@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
 // (CJNATIVE)EXEC: %run %run_opt %n.%suffix
 // (not CJNATIVE)EXEC-1: %run %run_opt %n.%suffix
 

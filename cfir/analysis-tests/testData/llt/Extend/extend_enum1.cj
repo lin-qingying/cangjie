@@ -1,6 +1,3 @@
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 public interface NoneTrait {
     func IsNone(): Bool
 }

@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
-// ASSERT: scan-2 try
-// ASSERT: scan-2 finally
-
 open class AAA <: Resource {
     public func close(a: Bool): Unit {}
     public func close(): Unit {}

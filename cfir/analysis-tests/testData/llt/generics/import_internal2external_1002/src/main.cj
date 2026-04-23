@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ../src
-// EXEC: %compiler %cmp_opt %compile_lib_opt src/pkga/pkga.cj -o pkga.%middle
-// EXEC: %compiler %cmp_opt pkga.%middle %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 
 internal import pkga.*
 

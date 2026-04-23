@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output %enableO2
-// EXEC: %run %run_opt %output
-
 class C {
     static var a: Range<Int64>
     static let b: Int64

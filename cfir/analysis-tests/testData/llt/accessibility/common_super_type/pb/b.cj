@@ -13,5 +13,5 @@ interface I1 <: I0 {}
 interface I2 <: I0 {}
 
 main() {
-    let i2: I0 = i
+    let i2: I0 = <!TYPE_MISMATCH!>i<!>
 }

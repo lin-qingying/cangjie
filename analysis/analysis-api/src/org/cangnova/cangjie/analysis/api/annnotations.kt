@@ -17,6 +17,22 @@ package org.cangnova.cangjie.analysis.api
 annotation class CaImplementationDetail
 
 /**
+ * 标记 Analysis API 的非公开接口。
+ *
+ * 对齐 Kotlin `KaNonPublicApi`，用于表达仅供 IDE 与框架内部使用、
+ * 不面向外部调用方承诺兼容性的 API。
+ */
+@Target(
+    AnnotationTarget.CLASS,
+    AnnotationTarget.PROPERTY,
+    AnnotationTarget.CONSTRUCTOR,
+    AnnotationTarget.FUNCTION,
+    AnnotationTarget.TYPEALIAS,
+)
+@RequiresOptIn("Internal API which is intended for IDE and Analysis API internal use only and does not provide compatibility guarantees")
+annotation class CaNonPublicApi
+
+/**
  * 标记仅供 IntelliJ 仓颉插件内部使用的 Analysis API。
  *
  * 该注解对齐 Kotlin `KaIdeApi`，用于承载更适合放在 Analysis API/low-level API 中、
@@ -56,3 +72,8 @@ annotation class CaExperimentalApi
 )
 @RequiresOptIn("An API intended for Analysis API implementations and platforms. The API is neither stable nor intended for user consumption.")
 annotation class CaPlatformInterface
+@RequiresOptIn("Analysis should not be allowed to be run from a write action, as otherwise it may cause incorrect behavior and IDE freezes.")
+public annotation class CaAllowAnalysisFromWriteAction
+
+@RequiresOptIn("Analysis should not be allowed to be run from the EDT, as otherwise it may cause IDE freezes.")
+public annotation class CaAllowAnalysisOnEdt

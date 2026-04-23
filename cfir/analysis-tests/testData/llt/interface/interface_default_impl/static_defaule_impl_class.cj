@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args | compare %f
-
 interface I {
     static func f1(): Unit {
         println("I")
@@ -46,7 +43,3 @@ main() {
     D().f3()
     D().f5()
 }
-
-// (CJNATIVE)ASSERT: scan-2 D f1
-// (not CJNATIVE) ASSERT: scan-2 C f1
-// ASSERT: scan D f4

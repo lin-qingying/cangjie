@@ -4,6 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
+// DIAGNOSTICS: -warnings
+
 // (CJNATIVE) EXEC: %compiler %enableO2 %cmp_opt %n.cj -o %output 2>&1 |compare %f
 
 main(): Int64 {
@@ -19,27 +21,7 @@ class Boo {
         }
         set(input) {
             var a = 0;
-            m /= a
+            <!CONST_EVAL_DIVIDE_BY_ZERO!>m /= a<!>
         }
     }
 }
-
-/* SCAN
-warning: unused variable:'input'
-  ==> binary_error_report_05.cj:20:13:
-   | 
-20 |         set(input) {
-   |             ^^^^^ unused variable
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-error: divide by zero
-  ==> binary_error_report_05.cj:22:13:
-   | 
-22 |             m /= a
-   |             ^^^^^^ attempt to divide by zero
-   | 
-
-1 error generated, 1 error printed.
-1 warning generated, 1 warning printed.
-*/

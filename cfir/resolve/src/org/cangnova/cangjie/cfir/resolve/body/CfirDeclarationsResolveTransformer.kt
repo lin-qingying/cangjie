@@ -1,22 +1,18 @@
-﻿package org.cangnova.cangjie.cfir.resolve.body
+package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.impl.CfirInterfaceImpl
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
-import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
+import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -25,23 +21,31 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
+import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.resolve.withExpectedType
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
 
 /**
  * Declaration-level resolve transformer.
  *
- * Responsibilities:
- * - manage scope stack for files/classes/functions/blocks
- * - resolve declaration initializers and infer implicit types where needed
- * - register local declarations into local scopes
+ * 结构对齐 Kotlin K2 `CfirDeclarationsResolveTransformer`：
+ *  - 每个 `transformXxx(...)` 用 `whileAnalysing(session, xxx)` 包外壳，负责早退、进入特殊模式等前置决策；
+ *  - 真正干活的逻辑挪到 `transformXxxContent(...)`（`protected open`），供低层 body resolver 覆写；
+ *  - scope / DFA 推入推出封装在 `withFile`、`forClassLikeBody`、`forConstructorBody` 等辅助函数里，便于替换。
+ *
+ * 职责：
+ *  - 管理文件 / 类 / 函数 / 代码块的作用域栈；
+ *  - 解析声明的显式/隐式返回类型，推断 initializer 类型；
+ *  - 把局部声明注册到当前 local scope。
  */
 open class CfirDeclarationsResolveTransformer(
     transformer: CfirAbstractBodyResolveTransformerDispatcher,
@@ -59,33 +63,81 @@ open class CfirDeclarationsResolveTransformer(
         return transformer.transformDeclarationContent(declaration, data)
     }
 
-    override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile {
-        val savedContext = context.towerDataContext
-        context.withFile(file) {
-            val importScopes = createImportingScopes(file)
-            context.addNonLocalScopes(importScopes)
+    // ── File ───────────────────────────────────────────────────────────────
 
-            file.transformDeclarations(transformer, ResolutionMode.ContextIndependent)
+    override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile =
+        whileAnalysing(session, file) {
+            doTransformFile(file, data)
         }
-        context.replaceTowerDataContext(savedContext)
+
+    private fun doTransformFile(file: CfirFile, data: ResolutionMode): CfirFile =
+        withFile(file) {
+            transformFileContent(file, data)
+        }
+
+    /**
+     * 包装 file 级别的 scope / DFA 生命周期。对齐 K2 `CfirDeclarationsResolveTransformer.withFile`：
+     * 进入 `context.withFile`、装配 imports、开启 file CFG，最后把 CFG 写回 file。
+     */
+    protected open fun withFile(file: CfirFile, action: () -> CfirFile): CfirFile {
+        val savedContext = context.towerDataContext
+        try {
+            return context.withFile(file) {
+                val importScopes = createImportingScopes(file)
+                context.addNonLocalScopes(importScopes)
+
+                dataFlowAnalyzer.enterFile(file, buildGraph = true)
+                val result = action()
+                dataFlowAnalyzer.exitFile()?.let { graph ->
+                    file.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
+                }
+                result
+            }
+        } finally {
+            context.replaceTowerDataContext(savedContext)
+        }
+    }
+
+    protected open fun transformFileContent(file: CfirFile, data: ResolutionMode): CfirFile {
+        file.transformDeclarations(transformer, ResolutionMode.ContextIndependent)
         return file
     }
 
-    override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass {
-        return transformClassLikeDeclaration(klass)
-    }
+    // ── Class-like declarations ───────────────────────────────────────────
 
-    override fun transformInterface(`interface`: CfirInterface, data: ResolutionMode): CfirInterface {
-        return transformClassLikeDeclaration(`interface`)
-    }
+    override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass =
+        whileAnalysing(session, klass) {
+            transformClassContent(klass, data)
+        }
 
-    override fun transformStruct(struct: CfirStruct, data: ResolutionMode): CfirStruct {
-        return transformClassLikeDeclaration(struct)
-    }
+    override fun transformInterface(`interface`: CfirInterface, data: ResolutionMode): CfirInterface =
+        whileAnalysing(session, `interface`) {
+            transformInterfaceContent(`interface`, data)
+        }
 
-    override fun transformEnum(enum: CfirEnum, data: ResolutionMode): CfirEnum {
-        return transformClassLikeDeclaration(enum)
-    }
+    override fun transformStruct(struct: CfirStruct, data: ResolutionMode): CfirStruct =
+        whileAnalysing(session, struct) {
+            transformStructContent(struct, data)
+        }
+
+    override fun transformEnum(enum: CfirEnum, data: ResolutionMode): CfirEnum =
+        whileAnalysing(session, enum) {
+            transformEnumContent(enum, data)
+        }
+
+    protected open fun transformClassContent(klass: CfirClass, data: ResolutionMode): CfirClass =
+        transformClassLikeDeclaration(klass)
+
+    protected open fun transformInterfaceContent(
+        interfaceDeclaration: CfirInterface,
+        data: ResolutionMode,
+    ): CfirInterface = transformClassLikeDeclaration(interfaceDeclaration)
+
+    protected open fun transformStructContent(struct: CfirStruct, data: ResolutionMode): CfirStruct =
+        transformClassLikeDeclaration(struct)
+
+    protected open fun transformEnumContent(enum: CfirEnum, data: ResolutionMode): CfirEnum =
+        transformClassLikeDeclaration(enum)
 
     private fun <T : CfirClassLikeDeclaration> transformClassLikeDeclaration(classLike: T): T {
         val savedContext = context.towerDataContext
@@ -98,12 +150,9 @@ open class CfirDeclarationsResolveTransformer(
             }
 
             when (classLike) {
-                is CfirClass -> {
-                    context.withContainingClass(classLike) {
-                        context.withScopesForClass(classLike, components, resolveDeclarations)
-                    }
+                is CfirClass -> forClassBody(classLike) {
+                    context.withScopesForClass(classLike, components, resolveDeclarations)
                 }
-
                 else -> context.withScopesForClass(classLike, components, resolveDeclarations)
             }
         }
@@ -113,44 +162,26 @@ open class CfirDeclarationsResolveTransformer(
         return classLike
     }
 
-    override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
-        val savedContext = context.towerDataContext
-
-        context.withContainer(function) {
-            if (function.typeParameters.isNotEmpty()) {
-                context.addNonLocalScope(CfirTypeParameterScopeImpl(function.typeParameters))
-            }
-
-            function.valueParameters.forEach { param ->
-                param.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(param.returnTypeRef, function.typeParameters))
-            }
-            function.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(function.returnTypeRef, function.typeParameters))
-
-            val paramScope = CfirLocalScopeImpl()
-            for (param in function.valueParameters) {
-                val paramSymbol = param.symbol as? CfirCallableSymbol<*> ?: continue
-                paramScope.addVariable(param.name, paramSymbol)
-            }
-            context.addLocalScope(paramScope)
-
-            transformFunctionContent(
-                function = function,
-                resolutionModeForBody = ResolutionMode.ContextIndependent,
-                shouldResolveEverything = true,
-            )
-
-            if (function.returnTypeRef is CfirImplicitTypeRef) {
-                val bodyType = function.body?.coneTypeOrNull ?: session.builtinTypes.unitType
-                val resolvedType = IdealTypeResolver.resolveIfIdeal(bodyType)
-                function.replaceReturnTypeRef(
-                    function.returnTypeRef.resolvedTypeFromPrototype(resolvedType, function.returnTypeRef.source),
-                )
-            }
+    /**
+     * 进入 class body 的 DFA 区间；exit 后把 CFG 写回 class。对齐 K2 `forRegularClassBody`。
+     */
+    protected open fun forClassBody(klass: CfirClass, action: () -> Unit) {
+        dataFlowAnalyzer.enterClass(klass, buildGraph = true)
+        context.withContainingClass(klass) {
+            action()
         }
+        dataFlowAnalyzer.exitClass()?.let { graph ->
+            klass.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
+        }
+    }
 
-        context.replaceTowerDataContext(savedContext)
-        bumpPhase(function)
-        return function
+    // ── Function ──────────────────────────────────────────────────────────
+
+    override fun transformFunction(
+        function: CfirFunction,
+        data: ResolutionMode,
+    ): CfirFunction {
+        error("Concrete transform functions should be called")
     }
 
     protected open fun transformFunctionContent(
@@ -158,64 +189,64 @@ open class CfirDeclarationsResolveTransformer(
         resolutionModeForBody: ResolutionMode,
         shouldResolveEverything: Boolean,
     ): CfirFunction {
+        dataFlowAnalyzer.enterFunction(function)
         val body = function.body
         if (body != null) {
             function.transformBody(transformer, resolutionModeForBody)
         }
+        function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
         return function
     }
 
-    override fun transformConstructor(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor {
-        val savedContext = context.towerDataContext
+    // ── Constructor ───────────────────────────────────────────────────────
 
-        context.withContainer(constructor) {
-            if (constructor.typeParameters.isNotEmpty()) {
-                context.addNonLocalScope(CfirTypeParameterScopeImpl(constructor.typeParameters))
-            }
-
-            constructor.valueParameters.forEach { param ->
-                param.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(param.returnTypeRef, constructor.typeParameters))
-            }
-
-            val returnTypeRef = constructor.returnTypeRef
-            if (returnTypeRef is CfirImplicitTypeRef) {
-                val ownerClass = context.containers.filterIsInstance<CfirClassLikeDeclaration>().lastOrNull()
-                val ownerType = ownerClass?.let(::buildConstructedTypeForClass)
-                    ?: ConeErrorType(ConeSimpleDiagnostic("constructor has no owning class"))
-                constructor.replaceReturnTypeRef(
-                    returnTypeRef.resolvedTypeFromPrototype(ownerType, returnTypeRef.source),
-                )
-            } else {
-                constructor.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(returnTypeRef, constructor.typeParameters))
-            }
-
-            val paramScope = CfirLocalScopeImpl()
-            for (param in constructor.valueParameters) {
-                val paramSymbol = param.symbol as? CfirCallableSymbol<*> ?: continue
-                paramScope.addVariable(param.name, paramSymbol)
-            }
-            context.addLocalScope(paramScope)
-
-            transformConstructorContent(constructor, ResolutionMode.ContextIndependent)
+    override fun transformConstructor(constructor: CfirConstructor, data: ResolutionMode): CfirConstructor =
+        whileAnalysing(session, constructor) {
+            if (transformer.implicitTypeOnly) return constructor
+            // 仓颉的 annotation class 语义与 Kotlin 不完全一致（没有 ClassKind 体系），
+            // 当前阶段不对 annotation 构造器做特殊 tower-data 切换；
+            // 后续若引入 CfirClass.isAnnotation 标记，可再在此处分流到 withAnnotationContext。
+            return transformConstructorContent(constructor, data)
         }
-
-        context.replaceTowerDataContext(savedContext)
-        bumpPhase(constructor)
-        return constructor
-    }
 
     protected open fun transformConstructorContent(
         constructor: CfirConstructor,
         data: ResolutionMode,
     ): CfirConstructor {
-        val body = constructor.body
-        if (body != null) {
-            constructor.transformBody(transformer, data)
+        val owningClass = context.containerIfAny as? CfirClass
+
+        dataFlowAnalyzer.enterFunction(constructor)
+
+        context.forConstructor(constructor) {
+            constructor.transformTypeParameters(transformer, data)
+                .transformAnnotations(transformer, data)
+                .transformReturnTypeRef(transformer, data)
+
+            context.forConstructorParameters(constructor, owningClass, components) {
+                constructor.transformValueParameters(transformer, data)
+            }
+            // 仓颉没有独立的 delegated-constructor 节点：委托调用（this(...)/super(...)）
+            // 作为 body 内的普通表达式在下面统一解析。
+            context.forConstructorBody(constructor, session) {
+                constructor.transformBody(transformer, data)
+            }
         }
+
+        val controlFlowGraphReference = dataFlowAnalyzer.exitFunction(constructor)
+        constructor.replaceControlFlowGraphReference(controlFlowGraphReference)
         return constructor
     }
 
+    // ── Enum constructor ──────────────────────────────────────────────────
+
     override fun transformEnumConstructor(
+        enumConstructor: CfirEnumConstructor,
+        data: ResolutionMode,
+    ): CfirEnumConstructor = whileAnalysing(session, enumConstructor) {
+        transformEnumConstructorContent(enumConstructor, data)
+    }
+
+    protected open fun transformEnumConstructorContent(
         enumConstructor: CfirEnumConstructor,
         data: ResolutionMode,
     ): CfirEnumConstructor {
@@ -252,11 +283,26 @@ open class CfirDeclarationsResolveTransformer(
         return enumConstructor
     }
 
-    override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {
+    // ── Property ──────────────────────────────────────────────────────────
+
+    override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty =
+        whileAnalysing(session, property) {
+            transformPropertyContent(property, data)
+        }
+
+    protected open fun transformPropertyContent(
+        property: CfirProperty,
+        data: ResolutionMode,
+    ): CfirProperty {
         val savedContext = context.towerDataContext
 
         context.withContainer(property) {
-            property.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(property.returnTypeRef, property.typeParameters))
+            property.replaceReturnTypeRef(
+                resolveExplicitTypeRefIfNeeded(
+                    property.returnTypeRef,
+                    property.typeParameters,
+                )
+            )
         }
 
         context.replaceTowerDataContext(savedContext)
@@ -264,12 +310,63 @@ open class CfirDeclarationsResolveTransformer(
         return property
     }
 
-    override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
+    // ── Variable (generic fallback) ───────────────────────────────────────
+
+    override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable =
+        whileAnalysing(session, variable) {
+            transformVariableContent(variable, data)
+        }
+
+    protected open fun transformVariableContent(
+        variable: CfirVariable,
+        data: ResolutionMode,
+    ): CfirVariable {
         bumpPhase(variable)
         return variable
     }
 
+    // ── Value parameter ───────────────────────────────────────────────────
+
+    override fun transformValueParameter(
+        valueParameter: CfirValueParameter,
+        data: ResolutionMode,
+    ): CfirValueParameter = whileAnalysing(session, valueParameter) {
+        transformValueParameterContent(valueParameter, data)
+    }
+
+    protected open fun transformValueParameterContent(
+        valueParameter: CfirValueParameter,
+        data: ResolutionMode,
+    ): CfirValueParameter {
+        dataFlowAnalyzer.enterValueParameter(valueParameter)
+
+        val result = context.withValueParameter(valueParameter, session) {
+            // 仓颉的 annotation parameter 默认值必须是常量表达式，
+            // 但常量求值由后续 checker / codegen 阶段完成，
+            // 这里只负责类型推断与 DFA，不做 ArrayLiteralPosition 的注解参数分流。
+            transformDeclarationContent(
+                valueParameter,
+                withExpectedType(valueParameter.returnTypeRef),
+            ) as CfirValueParameter
+        }
+
+        dataFlowAnalyzer.exitValueParameter(result)?.let { graph ->
+            result.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
+        }
+
+        return result
+    }
+
+    // ── Field variable ────────────────────────────────────────────────────
+
     override fun transformFieldVariable(
+        fieldVariable: CfirFieldVariable,
+        data: ResolutionMode,
+    ): CfirFieldVariable = whileAnalysing(session, fieldVariable) {
+        transformFieldVariableContent(fieldVariable, data)
+    }
+
+    protected open fun transformFieldVariableContent(
         fieldVariable: CfirFieldVariable,
         data: ResolutionMode,
     ): CfirFieldVariable {
@@ -279,14 +376,19 @@ open class CfirDeclarationsResolveTransformer(
 
         val explicitTypeRef = fieldVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
-            ResolutionMode.WithExpectedType(explicitTypeRef )
+            ResolutionMode.WithExpectedType(explicitTypeRef)
         } else {
             ResolutionMode.ContextIndependent
         }
 
         val initializer = fieldVariable.initializer
         if (initializer != null) {
+            dataFlowAnalyzer.enterFieldInitializer(fieldVariable)
             fieldVariable.transformInitializer(transformer, initializerMode)
+            // 仓颉 CfirFieldVariable 不是 CfirControlFlowGraphOwner：
+            // 字段初始化器的 CFG 归属包含它的 class initializer / primary constructor，
+            // 这里只负责通知 DFA 出栈，graph 由 DFA 合并到上层。
+            dataFlowAnalyzer.exitFieldInitializer()
         }
 
         if (fieldVariable.returnTypeRef is CfirImplicitTypeRef) {
@@ -302,21 +404,37 @@ open class CfirDeclarationsResolveTransformer(
             }
         }
 
-        val varSymbol = fieldVariable.symbol as? CfirFieldVariableSymbol
-        if (varSymbol != null) {
-            context.storeVariable(fieldVariable.name, varSymbol)
-        }
+        context.storeVariable(fieldVariable, session)
 
         bumpPhase(fieldVariable)
         return fieldVariable
     }
 
-    override fun transformDeclaration(declaration: CfirDeclaration, data: ResolutionMode): CfirDeclaration {
+    // ── Declaration (generic fallback) ────────────────────────────────────
+
+    override fun transformDeclaration(declaration: CfirDeclaration, data: ResolutionMode): CfirDeclaration =
+        whileAnalysing(session, declaration) {
+            transformDeclarationBumpPhaseContent(declaration, data)
+        }
+
+    protected open fun transformDeclarationBumpPhaseContent(
+        declaration: CfirDeclaration,
+        data: ResolutionMode,
+    ): CfirDeclaration {
         bumpPhase(declaration)
         return declaration
     }
 
+    // ── Pattern binding / pattern variable ────────────────────────────────
+
     override fun transformPatternBindingVariable(
+        patternBindingVariable: CfirPatternBindingVariable,
+        data: ResolutionMode,
+    ): CfirPatternBindingVariable = whileAnalysing(session, patternBindingVariable) {
+        transformPatternBindingVariableContent(patternBindingVariable, data)
+    }
+
+    protected open fun transformPatternBindingVariableContent(
         patternBindingVariable: CfirPatternBindingVariable,
         data: ResolutionMode,
     ): CfirPatternBindingVariable {
@@ -328,6 +446,13 @@ open class CfirDeclarationsResolveTransformer(
     }
 
     override fun transformPatternVariable(
+        patternVariable: CfirPatternVariable,
+        data: ResolutionMode,
+    ): CfirPatternVariable = whileAnalysing(session, patternVariable) {
+        transformPatternVariableContent(patternVariable, data)
+    }
+
+    protected open fun transformPatternVariableContent(
         patternVariable: CfirPatternVariable,
         data: ResolutionMode,
     ): CfirPatternVariable {
@@ -380,16 +505,14 @@ open class CfirDeclarationsResolveTransformer(
         return patternVariable
     }
 
-    override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression {
-        val savedContext = context.towerDataContext
-        val blockScope = CfirLocalScopeImpl()
-        context.addLocalScope(blockScope)
+    // ── Block（非 declaration，不走 whileAnalysing） ───────────────────────
 
-        val result = transformer.expressionsTransformer.transformBlock(block, data)
+    override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression =
+        context.forBlock(session) {
+            transformer.expressionsTransformer.transformBlock(block, data)
+        }
 
-        context.replaceTowerDataContext(savedContext)
-        return result
-    }
+    // ── Helpers ───────────────────────────────────────────────────────────
 
     private fun createImportingScopes(file: CfirFile): List<CfirScope> {
         val symbolProvider = session.symbolProvider
@@ -409,14 +532,160 @@ open class CfirDeclarationsResolveTransformer(
         return buildList {
             // 声明解析阶段同样要先看到当前文件顶层声明，保证后续类型与 extend 规则建立在正确的本地符号之上。
             add(CfirFileDeclaredTopLevelScope(file))
-            add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
+            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
             add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
             add(CfirExplicitStarImportingScope(imports, symbolProvider))
             add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
             add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
         }
     }
+    // ── Named function ────────────────────────────────────────────────────
 
+    /**
+     * 仓颉的 named function 解析流程（对齐 K2 `transformNamedFunction` 但按仓颉语义裁剪）：
+     *  1. `whileAnalysing` 包外壳，`implicitTypeOnly` 且返回类型已显式时直接返回；
+     *  2. 进入 `withNamedFunction`（非类成员时注册到当前局部作用域）；
+     *  3. 解析类型参数（仓颉没有 Kotlin 的 receiverParameter 独立声明、contract 系统、repl snippet、
+     *     header mode 等，对应分支全部剔除）；
+     *  4. 非顶层、非类成员时（即局部嵌套函数）先把签名里的 return / 参数类型解析出来；
+     *  5. 进入 `forFunctionBody`，按 `transformFunctionContent` 解析 body，必要时从 body 回推隐式返回类型。
+     */
+    override fun transformNamedFunction(
+        namedFunction: CfirNamedFunction,
+        data: ResolutionMode,
+    ): CfirNamedFunction = whileAnalysing(session, namedFunction) {
+        val shouldResolveEverything = !transformer.implicitTypeOnly
+        val returnTypeRef = namedFunction.returnTypeRef
+        if (returnTypeRef !is CfirImplicitTypeRef && transformer.implicitTypeOnly) {
+            return namedFunction
+        }
+
+        val containingDeclaration = context.containerIfAny
+        return context.withNamedFunction(namedFunction, session) {
+            if (shouldResolveEverything) {
+                namedFunction.transformTypeParameters(this, ResolutionMode.ContextIndependent)
+            }
+
+            // 局部嵌套函数（不在类体/文件顶层）需要先把签名解析好，
+            // 因为类成员的签名由前面的阶段（SUPER_TYPES / STATUS）处理过。
+            val isLocalNested = containingDeclaration != null &&
+                    containingDeclaration !is CfirClass &&
+                    containingDeclaration !is CfirFile
+            if (isLocalNested) {
+                prepareSignatureForBodyResolve(namedFunction)
+            }
+
+            context.forFunctionBody(namedFunction, components) {
+                withFullBodyResolve {
+                    transformFunctionWithGivenSignature(namedFunction, shouldResolveEverything)
+                }
+            }
+        }
+    }
+
+    /**
+     * `main` 在 CFIR 树上是独立声明节点，但 body resolve 约束仍与普通函数一致：
+     * 需要走具体声明入口，而不是落回 `transformFunction()` 这个抽象兜底分发。
+     */
+    override fun transformMainFunction(
+        mainFunction: CfirMainFunction,
+        data: ResolutionMode,
+    ): CfirMainFunction = whileAnalysing(session, mainFunction) {
+        val shouldResolveEverything = !transformer.implicitTypeOnly
+        val returnTypeRef = mainFunction.returnTypeRef
+        if (returnTypeRef !is CfirImplicitTypeRef && transformer.implicitTypeOnly) {
+            return mainFunction
+        }
+
+        context.withContainer(mainFunction) {
+            if (shouldResolveEverything) {
+                mainFunction.transformTypeParameters(this, ResolutionMode.ContextIndependent)
+            }
+
+            context.forFunctionBody(mainFunction, components) {
+                withFullBodyResolve {
+                    transformFunctionWithGivenSignature(mainFunction, shouldResolveEverything)
+                }
+            }
+        }
+    }
+
+    /**
+     * 解析函数 body 并在需要时回推隐式返回类型。
+     * 仓颉没有 Kotlin 的类型近似（`approximateDeclarationType` / `visibilityForApproximation`）和
+     * header mode，简化为"若返回类型仍是 implicit，直接用 body 的 cone type 封装"。
+     */
+    private fun <F : CfirFunction> transformFunctionWithGivenSignature(
+        function: F,
+        shouldResolveEverything: Boolean,
+    ): F {
+        @Suppress("UNCHECKED_CAST")
+        val result = transformFunctionContent(
+            function,
+            resolutionModeForBody = ResolutionMode.ContextIndependent,
+            shouldResolveEverything = shouldResolveEverything,
+        ) as F
+
+        if (result.returnTypeRef is CfirImplicitTypeRef) {
+            val inferredType = inferFunctionReturnType(result)
+            val resolved = result.returnTypeRef.resolvedTypeFromPrototype(
+                inferredType,
+                result.returnTypeRef.source,
+            )
+            result.replaceReturnTypeRef(resolved)
+        }
+
+        return result
+    }
+
+    /**
+     * 从当前函数 CFG 已确认可达的返回结果里推断函数返回类型。
+     *
+     * 返回结果统一包含：
+     * - 显式 `return expr`
+     * - 函数体正常流出时的 block 尾表达式
+     *
+     * 这样可以让“最后一条表达式是返回值”与显式 return 共享同一套推断入口，
+     * 并自动排除 CFG 上不可达的块尾表达式。
+     */
+    private fun inferFunctionReturnType(function: CfirFunction): ConeCangJieType {
+        val returnExpressions = components.dataFlowAnalyzer.returnExpressionsOfFunction(function)
+        if (returnExpressions.isEmpty()) {
+            return session.builtinTypes.unitType
+        }
+
+        val expressionTypes = returnExpressions.map { expression ->
+            expression.coneTypeOrNull ?: ConeErrorType(ConeSimpleDiagnostic("Postponed inference"))
+        }
+
+        if (expressionTypes.size == 1) {
+            return expressionTypes.single()
+        }
+
+        val commonType = session.typeContext.commonSuperTypeOrNull(expressionTypes)
+        if (commonType != null && commonType !is ConeErrorType) {
+            return commonType
+        }
+
+        val message = expressionTypes.joinToString(
+            prefix = "The types ",
+            postfix = " do not have the smallest common supertype",
+        ) { "'$it'" }
+        return ConeErrorType(ConeSimpleDiagnostic(message))
+    }
+
+    /**
+     * 提前把函数签名（返回类型、各参数类型）解析到 resolved 状态。
+     * 用于局部嵌套函数进入 body resolve 前的一次性签名准备。
+     */
+    private fun prepareSignatureForBodyResolve(callableMember: CfirCallableDeclaration) {
+        callableMember.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+        if (callableMember is CfirFunction) {
+            callableMember.valueParameters.forEach {
+                it.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+            }
+        }
+    }
     private fun resolveExplicitTypeRefIfNeeded(
         typeRef: CfirTypeRef,
         additionalTypeParameters: List<CfirTypeParameter> = emptyList(),
@@ -497,7 +766,7 @@ open class CfirDeclarationsResolveTransformer(
         val classId = resolveClassId(klass)
             ?: return ConeErrorType(ConeSimpleDiagnostic("cannot resolve class id for constructor owner"))
         val typeArguments = klass.typeParameters.map { parameter ->
-            ConeTypeProjection(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag()))
+            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
         }
         val lookupTag = ConeClassLikeLookupTagImpl(classId)
         return when (klass) {
@@ -506,15 +775,18 @@ open class CfirDeclarationsResolveTransformer(
                 typeArguments = typeArguments,
                 isInterface = true,
             )
+
             is CfirStruct -> ConeStructType(
                 lookupTag = lookupTag,
                 typeArguments = typeArguments,
             )
+
             is CfirEnum -> ConeEnumType(
                 lookupTag = lookupTag,
                 typeArguments = typeArguments,
                 isRefEnum = klass.isRefEnum,
             )
+
             else -> ConeClassLikeType(
                 lookupTag = lookupTag,
                 typeArguments = typeArguments,

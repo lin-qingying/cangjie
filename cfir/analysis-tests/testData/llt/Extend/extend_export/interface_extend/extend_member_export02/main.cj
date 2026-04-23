@@ -5,18 +5,11 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ./testa.cj ./testb.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt testa.cj -o a.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt testb.cj -o b.%middle
-// EXEC-PIPE-1: %compiler %cmp_opt a.%middle %f -o %output 2>&1 | compare %f
-
 import a.*
 import b.*
 
 main() {
     A().f1
-    A().f2 // error
+    A().<!NOT_MEMBER_OF!>f2<!> // error
     A().f3
 }
-
-// (not CJNATIVE) ASSERT: scan error: can not access field 'f2'
-// (CJNATIVE) ASSERT: scan error: 'f2' is not a member of class 'A'

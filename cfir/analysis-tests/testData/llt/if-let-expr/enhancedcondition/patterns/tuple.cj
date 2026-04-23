@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC: %run %run_opt %output %run_args | compare %f
-
 enum Color {
     R | G | B(Int64)
 }
@@ -25,10 +22,3 @@ main() {
     println(foo((None, B(15))))
     println(foo((None, R)))
 }
-
-/* SCAN-IN
-18
--1
--1
--1
-*/

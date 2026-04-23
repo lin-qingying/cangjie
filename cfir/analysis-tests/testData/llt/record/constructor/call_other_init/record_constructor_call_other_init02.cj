@@ -4,13 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
+// DIAGNOSTICS: -UNUSED_VARIABLE
 
 struct A {
     public let a: Int64
     public let b: Int64
     public let c: Int64
-    public init(x: Int64, y: Int64) {
+    <!CLASS_UNINITIALIZED_FIELD!>public init(x: Int64, y: Int64)<!> {
         this.a = x
         this.b = y
     }
@@ -24,14 +24,3 @@ struct A {
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: the uninitialized member variable 'c' is not initialized in the constructor of class or struct
-  ==> record_constructor_call_other_init02.cj:13:5:
-   | 
-13 |     public init(x: Int64, y: Int64) {
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

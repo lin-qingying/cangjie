@@ -2,11 +2,15 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.cfir.*
 
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
@@ -21,7 +25,11 @@ import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendIndexStore
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 
@@ -31,29 +39,55 @@ internal fun CaCfirSession.restoreCallablePublicSymbol(
 ): CaCallableSymbol? {
     val ownerClassId = callableId.classId
     val candidates = when (ownerClassId) {
-        null -> getOrCreateTopLevelPublicSymbols(callableId.packageName, callableId.callableName).callableSymbols
-        else -> scopeQueries.queryDeclaredMemberScope(ownerClassId)
-            ?.let { scope ->
+        null -> getTopLevelCallableSymbols(callableId.packageName, callableId.callableName)
+        else -> {
+            val ownerClass = cfirSession.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir as? CfirClass
+                ?: return null
+            cfirSession.cangjieScopeProvider.getDeclarationSiteMemberScope(
+                ownerClass,
+                cfirSession,
+                getScopeSessionFor(cfirSession),
+            ).let { scope ->
                 buildList {
                     scope.processCallablesByName(callableId.callableName) { symbol ->
-                        add(createCallableSymbol(symbol))
+                        add(cfirSymbolBuilder.buildSymbol(symbol) as CaCallableSymbol)
                     }
                 }
             }
-            .orEmpty()
+        }
     }
     val stableCandidate = candidates.singleOrNull { candidate -> candidate.matchesStableCallable(callableId, kind) }
     if (stableCandidate != null) return stableCandidate
 
     if (kind == CaCfirCallableSymbolKind.PATTERN_VARIABLE || kind == CaCfirCallableSymbolKind.PATTERN_BINDING) {
-        return resolutionFacade.cfirFiles
-            .asSequence()
-            .mapNotNull { file -> file.findCallableSymbol(callableId, kind) }
-            .firstOrNull()
-            ?.let(::createCallableSymbol)
+        return ((runCatching { cfirSession.cfirProvider }.getOrNull() as? CfirProviderImpl)
+            ?.getAllFiles()
+            ?.asSequence()
+            ?.mapNotNull { file -> file.findCallableSymbol(callableId, kind) }
+            ?.firstOrNull())
+            ?.let { cfirSymbolBuilder.buildSymbol(it) as CaCallableSymbol }
     }
 
     return null
+}
+
+/**
+ * 顶层命名函数恢复必须带 signature。
+ *
+ * 这是 Kotlin `KaFirTopLevelFunctionSymbolPointer` 在仓颉侧的等价恢复入口，
+ * 用来区分同名重载函数，避免把顶层函数退化成 `CallableId -> singleOrNull`。
+ */
+@OptIn(CaImplementationDetail::class)
+internal fun CaCfirSession.restoreTopLevelFunctionPublicSymbol(
+    callableId: CallableId,
+    signature: CfirCallableSignature,
+): CaNamedFunctionSymbol? {
+    val candidates = cfirSession.symbolProvider.getTopLevelCallableSymbols(callableId.packageName, callableId.callableName)
+    val functionSymbol = candidates
+        .filterIsInstance<CfirNamedFunctionSymbol>()
+        .singleOrNull { candidate -> signature.hasTheSameSignature(candidate) }
+        ?: return null
+    return cfirSymbolBuilder.functionBuilder.buildNamedFunctionSymbol(functionSymbol)
 }
 
 internal fun CaCfirSession.restoreExtendMemberCallablePublicSymbol(
@@ -63,7 +97,7 @@ internal fun CaCfirSession.restoreExtendMemberCallablePublicSymbol(
 ): CaCallableSymbol? {
     val extendSymbol = restoreExtendPublicSymbol(extendIdentity) ?: return null
     val candidates = with(this) {
-        extendSymbol.declaredMemberScope.getCallableSymbols(callableName)
+        extendSymbol.declaredMemberScope.callables(callableName).toList()
     }
     val expectedKey = CaCfirExtendMemberCallableSymbolCacheKey(extendIdentity, callableName, kind)
     return candidates.singleOrNull { candidate ->
@@ -79,7 +113,7 @@ internal fun CaCfirSession.restoreExtendPublicSymbol(
         .firstOrNull { model -> model.toPublicSymbolIdentity() == extendIdentity }
         ?.declaration
         ?: return null
-    return createExtendSymbol(extendDeclaration.symbol)
+    return cfirSymbolBuilder.buildExtendSymbol(extendDeclaration.symbol)
 }
 
 private fun CfirFile.findCallableSymbol(

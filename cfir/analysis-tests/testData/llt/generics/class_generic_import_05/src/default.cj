@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: p1
-// EXEC: %compiler %cmp_opt %compile_lib_opt ./p1/*.cj -o a.%middle
-// EXEC: %compiler %cmp_opt a.%middle %f -o %output
-// EXEC: %run %run_opt %output %run_args
 
 //brief:导入泛型类型后继承
 

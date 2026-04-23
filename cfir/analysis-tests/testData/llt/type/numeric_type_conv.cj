@@ -4,21 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-
 main() {
-    let a = UInt64(0xFFFF_FFFF_FFFF_FFFF)
+    let a = UInt64(<!LITERAL_NUMERIC_OVERFLOW!>0xFFFF_FFFF_FFFF_FFFF<!>)
     a
     0
 }
-
-/* SCAN
-error: the number '0xFFFF_FFFF_FFFF_FFFF' exceeds the value range of type 'Int64'
-  ==> numeric_type_conv.cj:10:20:
-   | 
-10 |     let a = UInt64(0xFFFF_FFFF_FFFF_FFFF)
-   |                    ^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

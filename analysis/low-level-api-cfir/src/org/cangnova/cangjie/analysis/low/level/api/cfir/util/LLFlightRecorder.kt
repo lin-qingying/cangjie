@@ -19,11 +19,13 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirResol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.transformers.PartialBodyAnalysisSuspendedException
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
@@ -221,6 +223,7 @@ object LLFlightRecorder {
             is CfirTypeParameter -> "tp/" + declaration.name.asString()
             is CfirTypeAlias -> "ta/" + declaration.classId.asString()
             is CfirClass -> "c/" + declaration.classId.asString()
+            is CfirExtend -> "x/" + (declaration.psi?.text ?: declaration::class.simpleName ?: "<extend>")
             is CfirProperty -> "p/" + declaration.name.asString()
             is CfirValueParameter -> "vp/" + declaration.name.asString()
             is CfirVariable -> "v/" + declaration.symbol.name.asString() + "/${declaration::class.java.simpleName.lowercase()}"

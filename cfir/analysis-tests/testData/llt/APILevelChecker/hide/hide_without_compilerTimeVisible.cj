@@ -5,23 +5,10 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: hide.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt hide.cj -o hide.%middle
-// ERRCHECK: %compiler %cmp_opt %compile_lib_opt hide.%middle %n.cj -o %n.%suffix -Woff all
 
 package ohos.dep
 
 import ohos.labels.*
 
-@Hide[isChecked: true]
+@<!HIDE_COMPILE_TIME_INVISIBLE!>Hide[isChecked: true]<!>
 public class A {}
-
-/* SCAN
-error: 'Hide' annotation must be visible at compile time
-  ==> hide_without_compilerTimeVisible.cj:15:1:
-   | 
-15 | @Hide[isChecked: true]
-   | ^^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

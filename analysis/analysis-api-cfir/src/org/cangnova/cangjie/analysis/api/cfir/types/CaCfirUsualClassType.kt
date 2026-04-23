@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
 import org.cangnova.cangjie.analysis.api.cfir.utils.asPublicTypeProjections
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreUsualClassType
@@ -11,6 +12,10 @@ import org.cangnova.cangjie.analysis.api.types.CaResolvedClassTypeQualifier
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.types.CaTypePointer
 import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
+import org.cangnova.cangjie.cfir.resolve.toSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -25,8 +30,11 @@ import org.cangnova.cangjie.name.ClassId
  */
 internal class CaCfirUsualClassType(
     override val coneType: ConeCangJieType,
-    override val analysisSession: CaCfirSession,
+    private val builder: CaSymbolByCfirBuilder,
 ) : CaUsualClassType(), CaCfirType {
+    override val token
+        get() = builder.token
+
     override val presentation: String
         get() = withValidityAssertion { coneType.renderForDebugging() }
 
@@ -43,18 +51,25 @@ internal class CaCfirUsualClassType(
         }
 
     override val symbol: CaClassLikeSymbol
-        get() = withValidityAssertion { analysisSession.requireClassLikePublicSymbol(coneType) }
-
+        get() = withValidityAssertion {
+            resolveClassLikeSymbol()?.let(builder.classifierBuilder::buildClassLikeSymbol)
+                ?: errorWithCfirSpecificEntries("Class was not found", coneType = coneType)
+        }
     override val qualifiers: List<CaResolvedClassTypeQualifier>
         get() = withValidityAssertion {
-            listOf(
-                CaCfirResolvedClassTypeQualifierImpl(
-                    name = classId.shortClassName,
-                    typeArguments = coneType.asPublicTypeProjections(analysisSession),
-                    symbol = symbol,
-                    token = token,
+            when (coneType) {
+                is ConeClassLikeType -> UsualClassTypeQualifierBuilder.buildQualifiers(coneType, builder)
+                is ConeTypeAliasType -> listOf(
+                    CaCfirResolvedClassTypeQualifierImpl(
+                        name = symbol.name,
+                        typeArguments = coneType.asPublicTypeProjections(builder.analysisSession),
+                        symbol = symbol,
+                        token = symbol.token,
+                    )
                 )
-            )
+
+                else -> error("Unsupported usual class type qualifier source: ${coneType::class.simpleName}")
+            }
         }
 
     override val typeArguments: List<CaType>
@@ -71,4 +86,10 @@ internal class CaCfirUsualClassType(
     override fun hashCode() = typeHashcode()
 
     override fun toString(): String = coneType.renderForDebugging()
+
+    private fun resolveClassLikeSymbol(): CfirClassLikeSymbol<*>? = when (coneType) {
+        is ConeClassLikeType -> coneType.lookupTag.toSymbol(builder.analysisSession.cfirSession)
+        is ConeTypeAliasType -> coneType.classId.toSymbol(builder.analysisSession.cfirSession)
+        else -> null
+    }
 }

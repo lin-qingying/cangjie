@@ -4,23 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
-func f(x!: Bool = return true, y!: Bool = x) {
+func f(x!: Bool = <!INVALID_RETURN!>return true<!>, y!: Bool = x) {
     return y
 }
 
 main() {
     println(f())
 }
-
-/* SCAN
-error: 'return' must be used inside a function body
- ==> return6.cj:9:19:
-  | 
-9 | func f(x!: Bool = return true, y!: Bool = x) {
-  |                   ^^^^^^^^^^^ 
-  | 
-
-1 error generated, 1 error printed.
-*/

@@ -5,11 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkgs0012001a
-// EXEC: %frontendCompiler %typecheck %cmp_opt pkgs0012001a/pkgs0012001a.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkgs0012001a/pkgs0012001a.cj -o pkgs0012001a/pkgs0012001a.%middle
-// EXEC: %frontendCompiler %typecheck %cmp_opt pkgs0012001a/pkgs0012001a.%middle %n.cj --import-path pkgs0012001a
-// EXEC: %compiler %cmp_opt pkgs0012001a/pkgs0012001a.%middle %n.cj --import-path pkgs0012001a -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 
 internal import pkgs0012001a.Test
 

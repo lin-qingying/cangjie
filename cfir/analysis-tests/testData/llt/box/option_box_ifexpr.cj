@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args 2>&1 | compare %f
-// ASSERT: scan-4 Some(C)
-// ASSERT: scan-5 C
-
 main() {
     let a = calc()
     let key1 = if (a == 7) {

@@ -38,8 +38,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.SnapshotCfirMapper
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.*
-import org.cangnova.cangjie.cfir.scopes.CfirLocalScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -131,7 +130,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
         private val MAX_ANALYSES_COUNT: Int by lazy(LazyThreadSafetyMode.PUBLICATION) {
             // On various repositories, number of declarations analyzed more than five times, is under 1%.
             // So here we cap only unusually lengthy declarations.
-            Registry.intValue("kotlin.analysis.partialBodyAnalysis.attemptCount", 5)
+            Registry.intValue("cangjie.analysis.partialBodyAnalysis.attemptCount", 5)
         }
     }
 
@@ -186,6 +185,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
         }
     }
 
+    @OptIn(CfgInternals::class)
     private fun transformPartially(
         request: LLPartialBodyResolveRequest,
         block: CfirBlock,
@@ -231,7 +231,11 @@ private class CfirPartialBodyExpressionResolveTransformer(
 
         // Run analysis with the previous tower data context
         context.withTowerDataContext(resolveSnapshot.towerDataContext) {
-            context.dataFlowAnalyzerContext.resetFrom(resolveSnapshot.dataFlowAnalyzerContext)
+            val dataFlowSnapshot = resolveSnapshot.dataFlowAnalyzerContext.createSnapshot(
+                LLSnapshotCfirMapper(listOf(block, declaration))
+            )
+            patchControlFlowGraphReferences(listOf(block, declaration), dataFlowSnapshot.graphMapping)
+            context.dataFlowAnalyzerContext.resetFrom(dataFlowSnapshot.context)
 
             /** No [BodyResolveContext.forBlock] as here we manually restore the tower data context from the snapshot. */
             val isAnalyzedEntirely = transformStatementsPartially(
@@ -519,7 +523,13 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         )
 
         override val components: BodyResolveTransformerComponents =
-            BodyResolveTransformerComponents(resolveTargetSession, resolveTargetScopeSession, this, context)
+            BodyResolveTransformerComponents(
+                session = resolveTargetSession,
+                scopeSession = resolveTargetScopeSession,
+                transformer = this,
+                context = context,
+                expandTypeAliases = true,
+            )
 
         override val expressionsTransformer: CfirExpressionsResolveTransformer =
             CfirPartialBodyExpressionResolveTransformer(this, resolveTarget)
@@ -715,6 +725,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
 
         when (target) {
             is CfirFile, is CfirClass, is CfirCodeFragment -> error("Should have been resolved in ${::doResolveWithoutLock.name}")
+            is CfirExtend -> {
+                // extend 自身不拥有独立 body，成员会作为独立目标继续推进到 BODY_RESOLVE。
+            }
             is CfirConstructor -> resolve(target, BodyStateKeepers.CONSTRUCTOR)
             is CfirFunction -> resolve(target, BodyStateKeepers.FUNCTION)
             is CfirProperty -> resolve(target, BodyStateKeepers.PROPERTY)

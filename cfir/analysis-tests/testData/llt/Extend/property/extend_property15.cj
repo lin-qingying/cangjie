@@ -4,19 +4,17 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 main(): Int64 {
-    B<Int32>().a
+    B<Int32>().<!NOT_MEMBER_OF!>a<!>
     var a = [1, 2]
-    a.size = 1
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.size = 1<!>
     return 0
 }
 
 class A {}
 
 extend A {
-    public prop a: Int64 {
+    public prop <!EXTEND_MEMBER_CANNOT_SHADOW!>a<!>: Int64 {
         get() {
             return 1
         }
@@ -24,7 +22,7 @@ extend A {
 }
 
 extend A {
-    public prop a: Int64 {
+    public prop <!EXTEND_MEMBER_CANNOT_SHADOW!>a<!>: Int64 {
         get() {
             return 1
         }
@@ -42,13 +40,3 @@ extend B<Int64> {
         }
     }
 }
-
-// ASSERT: scan error: 'a' is not a member of class 'B<Int32>'
-// ASSERT: scan  ==> extend_property15.cj:10:16:
-// ASSERT: scan error: cannot assign to immutable value
-// ASSERT: scan  ==> extend_property15.cj:12:5:
-// ASSERT: scan error: extend member 'a' is not allowed to shadow members of 'extend A'
-// ASSERT: scan   ==> extend_property15.cj:19:17:
-// ASSERT: scan error: extend member 'a' is not allowed to shadow members of 'extend A'
-// ASSERT: scan   ==> extend_property15.cj:27:17:
-// ASSERT: scan 4 errors generated, 4 errors printed.

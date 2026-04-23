@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 // Test for error reporting was not able to report error in main's binaryExpr
 interface I<T> {}
 
@@ -26,17 +24,6 @@ func test<T>(): UInt64 {
 }
 
 main() {
-    1 ** test<I>()
+    1 ** test<<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>I<!>>()
     return 0
 }
-
-/* SCAN
-error: generic type should be used with type argument
-  ==> binary_error_report_04.cj:29:15:
-   | 
-29 |     1 ** test<I>()
-   |               ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

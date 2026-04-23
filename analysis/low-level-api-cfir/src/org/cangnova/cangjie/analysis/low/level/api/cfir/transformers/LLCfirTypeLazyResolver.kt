@@ -18,6 +18,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirTypeResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
@@ -53,18 +54,29 @@ internal object LLCfirTypeLazyResolver : LLCfirLazyResolver(CfirResolvePhase.TYP
  * @see CfirResolvePhase.TYPES
  */
 private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTargetResolver(target, CfirResolvePhase.TYPES) {
-    private val transformer = CfirTypeResolveTransformer(resolveTargetSession)
+    private val transformer = CfirTypeResolveTransformer(resolveTargetSession, resolveTargetScopeSession)
 
     @Deprecated("Should never be called directly, only for override purposes, please use withFile", level = DeprecationLevel.ERROR)
     override fun withContainingFile(cfirFile: CfirFile, action: () -> Unit) {
-        action()
+        transformer.withFileScope(cfirFile, action)
     }
 
     @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
     override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
-        if (cfirClass.resolvePhase < resolverPhase) {
+        cfirClass.lazyResolveToPhase(resolverPhase.previous)
+        transformer.withClassDeclarationCleanup(cfirClass) {
             performCustomResolveUnderLock(cfirClass) {
-                rawResolve(cfirClass)
+                transformer.resolveClassTypes(cfirClass)
+            }
+            transformer.withClassScopes(cfirClass, action)
+        }
+    }
+
+    @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
+    override fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
+        if (cfirExtend.resolvePhase < resolverPhase) {
+            performCustomResolveUnderLock(cfirExtend) {
+                transformer.resolveExtendTypes(cfirExtend)
             }
         }
         action()
@@ -75,6 +87,7 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
             is CfirFunction -> resolve(target, TypeStateKeepers.FUNCTION)
             is CfirProperty -> resolve(target, TypeStateKeepers.PROPERTY)
             is CfirCallableDeclaration,
+            is CfirExtend,
             is CfirFile,
             is CfirTypeAlias,
             is CfirClass,
@@ -100,11 +113,12 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
 
     private fun rawResolve(target: CfirElementWithResolveState) {
         when (target) {
-            is CfirFile -> transformer.transformFile(target, buildConfiguration(target))
-            is CfirClass -> transformer.transformClass(target, buildConfiguration(target))
-            is CfirInterface -> transformer.transformInterface(target, buildConfiguration(target))
-            is CfirStruct -> transformer.transformStruct(target, buildConfiguration(target))
-            is CfirEnum -> transformer.transformEnum(target, buildConfiguration(target))
+            is CfirFile -> transformer.resolveFileTypes(target)
+            is CfirClass -> transformer.withClassDeclarationCleanup(target) { transformer.resolveClassTypes(target) }
+            is CfirInterface -> transformer.resolveClassTypes(target)
+            is CfirStruct -> transformer.resolveClassTypes(target)
+            is CfirEnum -> transformer.resolveClassTypes(target)
+            is CfirExtend -> transformer.resolveExtendTypes(target)
             is CfirTypeAlias,
             is CfirCallableDeclaration,
             is CfirTypeParameter,

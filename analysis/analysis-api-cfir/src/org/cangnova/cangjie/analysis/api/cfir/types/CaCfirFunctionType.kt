@@ -5,11 +5,12 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreFunctionType
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.types.CaFunctionType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.types.CaTypePointer
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.renderForDebugging
 
 /**
@@ -19,9 +20,12 @@ import org.cangnova.cangjie.cfir.types.renderForDebugging
  * 仅把 CFIR 侧实现落位拆回 Kotlin 风格的单叶子文件。
  */
 internal class CaCfirFunctionType(
-    override val coneType: ConeFuncType,
-    override val analysisSession: CaCfirSession,
+    override val coneType: ConeFunctionType,
+    private val analysisSession: CaCfirSession,
 ) : CaFunctionType, CaCfirType {
+    override val token: CaLifetimeToken
+        get() = analysisSession.token
+
     override val presentation: String
         get() = withValidityAssertion { coneType.renderForDebugging() }
 

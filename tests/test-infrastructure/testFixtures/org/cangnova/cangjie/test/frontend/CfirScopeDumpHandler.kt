@@ -28,7 +28,6 @@ import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
@@ -371,14 +370,18 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
     }
 
     private fun SmartPrinter.processFunctions(name: Name, scope: CfirTypeScope) {
-        val functions = mutableListOf<CfirFunctionSymbol<*>>()
+        val functions = mutableListOf<org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol>()
         scope.processFunctionsByName(name) { functions += it }
         for (function in functions) {
             processFunction(function, scope, SymbolCounter())
         }
     }
 
-    private fun SmartPrinter.processFunction(symbol: CfirFunctionSymbol<*>, scope: CfirTypeScope, counter: SymbolCounter) {
+    private fun SmartPrinter.processFunction(
+        symbol: org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol,
+        scope: CfirTypeScope,
+        counter: SymbolCounter,
+    ) {
         printInfo(symbol.cfir, scope, counter)
         scope.processDirectOverriddenFunctionsWithBaseScope(symbol) { overridden, baseScope ->
             withIndent {
@@ -420,7 +423,7 @@ class CfirScopeDumpHandler(testServices: TestServices) : CfirAnalysisHandler(tes
         hasMembers = true
         for (callable in callables) {
             when (callable) {
-                is CfirFunctionSymbol<*> -> processFunction(callable, scope, SymbolCounter())
+                is org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol -> processFunction(callable, scope, SymbolCounter())
                 is CfirPropertySymbol -> processProperty(callable, scope, SymbolCounter())
                 is CfirVariableSymbol<*> -> printInfo(callable.cfir, scope, SymbolCounter())
                 else -> printInfo(callable.cfir, scope, SymbolCounter())

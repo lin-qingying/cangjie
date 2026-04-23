@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 class A {
     func test<T>() {
         1
@@ -23,17 +21,6 @@ class A {
 
 main() {
     let a = A()
-    let b = a.test
+    let b = a.<!UNABLE_TO_INFER_GENERIC_FUNC!>test<!>
     return 0
 }
-
-/* SCAN
-error: type arguments needed for the generic function 'test'
-  ==> call_reference_inference_03.cj:26:15:
-   | 
-26 |     let b = a.test
-   |               ^^^^ cannot infer type arguments for the generic function
-   | 
-
-1 error generated, 1 error printed.
-*/

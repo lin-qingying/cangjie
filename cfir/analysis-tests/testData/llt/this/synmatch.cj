@@ -4,48 +4,16 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %frontendCompiler %f %compile_lib_opt %cmp_opt
-
 class Test {
-    func f(x: Int64): This {
+    func f(x: Int64): This <!TYPE_MISMATCH!>{
         (match (x) {
             case _ => this
         }).g()
-    }
+    }<!>
 
-    func g(): This {
+    func g(): This <!TYPE_MISMATCH!>{
         (match {
             case _ => this
         }).g()
-    }
+    }<!>
 }
-
-/* SCAN
-error: mismatched types
-  ==> synmatch.cj:10:28:
-   | 
-10 |       func f(x: Int64): This {
-   |  _______________________~~~~_^
-   | |                       |
-   | |                       expected 'This' because of return type
-11 | |         (match (x) {
-   | | ...
-14 | |     }
-   | |_____^ expected 'This', found 'Class-Test'
-   | 
-
-error: mismatched types
-  ==> synmatch.cj:16:20:
-   | 
-16 |       func g(): This {
-   |  _______________~~~~_^
-   | |               |
-   | |               expected 'This' because of return type
-17 | |         (match {
-   | | ...
-20 | |     }
-   | |_____^ expected 'This', found 'Class-Test'
-   | 
-
-2 errors generated, 2 errors printed.
-*/

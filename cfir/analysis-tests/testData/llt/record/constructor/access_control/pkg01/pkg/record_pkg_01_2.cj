@@ -6,7 +6,7 @@
 
 package pkg
 
-let n: Int64 = A().a
+let n: Int64 = <!NO_CONSTRUCTOR!>A<!>().a
 
 struct B {
     public let a: Int64 = n

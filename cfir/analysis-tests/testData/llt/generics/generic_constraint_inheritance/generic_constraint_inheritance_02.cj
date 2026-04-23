@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %diag_json %f -o %output
-
 open class A {}
 
 open class B <: A {}
@@ -21,7 +19,7 @@ interface I2 {
 }
 
 class D <: I1 & I2 {
-    public static func test<T>(): Unit where T <: C {}
+    public static func test<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>C<!> {}
 }
 
 class E <: I1 & I2 {
@@ -29,10 +27,7 @@ class E <: I1 & I2 {
 }
 
 class F <: I1 & I2 {
-    public static func test<T>(): Unit where T <: A {}
+    public static func test<T>(): Unit where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>A<!> {}
 }
 
 main() {}
-
-// ASSERT: scan-2 sema_generic_constraint_not_looser
-// ASSERT: scan "Errors": 2

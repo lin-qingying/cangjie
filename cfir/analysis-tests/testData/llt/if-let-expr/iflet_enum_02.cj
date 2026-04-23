@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-// EXEC: %run %run_opt %output %run_args
-
 func foo(): Option<Int64> {
     let x1 = Option<Int64>.Some(111)
     let x2 = Option<Int64>.None

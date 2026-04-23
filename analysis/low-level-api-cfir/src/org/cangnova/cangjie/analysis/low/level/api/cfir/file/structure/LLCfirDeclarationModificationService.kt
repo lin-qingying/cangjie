@@ -307,7 +307,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
                 }
 
                 is CfirProperty -> {
-                    // in-block modifications only applicable to properties with an explicit type,
+                    // in-block modifications only applicable to variables with an explicit type,
                     // but existed backing field can lead to the entire body resolution even on
                     // implicit body phase, so we will mark this phase as fully resolved too to be safe
                     if (phase != CfirResolvePhase.BODY_RESOLVE && phase != CfirResolvePhase.IMPLICIT_TYPES) return

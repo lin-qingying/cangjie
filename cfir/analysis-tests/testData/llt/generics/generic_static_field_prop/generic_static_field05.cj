@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// RUN-EXEC-2: %run %run_opt %output %run_args
-
 class A<T> {
     static var a: Int64 = 1
 }

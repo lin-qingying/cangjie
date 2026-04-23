@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -27,6 +28,7 @@ abstract class CfirTypeAlias : CfirClassLikeDeclaration() {
     abstract override val deprecationsProvider: DeprecationsProvider
     abstract override val declarations: List<CfirDeclaration>
     abstract override val superTypeRefs: List<CfirTypeRef>
+    abstract override val scopeProvider: CfirScopeProvider
     abstract override val symbol: CfirTypeAliasSymbol
     abstract override val status: CfirDeclarationStatus
     abstract override val typeParameters: List<CfirTypeParameter>

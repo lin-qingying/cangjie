@@ -12,16 +12,16 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.types.AbstractConeSubstitutor
+import org.cangnova.cangjie.cfir.types.ConeEmptySubstitutor
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
-import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.FqNameUnsafe
 import org.cangnova.cangjie.name.Name
@@ -29,7 +29,6 @@ import org.cangnova.cangjie.type.AbstractTypePreparator
 import org.cangnova.cangjie.type.AbstractTypeRefiner
 import org.cangnova.cangjie.type.TypeCheckerState
 import org.cangnova.cangjie.type.model.*
-import org.cangnova.cangjie.type.newTypeCheckerState
 
 /** 创建简单诊断信息的辅助函数 */
 private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiagnostic {
@@ -179,7 +178,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
 
     override fun TypeConstructorMarker.isFinalClassConstructor(): Boolean {
         // 结构类型/原始类型/枚举类型是 final 的
-        if (this is ConePrimitiveType || this is ConeFuncType || this is ConeTupleType ||
+        if (this is ConePrimitiveType || this is ConeFunctionType || this is ConeTupleType ||
             this is ConeVArrayType || this is ConePointerType || this is ConeCStringType) {
             return true
         }
@@ -199,7 +198,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         return when (this) {
             is ConeClassifierLookupTag -> true
             is ConePrimitiveType -> true
-            is ConeFuncType -> true
+            is ConeFunctionType -> true
             is ConeTupleType -> true
             is ConeVArrayType -> true
             is ConePointerType -> true
@@ -310,7 +309,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     }
 
     override fun CangJieTypeMarker.isFunctionType(): Boolean {
-        return this is ConeFuncType
+        return this is ConeFunctionType
     }
 
     override fun CangJieTypeMarker.isTupleType(): Boolean {
@@ -323,7 +322,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     }
 
     override fun createFunctionType(parameterTypes: List<CangJieTypeMarker>, returnType: CangJieTypeMarker): CangJieTypeMarker {
-        return ConeFuncType(
+        return ConeFunctionType(
             parameterTypes = parameterTypes.map { it as ConeCangJieType },
             returnType = returnType as ConeCangJieType,
         )
@@ -400,11 +399,11 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
             is ConeClassLikeLookupTag -> ConeClassLikeType(constructor, coneArguments, coneAttributes)
             is ConeTypeParameterLookupTag -> org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl(constructor)
             is ConePrimitiveType -> constructor
-            is ConeFuncType -> {
+            is ConeFunctionType -> {
                 val coneTypes = arguments.map { (it as ConeTypeProjection).type }
                 val parameterTypes = coneTypes.dropLast(1)
                 val returnType = coneTypes.lastOrNull() ?: ConePrimitiveType.NOTHING
-                ConeFuncType(
+                ConeFunctionType(
                     parameterTypes = parameterTypes,
                     returnType = returnType,
                     isCFunc = constructor.isCFunc,
@@ -429,7 +428,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
 
     override fun createTypeArgument(type: CangJieTypeMarker): TypeArgumentMarker {
         require(type is ConeCangJieType)
-        return ConeTypeProjection(type)
+        return type
     }
 
     override fun createErrorType(debugName: String, delegatedType: RigidTypeMarker?): SimpleTypeMarker {
@@ -475,7 +474,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         require(componentType is ConeCangJieType)
         return ConeClassLikeType(
             StdlibClassIds.Array.toLookupTag(),
-            listOf(ConeTypeProjection(componentType)),
+            listOf(componentType),
         )
     }
 
@@ -491,11 +490,11 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
             is ConeClassLikeType -> ConeClassLikeType(lookupTag, coneArgs, attributes, isInterface, isThisType)
             is ConeStructType -> ConeStructType(lookupTag, coneArgs, attributes)
             is ConeEnumType -> ConeEnumType(lookupTag, coneArgs, attributes, isRefEnum)
-            is ConeFuncType -> {
+            is ConeFunctionType -> {
                 if (coneArgs.isEmpty()) return this
                 val paramTypes = coneArgs.dropLast(1).map { it.type }
                 val retType = coneArgs.last().type
-                ConeFuncType(paramTypes, retType, isCFunc, isClosureType, hasVariableLenArg, attributes)
+                ConeFunctionType(paramTypes, retType, isCFunc, isClosureType, hasVariableLenArg, attributes)
             }
             is ConeTupleType -> ConeTupleType(coneArgs.map { it.type }, attributes)
             is ConeVArrayType -> {
@@ -534,7 +533,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
             val erased = (proj.type as CangJieTypeMarker).eraseContainingTypeParameters()
             if (erased !== proj.type) {
                 changed = true
-                ConeTypeProjection(erased as ConeCangJieType)
+                erased as ConeCangJieType
             } else {
                 proj
             }
@@ -664,16 +663,16 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     }
 
     override fun CangJieTypeMarker.extractArgumentsForFunctionType(): List<CangJieTypeMarker> {
-        require(this is ConeFuncType)
+        require(this is ConeFunctionType)
         // 返回参数类型 + 返回值类型
         return parameterTypes + returnType
     }
 
     override fun getFunctionTypeConstructor(parametersNumber: Int): TypeConstructorMarker {
         // 仓颉函数类型不像 Kotlin 有 Function0/Function1 等独立构造器
-        // 返回一个占位的 ConeFuncType 作为构造器标记
+        // 返回一个占位的 ConeFunctionType 作为构造器标记
         val params = (0 until parametersNumber).map { ConePrimitiveType.NOTHING as ConeCangJieType }
-        return ConeFuncType(params, ConePrimitiveType.NOTHING)
+        return ConeFunctionType(params, ConePrimitiveType.NOTHING)
     }
 
     // =========================================================================

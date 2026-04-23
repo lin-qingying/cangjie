@@ -4,16 +4,14 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
-open class Boo<T> where T <: Int64 {
-    public static func foo<V>(x: T, y: V) where V <: Int32 {
+open class Boo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: Int64 {
+    public static func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: T, y: V) where V <: Int32 {
         1
     }
 }
 
 class Coo <: Boo<Int64> {
-    public static redef func foo<V>(x: Int64, y: V) where V <: Int32 {
+    public static redef func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: Int64, y: V) where V <: Int32 {
         2
     }
 }
@@ -26,28 +24,3 @@ main() {
     }
     return 0
 }
-
-/* SCAN
-error: the upper bound 'Int64' of generic parameter 'Generics-T' must be class or interface
- ==> class_redef_15.cj:9:16:
-  | 
-9 | open class Boo<T> where T <: Int64 {
-  |                ^ 
-  | 
-
-error: the upper bound 'Int32' of generic parameter 'Generics-V' must be class or interface
-  ==> class_redef_15.cj:10:28:
-   | 
-10 |     public static func foo<V>(x: T, y: V) where V <: Int32 {
-   |                            ^ 
-   | 
-
-error: the upper bound 'Int32' of generic parameter 'Generics-V' must be class or interface
-  ==> class_redef_15.cj:16:34:
-   | 
-16 |     public static redef func foo<V>(x: Int64, y: V) where V <: Int32 {
-   |                                  ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

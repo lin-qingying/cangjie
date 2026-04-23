@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ok_class_05_dep.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt ok_class_05_dep.cj -o pkga.%middle
-// EXEC: %compiler %cmp_opt pkga.%middle %f -o %output
 
 import pkga.*
 

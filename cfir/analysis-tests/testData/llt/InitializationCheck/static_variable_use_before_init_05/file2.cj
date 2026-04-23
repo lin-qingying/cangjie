@@ -7,6 +7,6 @@
 open class Bar {
     static let x: Int64
     static init() {
-        x = Foo.y
+        x = <!USED_BEFORE_INITIALIZATION!>Foo.y<!>
     }
 }

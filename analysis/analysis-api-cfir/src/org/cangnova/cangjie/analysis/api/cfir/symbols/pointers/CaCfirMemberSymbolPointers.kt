@@ -3,7 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols.pointers
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.components.declaredMemberScope
+
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
@@ -31,19 +31,21 @@ internal abstract class CaCfirMemberSymbolPointer<S : CaSymbol>(
     protected abstract fun CaCfirSession.chooseCandidateAndCreateSymbol(ownerSymbol: CaDeclarationContainerSymbol): S?
 }
 
+@OptIn(CaImplementationDetail::class)
 internal class CaCfirMemberFunctionSymbolPointer(
     private val ownerPointer: CaSymbolPointer<CaDeclarationContainerSymbol>,
     private val name: Name,
     private val signature: CfirCallableSignature,
 ) : CaCfirMemberSymbolPointer<CaNamedFunctionSymbol>(ownerPointer) {
+    @OptIn(CaImplementationDetail::class)
     override fun CaCfirSession.chooseCandidateAndCreateSymbol(ownerSymbol: CaDeclarationContainerSymbol): CaNamedFunctionSymbol? {
         val candidates = when (ownerSymbol) {
             is org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol -> with(this) {
-                ownerSymbol.declaredMemberScope.getCallableSymbols(name)
+                ownerSymbol.declaredMemberScope.callables(name).toList()
             }
 
             is org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol -> with(this) {
-                ownerSymbol.declaredMemberScope.getCallableSymbols(name)
+                ownerSymbol.declaredMemberScope.callables(name).toList()
             }
 
             else -> emptyList()

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %diag_json %f -o %output 2>&1 | compare %f
-
 public struct S {
     public var x: Int64 = 0
 }
@@ -21,10 +19,8 @@ public class A {
         }
     }
     public func test(): Unit {
-        s.x = 1
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>s.x<!> = 1
     }
 }
 
 main() {}
-
-// ASSERT: scan sema_cannot_assign_to_immutable

@@ -4,23 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 class A {
-    operator func [](index0: Int64, value!: Int64): Int64 {
+    operator func [](index0: Int64, value!: Int64): <!INVALID_SUBSCRIPT_ASSIGN_RETURN!>Int64<!> {
         0
     }
 }
 
 main() {}
-
-/* SCAN
-error: the return type of subscript assignment must be 'Unit'
-  ==> err_subscript_assign_03.cj:10:53:
-   | 
-10 |     operator func [](index0: Int64, value!: Int64): Int64 {
-   |                                                     ^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

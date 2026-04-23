@@ -4,42 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
+// DIAGNOSTICS: -UNUSED_VARIABLE
 
 class ClassC<T> {}
 
 struct A<T> {
-    static var a: ClassC<T> = ClassC<T>()
+    static var a: <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>ClassC<T><!> = <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>ClassC<T>()<!>
 }
 
 main() {}
-
-/* SCAN
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> generic_static_field04.cj:12:19:
-   | 
-12 |     static var a: ClassC<T> = ClassC<T>()
-   |                   ^^^^^^^^^ 
-   | 
-note: generic argument declaration here
-  ==> generic_static_field04.cj:11:10:
-   | 
-11 | struct A<T> {
-   |          ^ 
-   | 
-
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> generic_static_field04.cj:12:31:
-   | 
-12 |     static var a: ClassC<T> = ClassC<T>()
-   |                               ^^^^^^^^^ 
-   | 
-note: generic argument declaration here
-  ==> generic_static_field04.cj:11:10:
-   | 
-11 | struct A<T> {
-   |          ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

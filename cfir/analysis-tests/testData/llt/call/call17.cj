@@ -4,13 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
+func test<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>X<!>, Y>() where X <: Y {}
 
-func test<X, Y>() where X <: Y {}
+class C<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>X<!>, Y> where X <: Y {}
 
-class C<X, Y> where X <: Y {}
-
-struct R<X, Y> where X <: Y {}
+struct R<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>X<!>, Y> where X <: Y {}
 
 main() {
     var i = test<Int8, Int8>()
@@ -18,28 +16,3 @@ main() {
     var r = R<Int8, Int8>()
     return 0
 }
-
-/* SCAN
-error: the upper bound 'Generics-Y' of generic parameter 'Generics-X' must be class or interface
- ==> call17.cj:9:11:
-  | 
-9 | func test<X, Y>() where X <: Y {}
-  |           ^ 
-  | 
-
-error: the upper bound 'Generics-Y' of generic parameter 'Generics-X' must be class or interface
-  ==> call17.cj:11:9:
-   | 
-11 | class C<X, Y> where X <: Y {}
-   |         ^ 
-   | 
-
-error: the upper bound 'Generics-Y' of generic parameter 'Generics-X' must be class or interface
-  ==> call17.cj:13:10:
-   | 
-13 | struct R<X, Y> where X <: Y {}
-   |          ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

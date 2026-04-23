@@ -270,6 +270,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         typePattern,
 
         // -------- 类型引用节点 --------
+        qualifierPart,
         resolvedTypeRef,
         userTypeRef,
         basicTypeRef,

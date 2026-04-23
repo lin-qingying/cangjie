@@ -4,34 +4,15 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 open class A {
     public static func f() {}
 }
 
 class B <: A {
-    private static redef func f() {
+    private static redef func <!CANNOT_WEAKEN_ACCESS_PRIVILEGE!>f<!>() {
         print(1)
     }
 }
 
 main() {
 }
-
-/* SCAN
-error: a deriving member must be at least as visible as its base member
-  ==> class_access_control20.cj:14:31:
-   | 
-14 |     private static redef func f() {
-   |                               ^ the visibility of the deriving 'f' is 'private'
-   | 
-note: the visibility of the base 'f' is 'public'
-  ==> class_access_control20.cj:10:24:
-   | 
-10 |     public static func f() {}
-   |                        ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

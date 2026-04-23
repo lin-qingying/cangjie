@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
+import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.ProcessorAction
@@ -99,10 +100,13 @@ class ConeOverloadConflictResolver(
         val scope = originScope as? CfirTypeScope ?: return false
 
         return when (candidateSymbol) {
-            is CfirFunctionSymbol<*> -> overrides(
+            // 仓颉的 override 决议只涉及 named function：
+            // constructor / enum constructor / init / property accessor 不参与普通重写判定，
+            // 按 CfirNamedFunctionSymbol 窄化即可满足 CfirTypeScope API。
+            is CfirNamedFunctionSymbol -> overrides(
                 MemberWithBaseScope(candidateSymbol, scope),
                 otherSymbol,
-                ProcessAllOverridden<CfirFunctionSymbol<*>> { baseScope, symbol, processor ->
+                ProcessAllOverridden<CfirNamedFunctionSymbol> { baseScope, symbol, processor ->
                     baseScope.processDirectOverriddenFunctionsWithBaseScope(symbol, processor)
                 },
             )

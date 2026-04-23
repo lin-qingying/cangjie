@@ -4,11 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE)EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// (not CJNATIVE) EXEC: %compiler %f
+// DIAGNOSTICS: -UNUSED_VARIABLE
 
 interface P<T> {
-    static prop p: T
+    static prop p: <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>
 }
 
 class A <: P<A> {
@@ -34,20 +33,3 @@ main(): Int64 {
     }
     return 1
 }
-
-/* SCAN
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> generic_upperbound_reference_04.cj:11:20:
-   | 
-11 |     static prop p: T
-   |                    ^ 
-   | 
-note: generic argument declaration here
-  ==> generic_upperbound_reference_04.cj:10:13:
-   | 
-10 | interface P<T> {
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

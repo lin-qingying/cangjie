@@ -4,11 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 class A {
     static init() {
-        println(B.FLAG)
+        println(B.<!USED_BEFORE_INITIALIZATION!>FLAG<!>)
     }
 }
 
@@ -19,5 +17,3 @@ class B {
 main(): Int64 {
     0
 }
-
-// ASSERT: scan global/static variable 'FLAG' is used before initialization during initializing 'A.init'

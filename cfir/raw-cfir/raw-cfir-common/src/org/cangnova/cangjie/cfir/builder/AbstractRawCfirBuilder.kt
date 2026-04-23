@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -246,7 +247,9 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     }
 
     protected fun buildImplicitTypeRef(): CfirTypeRef {
-        return buildImplicitTypeRefNode()
+        return buildImplicitTypeRefNode {
+            customRenderer = false
+        }
     }
 
     /**
@@ -369,7 +372,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
             this.diagnostic = diagnostic
             symbol = org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol()
             attributes = CfirDeclarationAttributes.EMPTY
-            status = CfirDeclarationStatusImpl.DEFAULT
+            status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
             dispatchReceiverType = null
             body = null
         }
@@ -385,6 +388,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
         source: CjSourceElement?,
         name: Name,
         returnTypeRef: CfirTypeRef,
+        containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): CfirValueParameter {
         return buildValueParameter {
             this.source = source
@@ -400,6 +404,7 @@ abstract class AbstractRawCfirBuilder<T : Any>(
             this.returnTypeRef = returnTypeRef
             this.name = name
             defaultValue = null
+            this.containingDeclarationSymbol = containingDeclarationSymbol
         }
     }
 }

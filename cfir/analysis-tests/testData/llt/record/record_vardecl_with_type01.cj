@@ -4,12 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 struct RA {
     public let a: Int64 = 10
     public init(a: Int64) {
-        this.a = a
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.a<!> = a
     }
 }
 
@@ -20,20 +18,3 @@ main() {
     }
     return 1
 }
-
-/* SCAN
-error: cannot assign to immutable value
-  ==> record_vardecl_with_type01.cj:12:9:
-   | 
-12 |         this.a = a
-   |         ^^^^^^^^^^ 
-   | 
-note: variable 'a' is immutable
-  ==> record_vardecl_with_type01.cj:10:16:
-   | 
-10 |     public let a: Int64 = 10
-   |                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

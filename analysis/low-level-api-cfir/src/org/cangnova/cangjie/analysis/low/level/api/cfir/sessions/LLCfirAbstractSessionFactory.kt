@@ -176,6 +176,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, cfirProvider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+            register(
+                CfirExtendProvider::class,
+                CfirSessionExtendProvider(this, extendIndexStore),
+            )
 
             registerCompilerPluginServices(project, resolutionScope)
             registerCompilerPluginExtensions(project, module)

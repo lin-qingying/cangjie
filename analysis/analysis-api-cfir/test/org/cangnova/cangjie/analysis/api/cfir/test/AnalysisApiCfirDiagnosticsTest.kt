@@ -33,4 +33,13 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
         assertTrue(extraDiagnostics.isEmpty())
         assertTrue(experimentalDiagnostics.isEmpty())
     }
+
+    @Test
+    fun extendDiagnostics(mainFile: CjFile) {
+        val allDiagnostics = analyzeForTest(mainFile) {
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
+
+        assertTrue(allDiagnostics.isEmpty(), "合法 extend 文件收集 diagnostics 不应抛异常，也不应产生额外诊断")
+    }
 }

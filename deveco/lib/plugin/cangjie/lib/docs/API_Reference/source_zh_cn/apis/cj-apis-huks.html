@@ -1,0 +1,1800 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ohos.security.huks（通用密钥库系统） - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item expanded "><a href="../../source_zh_cn/apis/cj-apis-huks.html" class="active"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ohossecurityhuks通用密钥库系统"><a class="header" href="#ohossecurityhuks通用密钥库系统">ohos.security.huks（通用密钥库系统）</a></h1>
+<p>向应用提供密钥库能力，包括密钥管理及密钥的密码学操作等功能。
+HUKS所管理的密钥可以由应用导入或者由应用调用HUKS接口生成。</p>
+<h2 id="导入模块"><a class="header" href="#导入模块">导入模块</a></h2>
+<pre><code class="language-cangjie">import ohos.security_huks.*
+</code></pre>
+<h2 id="type-bytes"><a class="header" href="#type-bytes">type Bytes</a></h2>
+<pre><code class="language-cangjie">type Bytes = Array&lt;UInt8&gt;
+</code></pre>
+<p>为提高代码可读性，本模块使用 <code>Bytes</code> 作为 <code>Array&lt;UInt8&gt;</code> 的别名，下方文档同理。</p>
+<h2 id="enum-huksparamvalue"><a class="header" href="#enum-huksparamvalue">enum HuksParamValue</a></h2>
+<pre><code class="language-cangjie">public enum HuksParamValue {
+    | boolean(Bool)
+    | int32(Int32)
+    | uint32(UInt32)
+    | uint64(UInt64)
+    | bytes(Bytes)
+}
+</code></pre>
+<p>用于表示HuksParam中value的值，支持Bool、Int32、UInt32、UInt64、Bytes格式。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<h3 id="func-tobool"><a class="header" href="#func-tobool">func toBool()</a></h3>
+<pre><code class="language-cangjie">public func toBool(): Option&lt;Bool&gt;
+</code></pre>
+<p>获取HuksParamValue的Bool值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;Bool&gt;</td><td style="text-align: left">返回HuksParamValue的Bool值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-toint32"><a class="header" href="#func-toint32">func toInt32()</a></h3>
+<pre><code class="language-cangjie">public func toInt32(): Option&lt;Int32&gt;
+</code></pre>
+<p>获取HuksParamValue的Int32值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;Int32&gt;</td><td style="text-align: left">返回HuksParamValue的Int32值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-touint32"><a class="header" href="#func-touint32">func toUInt32()</a></h3>
+<pre><code class="language-cangjie">public func toUInt32(): Option&lt;UInt32&gt;
+</code></pre>
+<p>获取HuksParamValue的UInt32值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;UInt32&gt;</td><td style="text-align: left">返回HuksParamValue的UInt32值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-touint64"><a class="header" href="#func-touint64">func toUInt64()</a></h3>
+<pre><code class="language-cangjie">public func toUInt64(): Option&lt;UInt64&gt;
+</code></pre>
+<p>获取HuksParamValue的UInt64值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;UInt64&gt;</td><td style="text-align: left">返回HuksParamValue的UInt64值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-tobytes"><a class="header" href="#func-tobytes">func toBytes()</a></h3>
+<pre><code class="language-cangjie">public func toBytes(): Option&lt;Bytes&gt;
+</code></pre>
+<p>获取HuksParamValue的UInt64值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;Bytes&gt;</td><td style="text-align: left">返回HuksParamValue的Bytes值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="operator-func-huksparamvalue"><a class="header" href="#operator-func-huksparamvalue">operator func |(HuksParamValue)</a></h3>
+<pre><code class="language-cangjie">public operator func |(other: HuksParamValue): HuksParamValue
+</code></pre>
+<p>将当前HuksParamValue的UInt32值与另一HuksParamValue的UInt32值进行或运算。</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">other</td><td style="text-align: left">HuksParamValue</td><td style="text-align: left">是</td><td style="text-align: left">需要进行或运算的HuksParamValue。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HuksParamValue</td><td style="text-align: left">返回或运算后的HuksParamValue。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksparam"><a class="header" href="#struct-huksparam">struct HuksParam</a></h2>
+<pre><code class="language-cangjie">public struct HuksParam {
+    public HuksParam (
+        public let tag: HuksTag,
+        public let value: HuksParamValue
+    ) {}
+}
+</code></pre>
+<p><a href="#struct-huksoptions">HuksOptions</a>中properties数组中的元素。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">tag</td><td style="text-align: left"><a href="#enum-hukstag">HuksTag</a></td><td style="text-align: left">是</td><td style="text-align: left">标签。</td></tr>
+<tr><td style="text-align: left">value</td><td style="text-align: left"><a href="#enum-huksparamvalue">HuksParamValue</a></td><td style="text-align: left">是</td><td style="text-align: left">标签对应值。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksoptions"><a class="header" href="#struct-huksoptions">struct HuksOptions</a></h2>
+<pre><code class="language-cangjie">public struct HuksOptions {
+    public HuksOptions(
+        public var properties: Option&lt;Array&lt;HuksParam&gt;&gt;,
+        public var inData: Option&lt;Bytes&gt;
+    ) {}
+
+    public static let NONE = HuksOptions(None, None)
+}
+</code></pre>
+<p>调用接口使用的options。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">properties</td><td style="text-align: left">Option&lt;Array&lt;<a href="#struct-huksparam">HuksParam</a>&gt;&gt;</td><td style="text-align: left">否</td><td style="text-align: left">属性，用于存HuksParam的数组。</td></tr>
+<tr><td style="text-align: left">inData</td><td style="text-align: left">Option&lt;Bytes&gt;</td><td style="text-align: left">否</td><td style="text-align: left">输入数据。</td></tr>
+</tbody></table>
+</div>
+<h3 id="let-none"><a class="header" href="#let-none">let NONE</a></h3>
+<pre><code class="language-cangjie">public static let NONE = HuksOptions(None, None)
+</code></pre>
+<p>获取一个空的HuksOptions。</p>
+<h2 id="struct-hukshandle"><a class="header" href="#struct-hukshandle">struct HuksHandle</a></h2>
+<pre><code class="language-cangjie">public struct HuksHandle {
+    HuksHandle(let data: Bytes) {}
+}
+</code></pre>
+<p>表示handle值。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">data</td><td style="text-align: left">Bytes</td><td style="text-align: left">是</td><td style="text-align: left">表示handle值。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukssessionhandle"><a class="header" href="#struct-hukssessionhandle">struct HuksSessionHandle</a></h2>
+<pre><code class="language-cangjie">public struct HuksSessionHandle {
+    public HuksSessionHandle(
+        public let handle: HuksHandle,
+        public let challenge: Option&lt;Bytes&gt;
+    ) {}
+}
+</code></pre>
+<p>huks Handle结构体。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">handle</td><td style="text-align: left">HuksHandle</td><td style="text-align: left">是</td><td style="text-align: left">表示handle值。</td></tr>
+<tr><td style="text-align: left">challenge</td><td style="text-align: left">Option&lt;Bytes&gt;</td><td style="text-align: left">否</td><td style="text-align: left">表示<a href="#func-initsessionstring-huksoptions">initSession</a>操作之后获取到的challenge信息。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksreturnresult"><a class="header" href="#struct-huksreturnresult">struct HuksReturnResult</a></h2>
+<pre><code class="language-cangjie">public struct HuksReturnResult {
+    public HuksReturnResult(
+        public let outData: Option&lt;Bytes&gt;,
+        public let properties: Option&lt;Array&lt;HuksParam&gt;&gt;,
+        public let certChains: Option&lt;Array&lt;String&gt;&gt;
+    ) {}
+}
+</code></pre>
+<p>表示接口返回的结果，存放返回数据。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">outData</td><td style="text-align: left">Option&lt;Bytes&gt;</td><td style="text-align: left">否</td><td style="text-align: left">表示输出数据。</td></tr>
+<tr><td style="text-align: left">properties</td><td style="text-align: left">properties: Option&lt;Array&lt;<a href="#struct-huksparam">HuksParam</a>&gt;&gt;</td><td style="text-align: left">否</td><td style="text-align: left">表示属性信息。</td></tr>
+<tr><td style="text-align: left">certChains</td><td style="text-align: left">Option&lt;Array&lt;String&gt;&gt;</td><td style="text-align: left">否</td><td style="text-align: left">表示证书链数据。</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-generatekeyitemstring-huksoptions"><a class="header" href="#func-generatekeyitemstring-huksoptions">func generateKeyItem(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func generateKeyItem(keyAlias: String, options: HuksOptions): Unit
+</code></pre>
+<p>生成密钥。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">用于存放生成key所需Tag。其中密钥使用的算法、密钥用途、密钥长度为必选参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000013</td><td style="text-align: left">queried credential does not exist.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+<tr><td style="text-align: left">12000015</td><td style="text-align: left">call service failed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.security_huks.*
+func clean(keyAlias: String) {
+    try {
+        if (isKeyItemExist(keyAlias, HuksOptions.NONE)) {
+            deleteKeyItem(keyAlias, HuksOptions.NONE)
+        }
+    } catch (e: BusinessException) {
+        e.printStackTrace()
+    }
+}
+
+func test_generate_key() {
+    let keyAlias = &quot;test_generate_key&quot;
+    clean(keyAlias)
+    try {
+        let options = HuksOptions(
+            [
+                HuksParam(HuksTag.HUKS_TAG_ALGORITHM, HuksKeyAlg.HUKS_ALG_AES),
+                HuksParam(HuksTag.HUKS_TAG_KEY_SIZE, HuksKeySize.HUKS_AES_KEY_SIZE_128),
+                HuksParam(
+                    HuksTag.HUKS_TAG_PURPOSE,
+                    HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT | HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT
+                )
+            ],
+            None
+        )
+        generateKeyItem(keyAlias, options)
+    } finally {
+        clean(keyAlias)
+    }
+}
+</code></pre>
+<h2 id="func-deletekeyitemstring-huksoptions"><a class="header" href="#func-deletekeyitemstring-huksoptions">func deleteKeyItem(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func deleteKeyItem(keyAlias: String, options: HuksOptions): Unit
+</code></pre>
+<p>删除密钥。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名，应为生成key时传入的别名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">用于删除时指定密钥的属性Tag，比如删除的密钥范围（全量/单个），当删除单个时，Tag字段可传空。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.security_huks.*
+func clean(keyAlias: String) {
+    try {
+        if (isKeyItemExist(keyAlias, HuksOptions.NONE)) {
+            deleteKeyItem(keyAlias, HuksOptions.NONE)
+        }
+    } catch (e: BusinessException) {
+        e.printStackTrace()
+    }
+}
+
+func generateSimpleKey(keyAlias: String) {
+    let options = HuksOptions(
+        [
+            HuksParam(HuksTag.HUKS_TAG_ALGORITHM, HuksKeyAlg.HUKS_ALG_AES),
+            HuksParam(HuksTag.HUKS_TAG_KEY_SIZE, HuksKeySize.HUKS_AES_KEY_SIZE_128),
+            HuksParam(
+                HuksTag.HUKS_TAG_PURPOSE,
+                HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT | HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT
+            )
+        ],
+        None
+    )
+    generateKeyItem(keyAlias, options)
+}
+
+func test_delete_key() {
+    let keyAlias = &quot;test_delete_key&quot;
+    clean(keyAlias)
+    try {
+        generateSimpleKey(keyAlias)
+        // delete 
+        deleteKeyItem(keyAlias, HuksOptions.NONE)
+    } finally {
+        clean(keyAlias)
+    }
+}
+</code></pre>
+<h2 id="func-getsdkversion"><a class="header" href="#func-getsdkversion">func getSdkVersion()</a></h2>
+<pre><code class="language-cangjie">public func getSdkVersion(): String
+</code></pre>
+<p>获取当前系统sdk版本。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">返回sdk版本。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.security_huks.*
+func test_get_sdk_version() {
+    let res = getSdkVersion()
+    return res
+}
+</code></pre>
+<h2 id="func-importkeyitemstring-huksoptions"><a class="header" href="#func-importkeyitemstring-huksoptions">func importKeyItem(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func importKeyItem(keyAlias: String, options: HuksOptions): Unit
+</code></pre>
+<p>导入明文密钥。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">用于导入时所需Tag和需要导入的密钥。其中密钥使用的算法、密钥用途、密钥长度为必选参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000013</td><td style="text-align: left">queried credential does not exist.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+<tr><td style="text-align: left">12000015</td><td style="text-align: left">call service failed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.security_huks.*
+func clean(keyAlias: String) {
+    try {
+        if (isKeyItemExist(keyAlias, HuksOptions.NONE)) {
+            deleteKeyItem(keyAlias, HuksOptions.NONE)
+        }
+    } catch (e: BusinessException) {
+        e.printStackTrace()
+    }
+}
+
+func test_import_aes() {
+    let keyAlias = &quot;test_import_aes&quot;
+    clean(keyAlias)
+    try {
+        let key = Array&lt;UInt8&gt;(Int64(HuksKeySize.HUKS_AES_KEY_SIZE_256.toUInt32().getOrThrow() / 8),
+            {i =&gt; UInt8(i &amp; 0xFF)});
+        importKeyItem(
+            keyAlias,
+            HuksOptions(
+                [
+                    HuksParam(HuksTag.HUKS_TAG_ALGORITHM, HuksKeyAlg.HUKS_ALG_AES),
+                    HuksParam(HuksTag.HUKS_TAG_KEY_SIZE, HuksKeySize.HUKS_AES_KEY_SIZE_256),
+                    HuksParam(
+                        HuksTag.HUKS_TAG_PURPOSE,
+                        HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT | HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT
+                    )
+                ],
+                key
+            )
+        )
+    } finally {
+        clean(keyAlias)
+    }
+}
+</code></pre>
+<h2 id="func-attestkeyitemstring-huksoptions"><a class="header" href="#func-attestkeyitemstring-huksoptions">func attestKeyItem(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func attestKeyItem(keyAlias: String, options: HuksOptions): Array&lt;String&gt; 
+</code></pre>
+<p>获取密钥证书。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名，存放待获取证书的密钥别名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">用于获取证书时指定所需参数与数据。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Array&lt;String&gt;</td><td style="text-align: left">返回密钥证书链。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">201</td><td style="text-align: left">check permission failed.</td></tr>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-anonattestkeyitemstring-huksoptions"><a class="header" href="#func-anonattestkeyitemstring-huksoptions">func anonAttestKeyItem(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func anonAttestKeyItem(keyAlias: String, options: HuksOptions): Array&lt;String&gt;
+</code></pre>
+<p>获取匿名化密钥证书。</p>
+<p>该操作需要联网进行，且耗时较长。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名，存放待获取证书密钥的别名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">用于获取证书时指定所需参数与数据。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Array&lt;String&gt;</td><td style="text-align: left">返回密钥证书链。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">func test_rsa_anno() {
+        let keyAlias = &quot;test_rsa_anno&quot;
+        clean(keyAlias)
+
+        try {
+            // generate key
+            generateKeyItem(
+                keyAlias,
+                HuksOptions(
+                    [
+                        HuksParam(HuksTag.HUKS_TAG_ALGORITHM, HuksKeyAlg.HUKS_ALG_RSA),
+                        HuksParam(HuksTag.HUKS_TAG_KEY_SIZE, HuksKeySize.HUKS_RSA_KEY_SIZE_2048),
+                        HuksParam(HuksTag.HUKS_TAG_PURPOSE, HuksKeyPurpose.HUKS_KEY_PURPOSE_VERIFY),
+                        HuksParam(HuksTag.HUKS_TAG_DIGEST, HuksKeyDigest.HUKS_DIGEST_SHA256),
+                        HuksParam(HuksTag.HUKS_TAG_PADDING, HuksKeyPadding.HUKS_PADDING_PSS),
+                        HuksParam(HuksTag.HUKS_TAG_BLOCK_MODE, HuksCipherMode.HUKS_MODE_ECB)
+                    ],
+                    None
+                )
+            )
+
+            let challenge = &quot;hi_challenge_data&quot;
+            let chains = anonAttestKeyItem(
+                keyAlias,
+                HuksOptions(
+                    [
+                        HuksParam(HuksTag.HUKS_TAG_ATTESTATION_CHALLENGE, HuksParamValue.bytes(challenge.toArray())),
+                        HuksParam(HuksTag.HUKS_TAG_ATTESTATION_ID_ALIAS, HuksParamValue.bytes(keyAlias.toArray()))
+                    ],
+                    None
+                )
+            )
+        } finally {
+            clean(keyAlias)
+        }
+    }
+</code></pre>
+<h2 id="func-importwrappedkeyitemstring-string-huksoptions"><a class="header" href="#func-importwrappedkeyitemstring-string-huksoptions">func importWrappedKeyItem(String, String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func importWrappedKeyItem(keyAlias: String, wrappingKeyAlias: String, options: HuksOptions): Unit
+</code></pre>
+<p>导入加密密钥。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名，存放待导入密钥的别名。</td></tr>
+<tr><td style="text-align: left">wrappingKeyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名，对应密钥用于解密加密的密钥数据。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">用于导入时所需Tag和需要导入的加密的密钥数据。其中密钥使用的算法、密钥用途、密钥长度为必选参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000013</td><td style="text-align: left">queried credential does not exist.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+<tr><td style="text-align: left">12000015</td><td style="text-align: left">call service failed.</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-exportkeyitemstring-huksoptions"><a class="header" href="#func-exportkeyitemstring-huksoptions">func exportKeyItem(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func exportKeyItem(keyAlias: String, options: HuksOptions): Bytes
+</code></pre>
+<p>导出密钥。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名，应与所用密钥生成时使用的别名相同。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">空对象（此处传空即可）。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bytes</td><td style="text-align: left">返回从密钥中导出的公钥。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">func clean(keyAlias: String) {
+    try {
+        if (isKeyItemExist(keyAlias, HuksOptions.NONE)) {
+            deleteKeyItem(keyAlias, HuksOptions.NONE)
+        }
+    } catch (e: BusinessException) {
+        e.printStackTrace()
+    }
+}
+
+func test_export_key() {
+    let keyAlias = &quot;test_export_key&quot;
+    clean(keyAlias)
+    try {
+        /* 1. Generate Key */
+        generateKeyItem(
+            keyAlias,
+            HuksOptions(
+                [
+                    HuksParam(HuksTag.HUKS_TAG_ALGORITHM, HuksKeyAlg.HUKS_ALG_ECC),
+                    HuksParam(HuksTag.HUKS_TAG_KEY_SIZE, HuksKeySize.HUKS_ECC_KEY_SIZE_256),
+                    HuksParam(
+                        HuksTag.HUKS_TAG_PURPOSE,
+                        HuksKeyPurpose.HUKS_KEY_PURPOSE_VERIFY | HuksKeyPurpose.HUKS_KEY_PURPOSE_SIGN
+                    ),
+                    HuksParam(HuksTag.HUKS_TAG_DIGEST, HuksKeyDigest.HUKS_DIGEST_SHA256)
+                ],
+                None
+            )
+        )
+        /* 2. Export Key */
+        let data = exportKeyItem(keyAlias, HuksOptions.NONE)
+        @Expect(!data.isEmpty())
+    } finally {
+        clean(keyAlias)
+    }
+}
+</code></pre>
+<h2 id="func-getkeyitempropertiesstring-huksoptions"><a class="header" href="#func-getkeyitempropertiesstring-huksoptions">func getKeyItemProperties(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func getKeyItemProperties(keyAlias: String, options: HuksOptions): Array&lt;HuksParam&gt;
+</code></pre>
+<p>获取密钥属性。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">密钥别名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">空对象（此处传空即可）。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Array&lt;HuksParam&gt;</td><td style="text-align: left">返回密钥属性。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">func test_get_key_item_properties() {
+    let keyAlias = &quot;test_get_key_item_properties&quot;
+    clean(keyAlias)
+    try {
+        generateSimpleKey(keyAlias)
+        //get properties
+        let properties = getKeyItemProperties(keyAlias, HuksOptions.NONE)
+    } finally {
+        clean(keyAlias)
+    }
+}
+</code></pre>
+<h2 id="func-iskeyitemexiststring-huksoptions"><a class="header" href="#func-iskeyitemexiststring-huksoptions">func isKeyItemExist(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func isKeyItemExist(keyAlias: String, options: HuksOptions): Bool
+</code></pre>
+<p>判断密钥是否存在。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">待查找的密钥的别名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">用于查询时指定密钥的属性Tag，比如查询的密钥范围（全量/单个），当查询单个时，Tag字段可传空。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">表示密钥是否存在。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">func test_is_key_item_exist() {
+    let keyAlias = &quot;test_is_key_item_exist&quot;
+    clean(keyAlias)
+    try {
+        // false
+        isKeyItemExist(keyAlias, HuksOptions.NONE)
+        generateSimpleKey(keyAlias)
+        // true
+        isKeyItemExist(keyAlias, HuksOptions.NONE)
+    } finally {
+        clean(keyAlias)
+    }
+}
+</code></pre>
+<h2 id="func-initsessionstring-huksoptions"><a class="header" href="#func-initsessionstring-huksoptions">func initSession(String, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func initSession(keyAlias: String, options: HuksOptions): HuksSessionHandle
+</code></pre>
+<p>initSession操作密钥接口。huks.initSession, huks.updateSession, huks.finishSession为三段式接口，需要一起使用。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyAlias</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">initSession操作密钥的别名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">initSession操作的参数集合。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HuksSessionHandle</td><td style="text-align: left">返回密钥huks Handle。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000010</td><td style="text-align: left">the number of sessions has reached limit.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-updatesessionhukshandle-huksoptions"><a class="header" href="#func-updatesessionhukshandle-huksoptions">func updateSession(HuksHandle, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func updateSession(handle: HuksHandle, options: HuksOptions): Option&lt;Bytes&gt;
+</code></pre>
+<p>updateSession操作密钥接口。huks.initSession, huks.updateSession, huks.finishSession为三段式接口，需要一起使用。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">handle</td><td style="text-align: left">HuksHandle</td><td style="text-align: left">是</td><td style="text-align: left">updateSession操作的handle。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">updateSession的参数集合。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;Bytes&gt;</td><td style="text-align: left">输出密钥更新结果。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000007</td><td style="text-align: left">this credential is already invalidated permanently.</td></tr>
+<tr><td style="text-align: left">12000008</td><td style="text-align: left">verify authtoken failed.</td></tr>
+<tr><td style="text-align: left">12000009</td><td style="text-align: left">authtoken is already timeout.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-updatesessionhukshandle-huksoptions-bytes"><a class="header" href="#func-updatesessionhukshandle-huksoptions-bytes">func updateSession(HuksHandle, HuksOptions, Bytes)</a></h2>
+<pre><code class="language-cangjie">public func updateSession(handle: HuksHandle, options: HuksOptions, token: Bytes): Option&lt;Bytes&gt;
+</code></pre>
+<p>updateSession操作密钥接口。huks.initSession, huks.updateSession, huks.finishSession为三段式接口，需要一起使用。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">handle</td><td style="text-align: left">HuksHandle</td><td style="text-align: left">是</td><td style="text-align: left">updateSession操作的handle。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">updateSession的参数集合。</td></tr>
+<tr><td style="text-align: left">token</td><td style="text-align: left">Bytes</td><td style="text-align: left">否</td><td style="text-align: left">表示USER IAM服务的AuthToken的值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;Bytes&gt;</td><td style="text-align: left">输出密钥更新结果。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000007</td><td style="text-align: left">this credential is already invalidated permanently.</td></tr>
+<tr><td style="text-align: left">12000008</td><td style="text-align: left">verify authtoken failed.</td></tr>
+<tr><td style="text-align: left">12000009</td><td style="text-align: left">authtoken is already timeout.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-finishsessionhukshandle-huksoptions"><a class="header" href="#func-finishsessionhukshandle-huksoptions">func finishSession(HuksHandle, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func finishSession(handle: HuksHandle, options: HuksOptions): Option&lt;Bytes&gt;
+</code></pre>
+<p>finishSession操作密钥接口。huks.initSession, huks.updateSession, huks.finishSession为三段式接口，需要一起使用。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">handle</td><td style="text-align: left">HuksHandle</td><td style="text-align: left">是</td><td style="text-align: left">finishSession操作的handle。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">finishSession的参数集合。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;Bytes&gt;</td><td style="text-align: left">输出处理结果。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000007</td><td style="text-align: left">this credential is already invalidated permanently.</td></tr>
+<tr><td style="text-align: left">12000008</td><td style="text-align: left">verify authtoken failed.</td></tr>
+<tr><td style="text-align: left">12000009</td><td style="text-align: left">authtoken is already timeout.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-finishsessionhukshandle-huksoptions-bytes"><a class="header" href="#func-finishsessionhukshandle-huksoptions-bytes">func finishSession(HuksHandle, HuksOptions, Bytes)</a></h2>
+<pre><code class="language-cangjie">public func finishSession(handle: HuksHandle, options: HuksOptions, token: Bytes): Option&lt;Bytes&gt;
+</code></pre>
+<p>finishSession操作密钥接口。huks.initSession, huks.updateSession, huks.finishSession为三段式接口，需要一起使用。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">handle</td><td style="text-align: left">HuksHandle</td><td style="text-align: left">是</td><td style="text-align: left">finishSession操作的handle。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">finishSession的参数集合。</td></tr>
+<tr><td style="text-align: left">token</td><td style="text-align: left">Bytes</td><td style="text-align: left">是</td><td style="text-align: left">表示USER IAM服务的AuthToken的值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Option&lt;Bytes&gt;</td><td style="text-align: left">输出处理结果。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000001</td><td style="text-align: left">algorithm mode is not supported.</td></tr>
+<tr><td style="text-align: left">12000002</td><td style="text-align: left">algorithm param is missing.</td></tr>
+<tr><td style="text-align: left">12000003</td><td style="text-align: left">algorithm param is invalid.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000007</td><td style="text-align: left">this credential is already invalidated permanently.</td></tr>
+<tr><td style="text-align: left">12000008</td><td style="text-align: left">verify authtoken failed.</td></tr>
+<tr><td style="text-align: left">12000009</td><td style="text-align: left">authtoken is already timeout.</td></tr>
+<tr><td style="text-align: left">12000011</td><td style="text-align: left">queried entity does not exist.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<h2 id="func-abortsessionhukshandle-huksoptions"><a class="header" href="#func-abortsessionhukshandle-huksoptions">func abortSession(HuksHandle, HuksOptions)</a></h2>
+<pre><code class="language-cangjie">public func abortSession(handle: HuksHandle, options: HuksOptions): Unit
+</code></pre>
+<p>abortSession操作密钥接口。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">handle</td><td style="text-align: left">HuksHandle</td><td style="text-align: left">是</td><td style="text-align: left">abortSession操作的handle。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-huksoptions">HuksOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">abortSession操作的参数集合。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-huks.html">HUKS错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">argument is invalid.</td></tr>
+<tr><td style="text-align: left">801</td><td style="text-align: left">api is not supported.</td></tr>
+<tr><td style="text-align: left">12000004</td><td style="text-align: left">operating file failed.</td></tr>
+<tr><td style="text-align: left">12000005</td><td style="text-align: left">IPC communication failed.</td></tr>
+<tr><td style="text-align: left">12000006</td><td style="text-align: left">error occured in crypto engine.</td></tr>
+<tr><td style="text-align: left">12000012</td><td style="text-align: left">external error.</td></tr>
+<tr><td style="text-align: left">12000014</td><td style="text-align: left">memory is insufficient.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">func test_abort() {
+    let keyAlias = &quot;test_abort&quot;
+    clean(keyAlias)
+    try {
+        let plainText = &quot;123456&quot;
+        let iv = &quot;0011223344556677&quot;
+        let options = HuksOptions(
+            [
+                HuksParam(HuksTag.HUKS_TAG_ALGORITHM, HuksKeyAlg.HUKS_ALG_AES),
+                HuksParam(HuksTag.HUKS_TAG_KEY_SIZE, HuksKeySize.HUKS_AES_KEY_SIZE_128),
+                HuksParam(
+                    HuksTag.HUKS_TAG_PURPOSE,
+                    HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT | HuksKeyPurpose.HUKS_KEY_PURPOSE_DECRYPT
+                )
+            ],
+            None
+        )
+        let encOptions = HuksOptions(
+            [
+                HuksParam(HuksTag.HUKS_TAG_ALGORITHM, HuksKeyAlg.HUKS_ALG_AES),
+                HuksParam(HuksTag.HUKS_TAG_KEY_SIZE, HuksKeySize.HUKS_AES_KEY_SIZE_128),
+                HuksParam(HuksTag.HUKS_TAG_PURPOSE, HuksKeyPurpose.HUKS_KEY_PURPOSE_ENCRYPT),
+                HuksParam(HuksTag.HUKS_TAG_PADDING, HuksKeyPadding.HUKS_PADDING_PKCS7),
+                HuksParam(HuksTag.HUKS_TAG_BLOCK_MODE, HuksCipherMode.HUKS_MODE_CBC),
+                HuksParam(HuksTag.HUKS_TAG_IV, HuksParamValue.bytes(iv.toArray()))
+            ],
+            plainText.toArray()
+        )
+
+        generateKeyItem(keyAlias, options)
+
+        // encrypt and abort
+        let handle = initSession(keyAlias, encOptions).handle
+
+        abortSession(handle, encOptions)
+    } finally {
+        clean(keyAlias)
+    }
+}
+</code></pre>
+<h2 id="struct-huksexceptionerrcode"><a class="header" href="#struct-huksexceptionerrcode">struct HuksExceptionErrCode</a></h2>
+<pre><code class="language-cangjie">public struct HuksExceptionErrCode {
+    public static const HUKS_ERR_CODE_PERMISSION_FAIL: Int32
+    public static const HUKS_ERR_CODE_ILLEGAL_ARGUMENT: Int32
+    public static const HUKS_ERR_CODE_NOT_SUPPORTED_API: Int32
+    public static const HUKS_ERR_CODE_FEATURE_NOT_SUPPORTED: Int32
+    public static const HUKS_ERR_CODE_MISSING_CRYPTO_ALG_ARGUMENT: Int32
+    public static const HUKS_ERR_CODE_INVALID_CRYPTO_ALG_ARGUMENT: Int32
+    public static const HUKS_ERR_CODE_FILE_OPERATION_FAIL: Int32
+    public static const HUKS_ERR_CODE_COMMUNICATION_FAIL: Int32
+    public static const HUKS_ERR_CODE_CRYPTO_FAIL: Int32
+    public static const HUKS_ERR_CODE_KEY_AUTH_PERMANENTLY_INVALIDATED: Int32
+    public static const HUKS_ERR_CODE_KEY_AUTH_VERIFY_FAILED: Int32
+    public static const HUKS_ERR_CODE_KEY_AUTH_TIME_OUT: Int32
+    public static const HUKS_ERR_CODE_SESSION_LIMIT: Int32
+    public static const HUKS_ERR_CODE_ITEM_NOT_EXIST: Int32
+    public static const HUKS_ERR_CODE_EXTERNAL_ERROR: Int32
+    public static const HUKS_ERR_CODE_CREDENTIAL_NOT_EXIST: Int32
+    public static const HUKS_ERR_CODE_INSUFFICIENT_MEMORY: Int32
+    public static const HUKS_ERR_CODE_CALL_SERVICE_FAILED: Int32
+}
+</code></pre>
+<p>表示错误码的枚举以及对应的错误信息， 错误码表示错误类型，错误信息展示错误详情。</p>
+<p>关于错误码的具体信息，可在<a href="../errorcodes/cj-errorcode-huks.html">错误码参考文档</a>中查看。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_ERR_CODE_PERMISSION_FAIL</td><td style="text-align: left">201</td><td style="text-align: left">权限错误导致失败。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_ILLEGAL_ARGUMENT</td><td style="text-align: left">401</td><td style="text-align: left">参数错误导致失败。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_NOT_SUPPORTED_API</td><td style="text-align: left">801</td><td style="text-align: left">不支持的API。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_FEATURE_NOT_SUPPORTED</td><td style="text-align: left">12000001</td><td style="text-align: left">不支持的功能/特性。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_MISSING_CRYPTO_ALG_ARGUMENT</td><td style="text-align: left">12000002</td><td style="text-align: left">缺少密钥算法参数。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_INVALID_CRYPTO_ALG_ARGUMENT</td><td style="text-align: left">12000003</td><td style="text-align: left">无效密钥算法参数。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_FILE_OPERATION_FAIL</td><td style="text-align: left">12000004</td><td style="text-align: left">文件操作失败。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_COMMUNICATION_FAIL</td><td style="text-align: left">12000005</td><td style="text-align: left">通信失败。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_CRYPTO_FAIL</td><td style="text-align: left">12000006</td><td style="text-align: left">算法库操作失败。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_KEY_AUTH_PERMANENTLY_INVALIDATED</td><td style="text-align: left">12000007</td><td style="text-align: left">密钥访问失败-密钥访问失效。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_KEY_AUTH_VERIFY_FAILED</td><td style="text-align: left">12000008</td><td style="text-align: left">密钥访问失败-密钥认证失败。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_KEY_AUTH_TIME_OUT</td><td style="text-align: left">12000009</td><td style="text-align: left">密钥访问失败-密钥访问超时。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_SESSION_LIMIT</td><td style="text-align: left">12000010</td><td style="text-align: left">密钥操作会话数已达上限。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_ITEM_NOT_EXIST</td><td style="text-align: left">12000011</td><td style="text-align: left">目标对象不存在。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_EXTERNAL_ERROR</td><td style="text-align: left">12000012</td><td style="text-align: left">外部错误。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_CREDENTIAL_NOT_EXIST</td><td style="text-align: left">12000013</td><td style="text-align: left">缺失所需凭据。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_INSUFFICIENT_MEMORY</td><td style="text-align: left">12000014</td><td style="text-align: left">内存不足。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ERR_CODE_CALL_SERVICE_FAILED</td><td style="text-align: left">12000015</td><td style="text-align: left">调用其他系统服务失败。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukskeypurpose"><a class="header" href="#struct-hukskeypurpose">struct HuksKeyPurpose</a></h2>
+<pre><code class="language-cangjie">public struct HuksKeyPurpose {
+    public static const HUKS_KEY_PURPOSE_ENCRYPT: HuksParamValue
+    public static const HUKS_KEY_PURPOSE_DECRYPT: HuksParamValue
+    public static const HUKS_KEY_PURPOSE_SIGN: HuksParamValue
+    public static const HUKS_KEY_PURPOSE_VERIFY: HuksParamValue
+    public static const HUKS_KEY_PURPOSE_DERIVE: HuksParamValue
+    public static const HUKS_KEY_PURPOSE_WRAP: HuksParamValue
+    public static const HUKS_KEY_PURPOSE_UNWRAP: HuksParamValue
+    public static const HUKS_KEY_PURPOSE_MAC: HuksParamValue
+    public static const HUKS_KEY_PURPOSE_AGREE: HuksParamValue
+}
+</code></pre>
+<p>表示密钥用途。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_ENCRYPT</td><td style="text-align: left">1</td><td style="text-align: left">表示密钥用于对明文进行加密操作。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_DECRYPT</td><td style="text-align: left">2</td><td style="text-align: left">表示密钥用于对密文进行解密操作。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_SIGN</td><td style="text-align: left">4</td><td style="text-align: left">表示密钥用于对数据进行签名。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_VERIFY</td><td style="text-align: left">8</td><td style="text-align: left">表示密钥用于验证签名后的数据。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_DERIVE</td><td style="text-align: left">16</td><td style="text-align: left">表示密钥用于派生密钥。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_WRAP</td><td style="text-align: left">32</td><td style="text-align: left">表示密钥用于加密导出。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_UNWRAP</td><td style="text-align: left">64</td><td style="text-align: left">表示密钥加密导入。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_MAC</td><td style="text-align: left">128</td><td style="text-align: left">表示密钥用于生成mac消息验证码。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_PURPOSE_AGREE</td><td style="text-align: left">256</td><td style="text-align: left">表示密钥用于进行密钥协商。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukskeydigest"><a class="header" href="#struct-hukskeydigest">struct HuksKeyDigest</a></h2>
+<pre><code class="language-cangjie">public struct HuksKeyDigest {
+    public static const HUKS_DIGEST_NONE: HuksParamValue
+    public static const HUKS_DIGEST_MD5: HuksParamValue
+    public static const HUKS_DIGEST_SM3: HuksParamValue
+    public static const HUKS_DIGEST_SHA1: HuksParamValue
+    public static const HUKS_DIGEST_SHA224: HuksParamValue
+    public static const HUKS_DIGEST_SHA256: HuksParamValue
+    public static const HUKS_DIGEST_SHA384: HuksParamValue
+    public static const HUKS_DIGEST_SHA512: HuksParamValue
+}
+</code></pre>
+<p>表示摘要算法。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_DIGEST_NONE</td><td style="text-align: left">0</td><td style="text-align: left">表示无摘要算法。</td></tr>
+<tr><td style="text-align: left">HUKS_DIGEST_MD5</td><td style="text-align: left">1</td><td style="text-align: left">表示MD5摘要算法。</td></tr>
+<tr><td style="text-align: left">HUKS_DIGEST_SM3</td><td style="text-align: left">2</td><td style="text-align: left">表示SM3摘要算法。</td></tr>
+<tr><td style="text-align: left">HUKS_DIGEST_SHA1</td><td style="text-align: left">10</td><td style="text-align: left">表示SHA1摘要算法。</td></tr>
+<tr><td style="text-align: left">HUKS_DIGEST_SHA224</td><td style="text-align: left">11</td><td style="text-align: left">表示SHA224摘要算法。</td></tr>
+<tr><td style="text-align: left">HUKS_DIGEST_SHA256</td><td style="text-align: left">12</td><td style="text-align: left">表示SHA256摘要算法。</td></tr>
+<tr><td style="text-align: left">HUKS_DIGEST_SHA384</td><td style="text-align: left">13</td><td style="text-align: left">表示SHA384摘要算法。</td></tr>
+<tr><td style="text-align: left">HUKS_DIGEST_SHA512</td><td style="text-align: left">14</td><td style="text-align: left">表示SHA512摘要算法。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukskeypadding"><a class="header" href="#struct-hukskeypadding">struct HuksKeyPadding</a></h2>
+<pre><code class="language-cangjie">public struct HuksKeyPadding {
+    public static const HUKS_PADDING_NONE: HuksParamValue
+    public static const HUKS_PADDING_OAEP: HuksParamValue
+    public static const HUKS_PADDING_PSS: HuksParamValue
+    public static const HUKS_PADDING_PKCS1_V1_5: HuksParamValue
+    public static const HUKS_PADDING_PKCS5: HuksParamValue
+    public static const HUKS_PADDING_PKCS7: HuksParamValue
+}
+</code></pre>
+<p>表示补齐算法。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_PADDING_NONE</td><td style="text-align: left">0</td><td style="text-align: left">表示不使用补齐算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_PADDING_OAEP</td><td style="text-align: left">1</td><td style="text-align: left">表示使用OAEP补齐算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_PADDING_PSS</td><td style="text-align: left">2</td><td style="text-align: left">表示使用PSS补齐算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_PADDING_PKCS1_V1_5</td><td style="text-align: left">3</td><td style="text-align: left">表示使用PKCS1_V1_5补齐算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_PADDING_PKCS5</td><td style="text-align: left">4</td><td style="text-align: left">表示使用PKCS5补齐算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_PADDING_PKCS7</td><td style="text-align: left">5</td><td style="text-align: left">表示使用PKCS7补齐算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksciphermode"><a class="header" href="#struct-huksciphermode">struct HuksCipherMode</a></h2>
+<pre><code class="language-cangjie">public struct HuksCipherMode {
+    public static const HUKS_MODE_ECB: HuksParamValue
+    public static const HUKS_MODE_CBC: HuksParamValue
+    public static const HUKS_MODE_CTR: HuksParamValue
+    public static const HUKS_MODE_OFB: HuksParamValue
+    public static const HUKS_MODE_CCM: HuksParamValue
+    public static const HUKS_MODE_GCM: HuksParamValue
+}
+</code></pre>
+<p>表示加密模式。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_MODE_ECB</td><td style="text-align: left">1</td><td style="text-align: left">表示使用ECB加密模式。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_MODE_CBC</td><td style="text-align: left">2</td><td style="text-align: left">表示使用CBC加密模式。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_MODE_CTR</td><td style="text-align: left">3</td><td style="text-align: left">表示使用CTR加密模式。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_MODE_OFB</td><td style="text-align: left">4</td><td style="text-align: left">表示使用OFB加密模式。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_MODE_CCM</td><td style="text-align: left">31</td><td style="text-align: left">表示使用CCM加密模式。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_MODE_GCM</td><td style="text-align: left">32</td><td style="text-align: left">表示使用GCM加密模式。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukskeysize"><a class="header" href="#struct-hukskeysize">struct HuksKeySize</a></h2>
+<pre><code class="language-cangjie">public struct HuksKeySize {
+    public static const HUKS_RSA_KEY_SIZE_512: HuksParamValue
+    public static const HUKS_RSA_KEY_SIZE_768: HuksParamValue
+    public static const HUKS_RSA_KEY_SIZE_1024: HuksParamValue
+    public static const HUKS_RSA_KEY_SIZE_2048: HuksParamValue
+    public static const HUKS_RSA_KEY_SIZE_3072: HuksParamValue
+    public static const HUKS_RSA_KEY_SIZE_4096: HuksParamValue
+    public static const HUKS_ECC_KEY_SIZE_224: HuksParamValue
+    public static const HUKS_ECC_KEY_SIZE_256: HuksParamValue
+    public static const HUKS_ECC_KEY_SIZE_384: HuksParamValue
+    public static const HUKS_ECC_KEY_SIZE_521: HuksParamValue
+    public static const HUKS_AES_KEY_SIZE_128: HuksParamValue
+    public static const HUKS_AES_KEY_SIZE_192: HuksParamValue
+    public static const HUKS_AES_KEY_SIZE_256: HuksParamValue
+    public static const HUKS_AES_KEY_SIZE_512: HuksParamValue
+    public static const HUKS_CURVE25519_KEY_SIZE_256: HuksParamValue
+    public static const HUKS_DH_KEY_SIZE_2048: HuksParamValue
+    public static const HUKS_DH_KEY_SIZE_3072: HuksParamValue
+    public static const HUKS_DH_KEY_SIZE_4096: HuksParamValue
+    public static const HUKS_SM2_KEY_SIZE_256: HuksParamValue
+    public static const HUKS_SM4_KEY_SIZE_128: HuksParamValue
+}
+</code></pre>
+<p>表示密钥长度。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_RSA_KEY_SIZE_512</td><td style="text-align: left">512</td><td style="text-align: left">表示使用RSA算法的密钥长度为512bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_RSA_KEY_SIZE_768</td><td style="text-align: left">768</td><td style="text-align: left">表示使用RSA算法的密钥长度为768bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_RSA_KEY_SIZE_1024</td><td style="text-align: left">1024</td><td style="text-align: left">表示使用RSA算法的密钥长度为1024bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_RSA_KEY_SIZE_2048</td><td style="text-align: left">2048</td><td style="text-align: left">表示使用RSA算法的密钥长度为2048bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_RSA_KEY_SIZE_3072</td><td style="text-align: left">3072</td><td style="text-align: left">表示使用RSA算法的密钥长度为3072bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_RSA_KEY_SIZE_4096</td><td style="text-align: left">4096</td><td style="text-align: left">表示使用RSA算法的密钥长度为4096bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ECC_KEY_SIZE_224</td><td style="text-align: left">224</td><td style="text-align: left">表示使用ECC算法的密钥长度为224bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ECC_KEY_SIZE_256</td><td style="text-align: left">256</td><td style="text-align: left">表示使用ECC算法的密钥长度为256bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ECC_KEY_SIZE_384</td><td style="text-align: left">384</td><td style="text-align: left">表示使用ECC算法的密钥长度为384bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ECC_KEY_SIZE_521</td><td style="text-align: left">521</td><td style="text-align: left">表示使用ECC算法的密钥长度为521bit。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_AES_KEY_SIZE_128</td><td style="text-align: left">128</td><td style="text-align: left">表示使用AES算法的密钥长度为128bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_AES_KEY_SIZE_192</td><td style="text-align: left">192</td><td style="text-align: left">表示使用AES算法的密钥长度为192bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_AES_KEY_SIZE_256</td><td style="text-align: left">256</td><td style="text-align: left">表示使用AES算法的密钥长度为256bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_AES_KEY_SIZE_512</td><td style="text-align: left">512</td><td style="text-align: left">表示使用AES算法的密钥长度为512bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_CURVE25519_KEY_SIZE_256</td><td style="text-align: left">256</td><td style="text-align: left">表示使用CURVE25519算法的密钥长度为256bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_DH_KEY_SIZE_2048</td><td style="text-align: left">2048</td><td style="text-align: left">表示使用DH算法的密钥长度为2048bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_DH_KEY_SIZE_3072</td><td style="text-align: left">3072</td><td style="text-align: left">表示使用DH算法的密钥长度为3072bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_DH_KEY_SIZE_4096</td><td style="text-align: left">4096</td><td style="text-align: left">表示使用DH算法的密钥长度为4096bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_SM2_KEY_SIZE_256</td><td style="text-align: left">256</td><td style="text-align: left">表示SM2算法的密钥长度为256bit。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_SM4_KEY_SIZE_128</td><td style="text-align: left">128</td><td style="text-align: left">表示SM4算法的密钥长度为128bit。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukskeyalg"><a class="header" href="#struct-hukskeyalg">struct HuksKeyAlg</a></h2>
+<pre><code class="language-cangjie">public struct HuksKeyAlg {
+    public static const HUKS_ALG_RSA: HuksParamValue
+    public static const HUKS_ALG_ECC: HuksParamValue
+    public static const HUKS_ALG_DSA: HuksParamValue
+    public static const HUKS_ALG_AES: HuksParamValue
+    public static const HUKS_ALG_HMAC: HuksParamValue
+    public static const HUKS_ALG_HKDF: HuksParamValue
+    public static const HUKS_ALG_PBKDF2: HuksParamValue
+    public static const HUKS_ALG_ECDH: HuksParamValue
+    public static const HUKS_ALG_X25519: HuksParamValue
+    public static const HUKS_ALG_ED25519: HuksParamValue
+    public static const HUKS_ALG_DH: HuksParamValue
+    public static const HUKS_ALG_SM2: HuksParamValue
+    public static const HUKS_ALG_SM3: HuksParamValue
+    public static const HUKS_ALG_SM4: HuksParamValue
+}
+</code></pre>
+<p>表示密钥使用的算法。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_ALG_RSA</td><td style="text-align: left">1</td><td style="text-align: left">表示使用RSA算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_ECC</td><td style="text-align: left">2</td><td style="text-align: left">表示使用ECC算法。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_DSA</td><td style="text-align: left">3</td><td style="text-align: left">表示使用DSA算法。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_AES</td><td style="text-align: left">20</td><td style="text-align: left">表示使用AES算法。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_HMAC</td><td style="text-align: left">50</td><td style="text-align: left">表示使用HMAC算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_HKDF</td><td style="text-align: left">51</td><td style="text-align: left">表示使用HKDF算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_PBKDF2</td><td style="text-align: left">52</td><td style="text-align: left">表示使用PBKDF2算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_ECDH</td><td style="text-align: left">100</td><td style="text-align: left">表示使用ECDH算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_X25519</td><td style="text-align: left">101</td><td style="text-align: left">表示使用X25519算法。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_ED25519</td><td style="text-align: left">102</td><td style="text-align: left">表示使用ED25519算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_DH</td><td style="text-align: left">103</td><td style="text-align: left">表示使用DH算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_SM2</td><td style="text-align: left">150</td><td style="text-align: left">表示使用SM2算法。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_SM3</td><td style="text-align: left">151</td><td style="text-align: left">表示使用SM3算法。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_ALG_SM4</td><td style="text-align: left">152</td><td style="text-align: left">表示使用SM4算法。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukskeygeneratetype"><a class="header" href="#struct-hukskeygeneratetype">struct HuksKeyGenerateType</a></h2>
+<pre><code class="language-cangjie">public struct HuksKeyGenerateType {
+    public static const HUKS_KEY_GENERATE_TYPE_DEFAULT: HuksParamValue
+    public static const HUKS_KEY_GENERATE_TYPE_DERIVE: HuksParamValue
+    public static const HUKS_KEY_GENERATE_TYPE_AGREE: HuksParamValue
+}
+</code></pre>
+<p>表示生成密钥的类型。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_KEY_GENERATE_TYPE_DEFAULT</td><td style="text-align: left">0</td><td style="text-align: left">默认生成的密钥。</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_GENERATE_TYPE_DERIVE</td><td style="text-align: left">1</td><td style="text-align: left">派生生成的密钥。</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_GENERATE_TYPE_AGREE</td><td style="text-align: left">2</td><td style="text-align: left">协商生成的密钥。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukskeyflag"><a class="header" href="#struct-hukskeyflag">struct HuksKeyFlag</a></h2>
+<pre><code class="language-cangjie">public struct HuksKeyFlag {
+    public static const HUKS_KEY_FLAG_IMPORT_KEY: HuksParamValue
+    public static const HUKS_KEY_FLAG_GENERATE_KEY: HuksParamValue
+    public static const HUKS_KEY_FLAG_AGREE_KEY: HuksParamValue
+    public static const HUKS_KEY_FLAG_DERIVE_KEY: HuksParamValue
+}
+</code></pre>
+<p>表示密钥的产生方式。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_KEY_FLAG_IMPORT_KEY</td><td style="text-align: left">1</td><td style="text-align: left">表示通过导入公钥接口导入的密钥。</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_FLAG_GENERATE_KEY</td><td style="text-align: left">2</td><td style="text-align: left">表示通过生成密钥接口生成的密钥。</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_FLAG_AGREE_KEY</td><td style="text-align: left">3</td><td style="text-align: left">表示通过生成密钥协商接口生成的密钥。</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_FLAG_DERIVE_KEY</td><td style="text-align: left">4</td><td style="text-align: left">表示通过生成密钥派生接口生成的密钥。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukskeystoragetype"><a class="header" href="#struct-hukskeystoragetype">struct HuksKeyStorageType</a></h2>
+<pre><code class="language-cangjie">public struct HuksKeyStorageType {
+    public static const HUKS_STORAGE_TEMP: HuksParamValue
+    public static const HUKS_STORAGE_PERSISTENT: HuksParamValue
+    public static const HUKS_STORAGE_ONLY_USED_IN_HUKS: HuksParamValue
+    public static const HUKS_STORAGE_KEY_EXPORT_ALLOWED: HuksParamValue
+}
+</code></pre>
+<p>表示密钥存储方式。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_STORAGE_TEMP<sup>(deprecated)</sup></td><td style="text-align: left">0</td><td style="text-align: left">表示通过本地直接管理密钥。<br/> <strong>说明：</strong> 已废弃，由于开发者正常使用密钥管理过程中并不需要使用此Tag，故无替代接口。针对密钥派生场景，可使用HUKS_STORAGE_ONLY_USED_IN_HUKS 与 HUKS_STORAGE_KEY_EXPORT_ALLOWED。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_STORAGE_PERSISTENT<sup>(deprecated)</sup></td><td style="text-align: left">1</td><td style="text-align: left">表示通过HUKS service管理密钥。<br/> <strong>说明：</strong> 已废弃，由于开发者正常使用密钥管理过程中并不需要使用此Tag，故无替代接口。针对密钥派生场景，可使用HUKS_STORAGE_ONLY_USED_IN_HUKS 与 HUKS_STORAGE_KEY_EXPORT_ALLOWED。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_STORAGE_ONLY_USED_IN_HUKS</td><td style="text-align: left">2</td><td style="text-align: left">表示主密钥派生的密钥存储于huks中，由HUKS进行托管。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_STORAGE_KEY_EXPORT_ALLOWED</td><td style="text-align: left">3</td><td style="text-align: left">表示主密钥派生的密钥直接导出给业务方，HUKS不对其进行托管服务。<br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukssendtype"><a class="header" href="#struct-hukssendtype">struct HuksSendType</a></h2>
+<pre><code class="language-cangjie">public struct HuksSendType {
+    public static const HUKS_SEND_TYPE_ASYNC: HuksParamValue
+    public static const HUKS_SEND_TYPE_SYNC: HuksParamValue
+}
+</code></pre>
+<p>表示发送Tag的方式。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_SEND_TYPE_ASYNC</td><td style="text-align: left">0</td><td style="text-align: left">表示异步发送Tag。</td></tr>
+<tr><td style="text-align: left">HUKS_SEND_TYPE_SYNC</td><td style="text-align: left">1</td><td style="text-align: left">表示同步发送Tag。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksunwrapsuite"><a class="header" href="#struct-huksunwrapsuite">struct HuksUnwrapSuite</a></h2>
+<pre><code class="language-cangjie">public struct HuksUnwrapSuite {
+    public static const HUKS_UNWRAP_SUITE_X25519_AES_256_GCM_NOPADDING: HuksParamValue
+    public static const HUKS_UNWRAP_SUITE_ECDH_AES_256_GCM_NOPADDING: HuksParamValue
+}
+</code></pre>
+<p>表示导入加密密钥的算法套件。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_UNWRAP_SUITE_X25519_AES_256_GCM_NOPADDING</td><td style="text-align: left">1</td><td style="text-align: left">导入加密密钥时，X25519密钥协商后使用AES-256 GCM加密。</td></tr>
+<tr><td style="text-align: left">HUKS_UNWRAP_SUITE_ECDH_AES_256_GCM_NOPADDING</td><td style="text-align: left">2</td><td style="text-align: left">导入加密密钥时，ECDH密钥协商后使用AES-256 GCM加密。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksimportkeytype"><a class="header" href="#struct-huksimportkeytype">struct HuksImportKeyType</a></h2>
+<pre><code class="language-cangjie">public struct HuksImportKeyType {
+    public static const HUKS_KEY_TYPE_PUBLIC_KEY: HuksParamValue
+    public static const HUKS_KEY_TYPE_PRIVATE_KEY: HuksParamValue
+    public static const HUKS_KEY_TYPE_KEY_PAIR: HuksParamValue
+}
+</code></pre>
+<p>表示导入密钥的密钥类型，默认为导入公钥，导入对称密钥时不需要该字段。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_KEY_TYPE_PUBLIC_KEY</td><td style="text-align: left">0</td><td style="text-align: left">表示导入的密钥类型为公钥。</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_TYPE_PRIVATE_KEY</td><td style="text-align: left">1</td><td style="text-align: left">表示导入的密钥类型为私钥。</td></tr>
+<tr><td style="text-align: left">HUKS_KEY_TYPE_KEY_PAIR</td><td style="text-align: left">2</td><td style="text-align: left">表示导入的密钥类型为公私钥对。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksrsapsssaltlentype"><a class="header" href="#struct-huksrsapsssaltlentype">struct HuksRsaPssSaltLenType</a></h2>
+<pre><code class="language-cangjie">public struct HuksRsaPssSaltLenType {
+    public static const HUKS_RSA_PSS_SALT_LEN_DIGEST: HuksParamValue
+    public static const HUKS_RSA_PSS_SALT_LEN_MAX: HuksParamValue
+}
+</code></pre>
+<p>表示Rsa在签名或者验签时、且padding为pss时，需指定的salt_len类型。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_RSA_PSS_SALT_LEN_DIGEST</td><td style="text-align: left">0</td><td style="text-align: left">表示以摘要长度设置salt_len。</td></tr>
+<tr><td style="text-align: left">HUKS_RSA_PSS_SALT_LEN_MAX</td><td style="text-align: left">1</td><td style="text-align: left">表示以最大长度设置salt_len。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksuserauthtype"><a class="header" href="#struct-huksuserauthtype">struct HuksUserAuthType</a></h2>
+<pre><code class="language-cangjie">public struct HuksUserAuthType {
+    public static const HUKS_USER_AUTH_TYPE_FINGERPRINT: HuksParamValue
+    public static const HUKS_USER_AUTH_TYPE_FACE: HuksParamValue
+    public static const HUKS_USER_AUTH_TYPE_PIN: HuksParamValue
+}
+</code></pre>
+<p>表示用户认证类型。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_USER_AUTH_TYPE_FINGERPRINT</td><td style="text-align: left">1 &lt;&lt; 0</td><td style="text-align: left">表示用户认证类型为指纹。</td></tr>
+<tr><td style="text-align: left">HUKS_USER_AUTH_TYPE_FACE</td><td style="text-align: left">1 &lt;&lt; 1</td><td style="text-align: left">表示用户认证类型为人脸 。</td></tr>
+<tr><td style="text-align: left">HUKS_USER_AUTH_TYPE_PIN</td><td style="text-align: left">1 &lt;&lt; 2</td><td style="text-align: left">表示用户认证类型为PIN码。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksauthaccesstype"><a class="header" href="#struct-huksauthaccesstype">struct HuksAuthAccessType</a></h2>
+<pre><code class="language-cangjie">public struct HuksAuthAccessType {
+    public static const HUKS_AUTH_ACCESS_INVALID_CLEAR_PASSWORD: HuksParamValue
+    public static const HUKS_AUTH_ACCESS_INVALID_NEW_BIO_ENROLL: HuksParamValue
+}
+</code></pre>
+<p>表示安全访问控制类型。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_AUTH_ACCESS_INVALID_CLEAR_PASSWORD</td><td style="text-align: left">1 &lt;&lt; 0</td><td style="text-align: left">表示安全访问控制类型为清除密码后密钥无效。</td></tr>
+<tr><td style="text-align: left">HUKS_AUTH_ACCESS_INVALID_NEW_BIO_ENROLL</td><td style="text-align: left">1 &lt;&lt; 1</td><td style="text-align: left">表示安全访问控制类型为新录入生物特征后密钥无效。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukschallengetype"><a class="header" href="#struct-hukschallengetype">struct HuksChallengeType</a></h2>
+<pre><code class="language-cangjie">public struct HuksChallengeType {
+    public static const HUKS_CHALLENGE_TYPE_NORMAL: HuksParamValue
+    public static const HUKS_CHALLENGE_TYPE_CUSTOM: HuksParamValue
+    public static const HUKS_CHALLENGE_TYPE_NONE: HuksParamValue
+}
+</code></pre>
+<p>表示密钥使用时生成challenge的类型。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_CHALLENGE_TYPE_NORMAL</td><td style="text-align: left">0</td><td style="text-align: left">表示challenge为普通类型，默认32字节。</td></tr>
+<tr><td style="text-align: left">HUKS_CHALLENGE_TYPE_CUSTOM</td><td style="text-align: left">1</td><td style="text-align: left">表示challenge为用户自定义类型。支持使用多个密钥仅一次认证。</td></tr>
+<tr><td style="text-align: left">HUKS_CHALLENGE_TYPE_NONE</td><td style="text-align: left">2</td><td style="text-align: left">表示免challenge类型。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukschallengeposition"><a class="header" href="#struct-hukschallengeposition">struct HuksChallengePosition</a></h2>
+<pre><code class="language-cangjie">public struct HuksChallengePosition {
+    public static const HUKS_CHALLENGE_POS_0: HuksParamValue
+    public static const HUKS_CHALLENGE_POS_1: HuksParamValue
+    public static const HUKS_CHALLENGE_POS_2: HuksParamValue
+    public static const HUKS_CHALLENGE_POS_3: HuksParamValue
+}
+</code></pre>
+<p>表示challenge类型为用户自定义类型时，生成的challenge有效长度仅为8字节连续的数据，且仅支持4种位置 。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_CHALLENGE_POS_0</td><td style="text-align: left">0</td><td style="text-align: left">表示0~7字节为当前密钥的有效challenge。</td></tr>
+<tr><td style="text-align: left">HUKS_CHALLENGE_POS_1</td><td style="text-align: left">1</td><td style="text-align: left">表示8~15字节为当前密钥的有效challenge。</td></tr>
+<tr><td style="text-align: left">HUKS_CHALLENGE_POS_2</td><td style="text-align: left">2</td><td style="text-align: left">表示16~23字节为当前密钥的有效challenge。</td></tr>
+<tr><td style="text-align: left">HUKS_CHALLENGE_POS_3</td><td style="text-align: left">3</td><td style="text-align: left">表示24~31字节为当前密钥的有效challenge。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukssecuresigntype"><a class="header" href="#struct-hukssecuresigntype">struct HuksSecureSignType</a></h2>
+<pre><code class="language-cangjie">public struct HuksSecureSignType {
+    public static const HUKS_SECURE_SIGN_WITH_AUTHINFO: HuksParamValue
+}
+</code></pre>
+<p>表示生成或导入密钥时，指定该密钥的签名类型。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_SECURE_SIGN_WITH_AUTHINFO</td><td style="text-align: left">1</td><td style="text-align: left">表示签名类型为携带认证信息。生成或导入密钥时指定该字段，则在使用密钥进行签名时，对待签名的数据添加认证信息后进行签名。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-huksauthstoragelevel"><a class="header" href="#struct-huksauthstoragelevel">struct HuksAuthStorageLevel</a></h2>
+<pre><code class="language-cangjie">public struct HuksAuthStorageLevel {
+    public static const HUKS_AUTH_STORAGE_LEVEL_DE: HuksParamValue
+    public static const HUKS_AUTH_STORAGE_LEVEL_CE: HuksParamValue
+    public static const HUKS_AUTH_STORAGE_LEVEL_ECE: HuksParamValue
+}
+</code></pre>
+<p>表示生成或导入密钥时，指定该密钥的存储安全等级。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Extension</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_AUTH_STORAGE_LEVEL_DE</td><td style="text-align: left">0</td><td style="text-align: left">表示密钥仅在开机后可访问。</td></tr>
+<tr><td style="text-align: left">HUKS_AUTH_STORAGE_LEVEL_CE</td><td style="text-align: left">1</td><td style="text-align: left">表示密钥仅在首次解锁后可访问。</td></tr>
+<tr><td style="text-align: left">HUKS_AUTH_STORAGE_LEVEL_ECE</td><td style="text-align: left">2</td><td style="text-align: left">表示密钥仅在解锁状态时可访问。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hukstagtype"><a class="header" href="#struct-hukstagtype">struct HuksTagType</a></h2>
+<pre><code class="language-cangjie">public struct HuksTagType {
+    public static const HUKS_TAG_TYPE_INVALID: UInt32
+    public static const HUKS_TAG_TYPE_INT: UInt32
+    public static const HUKS_TAG_TYPE_UINT: UInt32
+    public static const HUKS_TAG_TYPE_ULONG: UInt32
+    public static const HUKS_TAG_TYPE_BOOL: UInt32
+    public static const HUKS_TAG_TYPE_BYTES: UInt32
+}
+</code></pre>
+<p>表示Tag的数据类型。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_TAG_TYPE_INVALID</td><td style="text-align: left">0 &lt;&lt; 28</td><td style="text-align: left">表示非法的Tag类型。</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_TYPE_INT</td><td style="text-align: left">1 &lt;&lt; 28</td><td style="text-align: left">表示该Tag的数据类型为int类型的number。</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_TYPE_UINT</td><td style="text-align: left">2 &lt;&lt; 28</td><td style="text-align: left">表示该Tag的数据类型为uint类型的number。</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_TYPE_ULONG</td><td style="text-align: left">3 &lt;&lt; 28</td><td style="text-align: left">表示该Tag的数据类型为bigint。</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_TYPE_BOOL</td><td style="text-align: left">4 &lt;&lt; 28</td><td style="text-align: left">表示该Tag的数据类型为boolean。</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_TYPE_BYTES</td><td style="text-align: left">5 &lt;&lt; 28</td><td style="text-align: left">表示该Tag的数据类型为Uint8Array。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-hukstag"><a class="header" href="#enum-hukstag">enum HuksTag</a></h2>
+<pre><code class="language-cangjie">public enum HuksTag {
+    | HUKS_TAGS_CANGJIE_UNKNOWN(UInt32)
+    | HUKS_TAG_INVALID
+    | HUKS_TAG_ALGORITHM
+    | HUKS_TAG_PURPOSE
+    | HUKS_TAG_KEY_SIZE
+    | HUKS_TAG_DIGEST
+    | HUKS_TAG_PADDING
+    | HUKS_TAG_BLOCK_MODE
+    | HUKS_TAG_KEY_TYPE
+    | HUKS_TAG_ASSOCIATED_DATA
+    | HUKS_TAG_NONCE
+    | HUKS_TAG_IV
+    | HUKS_TAG_INFO
+    | HUKS_TAG_SALT
+    | HUKS_TAG_PWD
+    | HUKS_TAG_ITERATION
+    | HUKS_TAG_KEY_GENERATE_TYPE
+    | HUKS_TAG_DERIVE_MAIN_KEY
+    | HUKS_TAG_DERIVE_FACTOR
+    | HUKS_TAG_DERIVE_ALG
+    | HUKS_TAG_AGREE_ALG
+    | HUKS_TAG_AGREE_PUBLIC_KEY_IS_KEY_ALIAS
+    | HUKS_TAG_AGREE_PRIVATE_KEY_ALIAS
+    | HUKS_TAG_AGREE_PUBLIC_KEY
+    | HUKS_TAG_KEY_ALIAS
+    | HUKS_TAG_DERIVE_KEY_SIZE
+    | HUKS_TAG_IMPORT_KEY_TYPE
+    | HUKS_TAG_UNWRAP_ALGORITHM_SUITE
+    | HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAG
+    | HUKS_TAG_RSA_PSS_SALT_LEN_TYPE
+    | HUKS_TAG_ACTIVE_DATETIME
+    | HUKS_TAG_ORIGINATION_EXPIRE_DATETIME
+    | HUKS_TAG_USAGE_EXPIRE_DATETIME
+    | HUKS_TAG_CREATION_DATETIME
+    | HUKS_TAG_ALL_USERS
+    | HUKS_TAG_USER_ID
+    | HUKS_TAG_NO_AUTH_REQUIRED
+    | HUKS_TAG_USER_AUTH_TYPE
+    | HUKS_TAG_AUTH_TIMEOUT
+    | HUKS_TAG_AUTH_TOKEN
+    | HUKS_TAG_KEY_AUTH_ACCESS_TYPE
+    | HUKS_TAG_KEY_SECURE_SIGN_TYPE
+    | HUKS_TAG_CHALLENGE_TYPE
+    | HUKS_TAG_CHALLENGE_POS
+    | HUKS_TAG_KEY_AUTH_PURPOSE
+    | HUKS_TAG_ATTESTATION_CHALLENGE
+    | HUKS_TAG_ATTESTATION_APPLICATION_ID
+    | HUKS_TAG_ATTESTATION_ID_BRAND
+    | HUKS_TAG_ATTESTATION_ID_DEVICE
+    | HUKS_TAG_ATTESTATION_ID_PRODUCT
+    | HUKS_TAG_ATTESTATION_ID_SERIAL
+    | HUKS_TAG_ATTESTATION_ID_IMEI
+    | HUKS_TAG_ATTESTATION_ID_MEID
+    | HUKS_TAG_ATTESTATION_ID_MANUFACTURER
+    | HUKS_TAG_ATTESTATION_ID_MODEL
+    | HUKS_TAG_ATTESTATION_ID_ALIAS
+    | HUKS_TAG_ATTESTATION_ID_SOCID
+    | HUKS_TAG_ATTESTATION_ID_UDID
+    | HUKS_TAG_ATTESTATION_ID_SEC_LEVEL_INFO
+    | HUKS_TAG_ATTESTATION_ID_VERSION_INFO
+    | HUKS_TAG_ATTESTATION_BASE64
+    | HUKS_TAG_ATTESTATION_MODE
+    | HUKS_TAG_ATTESTATION_APPLICATION_ID_TYPE
+    | HUKS_TAG_IS_KEY_ALIAS
+    | HUKS_TAG_KEY_STORAGE_FLAG
+    | HUKS_TAG_IS_ALLOWED_WRAP
+    | HUKS_TAG_KEY_WRAP_TYPE
+    | HUKS_TAG_KEY_AUTH_ID
+    | HUKS_TAG_KEY_ROLE
+    | HUKS_TAG_KEY_FLAG
+    | HUKS_TAG_IS_ASYNCHRONIZED
+    | HUKS_TAG_SECURE_KEY_ALIAS
+    | HUKS_TAG_SECURE_KEY_UUID
+    | HUKS_TAG_KEY_DOMAIN
+    | HUKS_TAG_PROCESS_NAME
+    | HUKS_TAG_PACKAGE_NAME
+    | HUKS_TAG_ACCESS_TIME
+    | HUKS_TAG_USES_TIME
+    | HUKS_TAG_CRYPTO_CTX
+    | HUKS_TAG_KEY
+    | HUKS_TAG_KEY_VERSION
+    | HUKS_TAG_PAYLOAD_LEN
+    | HUKS_TAG_AE_TAG
+    | HUKS_TAG_IS_KEY_HANDLE
+    | HUKS_TAG_OS_VERSION
+    | HUKS_TAG_OS_PATCHLEVEL
+    | HUKS_TAG_SYMMETRIC_KEY_DATA
+    | HUKS_TAG_ASYMMETRIC_PUBLIC_KEY_DATA
+    | HUKS_TAG_ASYMMETRIC_PRIVATE_KEY_DATA
+}
+</code></pre>
+<p>表示调用参数的Tag。</p>
+<p><strong>系统能力</strong>：SystemCapability.Security.Huks.Core</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>由于Huks底层返回值随版本更新会有变化，为兼容取值未落在已知枚举范围内的Tag，<code>HuksTag</code> 使用 <code>HUKS_TAGS_CANGJIE_UNKNOWN(UInt32)</code> 枚举值对其进行表示，开发者可以自行访问存在其中的 <code>UInt32</code> 或借助 <code>getValue()</code> 来获取其真实值，从而实现对应的业务逻辑。</p>
+</blockquote>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HUKS_TAG_INVALID<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_INVALID | 0</td><td style="text-align: left">表示非法的Tag。已废弃。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ALGORITHM</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 1</td><td style="text-align: left">表示算法的Tag。    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_PURPOSE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 2</td><td style="text-align: left">表示密钥用途的Tag。    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_SIZE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 3</td><td style="text-align: left">表示密钥长度的Tag。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_DIGEST</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 4</td><td style="text-align: left">表示摘要算法的Tag。    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_PADDING</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 5</td><td style="text-align: left">表示补齐算法的Tag。    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_BLOCK_MODE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 6</td><td style="text-align: left">表示加密模式的Tag。     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 7</td><td style="text-align: left">表示密钥类型的Tag。     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ASSOCIATED_DATA</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 8</td><td style="text-align: left">表示附加身份验证数据的Tag。    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_NONCE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 9</td><td style="text-align: left">表示密钥加解密的字段。     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_IV</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 10</td><td style="text-align: left">表示密钥初始化的向量。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_INFO</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 11</td><td style="text-align: left">表示密钥派生时的info。    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_SALT</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 12</td><td style="text-align: left">表示密钥派生时的盐值。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_PWD<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 13</td><td style="text-align: left">表示密钥派生时的password。已废弃。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ITERATION</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 14</td><td style="text-align: left">表示密钥派生时的迭代次数。 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_GENERATE_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 15</td><td style="text-align: left">表示生成密钥类型的Tag。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_DERIVE_MAIN_KEY<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 16</td><td style="text-align: left">表示密钥派生时的主密钥。已废弃。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_DERIVE_FACTOR<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 17</td><td style="text-align: left">表示密钥派生时的派生因子。已废弃。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_DERIVE_ALG<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 18</td><td style="text-align: left">表示密钥派生时的算法类型。已废弃。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_AGREE_ALG</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 19</td><td style="text-align: left">表示密钥协商时的算法类型。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_AGREE_PUBLIC_KEY_IS_KEY_ALIAS</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BOOL | 20</td><td style="text-align: left">表示密钥协商时的公钥别名。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_AGREE_PRIVATE_KEY_ALIAS</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 21</td><td style="text-align: left">表示密钥协商时的私钥别名。    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_AGREE_PUBLIC_KEY</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 22</td><td style="text-align: left">表示密钥协商时的公钥。     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_ALIAS</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 23</td><td style="text-align: left">表示密钥别名。        <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_DERIVE_KEY_SIZE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 24</td><td style="text-align: left">表示派生密钥的大小。     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_IMPORT_KEY_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 25</td><td style="text-align: left">表示导入的密钥类型。      <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_UNWRAP_ALGORITHM_SUITE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 26</td><td style="text-align: left">表示导入加密密钥的套件。        <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_DERIVED_AGREED_KEY_STORAGE_FLAG</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT |29</td><td style="text-align: left">表示派生密钥/协商密钥的存储类型。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_RSA_PSS_SALT_LEN_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT |30</td><td style="text-align: left">表示rsa_pss_salt_length的类型。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ACTIVE_DATETIME<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_ULONG | 201</td><td style="text-align: left">原为证书业务预留字段，当前证书管理已独立，此字段废弃，不再预留。        <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ORIGINATION_EXPIRE_DATETIME<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_ULONG | 202</td><td style="text-align: left">原为证书业务预留字段，当前证书管理已独立，此字段废弃，不再预留。                           <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_USAGE_EXPIRE_DATETIME<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_ULONG | 203</td><td style="text-align: left">原为证书业务预留字段，当前证书管理已独立，此字段废弃，不再预留。               <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_CREATION_DATETIME<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_ULONG | 204</td><td style="text-align: left">原为证书业务预留字段，当前证书管理已独立，此字段废弃，不再预留。     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ALL_USERS</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BOOL | 301</td><td style="text-align: left">预留               <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_USER_ID</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 302</td><td style="text-align: left">表示当前密钥属于哪个userID                  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_NO_AUTH_REQUIRED</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BOOL | 303</td><td style="text-align: left">预留。                   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_USER_AUTH_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 304</td><td style="text-align: left">表示用户认证类型。从<a href="#struct-huksuserauthtype">HuksUserAuthType</a>中选择，需要与安全访问控制类型同时设置。支持同时指定两种用户认证类型，如：安全访问控制类型指定为HUKS_SECURE_ACCESS_INVALID_NEW_BIO_ENROLL时，密钥访问认证类型可以指定以下三种： HUKS_USER_AUTH_TYPE_FACE 、HUKS_USER_AUTH_TYPE_FINGERPRINT、HUKS_USER_AUTH_TYPE_FACE | HUKS_USER_AUTH_TYPE_FINGERPRINT   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_AUTH_TIMEOUT</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 305</td><td style="text-align: left">表示authtoken单次有效期。               <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_AUTH_TOKEN</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 306</td><td style="text-align: left">用于传入authToken的字段                <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_AUTH_ACCESS_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 307</td><td style="text-align: left">表示安全访问控制类型。从<a href="#struct-huksauthaccesstype">HuksAuthAccessType</a>中选择，需要和用户认证类型同时设置。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_SECURE_SIGN_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 308</td><td style="text-align: left">表示生成或导入密钥时，指定该密钥的签名类型。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_CHALLENGE_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 309</td><td style="text-align: left">表示密钥使用时生成的challenge类型。从<a href="#struct-hukschallengetype">HuksChallengeType</a>中选择   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_CHALLENGE_POS</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 310</td><td style="text-align: left">表示challenge类型为用户自定义类型时，huks产生的challenge有效长度仅为8字节连续的数据。从<a href="#struct-hukschallengeposition">HuksChallengePosition</a>中选择。   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_AUTH_PURPOSE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT |311</td><td style="text-align: left">表示密钥认证用途的tag   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_CHALLENGE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 501</td><td style="text-align: left">表示attestation时的挑战值。            <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_APPLICATION_ID</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 502</td><td style="text-align: left">表示attestation时拥有该密钥的application的ID。     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_BRAND<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 503</td><td style="text-align: left">表示设备的品牌。已废弃。                      <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_DEVICE<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 504</td><td style="text-align: left">表示设备的设备ID。已废弃。                   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_PRODUCT<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 505</td><td style="text-align: left">表示设备的产品名。已废弃。                  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_SERIAL<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 506</td><td style="text-align: left">表示设备的SN号。已废弃。                    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_IMEI<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 507</td><td style="text-align: left">表示设备的IMEI号。已废弃。                  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_MEID<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 508</td><td style="text-align: left">表示设备的MEID号。已废弃。                  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_MANUFACTURER<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 509</td><td style="text-align: left">表示设备的制造商。已废弃。                  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_MODEL<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 510</td><td style="text-align: left">表示设备的型号。已废弃。                     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_ALIAS</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 511</td><td style="text-align: left">表示attestation时的密钥别名。        <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_SOCID<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 512</td><td style="text-align: left">表示设备的SOCID。已废弃。                     <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_UDID<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 513</td><td style="text-align: left">表示设备的UDID。已废弃。                   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_SEC_LEVEL_INFO</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 514</td><td style="text-align: left">表示attestation时的安全凭据。        <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ATTESTATION_ID_VERSION_INFO</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 515</td><td style="text-align: left">表示attestation时的版本号。         <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_IS_KEY_ALIAS</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BOOL | 1001</td><td style="text-align: left">表示是否使用生成key时传入的别名的Tag。  <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_STORAGE_FLAG</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 1002</td><td style="text-align: left">表示密钥存储方式的Tag。          <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_IS_ALLOWED_WRAP</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BOOL | 1003</td><td style="text-align: left">预留。            <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_WRAP_TYPE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 1004</td><td style="text-align: left">预留。                <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_AUTH_ID</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 1005</td><td style="text-align: left">预留。                   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_ROLE</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 1006</td><td style="text-align: left">预留。                      <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_FLAG</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 1007</td><td style="text-align: left">表示密钥标志的Tag。         <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_IS_ASYNCHRONIZED</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 1008</td><td style="text-align: left">预留。                           <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_SECURE_KEY_ALIAS<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BOOL | 1009</td><td style="text-align: left">原为预留字段，已废弃。                          <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_SECURE_KEY_UUID<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 1010</td><td style="text-align: left">原为预留字段，已废弃。                            <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_DOMAIN</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 1011</td><td style="text-align: left">预留。                      <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_PROCESS_NAME<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 10001</td><td style="text-align: left">表示进程名称的Tag。已废弃。          <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_PACKAGE_NAME<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 10002</td><td style="text-align: left">原为预留字段，已废弃。             <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ACCESS_TIME<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 10003</td><td style="text-align: left">原为预留字段，已废弃。                    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_USES_TIME<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 10004</td><td style="text-align: left">原为预留字段，已废弃。                 <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_CRYPTO_CTX<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_ULONG | 10005</td><td style="text-align: left">原为预留字段，已废弃。                <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 10006</td><td style="text-align: left">预留。                           <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_KEY_VERSION<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 10007</td><td style="text-align: left">表示密钥版本的Tag。已废弃。                   <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_PAYLOAD_LEN<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 10008</td><td style="text-align: left">原为预留字段，已废弃。                          <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_AE_TAG</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 10009</td><td style="text-align: left">用于传入GCM模式中的AEAD数据的字段。      <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_IS_KEY_HANDLE<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_ULONG | 10010</td><td style="text-align: left">原为预留字段，已废弃。              <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_OS_VERSION<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 10101</td><td style="text-align: left">表示操作系统版本的Tag。已废弃。      <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_OS_PATCHLEVEL<sup>(deprecated)</sup></td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_UINT | 10102</td><td style="text-align: left">表示操作系统补丁级别的Tag。已废弃。    <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_SYMMETRIC_KEY_DATA</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 20001</td><td style="text-align: left">预留。        <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Core</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ASYMMETRIC_PUBLIC_KEY_DATA</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 20002</td><td style="text-align: left">预留。             <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+<tr><td style="text-align: left">HUKS_TAG_ASYMMETRIC_PRIVATE_KEY_DATA</td><td style="text-align: left">HuksTagType.HUKS_TAG_TYPE_BYTES | 20003</td><td style="text-align: left">预留。         <br> <strong>系统能力：</strong> SystemCapability.Security.Huks.Extension</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getvalue"><a class="header" href="#func-getvalue">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): UInt32
+</code></pre>
+<p>获取HuksTag对应的UInt32值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">UInt32</td><td style="text-align: left">返回HuksTag对应的UInt32值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="static-func-parseuint32"><a class="header" href="#static-func-parseuint32">static func parse(UInt32)</a></h3>
+<pre><code class="language-cangjie">public static func parse(val: UInt32): HuksTag
+</code></pre>
+<p>通过UInt32值构造一个HuksTag。</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">val</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">需要构造的HuksTag对应的UInt32值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">HuksTag</td><td style="text-align: left">返回一个通过UInt32值构造的HuksTag。</td></tr>
+</tbody></table>
+</div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/apis/cj-apis-crypto.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-user-auth.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/apis/cj-apis-crypto.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-user-auth.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

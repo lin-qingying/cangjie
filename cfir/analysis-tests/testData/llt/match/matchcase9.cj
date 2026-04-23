@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
-
 // All branch of match should be Option<ToString>
 func foo(): Option<ToString> {
     let sub: ToString = 1

@@ -64,7 +64,7 @@ internal sealed class FileStructureElementDiagnosticRetriever(
         declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
 
         val declarationContainer = when (declaration) {
-            is CfirFile, is CfirClass -> declaration
+            is CfirFile, is CfirClass, is CfirExtend -> declaration
             else -> return
         }
 

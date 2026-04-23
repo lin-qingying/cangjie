@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 main(): Int64 {
     if (foo<Int64>(1) != 3) {
         return 1
@@ -13,7 +11,7 @@ main(): Int64 {
     return 0
 }
 
-func foo<T>(x: T): Int32 where T <: Int64 {
+func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>(x: T): Int32 where T <: Int64 {
     return x.n + x.m
 }
 
@@ -29,14 +27,3 @@ extend Int64 {
         }
     }
 }
-
-/* SCAN
-error: the upper bound 'Int64' of generic parameter 'Generics-T' must be class or interface
-  ==> extend_property14.cj:16:10:
-   | 
-16 | func foo<T>(x: T): Int32 where T <: Int64 {
-   |          ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

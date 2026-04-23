@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 func f(c: Bool) {
     let a: Int64
     if (c) {
@@ -16,20 +14,9 @@ func f(c: Bool) {
     } else {
         a = 2
     }
-    return a
+    return <!USED_BEFORE_INITIALIZATION!>a<!>
 }
 
 main() {
     f(true) - 1
 }
-
-/* SCAN
-error: variable 'a' is used before initialization
-  ==> variable_assignment_terminated_04.cj:19:12:
-   | 
-19 |     return a
-   |            ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

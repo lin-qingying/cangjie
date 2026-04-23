@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 let i: Int32 = 10
 var lmda1 = {
     x: Int32 =>
@@ -14,20 +12,9 @@ var lmda1 = {
 }
 
 main(): Int64 {
-    var res1: Int64 = lmda1(3)
+    var res1: Int64 = <!TYPE_MISMATCH!>lmda1(3)<!>
     if (res1 != 30) {
         return 1
     }
     return 0
 }
-
-/* SCAN
-error: mismatched types
-  ==> lambda02.cj:17:23:
-   | 
-17 |     var res1: Int64 = lmda1(3)
-   |                       ^^^^^^^^ expected 'Int64', found 'Int32'
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f
-
 public interface INumber<T> {
     static prop size: Int
     static prop diff: Int

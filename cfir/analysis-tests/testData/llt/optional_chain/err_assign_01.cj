@@ -4,25 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct A {
     var b: Int64 = 0
 }
 
 main() {
     var a: ?A = A()
-    a?.b = 9
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a?.b<!> = 9
     return
 }
-
-/* SCAN
-error: cannot assign to immutable value
-  ==> err_assign_01.cj:15:5:
-   | 
-15 |     a?.b = 9
-   |     ^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

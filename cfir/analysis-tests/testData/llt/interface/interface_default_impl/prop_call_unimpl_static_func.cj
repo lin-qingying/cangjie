@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-PIPE: %run %run_opt %output %run_args | compare %f
-// ASSERT: scan set 10
-// ASSERT: scan pass
-
 interface I {
     static func foo(): Int64
     static func foo(a: Int64): Int64

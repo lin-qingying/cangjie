@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt -Woff unused %f -o %output
-// EXEC: %run %run_opt %output %run_args
 
 func app<T, R>(f: (T) -> R, arg: T) {
     f(arg)

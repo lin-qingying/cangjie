@@ -1,0 +1,99 @@
+.content p {
+    line-height: 1.8em; /*增大正文默认行距*/
+}
+
+.nav-wide-wrapper {
+    display: none; /*不显示侧边的页面切换按钮*/
+}
+
+.nav-wrapper {
+    display: none !important; /*不显示顶部的页面切换按钮*/
+}
+
+@media only screen and (max-width:1199px) {
+    .sidetoc {
+        display: none;
+    }
+}
+
+@media only screen and (min-width:1200px) {
+    main {
+        position: relative;
+        float: left;
+        width: 67%;
+    }
+    .content main {
+        margin-left: 8%;
+        max-width: none;
+    }
+
+    .sidetoc {
+        margin-left: 20px;
+        float: left;
+    }
+    .pagetoc {
+        position: fixed;
+        min-width: 200px;
+        max-width: 300px;
+        padding-top: 20px;
+        width: 20%;
+        font-size: 90%;
+        height: calc(100vh - var(--menu-bar-height) - 0.67em * 4);
+        overflow: auto;
+    }
+    .pagetoc a {
+        border-left: 1px solid var(--sidebar-bg);
+        color: var(--fg) !important;
+        display: block;
+        padding-bottom: 5px;
+        padding-top: 5px;
+        padding-left: 10px;
+        text-align: left;
+        text-decoration: none;
+    }
+    .pagetoc a:hover,
+    .pagetoc a.active {
+        background: var(--sidebar-bg);
+        color: var(--sidebar-fg) !important;
+    }
+    .pagetoc .active {
+        background: var(--sidebar-bg);
+        color: var(--sidebar-fg);
+    }
+    .pagetoc a.H1 {
+        padding-left: 1rem;
+        font-size: 1.5rem;
+    }
+    .pagetoc a.H2 {
+        padding-left: 3rem;
+        font-size: 1.5rem;
+    }
+    .pagetoc a.H3 {
+        padding-left: 5rem;
+        font-size: 1.4rem;
+    }
+    .pagetoc a.H4 {
+        padding-left: 7rem;
+        font-size: 1.3rem;
+    }
+    .pagetoc a.H5 {
+        padding-left: 9rem;
+        font-size: 1.3rem;
+    }
+    .table-wrapper table {
+        width: 100%;
+    }
+}
+.chapter li {
+    text-decoration: none;
+    color: var(--sidebar-fg);
+}
+.chapter li:hover {
+    color: var(--sidebar-active);
+    cursor: pointer;
+}
+@media print {
+    .sidetoc {
+        display: none;
+    }
+}

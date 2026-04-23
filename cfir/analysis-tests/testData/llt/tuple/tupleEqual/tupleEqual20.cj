@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-1: %compiler %cmp_opt %f -o %output
-
 main(): Int64 {
     var l = (1,1.*)
     var r = (2,2)

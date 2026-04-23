@@ -388,6 +388,12 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/function")
         }
 
+        @TestMetadata("bodyReturnInference.cj")
+        @Test
+        fun testBodyReturnInference() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/function/bodyReturnInference.cj")
+        }
+
         @TestMetadata("funcArg.cj")
         @Test
         fun testFuncArg() {

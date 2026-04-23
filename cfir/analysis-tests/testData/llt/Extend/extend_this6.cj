@@ -4,12 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 class A {
     func foo() {
-        this.bar() // error
-        bar() // error
+        this.<!NOT_MEMBER_OF!>bar<!>() // error
+        <!UNRESOLVED_REFERENCE!>bar<!>() // error
     }
 }
 
@@ -19,8 +17,8 @@ extend A {
 
 struct S {
     func foo() {
-        this.bar() // error
-        bar() // error
+        this.<!NOT_MEMBER_OF!>bar<!>() // error
+        <!UNRESOLVED_REFERENCE!>bar<!>() // error
     }
 }
 
@@ -32,8 +30,8 @@ enum E {
     EE
 
     func foo() {
-        this.bar() // error
-        bar() // error
+        this.<!NOT_MEMBER_OF!>bar<!>() // error
+        <!UNRESOLVED_REFERENCE!>bar<!>() // error
     }
 }
 
@@ -42,49 +40,3 @@ extend E {
 }
 
 main() {}
-
-/* SCAN
-error: 'bar' is not a member of class 'A'
-  ==> extend_this6.cj:11:14:
-   | 
-11 |         this.bar() // error
-   |              ^^^ 
-   | 
-
-error: undeclared identifier 'bar'
-  ==> extend_this6.cj:12:9:
-   | 
-12 |         bar() // error
-   |         ^ 
-   | 
-
-error: 'bar' is not a member of struct 'S'
-  ==> extend_this6.cj:22:14:
-   | 
-22 |         this.bar() // error
-   |              ^^^ 
-   | 
-
-error: undeclared identifier 'bar'
-  ==> extend_this6.cj:23:9:
-   | 
-23 |         bar() // error
-   |         ^ 
-   | 
-
-error: 'bar' is not a member of enum 'E'
-  ==> extend_this6.cj:35:14:
-   | 
-35 |         this.bar() // error
-   |              ^^^ 
-   | 
-
-error: undeclared identifier 'bar'
-  ==> extend_this6.cj:36:9:
-   | 
-36 |         bar() // error
-   |         ^ 
-   | 
-
-6 errors generated, 6 errors printed.
-*/

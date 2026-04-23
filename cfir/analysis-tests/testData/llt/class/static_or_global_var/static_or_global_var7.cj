@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 class A {
     static init() {
         C.fun()
@@ -19,13 +17,11 @@ func getNum() {
 class C {
     static let NUM = getNum()
     public static func fun(): Int64 {
-        println(NUM)
-        NUM
+        println(<!USED_BEFORE_INITIALIZATION!>NUM<!>)
+        <!USED_BEFORE_INITIALIZATION!>NUM<!>
     }
 }
 
 main(): Int64 {
     0
 }
-
-// ASSERT: scan global/static variable 'NUM' is used before initialization during initializing 'A.init'

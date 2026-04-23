@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f %overflowOpt -o %output
-// RUN-EXEC-PIPE-0: %run %run_opt %output %run_args | compare %f
-
-// ASSERT: scan Int64
-
 import std.reflect.TypeInfo
 
 interface I<T> {

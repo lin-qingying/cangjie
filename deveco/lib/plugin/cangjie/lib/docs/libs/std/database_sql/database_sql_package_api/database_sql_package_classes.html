@@ -1,0 +1,1573 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>类 - 仓颉编程语言库 API</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../assets/style.css">
+        <link rel="stylesheet" href="../../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../libs_overview_ohos.html"><strong aria-hidden="true">1.</strong> 仓颉编程语言库 API</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../std/std_module_overview_ohos.html"><strong aria-hidden="true">1.1.</strong> std 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_overview.html"><strong aria-hidden="true">1.1.1.</strong> std.core 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_funcs.html"><strong aria-hidden="true">1.1.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_types.html"><strong aria-hidden="true">1.1.1.2.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_intrinsics.html"><strong aria-hidden="true">1.1.1.3.</strong> 内置类型</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_interfaces.html"><strong aria-hidden="true">1.1.1.4.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_classes.html"><strong aria-hidden="true">1.1.1.5.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_enums.html"><strong aria-hidden="true">1.1.1.6.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_structs.html"><strong aria-hidden="true">1.1.1.7.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_exceptions.html"><strong aria-hidden="true">1.1.1.8.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.1.9.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_samples/core_spawn_sample.html"><strong aria-hidden="true">1.1.1.9.1.</strong> 仓颉并发编程示例</a></li><li class="chapter-item "><a href="../../../std/core/core_samples/core_cstring_sample.html"><strong aria-hidden="true">1.1.1.9.2.</strong> 使用 CString 与 C 代码交互示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/argopt/argopt_package_overview.html"><strong aria-hidden="true">1.1.2.</strong> std.argopt 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_package_api/argopt_package_classes.html"><strong aria-hidden="true">1.1.2.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/long_argument_parse.html"><strong aria-hidden="true">1.1.2.2.1.</strong> 长命令行参数解析</a></li><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/short_argument_parse.html"><strong aria-hidden="true">1.1.2.2.2.</strong> 短命令行参数解析</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/ast/ast_package_overview.html"><strong aria-hidden="true">1.1.3.</strong> std.ast 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_funcs.html"><strong aria-hidden="true">1.1.3.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_interfaces.html"><strong aria-hidden="true">1.1.3.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_classes.html"><strong aria-hidden="true">1.1.3.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_enums.html"><strong aria-hidden="true">1.1.3.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_structs.html"><strong aria-hidden="true">1.1.3.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_exceptions.html"><strong aria-hidden="true">1.1.3.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.3.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_samples/context.html"><strong aria-hidden="true">1.1.3.7.1.</strong> Macro With Context</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/dump.html"><strong aria-hidden="true">1.1.3.7.2.</strong> 语法树节点打印</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/operate.html"><strong aria-hidden="true">1.1.3.7.3.</strong> 操作 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/parse.html"><strong aria-hidden="true">1.1.3.7.4.</strong> 将仓颉源码解析为 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/report.html"><strong aria-hidden="true">1.1.3.7.5.</strong> 自定义报错接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/traverse.html"><strong aria-hidden="true">1.1.3.7.6.</strong> 自定义访问函数遍历 AST 对象示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/binary/binary_package_overview.html"><strong aria-hidden="true">1.1.4.</strong> std.binary 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/binary/binary_package_api/binary_package_interfaces.html"><strong aria-hidden="true">1.1.4.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/collection/collection_package_overview.html"><strong aria-hidden="true">1.1.5.</strong> std.collection 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_function.html"><strong aria-hidden="true">1.1.5.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_interface.html"><strong aria-hidden="true">1.1.5.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_class.html"><strong aria-hidden="true">1.1.5.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/colleciton_package_struct.html"><strong aria-hidden="true">1.1.5.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_exception.html"><strong aria-hidden="true">1.1.5.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.5.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_append_insert.html"><strong aria-hidden="true">1.1.5.6.1.</strong> ArrayList 的 append/insert 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_get_set.html"><strong aria-hidden="true">1.1.5.6.2.</strong> ArrayList 的 get/set 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_remove_clear_slice.html"><strong aria-hidden="true">1.1.5.6.3.</strong> ArrayList 的 remove/clear/slice 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_get_put_contains.html"><strong aria-hidden="true">1.1.5.6.4.</strong> Hashmap 的 get/put/contains 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_putall_remove_clear.html"><strong aria-hidden="true">1.1.5.6.5.</strong> HashMap 的 putAll/remove/clear 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashset_put_iterator_remove.html"><strong aria-hidden="true">1.1.5.6.6.</strong> HashSet 的 put/iterator/remove 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_iterator.html"><strong aria-hidden="true">1.1.5.6.7.</strong> 迭代器操作函数</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_overview.html"><strong aria-hidden="true">1.1.6.</strong> std.collection.concurrent 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_interface.html"><strong aria-hidden="true">1.1.6.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_class.html"><strong aria-hidden="true">1.1.6.2.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.6.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_concurrenthashmap.html"><strong aria-hidden="true">1.1.6.3.1.</strong> ConcurrentHashMap 使用示例</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_noblocking_queue.html"><strong aria-hidden="true">1.1.6.3.2.</strong> NonBlockingQueue 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/console/console_package_overview.html"><strong aria-hidden="true">1.1.7.</strong> std.console 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_package_api/console_package_class.html"><strong aria-hidden="true">1.1.7.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.7.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_samples/console_sample.html"><strong aria-hidden="true">1.1.7.2.1.</strong> Console 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/convert/convert_package_overview.html"><strong aria-hidden="true">1.1.8.</strong> std.convert 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_package_api/convert_package_interfaces.html"><strong aria-hidden="true">1.1.8.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.8.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_samples/convert_samples.html"><strong aria-hidden="true">1.1.8.2.1.</strong> covert 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_overview.html"><strong aria-hidden="true">1.1.9.</strong> std.crypto.cipher 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_api/cipher_package_interfaces.html"><strong aria-hidden="true">1.1.9.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_overview.html"><strong aria-hidden="true">1.1.10.</strong> std.crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_funcs.html"><strong aria-hidden="true">1.1.10.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_interfaces.html"><strong aria-hidden="true">1.1.10.2.</strong> 接口</a></li></ol></li><li class="chapter-item expanded "><a href="../../../std/database_sql/database_sql_package_overview.html"><strong aria-hidden="true">1.1.11.</strong> std.database.sql 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html"><strong aria-hidden="true">1.1.11.1.</strong> 接口</a></li><li class="chapter-item expanded "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_classes.html" class="active"><strong aria-hidden="true">1.1.11.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html"><strong aria-hidden="true">1.1.11.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_exceptions.html"><strong aria-hidden="true">1.1.11.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.11.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_driver.html"><strong aria-hidden="true">1.1.11.5.1.</strong> 实现数据库驱动查询功能示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_get_connection.html"><strong aria-hidden="true">1.1.11.5.2.</strong> 获取数据库连接示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_modify_table.html"><strong aria-hidden="true">1.1.11.5.3.</strong> 删除表、创建表示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_operations.html"><strong aria-hidden="true">1.1.11.5.4.</strong> 执行数据库操作语句示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_transactions.html"><strong aria-hidden="true">1.1.11.5.5.</strong> 执行事务控制语句示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/format/format_package_overview.html"><strong aria-hidden="true">1.1.12.</strong> std.format 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_package_api/format_package_interfaces.html"><strong aria-hidden="true">1.1.12.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.12.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_samples/format_samples.html"><strong aria-hidden="true">1.1.12.2.1.</strong> format 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/fs/fs_package_overview.html"><strong aria-hidden="true">1.1.13.</strong> std.fs 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_classes.html"><strong aria-hidden="true">1.1.13.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_enums.html"><strong aria-hidden="true">1.1.13.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_structs.html"><strong aria-hidden="true">1.1.13.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_exceptions.html"><strong aria-hidden="true">1.1.13.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.13.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_samples/directory_samples.html"><strong aria-hidden="true">1.1.13.5.1.</strong> Directory 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/file_samples.html"><strong aria-hidden="true">1.1.13.5.2.</strong> File 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/fileinfo_samples.html"><strong aria-hidden="true">1.1.13.5.3.</strong> FileInfo 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/path_samples.html"><strong aria-hidden="true">1.1.13.5.4.</strong> Path 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/io/io_package_overview.html"><strong aria-hidden="true">1.1.14.</strong> std.io 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_interfaces.html"><strong aria-hidden="true">1.1.14.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_classes.html"><strong aria-hidden="true">1.1.14.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_enums.html"><strong aria-hidden="true">1.1.14.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_exceptions.html"><strong aria-hidden="true">1.1.14.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.14.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_input_stream.html"><strong aria-hidden="true">1.1.14.5.1.</strong> BufferedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_output_stream.html"><strong aria-hidden="true">1.1.14.5.2.</strong> BufferedOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/byte_array_stream.html"><strong aria-hidden="true">1.1.14.5.3.</strong> ByteArrayStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/chained_input_stream.html"><strong aria-hidden="true">1.1.14.5.4.</strong> ChainedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/multi_output_stream.html"><strong aria-hidden="true">1.1.14.5.5.</strong> MultiOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_reader.html"><strong aria-hidden="true">1.1.14.5.6.</strong> StringReader 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_writer.html"><strong aria-hidden="true">1.1.14.5.7.</strong> StringWriter 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_overview.html"><strong aria-hidden="true">1.1.15.</strong> std.log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_interfaces.html"><strong aria-hidden="true">1.1.15.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_classes.html"><strong aria-hidden="true">1.1.15.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_enums.html"><strong aria-hidden="true">1.1.15.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.15.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_samples/stdlog_sample.html"><strong aria-hidden="true">1.1.15.4.1.</strong> 日志打印示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math/math_package_overview.html"><strong aria-hidden="true">1.1.16.</strong> std.math 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_funcs.html"><strong aria-hidden="true">1.1.16.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_interfaces.html"><strong aria-hidden="true">1.1.16.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_enums.html"><strong aria-hidden="true">1.1.16.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.16.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_samples/math_basic_operation.html"><strong aria-hidden="true">1.1.16.4.1.</strong> 数学基础运算示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_overview.html"><strong aria-hidden="true">1.1.17.</strong> std.math.numeric 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_funcs.html"><strong aria-hidden="true">1.1.17.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html"><strong aria-hidden="true">1.1.17.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_structs.html"><strong aria-hidden="true">1.1.17.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.17.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.1.</strong> BigInt 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_prop.html"><strong aria-hidden="true">1.1.17.4.2.</strong> BigInt 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_compare_opration.html"><strong aria-hidden="true">1.1.17.4.3.</strong> BigInt 大小比较示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.4.</strong> Decimal 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_prop.html"><strong aria-hidden="true">1.1.17.4.5.</strong> Decimal 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_compare_opration.html"><strong aria-hidden="true">1.1.17.4.6.</strong> Decimal 大小比较示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_overview.html"><strong aria-hidden="true">1.1.18.</strong> std.objectpool 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_api/objectpool_package_classes.html"><strong aria-hidden="true">1.1.18.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/os/os_package_overview.html"><strong aria-hidden="true">1.1.19.</strong> std.os 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os/os_package_api/os_package_funcs.html"><strong aria-hidden="true">1.1.19.1.</strong> 函数</a></li></ol></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_overview.html"><strong aria-hidden="true">1.1.20.</strong> std.os.posix 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_constants_vars.html"><strong aria-hidden="true">1.1.20.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_funcs.html"><strong aria-hidden="true">1.1.20.2.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.20.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_content_samples.html"><strong aria-hidden="true">1.1.20.3.1.</strong> 文件内容相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_info_samples.html"><strong aria-hidden="true">1.1.20.3.2.</strong> 文件信息相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_os_envinfo_samples.html"><strong aria-hidden="true">1.1.20.3.3.</strong> 获取各类系统信息</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_process_samples.html"><strong aria-hidden="true">1.1.20.3.4.</strong> 进程相关信息操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_overview.html"><strong aria-hidden="true">1.1.21.</strong> std.os.process 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_classes.html"><strong aria-hidden="true">1.1.21.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_enums.html"><strong aria-hidden="true">1.1.21.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_exceptions.html"><strong aria-hidden="true">1.1.21.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.21.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_currentprocess_sample.html"><strong aria-hidden="true">1.1.21.4.1.</strong> 当前进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_rm_file_win_platform_sample.html"><strong aria-hidden="true">1.1.21.4.2.</strong> Windows 平台子进程结束后删除子进程可执行文件</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_sample.html"><strong aria-hidden="true">1.1.21.4.3.</strong> 任意进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_subprocess_sample.html"><strong aria-hidden="true">1.1.21.4.4.</strong> 子进程相关操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_overview.html"><strong aria-hidden="true">1.1.22.</strong> std.overflow 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_interfaces.html"><strong aria-hidden="true">1.1.22.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_exceptions.html"><strong aria-hidden="true">1.1.22.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.22.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/option.html"><strong aria-hidden="true">1.1.22.3.1.</strong> 返回 Option 策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/saturating.html"><strong aria-hidden="true">1.1.22.3.2.</strong> 饱和策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/throwing.html"><strong aria-hidden="true">1.1.22.3.3.</strong> 抛出异常策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/wrapping.html"><strong aria-hidden="true">1.1.22.3.4.</strong> 高位截断策略的示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/random/random_package_overview.html"><strong aria-hidden="true">1.1.23.</strong> std.random 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/random/random_package_api/random_package_classes.html"><strong aria-hidden="true">1.1.23.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/regex/regex_package_overview.html"><strong aria-hidden="true">1.1.24.</strong> std.regex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_classes.html"><strong aria-hidden="true">1.1.24.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_structs.html"><strong aria-hidden="true">1.1.24.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_exceptions.html"><strong aria-hidden="true">1.1.24.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.24.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_samples/regex_sample.html"><strong aria-hidden="true">1.1.24.4.1.</strong> Regex 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_overview.html"><strong aria-hidden="true">1.1.25.</strong> std.runtime 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_funcs.html"><strong aria-hidden="true">1.1.25.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_structs.html"><strong aria-hidden="true">1.1.25.2.</strong> 结构体</a></li></ol></li><li class="chapter-item "><a href="../../../std/socket/socket_package_overview.html"><strong aria-hidden="true">1.1.26.</strong> std.socket 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_constants_vars.html"><strong aria-hidden="true">1.1.26.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_interfaces.html"><strong aria-hidden="true">1.1.26.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_classes.html"><strong aria-hidden="true">1.1.26.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_enums.html"><strong aria-hidden="true">1.1.26.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_structs.html"><strong aria-hidden="true">1.1.26.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_exceptions.html"><strong aria-hidden="true">1.1.26.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.26.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_samples/socket_option.html"><strong aria-hidden="true">1.1.26.7.1.</strong> 属性配置使用用例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/tcp.html"><strong aria-hidden="true">1.1.26.7.2.</strong> TCP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/udp.html"><strong aria-hidden="true">1.1.26.7.3.</strong> UDP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix.html"><strong aria-hidden="true">1.1.26.7.4.</strong> UNIX 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix_datagram.html"><strong aria-hidden="true">1.1.26.7.5.</strong> UnixDatagram 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sort/sort_package_overview.html"><strong aria-hidden="true">1.1.27.</strong> std.sort 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_funcs.html"><strong aria-hidden="true">1.1.27.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_interfaces.html"><strong aria-hidden="true">1.1.27.2.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.27.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_samples/sort_sample_array.html"><strong aria-hidden="true">1.1.27.3.1.</strong> 对 Array 进行排序</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sync/sync_package_overview.html"><strong aria-hidden="true">1.1.28.</strong> std.sync 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_constants_vars.html"><strong aria-hidden="true">1.1.28.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_funcs.html"><strong aria-hidden="true">1.1.28.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_interfaces.html"><strong aria-hidden="true">1.1.28.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_classes.html"><strong aria-hidden="true">1.1.28.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_enums.html"><strong aria-hidden="true">1.1.28.5.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_structs.html"><strong aria-hidden="true">1.1.28.6.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_exceptions.html"><strong aria-hidden="true">1.1.28.7.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.28.8.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_samples/sync_samples.html"><strong aria-hidden="true">1.1.28.8.1.</strong> 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/time/time_package_overview.html"><strong aria-hidden="true">1.1.29.</strong> std.time 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_interfaces.html"><strong aria-hidden="true">1.1.29.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_classes.html"><strong aria-hidden="true">1.1.29.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_enums.html"><strong aria-hidden="true">1.1.29.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_structs.html"><strong aria-hidden="true">1.1.29.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_exceptions.html"><strong aria-hidden="true">1.1.29.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.29.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_compare.html"><strong aria-hidden="true">1.1.29.6.1.</strong> DateTime 比较</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_parse.html"><strong aria-hidden="true">1.1.29.6.2.</strong> DateTime 与 String 类型的转换</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_prop.html"><strong aria-hidden="true">1.1.29.6.3.</strong> 获取日期时间信息</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_tz.html"><strong aria-hidden="true">1.1.29.6.4.</strong> 同一时间在不同时区的本地时间</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/monotime_test.html"><strong aria-hidden="true">1.1.29.6.5.</strong> 利用 MonoTime 作计时</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unicode/unicode_package_overview.html"><strong aria-hidden="true">1.1.30.</strong> std.unicode 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unicode/unicode_package_api/unicode_package_interfaces.html"><strong aria-hidden="true">1.1.30.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_overview.html"><strong aria-hidden="true">1.1.31.</strong> std.unittest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_functions.html"><strong aria-hidden="true">1.1.31.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html"><strong aria-hidden="true">1.1.31.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_classes.html"><strong aria-hidden="true">1.1.31.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_enums.html"><strong aria-hidden="true">1.1.31.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_structs.html"><strong aria-hidden="true">1.1.31.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_exceptions.html"><strong aria-hidden="true">1.1.31.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.31.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_getting_started.html"><strong aria-hidden="true">1.1.31.7.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_basics.html"><strong aria-hidden="true">1.1.31.7.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_parameterized_tests.html"><strong aria-hidden="true">1.1.31.7.3.</strong> 参数化测试</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_dynamic_tests.html"><strong aria-hidden="true">1.1.31.7.4.</strong> 动态测试</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_overview.html"><strong aria-hidden="true">1.1.32.</strong> std.unittest.mock 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_functions.html"><strong aria-hidden="true">1.1.32.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_interfaces.html"><strong aria-hidden="true">1.1.32.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_classes.html"><strong aria-hidden="true">1.1.32.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_enums.html"><strong aria-hidden="true">1.1.32.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_exceptions.html"><strong aria-hidden="true">1.1.32.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.32.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_getting_started.html"><strong aria-hidden="true">1.1.32.6.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_basics.html"><strong aria-hidden="true">1.1.32.6.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_stubs.html"><strong aria-hidden="true">1.1.32.6.3.</strong> 桩</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_verification.html"><strong aria-hidden="true">1.1.32.6.4.</strong> 验证</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_overview.html"><strong aria-hidden="true">1.1.33.</strong> std.unittest.mock.mockmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_api/unittest_mock_mockmacro_package_macros.html"><strong aria-hidden="true">1.1.33.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_overview.html"><strong aria-hidden="true">1.1.34.</strong> std.unittest.testmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html"><strong aria-hidden="true">1.1.34.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_overview.html"><strong aria-hidden="true">1.1.35.</strong> std.unittest.common 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_functions.html"><strong aria-hidden="true">1.1.35.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html"><strong aria-hidden="true">1.1.35.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_classes.html"><strong aria-hidden="true">1.1.35.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_enums.html"><strong aria-hidden="true">1.1.35.4.</strong> 枚举</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_overview.html"><strong aria-hidden="true">1.1.36.</strong> unittest.diff</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_api/unittest_diff_package_interfaces.html"><strong aria-hidden="true">1.1.36.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_overview.html"><strong aria-hidden="true">1.1.37.</strong> unittest.prop_test</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_functions.html"><strong aria-hidden="true">1.1.37.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html"><strong aria-hidden="true">1.1.37.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_classes.html"><strong aria-hidden="true">1.1.37.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_structs.html"><strong aria-hidden="true">1.1.37.4.</strong> 结构体</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../compress/compress_module_overview.html"><strong aria-hidden="true">1.2.</strong> compress 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_overview.html"><strong aria-hidden="true">1.2.1.</strong> compress.zlib 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_classes.html"><strong aria-hidden="true">1.2.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_enums.html"><strong aria-hidden="true">1.2.1.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_exceptions.html"><strong aria-hidden="true">1.2.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.2.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/deflate_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.1.</strong> Deflate 格式数据的压缩和解压</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/gzip_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.2.</strong> Gzip 格式数据的压缩和解压</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/crypto_module_overview.html"><strong aria-hidden="true">1.3.</strong> crypto 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_overview.html"><strong aria-hidden="true">1.3.1.</strong> crypto.crypto 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_classes.html"><strong aria-hidden="true">1.3.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_structs.html"><strong aria-hidden="true">1.3.1.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_exceptions.html"><strong aria-hidden="true">1.3.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_secure_random.html"><strong aria-hidden="true">1.3.1.4.1.</strong> SecureRandom 使用</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_crypto.html"><strong aria-hidden="true">1.3.1.4.2.</strong> SM4 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/digest/crypto_digest_package_overview.html"><strong aria-hidden="true">1.3.2.</strong> crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_classes.html"><strong aria-hidden="true">1.3.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_structs.html"><strong aria-hidden="true">1.3.2.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_exceptions.html"><strong aria-hidden="true">1.3.2.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.2.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_samples/sample_digest.html"><strong aria-hidden="true">1.3.2.4.1.</strong> digest 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_overview.html"><strong aria-hidden="true">1.3.3.</strong> crypto.keys 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_classes.html"><strong aria-hidden="true">1.3.3.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_enums.html"><strong aria-hidden="true">1.3.3.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_structs.html"><strong aria-hidden="true">1.3.3.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.3.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_samples/sample_keys.html"><strong aria-hidden="true">1.3.3.4.1.</strong> keys 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_overview.html"><strong aria-hidden="true">1.3.4.</strong> crypto.x509 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_type.html"><strong aria-hidden="true">1.3.4.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_interfaces.html"><strong aria-hidden="true">1.3.4.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_classes.html"><strong aria-hidden="true">1.3.4.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_enums.html"><strong aria-hidden="true">1.3.4.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_structs.html"><strong aria-hidden="true">1.3.4.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_exceptions.html"><strong aria-hidden="true">1.3.4.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.4.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_samples/sample_x509.html"><strong aria-hidden="true">1.3.4.7.1.</strong> x509 使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/encoding_module_overview.html"><strong aria-hidden="true">1.4.</strong> encoding 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_overview.html"><strong aria-hidden="true">1.4.1.</strong> encoding.base64 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_api/base64_package_funcs.html"><strong aria-hidden="true">1.4.1.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.1.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_samples/base64.html"><strong aria-hidden="true">1.4.1.2.1.</strong> Byte 数组和 Base64 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/hex/hex_package_overview.html"><strong aria-hidden="true">1.4.2.</strong> encoding.hex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_package_api/hex_package_funcs.html"><strong aria-hidden="true">1.4.2.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_samples/hex.html"><strong aria-hidden="true">1.4.2.2.1.</strong> Byte 数组和 Hex 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json/json_package_overview.html"><strong aria-hidden="true">1.4.3.</strong> encoding.json 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html"><strong aria-hidden="true">1.4.3.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_classes.html"><strong aria-hidden="true">1.4.3.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_enums.html"><strong aria-hidden="true">1.4.3.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_exceptions.html"><strong aria-hidden="true">1.4.3.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.3.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_array_sample.html"><strong aria-hidden="true">1.4.3.5.1.</strong> JsonArray 使用示例</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_value_sample.html"><strong aria-hidden="true">1.4.3.5.2.</strong> JsonValue 和 String 互相转换</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/to_json_sample.html"><strong aria-hidden="true">1.4.3.5.3.</strong> JsonValue 与 DataModel 的转换</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_overview.html"><strong aria-hidden="true">1.4.4.</strong> encoding.json.stream 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_interfaces.html"><strong aria-hidden="true">1.4.4.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_classes.html"><strong aria-hidden="true">1.4.4.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_enums.html"><strong aria-hidden="true">1.4.4.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_structs.html"><strong aria-hidden="true">1.4.4.4.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.4.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_reader.html"><strong aria-hidden="true">1.4.4.5.1.</strong> 使用 Json Stream 进行反序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writer.html"><strong aria-hidden="true">1.4.4.5.2.</strong> 使用 Json Stream 进行序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writeconfig.html"><strong aria-hidden="true">1.4.4.5.3.</strong> WriteConfig 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/url/url_package_overview.html"><strong aria-hidden="true">1.4.5.</strong> encoding.url 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_classes.html"><strong aria-hidden="true">1.4.5.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_exceptions.html"><strong aria-hidden="true">1.4.5.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.5.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_samples/form.html"><strong aria-hidden="true">1.4.5.3.1.</strong> Form 的构造使用</a></li><li class="chapter-item "><a href="../../../encoding/url/url_samples/url_parse.html"><strong aria-hidden="true">1.4.5.3.2.</strong> URL 解析函数 parse 的使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../fuzz/fuzz_module_overview.html"><strong aria-hidden="true">1.5.</strong> fuzz 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_overview.html"><strong aria-hidden="true">1.5.1.</strong> fuzz.fuzz 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_constants_vars.html"><strong aria-hidden="true">1.5.1.1.</strong> 常量变量</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_classes.html"><strong aria-hidden="true">1.5.1.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_exceptions.html"><strong aria-hidden="true">1.5.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.5.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/basic_fuzzing_test.html"><strong aria-hidden="true">1.5.1.4.1.</strong> 测试猜测字符功能</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/dataprovider_usage.html"><strong aria-hidden="true">1.5.1.4.2.</strong> 使用 DataProvider 功能进行测试</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/fake_coverage_usage.html"><strong aria-hidden="true">1.5.1.4.3.</strong> 使用 FakeCoverage 避免 DataProvider 模式下 Fuzz 异常终止</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_cj-fuzz_usage.html"><strong aria-hidden="true">1.5.1.4.4.</strong> 打印 fuzz 使用方法</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_coverage.html"><strong aria-hidden="true">1.5.1.4.5.</strong> 实验性特性-覆盖率信息打印</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/stack_backtrace_missing_solution.html"><strong aria-hidden="true">1.5.1.4.6.</strong> 栈回溯缺失的处理方案</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../log/log_module_overview.html"><strong aria-hidden="true">1.6.</strong> log 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_overview.html"><strong aria-hidden="true">1.6.1.</strong> log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_types.html"><strong aria-hidden="true">1.6.1.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_funcs.html"><strong aria-hidden="true">1.6.1.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_interfaces.html"><strong aria-hidden="true">1.6.1.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_classes.html"><strong aria-hidden="true">1.6.1.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_structs.html"><strong aria-hidden="true">1.6.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_exceptions.html"><strong aria-hidden="true">1.6.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.6.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_samples/log_sample.html"><strong aria-hidden="true">1.6.1.7.1.</strong> 日志打印示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/net_module_overview.html"><strong aria-hidden="true">1.7.</strong> net 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_overview.html"><strong aria-hidden="true">1.7.1.</strong> net.http 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_funcs.html"><strong aria-hidden="true">1.7.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_interfaces.html"><strong aria-hidden="true">1.7.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_classes.html"><strong aria-hidden="true">1.7.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_enums.html"><strong aria-hidden="true">1.7.1.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_structs.html"><strong aria-hidden="true">1.7.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_exceptions.html"><strong aria-hidden="true">1.7.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_samples/http_client.html"><strong aria-hidden="true">1.7.1.7.1.</strong> client</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/cookie.html"><strong aria-hidden="true">1.7.1.7.2.</strong> cookie</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/log.html"><strong aria-hidden="true">1.7.1.7.3.</strong> log</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/http_server.html"><strong aria-hidden="true">1.7.1.7.4.</strong> server</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/webSocket.html"><strong aria-hidden="true">1.7.1.7.5.</strong> webSocket</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/tls/tls_package_overview.html"><strong aria-hidden="true">1.7.2.</strong> net.tls 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_classes.html"><strong aria-hidden="true">1.7.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_enums.html"><strong aria-hidden="true">1.7.2.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_structs.html"><strong aria-hidden="true">1.7.2.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_exceptions.html"><strong aria-hidden="true">1.7.2.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.2.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_samples/cert_key.html"><strong aria-hidden="true">1.7.2.5.1.</strong> 服务端证书及公钥在一份文件中</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/client.html"><strong aria-hidden="true">1.7.2.5.2.</strong> 客户端示例</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/hot_update_cert.html"><strong aria-hidden="true">1.7.2.5.3.</strong> 证书热更新</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/server.html"><strong aria-hidden="true">1.7.2.5.4.</strong> 服务端示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../serialization/serialization_module_overview.html"><strong aria-hidden="true">1.8.</strong> serialization 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_overview.html"><strong aria-hidden="true">1.8.1.</strong> serialization.serialization 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_functions.html"><strong aria-hidden="true">1.8.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_interfaces.html"><strong aria-hidden="true">1.8.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_classes.html"><strong aria-hidden="true">1.8.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_exceptions.html"><strong aria-hidden="true">1.8.1.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.8.1.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_and_deserialize_class.html"><strong aria-hidden="true">1.8.1.5.1.</strong> class 序列化和反序列化</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_hashmap_and_hashset.html"><strong aria-hidden="true">1.8.1.5.2.</strong> HashSet 和 HashMap 序列化</a></li></ol></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">仓颉编程语言库 API</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="类"><a class="header" href="#类">类</a></h1>
+<h2 id="class-drivermanager"><a class="header" href="#class-drivermanager">class DriverManager</a></h2>
+<pre><code class="language-cangjie">public class DriverManager
+</code></pre>
+<p>功能：支持运行时根据驱动名获取数据库驱动实例。</p>
+<h3 id="static-func-deregisterstring"><a class="header" href="#static-func-deregisterstring">static func deregister(String)</a></h3>
+<pre><code class="language-cangjie">public static func deregister(driverName: String): Unit
+</code></pre>
+<p>功能：按名称取消注册数据库驱动（如果存在）。本函数并发安全。</p>
+<p>参数：</p>
+<ul>
+<li>driverName: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 驱动名称。</li>
+</ul>
+<h3 id="static-func-drivers"><a class="header" href="#static-func-drivers">static func drivers()</a></h3>
+<pre><code class="language-cangjie">public static func drivers(): Array&lt;String&gt;
+</code></pre>
+<p>功能：返回已注册数据库驱动名称的列表(名称已按照字典序排序)。本方法并发安全。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a>&gt; - 数据库驱动名称的列表。</li>
+</ul>
+<h3 id="static-func-getdriverstring"><a class="header" href="#static-func-getdriverstring">static func getDriver(String)</a></h3>
+<pre><code class="language-cangjie">public static func getDriver(driverName: String): Option&lt;Driver&gt;
+</code></pre>
+<p>功能：按名称获取已注册的数据库驱动，如果不存在返回 <code>None</code>。本函数并发安全。</p>
+<p>参数：</p>
+<ul>
+<li>driverName: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 驱动名称。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_enums.html#enum-optiont">Option</a>&lt;<a href="database_sql_package_interfaces.html#interface-driver">Driver</a>&gt; - 若驱动存在返回 <a href="../../core/core_package_api/core_package_enums.html#enum-optiont">Option</a> 包装的驱动实例，否则返回 <code>None</code>。</li>
+</ul>
+<h3 id="static-func-registerstring-driver"><a class="header" href="#static-func-registerstring-driver">static func register(String, Driver)</a></h3>
+<pre><code class="language-cangjie">public static func register(driverName: String, driver: Driver): Unit
+</code></pre>
+<p>功能：按名称和驱动实例注册数据库驱动，名称和实例一一对应。本方法并发安全。</p>
+<p>参数：</p>
+<ul>
+<li>driverName: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 驱动名称。</li>
+<li>driver: <a href="database_sql_package_interfaces.html#interface-driver">Driver</a> - 驱动实例。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="database_sql_package_exceptions.html#class-sqlexception">SqlException</a> - 当名称重复已经被注册时，抛出异常。</li>
+</ul>
+<h2 id="class-pooleddatasource"><a class="header" href="#class-pooleddatasource">class PooledDatasource</a></h2>
+<pre><code class="language-cangjie">public class PooledDatasource &lt;: Datasource {
+    public init(datasource: Datasource)
+}
+</code></pre>
+<p>功能：数据库连接池类，提供数据库连接池能力。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-datasource">Datasource</a></li>
+</ul>
+<h3 id="prop-connectiontimeout"><a class="header" href="#prop-connectiontimeout">prop connectionTimeout</a></h3>
+<pre><code class="language-cangjie">public mut prop connectionTimeout: Duration
+</code></pre>
+<p>功能：从池中获取连接的超时时间。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a></p>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 当该属性被设置为 <a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a>.Max 或 <a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a>.Min 时，抛此异常。</li>
+<li><a href="database_sql_package_exceptions.html#class-sqlexception">SqlException</a> - 当超时后，抛出此异常。</li>
+</ul>
+<h3 id="prop-idletimeout"><a class="header" href="#prop-idletimeout">prop idleTimeout</a></h3>
+<pre><code class="language-cangjie">public mut prop idleTimeout: Duration
+</code></pre>
+<p>功能：允许连接在池中闲置的最长时间，超过这个时间的空闲连接可能会被回收。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="prop-keepalivetime"><a class="header" href="#prop-keepalivetime">prop keepaliveTime</a></h3>
+<pre><code class="language-cangjie">public mut prop keepaliveTime: Duration
+</code></pre>
+<p>功能：检查空闲连接健康状况的间隔时间，防止它被数据库或网络基础设施超时。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="prop-maxidlesize"><a class="header" href="#prop-maxidlesize">prop maxIdleSize</a></h3>
+<pre><code class="language-cangjie">public mut prop maxIdleSize: Int32
+</code></pre>
+<p>功能：最大空闲连接数量，超过这个数量的空闲连接会被关闭，负数或0表示无限制。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a></p>
+<h3 id="prop-maxlifetime"><a class="header" href="#prop-maxlifetime">prop maxLifeTime</a></h3>
+<pre><code class="language-cangjie">public mut prop maxLifeTime: Duration
+</code></pre>
+<p>功能：自连接创建以来的持续时间，在该持续时间之后，连接将自动关闭。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="prop-maxsize"><a class="header" href="#prop-maxsize">prop maxSize</a></h3>
+<pre><code class="language-cangjie">public mut prop maxSize: Int32
+</code></pre>
+<p>功能：连接池最大连接数量，负数或0表示无限制。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a></p>
+<h3 id="initdatasource"><a class="header" href="#initdatasource">init(DataSource)</a></h3>
+<pre><code class="language-cangjie">public init(datasource: Datasource)
+</code></pre>
+<p>功能：通过数据源 datasource 构造一个 <a href="database_sql_package_classes.html#class-pooleddatasource">PooledDatasource</a> 实例，入参必须为 <a href="database_sql_package_interfaces.html#interface-datasource">Datasource</a> 对象。</p>
+<p>参数：</p>
+<ul>
+<li>datasource: <a href="database_sql_package_interfaces.html#interface-datasource">Datasource</a> - 数据源。</li>
+</ul>
+<h3 id="func-close"><a class="header" href="#func-close">func close()</a></h3>
+<pre><code class="language-cangjie">public func close(): Unit
+</code></pre>
+<p>功能：关闭连接池中的所有连接并阻止其它连接请求。调用该方法会阻塞至所有连接关闭并归还到连接池。</p>
+<h3 id="func-connect"><a class="header" href="#func-connect">func connect()</a></h3>
+<pre><code class="language-cangjie">public func connect(): Connection
+</code></pre>
+<p>功能：获取一个连接。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="./database_sql_package_interfaces.html#interface-connection">Connection</a> - 获取到的连接。</li>
+</ul>
+<h3 id="func-isclosed"><a class="header" href="#func-isclosed">func isClosed()</a></h3>
+<pre><code class="language-cangjie">public func isClosed(): Bool
+</code></pre>
+<p>功能：判断连接是否关闭。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 连接是否关闭。</li>
+</ul>
+<h3 id="func-setoptionstring-string"><a class="header" href="#func-setoptionstring-string">func setOption(String, String)</a></h3>
+<pre><code class="language-cangjie">public func setOption(key: String, value: String): Unit
+</code></pre>
+<p>功能：设置数据库驱动连接选项（公钥在 <a href="database_sql_package_classes.html#class-sqloption">SqlOption</a> 中预定义）。</p>
+<p>参数：</p>
+<ul>
+<li>key: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 连接选项名称。</li>
+<li>value: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 连接选项的值。</li>
+</ul>
+<h2 id="class-sqlbigint"><a class="header" href="#class-sqlbigint">class SqlBigInt</a></h2>
+<pre><code class="language-cangjie">public class SqlBigInt &lt;: SqlDbType {
+    public init(v: Int64)
+}
+</code></pre>
+<p>功能：大整数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name"><a class="header" href="#prop-name">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlbigint">SqlBigInt</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value"><a class="header" href="#prop-value">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Int64
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="initint64"><a class="header" href="#initint64">init(Int64)</a></h3>
+<pre><code class="language-cangjie">public init(v: Int64)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlbigint">SqlBigInt</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlbinary"><a class="header" href="#class-sqlbinary">class SqlBinary</a></h2>
+<pre><code class="language-cangjie">public class SqlBinary &lt;: SqlDbType {
+    public init(v: Array&lt;Byte&gt;)
+}
+</code></pre>
+<p>功能：定长二进制字符串，对应仓颉 <a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-1"><a class="header" href="#prop-name-1">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlbinary">SqlBinary</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-1"><a class="header" href="#prop-value-1">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Array&lt;Byte&gt;
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt;</p>
+<h3 id="initarraybyte"><a class="header" href="#initarraybyte">init(Array&lt;Byte&gt;)</a></h3>
+<pre><code class="language-cangjie">public init(v: Array&lt;Byte&gt;)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlbinary">SqlBinary</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlblob"><a class="header" href="#class-sqlblob">class SqlBlob</a></h2>
+<pre><code class="language-cangjie">public class SqlBlob &lt;: SqlDbType {
+    public init(v: InputStream)
+}
+</code></pre>
+<p>功能：变长超大二进制字符串（BINARY LARGE OBJECT），对应仓颉 <a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-2"><a class="header" href="#prop-name-2">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlblob">SqlBlob</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-2"><a class="header" href="#prop-value-2">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: InputStream
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a></p>
+<h3 id="initinputstream"><a class="header" href="#initinputstream">init(InputStream)</a></h3>
+<pre><code class="language-cangjie">public init(v: InputStream)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlblob">SqlBlob</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlbool"><a class="header" href="#class-sqlbool">class SqlBool</a></h2>
+<pre><code class="language-cangjie">public class SqlBool &lt;: SqlDbType {
+    public init(v: Bool)
+}
+</code></pre>
+<p>功能：布尔类型，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-3"><a class="header" href="#prop-name-3">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlbool">SqlBool</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-3"><a class="header" href="#prop-value-3">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Bool
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a></p>
+<h3 id="initbool"><a class="header" href="#initbool">init(Bool)</a></h3>
+<pre><code class="language-cangjie">public init(v: Bool)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlbool">SqlBool</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlbyte"><a class="header" href="#class-sqlbyte">class SqlByte</a></h2>
+<pre><code class="language-cangjie">public class SqlByte &lt;: SqlDbType {
+    public init(v: Int8)
+}
+</code></pre>
+<p>功能：字节，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-4"><a class="header" href="#prop-name-4">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlbyte">SqlByte</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-4"><a class="header" href="#prop-value-4">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Int8
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a></p>
+<h3 id="initint8"><a class="header" href="#initint8">init(Int8)</a></h3>
+<pre><code class="language-cangjie">public init(v: Int8)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlbyte">SqlByte</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlchar"><a class="header" href="#class-sqlchar">class SqlChar</a></h2>
+<pre><code class="language-cangjie">public class SqlChar &lt;: SqlDbType {
+    public init(v: String)
+}
+</code></pre>
+<p>功能：定长字符串，对应仓颉 <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-5"><a class="header" href="#prop-name-5">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlchar">SqlChar</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-5"><a class="header" href="#prop-value-5">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: String
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="initstring"><a class="header" href="#initstring">init(String)</a></h3>
+<pre><code class="language-cangjie">public init(v: String)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlchar">SqlChar</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlclob"><a class="header" href="#class-sqlclob">class SqlClob</a></h2>
+<pre><code class="language-cangjie">public class SqlClob &lt;: SqlDbType {
+    public init(v: InputStream)
+}
+</code></pre>
+<p>功能：变长超大字符串（RUNE LARGE OBJECT），对应仓颉 <a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-6"><a class="header" href="#prop-name-6">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlclob">SqlClob</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-6"><a class="header" href="#prop-value-6">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: InputStream
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a></p>
+<h3 id="initinputstream-1"><a class="header" href="#initinputstream-1">init(InputStream)</a></h3>
+<pre><code class="language-cangjie">public init(v: InputStream)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlclob">SqlClob</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqldate"><a class="header" href="#class-sqldate">class SqlDate</a></h2>
+<pre><code class="language-cangjie">public class SqlDate &lt;: SqlDbType {
+    public init(v: DateTime)
+}
+</code></pre>
+<p>功能：日期，仅年月日有效，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-7"><a class="header" href="#prop-name-7">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqldate">SqlDate</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-7"><a class="header" href="#prop-value-7">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: DateTime
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="initdatetime"><a class="header" href="#initdatetime">init(DateTime)</a></h3>
+<pre><code class="language-cangjie">public init(v: DateTime)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqldate">SqlDate</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqldecimal"><a class="header" href="#class-sqldecimal">class SqlDecimal</a></h2>
+<pre><code class="language-cangjie">public class SqlDecimal &lt;: SqlDbType {
+    public init(v: Decimal)
+}
+</code></pre>
+<p>功能：高精度数，对应仓颉 <a href="../../math_numeric/math_numeric_package_api/math_numeric_package_structs.html#struct-decimal">Decimal</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-8"><a class="header" href="#prop-name-8">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqldecimal">SqlDecimal</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-8"><a class="header" href="#prop-value-8">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Decimal
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../math_numeric/math_numeric_package_api/math_numeric_package_structs.html#struct-decimal">Decimal</a></p>
+<h3 id="initdecimal"><a class="header" href="#initdecimal">init(Decimal)</a></h3>
+<pre><code class="language-cangjie">public init(v: Decimal)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqldecimal">SqlDecimal</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../math_numeric/math_numeric_package_api/math_numeric_package_structs.html#struct-decimal">Decimal</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqldouble"><a class="header" href="#class-sqldouble">class SqlDouble</a></h2>
+<pre><code class="language-cangjie">public class SqlDouble &lt;: SqlDbType {
+    public init(v: Float64)
+}
+</code></pre>
+<p>功能：双精度数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-9"><a class="header" href="#prop-name-9">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqldouble">SqlDouble</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-9"><a class="header" href="#prop-value-9">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Float64
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a></p>
+<h3 id="initfloat64"><a class="header" href="#initfloat64">init(Float64)</a></h3>
+<pre><code class="language-cangjie">public init(v: Float64)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqldouble">SqlDouble</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlinteger"><a class="header" href="#class-sqlinteger">class SqlInteger</a></h2>
+<pre><code class="language-cangjie">public class SqlInteger &lt;: SqlDbType {
+    public init(v: Int32)
+}
+</code></pre>
+<p>功能：中整数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-10"><a class="header" href="#prop-name-10">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlinteger">SqlInteger</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-10"><a class="header" href="#prop-value-10">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Int32
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a></p>
+<h3 id="initint32"><a class="header" href="#initint32">init(Int32)</a></h3>
+<pre><code class="language-cangjie">public init(v: Int32)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlinteger">SqlInteger</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlinterval"><a class="header" href="#class-sqlinterval">class SqlInterval</a></h2>
+<pre><code class="language-cangjie">public class SqlInterval &lt;: SqlDbType {
+    public init(v: Duration)
+}
+</code></pre>
+<p>功能：时间间隔，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-11"><a class="header" href="#prop-name-11">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlinterval">SqlInterval</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-11"><a class="header" href="#prop-value-11">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Duration
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="initduration"><a class="header" href="#initduration">init(Duration)</a></h3>
+<pre><code class="language-cangjie">public init(v: Duration)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlinterval">SqlInterval</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablebigint"><a class="header" href="#class-sqlnullablebigint">class SqlNullableBigInt</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableBigInt &lt;: SqlNullableDbType {
+    public init(v: ?Int64)
+}
+</code></pre>
+<p>功能：大整数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-12"><a class="header" href="#prop-name-12">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablebigint">SqlNullableBigInt</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-12"><a class="header" href="#prop-value-12">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Int64
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="initint64-1"><a class="header" href="#initint64-1">init(?Int64)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Int64)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablebigint">SqlNullableBigInt</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablebinary"><a class="header" href="#class-sqlnullablebinary">class SqlNullableBinary</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableBinary &lt;: SqlNullableDbType {
+    public init(v: ?Array&lt;Byte&gt;)
+}
+</code></pre>
+<p>功能：定长二进制字符串，对应仓颉 <a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-13"><a class="header" href="#prop-name-13">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablebinary">SqlNullableBinary</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-13"><a class="header" href="#prop-value-13">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Array&lt;Byte&gt;
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt;</p>
+<h3 id="initarraybyte-1"><a class="header" href="#initarraybyte-1">init(?Array&lt;Byte&gt;)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Array&lt;Byte&gt;)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablebinary">SqlNullableBinary</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullableblob"><a class="header" href="#class-sqlnullableblob">class SqlNullableBlob</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableBlob &lt;: SqlNullableDbType {
+    public init(v: ?InputStream)
+}
+</code></pre>
+<p>功能：变长超大二进制字符串（BINARY LARGE OBJECT），对应仓颉 <a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-14"><a class="header" href="#prop-name-14">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullableblob">SqlNullableBlob</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-14"><a class="header" href="#prop-value-14">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?InputStream
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a></p>
+<h3 id="initinputstream-2"><a class="header" href="#initinputstream-2">init(?InputStream)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?InputStream)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullableblob">SqlNullableBlob</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablebool"><a class="header" href="#class-sqlnullablebool">class SqlNullableBool</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableBool &lt;: SqlNullableDbType {
+    public init(v: ?Bool)
+}
+</code></pre>
+<p>功能：布尔类型，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-15"><a class="header" href="#prop-name-15">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablebool">SqlNullableBool</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-15"><a class="header" href="#prop-value-15">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Bool
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a></p>
+<h3 id="initbool-1"><a class="header" href="#initbool-1">init(?Bool)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Bool)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablebool">SqlNullableBool</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablebyte"><a class="header" href="#class-sqlnullablebyte">class SqlNullableByte</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableByte &lt;: SqlNullableDbType {
+    public init(v: ?Int8)
+}
+</code></pre>
+<p>功能：字节，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-16"><a class="header" href="#prop-name-16">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablebyte">SqlNullableByte</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-16"><a class="header" href="#prop-value-16">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Int8
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a></p>
+<h3 id="initint8-1"><a class="header" href="#initint8-1">init(?Int8)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Int8)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablebyte">SqlNullableByte</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablechar"><a class="header" href="#class-sqlnullablechar">class SqlNullableChar</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableChar &lt;: SqlNullableDbType {
+    public init(v: ?String)
+}
+</code></pre>
+<p>功能：定长字符串，对应仓颉 <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-17"><a class="header" href="#prop-name-17">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablechar">SqlNullableChar</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-17"><a class="header" href="#prop-value-17">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?String
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="initstring-1"><a class="header" href="#initstring-1">init(?String)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?String)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablechar">SqlNullableChar</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullableclob"><a class="header" href="#class-sqlnullableclob">class SqlNullableClob</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableClob &lt;: SqlNullableDbType {
+    public init(v: ?InputStream)
+}
+</code></pre>
+<p>功能：变长超大字符串（RUNE LARGE OBJECT），对应仓颉 <a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-18"><a class="header" href="#prop-name-18">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullableclob">SqlNullableClob</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-18"><a class="header" href="#prop-value-18">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?InputStream
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a></p>
+<h3 id="initinputstream-3"><a class="header" href="#initinputstream-3">init(?InputStream)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?InputStream)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullableclob">SqlNullableClob</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../io/io_package_api/io_package_interfaces.html#interface-inputstream">InputStream</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullabledate"><a class="header" href="#class-sqlnullabledate">class SqlNullableDate</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableDate &lt;: SqlNullableDbType {
+    public init(v: ?DateTime)
+}
+</code></pre>
+<p>功能：日期，仅年月日有效，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-19"><a class="header" href="#prop-name-19">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullabledate">SqlNullableDate</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-19"><a class="header" href="#prop-value-19">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?DateTime
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="initdatetime-1"><a class="header" href="#initdatetime-1">init(?DateTime)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?DateTime)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullabledate">SqlNullableDate</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullabledecimal"><a class="header" href="#class-sqlnullabledecimal">class SqlNullableDecimal</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableDecimal &lt;: SqlNullableDbType {
+    public init(v: ?Decimal)
+}
+</code></pre>
+<p>功能：高精度数，对应仓颉 <a href="../../math_numeric/math_numeric_package_api/math_numeric_package_structs.html#struct-decimal">Decimal</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-20"><a class="header" href="#prop-name-20">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullabledecimal">SqlNullableDecimal</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-20"><a class="header" href="#prop-value-20">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Decimal
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../math_numeric/math_numeric_package_api/math_numeric_package_structs.html#struct-decimal">Decimal</a></p>
+<h3 id="initdecimal-1"><a class="header" href="#initdecimal-1">init(?Decimal)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Decimal)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullabledecimal">SqlNullableDecimal</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../math_numeric/math_numeric_package_api/math_numeric_package_structs.html#struct-decimal">Decimal</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullabledouble"><a class="header" href="#class-sqlnullabledouble">class SqlNullableDouble</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableDouble &lt;: SqlNullableDbType {
+    public init(v: ?Float64)
+}
+</code></pre>
+<p>功能：双精度数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-21"><a class="header" href="#prop-name-21">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullabledouble">SqlNullableDouble</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-21"><a class="header" href="#prop-value-21">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Float64
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a></p>
+<h3 id="initfloat64-1"><a class="header" href="#initfloat64-1">init(?Float64)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Float64)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullabledouble">SqlNullableDouble</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullableinteger"><a class="header" href="#class-sqlnullableinteger">class SqlNullableInteger</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableInteger &lt;: SqlNullableDbType {
+    public init(v: ?Int32)
+}
+</code></pre>
+<p>功能：中整数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-22"><a class="header" href="#prop-name-22">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullableinteger">SqlNullableInteger</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-22"><a class="header" href="#prop-value-22">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Int32
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a></p>
+<h3 id="initint32-1"><a class="header" href="#initint32-1">init(?Int32)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Int32)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullableinteger">SqlNullableInteger</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullableinterval"><a class="header" href="#class-sqlnullableinterval">class SqlNullableInterval</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableInterval &lt;: SqlNullableDbType {
+    public init(v: ?Duration)
+}
+</code></pre>
+<p>功能：时间间隔，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-23"><a class="header" href="#prop-name-23">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullableinterval">SqlNullableInterval</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-23"><a class="header" href="#prop-value-23">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Duration
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a></p>
+<h3 id="initduration-1"><a class="header" href="#initduration-1">init(?Duration)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Duration)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullableinterval">SqlNullableInterval</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../time/time_package_api/time_package_structs.html#struct-duration">Duration</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablereal"><a class="header" href="#class-sqlnullablereal">class SqlNullableReal</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableReal &lt;: SqlNullableDbType {
+    public init(v: ?Float32)
+}
+</code></pre>
+<p>功能：浮点数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-24"><a class="header" href="#prop-name-24">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablereal">SqlNullableReal</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-24"><a class="header" href="#prop-value-24">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Float32
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a></p>
+<h3 id="initfloat32"><a class="header" href="#initfloat32">init(?Float32)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Float32)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablereal">SqlNullableReal</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablesmallint"><a class="header" href="#class-sqlnullablesmallint">class SqlNullableSmallInt</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableSmallInt &lt;: SqlNullableDbType {
+    public init(v: ?Int16)
+}
+</code></pre>
+<p>功能：小整数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-25"><a class="header" href="#prop-name-25">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablesmallint">SqlNullableSmallInt</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-25"><a class="header" href="#prop-value-25">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Int16
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a></p>
+<h3 id="initint16"><a class="header" href="#initint16">init(?Int16)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Int16)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablesmallint">SqlNullableSmallInt</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullabletime"><a class="header" href="#class-sqlnullabletime">class SqlNullableTime</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableTime &lt;: SqlNullableDbType {
+    public init(v: ?DateTime)
+}
+</code></pre>
+<p>功能：时间，仅时分秒毫秒有效，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-26"><a class="header" href="#prop-name-26">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullabletime">SqlNullableTime</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-26"><a class="header" href="#prop-value-26">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?DateTime
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="initdatetime-2"><a class="header" href="#initdatetime-2">init(?DateTime)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?DateTime)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullabletime">SqlNullableTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullabletimetz"><a class="header" href="#class-sqlnullabletimetz">class SqlNullableTimeTz</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableTimeTz &lt;: SqlNullableDbType {
+    public init(v: ?DateTime)
+}
+</code></pre>
+<p>功能：带时区的时间，仅时分秒毫秒时区有效，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-27"><a class="header" href="#prop-name-27">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullabletimetz">SqlNullableTimeTz</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-27"><a class="header" href="#prop-value-27">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?DateTime
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="initdatetime-3"><a class="header" href="#initdatetime-3">init(?DateTime)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?DateTime)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullabletimetz">SqlNullableTimeTz</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullabletimestamp"><a class="header" href="#class-sqlnullabletimestamp">class SqlNullableTimestamp</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableTimestamp &lt;: SqlNullableDbType {
+    public init(v: ?DateTime)
+}
+</code></pre>
+<p>功能：时间戳，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-28"><a class="header" href="#prop-name-28">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullabletimestamp">SqlNullableTimestamp</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-28"><a class="header" href="#prop-value-28">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?DateTime
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="initdatetime-4"><a class="header" href="#initdatetime-4">init(?DateTime)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?DateTime)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullabletimestamp">SqlNullableTimestamp</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablevarbinary"><a class="header" href="#class-sqlnullablevarbinary">class SqlNullableVarBinary</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableVarBinary &lt;: SqlNullableDbType {
+    public init(v: ?Array&lt;Byte&gt;)
+}
+</code></pre>
+<p>功能：变长二进制字符串，对应仓颉 <a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-29"><a class="header" href="#prop-name-29">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablevarbinary">SqlNullableVarBinary</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-29"><a class="header" href="#prop-value-29">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?Array&lt;Byte&gt;
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：?<a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt;</p>
+<h3 id="initarraybyte-2"><a class="header" href="#initarraybyte-2">init(?Array&lt;Byte&gt;)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?Array&lt;Byte&gt;)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablevarbinary">SqlNullableVarBinary</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlnullablevarchar"><a class="header" href="#class-sqlnullablevarchar">class SqlNullableVarchar</a></h2>
+<pre><code class="language-cangjie">public class SqlNullableVarchar &lt;: SqlNullableDbType {
+    public init(v: ?String)
+}
+</code></pre>
+<p>功能：变长字符串，对应仓颉 <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> 类型，可为数据库 <code>Null</code> 值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqlnullabledbtype">SqlNullableDbType</a></li>
+</ul>
+<h3 id="prop-name-30"><a class="header" href="#prop-name-30">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlnullablevarchar">SqlNullableVarchar</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-30"><a class="header" href="#prop-value-30">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: ?String
+</code></pre>
+<p>功能：该数据的值。
+类型：?<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="initstring-2"><a class="header" href="#initstring-2">init(?String)</a></h3>
+<pre><code class="language-cangjie">public init(v: ?String)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlnullablevarchar">SqlNullableVarchar</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: ?<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqloption"><a class="header" href="#class-sqloption">class SqlOption</a></h2>
+<pre><code class="language-cangjie">public class SqlOption
+</code></pre>
+<p>功能：预定义的 sql 选项名称和值。如果需要扩展，请不要与这些名称和值冲突。</p>
+<h3 id="static-const-connectiontimeout"><a class="header" href="#static-const-connectiontimeout">static const ConnectionTimeout</a></h3>
+<pre><code class="language-cangjie">public static const ConnectionTimeout = &quot;connection_timeout&quot;
+</code></pre>
+<p>功能：获取 connect 操作的超时时间，单位 ms。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-database"><a class="header" href="#static-const-database">static const Database</a></h3>
+<pre><code class="language-cangjie">public static const Database = &quot;database&quot;
+</code></pre>
+<p>功能：获取数据库名称。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-driver"><a class="header" href="#static-const-driver">static const Driver</a></h3>
+<pre><code class="language-cangjie">public static const Driver = &quot;driver&quot;
+</code></pre>
+<p>功能：获取数据库驱动名称，比如 postgres，opengauss。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-encoding"><a class="header" href="#static-const-encoding">static const Encoding</a></h3>
+<pre><code class="language-cangjie">public static const Encoding = &quot;encoding&quot;
+</code></pre>
+<p>功能：获取数据库字符集编码类型。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-fetchrows"><a class="header" href="#static-const-fetchrows">static const FetchRows</a></h3>
+<pre><code class="language-cangjie">public static const FetchRows = &quot;fetch_rows&quot;
+</code></pre>
+<p>功能：获取指定需要获取额外行时从数据库中提取的行数。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-host"><a class="header" href="#static-const-host">static const Host</a></h3>
+<pre><code class="language-cangjie">public static const Host = &quot;host&quot;
+</code></pre>
+<p>功能：获取数据库服务器主机名或者 <a href="../../../crypto/x509/x509_package_api/x509_package_type.html#type-ip">IP</a> 地址。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-password"><a class="header" href="#static-const-password">static const Password</a></h3>
+<pre><code class="language-cangjie">public static const Password = &quot;password&quot;
+</code></pre>
+<p>功能：获取连接数据库的密码。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-querytimeout"><a class="header" href="#static-const-querytimeout">static const QueryTimeout</a></h3>
+<pre><code class="language-cangjie">public static const QueryTimeout = &quot;query_timeout&quot;
+</code></pre>
+<p>功能：获取 query 操作的超时时间，单位 ms。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslca"><a class="header" href="#static-const-sslca">static const SSLCA</a></h3>
+<pre><code class="language-cangjie">public static const SSLCA = &quot;ssl.ca&quot;
+</code></pre>
+<p>功能：证书颁发机构（ CA ）证书文件的路径名。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslcert"><a class="header" href="#static-const-sslcert">static const SSLCert</a></h3>
+<pre><code class="language-cangjie">public static const SSLCert = &quot;ssl.cert&quot;
+</code></pre>
+<p>功能：客户端 SSL 公钥证书文件的路径名。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslkey"><a class="header" href="#static-const-sslkey">static const SSLKey</a></h3>
+<pre><code class="language-cangjie">public static const SSLKey = &quot;ssl.key&quot;
+</code></pre>
+<p>功能：客户端 SSL 私钥文件的路径名。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslkeypassword"><a class="header" href="#static-const-sslkeypassword">static const SSLKeyPassword</a></h3>
+<pre><code class="language-cangjie">public static const SSLKeyPassword = &quot;ssl.key.password&quot;
+</code></pre>
+<p>功能：客户端 SSL 私钥文件的密码。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslmode"><a class="header" href="#static-const-sslmode">static const SSLMode</a></h3>
+<pre><code class="language-cangjie">public static const SSLMode = &quot;ssl.mode&quot;
+</code></pre>
+<p>功能：获取 SSLMode 传输层加密模式。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslmodedisabled"><a class="header" href="#static-const-sslmodedisabled">static const SSLModeDisabled</a></h3>
+<pre><code class="language-cangjie">public static const SSLModeDisabled = &quot;ssl.mode.disabled&quot;
+</code></pre>
+<p>功能：建立未加密的连接。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslmodepreferred"><a class="header" href="#static-const-sslmodepreferred">static const SSLModePreferred</a></h3>
+<pre><code class="language-cangjie">public static const SSLModePreferred = &quot;ssl.mode.preferred&quot;
+</code></pre>
+<p>功能：如果服务器支持加密连接，则建立加密连接; 如果无法建立加密连接，则回退到未加密连接，这是 SSLMode 的默认值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslmoderequired"><a class="header" href="#static-const-sslmoderequired">static const SSLModeRequired</a></h3>
+<pre><code class="language-cangjie">public static const SSLModeRequired = &quot;ssl.mode.required&quot;
+</code></pre>
+<p>功能：如果服务器支持加密连接，则建立加密连接。如果无法建立加密连接，则连接失败。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslmodeverifyca"><a class="header" href="#static-const-sslmodeverifyca">static const SSLModeVerifyCA</a></h3>
+<pre><code class="language-cangjie">public static const SSLModeVerifyCA = &quot;ssl.mode.verify_ca&quot;
+</code></pre>
+<p>功能：SSLModeVerifyCA 和 SSLModeRequired 类似，但是增加了校验服务器证书，如果校验失败，则连接失败。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslmodeverifyfull"><a class="header" href="#static-const-sslmodeverifyfull">static const SSLModeVerifyFull</a></h3>
+<pre><code class="language-cangjie">public static const SSLModeVerifyFull = &quot;ssl.mode.verify_full&quot;
+</code></pre>
+<p>功能：SSLModeVerifyFull 和 SSLModeVerifyCA 类似，但通过对照服务器发送给客户端的证书中的标识检查客户端用于连接到服务器的主机名来执行主机名身份验证。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-sslsni"><a class="header" href="#static-const-sslsni">static const SSLSni</a></h3>
+<pre><code class="language-cangjie">public static const SSLSni = &quot;ssl.sni&quot;
+</code></pre>
+<p>功能：客户端通过该标识在握手过程开始时试图连接到哪个主机名。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-tls12ciphersuites"><a class="header" href="#static-const-tls12ciphersuites">static const Tls12Ciphersuites</a></h3>
+<pre><code class="language-cangjie">public static const Tls12Ciphersuites = &quot;tls1.2.ciphersuites&quot;
+</code></pre>
+<p>功能：此选项指定客户端允许使用 TLSv1.2 及以下的加密连接使用哪些密码套件。
+值为冒号分隔的字符串，比如 &quot;TLS_ECDHE_ECDSA_WITH_AES_128_GCM_<a href="../../../crypto/digest/digest_package_api/digest_package_classes.html#class-sha256">SHA256</a>:TLS_DHE_RSA_WITH_AES_128_CBC_SHA&quot;。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-tls13ciphersuites"><a class="header" href="#static-const-tls13ciphersuites">static const Tls13Ciphersuites</a></h3>
+<pre><code class="language-cangjie">public static const Tls13Ciphersuites = &quot;tls1.3.ciphersuites&quot;
+</code></pre>
+<p>功能：此选项指定客户端允许使用 TLSv1.3 的加密连接使用哪些密码套件。
+值为冒号分隔的字符串，比如 &quot;TLS_AES_256_GCM_<a href="../../../crypto/digest/digest_package_api/digest_package_classes.html#class-sha384">SHA384</a>:TLS_CHACHA20_POLY1305_<a href="../../../crypto/digest/digest_package_api/digest_package_classes.html#class-sha256">SHA256</a>&quot;。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-tlsversion"><a class="header" href="#static-const-tlsversion">static const TlsVersion</a></h3>
+<pre><code class="language-cangjie">public static const TlsVersion = &quot;tls.version&quot;
+</code></pre>
+<p>功能：支持的 TLS 版本号，值为逗号分隔的字符串，比如 &quot;TLSv1.2,TLSv1.3&quot;。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-url"><a class="header" href="#static-const-url">static const URL</a></h3>
+<pre><code class="language-cangjie">public static const URL = &quot;url&quot;
+</code></pre>
+<p>功能：获取数据库连接 <a href="../../../encoding/url/url_package_api/url_package_classes.html#class-url">URL</a> 字符串。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-updatetimeout"><a class="header" href="#static-const-updatetimeout">static const UpdateTimeout</a></h3>
+<pre><code class="language-cangjie">public static const UpdateTimeout = &quot;update_timeout&quot;
+</code></pre>
+<p>功能：获取 update 操作的超时时间，单位 ms。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="static-const-username"><a class="header" href="#static-const-username">static const Username</a></h3>
+<pre><code class="language-cangjie">public static const Username = &quot;username&quot;
+</code></pre>
+<p>功能：获取连接数据库的用户名。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h2 id="class-sqlreal"><a class="header" href="#class-sqlreal">class SqlReal</a></h2>
+<pre><code class="language-cangjie">public class SqlReal &lt;: SqlDbType {
+    public init(v: Float32)
+}
+</code></pre>
+<p>功能：浮点数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-31"><a class="header" href="#prop-name-31">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlreal">SqlReal</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-31"><a class="header" href="#prop-value-31">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Float32
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a></p>
+<h3 id="initfloat32-1"><a class="header" href="#initfloat32-1">init(Float32)</a></h3>
+<pre><code class="language-cangjie">public init(v: Float32)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlreal">SqlReal</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlsmallint"><a class="header" href="#class-sqlsmallint">class SqlSmallInt</a></h2>
+<pre><code class="language-cangjie">public class SqlSmallInt &lt;: SqlDbType {
+    public init(v: Int16)
+}
+</code></pre>
+<p>功能：小整数，对应仓颉 <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-32"><a class="header" href="#prop-name-32">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlsmallint">SqlSmallInt</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-32"><a class="header" href="#prop-value-32">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Int16
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a></p>
+<h3 id="initint16-1"><a class="header" href="#initint16-1">init(Int16)</a></h3>
+<pre><code class="language-cangjie">public init(v: Int16)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlsmallint">SqlSmallInt</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqltime"><a class="header" href="#class-sqltime">class SqlTime</a></h2>
+<pre><code class="language-cangjie">public class SqlTime &lt;: SqlDbType {
+    public init(v: DateTime)
+}
+</code></pre>
+<p>功能：时间，仅时分秒毫秒有效，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-33"><a class="header" href="#prop-name-33">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqltime">SqlTime</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-33"><a class="header" href="#prop-value-33">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: DateTime
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="initdatetime-5"><a class="header" href="#initdatetime-5">init(DateTime)</a></h3>
+<pre><code class="language-cangjie">public init(v: DateTime)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqltime">SqlTime</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqltimetz"><a class="header" href="#class-sqltimetz">class SqlTimeTz</a></h2>
+<pre><code class="language-cangjie">public class SqlTimeTz &lt;: SqlDbType {
+    public init(v: DateTime)
+}
+</code></pre>
+<p>功能：带时区的时间，仅时分秒毫秒时区有效，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-34"><a class="header" href="#prop-name-34">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqltimetz">SqlTimeTz</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-34"><a class="header" href="#prop-value-34">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: DateTime
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="initdatetime-6"><a class="header" href="#initdatetime-6">init(DateTime)</a></h3>
+<pre><code class="language-cangjie">public init(v: DateTime)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqltimetz">SqlTimeTz</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqltimestamp"><a class="header" href="#class-sqltimestamp">class SqlTimestamp</a></h2>
+<pre><code class="language-cangjie">public class SqlTimestamp &lt;: SqlDbType {
+    public init(v: DateTime)
+}
+</code></pre>
+<p>功能：时间戳，对应仓颉 <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-35"><a class="header" href="#prop-name-35">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqltimestamp">SqlTimestamp</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-35"><a class="header" href="#prop-value-35">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: DateTime
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a></p>
+<h3 id="initdatetime-7"><a class="header" href="#initdatetime-7">init(DateTime)</a></h3>
+<pre><code class="language-cangjie">public init(v: DateTime)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqltimestamp">SqlTimestamp</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../time/time_package_api/time_package_structs.html#struct-datetime">DateTime</a> - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlvarbinary"><a class="header" href="#class-sqlvarbinary">class SqlVarBinary</a></h2>
+<pre><code class="language-cangjie">public class SqlVarBinary &lt;: SqlDbType {
+    public init(v: Array&lt;Byte&gt;)
+}
+</code></pre>
+<p>功能：变长二进制字符串，对应仓颉 <a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-36"><a class="header" href="#prop-name-36">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlvarbinary">SqlVarBinary</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-36"><a class="header" href="#prop-value-36">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: Array&lt;Byte&gt;
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt;</p>
+<h3 id="initarraybyte-3"><a class="header" href="#initarraybyte-3">init(Array&lt;Byte&gt;)</a></h3>
+<pre><code class="language-cangjie">public init(v: Array&lt;Byte&gt;)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlvarbinary">SqlVarBinary</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; - 传入的数据。</li>
+</ul>
+<h2 id="class-sqlvarchar"><a class="header" href="#class-sqlvarchar">class SqlVarchar</a></h2>
+<pre><code class="language-cangjie">public class SqlVarchar &lt;: SqlDbType {
+    public init(v: String)
+}
+</code></pre>
+<p>功能：变长字符串，对应仓颉 <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> 类型。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="database_sql_package_interfaces.html#interface-sqldbtype">SqlDbType</a></li>
+</ul>
+<h3 id="prop-name-37"><a class="header" href="#prop-name-37">prop name</a></h3>
+<pre><code class="language-cangjie">public prop name: String
+</code></pre>
+<p>功能：类型名称，即 <a href="database_sql_package_classes.html#class-sqlvarchar">SqlVarchar</a>。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="prop-value-37"><a class="header" href="#prop-value-37">prop value</a></h3>
+<pre><code class="language-cangjie">public mut prop value: String
+</code></pre>
+<p>功能：该数据的值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a></p>
+<h3 id="initstring-3"><a class="header" href="#initstring-3">init(String)</a></h3>
+<pre><code class="language-cangjie">public init(v: String)
+</code></pre>
+<p>功能：根据传入参数 v 构造一个 <a href="database_sql_package_classes.html#class-sqlvarchar">SqlVarchar</a> 实例。</p>
+<p>参数：</p>
+<ul>
+<li>v: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 传入的数据。</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../highlight.js"></script>
+        <script src="../../../assets/elasticlunr.js"></script>
+        <script src="../../../assets/fzf.umd.js"></script>
+        <script src="../../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

@@ -4,7 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
+// DIAGNOSTICS: -warnings
 
 var a = 0
 
@@ -27,28 +27,5 @@ main(): Int64 {
     } else {
         return 2
     }
-        % n
+        % <!UNRESOLVED_REFERENCE!>n<!>
 }
-
-/* SCAN
-warning: possibly confusing line terminator
-  ==> binary_nothing.cj:29:6:
-   | 
-29 |       }
-   |       ~^ 
-   |  _____|
-30 | |         % n
-   | |_________~ possibly confusing line terminator between '}' and '%'
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff parser`
-
-error: undeclared identifier 'n'
-  ==> binary_nothing.cj:30:11:
-   | 
-30 |         % n
-   |           ^ 
-   | 
-
-1 error generated, 1 error printed.
-1 warning generated, 1 warning printed.
-*/

@@ -4,20 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main() {
-    try (x = return) {}
+    try (x = <!TYPE_MISMATCH!>return<!>) {}
 }
-
-/* SCAN
-error: mismatched types
-  ==> err_try_with_resources_00.cj:10:10:
-   | 
-10 |     try (x = return) {}
-   |          ^^^^^^^^^^ expected 'Interface-Resource', found 'Nothing'
-   | 
-   # note: the resource specification should implement interface 'Resource'
-
-1 error generated, 1 error printed.
-*/

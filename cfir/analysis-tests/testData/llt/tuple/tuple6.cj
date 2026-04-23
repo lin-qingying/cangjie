@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%compiler %cmp_opt %f -o %output
-// EXEC:%run %run_opt %output %run_args
-
 func test(): Int64 {
     var a: Array<(Int64, Int64)> = [(1, 1)]
     return 0
@@ -15,6 +12,3 @@ func test(): Int64 {
 main(): Int64 {
     return test()
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

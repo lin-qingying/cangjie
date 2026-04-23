@@ -307,6 +307,7 @@ class Generator(
                 }
                 println("} catch (e: Exception) {")
                 withIndent {
+                    println("if (shouldIjPlatformExceptionBeRethrown(e)) throw e")
                     println("rethrowExceptionWithDetails(\"Exception in $checkersTypeInErrorMsg checkers\", e) {")
                     withIndent {
                         println("withCfirEntry(\"element\", element)")
@@ -367,6 +368,5 @@ class Generator(
         generateDiagnosticComponent()
     }
 }
-
 
 

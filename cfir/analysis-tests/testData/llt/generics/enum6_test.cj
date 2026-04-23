@@ -4,14 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 class App {
     public init(config!: Option<Config> = Option<Config>.None) {}
 }
 
 class Config {
-    public init(logLevel!: Option<LogLevel> = Option<LogLevel>.None) {}
+    public init(logLevel!: Option<<!UNRESOLVED_REFERENCE!>LogLevel<!>> = Option<<!UNRESOLVED_REFERENCE!>LogLevel<!>>.None) {}
 }
 
 // 注释去掉 不会core dump
@@ -19,37 +17,5 @@ class Config {
 // }
 
 public func SwanMain() {
-    App(config: Option<Config>.Some(Config(Option<LogLevel>.Some(LogLevel.debug)))).run()
+    App(config: Option<Config>.Some(Config(<!NEED_NAMED_ARGUMENT!>Option<<!UNRESOLVED_REFERENCE!>LogLevel<!>>.Some(LogLevel.debug)<!>))).run()
 }
-
-/* SCAN
-error: undeclared type name 'LogLevel'
-  ==> enum6_test.cj:14:35:
-   | 
-14 |     public init(logLevel!: Option<LogLevel> = Option<LogLevel>.None) {}
-   |                                   ^ 
-   | 
-
-error: undeclared type name 'LogLevel'
-  ==> enum6_test.cj:14:54:
-   | 
-14 |     public init(logLevel!: Option<LogLevel> = Option<LogLevel>.None) {}
-   |                                                      ^ 
-   | 
-
-error: undeclared type name 'LogLevel'
-  ==> enum6_test.cj:22:51:
-   | 
-22 |     App(config: Option<Config>.Some(Config(Option<LogLevel>.Some(LogLevel.debug)))).run()
-   |                                                   ^ 
-   | 
-
-error: missing argument prefix 'logLevel:' for named parameter
-  ==> enum6_test.cj:22:44:
-   | 
-22 |     App(config: Option<Config>.Some(Config(Option<LogLevel>.Some(LogLevel.debug)))).run()
-   |                                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

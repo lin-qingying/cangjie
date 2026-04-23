@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output
-
 public func f1() {
     [Int64(-20), [if (true) {
         const func f222<T0>(a: T0): T0 {

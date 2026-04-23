@@ -4,14 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 open class Day<T> where T <: Day<T> {
     public var day: T
     public init(x: T) {
         day = x
     }
-    public static func foo<V>(x: V): V where V <: String {
+    public static func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: V): V where V <: String {
         return x
     }
     public static func boo<V>(x: V): V where V <: Day<V> {
@@ -24,11 +22,11 @@ open class Day<T> where T <: Day<T> {
 
 class Monday <: Day<Monday> {
     public var d: Int32
-    public init() {
+    public <!RECURSIVE_CONSTRUCTOR_CALL!>init<!>() {
         this(0)
     }
-    public init(x: Int32) {
-        super(Monday())
+    public <!RECURSIVE_CONSTRUCTOR_CALL!>init<!>(x: Int32) {
+        super(<!RECURSIVE_CONSTRUCTOR_CALL!>Monday()<!>)
         d = x
     }
 }
@@ -49,45 +47,3 @@ func run(): Int64 {
 main(): Int64 {
     return run()
 }
-
-/* SCAN
-error: the upper bound 'Struct-String' of generic parameter 'Generics-V' must be class or interface
-  ==> call22.cj:14:28:
-   | 
-14 |     public static func foo<V>(x: V): V where V <: String {
-   |                            ^ 
-   | 
-
-error: recursive constructor calling detected
-  ==> call22.cj:27:12:
-   | 
-27 |     public init() {
-   |            ^^^^ 
-   | 
-note: depends on
-  ==> call22.cj:28:9:
-   | 
-28 |         this(0)
-   |         ^^^^ 
-   | 
-note: depends on
-  ==> call22.cj:30:12:
-   | 
-30 |     public init(x: Int32) {
-   |            ^^^^ 
-   | 
-note: depends on
-  ==> call22.cj:31:15:
-   | 
-31 |         super(Monday())
-   |               ^^^^^^ 
-   | 
-note: depends on
-  ==> call22.cj:27:12:
-   | 
-27 |     public init() {
-   |            ^^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

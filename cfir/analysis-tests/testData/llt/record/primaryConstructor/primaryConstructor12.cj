@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args | compare %f
-// ASSERT: scan a = 3
-
 class Data<T1> where T1 <: ToString {
     public let a: T1
     public Data(x: T1) {
@@ -23,6 +19,3 @@ main() {
     data.show()
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

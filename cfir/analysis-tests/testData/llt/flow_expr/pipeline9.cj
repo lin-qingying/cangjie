@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 class A <: Resource {
     public func isClosed() {
         true
@@ -21,17 +19,6 @@ func g<T>(_: Unit) {}
 
 main() {
     f(try (x = A()) {} finally {
-        let _ = A(1)
+        let _ = <!TOO_MANY_ARGUMENTS!>A(1)<!>
     }) |> g<Unit>
 }
-
-/* SCAN
-error: extra argument given for parameter list '()' in call
-  ==> pipeline9.cj:24:18:
-   | 
-24 |         let _ = A(1)
-   |                  ^^^ expected 0 arguments, found 1
-   | 
-
-1 error generated, 1 error printed.
-*/

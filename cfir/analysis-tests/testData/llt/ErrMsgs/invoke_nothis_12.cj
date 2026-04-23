@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 var aa = 0
 
 main(): Int64 {
@@ -32,23 +30,6 @@ class Data {
 class C {
     public static var data = Data(a: 8)
     public var b = {
-        => data.f2(3)
+        => data.f2(<!TOO_MANY_ARGUMENTS!>3<!>)
     }()
 }
-
-/* SCAN
-error: extra argument given for parameter list '()' in call
-  ==> invoke_nothis_12.cj:35:19:
-   | 
-35 |         => data.f2(3)
-   |                   ^^^ expected 0 arguments, found 1
-   | 
-note: found candidate
-  ==> invoke_nothis_12.cj:23:17:
-   | 
-23 |     public func f2() {
-   |                 ^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

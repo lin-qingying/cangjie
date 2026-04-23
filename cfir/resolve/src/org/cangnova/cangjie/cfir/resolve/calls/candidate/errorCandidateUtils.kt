@@ -1,9 +1,9 @@
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.resolve.body.ResolutionStageRunner
-import org.cangnova.cangjie.cfir.resolve.body.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
+import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.source.CjSourceElement
 
 fun createErrorReferenceWithErrorCandidate(

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct S0 {
     var t0 = 0
 }
@@ -19,7 +17,7 @@ struct S1 {
     }
 
     mut func f() {
-        t1.t0 += 1
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>t1.t0<!> += 1
     }
 }
 
@@ -37,29 +35,3 @@ main() {
     let c = C()
     c.s2.t2.f()
 }
-
-/* SCAN
-error: cannot use mutable function on immutable value
-  ==> mut_function_09.cj:36:5:
-   | 
-36 |     a[0].t2.f()
-   |     ^^^^    ~ is a mutable function
-   |     |
-   |     is immutable
-   | 
-
-error: cannot assign to immutable value
-  ==> mut_function_09.cj:22:9:
-   | 
-22 |         t1.t0 += 1
-   |         ^^^^^^^^^^ 
-   | 
-note: property 't1' is immutable
-  ==> mut_function_09.cj:14:14:
-   | 
-14 |     mut prop t1: S0 {
-   |              ^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

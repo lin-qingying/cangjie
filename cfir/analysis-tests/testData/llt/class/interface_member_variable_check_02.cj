@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-
 interface I {
     let a: Int64 // variable 'a' can not be declared in interface
 }
@@ -14,5 +12,3 @@ main(): Int64 {
     return 0
 }
 
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

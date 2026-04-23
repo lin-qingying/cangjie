@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 class Base12<T> {
-    public var d: T
+    <!CLASS_UNINITIALIZED_FIELD!>public var d: T<!>
     public mut prop a: T {
         get() {
             return d
@@ -27,14 +25,3 @@ main() {
     }
     return 1
 }
-
-/* SCAN
-error: the uninitialized member variable 'd' is not initialized in the constructor of class or struct
-  ==> property2.cj:10:5:
-   | 
-10 |     public var d: T
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

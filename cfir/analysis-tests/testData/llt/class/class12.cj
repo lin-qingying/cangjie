@@ -4,23 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 class D {
-    public var a: Int32 = a
+    public var a: Int32 = <!UNRESOLVED_REFERENCE!>a<!>
 }
 
 main() {
     return 0
 }
-
-/* SCAN
-error: undeclared identifier 'a'
-  ==> class12.cj:10:27:
-   | 
-10 |     public var a: Int32 = a
-   |                           ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

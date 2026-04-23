@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 class A {
     public var a = 0
     public static func foo1() {
@@ -14,7 +12,7 @@ class A {
 }
 
 extend A {
-    public static func foo1() {
+    public static func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo1<!>() {
         return 0
     }
 }
@@ -28,20 +26,3 @@ extend A {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: extend member 'foo1' is not allowed to shadow members of 'Class-A'
-  ==> extend_static_function_duplicate_name3.cj:17:24:
-   | 
-17 |     public static func foo1() {
-   |                        ^^^^ 
-   | 
-note: shadowed definition of 'foo1' is here
-  ==> extend_static_function_duplicate_name3.cj:11:24:
-   | 
-11 |     public static func foo1() {
-   |                        ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

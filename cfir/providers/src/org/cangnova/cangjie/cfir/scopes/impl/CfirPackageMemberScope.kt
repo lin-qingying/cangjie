@@ -4,9 +4,10 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -21,12 +22,16 @@ import org.cangnova.cangjie.name.Name
  */
 class CfirPackageMemberScope(
     private val packageFqName: FqName,
-    private val symbolProvider: CfirSymbolProvider,
+    val session: CfirSession,
+
+    private val symbolProvider: CfirSymbolProvider = session.symbolProvider,
+    private val excludedNames: Set<Name> = emptySet(),
+
 ) : CfirPackageScope() {
 
     private val classifierCache = HashMap<Name, List<CfirClassLikeSymbol<*>>>()
     private val callableCache = HashMap<Name, List<CfirCallableSymbol<*>>>()
-    private val functionCache = HashMap<Name, List<CfirFunctionSymbol<*>>>()
+    private val functionCache = HashMap<Name, List<CfirNamedFunctionSymbol>>()
     private val propertyCache = HashMap<Name, List<CfirPropertySymbol>>()
 
     override fun getCallableNames(): Set<Name> =
@@ -47,7 +52,7 @@ class CfirPackageMemberScope(
         symbols.forEach(processor)
     }
 
-    override fun processFunctionsByName(name: Name, processor: (CfirFunctionSymbol<*>) -> Unit) {
+    override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         val symbols = functionCache.getOrPut(name) {
             symbolProvider.getTopLevelFunctionSymbols(packageFqName, name)
         }

@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.test.services
 
+import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.AnalysisFlag
 import org.cangnova.cangjie.LanguageVersion
 import org.cangnova.cangjie.config.CompilerConfiguration
@@ -7,8 +8,15 @@ import org.cangnova.cangjie.config.CompilerConfigurationKey
 import org.cangnova.cangjie.config.CommonConfigurationKeys
 import org.cangnova.cangjie.config.addClasspathRoot
 import org.cangnova.cangjie.config.useLightTree
+import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
+import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
+import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.config.TestPhaseDirectives
+import org.cangnova.cangjie.test.directives.CangjieTestDirectives.API_LEVEL
+import org.cangnova.cangjie.test.directives.CangjieTestDirectives.API_LEVEL_SYSCAP
+import org.cangnova.cangjie.test.directives.CangjieTestDirectives.IMPORT_PATH
+import org.cangnova.cangjie.test.directives.CangjieTestDirectives.NO_PRELUDE
 import org.cangnova.cangjie.test.config.addSourcesForDependsOnClosure
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.WITH_STDLIB
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
@@ -58,13 +66,31 @@ abstract class EnvironmentConfigurator(protected val testServices: TestServices)
 }
 
 class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
+    override fun provideAdditionalAnalysisFlags(
+        directives: RegisteredDirectives,
+        languageVersion: LanguageVersion,
+    ): Map<AnalysisFlag<*>, Any?> {
+        return buildMap {
+            if (NO_PRELUDE in directives) {
+                put(AnalysisFlags.noPrelude, true)
+            }
+        }
+    }
+
     override fun DirectiveToConfigurationKeyExtractor.provideConfigurationKeys() {
         register(CfirDiagnosticsDirectives.DUMP_INFERENCE_LOGS, CommonConfigurationKeys.DUMP_INFERENCE_LOGS)
     }
 
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
+        val noPreludeEnabled = module.hasDirective(NO_PRELUDE)
         addRuntimeClasspathRoots(configuration, module)
-        if (WITH_STDLIB in module.directives) {
+        addImportPathRoots(configuration, module)
+        configuration.noPrelude = noPreludeEnabled
+        configuration.apiLevel = module.directives[API_LEVEL]
+            .lastOrNull()
+            ?.toIntOrNull()
+        configuration.apiLevelSyscapConfigPath = module.directives[API_LEVEL_SYSCAP].lastOrNull()
+        if (WITH_STDLIB in module.directives && !noPreludeEnabled) {
             addStdlibClasspathRoots(configuration)
         }
         setupCliConfiguration(module, configuration)
@@ -99,6 +125,33 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
             .toList()
 
         runtimeRoots.forEach { configuration.addClasspathRoot(it.path) }
+    }
+
+    /**
+     * LLT 迁移后允许测试数据显式声明附加 import/classpath 根目录。
+     *
+     * 这里按测试数据文件所在目录解析相对路径，避免把旧 LLT `--import-path`
+     * 语义退化成仓库根目录相对路径。
+     */
+    private fun addImportPathRoots(configuration: CompilerConfiguration, module: TestModule) {
+        val anchorFile = module.files
+            .firstOrNull { !it.isAdditional }
+            ?.originalFile
+            ?.parentFile
+            ?: return
+
+        module.directives[IMPORT_PATH]
+            .asSequence()
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .map { rawPath ->
+                val candidate = File(rawPath)
+                if (candidate.isAbsolute) candidate else anchorFile.resolve(rawPath)
+            }
+            .map { it.normalize() }
+            .filter { it.exists() }
+            .distinctBy { it.absolutePath }
+            .forEach { configuration.addClasspathRoot(it.path) }
     }
 
     private fun addStdlibClasspathRoots(configuration: CompilerConfiguration) {
@@ -139,6 +192,11 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
         return normalized
     }
 }
+
+private fun TestModule.hasDirective(directive: SimpleDirective): Boolean {
+    return directive in directives || files.any { directive in it.directives }
+}
+
 class DirectiveToConfigurationKeyExtractor {
     private val booleanDirectivesMap = mutableMapOf<SimpleDirective, CompilerConfigurationKey<Boolean>>()
     private val invertedBooleanDirectives = mutableSetOf<SimpleDirective>()

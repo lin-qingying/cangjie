@@ -1,0 +1,1903 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ohos.multimedia.image（图片处理） - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../source_zh_cn/apis/cj-apis-image.html" class="active"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ohosmultimediaimage图片处理"><a class="header" href="#ohosmultimediaimage图片处理">ohos.multimedia.image（图片处理）</a></h1>
+<p>本模块提供图片处理效果，包括通过属性创建PixelMap、读取图像像素数据、读取区域内的图片数据等。</p>
+<h2 id="导入模块"><a class="header" href="#导入模块">导入模块</a></h2>
+<pre><code class="language-cangjie">import ohos.image.*
+</code></pre>
+<h2 id="func-createpixelmaparrayuint8-initializationoptions"><a class="header" href="#func-createpixelmaparrayuint8-initializationoptions">func createPixelMap(Array&lt;UInt8&gt;, InitializationOptions)</a></h2>
+<pre><code class="language-cangjie">public func createPixelMap(colors: Array&lt;UInt8&gt;, opts: InitializationOptions): PixelMap
+</code></pre>
+<p>通过属性创建PixelMap，默认采用BGRA_8888格式处理数据，目前只支持BGRA_8888格式。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">colors</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">BGRA_8888格式的颜色数组。</td></tr>
+<tr><td style="text-align: left">opts</td><td style="text-align: left"><a href="#struct-initializationoptions">InitializationOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">创建像素的属性，包括透明度，尺寸，缩略值，像素格式和是否可编辑。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-pixelmap">PixelMap</a></td><td style="text-align: left">返回Pixelmap。<br>当创建的pixelmap大小超过原图大小时，返回原图pixelmap大小。</td></tr>
+</tbody></table>
+</div>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980096</td><td style="text-align: left">If the operation failed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let color : Array&lt;UInt8&gt; = Array&lt;UInt8&gt;(96, item:0)  //96为需要创建的像素buffer大小，取值为：height * width *4
+    let opts : InitializationOptions = InitializationOptions(editable: true, pixelFormat: RGBA_8888, size: Size(height: 4, width: 6))
+    let pixelMap = createPixelMap(color, opts)
+}
+</code></pre>
+<h2 id="class-pixelmap"><a class="header" href="#class-pixelmap">class PixelMap</a></h2>
+<pre><code class="language-cangjie">public class PixelMap {}
+</code></pre>
+<p>图像像素类，用于读取或写入图像数据以及获取图像信息。在调用PixelMap的方法前，需要先通过<a href="#func-createpixelmaparrayuint8-initializationoptions">createPixelMap</a>创建一个PixelMap实例。目前pixelmap序列化大小最大128MB，超过会送显失败。大小计算方式为(宽*高*每像素占用字节数)。</p>
+<p>PixelMap支持通过worker跨线程调用。当PixelMap通过Worker跨线程后，原线程的PixelMap的所有接口均不能调用，否则将报错501服务器不具备完成请求的功能。</p>
+<p>在调用PixelMap的方法前，需要先通过<a href="#func-createpixelmaparrayuint8-initializationoptions">createPixelMap</a>构建一个PixelMap对象。</p>
+<h3 id="属性"><a class="header" href="#属性">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">isEditable</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">设定图像像素是否可被编辑。</td></tr>
+<tr><td style="text-align: left">isStrideAlignment</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">设定图像内存是否为DMA内存。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-readpixelstobufferarrayuint8"><a class="header" href="#func-readpixelstobufferarrayuint8">func readPixelsToBuffer(Array&lt;UInt8&gt;)</a></h3>
+<pre><code class="language-cangjie">public func readPixelsToBuffer(dst: Array&lt;UInt8&gt;): Unit
+</code></pre>
+<p>读取图像像素数据，结果写入Array&lt;UInt8&gt;里返回。指定BGRA_8888格式创建pixelmap，读取的像素数据与原数据保持一致。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">dst</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">缓冲区，函数执行结束后获取的图像像素数据写入到该内存区域内。缓冲区大小由<a href="#func-getpixelbytesnumber">getPixelBytesNumber</a>接口获取。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let readBuffer : Array&lt;UInt8&gt; = Array&lt;UInt8&gt;(96, item: 0)  //96为需要创建的像素buffer大小，取值为：height * width *4
+    pixelMap.readPixelsToBuffer(readBuffer)
+}
+</code></pre>
+<h3 id="func-readpixelspositionarea"><a class="header" href="#func-readpixelspositionarea">func readPixels(PositionArea)</a></h3>
+<pre><code class="language-cangjie">public func readPixels(area: PositionArea): Unit
+</code></pre>
+<p>读取区域内的图片数据。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">area</td><td style="text-align: left"><a href="#struct-positionarea">PositionArea</a></td><td style="text-align: left">是</td><td style="text-align: left">区域大小，根据区域读取。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let area : PositionArea = PositionArea(
+        Array&lt;UInt8&gt;(8, item: 0),
+        0,
+        8,
+        Region(Size(height: 1, width: 2), 0, 0)
+    )
+    pixelMap.readPixels(area)
+}
+</code></pre>
+<h3 id="func-writepixelspositionarea"><a class="header" href="#func-writepixelspositionarea">func writePixels(PositionArea)</a></h3>
+<pre><code class="language-cangjie">public func writePixels(area: PositionArea): Unit
+</code></pre>
+<p>将PixelMap写入指定区域内。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">area</td><td style="text-align: left"><a href="#struct-positionarea">PositionArea</a></td><td style="text-align: left">是</td><td style="text-align: left">区域，根据区域写入。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let area : PositionArea = PositionArea(
+        Array&lt;UInt8&gt;(8, {i =&gt; Uint8(i)}),
+        0,
+        8,
+        Region(Size(height: 1, width: 2), 0, 0)
+    )
+    pixelMap.writePixels(area)
+}
+</code></pre>
+<h3 id="func-writebuffertopixelsarrayuint8"><a class="header" href="#func-writebuffertopixelsarrayuint8">func writeBufferToPixels(Array&lt;UInt8&gt;)</a></h3>
+<pre><code class="language-cangjie">public func writeBufferToPixels(src: Array&lt;UInt8&gt;): Unit
+</code></pre>
+<p>读取缓冲区中的图片数据，结果写入PixelMap中。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">src</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">图像像素数据。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let color : Array&lt;UInt8&gt; = Array&lt;UInt8&gt;(96, {i =&gt; UInt8(i)})  //96为需要创建的像素buffer大小，取值为：height * width *4
+    pixelMap.writeBufferToPixels(color)
+}
+</code></pre>
+<h3 id="func-getimageinfo"><a class="header" href="#func-getimageinfo">func getImageInfo()</a></h3>
+<pre><code class="language-cangjie">public func getImageInfo(): ImageInfo
+</code></pre>
+<p>获取图像像素信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-imageinfo">ImageInfo</a></td><td style="text-align: left">用于获取图像像素信息，失败时返回错误信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    pixelMap.getImageInfo()
+}
+</code></pre>
+<h3 id="func-getbytesnumberperrow"><a class="header" href="#func-getbytesnumberperrow">func getBytesNumberPerRow()</a></h3>
+<pre><code class="language-cangjie">public func getBytesNumberPerRow(): UInt32
+</code></pre>
+<p>获取图像像素每行字节数。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">UInt32</td><td style="text-align: left">图像像素的行字节数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let rowCount : UInt32 = pixelMap.getBytesNumberPerRow()
+}
+</code></pre>
+<h3 id="func-getpixelbytesnumber"><a class="header" href="#func-getpixelbytesnumber">func getPixelBytesNumber()</a></h3>
+<pre><code class="language-cangjie">public func getPixelBytesNumber(): UInt32
+</code></pre>
+<p>获取图像像素的总字节数。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">UInt32</td><td style="text-align: left">图像像素的总字节数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let pixelBytesNumber : UInt32 = pixelMap.getPixelBytesNumber()
+}
+</code></pre>
+<h3 id="func-getdensity"><a class="header" href="#func-getdensity">func getDensity()</a></h3>
+<pre><code class="language-cangjie">public func getDensity():Int32
+</code></pre>
+<p>获取当前图像像素的密度。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">图像像素的密度。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let getDensity : Int32 = pixelMap.getDensity()
+}
+</code></pre>
+<h3 id="func-opacityfloat32"><a class="header" href="#func-opacityfloat32">func opacity(Float32)</a></h3>
+<pre><code class="language-cangjie">public func opacity(rate: Float32): Unit
+</code></pre>
+<p>通过设置透明比率来让PixelMap达到对应的透明效果。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">rate</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">透明比率的值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let rate : Float32 = 0.5
+    pixelMap.opacity(rate)
+}
+</code></pre>
+<h3 id="func-createalphapixelmap"><a class="header" href="#func-createalphapixelmap">func createAlphaPixelmap()</a></h3>
+<pre><code class="language-cangjie">public func createAlphaPixelmap(): PixelMap
+</code></pre>
+<p>根据Alpha通道的信息，来生成一个仅包含Alpha通道信息的pixelmap，可用于阴影效果。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">PixelMap</td><td style="text-align: left">返回pixelmap实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let alphaPixelmap = pixelMap.createAlphaPixelmap()
+}
+</code></pre>
+<h3 id="func-scalefloat32-float32"><a class="header" href="#func-scalefloat32-float32">func scale(Float32, Float32)</a></h3>
+<pre><code class="language-cangjie">public func scale(x: Float32, y: Float32): Unit
+</code></pre>
+<p>根据输入的宽高对图片进行缩放。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">x</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">宽度的缩放倍数。</td></tr>
+<tr><td style="text-align: left">y</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">高度的缩放倍数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let scaleX : Float32 = 2.0
+    let scaleY : Float32 = 1.0
+    pixelMap.scale(scaleX, scaleY)
+}
+</code></pre>
+<h3 id="func-translatefloat32-float32"><a class="header" href="#func-translatefloat32-float32">func translate(Float32, Float32)</a></h3>
+<pre><code class="language-cangjie">public func translate(x: Float32, y: Float32): Unit
+</code></pre>
+<p>根据输入的坐标对图片进行位置变换。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">x</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">区域横坐标。</td></tr>
+<tr><td style="text-align: left">y</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">区域纵坐标。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let translateX : Float32 = 50.0
+    let translateY : Float32 = 10.0
+    pixelMap.translate(translateX, translateY)
+}
+</code></pre>
+<h3 id="func-rotatefloat32"><a class="header" href="#func-rotatefloat32">func rotate(Float32)</a></h3>
+<pre><code class="language-cangjie">public func rotate(angle: Float32): Unit
+</code></pre>
+<p>根据输入的角度对图片进行旋转。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">angle</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">图片旋转的角度。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let angle : Float32 = 90.0
+    pixelMap.rotate(angle)
+}
+</code></pre>
+<h3 id="func-flipbool-bool"><a class="header" href="#func-flipbool-bool">func flip(Bool, Bool)</a></h3>
+<pre><code class="language-cangjie">public func flip(horizontal: Bool, vertical: Bool): Unit
+</code></pre>
+<p>根据输入的条件对图片进行翻转。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">horizontal</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">水平翻转。</td></tr>
+<tr><td style="text-align: left">vertical</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">垂直翻转。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let horizontal : Bool = true
+    let vertical : Bool = false
+    pixelMap.flip(horizontal, vertical)
+}
+</code></pre>
+<h3 id="func-cropregion"><a class="header" href="#func-cropregion">func crop(Region)</a></h3>
+<pre><code class="language-cangjie">public func crop(region: Region): Unit
+</code></pre>
+<p>根据输入的尺寸对图片进行裁剪。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">region</td><td style="text-align: left"><a href="#struct-region">Region</a></td><td style="text-align: left">是</td><td style="text-align: left">裁剪的尺寸。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    let region : Region = Region(Size(height: 100, width: 100), 0, 0)
+    pixelMap.crop(region)
+}
+</code></pre>
+<h3 id="func-getcolorspace"><a class="header" href="#func-getcolorspace">func getColorSpace()</a></h3>
+<pre><code class="language-cangjie">public func getColorSpace(): ColorSpaceManager
+</code></pre>
+<p>获取图像广色域信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="cj-apis-colorManager.html#class-colorspacemanager">ColorSpaceManager</a></td><td style="text-align: left">图像广色域信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980101</td><td style="text-align: left">If the image data abnormal.</td></tr>
+<tr><td style="text-align: left">62980103</td><td style="text-align: left">If the image data unsupport.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">If the image parameter invalid.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">pixelMap.getColorSpace()
+</code></pre>
+<h3 id="func-setcolorspacecolorspacemanager"><a class="header" href="#func-setcolorspacecolorspacemanager">func setColorSpace(ColorSpaceManager)</a></h3>
+<pre><code class="language-cangjie">public func setColorSpace(colorSpace: ColorSpaceManager): Unit
+</code></pre>
+<p>设置图像广色域信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">colorSpace</td><td style="text-align: left"><a href="cj-apis-colorManager.html#class-colorspacemanager">ColorSpaceManager</a></td><td style="text-align: left">是</td><td style="text-align: left">图像广色域信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980111</td><td style="text-align: left">If the operation invalid.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">If the image parameter invalid.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let colorSpaceManager = create(SRGB)
+pixelMap.setColorSpace(colorSpaceManager)
+</code></pre>
+<h3 id="func-applycolorspacecolorspacemanager"><a class="header" href="#func-applycolorspacecolorspacemanager">func applyColorSpace(ColorSpaceManager)</a></h3>
+<pre><code class="language-cangjie">public func applyColorSpace(colorSpace: ColorSpaceManager): Unit
+</code></pre>
+<p>根据输入的目标色彩空间对图像像素颜色进行色彩空间转换。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">targetColorSpace</td><td style="text-align: left"><a href="cj-apis-colorManager.html#class-colorspacemanager">ColorSpaceManager</a></td><td style="text-align: left">是</td><td style="text-align: left">目标色彩空间，支持SRGB、DCI_P3、DISPLAY_P3、ADOBE_RGB_1998。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">The parameter check failed.</td></tr>
+<tr><td style="text-align: left">62980104</td><td style="text-align: left">Failed to initialize the internal object.</td></tr>
+<tr><td style="text-align: left">62980108</td><td style="text-align: left">Failed to convert the color space.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let colorSpaceManager = create(SRGB)
+pixelMap.applyColorSpace(colorSpaceManager)
+</code></pre>
+<h3 id="func-release"><a class="header" href="#func-release">func Release()</a></h3>
+<pre><code class="language-cangjie">public func Release(): Unit
+</code></pre>
+<p>释放PixelMap对象。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+func Demo() {
+    pixelMap.Release()
+}
+</code></pre>
+<h2 id="func-createimagesourcestring"><a class="header" href="#func-createimagesourcestring">func createImageSource(String)</a></h2>
+<pre><code class="language-cangjie">public func createImageSource(uri: String): ImageSource
+</code></pre>
+<p>通过传入的 URI 创建图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">uri</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">图片路径，当前仅支持应用沙箱路径。</br>当前支持格式有：.jpg .png .gif .bmp .webp RAW <a href="#svg%E6%A0%87%E7%AD%BE%E8%AF%B4%E6%98%8E">SVG<sup>10+</sup></a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">返回ImageSource类实例</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980104</td><td style="text-align: left">Image initialization abnormal.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let path : String = &quot;../test.jpg&quot;
+let imageSourceApi : ImageSource = createImageSource(path)
+</code></pre>
+<h2 id="func-createimagesourcestring-sourceoptions"><a class="header" href="#func-createimagesourcestring-sourceoptions">func createImageSource(String, SourceOptions)</a></h2>
+<pre><code class="language-cangjie">public func createImageSource(uri: String, options: SourceOptions): ImageSource
+</code></pre>
+<p>通过传入的 URI 创建图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">uri</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">图片路径，当前仅支持应用沙箱路径。</br>当前支持格式有：.jpg .png .gif .bmp .webp RAW <a href="#svg%E6%A0%87%E7%AD%BE%E8%AF%B4%E6%98%8E">SVG</a>。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-sourceoptions">SourceOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">图片属性，包括图片序号与默认属性值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">返回ImageSource类实例</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980104</td><td style="text-align: left">Image initialization abnormal.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let sourceOptions : SourceOptions = SourceOptions(sourceDensity: 120)
+let imageSource : ImageSource = createImageSource(&quot;test.png&quot;, sourceOptions)
+</code></pre>
+<h2 id="func-createimagesourceint32"><a class="header" href="#func-createimagesourceint32">func createImageSource(Int32)</a></h2>
+<pre><code class="language-cangjie">public func createImageSource(fd: Int32): ImageSource
+</code></pre>
+<p>通过传入文件描述符来创建图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">fd</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">文件描述符fd。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">返回ImageSource类实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980104</td><td style="text-align: left">Image initialization abnormal.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let imageSourceApi : ImageSource = createImageSource(0)
+</code></pre>
+<h2 id="func-createimagesourceint32-sourceoptions"><a class="header" href="#func-createimagesourceint32-sourceoptions">func createImageSource(Int32, SourceOptions)</a></h2>
+<pre><code class="language-cangjie">public func createImageSource(fd: Int32, options: SourceOptions): ImageSource
+</code></pre>
+<p>通过传入文件描述符来创建图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">fd</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">文件描述符fd。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-sourceoptions">SourceOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">图片属性，包括图片序号与默认属性值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">返回ImageSource类实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980104</td><td style="text-align: left">Image initialization abnormal.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let sourceOptions : SourceOptions = SourceOptions(sourceDensity: 120 )
+let imageSource : ImageSource = createImageSource(0, sourceOptions)
+</code></pre>
+<h2 id="func-createimagesourcearrayuint8"><a class="header" href="#func-createimagesourcearrayuint8">func createImageSource(Array&lt;UInt8&gt;)</a></h2>
+<pre><code class="language-cangjie">public func createImageSource(buf: Array&lt;UInt8&gt;): ImageSource
+</code></pre>
+<p>通过缓冲区创建图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">buf</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">图像缓冲区数组。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">返回ImageSource类实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980104</td><td style="text-align: left">Image initialization abnormal.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let buf : Array&lt;UInt8&gt; = Array&lt;UInt8&gt;(96, item: 0)  //96为需要创建的像素buffer大小，取值为：height * width *4
+let imageSourceApi : ImageSource = createImageSource(buf)
+</code></pre>
+<h2 id="func-createimagesourcearrayuint8-sourceoptions"><a class="header" href="#func-createimagesourcearrayuint8-sourceoptions">func createImageSource(Array&lt;UInt8&gt;, SourceOptions)</a></h2>
+<pre><code class="language-cangjie">public func createImageSource(buf:  Array&lt;UInt8&gt;, options: SourceOptions): ImageSource
+</code></pre>
+<p>通过缓冲区创建图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">buf</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">图像缓冲区数组。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-sourceoptions">SourceOptions</a></td><td style="text-align: left">是</td><td style="text-align: left">图片属性，包括图片序号与默认属性值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">返回ImageSource类实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980104</td><td style="text-align: left">Image initialization abnormal.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let data : Array&lt;UInt8&gt; = Array&lt;UInt8&gt;(112, item: 0)
+let sourceOptions : SourceOptions = SourceOptions(sourceDensity: 120 )
+let imageSourceApi : ImageSource = createImageSource(data, sourceOptions)
+</code></pre>
+<h2 id="func-createimagesourcerawfiledescriptor-sourceoptions"><a class="header" href="#func-createimagesourcerawfiledescriptor-sourceoptions">func createImageSource(RawFileDescriptor, SourceOptions)</a></h2>
+<pre><code class="language-cangjie">public func createImageSource(rawfile: RawFileDescriptor, options!: SourceOptions = SourceOptions()): ImageSource
+</code></pre>
+<p>通过图像资源文件的RawFileDescriptor创建图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">rawfile</td><td style="text-align: left"><a href="./cj-apis-resource-manager.html#class-rawfiledescriptor">RawFileDescriptor</a></td><td style="text-align: left">是</td><td style="text-align: left">图像资源文件的RawFileDescriptor。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-sourceoptions">SourceOptions</a></td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> 图片属性，包括图片像素密度、像素格式和图片尺寸。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">返回ImageSource类实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let resourceManager = ResourceManager.getResourceManager(stageContext)
+
+try {
+    let rawfd = resourceManager.getRawFd(&quot;test.png&quot;)
+    createImageSource(rawfd)
+} catch (e: BusinessException) {
+    let code = e.code
+    let message = e.message
+    AppLog.info(&quot;getRawFd failed, error code: ${code}, message: ${message}.&quot;)
+}
+</code></pre>
+<h2 id="func-createincrementalsourcearrayuint8-sourceoptions"><a class="header" href="#func-createincrementalsourcearrayuint8-sourceoptions">func CreateIncrementalSource(Array&lt;UInt8&gt;, SourceOptions)</a></h2>
+<pre><code class="language-cangjie">public func CreateIncrementalSource(buf: Array&lt;UInt8&gt;, options!: SourceOptions = SourceOptions()): ImageSource
+</code></pre>
+<p>通过缓冲区以增量的方式创建图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">buf</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">增量数据， 这个参数实际不生效。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-sourceoptions">SourceOptions</a></td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> 图片属性，包括图片序号与默认属性值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">返回图片源。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let buf = Array&lt;UInt8&gt;(1, item: 0)
+let imageSource = CreateIncrementalSource(buf)
+</code></pre>
+<h2 id="class-imagesource"><a class="header" href="#class-imagesource">class ImageSource</a></h2>
+<pre><code class="language-cangjie">public class ImageSource {}
+</code></pre>
+<p>图片源类，用于获取图片相关信息。在调用ImageSource的方法前，需要先通过<a href="#func-createimagesourceint32">createImageSource</a>构建一个ImageSource实例。</p>
+<h3 id="属性-1"><a class="header" href="#属性-1">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">supportedFormats</td><td style="text-align: left">Array&lt;String&gt;</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">支持的图片格式，包括：png，jpeg，bmp，gif，webp，RAW。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getimageinfouint32--0"><a class="header" href="#func-getimageinfouint32--0">func getImageInfo(UInt32 = 0)</a></h3>
+<pre><code class="language-cangjie">public func getImageInfo(index!: UInt32 = 0): ImageInfo
+</code></pre>
+<p>获取图片信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">UInt32</td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> 创建图片源时的序号，不选择时默认为0。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-imageinfo">ImageInfo</a></td><td style="text-align: left">返回获取到的图片信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">imageSourceApi.getImageInfo(index : 0)
+</code></pre>
+<h3 id="func-getimagepropertypropertykey-imagepropertyoptions--imagepropertyoptions"><a class="header" href="#func-getimagepropertypropertykey-imagepropertyoptions--imagepropertyoptions">func getImageProperty(PropertyKey, ImagePropertyOptions = ImagePropertyOptions())</a></h3>
+<pre><code class="language-cangjie">public func getImageProperty(key: PropertyKey, options!: ImagePropertyOptions = ImagePropertyOptions()): String
+</code></pre>
+<p>获取图片中给定索引处图像的指定属性键的值，仅支持JPEG文件，且需要包含exif信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left"><a href="#enum-propertykey">PropertyKey</a></td><td style="text-align: left">是</td><td style="text-align: left">图片属性名。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-imagepropertyoptions">ImagePropertyOptions</a></td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> 图片属性，包括图片序号与默认属性值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">获取图片属性值，如获取失败则返回属性默认值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">imageSourceApi.getImageProperty(IMAGE_LENGTH)
+</code></pre>
+<h3 id="func-modifyimagepropertypropertykey-string"><a class="header" href="#func-modifyimagepropertypropertykey-string">func modifyImageProperty(PropertyKey, String)</a></h3>
+<pre><code class="language-cangjie">public func modifyImageProperty(key: PropertyKey, value: String): Unit
+</code></pre>
+<p>通过指定的键修改图片属性的值，仅支持JPEG文件，且需要包含exif信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left"><a href="#enum-propertykey">PropertyKey</a></td><td style="text-align: left">是</td><td style="text-align: left">图片属性名。</td></tr>
+<tr><td style="text-align: left">value</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">属性值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">The parameter check failed.</td></tr>
+<tr><td style="text-align: left">62980123</td><td style="text-align: left">The parameter check failed.</td></tr>
+<tr><td style="text-align: left">62980133</td><td style="text-align: left">The image source data is incomplete.</td></tr>
+<tr><td style="text-align: left">62980135</td><td style="text-align: left">The image source data is incomplete.</td></tr>
+<tr><td style="text-align: left">62980146</td><td style="text-align: left">The EXIF data failed to be written to the file.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">imageSourceApi.modifyImageProperty(IMAGE_LENGTH, &quot;120&quot;)
+</code></pre>
+<h3 id="func-updatedataarrayuint8-bool-uint32-uint32"><a class="header" href="#func-updatedataarrayuint8-bool-uint32-uint32">func updateData(Array&lt;UInt8&gt;, Bool, UInt32, UInt32)</a></h3>
+<pre><code class="language-cangjie">public func updateData(buf: Array&lt;UInt8&gt;, isFinished: Bool, offset: UInt32, length: UInt32): Unit
+</code></pre>
+<p>更新增量数据，配合CreateIncrementalSource使用。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">buf</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">增量数据。</td></tr>
+<tr><td style="text-align: left">isFinished</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">是否更新完。</td></tr>
+<tr><td style="text-align: left">offset</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">偏移量。</td></tr>
+<tr><td style="text-align: left">length</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">数组长。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let testPng = Array&lt;UInt8&gt;(16500, item: 0)
+let bufferSize = 5000
+var offset = 0
+var isFinished = false
+while (offset &lt; testPng.size) {
+    var oneStep = testPng.slice(offset, min(bufferSize, testPng.size-offset))
+    if (oneStep.size &lt; bufferSize) {
+        isFinished = true
+    }
+    imageSource.updateData(oneStep, isFinished, 0, UInt32(oneStep.size))
+    offset = offset + oneStep.size
+}
+</code></pre>
+<h3 id="func-createpixelmapdecodingoptions--decodingoptions"><a class="header" href="#func-createpixelmapdecodingoptions--decodingoptions">func createPixelMap(DecodingOptions = DecodingOptions())</a></h3>
+<pre><code class="language-cangjie">public func createPixelMap(options!: DecodingOptions = DecodingOptions()): PixelMap
+</code></pre>
+<p>通过图片解码参数创建PixelMap对象。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-decodingoptions">DecodingOptions</a></td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> 解码参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">PixelMap</td><td style="text-align: left">返回pixelMap实例</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let option = DecodingOptions(
+            sampleSize: 1,
+            rotate: 10,
+            editable: true,
+            desiredSize: Size(height: 3, width: 4),
+            desiredRegion: Region(Size(height: 3, width: 4), 0, 0),
+            desiredPixelFormat: PixelMapFormat.RGBA_8888,
+            index: 0,
+            fitDensity: 20)
+let pixelMap = imageSourceApi.createPixelMap(options: option)
+</code></pre>
+<h3 id="func-createpixelmaplistdecodingoptions--decodingoptions"><a class="header" href="#func-createpixelmaplistdecodingoptions--decodingoptions">func createPixelMapList(DecodingOptions = DecodingOptions())</a></h3>
+<pre><code class="language-cangjie">public func createPixelMapList(options!: DecodingOptions = DecodingOptions()): Array&lt;PixelMap&gt;
+</code></pre>
+<p>通过图片解码参数创建PixelMap数组。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-decodingoptions">DecodingOptions</a></td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> 解码参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Array&lt;<a href="#class-pixelmap">PixelMap</a>&gt;</td><td style="text-align: left">返回PixeMap数组。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980096</td><td style="text-align: left">The operation failed.</td></tr>
+<tr><td style="text-align: left">62980099</td><td style="text-align: left">The shared memory data is abnormal.</td></tr>
+<tr><td style="text-align: left">62980101</td><td style="text-align: left">The image data is abnormal.</td></tr>
+<tr><td style="text-align: left">62980103</td><td style="text-align: left">The image data is not supported.</td></tr>
+<tr><td style="text-align: left">62980106</td><td style="text-align: left">The image is too large.</td></tr>
+<tr><td style="text-align: left">62980109</td><td style="text-align: left">Failed to crop the image.</td></tr>
+<tr><td style="text-align: left">62980110</td><td style="text-align: left">The image source data is incorrect.</td></tr>
+<tr><td style="text-align: left">62980111</td><td style="text-align: left">The image source data is incomplete.</td></tr>
+<tr><td style="text-align: left">62980112</td><td style="text-align: left">The image format does not match.</td></tr>
+<tr><td style="text-align: left">62980113</td><td style="text-align: left">Unknown image format.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+<tr><td style="text-align: left">62980116</td><td style="text-align: left">Failed to decode the image.</td></tr>
+<tr><td style="text-align: left">62980118</td><td style="text-align: left">Failed to create the image plugin.</td></tr>
+<tr><td style="text-align: left">62980122</td><td style="text-align: left">The image decoding header is abnormal.</td></tr>
+<tr><td style="text-align: left">62980137</td><td style="text-align: left">Invalid media operation.</td></tr>
+<tr><td style="text-align: left">62980173</td><td style="text-align: left">The DMA memory does not exist.</td></tr>
+<tr><td style="text-align: left">62980174</td><td style="text-align: left">The DMA memory data is abnormal.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let option = DecodingOptions(
+            sampleSize: 1,
+            rotate: 10,
+            editable: true,
+            desiredSize: Size(height: 3, width: 4),
+            desiredRegion: Region(Size(height: 3, width: 4), 0, 0),
+            desiredPixelFormat: PixelMapFormat.RGBA_8888,
+            index: 0,
+            fitDensity: 20)
+let pixelMapList = imageSourceApi.createPixelMapList(options: option)
+</code></pre>
+<h3 id="func-getdelaytimelist"><a class="header" href="#func-getdelaytimelist">func getDelayTimeList()</a></h3>
+<pre><code class="language-cangjie">public func getDelayTimeList(): Array&lt;UInt32&gt;
+</code></pre>
+<p>获取图像延迟时间数组。此接口仅用于gif图片。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Array&lt;UInt32&gt;</td><td style="text-align: left">返回延迟时间数组。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980096</td><td style="text-align: left">The operation failed.</td></tr>
+<tr><td style="text-align: left">62980110</td><td style="text-align: left">The image source data is incorrect.</td></tr>
+<tr><td style="text-align: left">62980111</td><td style="text-align: left">The image source data is incomplete.</td></tr>
+<tr><td style="text-align: left">62980112</td><td style="text-align: left">The image format does not match.</td></tr>
+<tr><td style="text-align: left">62980113</td><td style="text-align: left">Unknown image format.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+<tr><td style="text-align: left">62980116</td><td style="text-align: left">Failed to decode the image.</td></tr>
+<tr><td style="text-align: left">62980118</td><td style="text-align: left">Failed to create the image plugin.</td></tr>
+<tr><td style="text-align: left">62980122</td><td style="text-align: left">The image decoding header is abnormal.</td></tr>
+<tr><td style="text-align: left">62980137</td><td style="text-align: left">Invalid media operation.</td></tr>
+<tr><td style="text-align: left">62980149</td><td style="text-align: left">Invalid media parameter.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">imageSourceApi.getDelayTimeList()
+</code></pre>
+<h3 id="func-getframecount"><a class="header" href="#func-getframecount">func getFrameCount()</a></h3>
+<pre><code class="language-cangjie">public func getFrameCount(): UInt32
+</code></pre>
+<p>获取图像帧数。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">UInt32</td><td style="text-align: left">返回图像帧数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-image.html">Image错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">62980096</td><td style="text-align: left">The operation failed.</td></tr>
+<tr><td style="text-align: left">62980110</td><td style="text-align: left">The image source data is incorrect.</td></tr>
+<tr><td style="text-align: left">62980111</td><td style="text-align: left">The image source data is incomplete.</td></tr>
+<tr><td style="text-align: left">62980112</td><td style="text-align: left">The image format does not match.</td></tr>
+<tr><td style="text-align: left">62980113</td><td style="text-align: left">Unknown image format.</td></tr>
+<tr><td style="text-align: left">62980115</td><td style="text-align: left">Invalid image parameter.</td></tr>
+<tr><td style="text-align: left">62980116</td><td style="text-align: left">Failed to decode the image.</td></tr>
+<tr><td style="text-align: left">62980118</td><td style="text-align: left">Failed to create the image plugin.</td></tr>
+<tr><td style="text-align: left">62980122</td><td style="text-align: left">The image decoding header is abnormal.</td></tr>
+<tr><td style="text-align: left">62980137</td><td style="text-align: left">Invalid media operation.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">imageSourceApi.getFrameCount()
+</code></pre>
+<h3 id="func-release-1"><a class="header" href="#func-release-1">func Release()</a></h3>
+<pre><code class="language-cangjie">public func Release(): Unit
+</code></pre>
+<p>释放图片源实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.image.*
+imageSourceApi.Release()
+</code></pre>
+<h2 id="func-createimagepacker"><a class="header" href="#func-createimagepacker">func createImagePacker()</a></h2>
+<pre><code class="language-cangjie">public func createImagePacker(): ImagePacker
+</code></pre>
+<p>创建ImagePacker实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImagePacker</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagepacker">ImagePacker</a></td><td style="text-align: left">返回ImagePacker实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let imagePacker : ImagePacker = createImagePacker()
+</code></pre>
+<h2 id="class-imagepacker"><a class="header" href="#class-imagepacker">class ImagePacker</a></h2>
+<pre><code class="language-cangjie">public class ImagePacker {}
+</code></pre>
+<p>图片打包器类，用于图片压缩和打包。在调用ImagePacker的方法前，需要先通过<a href="#func-createimagepacker">createImagePacker</a>构建一个ImagePacker实例，当前支持格式有：jpeg、webp、png。</p>
+<h3 id="属性-2"><a class="header" href="#属性-2">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImagePacker</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">supportedFormats</td><td style="text-align: left">Array&lt;String&gt;</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">图片打包支持的格式 jpeg、webp、png。</td></tr>
+</tbody></table>
+</div>
+<h3 id="struct-packingoption"><a class="header" href="#struct-packingoption">struct PackingOption</a></h3>
+<pre><code class="language-cangjie">public struct PackingOption {
+    public let format: String,
+    public let quality!: UInt8 = 100,
+    public let bufferSize!: UInt64 = 10 * 1024 * 1024
+}
+</code></pre>
+<p>表示图片打包选项。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImagePacker</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">format</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">目标格式。</td></tr>
+<tr><td style="text-align: left">quality</td><td style="text-align: left">UInt8</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">JPEG编码中设定输出图片质量的参数，取值范围为1-100。默认值100。</td></tr>
+<tr><td style="text-align: left">bufferSize</td><td style="text-align: left">UInt64</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">接收编码数据的缓冲区大小，单位为Byte。默认为10MB。bufferSize需大于编码后图片大小。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-packingpixelmap-packingoption"><a class="header" href="#func-packingpixelmap-packingoption">func packing(PixelMap, PackingOption)</a></h3>
+<pre><code class="language-cangjie">public func packing(source: PixelMap, option: PackingOption): Array&lt;UInt8&gt;
+</code></pre>
+<p>图片压缩或重新打包，返回Array&lt;UInt8&gt;结果。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImagePacker</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">source</td><td style="text-align: left"><a href="#class-pixelmap">PixelMap</a></td><td style="text-align: left">是</td><td style="text-align: left">打包的PixelMap源。</td></tr>
+<tr><td style="text-align: left">option</td><td style="text-align: left"><a href="#struct-packingoption">PackingOption</a></td><td style="text-align: left">是</td><td style="text-align: left">设置打包参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">用于获取压缩或打包后的数据。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var colors = Array&lt;UInt8&gt;([80, 2, 4, 8, 40, 2, 4, 8])
+var pm = createPixelMap(colors, InitializationOptions(scaleMode: ScaleMode.CENTER_CROP, size:Size(height: 4, width: 3)))
+var imagePacker = ImagePacker()
+let supportedFormats = imagePacker.supportedFormats
+let packingOption = PackingOption(&quot;image/jpeg&quot;)
+let packRes = imagePacker.packing(pm, packingOption)
+</code></pre>
+<h3 id="func-packingimagesource-packingoption"><a class="header" href="#func-packingimagesource-packingoption">func packing(ImageSource, PackingOption)</a></h3>
+<pre><code class="language-cangjie">public func packing(source: ImageSource, option: PackingOption): Array&lt;UInt8&gt;
+</code></pre>
+<p>图片压缩或重新打包，返回Array&lt;UInt8&gt;结果。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImagePacker</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">source</td><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">是</td><td style="text-align: left">打包的图片源。</td></tr>
+<tr><td style="text-align: left">option</td><td style="text-align: left"><a href="#struct-packingoption">PackingOption</a></td><td style="text-align: left">是</td><td style="text-align: left">设置打包参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">用于获取压缩或打包后的数据。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var imageSource = createImageSource(&quot;/data/storage/el2/base/haps/entry/files/test.jpg&quot;)
+var imagePacker = ImagePacker()
+let packingOption = PackingOption(&quot;image/jpeg&quot;)
+let packRes = imagePacker.packing(imageSource, packingOption)
+</code></pre>
+<h3 id="func-packtofilepixelmap-intnative-packingoption"><a class="header" href="#func-packtofilepixelmap-intnative-packingoption">func packToFile(PixelMap, IntNative, PackingOption)</a></h3>
+<pre><code class="language-cangjie">public func packToFile(source: PixelMap, fd: IntNative, option: PackingOption): Unit
+</code></pre>
+<p>图片压缩或重新打包到文件中。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImagePacker</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">source</td><td style="text-align: left"><a href="#class-pixelmap">PixelMap</a></td><td style="text-align: left">是</td><td style="text-align: left">打包的图片PixelMap。</td></tr>
+<tr><td style="text-align: left">fd</td><td style="text-align: left">IntNative</td><td style="text-align: left">是</td><td style="text-align: left">打包的目的文件的文件描述符。</td></tr>
+<tr><td style="text-align: left">option</td><td style="text-align: left"><a href="#struct-packingoption">PackingOption</a></td><td style="text-align: left">是</td><td style="text-align: left">设置打包参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var colors = Array&lt;UInt8&gt;([80, 2, 4, 8, 40, 2, 4, 8])
+var pm = createPixelMap(colors, InitializationOptions(scaleMode: ScaleMode.CENTER_CROP, size:Size(height: 4, width: 3)))
+
+var imagePacker = ImagePacker()
+var fd: Int32 = 0
+fd = `open`(&quot;/data/storage/el2/base/haps/entry/files/mapDst.jpg&quot;, O_RDWR)
+let packingOption = PackingOption(&quot;image/jpeg&quot;)
+imagePacker.packToFile(pm, IntNative(fd), packingOption)
+</code></pre>
+<h3 id="func-packtofileimagesource-intnative-packingoption"><a class="header" href="#func-packtofileimagesource-intnative-packingoption">func packToFile(ImageSource, IntNative, PackingOption)</a></h3>
+<pre><code class="language-cangjie">public func packToFile(source: ImageSource, fd: IntNative, option: PackingOption): Unit
+</code></pre>
+<p>图片压缩或重新打包到文件中。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImagePacker</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">source</td><td style="text-align: left"><a href="#class-imagesource">ImageSource</a></td><td style="text-align: left">是</td><td style="text-align: left">打包的图片源。</td></tr>
+<tr><td style="text-align: left">fd</td><td style="text-align: left">IntNative</td><td style="text-align: left">是</td><td style="text-align: left">打包的目的文件的文件描述符。</td></tr>
+<tr><td style="text-align: left">option</td><td style="text-align: left"><a href="#struct-packingoption">PackingOption</a></td><td style="text-align: left">是</td><td style="text-align: left">设置打包参数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var imageSource = createImageSource(&quot;/data/storage/el2/base/haps/entry/files/test.jpg&quot;)
+var imagePacker = ImagePacker()
+var fd: Int32 = 0
+fd = `open`(&quot;/data/storage/el2/base/haps/entry/files/sourceDst.jpg&quot;, O_RDWR)
+let packingOption = PackingOption(&quot;image/jpeg&quot;)
+imagePacker.packToFile(imageSource, IntNative(fd), packingOption)
+</code></pre>
+<h3 id="func-release-2"><a class="header" href="#func-release-2">func Release()</a></h3>
+<pre><code class="language-cangjie">public func Release(): Unit
+</code></pre>
+<p>释放图片打包实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImagePacker</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">imagePacker.Release()
+</code></pre>
+<h2 id="func-createimagereceiverint32-int32-imageformat-int32"><a class="header" href="#func-createimagereceiverint32-int32-imageformat-int32">func createImageReceiver(Int32, Int32, ImageFormat, Int32)</a></h2>
+<pre><code class="language-cangjie">public func createImageReceiver(width: Int32, height: Int32, format: ImageFormat, capacity: Int32): ImageReceiver
+</code></pre>
+<p>通过宽、高、图片格式、容量创建ImageReceiver实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageReceiver</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">width</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">图像的默认宽度。</td></tr>
+<tr><td style="text-align: left">height</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">图像的默认高度。</td></tr>
+<tr><td style="text-align: left">format</td><td style="text-align: left">ImageFormat</td><td style="text-align: left">是</td><td style="text-align: left">图像格式，取值为<a href="#enum-imageformat">ImageFormat</a>常量（目前仅支持 ImageFormat:JPEG）。</td></tr>
+<tr><td style="text-align: left">capacity</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">同时访问的最大图像数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagereceiver">ImageReceiver</a></td><td style="text-align: left">如果操作成功，则返回ImageReceiver实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let receiver : image.ImageReceiver = createImageReceiver(8192, 8, ImageFormat.JPEG, 8);
+</code></pre>
+<h2 id="class-imagereceiver"><a class="header" href="#class-imagereceiver">class ImageReceiver</a></h2>
+<pre><code class="language-cangjie">public class ImageReceiver &lt;: RemoteData {}
+</code></pre>
+<p>图像接收类，用于获取组件surface id，接收最新的图片和读取下一张图片，以及释放ImageReceiver实例。</p>
+<p>在调用以下方法前需要先创建ImageReceiver实例。</p>
+<h3 id="属性-3"><a class="header" href="#属性-3">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageReceiver</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">size</td><td style="text-align: left"><a href="#struct-size">Size</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">图片大小。</td></tr>
+<tr><td style="text-align: left">capacity</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">同时访问的图像数。</td></tr>
+<tr><td style="text-align: left">format</td><td style="text-align: left"><a href="#enum-imageformat">ImageFormat</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">图像格式。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getreceivingsurfaceid"><a class="header" href="#func-getreceivingsurfaceid">func getReceivingSurfaceId()</a></h3>
+<pre><code class="language-cangjie">public func getReceivingSurfaceId(): String
+</code></pre>
+<p>用于获取一个surface id供Camera或其他组件使用。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageReceiver</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">返回surface id。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let id: String = receiver.getReceivingSurfaceId()
+</code></pre>
+<h2 id="func-createimagecreatorint32-int32-int32-int32"><a class="header" href="#func-createimagecreatorint32-int32-int32-int32">func createImageCreator(Int32, Int32, Int32, Int32)</a></h2>
+<pre><code class="language-cangjie">public func createImageCreator(width: Int32, height: Int32, format: Int32, capacity: Int32): ImageCreator
+</code></pre>
+<p>创建ImageCreator实例。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageCreator</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">width</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">图像的默认宽度。</td></tr>
+<tr><td style="text-align: left">height</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">图像的默认高度。</td></tr>
+<tr><td style="text-align: left">format</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">图像格式，如YCBCR_422_SP，JPEG。</td></tr>
+<tr><td style="text-align: left">capacity</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">同时访问的最大图像数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-imagecreator">ImageCreator</a></td><td style="text-align: left">返回ImageCreator实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var imageCreator = createImageCreator(8192, 8, 4, 8)
+</code></pre>
+<h2 id="class-imagecreator"><a class="header" href="#class-imagecreator">class ImageCreator</a></h2>
+<pre><code class="language-cangjie">public class ImageCreator {}
+</code></pre>
+<p>图像创建模块，用于请求图像原生数据区域，并开放给应用编译原生图像数据的能力。 在调用以下方法前需要先创建ImageCreator实例。</p>
+<h3 id="属性-4"><a class="header" href="#属性-4">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageCreator</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">capacity</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">同时访问的图像数。</td></tr>
+<tr><td style="text-align: left">format</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">图像格式。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-dequeueimage"><a class="header" href="#func-dequeueimage">func dequeueImage()</a></h3>
+<pre><code class="language-cangjie">public func dequeueImage(): Image
+</code></pre>
+<p>从空闲队列中获取buffer图片，用于绘制UI内容。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageCreator</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-image">Image</a></td><td style="text-align: left">用于返回最新图片。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var imageCreator = createImageCreator(8192, 8, 4, 8)
+var image = imageCreator.dequeueImage()
+</code></pre>
+<h3 id="func-queueimageimage"><a class="header" href="#func-queueimageimage">func queueImage(Image)</a></h3>
+<pre><code class="language-cangjie">public func queueImage(image: Image): Unit
+</code></pre>
+<p>将绘制好的图片放入Dirty队列。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageCreator</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">image</td><td style="text-align: left"><a href="#class-image">Image</a></td><td style="text-align: left">是</td><td style="text-align: left">绘制好的buffer图像。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">var imageCreator = createImageCreator(8192, 8, 4, 8)
+var image = imageCreator.dequeueImage()
+imageCreator.queueImage(image)
+</code></pre>
+<h3 id="func-release-3"><a class="header" href="#func-release-3">func Release()</a></h3>
+<pre><code class="language-cangjie">public func Release(): Unit
+</code></pre>
+<p>释放当前图像。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageCreator</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">imageCreator.Release()
+</code></pre>
+<h2 id="class-image"><a class="header" href="#class-image">class Image</a></h2>
+<pre><code class="language-cangjie">public class ImageCreator {}
+</code></pre>
+<p>提供基本的图像操作，包括获取图像信息、读写图像数据。</p>
+<h3 id="属性-5"><a class="header" href="#属性-5">属性</a></h3>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">clipRect</td><td style="text-align: left"><a href="#struct-region">Region</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">要裁剪的图像区域。</td></tr>
+<tr><td style="text-align: left">size</td><td style="text-align: left"><a href="#struct-size">Size</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">图像大小。</td></tr>
+<tr><td style="text-align: left">format</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">图像格式，参考<a href="#enum-pixelmapformat">PixelMapFormat</a>。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getcomponentcomponenttype"><a class="header" href="#func-getcomponentcomponenttype">func getComponent(ComponentType)</a></h3>
+<pre><code class="language-cangjie">public func getComponent(componentType: ComponentType): Component
+</code></pre>
+<p>根据图像的组件类型从图像中获取组件缓存返回结果。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">componentType</td><td style="text-align: left"><a href="#enum-componenttype">ComponentType</a></td><td style="text-align: left">是</td><td style="text-align: left">图像的组件类型。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-component">Component</a></td><td style="text-align: left">返回组件缓冲区。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let component : Component = img.getComponent(ComponentType.JPEG)
+</code></pre>
+<h3 id="func-release-4"><a class="header" href="#func-release-4">func Release()</a></h3>
+<pre><code class="language-cangjie">public func Release(): Unit
+</code></pre>
+<p>释放当前图像。</p>
+<p>在接收另一个图像前必须先释放对应资源。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">img.Release()
+</code></pre>
+<h2 id="struct-positionarea"><a class="header" href="#struct-positionarea">struct PositionArea</a></h2>
+<pre><code class="language-cangjie">public struct PositionArea {
+    public let pixels: Array&lt;UInt8&gt;,
+    public let offset: UInt32,
+    public let stride: UInt32,
+    public let region: Region
+}
+</code></pre>
+<p>表示图片指定区域内的数据。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">pixels</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">像素。</td></tr>
+<tr><td style="text-align: left">offset</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">偏移量。</td></tr>
+<tr><td style="text-align: left">stride</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">跨距，内存中每行像素所占的空间。stride &gt;= region.size.width*4。</td></tr>
+<tr><td style="text-align: left">region</td><td style="text-align: left"><a href="#struct-region">Region</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">区域，按照区域读写。写入的区域宽度加X坐标不能大于原图的宽度，写入的区域高度加Y坐标不能大于原图的高度。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-imageinfo"><a class="header" href="#struct-imageinfo">struct ImageInfo</a></h2>
+<pre><code class="language-cangjie">public struct ImageInfo {
+    public let size: Size,
+    public let density: Int32
+}
+</code></pre>
+<p>表示图片信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">size</td><td style="text-align: left"><a href="#struct-size">Size</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">图片大小。</td></tr>
+<tr><td style="text-align: left">density</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">像素密度，单位为ppi。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-size"><a class="header" href="#struct-size">struct Size</a></h2>
+<pre><code class="language-cangjie">public struct Size {
+    public var height!: Int32 = 0,
+    public var width!: Int32 = 0
+}
+</code></pre>
+<p>表示图片尺寸。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">height</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">输出图片的高。</td></tr>
+<tr><td style="text-align: left">width</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">输出图片的宽。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-pixelmapformat"><a class="header" href="#enum-pixelmapformat">enum PixelMapFormat</a></h2>
+<pre><code class="language-cangjie">public enum PixelMapFormat &lt;: Equatable&lt;PixelMapFormat&gt; {
+    | UNKNOWN
+    | RGB_565
+    | RGBA_8888
+    | BGRA_8888
+    | RGB_888
+    | ALPHA_8
+    | RGBA_F16
+    | NV21
+    | NV12
+}
+</code></pre>
+<p>枚举，图片像素格式。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">UNKNOWN</td><td style="text-align: left">未知格式。</td></tr>
+<tr><td style="text-align: left">RGB_565</td><td style="text-align: left">格式为RGB_565</td></tr>
+<tr><td style="text-align: left">RGBA_8888</td><td style="text-align: left">格式为RGBA_8888</td></tr>
+<tr><td style="text-align: left">BGRA_8888</td><td style="text-align: left">格式为BGRA_8888</td></tr>
+<tr><td style="text-align: left">RGB_888</td><td style="text-align: left">格式为RGB_888</td></tr>
+<tr><td style="text-align: left">ALPHA_8</td><td style="text-align: left">格式为ALPHA_8</td></tr>
+<tr><td style="text-align: left">RGBA_F16</td><td style="text-align: left">格式为RGBA_F16</td></tr>
+<tr><td style="text-align: left">NV21</td><td style="text-align: left">格式为NV21</td></tr>
+<tr><td style="text-align: left">NV12</td><td style="text-align: left">格式为NV12</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getvalue"><a class="header" href="#func-getvalue">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Int32
+</code></pre>
+<p>获取枚举的值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">枚举的值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="operator-func-pixelmapformat"><a class="header" href="#operator-func-pixelmapformat">operator func ==(PixelMapFormat)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(r: PixelMapFormat): Bool
+</code></pre>
+<p>判断两个枚举值是否相等。</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">r</td><td style="text-align: left"><a href="#enum-pixelmapformat">PixelMapFormat</a></td><td style="text-align: left">是</td><td style="text-align: left">另一个枚举值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">两个枚举值相等返回true，否则返回false。</td></tr>
+</tbody></table>
+</div>
+<h3 id="operator-func-pixelmapformat-1"><a class="header" href="#operator-func-pixelmapformat-1">operator func !=(PixelMapFormat)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(r: PixelMapFormat): Bool
+</code></pre>
+<p>判断两个枚举值是否不相等。</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">r</td><td style="text-align: left"><a href="#enum-pixelmapformat">PixelMapFormat</a></td><td style="text-align: left">是</td><td style="text-align: left">另一个枚举值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">两个枚举值不相等返回true，否则返回false。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-alphatype"><a class="header" href="#enum-alphatype">enum AlphaType</a></h2>
+<pre><code class="language-cangjie">public enum AlphaType &lt;: Equatable&lt;AlphaType&gt; {
+    | UNKNOWN
+    | OPAQUE
+    | PREMUL
+    | UNPREMUL
+}
+</code></pre>
+<p>枚举，图像的透明度类型。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">UNKNOWN</td><td style="text-align: left">未知透明度。</td></tr>
+<tr><td style="text-align: left">OPAQUE</td><td style="text-align: left">没有alpha或图片不透明。</td></tr>
+<tr><td style="text-align: left">PREMUL</td><td style="text-align: left">RGB前乘alpha。</td></tr>
+<tr><td style="text-align: left">UNPREMUL</td><td style="text-align: left">RGB不前乘alpha。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getvalue-1"><a class="header" href="#func-getvalue-1">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Int32
+</code></pre>
+<p>获取枚举的值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">枚举的值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="operator-func-alphatype"><a class="header" href="#operator-func-alphatype">operator func ==(AlphaType)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(r: AlphaType): Bool
+</code></pre>
+<p>判断两个枚举值是否相等。</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">r</td><td style="text-align: left"><a href="#enum-alphatype">AlphaType</a></td><td style="text-align: left">是</td><td style="text-align: left">另一个枚举值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">两个枚举值相等返回true，否则返回false。</td></tr>
+</tbody></table>
+</div>
+<h3 id="operator-func-alphatype-1"><a class="header" href="#operator-func-alphatype-1">operator func !=(AlphaType)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(r: AlphaType): Bool
+</code></pre>
+<p>判断两个枚举值是否不相等。</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">r</td><td style="text-align: left"><a href="#enum-alphatype">AlphaType</a></td><td style="text-align: left">是</td><td style="text-align: left">另一个枚举值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">两个枚举值不相等返回true，否则返回false。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-scalemode"><a class="header" href="#enum-scalemode">enum ScaleMode</a></h2>
+<pre><code class="language-cangjie">public enum ScaleMode &lt;: Equatable&lt;ScaleMode&gt; {
+    | FIT_TARGET_SIZE
+    | CENTER_CROP
+}
+</code></pre>
+<p>枚举，图像的缩放模式。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">CENTER_CROP</td><td style="text-align: left">缩放图像以填充目标图像区域并居中裁剪区域外的效果。</td></tr>
+<tr><td style="text-align: left">FIT_TARGET_SIZE</td><td style="text-align: left">图像适合目标尺寸的效果。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getvalue-2"><a class="header" href="#func-getvalue-2">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Int32
+</code></pre>
+<p>获取枚举的值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">枚举的值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="operator-func-scalemode"><a class="header" href="#operator-func-scalemode">operator func ==(ScaleMode)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(r: ScaleMode): Bool
+</code></pre>
+<p>判断两个枚举值是否相等。</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">r</td><td style="text-align: left"><a href="#enum-scalemode">ScaleMode</a></td><td style="text-align: left">是</td><td style="text-align: left">另一个枚举值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">两个枚举值相等返回true，否则返回false。</td></tr>
+</tbody></table>
+</div>
+<h3 id="operator-func-scalemode-1"><a class="header" href="#operator-func-scalemode-1">operator func !=(ScaleMode)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(r: ScaleMode): Bool
+</code></pre>
+<p>判断两个枚举值是否不相等。</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">r</td><td style="text-align: left"><a href="#enum-scalemode">ScaleMode</a></td><td style="text-align: left">是</td><td style="text-align: left">另一个枚举值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">两个枚举值不相等返回true，否则返回false。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-sourceoptions"><a class="header" href="#struct-sourceoptions">struct SourceOptions</a></h2>
+<pre><code class="language-cangjie">public struct SourceOptions {
+    public let sourceDensity!: Int32 = 0,
+    public let sourcePixelFormat!: PixelMapFormat = PixelMapFormat.UNKNOWN,
+    public let sourceSize!: Size = Size(height: 0, width: 0)
+}
+</code></pre>
+<p>ImageSource的初始化选项。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">sourceDensity</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">ImageSource的密度。</td></tr>
+<tr><td style="text-align: left">sourcePixelFormat</td><td style="text-align: left"><a href="#enum-pixelmapformat">PixelMapFormat</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">图片像素格式。</td></tr>
+<tr><td style="text-align: left">sourceSize</td><td style="text-align: left"><a href="#struct-size">Size</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">图像像素大小。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-initializationoptions"><a class="header" href="#struct-initializationoptions">struct InitializationOptions</a></h2>
+<pre><code class="language-cangjie">public struct InitializationOptions {
+    public var alphaType!: AlphaType = AlphaType.UNKNOWN,
+    public var editable!: Bool = false,
+    public var pixelFormat!: PixelMapFormat = PixelMapFormat.UNKNOWN,
+    public var scaleMode!: ScaleMode = ScaleMode.FIT_TARGET_SIZE,
+    public var size!: Size
+}
+</code></pre>
+<p>PixelMap的初始化选项。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">alphaType</td><td style="text-align: left"><a href="#enum-alphatype">AlphaType</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">透明度。</td></tr>
+<tr><td style="text-align: left">editable</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">是否可编辑。</td></tr>
+<tr><td style="text-align: left">pixelFormat</td><td style="text-align: left"><a href="#enum-pixelmapformat">PixelMapFormat</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">像素格式。</td></tr>
+<tr><td style="text-align: left">scaleMode</td><td style="text-align: left"><a href="#enum-scalemode">ScaleMode</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">缩略值。</td></tr>
+<tr><td style="text-align: left">size</td><td style="text-align: left"><a href="#struct-size">Size</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">创建图片大小。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-decodingoptions"><a class="header" href="#struct-decodingoptions">struct DecodingOptions</a></h2>
+<pre><code class="language-cangjie">public struct DecodingOptions {
+    public let sampleSize!: UInt32 = 1,
+    public let rotate!: UInt32 = 0,
+    public let editable!: Bool = false,
+    public let desiredSize!: Size = Size(height: 0, width: 0),
+    public let desiredRegion!: Region = Region(Size(height: 0, width: 0), 0, 0),
+    public let desiredPixelFormat!: PixelMapFormat = UNKNOWN,
+    public let index!: UInt32 = 0,
+    public let fitDensity!: Int32 = 0,
+    public let desiredColorSpace!: ?ColorSpaceManager = None
+}
+</code></pre>
+<p>图像解码设置选项。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">sampleSize</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">缩略图采样大小，当前只能取1。</td></tr>
+<tr><td style="text-align: left">rotate</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">旋转角度。</td></tr>
+<tr><td style="text-align: left">editable</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">是否可编辑。当取值为false时，图片不可二次编辑，如crop等操作将失败。</td></tr>
+<tr><td style="text-align: left">desiredSize</td><td style="text-align: left"><a href="#struct-size">Size</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">期望输出大小。</td></tr>
+<tr><td style="text-align: left">desiredRegion</td><td style="text-align: left"><a href="#struct-region">Region</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">解码区域。</td></tr>
+<tr><td style="text-align: left">desiredPixelFormat</td><td style="text-align: left"><a href="#enum-pixelmapformat">PixelMapFormat</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">解码的像素格式。</td></tr>
+<tr><td style="text-align: left">index</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">解码图片序号。</td></tr>
+<tr><td style="text-align: left">fitDensity</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">图像像素密度，单位为ppi。</td></tr>
+<tr><td style="text-align: left">desiredColorSpace</td><td style="text-align: left"><a href="cj-apis-colorManager.html#class-colorspacemanager">ColorSpaceManager</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">目标色彩空间。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-region"><a class="header" href="#struct-region">struct Region</a></h2>
+<pre><code class="language-cangjie">public struct Region {
+    public var size: Size,
+    public var x: Int32,
+    public var y: Int32
+}
+</code></pre>
+<p>表示区域信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">size</td><td style="text-align: left"><a href="#struct-size">Size</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">区域大小。</td></tr>
+<tr><td style="text-align: left">x</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">区域横坐标。</td></tr>
+<tr><td style="text-align: left">y</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">区域纵坐标。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-imagepropertyoptions"><a class="header" href="#struct-imagepropertyoptions">struct ImagePropertyOptions</a></h2>
+<pre><code class="language-cangjie">public struct ImagePropertyOptions {
+    public let index!: UInt32 = 0,
+    public let defaultValue!: String = &quot;&quot;
+}
+</code></pre>
+<p>表示查询图片属性的索引。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageSource</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">图片序号。</td></tr>
+<tr><td style="text-align: left">defaultValue</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">默认属性值。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-propertykey"><a class="header" href="#enum-propertykey">enum PropertyKey</a></h2>
+<pre><code class="language-cangjie">public enum PropertyKey &lt;: ToString {
+    | BITS_PER_SAMPLE
+    | ORIENTATION
+    | IMAGE_LENGTH
+    | IMAGE_WIDTH
+    | GPS_LATITUDE
+    | GPS_LONGITUDE
+    | GPS_LATITUDE_REF
+    | GPS_LONGITUDE_REF
+    | DATE_TIME_ORIGINAL
+    | EXPOSURE_TIME
+    | SCENE_TYPE
+    | ISO_SPEED_RATINGS
+    | F_NUMBER
+    | DATE_TIME
+    | GPS_TIME_STAMP
+    | GPS_DATE_STAMP
+    | IMAGE_DESCRIPTION
+    | MAKE
+    | MODEL
+    | PHOTO_MODE
+    | SENSITIVITY_TYPE
+    | STANDARD_OUTPUT_SENSITIVITY
+    | RECOMMENDED_EXPOSURE_INDEX
+    | ISO_SPEED
+    | APERTURE_VALUE
+    | EXPOSURE_BIAS_VALUE
+    | METERING_MODE
+    | LIGHT_SOURCE
+    | FLASH
+    | FOCAL_LENGTH
+    | USER_COMMENT
+    | PIXEL_X_DIMENSION
+    | PIXEL_Y_DIMENSION
+    | WHITE_BALANCE
+    | FOCAL_LENGTH_IN_35_MM_FILM
+    | CAPTURE_MODE
+    | PHYSICAL_APERTURE
+    | ROLL_ANGLE
+    | PITCH_ANGLE
+    | SCENE_FOOD_CONF
+    | SCENE_STAGE_CONF
+    | SCENE_BLUE_SKY_CONF
+    | SCENE_GREEN_PLANT_CONF
+    | SCENE_BEACH_CONF
+    | SCENE_SNOW_CONF
+    | SCENE_SUNSET_CONF
+    | SCENE_FLOWERS_CONF
+    | SCENE_NIGHT_CONF
+    | SCENE_TEXT_CONF
+    | FACE_COUNT
+    | FOCUS_MODE
+}
+</code></pre>
+<p>枚举，Exif（Exchangeable image file format）图片信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">BITS_PER_SAMPLE</td><td style="text-align: left">&quot;BitsPerSample&quot;</td><td style="text-align: left">每个像素比特数。</td></tr>
+<tr><td style="text-align: left">ORIENTATION</td><td style="text-align: left">&quot;Orientation&quot;</td><td style="text-align: left">图片方向。</td></tr>
+<tr><td style="text-align: left">IMAGE_LENGTH</td><td style="text-align: left">&quot;ImageLength&quot;</td><td style="text-align: left">图片长度。</td></tr>
+<tr><td style="text-align: left">IMAGE_WIDTH</td><td style="text-align: left">&quot;ImageWidth&quot;</td><td style="text-align: left">图片宽度。</td></tr>
+<tr><td style="text-align: left">GPS_LATITUDE</td><td style="text-align: left">&quot;GPSLatitude&quot;</td><td style="text-align: left">图片纬度。</td></tr>
+<tr><td style="text-align: left">GPS_LONGITUDE</td><td style="text-align: left">&quot;GPSLongitude&quot;</td><td style="text-align: left">图片经度。</td></tr>
+<tr><td style="text-align: left">GPS_LATITUDE_REF</td><td style="text-align: left">&quot;GPSLatitudeRef&quot;</td><td style="text-align: left">纬度引用，例如N或S。</td></tr>
+<tr><td style="text-align: left">GPS_LONGITUDE_REF</td><td style="text-align: left">&quot;GPSLongitudeRef&quot;</td><td style="text-align: left">经度引用，例如W或E。</td></tr>
+<tr><td style="text-align: left">DATE_TIME_ORIGINAL</td><td style="text-align: left">&quot;DateTimeOriginal&quot;</td><td style="text-align: left">拍摄时间，例如2022:09:06 15:48:00。当前为只读属性。</td></tr>
+<tr><td style="text-align: left">EXPOSURE_TIME</td><td style="text-align: left">&quot;ExposureTime&quot;</td><td style="text-align: left">曝光时间，例如1/33 sec。当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_TYPE</td><td style="text-align: left">&quot;SceneType&quot;</td><td style="text-align: left">拍摄场景模式，例如人像、风光、运动、夜景等。当前为只读属性。</td></tr>
+<tr><td style="text-align: left">ISO_SPEED_RATINGS</td><td style="text-align: left">&quot;ISOSpeedRatings&quot;</td><td style="text-align: left">ISO感光度，例如400。当前为只读属性。</td></tr>
+<tr><td style="text-align: left">F_NUMBER</td><td style="text-align: left">&quot;FNumber&quot;</td><td style="text-align: left">光圈值，例如f/1.8。当前为只读属性。</td></tr>
+<tr><td style="text-align: left">DATE_TIME</td><td style="text-align: left">&quot;DateTime&quot;</td><td style="text-align: left">日期时间，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">GPS_TIME_STAMP</td><td style="text-align: left">&quot;GPSTimeStamp&quot;</td><td style="text-align: left">GPS时间戳，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">GPS_DATE_STAMP</td><td style="text-align: left">&quot;GPSDateStamp&quot;</td><td style="text-align: left">GPS日期戳，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">IMAGE_DESCRIPTION</td><td style="text-align: left">&quot;ImageDescription&quot;</td><td style="text-align: left">图像信息描述，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">MAKE</td><td style="text-align: left">&quot;Make&quot;</td><td style="text-align: left">生产商，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">MODEL</td><td style="text-align: left">&quot;Model&quot;</td><td style="text-align: left">设备型号，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">PHOTO_MODE</td><td style="text-align: left">&quot;PhotoMode &quot;</td><td style="text-align: left">拍照模式，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SENSITIVITY_TYPE</td><td style="text-align: left">&quot;SensitivityType&quot;</td><td style="text-align: left">灵敏度类型，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">STANDARD_OUTPUT_SENSITIVITY</td><td style="text-align: left">&quot;StandardOutputSensitivity&quot;</td><td style="text-align: left">标准输出灵敏度，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">RECOMMENDED_EXPOSURE_INDEX</td><td style="text-align: left">&quot;RecommendedExposureIndex&quot;</td><td style="text-align: left">推荐曝光指数，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">ISO_SPEED</td><td style="text-align: left">&quot;ISOSpeedRatings&quot;</td><td style="text-align: left">ISO速度等级，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">APERTURE_VALUE</td><td style="text-align: left">&quot;ApertureValue&quot;</td><td style="text-align: left">光圈值，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">EXPOSURE_BIAS_VALUE</td><td style="text-align: left">&quot;ExposureBiasValue&quot;</td><td style="text-align: left">曝光偏差值，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">METERING_MODE</td><td style="text-align: left">&quot;MeteringMode&quot;</td><td style="text-align: left">测光模式，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">LIGHT_SOURCE</td><td style="text-align: left">&quot;LightSource&quot;</td><td style="text-align: left">光源，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">FLASH</td><td style="text-align: left">&quot;Flash&quot;</td><td style="text-align: left">闪光灯，记录闪光灯状态，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">FOCAL_LENGTH</td><td style="text-align: left">&quot;FocalLength&quot;</td><td style="text-align: left">焦距，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">USER_COMMENT</td><td style="text-align: left">&quot;UserComment&quot;</td><td style="text-align: left">用户注释，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">PIXEL_X_DIMENSION</td><td style="text-align: left">&quot;PixelXDimension&quot;</td><td style="text-align: left">像素X尺寸，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">PIXEL_Y_DIMENSION</td><td style="text-align: left">&quot;PixelYDimension&quot;</td><td style="text-align: left">像素Y尺寸，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">WHITE_BALANCE</td><td style="text-align: left">&quot;WhiteBalance&quot;</td><td style="text-align: left">白平衡，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">FOCAL_LENGTH_IN_35_MM_FILM</td><td style="text-align: left">&quot;FocalLengthIn35mmFilm&quot;</td><td style="text-align: left">焦距35毫米胶片，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">CAPTURE_MODE</td><td style="text-align: left">&quot;HwMnoteCaptureMode&quot;</td><td style="text-align: left">捕获模式，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">PHYSICAL_APERTURE</td><td style="text-align: left">&quot;HwMnotePhysicalAperture&quot;</td><td style="text-align: left">物理孔径，光圈大小，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">ROLL_ANGLE</td><td style="text-align: left">&quot;HwMnoteRollAngle&quot;</td><td style="text-align: left">滚动角度，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">PITCH_ANGLE</td><td style="text-align: left">&quot;HwMnotePitchAngle&quot;</td><td style="text-align: left">俯仰角度，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_FOOD_CONF</td><td style="text-align: left">&quot;HwMnoteSceneFoodConf&quot;</td><td style="text-align: left">拍照场景：食物，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_STAGE_CONF</td><td style="text-align: left">&quot;HwMnoteSceneStageConf&quot;</td><td style="text-align: left">拍照场景：舞台，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_BLUE_SKY_CONF</td><td style="text-align: left">&quot;HwMnoteSceneBlueSkyConf&quot;</td><td style="text-align: left">拍照场景：蓝天，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_GREEN_PLANT_CONF</td><td style="text-align: left">&quot;HwMnoteSceneGreenPlantConf&quot;</td><td style="text-align: left">拍照场景：绿植，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_BEACH_CONF</td><td style="text-align: left">&quot;HwMnoteSceneBeachConf&quot;</td><td style="text-align: left">拍照场景：沙滩，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_SNOW_CONF</td><td style="text-align: left">&quot;HwMnoteSceneSnowConf&quot;</td><td style="text-align: left">拍照场景：下雪，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_SUNSET_CONF</td><td style="text-align: left">&quot;HwMnoteSceneSunsetConf&quot;</td><td style="text-align: left">拍照场景：日落，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_FLOWERS_CONF</td><td style="text-align: left">&quot;HwMnoteSceneFlowersConf&quot;</td><td style="text-align: left">拍照场景：花，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_NIGHT_CONF</td><td style="text-align: left">&quot;HwMnoteSceneNightConf&quot;</td><td style="text-align: left">拍照场景：夜晚，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">SCENE_TEXT_CONF</td><td style="text-align: left">&quot;HwMnoteSceneTextConf&quot;</td><td style="text-align: left">拍照场景：文本，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">FACE_COUNT</td><td style="text-align: left">&quot;HwMnoteFaceCount&quot;</td><td style="text-align: left">人脸数量，当前为只读属性。</td></tr>
+<tr><td style="text-align: left">FOCUS_MODE</td><td style="text-align: left">&quot;HwMnoteFocusMode&quot;</td><td style="text-align: left">对焦模式，当前为只读属性。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-tostring"><a class="header" href="#func-tostring">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>获取枚举的值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">枚举的说明。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-imageformat"><a class="header" href="#enum-imageformat">enum ImageFormat</a></h2>
+<pre><code class="language-cangjie">public enum ImageFormat {
+    | YCBCR_422_SP
+    | JPEG
+}
+</code></pre>
+<p>枚举，图片格式。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">YCBCR_422_SP</td><td style="text-align: left">YCBCR422半平面格式。</td></tr>
+<tr><td style="text-align: left">JPEG</td><td style="text-align: left">JPEG编码格式。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getvalue-3"><a class="header" href="#func-getvalue-3">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Int32
+</code></pre>
+<p>获取枚举的值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">枚举的值。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-componenttype"><a class="header" href="#enum-componenttype">enum ComponentType</a></h2>
+<pre><code class="language-cangjie">public enum ComponentType {
+    | YUV_Y
+    | YUV_U
+    | YUV_V
+    | JPEG
+}
+</code></pre>
+<p>枚举，图像的组件类型。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.ImageReceiver</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">YUV_Y</td><td style="text-align: left">亮度信息。</td></tr>
+<tr><td style="text-align: left">YUV_U</td><td style="text-align: left">色度信息。</td></tr>
+<tr><td style="text-align: left">YUV_V</td><td style="text-align: left">色度信息。</td></tr>
+<tr><td style="text-align: left">JPEG</td><td style="text-align: left">JPEG 类型。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getvalue-4"><a class="header" href="#func-getvalue-4">func getValue()</a></h3>
+<pre><code class="language-cangjie">public func getValue(): Int32
+</code></pre>
+<p>获取枚举的值。</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">枚举的值。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-component"><a class="header" href="#struct-component">struct Component</a></h2>
+<pre><code class="language-cangjie">public struct Component {
+    public let componentType: ComponentType,
+    public let rowStride: Int32,
+    public let pixelStride: Int32,
+    public let byteBuffer: Array&lt;UInt8&gt;
+}
+</code></pre>
+<p>描述图像颜色分量。</p>
+<p><strong>系统能力：</strong> SystemCapability.Multimedia.Image.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">componentType</td><td style="text-align: left"><a href="#enum-componenttype">ComponentType</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">组件类型。</td></tr>
+<tr><td style="text-align: left">rowStride</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">行距。</td></tr>
+<tr><td style="text-align: left">pixelStride</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">像素间距。</td></tr>
+<tr><td style="text-align: left">byteBuffer</td><td style="text-align: left">Array&lt;UInt8&gt;</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">组件缓冲区。</td></tr>
+</tbody></table>
+</div>
+<h2 id="补充说明"><a class="header" href="#补充说明">补充说明</a></h2>
+<h3 id="svg标签说明"><a class="header" href="#svg标签说明">SVG标签说明</a></h3>
+<p>支持SVG标签，使用版本为(SVG) 1.1，当前支持的标签列表有：</p>
+<ul>
+<li>a</li>
+<li>circla</li>
+<li>clipPath</li>
+<li>defs</li>
+<li>ellipse</li>
+<li>feBlend</li>
+<li>feColorMatrix</li>
+<li>feComposite</li>
+<li>feDiffuseLighting</li>
+<li>feDisplacementMap</li>
+<li>feDistantLight</li>
+<li>feFlood</li>
+<li>feGaussianBlur</li>
+<li>feImage</li>
+<li>feMorphology</li>
+<li>feOffset</li>
+<li>fePointLight</li>
+<li>feSpecularLighting</li>
+<li>feSpotLight</li>
+<li>feTurbulence</li>
+<li>filter</li>
+<li>g</li>
+<li>image</li>
+<li>line</li>
+<li>linearGradient</li>
+<li>mask</li>
+<li>path</li>
+<li>pattern</li>
+<li>polygon</li>
+<li>polyline</li>
+<li>radialGradient</li>
+<li>rect</li>
+<li>stop</li>
+<li>svg</li>
+<li>text</li>
+<li>textPath</li>
+<li>tspan</li>
+<li>use</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/apis/cj-apis-window.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-i18n.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/apis/cj-apis-window.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-i18n.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

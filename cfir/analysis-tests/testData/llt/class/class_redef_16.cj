@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 let var1: Class25<Enum319> = Class25<Enum319>()
 let var2: Class50<Enum319> = Class50<Enum319>()
 

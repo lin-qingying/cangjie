@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %enableO2 %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix 2>&1 | compare %f
-// ASSERT: scan BBB999
-
 class C <: ToString {
     public var x: Int32 = 999
     public func toString() {
@@ -33,4 +29,3 @@ main() {
     f(E<C>.B(C()))
     return 0
 }
-

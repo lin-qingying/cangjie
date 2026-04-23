@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-PIPE-0: %run %output | compare %f
-// (CJNATIVE) ASSERT: scan-2 2
-// (not CJNATIVE) ASSERT: scan-2 1
-
 interface I1 {
     func foo() {
         1

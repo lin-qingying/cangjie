@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 main(): Int64 {
     var res1 = (3.14, "PIE")[0] // ok
     var res2 = (3.14, "PIE")[1] // ok

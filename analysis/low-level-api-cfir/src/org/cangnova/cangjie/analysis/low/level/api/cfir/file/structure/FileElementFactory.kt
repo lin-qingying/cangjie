@@ -27,6 +27,14 @@ internal object FileElementFactory {
             ClassDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
         }
 
+        is CfirExtend -> {
+            cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+            cfirDeclaration.declarations.forEach { declaration ->
+                declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
+            }
+            ExtendDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
+        }
+
         else -> {
             if (cfirDeclaration is CfirPrimaryConstructor) {
                 cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)

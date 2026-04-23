@@ -104,6 +104,8 @@ object AnalysisFlags {
     val allowKotlinPackage by AnalysisFlag.Delegates.Boolean
     @JvmStatic
     val stdlibCompilation by AnalysisFlag.Delegates.Boolean
+    @JvmStatic
+    val noPrelude by AnalysisFlag.Delegates.Boolean
 
 }
 

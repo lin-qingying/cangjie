@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output
-// EXEC: %run %run_opt %output
-
 func foo3(x!: Int64 = 1, y!: Rune = r'a', z!: Float64 = 0.0): Int32 {
     return 1
 }

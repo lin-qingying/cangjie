@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 abstract class FaTest {
     public var a: Int32 = 1
     public func f(): Int32
@@ -59,5 +56,3 @@ main() {
     return 1
 }
 
-// ASSERT: regex-not core dump
-// ASSERT: regex-not stack trace

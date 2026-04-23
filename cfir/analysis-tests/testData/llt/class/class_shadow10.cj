@@ -4,14 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 open class Base {
     public let val = 1
 }
 
 open class Data <: Base {
-    public func val() {
+    public func <!INHERIT_MEMBER_KIND_INCONSISTENT!>val<!>() {
         return 0
     }
 }
@@ -19,20 +17,3 @@ open class Data <: Base {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: function member 'val' cannot have the same name with variable member in parent class or interfaces
-  ==> class_shadow10.cj:14:17:
-   | 
-14 |     public func val() {
-   |                 ^^^ 
-   | 
-note: found conflict here
-  ==> class_shadow10.cj:10:16:
-   | 
-10 |     public let val = 1
-   |                ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

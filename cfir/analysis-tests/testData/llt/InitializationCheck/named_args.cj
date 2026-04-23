@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f
-
 public func fseq(a!: Unit, b!: Unit): Unit {}
 
 main() {

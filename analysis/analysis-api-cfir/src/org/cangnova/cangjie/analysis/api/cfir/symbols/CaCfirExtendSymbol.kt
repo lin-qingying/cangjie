@@ -2,19 +2,21 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirExtendSymbolPointer
-import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
-import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -26,20 +28,36 @@ import org.cangnova.cangjie.name.FqName
  *
  * 这是仓颉特有公开语义，保留该差异，但组织方式改为 Kotlin 风格的单叶子单文件。
  */
-internal class CaCfirExtendSymbolImpl(
-    backingSymbol: CfirExtendSymbol,
+internal class CaCfirExtendSymbol(
+    override val backingSymbol: CfirExtendSymbol,
     internal val extendPsi: org.cangnova.cangjie.psi.CjExtend?,
     internal val stableIdentity: CaCfirExtendSymbolIdentity,
     private val stableExtendId: String,
     internal val extendPackageFqName: FqName,
-    analysisSession: CaCfirSession,
-    containingModule: CaModule,
-    token: CaLifetimeToken,
-) : CaCfirDeclarationBackedSymbol<CfirExtendSymbol>(backingSymbol, analysisSession, containingModule, token),
+    override val analysisSession: CaCfirSession,
+) : CaCfirSymbol<CfirExtendSymbol>,
+    CaCfirBackedSymbol<CfirExtendSymbol>,
     CaExtendSymbol,
     CaTypeParameterOwnerSymbol {
     private val extendDeclaration: CfirExtend
         get() = backingSymbol.cfir
+
+    private val status
+        get() = (extendDeclaration as? CfirMemberDeclaration)?.status
+
+    override val containingModule
+        get() = analysisSession.useSiteModule
+
+    override val annotations: CaAnnotationList
+        get() = withValidityAssertion {
+            CaCfirAnnotationListForDeclaration.create(backingSymbol, builder)
+        }
+
+    override val psi
+        get() = extendPsi ?: backingSymbol.backingPsiIfApplicable
+
+    override val origin: CaSymbolOrigin
+        get() = backingSymbol.origin.asPublicOrigin()
 
     override val extendId: String
         get() = stableExtendId
@@ -48,14 +66,26 @@ internal class CaCfirExtendSymbolImpl(
         get() = extendDeclaration.extendedTypeRef.coneTypeOrNull?.classIdOrPrimitiveClassId
 
     override val extendedType: CaType
-        get() = extendDeclaration.extendedTypeRef.coneTypeOrNull?.asCaType(analysisSession)
+        get() = extendDeclaration.extendedTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType)
             ?: error("Cannot build extended type for extend `${extendId}`")
 
     override val superTypes: List<CaType>
-        get() = extendDeclaration.superTypeRefs.mapNotNull { superTypeRef -> superTypeRef.coneTypeOrNull?.asCaType(analysisSession) }
+        get() = extendDeclaration.superTypeRefs.mapNotNull { superTypeRef -> superTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType) }
 
     override val typeParameters: List<CaTypeParameterSymbol>
-        get() = extendDeclaration.typeParameters.map { typeParameter -> analysisSession.createTypeParameterSymbol(typeParameter.symbol) }
+        get() = extendDeclaration.typeParameters.map { typeParameter -> builder.classifierBuilder.buildTypeParameterSymbol(typeParameter.symbol) }
+
+    override val visibility: CaSymbolVisibility
+        get() = status?.visibility?.asPublicVisibility() ?: CaSymbolVisibility.PUBLIC
+
+    override val isVisibilityExplicit: Boolean
+        get() = status?.isVisibilityExplicit == true
+
+    override val modality: CaSymbolModality?
+        get() = status?.modality?.asPublicModality()
+
+    override val isModalityExplicit: Boolean
+        get() = status?.isModalityExplicit == true
 
     override val location: CaSymbolLocation
         get() = CaSymbolLocation.TOP_LEVEL

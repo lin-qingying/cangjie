@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %output 2>&1 | compare %f
-
 main(): Int64 {
     var a: Int32 = 1
 
@@ -14,9 +12,9 @@ main(): Int64 {
     }
 
     var ret = if (true) {
-        foo
+        <!USE_FUNC_CAPTURE_VAR_ALONE!>foo<!>
     } else {
-        foo
+        <!USE_FUNC_CAPTURE_VAR_ALONE!>foo<!>
     }
 
     if (ret() != 1) {
@@ -25,33 +23,3 @@ main(): Int64 {
 
     return 0
 }
-
-/* SCAN
-error: function capturing mutable variables needs to be called directly
-  ==> capture7.cj:17:9:
-   | 
-17 |         foo
-   |         ^^^ 
-   | 
-note: 'a' is mutable
-  ==> capture7.cj:13:16:
-   | 
-13 |         return a
-   |                ^ 
-   | 
-
-error: function capturing mutable variables needs to be called directly
-  ==> capture7.cj:19:9:
-   | 
-19 |         foo
-   |         ^^^ 
-   | 
-note: 'a' is mutable
-  ==> capture7.cj:13:16:
-   | 
-13 |         return a
-   |                ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -11,7 +11,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealFloatConstantType
 import org.cangnova.cangjie.cfir.types.ConeIdealFloatLiteralType
 import org.cangnova.cangjie.cfir.types.ConeIdealIntConstantType
@@ -35,7 +35,6 @@ import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.getConstructor
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
-import kotlin.compareTo
 
 /**
  * 仓颉 Cone 类型渲染器。
@@ -135,7 +134,7 @@ open class ConeTypeRenderer(
             is ConeStructType -> renderStructType(type)
             is ConeEnumType -> renderEnumType(type)
             is ConeTypeAliasType -> renderTypeAliasType(type)
-            is ConeFuncType -> renderFunctionType(type)
+            is ConeFunctionType -> renderFunctionType(type)
             is ConeTupleType -> renderTupleType(type)
             is ConeVArrayType -> renderVArrayType(type)
             is ConePointerType -> renderPointerType(type)
@@ -275,7 +274,7 @@ open class ConeTypeRenderer(
      *
      * C 互操作/闭包/可变参是函数语义标签，体现在前缀与参数尾部标记。
      */
-    protected open fun renderFunctionType(type: ConeFuncType) {
+    protected open fun renderFunctionType(type: ConeFunctionType) {
         if (type.isCFunc) builder.append("cfunc ")
         if (type.isClosureType) builder.append("closure ")
 
@@ -362,7 +361,11 @@ open class ConeTypeRenderer(
     }
 
     protected fun ConeTypeProjection.render() {
-        renderType(type)
+        when (this) {
+            is ConeCangJieType -> {
+                render(this)
+            }
+        }
     }
 
     private fun ensureState() {

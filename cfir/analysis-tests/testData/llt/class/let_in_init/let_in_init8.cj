@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 struct B {
     public var a: Int32 = 1
     public let b: Int32 = 1
@@ -13,9 +11,9 @@ struct B {
 
 main(): Int64 {
     A().a = 2
-    A().b = 2
-    B().a = 2
-    B().b = 2
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>A().b<!> = 2
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>B().a<!> = 2
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>B().b<!> = 2
     return 0
 }
 
@@ -23,46 +21,3 @@ class A {
     public var a: Int32 = 1
     public let b: Int32 = 1
 }
-
-/* SCAN
-error: cannot assign to immutable value
-  ==> let_in_init8.cj:16:5:
-   | 
-16 |     A().b = 2
-   |     ^^^^^^^^^ 
-   | 
-note: variable 'b' is immutable
-  ==> let_in_init8.cj:24:16:
-   | 
-24 |     public let b: Int32 = 1
-   |                ^ 
-   | 
-
-error: cannot assign to immutable value
-  ==> let_in_init8.cj:17:5:
-   | 
-17 |     B().a = 2
-   |     ^^^^^^^^^ 
-   | 
-note: function call returns immutable value
-  ==> let_in_init8.cj:17:5:
-   | 
-17 |     B().a = 2
-   |     ^^^ 
-   | 
-
-error: cannot assign to immutable value
-  ==> let_in_init8.cj:18:5:
-   | 
-18 |     B().b = 2
-   |     ^^^^^^^^^ 
-   | 
-note: variable 'b' is immutable
-  ==> let_in_init8.cj:11:16:
-   | 
-11 |     public let b: Int32 = 1
-   |                ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

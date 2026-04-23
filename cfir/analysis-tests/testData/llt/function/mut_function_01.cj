@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct S0 {
     var t0: Int64 = 0
     init() {}
@@ -21,7 +19,7 @@ struct S2 {
     init() {}
 
     func f() {
-        t2.t1.t0 += 10 // 非mut函数，不应该允许此类修改
+        <!CANNOT_MODIFY_VAR!>t2<!>.t1.t0 += 10 // 非mut函数，不应该允许此类修改
     }
 }
 
@@ -30,14 +28,3 @@ main(): Unit {
     s2.f()
     println(s2.t2.t1.t0.toString())
 }
-
-/* SCAN
-error: instance member variable 't2' cannot be modified in immutable function
-  ==> mut_function_01.cj:24:9:
-   | 
-24 |         t2.t1.t0 += 10 // 非mut函数，不应该允许此类修改
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

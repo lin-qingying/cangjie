@@ -1,0 +1,1164 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ohos.data.distributed（分布式键值数据库） - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html" class="active"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ohosdatadistributedkvstore分布式键值数据库"><a class="header" href="#ohosdatadistributedkvstore分布式键值数据库">ohos.data.distributedKVStore（分布式键值数据库）</a></h1>
+<p>分布式键值数据库为应用程序提供不同设备间数据库的分布式协同能力。通过调用分布式键值数据库各个接口，应用程序可将数据保存到分布式键值数据库中，并可对分布式键值数据库中的数据进行增加、删除、修改、查询、同步等操作。</p>
+<p>该模块提供以下分布式键值数据库相关的常用功能：</p>
+<ul>
+<li><a href="#class-kvmanager">KVManager</a>：分布式键值数据库管理实例，用于获取数据库的相关信息。</li>
+<li><a href="#class-kvstoreresultset">KVStoreResultSet</a>：提供获取数据库结果集的相关方法，包括查询和移动数据读取位置等。</li>
+<li><a href="#class-query">Query</a>：使用谓词表示数据库查询，提供创建Query实例、查询数据库中的数据和添加谓词的方法。</li>
+<li><a href="#class-singlekvstore">SingleKVStore</a>：单版本分布式键值数据库，不对数据所属设备进行区分，设备之间修改相同的key会覆盖，提供查询数据和同步数据的方法。</li>
+<li><a href="#class-devicekvstore">DeviceKVStore</a>：设备协同数据库，继承自<a href="#class-singlekvstore">SingleKVStore</a>，以设备维度对数据进行区分，不存在冲突，支持按照设备的维度提供查询数据和同步数据的方法。</li>
+</ul>
+<h2 id="导入模块"><a class="header" href="#导入模块">导入模块</a></h2>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+</code></pre>
+<h2 id="struct-kvmanagerconfig"><a class="header" href="#struct-kvmanagerconfig">struct KVManagerConfig</a></h2>
+<pre><code class="language-cangjie">public struct KVManagerConfig {
+    public init(context: StageContext, boudleName: String)
+}
+</code></pre>
+<p>提供KVManager实例的配置信息，包括调用方的包名和应用的上下文。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">context</td><td style="text-align: left">Context</td><td style="text-align: left">是</td><td style="text-align: left">应用的上下文。</td></tr>
+<tr><td style="text-align: left">bundleName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">调用方的包名。</td></tr>
+</tbody></table>
+</div>
+<h2 id="constants"><a class="header" href="#constants">Constants</a></h2>
+<pre><code class="language-cangjie">public let MAX_KEY_LENGTH = 1024
+public let MAX_VALUE_LENGTH = 4194303
+public let MAX_KEY_LENGTH_DEVICE = 1024
+public let MAX_STORE_ID_LENGTH = 128
+public let MAX_QUERY_LENGTH = 512000
+public let MAX_BATCH_SIZE = 128
+</code></pre>
+<p>分布式键值数据库常量。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">值</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">MAX_KEY_LENGTH</td><td style="text-align: left">1024</td><td style="text-align: left">数据库中Key允许的最大长度，单位字节。</td></tr>
+<tr><td style="text-align: left">MAX_VALUE_LENGTH</td><td style="text-align: left">4194303</td><td style="text-align: left">数据库中Value允许的最大长度，单位字节。</td></tr>
+<tr><td style="text-align: left">MAX_KEY_LENGTH_DEVICE</td><td style="text-align: left">896</td><td style="text-align: left">设备协同数据库中key允许的最大长度，单位字节。</td></tr>
+<tr><td style="text-align: left">MAX_STORE_ID_LENGTH</td><td style="text-align: left">128</td><td style="text-align: left">数据库标识符允许的最大长度，单位字节。</td></tr>
+<tr><td style="text-align: left">MAX_QUERY_LENGTH</td><td style="text-align: left">512000</td><td style="text-align: left">最大查询长度，单位字节。</td></tr>
+<tr><td style="text-align: left">MAX_BATCH_SIZE</td><td style="text-align: left">128</td><td style="text-align: left">最大批处理操作数量。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-valuetype"><a class="header" href="#enum-valuetype">enum ValueType</a></h2>
+<pre><code class="language-cangjie">public enum ValueType {
+    | STRING(String)
+    | INTEGER(Int32)
+    | FLOAT(Float32)
+    | BYTE_ARRAY(Array&lt;Byte&gt;)
+    | BOOLEAN(Bool)
+    | DOUBLE(Float64)
+}
+</code></pre>
+<p>数据类型枚举。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">STRING</td><td style="text-align: left">String</td><td style="text-align: left">表示值类型为字符串。</td></tr>
+<tr><td style="text-align: left">INTEGER</td><td style="text-align: left">Int32</td><td style="text-align: left">表示值类型为Int32整数。</td></tr>
+<tr><td style="text-align: left">FLOAT</td><td style="text-align: left">Float32</td><td style="text-align: left">表示值类型为Float32浮点数。</td></tr>
+<tr><td style="text-align: left">BYTE_ARRAY</td><td style="text-align: left">Array&lt;Byte&gt;</td><td style="text-align: left">表示值类型为字节数组。</td></tr>
+<tr><td style="text-align: left">BOOLEAN</td><td style="text-align: left">Bool</td><td style="text-align: left">表示值类型为布尔值。</td></tr>
+<tr><td style="text-align: left">DOUBLE</td><td style="text-align: left">Float64</td><td style="text-align: left">表示值类型为Float64浮点数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">ValueType.INTEGER(123)
+ValueType.DOUBLE(123.123)
+ValueType.STRING(&quot;一个字符串&quot;)
+ValueType.BOOLEAN(true)
+ValueType.BYTE_ARRAY([3, 4, 5])
+ValueType.FLOAT(123.1)
+</code></pre>
+<h2 id="struct-entry"><a class="header" href="#struct-entry">struct Entry</a></h2>
+<pre><code class="language-cangjie">public struct Entry {
+    public var key: String
+    public var value: ValueType
+    public init (key: String, value: ValueType)
+}
+</code></pre>
+<p>存储在数据库中的键值对。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">键值。</td></tr>
+<tr><td style="text-align: left">value</td><td style="text-align: left"><a href="#enum-valuetype">ValueType</a></td><td style="text-align: left">是</td><td style="text-align: left">值对象。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-securitylevel"><a class="header" href="#enum-securitylevel">enum SecurityLevel</a></h2>
+<pre><code class="language-cangjie">public enum SecurityLevel {
+    | S1
+    | S2
+    | S3
+    | S4
+}
+</code></pre>
+<p>数据库的安全级别枚举。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: center">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: center">S1</td><td style="text-align: left">表示数据库的安全级别为低级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致有限的不利影响。<br>例如，性别、国籍，用户申请记录等。</td></tr>
+<tr><td style="text-align: center">S2</td><td style="text-align: left">表示数据库的安全级别为中级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严重的不利影响。<br>例如，个人详细通信地址，姓名昵称等。</td></tr>
+<tr><td style="text-align: center">S3</td><td style="text-align: left">表示数据库的安全级别为高级别，数据的泄露、篡改、破坏、销毁可能会给个人或组织导致严峻的不利影响。<br>例如，个人实时精确定位信息、运动轨迹等。</td></tr>
+<tr><td style="text-align: center">S4</td><td style="text-align: left">表示数据库的安全级别为关键级别，业界法律法规中定义的特殊数据类型，涉及个人的最私密领域的信息或者一旦泄露、篡改、破坏、销毁可能会给个人或组织造成重大的不利影响数据。<br>例如，政治观点、宗教、和哲学信仰、工会成员资格、基因数据、生物信息、健康和性生活状况、性取向等或设备认证鉴权、个人的信用卡等财务信息。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-options"><a class="header" href="#struct-options">struct Options</a></h2>
+<pre><code class="language-cangjie">public struct Options {
+    public init (securityLevel: SecurityLevel, createIfMissing!: Bool = true, encrypt!: Bool = false, 
+        backup!: Bool = true, autoSync!: Bool = false, schema!: Schema = Schema())
+}
+</code></pre>
+<p>用于提供创建数据库的配置信息。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">securityLevel</td><td style="text-align: left"><a href="#enum-securitylevel">SecurityLevel</a></td><td style="text-align: left">是</td><td style="text-align: left">设置数据库安全级别。<br><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</td></tr>
+<tr><td style="text-align: left">createIfMissing</td><td style="text-align: left">Bool</td><td style="text-align: left">否</td><td style="text-align: left">当数据库文件不存在时是否创建数据库，默认为true，即创建。<br><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</td></tr>
+<tr><td style="text-align: left">encrypt</td><td style="text-align: left">Bool</td><td style="text-align: left">否</td><td style="text-align: left">设置数据库文件是否加密，默认为false，即不加密。<br><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</td></tr>
+<tr><td style="text-align: left">backup</td><td style="text-align: left">Bool</td><td style="text-align: left">否</td><td style="text-align: left">设置数据库文件是否备份，默认为true，即备份。 <br><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</td></tr>
+<tr><td style="text-align: left">autoSync</td><td style="text-align: left">Bool</td><td style="text-align: left">否</td><td style="text-align: left">设置数据库文件是否自动同步。默认为false，即手动同步。<br><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core<br><strong>需要权限</strong>： ohos.permission.DISTRIBUTED_DATASYNC</td></tr>
+<tr><td style="text-align: left">schema</td><td style="text-align: left"><a href="#struct-schema">Schema</a></td><td style="text-align: left">否</td><td style="text-align: left">设置定义存储在数据库中的值，默认为undefined，即不使用Schema。<br><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.DistributedKVStore</td></tr>
+</tbody></table>
+</div>
+<h3 id="initsecuritylevel-bool-bool-bool-bool-schema"><a class="header" href="#initsecuritylevel-bool-bool-bool-bool-schema">init(SecurityLevel, Bool, Bool, Bool, Bool, Schema)</a></h3>
+<pre><code class="language-cangjie">public init(securityLevel: SecurityLevel, createIfMissing!: Bool = true, encrypt!: Bool = false, 
+        backup!: Bool = true, autoSync!: Bool = false, schema!: Schema = Schema())
+</code></pre>
+<p>用于创建Options实例的构造函数。</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let opt = Options(
+    SecurityLevel.S4, 
+    createIfMissing: true, 
+    encrypt: false
+)
+</code></pre>
+<h2 id="struct-schema"><a class="header" href="#struct-schema">struct Schema</a></h2>
+<pre><code class="language-cangjie">public struct Schema {
+    public var root: FieldNode = FieldNode(&quot;undefined&quot;)
+    public var indexes: Array&lt;String&gt; = []
+    public var mode: Int32 = 0
+    public var skip: Int32 = 0
+}
+</code></pre>
+<p>表示数据库模式，可以在创建或打开数据库时创建Schema对象并将它们放入<a href="#struct-options">Options</a>中。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.DistributedKVStore</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">root</td><td style="text-align: left"><a href="#struct-fieldnode">FieldNode</a></td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">表示json根对象。</td></tr>
+<tr><td style="text-align: left">indexes</td><td style="text-align: left">Array&lt;String&gt;</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">表示json类型的字符串数组。</td></tr>
+<tr><td style="text-align: left">mode</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">表示Schema的模式。</td></tr>
+<tr><td style="text-align: left">skip</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">Schema的跳跃大小。</td></tr>
+</tbody></table>
+</div>
+<h3 id="init"><a class="header" href="#init">init()</a></h3>
+<pre><code class="language-cangjie">public init()
+</code></pre>
+<p>用于创建Schema实例的构造函数。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.DistributedKVStore</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+var schema = Schema()
+</code></pre>
+<h2 id="struct-fieldnode"><a class="header" href="#struct-fieldnode">struct FieldNode</a></h2>
+<pre><code class="language-cangjie">public struct FieldNode {
+    public var nullable: Bool
+    public var default: String
+    public var type_: Int32
+    public init (name: String)
+}
+</code></pre>
+<p>表示 Schema 实例的节点，提供定义存储在数据库中的值的方法。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.DistributedKVStore</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">nullable</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">表示数据库字段是否可以为空。</td></tr>
+<tr><td style="text-align: left">default</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">表示Fieldnode的默认值。</td></tr>
+<tr><td style="text-align: left">type_</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">表示指定节点对应数据类型的值。</td></tr>
+</tbody></table>
+</div>
+<h3 id="initstring"><a class="header" href="#initstring">init(String)</a></h3>
+<pre><code class="language-cangjie">public init(name: String)
+</code></pre>
+<p>用于创建带有String字段FieldNode实例的构造函数。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.DistributedKVStore</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">name</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">FieldNode的值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+var fieldNode = FieldNode(&quot;root&quot;)
+fieldNode.nullable = false
+</code></pre>
+<h2 id="class-distributedkvstore"><a class="header" href="#class-distributedkvstore">class DistributedKVStore</a></h2>
+<pre><code class="language-cangjie">public class DistributedKVStore {}
+</code></pre>
+<p>用于创建KVManager的类。</p>
+<h3 id="static-func-createkvmanagerkvmanagerconfig"><a class="header" href="#static-func-createkvmanagerkvmanagerconfig">static func createKVManager(KVManagerConfig)</a></h3>
+<pre><code class="language-cangjie">public static func createKVManager(config: KVManagerConfig): KVManager
+</code></pre>
+<p>创建一个KVManager对象实例，用于管理数据库对象。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">config</td><td style="text-align: left"><a href="#struct-kvmanagerconfig">KVManagerConfig</a></td><td style="text-align: left">是</td><td style="text-align: left">提供KVManager实例的配置信息，包括调用方的包名和用户信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-kvmanager">KVManager</a></td><td style="text-align: left">返回创建的KVManager对象实例。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let kvManager = DistributedKVStore.createKVManager(KVManagerConfig(context, &quot;com.example.myapplication&quot;))
+</code></pre>
+<h2 id="class-kvmanager"><a class="header" href="#class-kvmanager">class KVManager</a></h2>
+<pre><code class="language-cangjie">public class KVManager {
+    public func getSingleKVStore(storeId: String, options: Options): SingleKVStore
+    public func getDeviceKVStore(storeId: String, options: Options): DeviceKVStore
+    public func closeKVStore(appId: String, storeId: String): Unit
+    public func deleteKVStore(appId: String, storeId: String): Unit
+    public func getAllKVStoreId(appId: String): Array&lt;String&gt;
+}
+</code></pre>
+<p>分布式键值数据库管理实例，用于获取分布式键值数据库的相关信息。在调用KVManager的方法前，需要先通过<a href="#static-func-createkvmanagerkvmanagerconfig">createKVManager</a>构建一个KVManager实例。</p>
+<h3 id="func-getsinglekvstorestring-options"><a class="header" href="#func-getsinglekvstorestring-options">func getSingleKVStore(String, Options)</a></h3>
+<pre><code class="language-cangjie">public func getSingleKVStore(storeId: String, options: Options): SingleKVStore
+</code></pre>
+<p>通过指定Options和storeId，创建并获取分布式键值数据库。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">storeId</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">数据库唯一标识符，长度不大于<a href="#constants">MAX_STORE_ID_LENGTH</a>。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-options">Options</a></td><td style="text-align: left">是</td><td style="text-align: left">创建分布式键值实例的配置信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">SingleKVStore</td><td style="text-align: left">SingleKVStore对象。单版本分布式键值数据库，不对数据所属设备进行区分，提供查询数据和同步数据的方法。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+<tr><td style="text-align: left">15100002</td><td style="text-align: left">Open existed database with changed options.</td></tr>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let opt = Options(
+    SecurityLevel.S4, 
+    createIfMissing: true, 
+    encrypt: false, 
+    backup: true, 
+    autoSync: false, 
+)
+let kvStore = kvManager.getSingleKVStore(&quot;myStoreId&quot;, opt)
+</code></pre>
+<h3 id="func-getdevicekvstorestring-options"><a class="header" href="#func-getdevicekvstorestring-options">func getDeviceKVStore(String, Options)</a></h3>
+<pre><code class="language-cangjie">public func getDeviceKVStore(storeId: String, options: Options): DeviceKVStore
+</code></pre>
+<p>通过指定Options和storeId，创建并获取分布式键值数据库。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">storeId</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">数据库唯一标识符，长度不大于<a href="#constants">MAX_STORE_ID_LENGTH</a>。</td></tr>
+<tr><td style="text-align: left">options</td><td style="text-align: left"><a href="#struct-options">Options</a></td><td style="text-align: left">是</td><td style="text-align: left">创建分布式键值实例的配置信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">DeviceKVStore</td><td style="text-align: left">DeviceKVStore对象。多设备协同数据库，数据以设备的维度管理，不存在冲突，支持查询数据。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+<tr><td style="text-align: left">15100002</td><td style="text-align: left">Open existed database with changed options.</td></tr>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let opt = Options(
+    SecurityLevel.S4, 
+    createIfMissing: true, 
+    encrypt: false, 
+    backup: true, 
+    autoSync: false, 
+)
+let kvStore = kvManager.getDeviceKVStore(&quot;myStoreId&quot;, opt)
+</code></pre>
+<h3 id="func-closekvstorestring-string"><a class="header" href="#func-closekvstorestring-string">func closeKVStore(String, String)</a></h3>
+<pre><code class="language-cangjie">public func closeKVStore(appId: String, storeId: String): Unit
+</code></pre>
+<p>通过storeId的值关闭指定的分布式键值数据库。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">appId</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">所调用数据库方的包名。</td></tr>
+<tr><td style="text-align: left">storeId</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要关闭的数据库唯一标识符，长度不大于<a href="#constants">MAX_STORE_ID_LENGTH</a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+kvManager.closeKVStore(&quot;com.example.myapplication&quot;, &quot;myStore&quot;)
+</code></pre>
+<h3 id="func-deletekvstorestring-string"><a class="header" href="#func-deletekvstorestring-string">func deleteKVStore(String, String)</a></h3>
+<pre><code class="language-cangjie">public func deleteKVStore(appId: String, storeId: String): Unit
+</code></pre>
+<p>通过storeId的值删除指定的分布式键值数据库。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">appId</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">所调用数据库方的包名。</td></tr>
+<tr><td style="text-align: left">storeId</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要删除的数据库唯一标识符，长度不大于<a href="#constants">MAX_STORE_ID_LENGTH</a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+<tr><td style="text-align: left">15100004</td><td style="text-align: left">Not found.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+kvManager.deleteKVStore(&quot;com.example.myapplication&quot;, &quot;myStore&quot;)
+</code></pre>
+<h3 id="func-getallkvstoreidstring"><a class="header" href="#func-getallkvstoreidstring">func getAllKVStoreId(String)</a></h3>
+<pre><code class="language-cangjie">public func getAllKVStoreId(appId: String): Array&lt;String&gt;
+</code></pre>
+<p>获取所有通过<a href="#func-getsinglekvstorestring-options">getSingleKVStore</a>或者<a href="#func-getdevicekvstorestring-options">getDeviceKVStore</a>方法创建的且没有调用<a href="#func-deletekvstorestring-string">deleteKVStore</a>方法删除的分布式键值数据库的storeId。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">appId</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">所调用数据库方的包名。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+kvManager.getAllKVStoreId(&quot;com.example.myapplication&quot;)
+</code></pre>
+<h2 id="class-kvstoreresultset"><a class="header" href="#class-kvstoreresultset">class KVStoreResultSet</a></h2>
+<pre><code class="language-cangjie">public class KVStoreResultSet {
+    public func getCount(): Int32 
+}
+</code></pre>
+<p>提供获取数据库结果集的相关方法，包括查询和移动数据读取位置等。同时允许打开的结果集的最大数量为8个。</p>
+<p>在调用KVStoreResultSet的方法前，需要先通过<a href="#func-getsinglekvstorestring-options">getSingleKVStore</a>或者<a href="#func-getdevicekvstorestring-options">getDeviceKVStore</a>构建一个SingleKVStore或者DeviceKVStore实例。</p>
+<h3 id="func-getcount"><a class="header" href="#func-getcount">func getCount()</a></h3>
+<pre><code class="language-cangjie">public func getCount(): Int32
+</code></pre>
+<p>获取结果集中的总行数。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">返回数据的总行数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let manager = DistributedKVStore.createKVManager(KVManagerConfig(getStageContext(globalAbilityContext.getOrThrow()), &quot;test_kvstore&quot;))
+let store = manager.getDeviceKVStore(&quot;test&quot;, distributed_kv_store.Options(SecurityLevel.S1))
+store.put(&quot;key&quot;, ValueType.STRING(&quot;value&quot;))
+var resultSet = store.getResultSet(&quot;key&quot;)
+resultSet.getCount()
+</code></pre>
+<h2 id="class-query"><a class="header" href="#class-query">class Query</a></h2>
+<pre><code class="language-cangjie">public class Query {
+    public init()
+}
+</code></pre>
+<p>使用谓词表示数据库查询，提供创建Query实例、查询数据库中的数据和添加谓词的方法。一个Query对象中谓词数量上限为256个。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<h3 id="init-1"><a class="header" href="#init-1">init</a></h3>
+<pre><code class="language-cangjie">public init()
+</code></pre>
+<p>用于创建Query实例的构造函数。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let query = Query()
+</code></pre>
+<h2 id="class-singlekvstore"><a class="header" href="#class-singlekvstore">class SingleKVStore</a></h2>
+<pre><code class="language-cangjie">public open class SingleKVStore {
+    public open func put(key: String, value: ValueType): Unit
+    public open func putBatch(entries: ArrayList&lt;Entry&gt;): Unit
+    public open func delete(key: String): Unit
+    public open func deleteBatch(keys: ArrayList&lt;String&gt;): Unit
+    public open func get(key: String): ValueType
+    public open func backup(file: String): Unit
+    public open func restore(file: String): Unit
+    public open func startTransaction(): Unit
+    public open func commit(): Unit
+    public open func rollback(): Unit
+    public open func enableSync(enabled: Bool): Unit
+    public open func setSyncParam(defaultAllowedDelayMs: UInt32): Unit
+}
+</code></pre>
+<p>SingleKVStore数据库实例，提供增加数据、删除数据和订阅数据变更、订阅数据同步完成的方法。</p>
+<p>在调用SingleKVStore的方法前，需要先通过<a href="#func-getsinglekvstorestring-options">getSingleKVStore</a>构建一个SingleKVStore实例。</p>
+<h3 id="open-func-putstring-valuetype"><a class="header" href="#open-func-putstring-valuetype">open func put(String, ValueType)</a></h3>
+<pre><code class="language-cangjie">public open func put(key: String, value: ValueType): Unit
+</code></pre>
+<p>添加指定类型键值对到数据库。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要添加数据的key，不能为空且长度不大于<a href="#constants">MAX_KEY_LENGTH</a>。</td></tr>
+<tr><td style="text-align: left">value</td><td style="text-align: left"><a href="#enum-valuetype">ValueType</a></td><td style="text-align: left">是</td><td style="text-align: left">要添加数据的value，支持Array&lt;UInt8&gt;、String、Int32、Bool、Float32、Float64 ，Array&lt;UInt8&gt;、String 的长度不大于<a href="#constants">MAX_VALUE_LENGTH</a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong>
+以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-data-rdb.html">关系型数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">14800047</td><td style="text-align: left">The WAL file size exceeds the default limit.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+try {
+    kvStore.put(&quot;myKey&quot;, ValueType.STRING(&quot;myValue&quot;))
+} catch(e: BusinessException) {
+    AppLog.info(&quot;put failed.&quot;)
+}
+</code></pre>
+<h3 id="open-func-putbatcharraylistentry"><a class="header" href="#open-func-putbatcharraylistentry">open func putBatch(ArrayList&lt;Entry&gt;)</a></h3>
+<pre><code class="language-cangjie">public open func putBatch(entries: ArrayList&lt;Entry&gt;): Unit
+</code></pre>
+<p>批量插入键值对到SingleKVStore数据库中。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">entries</td><td style="text-align: left">ArrayList&lt;Entry&gt;</td><td style="text-align: left">是</td><td style="text-align: left">表示要批量插入的键值对。一个entries对象中允许的最大数据量为512M。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-data-rdb.html">关系型数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">14800047</td><td style="text-align: left">The WAL file size exceeds the default limit.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import std.collection.*
+import ohos.distributed_kv_store.*
+
+let entries = ArrayList&lt;Entry&gt;()
+for (i in 0..10) {
+    let entry = Entry(&quot;batch_test_string_key${i}&quot;, ValueType.STRING(&quot;batch_test_string_value&quot;))
+    entries.append(entry)
+}
+singleKVStore.putBatch(entries)
+</code></pre>
+<h3 id="open-func-deletestring"><a class="header" href="#open-func-deletestring">open func delete(String)</a></h3>
+<pre><code class="language-cangjie">public open func delete(key: String): Unit
+</code></pre>
+<p>从数据库中删除指定键值的数据。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要删除数据的key，不能为空且长度不大于<a href="#constants">MAX_KEY_LENGTH</a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-data-rdb.html">关系型数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">14800047</td><td style="text-align: left">The WAL file size exceeds the default limit.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+singleKVStore.delete(&quot;myKey&quot;)
+</code></pre>
+<h3 id="open-func-deletebatcharrayliststring"><a class="header" href="#open-func-deletebatcharrayliststring">open func deleteBatch(ArrayList&lt;String&gt;)</a></h3>
+<pre><code class="language-cangjie">public open func deleteBatch(keys: ArrayList&lt;String&gt;): Unit
+</code></pre>
+<p>批量删除SingleKVStore数据库中的键值对。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keys</td><td style="text-align: left">ArrayList&lt;String&gt;</td><td style="text-align: left">是</td><td style="text-align: left">表示要批量删除的键值对。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-data-rdb.html">关系型数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">14800047</td><td style="text-align: left">The WAL file size exceeds the default limit.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import std.collection.*
+import ohos.distributed_kv_store.*
+
+let entries = ArrayList&lt;Entry&gt;()
+let keys = ArrayList&lt;String&gt;()
+for (i in 0..10) {
+    let key = &quot;batch_test_string_key${i}&quot;
+    let entry = Entry(key, ValueType.STRING(&quot;batch_test_string_value&quot;))
+    entries.append(entry)
+    keys.append(key)
+}
+singleKVStore.putBatch(entries)
+singleKVStore.deleteBatch(keys)
+</code></pre>
+<h3 id="open-func-getstring"><a class="header" href="#open-func-getstring">open func get(String)</a></h3>
+<pre><code class="language-cangjie">public open func get(key: String): ValueType
+</code></pre>
+<p>获取指定键的值。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要查询数据的key，不能为空且长度不大于<a href="#constants">MAX_KEY_LENGTH</a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#enum-valuetype">ValueType</a></td><td style="text-align: left">ValueType对象。返回获取查询的值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100004</td><td style="text-align: left">Not found.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+try {
+    let value = kvStore.get(&quot;myKey&quot;)
+    match (value) {
+        case STRING(v) =&gt; AppLog.info(&quot;The obtained value is a String: ${v}&quot;)
+        case INTEGER(v) =&gt; AppLog.info(&quot;The obtained value is a Int32: ${v}&quot;)
+        case DOUBLE(v) =&gt; AppLog.info(&quot;The obtained value is a Float64: ${v}&quot;)
+        case _ =&gt; AppLog.info(&quot;The obtained value is of another type.&quot;)
+    }
+} catch(e: BusinessException) {
+    AppLog.info(&quot;get failed.&quot;)
+}
+</code></pre>
+<h3 id="open-func-backupstring"><a class="header" href="#open-func-backupstring">open func backup(String)</a></h3>
+<pre><code class="language-cangjie">public open func backup(file: String): Unit
+</code></pre>
+<p>以指定名称备份数据库。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">file</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">备份数据库的指定名称，不能为空且长度不大于<a href="#constants">MAX_KEY_LENGTH</a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+singleKVStore.backup(&quot;myBackupfile&quot;)
+</code></pre>
+<h3 id="open-func-restorestring"><a class="header" href="#open-func-restorestring">open func restore(String)</a></h3>
+<pre><code class="language-cangjie">public open func restore(file: String): Unit
+</code></pre>
+<p>从指定的数据库文件恢复数据库。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">file</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">指定的数据库文件名称，不能为空且长度不大于<a href="#constants">MAX_KEY_LENGTH</a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">Parameter error.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+singleKVStore.restore(&quot;myBackupfile&quot;)
+</code></pre>
+<h3 id="open-func-starttransaction"><a class="header" href="#open-func-starttransaction">open func startTransaction()</a></h3>
+<pre><code class="language-cangjie">public open func startTransaction(): Unit
+</code></pre>
+<p>启动SingleKVStore数据库中的事务。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-data-rdb.html">关系型数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">14800047</td><td style="text-align: left">The WAL file size exceeds the default limit.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+singleKVStore.startTransaction()
+</code></pre>
+<h3 id="open-func-commit"><a class="header" href="#open-func-commit">open func commit()</a></h3>
+<pre><code class="language-cangjie">open func commit(): Unit
+</code></pre>
+<p>提交SingleKVStore数据库中的事务。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100004</td><td style="text-align: left">Not found.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+singleKVStore.commit()
+</code></pre>
+<h3 id="open-func-rollback"><a class="header" href="#open-func-rollback">open func rollback()</a></h3>
+<pre><code class="language-cangjie">public open func rollback(): Unit
+</code></pre>
+<p>在SingleKVStore数据库中回滚事务。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100004</td><td style="text-align: left">Not found.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+singleKVStore.rollback()
+</code></pre>
+<h3 id="open-func-enablesyncbool"><a class="header" href="#open-func-enablesyncbool">open func enableSync(Bool)</a></h3>
+<pre><code class="language-cangjie">public open func enableSync(enabled: Bool): Unit
+</code></pre>
+<p>设定是否开启同步。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">enabled</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">设定是否开启同步，true表示开启同步，false表示不启用同步。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+singleKVStore.enableSync(true)
+</code></pre>
+<h3 id="open-func-setsyncparamuint32"><a class="header" href="#open-func-setsyncparamuint32">open func setSyncParam(UInt32)</a></h3>
+<pre><code class="language-cangjie">public open func setSyncParam(defaultAllowedDelayMs: UInt32): Unit
+</code></pre>
+<p>设置数据库同步允许的默认延迟。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">defaultAllowedDelayMs</td><td style="text-align: left">UInt32</td><td style="text-align: left">是</td><td style="text-align: left">表示数据库同步允许的默认延迟，以毫秒为单位。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+singleKVStore.setSyncParam(500)
+</code></pre>
+<h2 id="class-devicekvstore"><a class="header" href="#class-devicekvstore">class DeviceKVStore</a></h2>
+<pre><code class="language-cangjie">public class DeviceKVStore &lt;: SingleKVStore {
+    public func get(key: String): ValueType
+    public func getEntries(keyPrefix: String): ArrayList&lt;Entry&gt;
+    public func getEntries(query: Query): ArrayList&lt;Entry&gt;
+    public func getResultSet(keyPrefix: String): KVStoreResultSet
+    public func getResultSet(query: Query): KVStoreResultSet
+    public func getResultSize(query: Query): Int32
+}
+</code></pre>
+<p>设备协同数据库，继承自SingleKVStore，提供查询数据和同步数据的方法。</p>
+<p>设备协同数据库，以设备维度对数据进行区分，每台设备仅能写入和修改本设备的数据，其它设备的数据对其是只读的，无法修改其它设备的数据。</p>
+<p>比如，可以使用设备协同数据库实现设备间的图片分享，可以查看其他设备的图片，但无法修改和删除其他设备的图片。</p>
+<p>在调用DeviceKVStore的方法前，需要先通过<a href="#func-getdevicekvstorestring-options">getDeviceKVStore</a>构建一个DeviceKVStore实例。</p>
+<h3 id="func-getstring"><a class="header" href="#func-getstring">func get(String)</a></h3>
+<pre><code class="language-cangjie">public func get(key: String): ValueType
+</code></pre>
+<p>获取本设备指定键的值。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">key</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要查询数据的key，不能为空且长度不大于<a href="#constants">MAX_KEY_LENGTH_DEVICE</a>。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#enum-valuetype">ValueType</a></td><td style="text-align: left">返回获取查询的值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100004</td><td style="text-align: left">Not found.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let manager = DistributedKVStore.createKVManager(KVManagerConfig(getStageContext(globalAbilityContext.getOrThrow()), &quot;test_kvstore&quot;))
+let store = manager.getDeviceKVStore(&quot;test&quot;, distributed_kv_store.Options(SecurityLevel.S1))
+store.put(&quot;key&quot;, ValueType.STRING(&quot;value&quot;))
+store.get(&quot;key&quot;)
+</code></pre>
+<h3 id="func-getentriesstring"><a class="header" href="#func-getentriesstring">func getEntries(String)</a></h3>
+<pre><code class="language-cangjie">func getEntries(keyPrefix: String): ArrayList&lt;Entry&gt;
+</code></pre>
+<p>获取匹配本设备指定键前缀的所有键值对。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyPrefix</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">表示要匹配的键前缀。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">ArrayList&lt;Entry&gt;</td><td style="text-align: left">返回匹配指定前缀的键值对列表。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let manager = DistributedKVStore.createKVManager(KVManagerConfig(getStageContext(globalAbilityContext.getOrThrow()), &quot;test_kvstore&quot;))
+let store = manager.getDeviceKVStore(&quot;test&quot;, distributed_kv_store.Options(SecurityLevel.S1))
+store.put(&quot;key&quot;, ValueType.STRING(&quot;value&quot;))
+store.getEntries(&quot;key&quot;)
+</code></pre>
+<h3 id="func-getentriesquery"><a class="header" href="#func-getentriesquery">func getEntries(Query)</a></h3>
+<pre><code class="language-cangjie">public func getEntries(query: Query): ArrayList&lt;Entry&gt;
+</code></pre>
+<p>获取本设备与指定Query对象匹配的键值对列表。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">query</td><td style="text-align: left"><a href="#class-query">Query</a></td><td style="text-align: left">是</td><td style="text-align: left">表示要匹配的键前缀。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">ArrayList&lt;Entry&gt;</td><td style="text-align: left">返回本设备与指定Query对象匹配的键值对列表。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let manager = DistributedKVStore.createKVManager(KVManagerConfig(getStageContext(globalAbilityContext.getOrThrow()), &quot;test_kvstore&quot;))
+let store = manager.getDeviceKVStore(&quot;test&quot;, distributed_kv_store.Options(SecurityLevel.S1))
+store.put(&quot;key&quot;, ValueType.STRING(&quot;value&quot;))
+store.getEntries(Query())
+</code></pre>
+<h3 id="func-getresultsetstring"><a class="header" href="#func-getresultsetstring">func getResultSet(String)</a></h3>
+<pre><code class="language-cangjie">public func getResultSet(keyPrefix: String): KVStoreResultSet
+</code></pre>
+<p>从DeviceKVStore数据库中获取本设备具有指定前缀的结果集。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">keyPrefix</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">表示要匹配的键前缀。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-kvstoreresultset">KVStoreResultSet</a></td><td style="text-align: left">返回具有指定前缀的结果集。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100001</td><td style="text-align: left">Over max  limits.</td></tr>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let manager = DistributedKVStore.createKVManager(KVManagerConfig(getStageContext(globalAbilityContext.getOrThrow()), &quot;test_kvstore&quot;))
+let store = manager.getDeviceKVStore(&quot;test&quot;, distributed_kv_store.Options(SecurityLevel.S1))
+store.put(&quot;key&quot;, ValueType.STRING(&quot;value&quot;))
+store.getResultSet(&quot;key&quot;)
+</code></pre>
+<h3 id="func-getresultsetquery"><a class="header" href="#func-getresultsetquery">func getResultSet(Query)</a></h3>
+<pre><code class="language-cangjie">public func getResultSet(query: Query): KVStoreResultSet
+</code></pre>
+<p>获取与本设备指定Query对象匹配的KVStoreResultSet对象。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">query</td><td style="text-align: left"><a href="#class-query">Query</a></td><td style="text-align: left">是</td><td style="text-align: left">表示查询对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-kvstoreresultset">KVStoreResultSet</a></td><td style="text-align: left">获取与本设备指定Query对象匹配的KVStoreResultSet对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100001</td><td style="text-align: left">Over max  limits.</td></tr>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let manager = DistributedKVStore.createKVManager(KVManagerConfig(getStageContext(globalAbilityContext.getOrThrow()), &quot;test_kvstore&quot;))
+let store = manager.getDeviceKVStore(&quot;test&quot;, distributed_kv_store.Options(SecurityLevel.S1))
+store.put(&quot;key&quot;, ValueType.STRING(&quot;value&quot;))
+store.getResultSet(Query())
+</code></pre>
+<h3 id="func-getresultsizequery"><a class="header" href="#func-getresultsizequery">func getResultSize(Query)</a></h3>
+<pre><code class="language-cangjie">public func getResultSize(query: Query): Int32
+</code></pre>
+<p>获取与本设备指定Query对象匹配的结果数。</p>
+<p><strong>系统能力：</strong> SystemCapability.DistributedDataManager.KVStore.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">query</td><td style="text-align: left"><a href="#class-query">Query</a></td><td style="text-align: left">是</td><td style="text-align: left">表示查询对象。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">获取与本设备指定Query对象匹配的结果数。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-distributedKVStore.html">分布式键值数据库错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left"><strong>错误码ID</strong></th><th style="text-align: left"><strong>错误信息</strong></th></tr></thead><tbody>
+<tr><td style="text-align: left">15100003</td><td style="text-align: left">Database corrupted.</td></tr>
+<tr><td style="text-align: left">15100005</td><td style="text-align: left">Database or result set already closed.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">import ohos.distributed_kv_store.*
+
+let manager = DistributedKVStore.createKVManager(KVManagerConfig(getStageContext(globalAbilityContext.getOrThrow()), &quot;test_kvstore&quot;))
+let store = manager.getDeviceKVStore(&quot;test&quot;, distributed_kv_store.Options(SecurityLevel.S1))
+store.put(&quot;key&quot;, ValueType.STRING(&quot;value&quot;))
+store.getResultSize(Query())
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-data-preferences.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-data-preferences.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

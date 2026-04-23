@@ -18,7 +18,7 @@ open class CfirBodyResolveTransformer(
     returnTypeCalculator: ReturnTypeCalculator = ReturnTypeCalculator.Default,
     outerBodyResolveContext: BodyResolveContext? = null,
     phase: CfirResolvePhase = CfirResolvePhase.BODY_RESOLVE,
-    override val implicitTypeOnly: Boolean = false,
+    override var implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformerDispatcher(phase, implicitTypeOnly) {
 
     override val context: BodyResolveContext = outerBodyResolveContext ?: BodyResolveContext(
@@ -27,7 +27,13 @@ open class CfirBodyResolveTransformer(
     )
 
     override val components: BodyResolveTransformerComponents =
-        BodyResolveTransformerComponents(session, scopeSession, this, context)
+        BodyResolveTransformerComponents(
+            session = session,
+            scopeSession = scopeSession,
+            transformer = this,
+            context = context,
+            expandTypeAliases = true,
+        )
 
     final override val expressionsTransformer = CfirExpressionsResolveTransformer(this)
     final override val declarationsTransformer = CfirDeclarationsResolveTransformer(this)

@@ -1,4 +1,3 @@
-// EXEC: %compiler %cmp_opt -g %n.cj -o %n.%suffix
 
 struct A {
     A(var `this`: Int64) {}

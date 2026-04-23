@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirErrorPrimaryConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
@@ -271,7 +272,7 @@ private fun <E : CfirElement> CfirTransformer<PersistentList<CfirDeclaration>>.r
     element: E,
     data: PersistentList<CfirDeclaration>,
 ): E {
-    if (element is CfirFile || element is CfirClass) {
+    if (element is CfirFile || element is CfirClass || element is CfirExtend) {
         val newList = data.add(element as CfirDeclaration)
         element.transformChildren(this, newList)
     }

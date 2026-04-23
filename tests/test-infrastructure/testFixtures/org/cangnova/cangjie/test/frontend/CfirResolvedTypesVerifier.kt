@@ -9,12 +9,13 @@ import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.ConeStubType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.IGNORE_LEAKED_INTERNAL_TYPES
@@ -108,7 +109,7 @@ class CfirResolvedTypesVerifier(
         }
 
         when (type) {
-            is ConeFuncType -> {
+            is ConeFunctionType -> {
                 type.parameterTypes.forEachIndexed { index, parameterType ->
                     checkConeType(parameterType, "$owner parameter[$index]", collector)
                 }

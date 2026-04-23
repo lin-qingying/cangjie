@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 class CA<T> {}
 
 interface I2_1 {
@@ -32,18 +30,6 @@ extend<T> CA<T> <: I3 where T <: I2_1 & I2_2 {
 }
 
 main() {
-    CA<Nothing>.goo()
+    CA<<!GENERIC_TYPE_INCONSISTENT!>Nothing<!>>.goo()
     0
 }
-
-/* SCAN
-error: can not instantiate 'Generics-T' by 'Nothing' for it has unimplemented static member
-  ==> interface_static_impl_with_generic12.cj:35:8:
-   | 
-35 |     CA<Nothing>.goo()
-   |        ^ 
-   | 
-   # note: 'Nothing' type has no members
-
-1 error generated, 1 error printed.
-*/

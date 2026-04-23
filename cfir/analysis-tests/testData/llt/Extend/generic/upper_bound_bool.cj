@@ -4,9 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
-class C<T, V> where T <: Bool, V <: Bool {
+class C<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>> where T <: Bool, V <: Bool {
     func f(a: T) {
         return a && true
     }
@@ -37,21 +35,3 @@ main() {
     }
     return 0
 }
-
-/* SCAN
-error: the upper bound 'Bool' of generic parameter 'Generics-T' must be class or interface
- ==> upper_bound_bool.cj:9:9:
-  | 
-9 | class C<T, V> where T <: Bool, V <: Bool {
-  |         ^ 
-  | 
-
-error: the upper bound 'Bool' of generic parameter 'Generics-V' must be class or interface
- ==> upper_bound_bool.cj:9:12:
-  | 
-9 | class C<T, V> where T <: Bool, V <: Bool {
-  |            ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

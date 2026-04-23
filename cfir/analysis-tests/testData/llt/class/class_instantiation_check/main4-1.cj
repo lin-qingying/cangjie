@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 main(): Int64 {
-    var a = B<Int32>()
+    var a = <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>B<Int32><!>()
     return 0
 }
 
@@ -19,26 +17,3 @@ class B<T> {
         return 2
     }
 }
-
-/* SCAN
-error: generic instantiation 'B<Int32>' causes ambiguous function '+'
-  ==> main4-1.cj:10:13:
-   | 
-10 |     var a = B<Int32>()
-   |             ^^^^^^^^ 
-   | 
-note: found candidate
-  ==> main4-1.cj:15:26:
-   | 
-15 |     public operator func +(x: Int32) {
-   |                          ^ 
-   | 
-note: found candidate
-  ==> main4-1.cj:18:26:
-   | 
-18 |     public operator func +(x: T) {
-   |                          ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

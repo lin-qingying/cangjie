@@ -2,8 +2,6 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.components.asCaAnnotationList
-import org.cangnova.cangjie.analysis.api.cfir.components.renderAnnotations
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -28,7 +26,7 @@ import org.cangnova.cangjie.name.Name
  * 把普通局部变量、模式变量、模式绑定变量的本地可见性语义集中在同一簇，
  * 避免与属性或值参数混在一起。
  */
-internal open class CaCfirLocalVariableSymbolImpl(
+internal open class CaCfirLocalVariableSymbol(
     final override val backingSymbol: CfirCallableSymbol<*>,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,
@@ -36,7 +34,7 @@ internal open class CaCfirLocalVariableSymbolImpl(
 ) : org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol(),
     CaCfirLocalVariableSymbolSupport<CfirCallableSymbol<*>> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = localCallableIdImpl
@@ -77,14 +75,14 @@ internal open class CaCfirLocalVariableSymbolImpl(
         get() = nameImpl
 }
 
-internal class CaCfirPatternVariableSymbolImpl(
+internal class CaCfirPatternVariableSymbol(
     final override val backingSymbol: CfirPatternVariableSymbol,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,
     final override val token: CaLifetimeToken,
 ) : CaPatternVariableSymbol(), CaCfirLocalVariableSymbolSupport<CfirPatternVariableSymbol> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = localCallableIdImpl
@@ -121,14 +119,14 @@ internal class CaCfirPatternVariableSymbolImpl(
         get() = nameImpl
 }
 
-internal class CaCfirPatternBindingSymbolImpl(
+internal class CaCfirPatternBindingSymbol(
     final override val backingSymbol: CfirPatternBindingSymbol,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,
     final override val token: CaLifetimeToken,
 ) : CaPatternBindingSymbol(), CaCfirLocalVariableSymbolSupport<CfirPatternBindingSymbol> {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { analysisSession.renderAnnotations(this).asCaAnnotationList(token) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = localCallableIdImpl

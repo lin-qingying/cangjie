@@ -6,24 +6,10 @@
 
 // DEPENDENCE: m1
 // DEPENDENCE: m2
-// EXEC: %compiler %cmp_opt %compile_lib_opt %mod_name_opt m1 ./m1/p1.cj -o m1/p1.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt %mod_name_opt m2 ./m2/p1.cj -o m2/p1.%middle
-// ERRCHECK: %compiler %cmp_opt m1/p1.%middle m2/p1.%middle %f -o %output
 
 import m1.p1
 
 main() {
-    "${p1.g()}"
+    "${p1.<!NOT_MEMBER_OF!>g<!>()}"
     0
 }
-
-/* SCAN
-error: 'g' is not a member of package 'm1.p1'
-  ==> err_not_member.cj:16:11:
-   | 
-16 |     "${p1.g()}"
-   |           ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

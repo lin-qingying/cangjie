@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreUnionType
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.types.CaTypePointer
@@ -17,8 +18,11 @@ import org.cangnova.cangjie.cfir.types.renderForDebugging
  */
 internal class CaCfirUnionType(
     override val coneType: ConeUnionType,
-    override val analysisSession: CaCfirSession,
+    private val analysisSession: CaCfirSession,
 ) : CaUnionType, CaCfirType {
+    override val token: CaLifetimeToken
+        get() = analysisSession.token
+
     override val presentation: String
         get() = withValidityAssertion { coneType.renderForDebugging() }
 

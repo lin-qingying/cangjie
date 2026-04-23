@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ../src
-// EXEC: %compiler %cmp_opt %compile_lib_opt src/pkgs/pkgs.cj -o pkgs.%middle
-// EXEC: %compiler %cmp_opt pkgs.%middle %f -o %output
-// EXEC: %run %run_opt %output %run_args
 internal import pkgs.*
 
 extend R1 {

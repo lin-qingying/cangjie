@@ -200,15 +200,21 @@ internal inline fun CfirClassLikeDeclaration.forEachDeclaration(action: (CfirDec
     declarations.forEach(action)
 }
 
+internal inline fun CfirExtend.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
+    declarations.forEach(action)
+}
+
 internal inline fun CfirFile.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
     declarations.forEach(action)
 }
 
-internal val CfirDeclaration.isDeclarationContainer: Boolean get() = this is CfirClassLikeDeclaration || this is CfirFile
+internal val CfirDeclaration.isDeclarationContainer: Boolean
+    get() = this is CfirClassLikeDeclaration || this is CfirExtend || this is CfirFile
 
 internal inline fun CfirDeclaration.forEachDeclaration(action: (CfirDeclaration) -> Unit) {
     when (this) {
         is CfirClassLikeDeclaration -> forEachDeclaration(action)
+        is CfirExtend -> forEachDeclaration(action)
         is CfirFile -> forEachDeclaration(action)
         else -> errorWithCfirSpecificEntries("Unsupported declarations container", fir = this)
     }

@@ -6,6 +6,8 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCompletionSymbolKey
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.DiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
@@ -19,6 +21,17 @@ import org.cangnova.cangjie.psi.CjFile
 internal data class CaCfirTopLevelPublicSymbolQueryValue(
     val classLikeSymbols: List<CaClassLikeSymbol>,
     val callableSymbols: List<CaCallableSymbol>,
+)
+
+/**
+ * 顶层 low-level 符号查询值。
+ *
+ * session query service 只负责恢复真实 CFIR 叶子符号；
+ * public symbol 的构造和缓存仍然留在 `cfir.symbols` 层。
+ */
+internal data class CaCfirTopLevelSymbolQueryResult(
+    val classLikeSymbols: List<CfirClassLikeSymbol<*>>,
+    val callableSymbols: List<CfirCallableSymbol<*>>,
 )
 
 /**

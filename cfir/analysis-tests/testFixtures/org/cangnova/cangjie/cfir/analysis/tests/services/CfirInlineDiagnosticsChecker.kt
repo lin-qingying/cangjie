@@ -1,10 +1,9 @@
 package org.cangnova.cangjie.cfir.analysis.tests.services
 
-import org.cangnova.cangjie.cfir.resolve.CfirDiagnosticCollector
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangnova.cangjie.cfir.session.diagnosticCollector
 import org.cangnova.cangjie.test.model.AfterAnalysisChecker
 import org.cangnova.cangjie.test.model.FrontendKinds
+import org.cangnova.cangjie.test.frontend.cfirDiagnosticCollectorService
 import org.cangnova.cangjie.test.services.artifactsProvider
 import org.cangnova.cangjie.test.services.moduleStructure
 import org.cangnova.cangjie.test.services.sourceFileProvider
@@ -51,11 +50,10 @@ class CfirInlineDiagnosticsChecker(
         val normalizedRealPath = normalizePath(testServices.sourceFileProvider.getOrCreateRealFileForSourceFile(file).canonicalPath)
         val normalizedOriginalPath = normalizePath(file.originalFile.canonicalPath)
 
-        return artifact.partsForDependsOnModules
-            .flatMap { part ->
-                val collector = runCatching { part.session.diagnosticCollector }.getOrNull() ?: return@flatMap emptyList()
-                collector.rawDiagnostics
-            }
+        return testServices.cfirDiagnosticCollectorService
+            .getFrontendDiagnosticsForModule(artifact)
+            .values
+            .flatten()
             .filter { diagnostic ->
                 val filePath = (diagnostic.context as? DiagnosticContext)?.containingFilePath?.let(::normalizePath)
                 filePath == null || filePath == normalizedRealPath || filePath == normalizedOriginalPath

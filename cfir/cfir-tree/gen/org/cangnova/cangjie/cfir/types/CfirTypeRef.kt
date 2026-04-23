@@ -19,6 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 sealed class CfirTypeRef : CfirPureAbstractElement(), CfirAnnotationContainer {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
+    abstract val customRenderer: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitTypeRef(this, data)

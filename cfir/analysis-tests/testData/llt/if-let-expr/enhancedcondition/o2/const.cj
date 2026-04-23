@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %enableO2 %f -o %output
-// RUN-EXEC-2: %run %run_opt %output %run_args
-
 main() {
     let a = 3
     var res = 0

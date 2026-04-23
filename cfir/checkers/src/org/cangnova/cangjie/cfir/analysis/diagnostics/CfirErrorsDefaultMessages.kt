@@ -49,11 +49,6 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CONFLICTING_OVERLOADS, "Conflicting overloads: {0}", RENDER_STRING_LIST)
         map.put(REDECLARATION, "Conflicting declarations: {0}", RENDER_STRING_LIST)
         map.put(CLASSIFIER_REDECLARATION, "Redeclaration: {0}", RENDER_STRING_LIST)
-        map.put(
-            CfirErrors. UNRESOLVED_IMPORT,
-            "Unresolved reference ''{0}''.",
-            NULLABLE_STRING,
-        )
         map.put(CfirErrors.IMPORT_CONFLICT, "conflicting imports for name ''{0}''", RENDER_NAME)
         map.put(CfirErrors.IMPORT_ALIAS_CONFLICT, "alias conflict for ''{0}''", RENDER_NAME)
         map.put(CfirErrors.UNRESOLVED_IMPORT, "unresolved import ''{0}''", RENDER_STRING)

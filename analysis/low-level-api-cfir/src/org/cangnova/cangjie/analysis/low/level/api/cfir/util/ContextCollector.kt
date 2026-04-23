@@ -54,7 +54,7 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScopeImpl
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -462,7 +462,9 @@ private class ContextCollectorVisitor(
             }
         }
 
-        context.storeVariable(symbol.name, symbol)
+        if (variable is org.cangnova.cangjie.cfir.declarations.CfirVariable) {
+            context.storeVariable(variable, variable.moduleData.session)
+        }
     }
 
     override fun visitValueParameter(valueParameter: CfirValueParameter) = withProcessor(valueParameter) {
@@ -708,9 +710,9 @@ private inline fun BodyResolveContext.withConstructorCompat(
     withTowerDataMode(org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.CfirTowerDataMode.CONSTRUCTOR_HEADER) {
         withContainer(constructor) {
             withTowerDataCleanup {
-                addLocalScope(CfirLocalScopeImpl())
+                addLocalScope(CfirLocalScope(holder.session))
                 for (valueParameter in constructor.valueParameters) {
-                    storeVariable(valueParameter.name, valueParameter.symbol)
+                    storeValueParameterIfNeeded(valueParameter, holder.session)
                 }
                 block()
             }
@@ -723,9 +725,9 @@ private inline fun BodyResolveContext.forConstructorBodyCompat(
     block: () -> Unit,
 ) {
     withTowerDataCleanup {
-        addLocalScope(CfirLocalScopeImpl())
+        addLocalScope(CfirLocalScope(constructor.moduleData.session))
         for (valueParameter in constructor.valueParameters) {
-            storeVariable(valueParameter.name, valueParameter.symbol)
+            storeValueParameterIfNeeded(valueParameter, constructor.moduleData.session)
         }
         block()
     }
@@ -738,7 +740,7 @@ private inline fun BodyResolveContext.withFunctionDeclarationCompat(
     if (containerIfAny !is CfirClassLikeDeclaration && containerIfAny !is CfirExtend) {
         val symbol = function.symbol as? CfirFunctionSymbol<*>
         if (symbol != null) {
-            storeFunction(symbol.name, symbol)
+            storeFunction(function as CfirNamedFunction, function.moduleData.session)
         }
     }
 
@@ -752,9 +754,9 @@ private inline fun BodyResolveContext.forFunctionBodyCompat(
     block: () -> Unit,
 ) {
     withTowerDataCleanup {
-        addLocalScope(CfirLocalScopeImpl())
+        addLocalScope(CfirLocalScope(function.moduleData.session))
         for (valueParameter in function.valueParameters) {
-            storeVariable(valueParameter.name, valueParameter.symbol)
+            storeValueParameterIfNeeded(valueParameter, function.moduleData.session)
         }
         block()
     }
@@ -775,9 +777,9 @@ private inline fun BodyResolveContext.withPropertyAccessorCompat(
     block: () -> Unit,
 ) {
     withTowerDataCleanup {
-        addLocalScope(CfirLocalScopeImpl())
+        addLocalScope(CfirLocalScope(propertyAccessor.moduleData.session))
         for (valueParameter in propertyAccessor.valueParameters) {
-            storeVariable(valueParameter.name, valueParameter.symbol)
+            storeValueParameterIfNeeded(valueParameter, propertyAccessor.moduleData.session)
         }
 
         withPublicApiInlineFunction(propertyAccessor) {
@@ -790,7 +792,7 @@ private inline fun BodyResolveContext.withValueParameterCompat(
     valueParameter: CfirValueParameter,
     block: () -> Unit,
 ) {
-    storeVariable(valueParameter.name, valueParameter.symbol)
+    storeValueParameterIfNeeded(valueParameter, valueParameter.moduleData.session)
     withContainer(valueParameter, block)
 }
 
@@ -800,8 +802,11 @@ private inline fun BodyResolveContext.withAnonymousFunctionCompat(
 ) {
     withTypeParametersCompat(anonymousFunction) {
         withTowerDataCleanup {
-            addLocalScope(CfirLocalScopeImpl())
+            addLocalScope(CfirLocalScope(anonymousFunction.moduleData.session))
             withContainer(anonymousFunction) {
+                for (valueParameter in anonymousFunction.valueParameters) {
+                    storeValueParameterIfNeeded(valueParameter, anonymousFunction.moduleData.session)
+                }
                 block()
             }
         }
@@ -810,7 +815,7 @@ private inline fun BodyResolveContext.withAnonymousFunctionCompat(
 
 private inline fun BodyResolveContext.withBlockScopeCompat(block: () -> Unit) {
     withTowerDataCleanup {
-        addLocalScope(CfirLocalScopeImpl())
+        addLocalScope(CfirLocalScope(file.moduleData.session))
         block()
     }
 }

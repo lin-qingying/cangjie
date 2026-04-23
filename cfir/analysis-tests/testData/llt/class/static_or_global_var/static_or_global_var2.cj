@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 // random seed:1635836677524
 
 // All global variable need to be defined before use!

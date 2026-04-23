@@ -1,8 +1,9 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.api.resolveToCfirSymbolOfType
 import org.cangnova.cangjie.analysis.api.impl.base.symbols.pointers.CaBasePsiSymbolPointer
 import org.cangnova.cangjie.analysis.api.impl.base.util.lazyPub
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -13,10 +14,14 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOfType
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.realPsi
+import org.cangnova.cangjie.analysis.api.impl.base.annotations.CaBaseEmptyAnnotationList
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.psi.CjAnnotated
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjDeclarationWithBody
@@ -28,7 +33,7 @@ import kotlin.reflect.KClass
 
 /**
  * A [CaCfirSymbol] that is possibly backed by some [PsiElement] and builds [cfirSymbol] lazily (by convention),
- * allowing some properties to be calculated without the need to build a [cfirSymbol].
+ * allowing some variables to be calculated without the need to build a [cfirSymbol].
  */
 internal interface CaCfirPsiSymbol<out P : PsiElement, out S : CfirBasedSymbol<*>> : CaCfirSymbol<S> {
     /**
@@ -108,7 +113,13 @@ internal fun <P : CjElement> CaCfirPsiSymbol<P, *>.psiOrSymbolOrigin(): CaSymbol
         else -> CaSymbolOrigin.SOURCE
     }
 }
+internal fun CaCfirCjBasedSymbol<CjAnnotated, *>.psiOrSymbolAnnotationList(): CaAnnotationList {
+    if (backingPsi?.annotationEntries?.isEmpty() == true) {
+        return CaBaseEmptyAnnotationList(token)
+    }
 
+    return CaCfirAnnotationListForDeclaration.create(cfirSymbol, builder)
+}
 internal val CjElement.cameFromCangJieLibrary: Boolean get() = containingCjFile.isCompiled
 internal val CfirBasedSymbol<*>.backingPsiIfApplicable: PsiElement?
     get() {
@@ -121,7 +132,7 @@ internal val CfirBasedSymbol<*>.backingPsiIfApplicable: PsiElement?
 internal fun CaCfirCjBasedSymbol<CjDeclarationWithBody, CfirCallableSymbol<*>>.createReturnType(): CaType {
     val backingPsi = backingPsi
     if (backingPsi?.hasBlockBody() == true && !backingPsi.hasDeclaredReturnType()) {
-        return analysisSession.builtinTypes.unit
+        return builder.typeBuilder.buildType(analysisSession.cfirSession.builtinTypes.unitType)
     }
 
     return cfirSymbol.returnType(builder)
@@ -133,6 +144,7 @@ internal inline fun <reified S : CaSymbol> CaCfirPsiSymbol<out CjElement, *>.psi
     return psiBasedSymbolPointerOfTypeIfSource(S::class, restoreSymbolByPsi)
 }
 
+@OptIn(CaImplementationDetail::class)
 internal fun <S : CaSymbol> CaCfirPsiSymbol<out CjElement, *>.psiBasedSymbolPointerOfTypeIfSource(
     expectedClass: KClass<S>,
     restoreSymbolByPsi: org.cangnova.cangjie.analysis.api.CaSession.(CjElement) -> CaSymbol?,
@@ -146,3 +158,4 @@ internal fun <S : CaSymbol> CaCfirPsiSymbol<out CjElement, *>.psiBasedSymbolPoin
         )
     }
 }
+

@@ -11,7 +11,8 @@ import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationOri
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationOriginKind
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightExtendDeclaration
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
-import org.cangnova.cangjie.analysis.api.signatures.CaSignature
+import org.cangnova.cangjie.analysis.api.signatures.CaCallableSignature
+
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
@@ -94,7 +95,7 @@ class CaLightCallableDeclarationImpl(
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
     override val callableId: CallableId?,
-    override val signature: CaSignature<*>?,
+    override val signature: CaCallableSignature<*>?,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.CALLABLE,
     name = name,

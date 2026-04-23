@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct A {
     var x = 0
 }
@@ -13,7 +11,7 @@ struct A {
 struct B {
     var a: A
     init() {
-        a.x = 1
+        <!USED_BEFORE_INITIALIZATION!>a<!>.x = 1
         a = A()
     }
 }
@@ -21,14 +19,3 @@ struct B {
 main() {
     println(B().a.x)
 }
-
-/* SCAN
-error: variable 'a' is used before initialization
-  ==> variable_use_before_init_11.cj:16:9:
-   | 
-16 |         a.x = 1
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

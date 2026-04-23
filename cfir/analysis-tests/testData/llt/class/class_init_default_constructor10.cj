@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 open class Tree {
     var left: Tree = Tree_None()
     var right: Tree = Tree_None()
@@ -15,15 +13,4 @@ open class Tree {
     }
 }
 
-class Tree_None <: Tree {}
-
-/* SCAN
-error: there is no non-parameter constructor in super class, please invoke super call explicitly
-  ==> class_init_default_constructor10.cj:18:7:
-   | 
-18 | class Tree_None <: Tree {}
-   |       ^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/
+<!EXPLICIT_SUPER_CALL_REQUIRED!>class Tree_None <: Tree {}<!>

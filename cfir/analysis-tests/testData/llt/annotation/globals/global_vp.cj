@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f
 @Annotation[target: [GlobalVariable]]
 public class APMLevel {
     let a: UInt8

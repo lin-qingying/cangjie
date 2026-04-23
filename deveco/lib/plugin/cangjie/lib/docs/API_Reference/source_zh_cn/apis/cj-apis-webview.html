@@ -1,0 +1,2664 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>ohos.web.webview（Webview） - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item expanded "><a href="../../source_zh_cn/apis/cj-apis-webview.html" class="active"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="ohoswebwebview-webview"><a class="header" href="#ohoswebwebview-webview">ohos.web.webview (Webview)</a></h1>
+<p>提供web控制能力，组件提供网页显示的能力。</p>
+<h2 id="需要权限"><a class="header" href="#需要权限">需要权限</a></h2>
+<p>访问在线网页时需添加网络权限：ohos.permission.INTERNET。</p>
+<h2 id="导入模块"><a class="header" href="#导入模块">导入模块</a></h2>
+<pre><code class="language-cangjie">import ohos.webview.*
+</code></pre>
+<h2 id="class-webviewcontroller"><a class="header" href="#class-webviewcontroller">class WebviewController</a></h2>
+<pre><code class="language-cangjie">public class WebviewController {
+    public init()
+    public init(webTag: String)
+}
+</code></pre>
+<p>通过WebviewController可以控制Web组件各种行为。一个WebviewController对象只能控制一个Web组件，且必须在Web组件和WebviewController绑定后，才能调用WebviewController上的方法（静态方法除外）。</p>
+<h3 id="init"><a class="header" href="#init">init()</a></h3>
+<pre><code class="language-cangjie">public init()
+</code></pre>
+<p>用于创建WebviewController对象的构造函数。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<h3 id="initstring"><a class="header" href="#initstring">init(String)</a></h3>
+<pre><code class="language-cangjie">public init(webTag: String)
+</code></pre>
+<p>用于创建WebviewController对象的构造函数。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">webTag</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">指定了Web组件的名称，默认为Empty。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-loadurlstring"><a class="header" href="#func-loadurlstring">func loadUrl(String)</a></h3>
+<pre><code class="language-cangjie">public func loadUrl(url: String): Unit
+</code></pre>
+<p>加载指定的URL。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">url</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">需要加载的URL。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+<tr><td style="text-align: left">17100002</td><td style="text-align: left">Invalid url.</td></tr>
+<tr><td style="text-align: left">17100003</td><td style="text-align: left">Invalid resource path or file type.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;loadUrl&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;loadUrl&quot;)
+                webController.loadUrl(&quot;www.example1.com&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-loadurlstring-arraywebheader"><a class="header" href="#func-loadurlstring-arraywebheader">func loadUrl(String, Array&lt;WebHeader&gt;)</a></h3>
+<pre><code class="language-cangjie">public func loadUrl(url: String, headers: Array&lt;WebHeader&gt;): Unit
+</code></pre>
+<p>加载指定的URL。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">url</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">需要加载的URL。</td></tr>
+<tr><td style="text-align: left">headers</td><td style="text-align: left">Array&lt;<a href="#struct-webheader">WebHeader</a>&gt;</td><td style="text-align: left">是</td><td style="text-align: left">URL的附加HTTP请求头。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+<tr><td style="text-align: left">17100002</td><td style="text-align: left">Invalid url.</td></tr>
+<tr><td style="text-align: left">17100003</td><td style="text-align: left">Invalid resource path or file type.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;loadUrl&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;loadUrl&quot;)
+                webController.loadUrl(&quot;www.example1.com&quot;, headers)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-loadurlcjresource"><a class="header" href="#func-loadurlcjresource">func loadUrl(CJResource)</a></h3>
+<pre><code class="language-cangjie">public func loadUrl(url: CJResource): Unit
+</code></pre>
+<p>加载指定的URL。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">url</td><td style="text-align: left"><a href="../arkui-cj/cj-appendix-enums.html#cjresource">CJResource</a></td><td style="text-align: left">是</td><td style="text-align: left">需要加载的URL。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+<tr><td style="text-align: left">17100002</td><td style="text-align: left">Invalid url.</td></tr>
+<tr><td style="text-align: left">17100003</td><td style="text-align: left">Invalid resource path or file type.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;loadUrl&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;loadUrl&quot;)
+                webController.loadUrl(@rawfile(&quot;index.html&quot;), headers)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-loadurlcjresource-arraywebheader"><a class="header" href="#func-loadurlcjresource-arraywebheader">func loadUrl(CJResource, Array&lt;WebHeader&gt;)</a></h3>
+<pre><code class="language-cangjie">public func loadUrl(url: CJResource, headers: Array&lt;WebHeader&gt;): Unit
+</code></pre>
+<p>加载指定的URL。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">url</td><td style="text-align: left"><a href="../arkui-cj/cj-appendix-enums.html#cjresource">CJResource</a></td><td style="text-align: left">是</td><td style="text-align: left">需要加载的URL。</td></tr>
+<tr><td style="text-align: left">headers</td><td style="text-align: left">Array&lt;<a href="#struct-webheader">WebHeader</a>&gt;</td><td style="text-align: left">是</td><td style="text-align: left">URL的附加HTTP请求头。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+<tr><td style="text-align: left">17100002</td><td style="text-align: left">Invalid url.</td></tr>
+<tr><td style="text-align: left">17100003</td><td style="text-align: left">Invalid resource path or file type.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;loadUrl&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;loadUrl&quot;)
+                webController.loadUrl(@rawfile(&quot;index.html&quot;), headers)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<p>加载本地网页，加载本地资源文件有三种方式。</p>
+<p>1.$rawfile方式。</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;loadUrl&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;loadUrl&quot;)
+                webController.loadUrl(@rawfile(&quot;index.html&quot;), headers)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<p>2.resources协议。</p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;loadUrl&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;loadUrl&quot;)
+                webController.loadUrl(&quot;resource://rawfile/index.html&quot;, headers)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<p>3.通过沙箱路径加载本地文件，可以参考web加载沙箱路径的示例代码。</p>
+<p>加载的html文件。</p>
+<pre><code class="language-html">&lt;!-- index.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;body&gt;
+    &lt;p&gt;Hello World&lt;/p&gt;
+  &lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="func-setwebdebuggingaccessbool"><a class="header" href="#func-setwebdebuggingaccessbool">func setWebDebuggingAccess(Bool)</a></h3>
+<pre><code class="language-cangjie">public static func setWebDebuggingAccess(webDebuggingAccess: Bool): Unit
+</code></pre>
+<p>设置是否启用网页调试功能。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">webDebuggingAccess</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">设置是否启用网页调试功能。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;setWebDebuggingAccess&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;setWebDebuggingAccess&quot;)
+                WebviewController.setWebDebuggingAccess(true)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-refresh"><a class="header" href="#func-refresh">func refresh()</a></h3>
+<pre><code class="language-cangjie">public func refresh(): Unit
+</code></pre>
+<p>调用此接口通知Web组件刷新网页。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;refresh&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;refresh&quot;)
+                webController.refresh()
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-getuseragent"><a class="header" href="#func-getuseragent">func getUserAgent()</a></h3>
+<pre><code class="language-cangjie">public func getUserAgent(): String
+</code></pre>
+<p>获取当前默认用户代理。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">默认用户代理。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;getUserAgent&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getUserAgent&quot;)
+                webController.getUserAgent()
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-accessbackward"><a class="header" href="#func-accessbackward">func accessBackward()</a></h3>
+<pre><code class="language-cangjie">public func accessBackward(): Bool
+</code></pre>
+<p>当前页面是否可后退，即当前页面是否有返回历史记录。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">可以后退返回true，否则返回false。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;accessBackward&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;accessBackward&quot;)
+                let bool = webController.accessBackward()
+                AppLog.info(&quot;accessBackward returns ${bool}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-setcustomuseragentstring"><a class="header" href="#func-setcustomuseragentstring">func setCustomUserAgent(String)</a></h3>
+<pre><code class="language-cangjie">public func setCustomUserAgent(userAgent: String): Unit
+</code></pre>
+<p>设置自定义用户代理，会覆盖系统的用户代理。</p>
+<p><strong>系统能力：</strong>  SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">userAgent</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">用户自定义代理信息。建议先使用<a href="#func-getuseragent">getUserAgent</a>获取当前默认用户代理，在此基础上追加自定义用户代理信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>.</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;setCustomUserAgent&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;setCustomUserAgent&quot;)
+                webController.setCustomUserAgent(&quot;ua&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-getcustomuseragent"><a class="header" href="#func-getcustomuseragent">func getCustomUserAgent()</a></h3>
+<pre><code class="language-cangjie">public func getCustomUserAgent(): String
+</code></pre>
+<p>获取自定义用户代理。</p>
+<p><strong>系统能力：</strong>  SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">用户自定义代理信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    let headers = [WebHeader(&quot;headerKey&quot;, &quot;headerValue&quot;)]
+    func test() {
+        Column(10) {
+            Button(&quot;getCustomUserAgent&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getCustomUserAgent&quot;)
+                let agent = webController.getCustomUserAgent()
+                AppLog.info(&quot;getCustomUserAgent returns ${agent}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-runjavascriptstring-asynccallbackstring"><a class="header" href="#func-runjavascriptstring-asynccallbackstring">func runJavaScript(String, AsyncCallback&lt;String&gt;)</a></h3>
+<pre><code class="language-cangjie">public func runJavaScript(script: String, callback : AsyncCallback&lt;String&gt;): Unit
+</code></pre>
+<p>异步执行JavaScript脚本，并通过回调方式返回脚本执行的结果。runJavaScript需要在loadUrl完成后，比如onPageEnd中调用。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">script</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">JavaScript脚本。</td></tr>
+<tr><td style="text-align: left">callback</td><td style="text-align: left">AsyncCallback&lt;String&gt;</td><td style="text-align: left">是</td><td style="text-align: left">回调执行JavaScript脚本结果。JavaScript脚本若执行失败或无返回值时，返回null。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+let callback: AsyncCallback&lt;String&gt; = {
+    errorCode: Option&lt;AsyncError&gt;, data: Option&lt;String&gt; =&gt; match (errorCode) {
+        case Some(e) =&gt; AppLog.error(&quot;callback error: errcode is ${e.code}&quot;)
+        case _ =&gt;
+            match (data) {
+                case Some(value) =&gt;
+                    AppLog.info(&quot;callback: get data successfully and data is ${value}&quot;)
+                case _ =&gt; AppLog.error(&quot;callback: data is null&quot;)
+            }
+    }
+}
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;runJavaScript&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;runJavaScript&quot;)
+                webController.runJavaScript(&quot;test()&quot;, callback)
+            }.width(400.px).height(150.px)
+
+            Web(src: @rawfile(&quot;index.html&quot;), controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<p>加载的html文件。</p>
+<pre><code class="language-html">&lt;!-- index.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+  &lt;meta charset=&quot;utf-8&quot;&gt;
+  &lt;body&gt;
+      Hello world!
+  &lt;/body&gt;
+  &lt;script type=&quot;text/javascript&quot;&gt;
+  function test() {
+      console.log('Ark WebComponent')
+      return &quot;This value is from index.html&quot;
+  }
+  &lt;/script&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="func-registerjavascriptproxyarraystring---string-string-arraystring"><a class="header" href="#func-registerjavascriptproxyarraystring---string-string-arraystring">func registerJavaScriptProxy(Array&lt;(String) -&gt; String&gt;, String, Array&lt;String&gt;)</a></h3>
+<pre><code class="language-cangjie">public func registerJavaScriptProxy(funcs: Array&lt;(String) -&gt; String&gt;, name: String, methodList: Array&lt;String&gt;): Unit
+</code></pre>
+<p>注入Cangjie方法到window对象中，并在window对象中调用该方法。注册后，须调用<a href="#func-refresh">refresh</a>接口生效。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">funcs</td><td style="text-align: left">Array&lt;(String) -&gt; String&gt;</td><td style="text-align: left">是</td><td style="text-align: left">参与注册的应用侧Cangjie方法数组。注册的Cangjie方法的入参和返回值都是String类型。</td></tr>
+<tr><td style="text-align: left">name</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">注册Cangjie方法数组的名称，与window中调用的对象名一致。注册后window对象可以通过此名字访问应用侧Cangjie方法。</td></tr>
+<tr><td style="text-align: left">methodList</td><td style="text-align: left">Array&lt;String&gt;</td><td style="text-align: left">是</td><td style="text-align: left">参与注册的应用侧Cangjie方法名，此数组的长度需要与funcs数组一致。注册完成后，后续funcs的判等会通过methodList来判断。因此后续如果想注册新的、或更改funcs，需要传入新的methodList。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">401</td><td style="text-align: left">WebviewController registerJavaScriptProxy failed: the funcs and methodList must have the same size.</td></tr>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>注意：</strong></p>
+<ul>
+<li>所有拥有仓颉函数类型的实体均支持被注册为JavaScript对象的方法，包括：全局函数、局部函数、实例/静态成员函数和闭包。</li>
+<li>如果方法名称列表<code>methodList</code>中存在重名的方法名称，例如<code>myMethod</code>，则调用JavaScript对象的<code>myMethod</code>方法时，将按照<code>methodList</code>中的顺序，选择第一个名称为<code>myMethod</code>的方法进行调用。</li>
+<li>目前仅支持函数签名为<code>(String) -&gt; String</code>的仓颉函数被注册为JavaScript的方法。</li>
+<li>支持多次使用相同的<code>name</code>定义JavaScript对象，每一次调用该接口进行JavaScript对象注册时，如果<code>methodList</code>与上一次注册时使用的<code>methodList</code>相等，则不会重新定义JavaScript对象；否则将覆盖前一次的JavaScript对象定义。</li>
+<li>方法名称列表<code>methodList</code>中如果存在空字符串或以数字开头等的不能作为合法JavaScript标识符的字符串，在调用该接口进行JavaScript方法注册时并不会抛出异常，而是在相关JavaScript源码被执行时导致相关问题。</li>
+</ul>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;proxy&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;registerJavaScriptProxy&quot;)
+                let funcA1 = {
+                    a: String =&gt;
+                        AppLog.info(&quot;funcA1 ${a}&quot;)
+                        return &quot;funcA1 &quot;+a
+                }
+                let funcA2 = {
+                    a: String =&gt;
+                        AppLog.info(&quot;funcA2 ${a}&quot;)
+                        return &quot;funcA2 &quot;+a
+                }
+                let funcA3 = {
+                    a: String =&gt;
+                        AppLog.info(&quot;funcA3 ${a}&quot;)
+                        return &quot;funcA3 &quot;+a
+                }
+                let funcB1 = {
+                    a: String =&gt;
+                        AppLog.info(&quot;funcB1 ${a}&quot;)
+                        return &quot;funcB1 &quot;+a
+                }
+                let funcB2 = {
+                    a: String =&gt;
+                        AppLog.info(&quot;funcB2 ${a}&quot;)
+                        return &quot;funcB2 &quot;+a
+                }
+                let funcB3 = {
+                    a: String =&gt;
+                        AppLog.info(&quot;funcB3 ${a}&quot;)
+                        return &quot;funcB3 &quot;+a
+                }
+                let funcsA = Array&lt;(String)-&gt;String&gt;([funcA1, funcA2, funcA3])
+                let funcsB = Array&lt;(String)-&gt;String&gt;([funcB1, funcB2, funcB3])
+                let methodListA = Array&lt;String&gt;([&quot;testFunA1&quot;, &quot;testFunA2&quot;, &quot;testFunA3&quot;])
+                let methodListB = Array&lt;String&gt;([&quot;testFunB1&quot;, &quot;testFunB2&quot;, &quot;testFunB3&quot;])
+
+                webController.registerJavaScriptProxy(funcsA, &quot;testObjA&quot;, methodListA)
+                webController.registerJavaScriptProxy(funcsB, &quot;testObjB&quot;, methodListB)
+             }.width(400.px).height(150.px)
+
+            Web(src: @rawfile(&quot;index.html&quot;), controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<p>加载的html文件。</p>
+<pre><code class="language-html">&lt;!-- index.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;body&gt;
+&lt;button type=&quot;button&quot; onclick=&quot;htmlTest()&quot;&gt;Click Me!&lt;/button&gt;
+&lt;p id=&quot;demo&quot;&gt;&lt;/p&gt;
+&lt;p id=&quot;webDemo&quot;&gt;&lt;/p&gt;
+&lt;/body&gt;
+&lt;script type=&quot;text/javascript&quot;&gt;
+    function htmlTest() {
+      // This function call expects to return &quot;ArkUI Web Component&quot;
+      let AStr=testObjA.testFunA2(&quot;A2 data&quot;);
+      let BStr=testObjB.testFunB1(&quot;B1 data&quot;);
+      testObjA.testFunA3(&quot;A3 data&quot;);
+      document.getElementById(&quot;demo&quot;).innerHTML=AStr;
+      document.getElementById(&quot;webDemo&quot;).innerHTML=BStr;
+      console.log('objName.test result:'+ str)
+    }
+&lt;/script&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="func-geturl"><a class="header" href="#func-geturl">func getUrl()</a></h3>
+<pre><code class="language-cangjie">public func getUrl(): String
+</code></pre>
+<p>获取当前页面的URL地址。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">当前页面的URL地址。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getUrl&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getUrl&quot;)
+                let url = webController.getUrl()
+                AppLog.info(&quot;getUrl is ${url}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-getoriginalurl"><a class="header" href="#func-getoriginalurl">func getOriginalUrl()</a></h3>
+<pre><code class="language-cangjie">public func getOriginalUrl(): String
+</code></pre>
+<p>获取当前页面的原始URL地址。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">当前页面的原始URL地址。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getOriginalUrl&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getOriginalUrl&quot;)
+                let url = webController.getOriginalUrl()
+                AppLog.info(&quot;getOriginalUrl is ${url}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-pageupbool"><a class="header" href="#func-pageupbool">func pageUp(Bool)</a></h3>
+<pre><code class="language-cangjie">public func pageUp(top: Bool): Unit
+</code></pre>
+<p>将Webview的内容向上滚动半个视框大小或者跳转到页面最顶部，通过top入参控制。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">top</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">是否跳转到页面最顶部，设置为false时将页面内容向上滚动半个视框大小，设置为true时跳转到页面最顶部。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;pageUp&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;pageUp&quot;)
+                webController.pageUp(true)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-pagedownbool"><a class="header" href="#func-pagedownbool">func pageDown(Bool)</a></h3>
+<pre><code class="language-cangjie">public func pageDown(bottom: Bool): Unit
+</code></pre>
+<p>将Webview的内容向下滚动半个视框大小或者跳转到页面最底部，通过bottom入参控制。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">bottom</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">是否跳转到页面最底部，设置为false时将页面内容向下滚动半个视框大小，设置为true时跳转到页面最底部。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;pageDown&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;pageDown&quot;)
+                webController.pageDown(true)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-scrolltofloat32-float32"><a class="header" href="#func-scrolltofloat32-float32">func scrollTo(Float32, Float32)</a></h3>
+<pre><code class="language-cangjie">public func scrollTo(x: Float32, y: Float32): Unit
+</code></pre>
+<p>将页面滚动到指定的绝对位置。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">x</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">绝对位置的水平坐标，当传入数值为负数时，按照传入0处理。</td></tr>
+<tr><td style="text-align: left">y</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">绝对位置的垂直坐标，当传入数值为负数时，按照传入0处理。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;scrollTo&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;scrollTo&quot;)
+                webController.scrollTo(50.0, 50.0)
+            }.width(400.px).height(150.px)
+
+            Web(src: @rawfile(&quot;index.html&quot;), controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<p>加载的html文件。</p>
+<pre><code class="language-html">&lt;!--index.html--&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Demo&lt;/title&gt;
+    &lt;style&gt;
+        body {
+            width:3000px;
+            height:3000px;
+            padding-right:170px;
+            padding-left:170px;
+            border:5px solid blueviolet
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+Scroll Test
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="func-scrollbyfloat32-float32"><a class="header" href="#func-scrollbyfloat32-float32">func scrollBy(Float32, Float32)</a></h3>
+<pre><code class="language-cangjie">public func scrollBy(deltaX: Float32, deltaY: Float32): Unit
+</code></pre>
+<p>将页面滚动指定的偏移量。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">deltaX</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">水平偏移量，其中水平向右为正方向。</td></tr>
+<tr><td style="text-align: left">deltaY</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">垂直偏移量，其中垂直向下为正方向。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;scrollBy&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;scrollBy&quot;)
+                webController.scrollBy(50.0, 50.0)
+            }.width(400.px).height(150.px)
+
+            Web(src: @rawfile(&quot;index.html&quot;), controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<p>加载的html文件。</p>
+<pre><code class="language-html">&lt;!--index.html--&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+    &lt;title&gt;Demo&lt;/title&gt;
+    &lt;style&gt;
+        body {
+            width:3000px;
+            height:3000px;
+            padding-right:170px;
+            padding-left:170px;
+            border:5px solid blueviolet
+        }
+    &lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+Scroll Test
+&lt;/body&gt;
+&lt;/html&gt;
+</code></pre>
+<h3 id="func-forward"><a class="header" href="#func-forward">func forward()</a></h3>
+<pre><code class="language-cangjie">public func forward(): Unit
+</code></pre>
+<p>按照历史栈，前进一个页面。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;forward&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;forward&quot;)
+                webController.forward()
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-backward"><a class="header" href="#func-backward">func backward()</a></h3>
+<pre><code class="language-cangjie">public func backward(): Unit
+</code></pre>
+<p>按照历史栈，后退一个页面。一般结合accessBackward一起使用。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;backward&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;backward&quot;)
+                webController.backward()
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-backorforwardint32"><a class="header" href="#func-backorforwardint32">func backOrForward(Int32)</a></h3>
+<pre><code class="language-cangjie">public func backOrForward(step: Int32): Unit
+</code></pre>
+<p>按照历史栈，前进或者后退指定步长的页面，当历史栈中不存在对应步长的页面时，不会进行页面跳转。</p>
+<p>前进或者后退页面时，直接使用已加载过的网页，无需重新加载网页。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">step</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">需要前进或后退的步长。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;backOrForward&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;backOrForward&quot;)
+                webController.backOrForward(-2)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-getpageheight"><a class="header" href="#func-getpageheight">func getPageHeight()</a></h3>
+<pre><code class="language-cangjie">public func getPageHeight(): Int32
+</code></pre>
+<p>获取当前网页的页面高度。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Int32</td><td style="text-align: left">当前网页的页面高度。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例:</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getPageHeight&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getPageHeight&quot;)
+                let height = webController.getPageHeight()
+                AppLog.info(&quot;getPageHeight success: ${height}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-gettitle"><a class="header" href="#func-gettitle">func getTitle()</a></h3>
+<pre><code class="language-cangjie">public func getTitle(): String
+</code></pre>
+<p>获取当前网页的标题。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">当前网页的标题。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例:</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getTitle&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getTitle&quot;)
+                let title = webController.getTitle()
+                AppLog.info(&quot;getPageHeight success: ${title}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-zoomfloat32"><a class="header" href="#func-zoomfloat32">func zoom(Float32)</a></h3>
+<pre><code class="language-cangjie">public func zoom(factor: Float32): Unit
+</code></pre>
+<p>调整当前网页的缩放比例，zoomAccess需为true。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">factor</td><td style="text-align: left">Float32</td><td style="text-align: left">是</td><td style="text-align: left">基于当前网页所需调整的相对缩放比例，入参要求大于0，当入参为1时为默认加载网页的缩放比例，入参小于1为缩小，入参大于1为放大。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+<tr><td style="text-align: left">17100004</td><td style="text-align: left">Function not enable.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;zoom&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;zoom&quot;)
+                webController.zoom(2.5)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-zoomin"><a class="header" href="#func-zoomin">func zoomIn()</a></h3>
+<pre><code class="language-cangjie">public func zoomIn(): Unit
+</code></pre>
+<p>调用此接口将当前网页进行放大，比例为20%。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+<tr><td style="text-align: left">17100004</td><td style="text-align: left">Function not enable.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;zoomIn&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;zoomIn&quot;)
+                webController.zoomIn()
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-zoomout"><a class="header" href="#func-zoomout">func zoomOut()</a></h3>
+<pre><code class="language-cangjie">public func zoomOut(): Unit
+</code></pre>
+<p>调用此接口将当前网页进行缩小，比例为20%。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+<tr><td style="text-align: left">17100004</td><td style="text-align: left">Function not enable.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;zoomOut&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;zoomOut&quot;)
+                webController.zoomOut()
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-gethittestvalue"><a class="header" href="#func-gethittestvalue">func getHitTestValue()</a></h3>
+<pre><code class="language-cangjie">public func getHitTestValue(): HitTestValue
+</code></pre>
+<p>获取当前被点击区域的元素信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-hittestvalue">HitTestValue</a></td><td style="text-align: left">点击区域的元素信息。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getHitTestValue&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getHitTestValue&quot;)
+                let hitTestValue = webController.getHitTestValue()
+                match(hitTestValue.hitTestType) {
+                    case WebHitTestType.EditText =&gt; AppLog.info(&quot;getHitTestValue returns EditText&quot;)
+                    case WebHitTestType.Email =&gt; AppLog.info(&quot;getHitTestValue returns Email&quot;)
+                    case WebHitTestType.HttpAnchor =&gt; AppLog.info(&quot;getHitTestValue returns HttpAnchor&quot;)
+                    case WebHitTestType.HttpAnchorImg =&gt; AppLog.info(&quot;getHitTestValue returns HttpAnchorImg&quot;)
+                    case WebHitTestType.Img =&gt; AppLog.info(&quot;getHitTestValue returns Img&quot;)
+                    case WebHitTestType.Map =&gt; AppLog.info(&quot;getHitTestValue returns Map&quot;)
+                    case WebHitTestType.Phone =&gt; AppLog.info(&quot;getHitTestValue returns Phone&quot;)
+                    case WebHitTestType.Unknown =&gt; AppLog.info(&quot;getHitTestValue returns Unknown&quot;)
+                 }
+                AppLog.info(&quot;getHitTestValue extra returns ${hitTestValue.extra}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-clearhistory"><a class="header" href="#func-clearhistory">func clearHistory()</a></h3>
+<pre><code class="language-cangjie">public func clearHistory(): Unit
+</code></pre>
+<p>删除所有前进后退记录。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;clearHistory&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;clearHistory&quot;)
+                webController.clearHistory()
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-accessstepint32"><a class="header" href="#func-accessstepint32">func accessStep(Int32)</a></h3>
+<pre><code class="language-cangjie">public func accessStep(step: Int32): Bool
+</code></pre>
+<p>当前页面是否可前进或者后退给定的step步。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">step</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">要跳转的步数，正数代表前进，负数代表后退。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">页面是否前进或后退</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;accessStep&quot;)
+             onClick {
+                evt =&gt;
+                AppLog.info(&quot;accessStep&quot;)
+                let access = webController.accessStep(2)
+                AppLog.info(&quot;accessStep returns: ${access}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-gethittest"><a class="header" href="#func-gethittest">func getHitTest()</a></h3>
+<pre><code class="language-cangjie">public func getHitTest(): WebHitTestType
+</code></pre>
+<p>获取当前被点击区域的元素类型。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#enum-webhittesttype">WebHitTestType</a></td><td style="text-align: left">被点击区域的元素类型。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getHitTest&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getHitTest&quot;)
+                let hitType = webController.getHitTest()
+                match(hitType) {
+                    case WebHitTestType.EditText =&gt; AppLog.info(&quot;getHitTest returns EditText&quot;)
+                    case WebHitTestType.Email =&gt; AppLog.info(&quot;getHitTest returns Email&quot;)
+                    case WebHitTestType.HttpAnchor =&gt; AppLog.info(&quot;getHitTest returns HttpAnchor&quot;)
+                    case WebHitTestType.HttpAnchorImg =&gt; AppLog.info(&quot;getHitTest returns HttpAnchorImg&quot;)
+                    case WebHitTestType.Img =&gt; AppLog.info(&quot;getHitTest returns Img&quot;)
+                    case WebHitTestType.Map =&gt; AppLog.info(&quot;getHitTest returns Map&quot;)
+                    case WebHitTestType.Phone =&gt; AppLog.info(&quot;getHitTest returns Phone&quot;)
+                    case WebHitTestType.Unknown =&gt; AppLog.info(&quot;getHitTest returns Unknown&quot;)
+                }
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-storewebarchivestring-bool-asynccallbackstring"><a class="header" href="#func-storewebarchivestring-bool-asynccallbackstring">func storeWebArchive(String, Bool, AsyncCallback&lt;String&gt;)</a></h3>
+<pre><code class="language-cangjie">public func storeWebArchive(baseName: String, autoName: Bool, callback: AsyncCallback&lt;String&gt;): Unit
+</code></pre>
+<p>以回调方式异步保存当前页面。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">baseName</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">生成的离线网页存储位置，该值不能为空。</td></tr>
+<tr><td style="text-align: left">autoName</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">决定是否自动生成文件名。如果为false，则按baseName的文件名存储；如果为true，则根据当前Url自动生成文件名，并按baseName的文件目录存储。</td></tr>
+<tr><td style="text-align: left">callback</td><td style="text-align: left">AsyncCallback&lt;String&gt;</td><td style="text-align: left">是</td><td style="text-align: left">返回文件存储路径。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+<tr><td style="text-align: left">17100003</td><td style="text-align: left">Invalid resource path or file type.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+let callback: AsyncCallback&lt;String&gt; = {
+    errorCode: Option&lt;AsyncError&gt;, data: Option&lt;String&gt; =&gt; match (errorCode) {
+        case Some(e) =&gt; AppLog.error(&quot;callback error: errcode is ${e.code}&quot;)
+        case _ =&gt;
+            match (data) {
+                case Some(value) =&gt;
+                    AppLog.info(&quot;callback: get data successfully and data is ${value}&quot;)
+                case _ =&gt; AppLog.error(&quot;callback: data is null&quot;)
+            }
+    }
+}
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;storeWebArchive&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;storeWebArchive&quot;)
+                webController.storeWebArchive(&quot;/data/storage/el2/base/&quot;, true, callback)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-stop"><a class="header" href="#func-stop">func stop()</a></h3>
+<pre><code class="language-cangjie">public func stop(): Unit
+</code></pre>
+<p>停止页面加载。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;stop&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;stop&quot;)
+                webController.stop()
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-enablesafebrowsingbool"><a class="header" href="#func-enablesafebrowsingbool">func enableSafeBrowsing(Bool)</a></h3>
+<pre><code class="language-cangjie">public func enableSafeBrowsing(enable: Bool): Unit
+</code></pre>
+<p>启用检查网站安全风险的功能，非法和欺诈网站是强制启用的，不能通过此功能禁用。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">enable</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">是否启用检查网站安全风险的功能。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;enableSafeBrowsing&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;enableSafeBrowsing&quot;)
+                webController.enableSafeBrowsing(true)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-issafebrowsingenabled"><a class="header" href="#func-issafebrowsingenabled">func isSafeBrowsingEnabled()</a></h3>
+<pre><code class="language-cangjie">public func isSafeBrowsingEnabled(): Bool
+</code></pre>
+<p>获取当前网页是否启用了检查网站安全风险。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">当前网页是否启用了检查网站安全风险的功能，默认为false。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;isSafeBrowsingEnabled&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;isSafeBrowsingEnabled&quot;)
+                let bool = webController.isSafeBrowsingEnabled()
+                AppLog.info(&quot;isSafeBrowsingEnabled returns ${bool}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-getsecuritylevel"><a class="header" href="#func-getsecuritylevel">func getSecurityLevel()</a></h3>
+<pre><code class="language-cangjie">public func getSecurityLevel(): SecurityLevel
+</code></pre>
+<p>获取当前网页的安全级别。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#enum-securitylevel">SecurityLevel</a></td><td style="text-align: left">当前网页的安全级别，具体值为NONE、SECURE、WARNING、DANGEROUS。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getSecurityLevel&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getSecurityLevel&quot;)
+                let securityLevel = webController.getSecurityLevel()
+                match(securityLevel) {
+                    case SecurityLevel.NONE =&gt; AppLog.info(&quot;getSecurityLevel returns NONE&quot;)
+                    case SecurityLevel.SECURE =&gt; AppLog.info(&quot;getSecurityLevel returns SECURE&quot;)
+                    case SecurityLevel.WARNING =&gt; AppLog.info(&quot;getSecurityLevel returns WARNING&quot;)
+                    case SecurityLevel.DANGEROUS =&gt; AppLog.info(&quot;getSecurityLevel returns DANGEROUS&quot;)
+                 }
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-isincognitomode"><a class="header" href="#func-isincognitomode">func isIncognitoMode()</a></h3>
+<pre><code class="language-cangjie">public func isIncognitoMode(): Bool
+</code></pre>
+<p>查询当前是否是隐私模式的Webview。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">返回是否是隐私模式的Webview。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;isIncognitoMode&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;isIncognitoMode&quot;)
+                let bool = webController.isIncognitoMode()
+                AppLog.info(&quot;isIncognitoMode returns ${bool}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-removecachebool"><a class="header" href="#func-removecachebool">func removeCache(Bool)</a></h3>
+<pre><code class="language-cangjie">public func removeCache(clearRom: Bool): Unit
+</code></pre>
+<p>清除应用中的资源缓存文件，此方法将会清除同一应用中所有webview的缓存文件。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">clearRom</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">设置为true时同时清除rom和ram中的缓存，设置为false时只清除ram中的缓存。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;removeCache&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;removeCache&quot;)
+                webController.removeCache(true)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h3 id="func-getbackforwardentries"><a class="header" href="#func-getbackforwardentries">func getBackForwardEntries()</a></h3>
+<pre><code class="language-cangjie">public func getBackForwardEntries(): BackForwardList
+</code></pre>
+<p>获取当前Webview的历史信息列表。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#class-backforwardlist">BackForwardList</a></td><td style="text-align: left">当前Webview的历史信息列表。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100001</td><td style="text-align: left">Init error. The WebviewController must be associated with a Web component.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getBackForwardEntries&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getBackForwardEntries&quot;)
+                let backForwardList = webController.getBackForwardEntries()
+                AppLog.info(&quot;backForwardList currentIndex is ${backForwardList.currentIndex}&quot;)
+                AppLog.info(&quot;backForwardList size is ${backForwardList.size}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h2 id="class-webcookiemanager"><a class="header" href="#class-webcookiemanager">class WebCookieManager</a></h2>
+<pre><code class="language-cangjie">public class WebCookieManager {}
+</code></pre>
+<p>通过WebCookie可以控制Web组件中的cookie的各种行为，其中每个应用中的所有web组件共享一个WebCookieManager实例。</p>
+<h3 id="static-func-fetchcookiestring-bool"><a class="header" href="#static-func-fetchcookiestring-bool">static func fetchCookie(String, Bool)</a></h3>
+<pre><code class="language-cangjie">public static func fetchCookie(url: String, incognito!: Bool = false): String
+</code></pre>
+<p>获取指定URL对应cookie的值。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">url</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要获取的cookie所属的URL，建议使用完整的URL。</td></tr>
+<tr><td style="text-align: left">incognito</td><td style="text-align: left">Bool</td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> true表示获取隐私模式下webview的内存cookies，false表示正常非隐私模式下的cookies。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">String</td><td style="text-align: left">指定URL对应的cookie的值。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100002</td><td style="text-align: left">Invalid url.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let value = WebCookieManager.fetchCookie(&quot;https://www.example.com&quot;)
+Hilog.info(0, &quot;WebCookieManager&quot;, &quot;fetchCookie cookie = ${value}&quot;)
+</code></pre>
+<h3 id="static-func-configcookiestring-bool"><a class="header" href="#static-func-configcookiestring-bool">static func configCookie(String, Bool)</a></h3>
+<pre><code class="language-cangjie">public static func configCookie(url: String, value: String, incognito!: Bool = false): Unit
+</code></pre>
+<p>为指定URL设置cookie的值。</p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>configCookie中的URL，可以指定域名的方式来使得页面内请求也附带上cookie。
+同步cookie的时机建议在webview组件加载之前完成。</p>
+</blockquote>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">url</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要设置的cookie所属的URL，建议使用完整的URL。</td></tr>
+<tr><td style="text-align: left">value</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">要设置的cookie的值。</td></tr>
+<tr><td style="text-align: left">incognito</td><td style="text-align: left">Bool</td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> true表示设置隐私模式下对应URL的cookies，false表示设置正常非隐私模式下对应URL的cookies。</td></tr>
+</tbody></table>
+</div>
+<p><strong>错误码：</strong></p>
+<p>以下错误码的详细介绍请参见<a href="../errorcodes/cj-errorcode-webview.html">webview错误码</a>。</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">错误码ID</th><th style="text-align: left">错误信息</th></tr></thead><tbody>
+<tr><td style="text-align: left">17100002</td><td style="text-align: left">Invalid url.</td></tr>
+<tr><td style="text-align: left">17100005</td><td style="text-align: left">Invalid cookie value.</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">WebCookieManager.configCookie(&quot;https://www.example.com&quot;, &quot;a=b,c=d,e=f&quot;)
+</code></pre>
+<h3 id="static-func-putacceptcookieenabledbool"><a class="header" href="#static-func-putacceptcookieenabledbool">static func putAcceptCookieEnabled(Bool)</a></h3>
+<pre><code class="language-cangjie">public static func putAcceptCookieEnabled(accept: Bool): Unit
+</code></pre>
+<p>设置WebCookieManager实例是否拥有发送和接收cookie的权限。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">accept</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">设置是否拥有发送和接收cookie的权限，默认为true。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">WebCookieManager.putAcceptCookieEnabled(false)
+</code></pre>
+<h3 id="static-func-iscookieallowed"><a class="header" href="#static-func-iscookieallowed">static func isCookieAllowed()</a></h3>
+<pre><code class="language-cangjie">public static func isCookieAllowed(): Bool
+</code></pre>
+<p>获取WebCookieManager实例是否拥有发送和接收cookie的权限。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">是否拥有发送和接收cookie的权限，默认为true。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let result = WebCookieManager.isCookieAllowed()
+Hilog.info(0, &quot;WebCookieManager&quot;, &quot;result: ${result}&quot;)
+</code></pre>
+<h3 id="static-func-putacceptthirdpartycookieenabledbool"><a class="header" href="#static-func-putacceptthirdpartycookieenabledbool">static func putAcceptThirdPartyCookieEnabled(Bool)</a></h3>
+<pre><code class="language-cangjie">public static func putAcceptThirdPartyCookieEnabled(accept: Bool): Unit
+</code></pre>
+<p>设置WebCookieManager实例是否拥有发送和接收第三方cookie的权限。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">accept</td><td style="text-align: left">Bool</td><td style="text-align: left">是</td><td style="text-align: left">设置是否拥有发送和接收第三方cookie的权限，默认为false。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">WebCookieManager.putAcceptThirdPartyCookieEnabled(true)
+</code></pre>
+<h3 id="static-func-isthirdpartycookieallowed"><a class="header" href="#static-func-isthirdpartycookieallowed">static func isThirdPartyCookieAllowed()</a></h3>
+<pre><code class="language-cangjie">public static func isThirdPartyCookieAllowed(): Bool
+</code></pre>
+<p>获取WebCookieManager实例是否拥有发送和接收第三方cookie的权限。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">是否拥有发送和接收第三方cookie的权限，默认为false。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let result = WebCookieManager.isThirdPartyCookieAllowed()
+Hilog.info(0, &quot;WebCookieManager&quot;, &quot;result: ${result}&quot;)
+</code></pre>
+<h3 id="static-func-existcookiebool"><a class="header" href="#static-func-existcookiebool">static func existCookie(Bool)</a></h3>
+<pre><code class="language-cangjie">public static func existCookie(incognito!: Bool = false): Bool
+</code></pre>
+<p>获取是否存在cookie。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">incognito</td><td style="text-align: left">Bool</td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> true表示隐私模式下查询是否存在cookies，false表示正常非隐私模式下查询是否存在cookies。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">Bool</td><td style="text-align: left">true表示存在cookie，false表示不存在cookie。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">let result = WebCookieManager.existCookie()
+Hilog.info(0, &quot;WebCookieManager&quot;, &quot;result: ${result}&quot;)
+</code></pre>
+<h3 id="static-func-clearallcookiesbool"><a class="header" href="#static-func-clearallcookiesbool">static func clearAllCookies(Bool)</a></h3>
+<pre><code class="language-cangjie">public static func clearAllCookies(incognito!: Bool = false): Unit
+</code></pre>
+<p>清除所有cookie。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">incognito</td><td style="text-align: left">Bool</td><td style="text-align: left">否</td><td style="text-align: left"><strong>命名参数。</strong> true表示清除隐私模式下webview的所有内存cookies，false表示清除正常非隐私模式下的持久化cookies。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">WebCookieManager.clearAllCookies()
+</code></pre>
+<h3 id="static-func-clearsessioncookie"><a class="header" href="#static-func-clearsessioncookie">static func clearSessionCookie()</a></h3>
+<pre><code class="language-cangjie">public static func clearSessionCookie(): Unit
+</code></pre>
+<p>清除所有会话cookie。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">WebCookieManager.clearSessionCookie()
+</code></pre>
+<h2 id="class-backforwardlist"><a class="header" href="#class-backforwardlist">class BackForwardList</a></h2>
+<pre><code class="language-cangjie">public class BackForwardList {}
+</code></pre>
+<p>当前Webview的历史信息列表。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">currentIndex</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">当前在页面历史列表中的索引。</td></tr>
+<tr><td style="text-align: left">size</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">历史列表中索引的数量，最多保存50条，超过时起始记录会被覆盖。</td></tr>
+</tbody></table>
+</div>
+<h3 id="func-getitematindexint32"><a class="header" href="#func-getitematindexint32">func getItemAtIndex(Int32)</a></h3>
+<pre><code class="language-cangjie">public func getItemAtIndex(index: Int32): HistoryItem
+</code></pre>
+<p>获取历史列表中指定索引的历史记录项信息。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<p><strong>参数：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">参数名</th><th style="text-align: left">类型</th><th style="text-align: left">必填</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">index</td><td style="text-align: left">Int32</td><td style="text-align: left">是</td><td style="text-align: left">指定历史列表中的索引。</td></tr>
+</tbody></table>
+</div>
+<p><strong>返回值：</strong></p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">类型</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left"><a href="#struct-historyitem">HistoryItem</a></td><td style="text-align: left">历史记录项。</td></tr>
+</tbody></table>
+</div>
+<p><strong>示例：</strong></p>
+<pre><code class="language-cangjie">package ohos_app_cangjie_entry
+import ohos.base.*
+import ohos.component.*
+import ohos.state_manage.*
+import ohos.state_macro_manage.*
+import ohos.webview.*
+
+@Entry
+@Component
+class EntryView {
+    let webController = WebviewController()
+    func test() {
+        Column(10) {
+            Button(&quot;getItemAtIndex&quot;)
+            .onClick {
+                evt =&gt;
+                AppLog.info(&quot;getItemAtIndex&quot;)
+                let backForwardList = webController.getBackForwardEntries()
+                let historyItem = backForwardList.getItemAtIndex(backForwardList.currentIndex)
+                AppLog.info(&quot;Current historyUrl is ${historyItem.historyUrl}.&quot;)
+                AppLog.info(&quot;Current historyRawUrl is ${historyItem.historyRawUrl}.&quot;)
+                AppLog.info(&quot;Current title is ${historyItem.title}.&quot;)
+                let pixelMap = historyItem.icon
+                let byteInfo = pixelMap?.getPixelBytesNumber() ?? 0
+                AppLog.info(&quot;icon byteInfo is ${byteInfo}&quot;)
+            }.width(400.px).height(150.px)
+
+            Web(src: &quot;www.example.com&quot;, controller: webController)
+            .onPageBegin({evt =&gt;
+                AppLog.info(&quot;page begin url: ${evt.url}&quot;)
+            })
+            .onPageEnd({evt =&gt;
+                AppLog.info(&quot;page end url: ${evt.url}&quot;)
+            })
+        }
+    }
+}
+</code></pre>
+<h2 id="struct-historyitem"><a class="header" href="#struct-historyitem">struct HistoryItem</a></h2>
+<pre><code class="language-cangjie">public struct HistoryItem {
+    public HistoryItem(
+        public let icon: ?PixelMap,
+        public let historyUrl: String,
+        public let historyRawUrl: String,
+        public let title: String
+    )
+}
+</code></pre>
+<p>页面历史记录项。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">icon</td><td style="text-align: left">Option&lt;<a href="./cj-apis-image.html#class-pixelmap">PixelMap</a>&gt;</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">历史页面图标的PixelMap对象。</td></tr>
+<tr><td style="text-align: left">historyUrl</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">历史记录项的URL地址。</td></tr>
+<tr><td style="text-align: left">historyRawUrl</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">历史记录项的原始URL地址。</td></tr>
+<tr><td style="text-align: left">title</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">历史记录项的标题。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-webheader"><a class="header" href="#struct-webheader">struct WebHeader</a></h2>
+<pre><code class="language-cangjie">public struct WebHeader {
+    public WebHeader(
+        public var headerKey: String,
+        public var headerValue: String
+    )
+}
+</code></pre>
+<p>Web组件返回的请求/响应头对象。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">headerKey</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">请求/响应头的key。</td></tr>
+<tr><td style="text-align: left">headerValue</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">是</td><td style="text-align: left">请求/响应头的value。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-securitylevel"><a class="header" href="#enum-securitylevel">enum SecurityLevel</a></h2>
+<pre><code class="language-cangjie">public enum SecurityLevel {
+    | NONE
+    | SECURE
+    | WARNING
+    | DANGEROUS
+}
+</code></pre>
+<p>当前网页的安全级别。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">NONE</td><td style="text-align: left">页面既不绝对安全，也不是不安全，即是中立。例如，部分scheme非http/https的URL。</td></tr>
+<tr><td style="text-align: left">SECURE</td><td style="text-align: left">页面安全，页面使用的是HTTPS协议，且使用了信任的证书。</td></tr>
+<tr><td style="text-align: left">WARNING</td><td style="text-align: left">页面不安全。例如，使用HTTP协议或使用HTTPS协议但使用旧版TLS版本。</td></tr>
+<tr><td style="text-align: left">DANGEROUS</td><td style="text-align: left">页面不安全。尝试HTTPS并失败、页面未通过身份验证、页面上包含不安全活动内容的HTTPS、恶意软件、网络钓鱼或任何其他可能危险的严重安全问题。</td></tr>
+</tbody></table>
+</div>
+<h2 id="struct-hittestvalue"><a class="header" href="#struct-hittestvalue">struct HitTestValue</a></h2>
+<pre><code class="language-cangjie">public struct HitTestValue {
+    HitTestValue(public let hitTestType: WebHitTestType, public let extra: String)
+}
+</code></pre>
+<p>提供点击区域的元素信息。示例代码参考<a href="#func-gethittestvalue">getHitTestValue</a>。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">类型</th><th style="text-align: left">可读</th><th style="text-align: left">可写</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">hitTestType</td><td style="text-align: left"><a href="#enum-webhittesttype">WebHitTestType</a></td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">当前被点击区域的元素类型。</td></tr>
+<tr><td style="text-align: left">extra</td><td style="text-align: left">String</td><td style="text-align: left">是</td><td style="text-align: left">否</td><td style="text-align: left">点击区域的附加参数信息。若被点击区域为图片或链接，则附加参数信息为其URL地址。</td></tr>
+</tbody></table>
+</div>
+<h2 id="enum-webhittesttype"><a class="header" href="#enum-webhittesttype">enum WebHitTestType</a></h2>
+<pre><code class="language-cangjie">public enum WebHitTestType {
+    | EditText
+    | Email
+    | HttpAnchor
+    | HttpAnchorImg
+    | Img
+    | Map
+    | Phone
+    | Unknown
+}
+</code></pre>
+<p><a href="#func-gethittest">getHitTest</a>接口用于指示游标节点。</p>
+<p><strong>系统能力：</strong> SystemCapability.Web.Webview.Core</p>
+<div class="table-wrapper"><table><thead><tr><th style="text-align: left">名称</th><th style="text-align: left">说明</th></tr></thead><tbody>
+<tr><td style="text-align: left">EditText</td><td style="text-align: left">可编辑的区域。</td></tr>
+<tr><td style="text-align: left">Email</td><td style="text-align: left">电子邮件地址。</td></tr>
+<tr><td style="text-align: left">HttpAnchor</td><td style="text-align: left">超链接，其中src为http。</td></tr>
+<tr><td style="text-align: left">HttpAnchorImg</td><td style="text-align: left">带有超链接的图片，其中src为http + HTML::img。</td></tr>
+<tr><td style="text-align: left">Img</td><td style="text-align: left">HTML::img标签。</td></tr>
+<tr><td style="text-align: left">Map</td><td style="text-align: left">地理地址。</td></tr>
+<tr><td style="text-align: left">Phone</td><td style="text-align: left">电话号码。</td></tr>
+<tr><td style="text-align: left">Unknown</td><td style="text-align: left">未知内容。</td></tr>
+</tbody></table>
+</div>
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/apis/cj-apis-system-date-time.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-device-info.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/apis/cj-apis-system-date-time.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/apis/cj-apis-device-info.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

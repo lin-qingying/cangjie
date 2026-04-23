@@ -1,0 +1,2030 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>内置类型 - 仓颉编程语言库 API</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../assets/style.css">
+        <link rel="stylesheet" href="../../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../libs_overview_ohos.html"><strong aria-hidden="true">1.</strong> 仓颉编程语言库 API</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../std/std_module_overview_ohos.html"><strong aria-hidden="true">1.1.</strong> std 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../std/core/core_package_overview.html"><strong aria-hidden="true">1.1.1.</strong> std.core 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_funcs.html"><strong aria-hidden="true">1.1.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_types.html"><strong aria-hidden="true">1.1.1.2.</strong> 类型别名</a></li><li class="chapter-item expanded "><a href="../../../std/core/core_package_api/core_package_intrinsics.html" class="active"><strong aria-hidden="true">1.1.1.3.</strong> 内置类型</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_interfaces.html"><strong aria-hidden="true">1.1.1.4.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_classes.html"><strong aria-hidden="true">1.1.1.5.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_enums.html"><strong aria-hidden="true">1.1.1.6.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_structs.html"><strong aria-hidden="true">1.1.1.7.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_exceptions.html"><strong aria-hidden="true">1.1.1.8.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.1.9.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_samples/core_spawn_sample.html"><strong aria-hidden="true">1.1.1.9.1.</strong> 仓颉并发编程示例</a></li><li class="chapter-item "><a href="../../../std/core/core_samples/core_cstring_sample.html"><strong aria-hidden="true">1.1.1.9.2.</strong> 使用 CString 与 C 代码交互示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/argopt/argopt_package_overview.html"><strong aria-hidden="true">1.1.2.</strong> std.argopt 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_package_api/argopt_package_classes.html"><strong aria-hidden="true">1.1.2.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/long_argument_parse.html"><strong aria-hidden="true">1.1.2.2.1.</strong> 长命令行参数解析</a></li><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/short_argument_parse.html"><strong aria-hidden="true">1.1.2.2.2.</strong> 短命令行参数解析</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/ast/ast_package_overview.html"><strong aria-hidden="true">1.1.3.</strong> std.ast 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_funcs.html"><strong aria-hidden="true">1.1.3.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_interfaces.html"><strong aria-hidden="true">1.1.3.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_classes.html"><strong aria-hidden="true">1.1.3.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_enums.html"><strong aria-hidden="true">1.1.3.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_structs.html"><strong aria-hidden="true">1.1.3.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_exceptions.html"><strong aria-hidden="true">1.1.3.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.3.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_samples/context.html"><strong aria-hidden="true">1.1.3.7.1.</strong> Macro With Context</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/dump.html"><strong aria-hidden="true">1.1.3.7.2.</strong> 语法树节点打印</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/operate.html"><strong aria-hidden="true">1.1.3.7.3.</strong> 操作 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/parse.html"><strong aria-hidden="true">1.1.3.7.4.</strong> 将仓颉源码解析为 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/report.html"><strong aria-hidden="true">1.1.3.7.5.</strong> 自定义报错接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/traverse.html"><strong aria-hidden="true">1.1.3.7.6.</strong> 自定义访问函数遍历 AST 对象示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/binary/binary_package_overview.html"><strong aria-hidden="true">1.1.4.</strong> std.binary 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/binary/binary_package_api/binary_package_interfaces.html"><strong aria-hidden="true">1.1.4.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/collection/collection_package_overview.html"><strong aria-hidden="true">1.1.5.</strong> std.collection 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_function.html"><strong aria-hidden="true">1.1.5.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_interface.html"><strong aria-hidden="true">1.1.5.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_class.html"><strong aria-hidden="true">1.1.5.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/colleciton_package_struct.html"><strong aria-hidden="true">1.1.5.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_exception.html"><strong aria-hidden="true">1.1.5.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.5.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_append_insert.html"><strong aria-hidden="true">1.1.5.6.1.</strong> ArrayList 的 append/insert 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_get_set.html"><strong aria-hidden="true">1.1.5.6.2.</strong> ArrayList 的 get/set 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_remove_clear_slice.html"><strong aria-hidden="true">1.1.5.6.3.</strong> ArrayList 的 remove/clear/slice 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_get_put_contains.html"><strong aria-hidden="true">1.1.5.6.4.</strong> Hashmap 的 get/put/contains 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_putall_remove_clear.html"><strong aria-hidden="true">1.1.5.6.5.</strong> HashMap 的 putAll/remove/clear 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashset_put_iterator_remove.html"><strong aria-hidden="true">1.1.5.6.6.</strong> HashSet 的 put/iterator/remove 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_iterator.html"><strong aria-hidden="true">1.1.5.6.7.</strong> 迭代器操作函数</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_overview.html"><strong aria-hidden="true">1.1.6.</strong> std.collection.concurrent 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_interface.html"><strong aria-hidden="true">1.1.6.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_class.html"><strong aria-hidden="true">1.1.6.2.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.6.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_concurrenthashmap.html"><strong aria-hidden="true">1.1.6.3.1.</strong> ConcurrentHashMap 使用示例</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_noblocking_queue.html"><strong aria-hidden="true">1.1.6.3.2.</strong> NonBlockingQueue 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/console/console_package_overview.html"><strong aria-hidden="true">1.1.7.</strong> std.console 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_package_api/console_package_class.html"><strong aria-hidden="true">1.1.7.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.7.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_samples/console_sample.html"><strong aria-hidden="true">1.1.7.2.1.</strong> Console 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/convert/convert_package_overview.html"><strong aria-hidden="true">1.1.8.</strong> std.convert 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_package_api/convert_package_interfaces.html"><strong aria-hidden="true">1.1.8.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.8.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_samples/convert_samples.html"><strong aria-hidden="true">1.1.8.2.1.</strong> covert 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_overview.html"><strong aria-hidden="true">1.1.9.</strong> std.crypto.cipher 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_api/cipher_package_interfaces.html"><strong aria-hidden="true">1.1.9.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_overview.html"><strong aria-hidden="true">1.1.10.</strong> std.crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_funcs.html"><strong aria-hidden="true">1.1.10.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_interfaces.html"><strong aria-hidden="true">1.1.10.2.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_overview.html"><strong aria-hidden="true">1.1.11.</strong> std.database.sql 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html"><strong aria-hidden="true">1.1.11.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_classes.html"><strong aria-hidden="true">1.1.11.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html"><strong aria-hidden="true">1.1.11.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_exceptions.html"><strong aria-hidden="true">1.1.11.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.11.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_driver.html"><strong aria-hidden="true">1.1.11.5.1.</strong> 实现数据库驱动查询功能示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_get_connection.html"><strong aria-hidden="true">1.1.11.5.2.</strong> 获取数据库连接示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_modify_table.html"><strong aria-hidden="true">1.1.11.5.3.</strong> 删除表、创建表示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_operations.html"><strong aria-hidden="true">1.1.11.5.4.</strong> 执行数据库操作语句示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_transactions.html"><strong aria-hidden="true">1.1.11.5.5.</strong> 执行事务控制语句示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/format/format_package_overview.html"><strong aria-hidden="true">1.1.12.</strong> std.format 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_package_api/format_package_interfaces.html"><strong aria-hidden="true">1.1.12.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.12.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_samples/format_samples.html"><strong aria-hidden="true">1.1.12.2.1.</strong> format 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/fs/fs_package_overview.html"><strong aria-hidden="true">1.1.13.</strong> std.fs 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_classes.html"><strong aria-hidden="true">1.1.13.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_enums.html"><strong aria-hidden="true">1.1.13.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_structs.html"><strong aria-hidden="true">1.1.13.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_exceptions.html"><strong aria-hidden="true">1.1.13.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.13.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_samples/directory_samples.html"><strong aria-hidden="true">1.1.13.5.1.</strong> Directory 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/file_samples.html"><strong aria-hidden="true">1.1.13.5.2.</strong> File 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/fileinfo_samples.html"><strong aria-hidden="true">1.1.13.5.3.</strong> FileInfo 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/path_samples.html"><strong aria-hidden="true">1.1.13.5.4.</strong> Path 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/io/io_package_overview.html"><strong aria-hidden="true">1.1.14.</strong> std.io 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_interfaces.html"><strong aria-hidden="true">1.1.14.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_classes.html"><strong aria-hidden="true">1.1.14.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_enums.html"><strong aria-hidden="true">1.1.14.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_exceptions.html"><strong aria-hidden="true">1.1.14.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.14.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_input_stream.html"><strong aria-hidden="true">1.1.14.5.1.</strong> BufferedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_output_stream.html"><strong aria-hidden="true">1.1.14.5.2.</strong> BufferedOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/byte_array_stream.html"><strong aria-hidden="true">1.1.14.5.3.</strong> ByteArrayStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/chained_input_stream.html"><strong aria-hidden="true">1.1.14.5.4.</strong> ChainedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/multi_output_stream.html"><strong aria-hidden="true">1.1.14.5.5.</strong> MultiOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_reader.html"><strong aria-hidden="true">1.1.14.5.6.</strong> StringReader 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_writer.html"><strong aria-hidden="true">1.1.14.5.7.</strong> StringWriter 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_overview.html"><strong aria-hidden="true">1.1.15.</strong> std.log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_interfaces.html"><strong aria-hidden="true">1.1.15.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_classes.html"><strong aria-hidden="true">1.1.15.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_enums.html"><strong aria-hidden="true">1.1.15.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.15.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_samples/stdlog_sample.html"><strong aria-hidden="true">1.1.15.4.1.</strong> 日志打印示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math/math_package_overview.html"><strong aria-hidden="true">1.1.16.</strong> std.math 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_funcs.html"><strong aria-hidden="true">1.1.16.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_interfaces.html"><strong aria-hidden="true">1.1.16.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_enums.html"><strong aria-hidden="true">1.1.16.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.16.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_samples/math_basic_operation.html"><strong aria-hidden="true">1.1.16.4.1.</strong> 数学基础运算示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_overview.html"><strong aria-hidden="true">1.1.17.</strong> std.math.numeric 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_funcs.html"><strong aria-hidden="true">1.1.17.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html"><strong aria-hidden="true">1.1.17.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_structs.html"><strong aria-hidden="true">1.1.17.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.17.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.1.</strong> BigInt 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_prop.html"><strong aria-hidden="true">1.1.17.4.2.</strong> BigInt 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_compare_opration.html"><strong aria-hidden="true">1.1.17.4.3.</strong> BigInt 大小比较示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.4.</strong> Decimal 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_prop.html"><strong aria-hidden="true">1.1.17.4.5.</strong> Decimal 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_compare_opration.html"><strong aria-hidden="true">1.1.17.4.6.</strong> Decimal 大小比较示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_overview.html"><strong aria-hidden="true">1.1.18.</strong> std.objectpool 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_api/objectpool_package_classes.html"><strong aria-hidden="true">1.1.18.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/os/os_package_overview.html"><strong aria-hidden="true">1.1.19.</strong> std.os 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os/os_package_api/os_package_funcs.html"><strong aria-hidden="true">1.1.19.1.</strong> 函数</a></li></ol></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_overview.html"><strong aria-hidden="true">1.1.20.</strong> std.os.posix 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_constants_vars.html"><strong aria-hidden="true">1.1.20.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_funcs.html"><strong aria-hidden="true">1.1.20.2.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.20.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_content_samples.html"><strong aria-hidden="true">1.1.20.3.1.</strong> 文件内容相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_info_samples.html"><strong aria-hidden="true">1.1.20.3.2.</strong> 文件信息相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_os_envinfo_samples.html"><strong aria-hidden="true">1.1.20.3.3.</strong> 获取各类系统信息</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_process_samples.html"><strong aria-hidden="true">1.1.20.3.4.</strong> 进程相关信息操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_overview.html"><strong aria-hidden="true">1.1.21.</strong> std.os.process 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_classes.html"><strong aria-hidden="true">1.1.21.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_enums.html"><strong aria-hidden="true">1.1.21.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_exceptions.html"><strong aria-hidden="true">1.1.21.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.21.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_currentprocess_sample.html"><strong aria-hidden="true">1.1.21.4.1.</strong> 当前进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_rm_file_win_platform_sample.html"><strong aria-hidden="true">1.1.21.4.2.</strong> Windows 平台子进程结束后删除子进程可执行文件</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_sample.html"><strong aria-hidden="true">1.1.21.4.3.</strong> 任意进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_subprocess_sample.html"><strong aria-hidden="true">1.1.21.4.4.</strong> 子进程相关操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_overview.html"><strong aria-hidden="true">1.1.22.</strong> std.overflow 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_interfaces.html"><strong aria-hidden="true">1.1.22.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_exceptions.html"><strong aria-hidden="true">1.1.22.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.22.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/option.html"><strong aria-hidden="true">1.1.22.3.1.</strong> 返回 Option 策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/saturating.html"><strong aria-hidden="true">1.1.22.3.2.</strong> 饱和策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/throwing.html"><strong aria-hidden="true">1.1.22.3.3.</strong> 抛出异常策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/wrapping.html"><strong aria-hidden="true">1.1.22.3.4.</strong> 高位截断策略的示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/random/random_package_overview.html"><strong aria-hidden="true">1.1.23.</strong> std.random 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/random/random_package_api/random_package_classes.html"><strong aria-hidden="true">1.1.23.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/regex/regex_package_overview.html"><strong aria-hidden="true">1.1.24.</strong> std.regex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_classes.html"><strong aria-hidden="true">1.1.24.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_structs.html"><strong aria-hidden="true">1.1.24.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_exceptions.html"><strong aria-hidden="true">1.1.24.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.24.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_samples/regex_sample.html"><strong aria-hidden="true">1.1.24.4.1.</strong> Regex 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_overview.html"><strong aria-hidden="true">1.1.25.</strong> std.runtime 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_funcs.html"><strong aria-hidden="true">1.1.25.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_structs.html"><strong aria-hidden="true">1.1.25.2.</strong> 结构体</a></li></ol></li><li class="chapter-item "><a href="../../../std/socket/socket_package_overview.html"><strong aria-hidden="true">1.1.26.</strong> std.socket 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_constants_vars.html"><strong aria-hidden="true">1.1.26.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_interfaces.html"><strong aria-hidden="true">1.1.26.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_classes.html"><strong aria-hidden="true">1.1.26.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_enums.html"><strong aria-hidden="true">1.1.26.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_structs.html"><strong aria-hidden="true">1.1.26.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_exceptions.html"><strong aria-hidden="true">1.1.26.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.26.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_samples/socket_option.html"><strong aria-hidden="true">1.1.26.7.1.</strong> 属性配置使用用例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/tcp.html"><strong aria-hidden="true">1.1.26.7.2.</strong> TCP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/udp.html"><strong aria-hidden="true">1.1.26.7.3.</strong> UDP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix.html"><strong aria-hidden="true">1.1.26.7.4.</strong> UNIX 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix_datagram.html"><strong aria-hidden="true">1.1.26.7.5.</strong> UnixDatagram 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sort/sort_package_overview.html"><strong aria-hidden="true">1.1.27.</strong> std.sort 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_funcs.html"><strong aria-hidden="true">1.1.27.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_interfaces.html"><strong aria-hidden="true">1.1.27.2.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.27.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_samples/sort_sample_array.html"><strong aria-hidden="true">1.1.27.3.1.</strong> 对 Array 进行排序</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sync/sync_package_overview.html"><strong aria-hidden="true">1.1.28.</strong> std.sync 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_constants_vars.html"><strong aria-hidden="true">1.1.28.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_funcs.html"><strong aria-hidden="true">1.1.28.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_interfaces.html"><strong aria-hidden="true">1.1.28.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_classes.html"><strong aria-hidden="true">1.1.28.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_enums.html"><strong aria-hidden="true">1.1.28.5.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_structs.html"><strong aria-hidden="true">1.1.28.6.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_exceptions.html"><strong aria-hidden="true">1.1.28.7.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.28.8.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_samples/sync_samples.html"><strong aria-hidden="true">1.1.28.8.1.</strong> 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/time/time_package_overview.html"><strong aria-hidden="true">1.1.29.</strong> std.time 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_interfaces.html"><strong aria-hidden="true">1.1.29.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_classes.html"><strong aria-hidden="true">1.1.29.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_enums.html"><strong aria-hidden="true">1.1.29.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_structs.html"><strong aria-hidden="true">1.1.29.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_exceptions.html"><strong aria-hidden="true">1.1.29.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.29.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_compare.html"><strong aria-hidden="true">1.1.29.6.1.</strong> DateTime 比较</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_parse.html"><strong aria-hidden="true">1.1.29.6.2.</strong> DateTime 与 String 类型的转换</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_prop.html"><strong aria-hidden="true">1.1.29.6.3.</strong> 获取日期时间信息</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_tz.html"><strong aria-hidden="true">1.1.29.6.4.</strong> 同一时间在不同时区的本地时间</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/monotime_test.html"><strong aria-hidden="true">1.1.29.6.5.</strong> 利用 MonoTime 作计时</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unicode/unicode_package_overview.html"><strong aria-hidden="true">1.1.30.</strong> std.unicode 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unicode/unicode_package_api/unicode_package_interfaces.html"><strong aria-hidden="true">1.1.30.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_overview.html"><strong aria-hidden="true">1.1.31.</strong> std.unittest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_functions.html"><strong aria-hidden="true">1.1.31.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html"><strong aria-hidden="true">1.1.31.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_classes.html"><strong aria-hidden="true">1.1.31.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_enums.html"><strong aria-hidden="true">1.1.31.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_structs.html"><strong aria-hidden="true">1.1.31.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_exceptions.html"><strong aria-hidden="true">1.1.31.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.31.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_getting_started.html"><strong aria-hidden="true">1.1.31.7.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_basics.html"><strong aria-hidden="true">1.1.31.7.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_parameterized_tests.html"><strong aria-hidden="true">1.1.31.7.3.</strong> 参数化测试</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_dynamic_tests.html"><strong aria-hidden="true">1.1.31.7.4.</strong> 动态测试</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_overview.html"><strong aria-hidden="true">1.1.32.</strong> std.unittest.mock 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_functions.html"><strong aria-hidden="true">1.1.32.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_interfaces.html"><strong aria-hidden="true">1.1.32.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_classes.html"><strong aria-hidden="true">1.1.32.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_enums.html"><strong aria-hidden="true">1.1.32.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_exceptions.html"><strong aria-hidden="true">1.1.32.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.32.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_getting_started.html"><strong aria-hidden="true">1.1.32.6.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_basics.html"><strong aria-hidden="true">1.1.32.6.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_stubs.html"><strong aria-hidden="true">1.1.32.6.3.</strong> 桩</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_verification.html"><strong aria-hidden="true">1.1.32.6.4.</strong> 验证</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_overview.html"><strong aria-hidden="true">1.1.33.</strong> std.unittest.mock.mockmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_api/unittest_mock_mockmacro_package_macros.html"><strong aria-hidden="true">1.1.33.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_overview.html"><strong aria-hidden="true">1.1.34.</strong> std.unittest.testmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html"><strong aria-hidden="true">1.1.34.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_overview.html"><strong aria-hidden="true">1.1.35.</strong> std.unittest.common 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_functions.html"><strong aria-hidden="true">1.1.35.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html"><strong aria-hidden="true">1.1.35.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_classes.html"><strong aria-hidden="true">1.1.35.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_enums.html"><strong aria-hidden="true">1.1.35.4.</strong> 枚举</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_overview.html"><strong aria-hidden="true">1.1.36.</strong> unittest.diff</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_api/unittest_diff_package_interfaces.html"><strong aria-hidden="true">1.1.36.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_overview.html"><strong aria-hidden="true">1.1.37.</strong> unittest.prop_test</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_functions.html"><strong aria-hidden="true">1.1.37.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html"><strong aria-hidden="true">1.1.37.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_classes.html"><strong aria-hidden="true">1.1.37.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_structs.html"><strong aria-hidden="true">1.1.37.4.</strong> 结构体</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../compress/compress_module_overview.html"><strong aria-hidden="true">1.2.</strong> compress 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_overview.html"><strong aria-hidden="true">1.2.1.</strong> compress.zlib 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_classes.html"><strong aria-hidden="true">1.2.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_enums.html"><strong aria-hidden="true">1.2.1.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_exceptions.html"><strong aria-hidden="true">1.2.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.2.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/deflate_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.1.</strong> Deflate 格式数据的压缩和解压</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/gzip_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.2.</strong> Gzip 格式数据的压缩和解压</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/crypto_module_overview.html"><strong aria-hidden="true">1.3.</strong> crypto 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_overview.html"><strong aria-hidden="true">1.3.1.</strong> crypto.crypto 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_classes.html"><strong aria-hidden="true">1.3.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_structs.html"><strong aria-hidden="true">1.3.1.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_exceptions.html"><strong aria-hidden="true">1.3.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_secure_random.html"><strong aria-hidden="true">1.3.1.4.1.</strong> SecureRandom 使用</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_crypto.html"><strong aria-hidden="true">1.3.1.4.2.</strong> SM4 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/digest/crypto_digest_package_overview.html"><strong aria-hidden="true">1.3.2.</strong> crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_classes.html"><strong aria-hidden="true">1.3.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_structs.html"><strong aria-hidden="true">1.3.2.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_exceptions.html"><strong aria-hidden="true">1.3.2.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.2.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_samples/sample_digest.html"><strong aria-hidden="true">1.3.2.4.1.</strong> digest 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_overview.html"><strong aria-hidden="true">1.3.3.</strong> crypto.keys 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_classes.html"><strong aria-hidden="true">1.3.3.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_enums.html"><strong aria-hidden="true">1.3.3.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_structs.html"><strong aria-hidden="true">1.3.3.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.3.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_samples/sample_keys.html"><strong aria-hidden="true">1.3.3.4.1.</strong> keys 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_overview.html"><strong aria-hidden="true">1.3.4.</strong> crypto.x509 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_type.html"><strong aria-hidden="true">1.3.4.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_interfaces.html"><strong aria-hidden="true">1.3.4.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_classes.html"><strong aria-hidden="true">1.3.4.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_enums.html"><strong aria-hidden="true">1.3.4.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_structs.html"><strong aria-hidden="true">1.3.4.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_exceptions.html"><strong aria-hidden="true">1.3.4.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.4.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_samples/sample_x509.html"><strong aria-hidden="true">1.3.4.7.1.</strong> x509 使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/encoding_module_overview.html"><strong aria-hidden="true">1.4.</strong> encoding 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_overview.html"><strong aria-hidden="true">1.4.1.</strong> encoding.base64 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_api/base64_package_funcs.html"><strong aria-hidden="true">1.4.1.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.1.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_samples/base64.html"><strong aria-hidden="true">1.4.1.2.1.</strong> Byte 数组和 Base64 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/hex/hex_package_overview.html"><strong aria-hidden="true">1.4.2.</strong> encoding.hex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_package_api/hex_package_funcs.html"><strong aria-hidden="true">1.4.2.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_samples/hex.html"><strong aria-hidden="true">1.4.2.2.1.</strong> Byte 数组和 Hex 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json/json_package_overview.html"><strong aria-hidden="true">1.4.3.</strong> encoding.json 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html"><strong aria-hidden="true">1.4.3.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_classes.html"><strong aria-hidden="true">1.4.3.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_enums.html"><strong aria-hidden="true">1.4.3.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_exceptions.html"><strong aria-hidden="true">1.4.3.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.3.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_array_sample.html"><strong aria-hidden="true">1.4.3.5.1.</strong> JsonArray 使用示例</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_value_sample.html"><strong aria-hidden="true">1.4.3.5.2.</strong> JsonValue 和 String 互相转换</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/to_json_sample.html"><strong aria-hidden="true">1.4.3.5.3.</strong> JsonValue 与 DataModel 的转换</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_overview.html"><strong aria-hidden="true">1.4.4.</strong> encoding.json.stream 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_interfaces.html"><strong aria-hidden="true">1.4.4.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_classes.html"><strong aria-hidden="true">1.4.4.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_enums.html"><strong aria-hidden="true">1.4.4.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_structs.html"><strong aria-hidden="true">1.4.4.4.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.4.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_reader.html"><strong aria-hidden="true">1.4.4.5.1.</strong> 使用 Json Stream 进行反序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writer.html"><strong aria-hidden="true">1.4.4.5.2.</strong> 使用 Json Stream 进行序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writeconfig.html"><strong aria-hidden="true">1.4.4.5.3.</strong> WriteConfig 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/url/url_package_overview.html"><strong aria-hidden="true">1.4.5.</strong> encoding.url 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_classes.html"><strong aria-hidden="true">1.4.5.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_exceptions.html"><strong aria-hidden="true">1.4.5.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.5.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_samples/form.html"><strong aria-hidden="true">1.4.5.3.1.</strong> Form 的构造使用</a></li><li class="chapter-item "><a href="../../../encoding/url/url_samples/url_parse.html"><strong aria-hidden="true">1.4.5.3.2.</strong> URL 解析函数 parse 的使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../fuzz/fuzz_module_overview.html"><strong aria-hidden="true">1.5.</strong> fuzz 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_overview.html"><strong aria-hidden="true">1.5.1.</strong> fuzz.fuzz 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_constants_vars.html"><strong aria-hidden="true">1.5.1.1.</strong> 常量变量</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_classes.html"><strong aria-hidden="true">1.5.1.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_exceptions.html"><strong aria-hidden="true">1.5.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.5.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/basic_fuzzing_test.html"><strong aria-hidden="true">1.5.1.4.1.</strong> 测试猜测字符功能</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/dataprovider_usage.html"><strong aria-hidden="true">1.5.1.4.2.</strong> 使用 DataProvider 功能进行测试</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/fake_coverage_usage.html"><strong aria-hidden="true">1.5.1.4.3.</strong> 使用 FakeCoverage 避免 DataProvider 模式下 Fuzz 异常终止</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_cj-fuzz_usage.html"><strong aria-hidden="true">1.5.1.4.4.</strong> 打印 fuzz 使用方法</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_coverage.html"><strong aria-hidden="true">1.5.1.4.5.</strong> 实验性特性-覆盖率信息打印</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/stack_backtrace_missing_solution.html"><strong aria-hidden="true">1.5.1.4.6.</strong> 栈回溯缺失的处理方案</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../log/log_module_overview.html"><strong aria-hidden="true">1.6.</strong> log 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_overview.html"><strong aria-hidden="true">1.6.1.</strong> log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_types.html"><strong aria-hidden="true">1.6.1.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_funcs.html"><strong aria-hidden="true">1.6.1.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_interfaces.html"><strong aria-hidden="true">1.6.1.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_classes.html"><strong aria-hidden="true">1.6.1.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_structs.html"><strong aria-hidden="true">1.6.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_exceptions.html"><strong aria-hidden="true">1.6.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.6.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_samples/log_sample.html"><strong aria-hidden="true">1.6.1.7.1.</strong> 日志打印示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/net_module_overview.html"><strong aria-hidden="true">1.7.</strong> net 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_overview.html"><strong aria-hidden="true">1.7.1.</strong> net.http 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_funcs.html"><strong aria-hidden="true">1.7.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_interfaces.html"><strong aria-hidden="true">1.7.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_classes.html"><strong aria-hidden="true">1.7.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_enums.html"><strong aria-hidden="true">1.7.1.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_structs.html"><strong aria-hidden="true">1.7.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_exceptions.html"><strong aria-hidden="true">1.7.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_samples/http_client.html"><strong aria-hidden="true">1.7.1.7.1.</strong> client</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/cookie.html"><strong aria-hidden="true">1.7.1.7.2.</strong> cookie</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/log.html"><strong aria-hidden="true">1.7.1.7.3.</strong> log</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/http_server.html"><strong aria-hidden="true">1.7.1.7.4.</strong> server</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/webSocket.html"><strong aria-hidden="true">1.7.1.7.5.</strong> webSocket</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/tls/tls_package_overview.html"><strong aria-hidden="true">1.7.2.</strong> net.tls 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_classes.html"><strong aria-hidden="true">1.7.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_enums.html"><strong aria-hidden="true">1.7.2.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_structs.html"><strong aria-hidden="true">1.7.2.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_exceptions.html"><strong aria-hidden="true">1.7.2.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.2.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_samples/cert_key.html"><strong aria-hidden="true">1.7.2.5.1.</strong> 服务端证书及公钥在一份文件中</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/client.html"><strong aria-hidden="true">1.7.2.5.2.</strong> 客户端示例</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/hot_update_cert.html"><strong aria-hidden="true">1.7.2.5.3.</strong> 证书热更新</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/server.html"><strong aria-hidden="true">1.7.2.5.4.</strong> 服务端示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../serialization/serialization_module_overview.html"><strong aria-hidden="true">1.8.</strong> serialization 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_overview.html"><strong aria-hidden="true">1.8.1.</strong> serialization.serialization 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_functions.html"><strong aria-hidden="true">1.8.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_interfaces.html"><strong aria-hidden="true">1.8.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_classes.html"><strong aria-hidden="true">1.8.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_exceptions.html"><strong aria-hidden="true">1.8.1.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.8.1.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_and_deserialize_class.html"><strong aria-hidden="true">1.8.1.5.1.</strong> class 序列化和反序列化</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_hashmap_and_hashset.html"><strong aria-hidden="true">1.8.1.5.2.</strong> HashSet 和 HashMap 序列化</a></li></ol></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">仓颉编程语言库 API</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="内置类型"><a class="header" href="#内置类型">内置类型</a></h1>
+<h2 id="bool"><a class="header" href="#bool">Bool</a></h2>
+<p>功能：表示布尔类型，有 <code>true</code> 和 <code>false</code> 两种取值。</p>
+<h3 id="extend-bool--equatablebool"><a class="header" href="#extend-bool--equatablebool">extend Bool &lt;: Equatable&lt;Bool&gt;</a></h3>
+<pre><code class="language-cangjie">extend Bool &lt;: Equatable&lt;Bool&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#bool">Bool</a> 类型扩展 <a href="core_package_interfaces.html#interface-equatablet">Equatable</a>&lt;<a href="core_package_intrinsics.html#bool">Bool</a>&gt; 接口，支持判等操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-equatablet">Equatable</a>&lt;<a href="#bool">Bool</a>&gt;</li>
+</ul>
+<h3 id="extend-bool--hashable"><a class="header" href="#extend-bool--hashable">extend Bool &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Bool &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#bool">Bool</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode"><a class="header" href="#func-hashcode">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-bool--tostring"><a class="header" href="#extend-bool--tostring">extend Bool &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Bool &lt;: ToString
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#bool">Bool</a> 类型其扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring"><a class="header" href="#func-tostring">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#bool">Bool</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="cpointert"><a class="header" href="#cpointert">CPointer&lt;T&gt;</a></h2>
+<p>功能：表示 <code>T</code> 类型实例的指针，在与 C 语言互操作的场景下使用，对应 C 语言的 <code>T*</code>。</p>
+<p>其中 <code>T</code> 必须满足 <a href="core_package_interfaces.html#interface-ctype">CType</a> 约束。</p>
+<p><a href="core_package_intrinsics.html#cpointert">CPointer</a> 类型必须满足：</p>
+<ul>
+<li>大小和对齐与平台相关。</li>
+<li>对它做加减法算术运算、读写内存，是需要在 unsafe 上下文操作的。</li>
+<li><a href="core_package_intrinsics.html#cpointert">CPointer</a>&lt;T1&gt; 可以在 unsafe 上下文中使用类型强制转换，变成 <a href="core_package_intrinsics.html#cpointert">CPointer</a>&lt;T2&gt; 类型。</li>
+</ul>
+<h3 id="extendt-cpointert"><a class="header" href="#extendt-cpointert">extend&lt;T&gt; CPointer&lt;T&gt;</a></h3>
+<pre><code class="language-cangjie">extend&lt;T&gt; CPointer&lt;T&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#cpointert">CPointer</a>&lt;T&gt; 扩展一些必要的指针使用相关接口，包含判空、读写数据等接口。</p>
+<p>其中泛型 <code>T</code> 为指针类型，其满足 <a href="core_package_interfaces.html#interface-ctype">CType</a> 约束。对 <a href="core_package_intrinsics.html#cpointert">CPointer</a> 做运算需要在 <code>unsafe</code> 上下文中进行。</p>
+<h4 id="func-asresource"><a class="header" href="#func-asresource">func asResource()</a></h4>
+<pre><code class="language-cangjie">public func asResource(): CPointerResource&lt;T&gt;
+</code></pre>
+<p>功能：获取该指针 <a href="core_package_structs.html#struct-cpointerresourcet-where-t--ctype">CPointerResource</a> 实例，后者可以在 <code>try-with-resource</code> 语法上下文中实现内容自动释放。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-cpointerresourcet-where-t--ctype">CPointerResource</a>&lt;T&gt; - 当前指针对应的 <a href="core_package_structs.html#struct-cpointerresourcet-where-t--ctype">CPointerResource</a> 实例。</li>
+</ul>
+<h4 id="func-isnotnull"><a class="header" href="#func-isnotnull">func isNotNull()</a></h4>
+<pre><code class="language-cangjie">public func isNotNull(): Bool
+</code></pre>
+<p>功能：判断指针是否不为空。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果不为空返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isnull"><a class="header" href="#func-isnull">func isNull()</a></h4>
+<pre><code class="language-cangjie">public func isNull(): Bool
+</code></pre>
+<p>功能：判断指针是否为空。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果为空返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-read"><a class="header" href="#func-read">func read()</a></h4>
+<pre><code class="language-cangjie">public unsafe func read(): T
+</code></pre>
+<p>功能：读取第一个数据，该接口需要用户保证指针的合法性，否则发生未定义行为。</p>
+<p>返回值：</p>
+<ul>
+<li>T - 该对象类型的第一个数据。</li>
+</ul>
+<h4 id="func-readint64"><a class="header" href="#func-readint64">func read(Int64)</a></h4>
+<pre><code class="language-cangjie">public unsafe func read(idx: Int64): T
+</code></pre>
+<p>功能：根据下标读取对应的数据，该接口需要用户保证指针的合法性，否则发生未定义行为。</p>
+<p>参数：</p>
+<ul>
+<li>idx: <a href="core_package_intrinsics.html#int64">Int64</a> - 要获取数据的下标。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>T - 输入下标对应的数据。</li>
+</ul>
+<h4 id="func-touintnative"><a class="header" href="#func-touintnative">func toUIntNative()</a></h4>
+<pre><code class="language-cangjie">public func toUIntNative(): UIntNative
+</code></pre>
+<p>功能：获取该指针的整型形式。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uintnative">UIntNative</a> - 该指针的整型形式。</li>
+</ul>
+<h4 id="func-writeint64-t"><a class="header" href="#func-writeint64-t">func write(Int64, T)</a></h4>
+<pre><code class="language-cangjie">public unsafe func write(idx: Int64, value: T): Unit
+</code></pre>
+<p>功能：在指定下标位置写入一个数据，该接口需要用户保证指针的合法性，否则发生未定义行为。</p>
+<p>参数：</p>
+<ul>
+<li>idx: <a href="core_package_intrinsics.html#int64">Int64</a> - 指定的下标位置。</li>
+<li>value: T - 写入的数据。</li>
+</ul>
+<h4 id="func-writet"><a class="header" href="#func-writet">func write(T)</a></h4>
+<pre><code class="language-cangjie">public unsafe func write(value: T): Unit
+</code></pre>
+<p>功能：写入一个数据，该数据总是在第一个，该接口需要用户保证指针的合法性，否则发生未定义行为。</p>
+<p>参数：</p>
+<ul>
+<li>value: T - 要写入的数据。</li>
+</ul>
+<h4 id="operator-func-int64"><a class="header" href="#operator-func-int64">operator func +(Int64)</a></h4>
+<pre><code class="language-cangjie">public unsafe operator func +(offset: Int64): CPointer&lt;T&gt;
+</code></pre>
+<p>功能：<a href="core_package_intrinsics.html#cpointert">CPointer</a> 对象指针后移，同 C 语言的指针加法操作。</p>
+<p>参数：</p>
+<ul>
+<li>offset: <a href="core_package_intrinsics.html#int64">Int64</a> - 偏移量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#cpointert">CPointer</a>&lt;T&gt; - 返回偏移后的指针。</li>
+</ul>
+<h4 id="operator-func--int64"><a class="header" href="#operator-func--int64">operator func -(Int64)</a></h4>
+<pre><code class="language-cangjie">public unsafe operator func -(offset: Int64): CPointer&lt;T&gt;
+</code></pre>
+<p>功能：<a href="core_package_intrinsics.html#cpointert">CPointer</a> 对象指针前移，同 C 语言的指针减法操作。</p>
+<p>参数：</p>
+<ul>
+<li>offset: <a href="core_package_intrinsics.html#int64">Int64</a> - 偏移量。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#cpointert">CPointer</a>&lt;T&gt; - 返回偏移后的指针。</li>
+</ul>
+<h2 id="cstring"><a class="header" href="#cstring">CString</a></h2>
+<p>功能：表示 C 风格字符串，在与 C 语言互操作的场景下使用。</p>
+<p>可以通过 <a href="core_package_intrinsics.html#cstring">CString</a> 的构造函数或 <a href="core_package_structs.html#struct-libc">LibC</a> 的 <code>mallocCString</code> 创建 C 风格字符串，如需在仓颉端释放，则调用 <a href="core_package_structs.html#struct-libc">LibC</a> 的 free 方法。</p>
+<h3 id="extend-cstring--tostring"><a class="header" href="#extend-cstring--tostring">extend CString &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend CString &lt;: ToString
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#cstring">CString</a> 类型扩展一些字符串指针常用方法，包括判空、获取长度、判等、获取子串等。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-asresource-1"><a class="header" href="#func-asresource-1">func asResource()</a></h4>
+<pre><code class="language-cangjie">public func asResource(): CStringResource
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#cstring">CString</a> 实例对应的 <a href="core_package_structs.html#struct-cstringresource">CStringResource</a> C 字符串资源类型实例。</p>
+<p><a href="core_package_structs.html#struct-cstringresource">CStringResource</a> 实现了 <a href="core_package_interfaces.html#interface-resource">Resource</a> 接口，可以在 <code>try-with-resource</code> 语法上下文中实现资源自动释放。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-cstringresource">CStringResource</a> - 对应的 <a href="core_package_structs.html#struct-cstringresource">CStringResource</a> C 字符串资源类型实例。</li>
+</ul>
+<h4 id="func-comparecstring"><a class="header" href="#func-comparecstring">func compare(CString)</a></h4>
+<pre><code class="language-cangjie">public func compare(str: CString): Int32
+</code></pre>
+<p>功能：按字典序比较两个字符串，同 C 语言中的 <code>strcmp</code>。</p>
+<p>参数：</p>
+<ul>
+<li>str: <a href="core_package_intrinsics.html#cstring">CString</a> - 比较的目标字符串。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int32">Int32</a> - 两者相等返回 0，如果当前字符串比参数 str 小，返回 -1，否则返回 1。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="core_package_exceptions.html#class-exception">Exception</a> - 如果被比较的两个 <a href="core_package_intrinsics.html#cstring">CString</a> 中存在空指针，抛出异常。</li>
+</ul>
+<h4 id="func-endswithcstring"><a class="header" href="#func-endswithcstring">func endsWith(CString)</a></h4>
+<pre><code class="language-cangjie">public func endsWith(suffix: CString): Bool
+</code></pre>
+<p>功能：判断字符串是否包含指定后缀。</p>
+<p>参数：</p>
+<ul>
+<li>suffix: <a href="core_package_intrinsics.html#cstring">CString</a> - 匹配的目标后缀字符串。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果该字符串包含 suffix 后缀，返回 true，如果该字符串不包含 suffix 后缀，返回 false，特别地，如果原字符串或者 suffix 后缀字符串指针为空，均返回 false。</li>
+</ul>
+<h4 id="func-equalscstring"><a class="header" href="#func-equalscstring">func equals(CString)</a></h4>
+<pre><code class="language-cangjie">public func equals(rhs: CString): Bool
+</code></pre>
+<p>功能：判断两个字符串是否相等。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#cstring">CString</a> - 比较的目标字符串。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果两个字符串相等，返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-equalslowercstring"><a class="header" href="#func-equalslowercstring">func equalsLower(CString)</a></h4>
+<pre><code class="language-cangjie">public func equalsLower(rhs: CString): Bool
+</code></pre>
+<p>功能：判断两个字符串是否相等，忽略大小写。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#cstring">CString</a> - 匹配的目标字符串。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果两个字符串忽略大小写相等，返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-getchars"><a class="header" href="#func-getchars">func getChars()</a></h4>
+<pre><code class="language-cangjie">public func getChars(): CPointer&lt;UInt8&gt;
+</code></pre>
+<p>功能：获取该字符串的指针。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="./core_package_intrinsics.html#cpointert">CPointer</a>&lt;<a href="./core_package_intrinsics.html#uint8">UInt8</a>&gt; - 该字符串的指针。</li>
+</ul>
+<h4 id="func-isempty"><a class="header" href="#func-isempty">func isEmpty()</a></h4>
+<pre><code class="language-cangjie">public func isEmpty(): Bool
+</code></pre>
+<p>功能：判断字符串是否为空字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果为空字符串或字符串指针为空，返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isnotempty"><a class="header" href="#func-isnotempty">func isNotEmpty()</a></h4>
+<pre><code class="language-cangjie">public func isNotEmpty(): Bool
+</code></pre>
+<p>功能：判断字符串是否不为空字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果不为空字符串，返回 true，如果字符串指针为空，返回 false。</li>
+</ul>
+<h4 id="func-isnull-1"><a class="header" href="#func-isnull-1">func isNull()</a></h4>
+<pre><code class="language-cangjie">public func isNull(): Bool
+</code></pre>
+<p>功能：判断字符串指针是否为空。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果字符串指针为空，返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-size"><a class="header" href="#func-size">func size()</a></h4>
+<pre><code class="language-cangjie">public func size(): Int64
+</code></pre>
+<p>功能：返回该字符串长度，同 C 语言中的 <code>strlen</code>。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 字符串长度。</li>
+</ul>
+<h4 id="func-startswithcstring"><a class="header" href="#func-startswithcstring">func startsWith(CString)</a></h4>
+<pre><code class="language-cangjie">public func startsWith(prefix: CString): Bool
+</code></pre>
+<p>功能：判断字符串是否包含指定前缀。</p>
+<p>参数：</p>
+<ul>
+<li>prefix: <a href="core_package_intrinsics.html#cstring">CString</a> - 匹配的目标前缀字符串。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果该字符串包含 prefix 前缀，返回 true，如果该字符串不包含 prefix 前缀，返回 false，特别地，如果原字符串或者 prefix 前缀字符串指针为空，均返回 false。</li>
+</ul>
+<h4 id="func-subcstringuintnative"><a class="header" href="#func-subcstringuintnative">func subCString(UIntNative)</a></h4>
+<pre><code class="language-cangjie">public func subCString(beginIndex: UIntNative): CString
+</code></pre>
+<p>功能：截取指定位置开始至字符串结束的子串。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<ol>
+<li>该接口返回为字符串的副本，返回的子串使用完后需要手动 free。</li>
+<li>如果 beginIndex 与字符串长度相等，将返回空指针。</li>
+</ol>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>beginIndex: <a href="core_package_intrinsics.html#uintnative">UIntNative</a> - 截取的起始位置，取值范围为 [0, this.size()]。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#cstring">CString</a> - 截取的子串。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="core_package_exceptions.html#class-indexoutofboundsexception">IndexOutOfBoundsException</a> - 如果 beginIndex 大于字符串长度，抛出异常。</li>
+<li><a href="core_package_exceptions.html#class-illegalmemoryexception">IllegalMemoryException</a> - 如果内存申请失败或内存拷贝失败时，抛出异常。</li>
+</ul>
+<h4 id="func-subcstringuintnative-uintnative"><a class="header" href="#func-subcstringuintnative-uintnative">func subCString(UIntNative, UIntNative)</a></h4>
+<pre><code class="language-cangjie">public func subCString(beginIndex: UIntNative, subLen: UIntNative): CString
+</code></pre>
+<p>功能：截取字符串的子串，指定起始位置和截取长度。</p>
+<p>如果截取的末尾位置超出字符串长度，截取至字符串末尾。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<ol>
+<li>该接口返回为字符串的副本，返回的子串使用完后需要手动 free。</li>
+<li>如果 beginIndex 等于于字符串长度，或 subLen 等于 0，返回空指针。</li>
+</ol>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>beginIndex: <a href="core_package_intrinsics.html#uintnative">UIntNative</a> - 截取的起始位置，取值范围为 [0, this.size()]。</li>
+<li>subLen: <a href="core_package_intrinsics.html#uintnative">UIntNative</a> - 截取长度，取值范围为 [0, <a href="core_package_intrinsics.html#uintnative">UIntNative</a>.Max]。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#cstring">CString</a> - 截取的子串。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="core_package_exceptions.html#class-indexoutofboundsexception">IndexOutOfBoundsException</a> - 如果 beginIndex 大于字符串长度，抛出异常。</li>
+<li><a href="core_package_exceptions.html#class-illegalmemoryexception">IllegalMemoryException</a> - 如果内存申请失败或内存拷贝失败时，抛出异常。</li>
+</ul>
+<h4 id="func-tostring-1"><a class="header" href="#func-tostring-1">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#cstring">CString</a> 类型转为仓颉的 <a href="core_package_structs.html#struct-string">String</a> 类型。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转换后的字符串。</li>
+</ul>
+<h2 id="float16"><a class="header" href="#float16">Float16</a></h2>
+<p>功能：表示 16 位浮点数，符合 <code>IEEE 754</code> 中的半精度格式（<code>binary16</code>）。</p>
+<h3 id="extend-float16--comparablefloat16"><a class="header" href="#extend-float16--comparablefloat16">extend Float16 &lt;: Comparable&lt;Float16&gt;</a></h3>
+<pre><code class="language-cangjie">extend Float16 &lt;: Comparable&lt;Float16&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float16">Float16</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#float16">Float16</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#float16">Float16</a>&gt;</li>
+</ul>
+<h4 id="func-comparefloat16"><a class="header" href="#func-comparefloat16">func compare(Float16)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: Float16): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#float16">Float16</a> 值与指定 <a href="core_package_intrinsics.html#float16">Float16</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#float16">Float16</a> - 待比较的另一个 <a href="core_package_intrinsics.html#float16">Float16</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-float16--floattobits"><a class="header" href="#extend-float16--floattobits">extend Float16 &lt;: FloatToBits</a></h3>
+<pre><code class="language-cangjie">extend Float16 &lt;: FloatToBits
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float16">Float16</a> 实现 <a href="core_package_interfaces.html#interface-floattobits">FloatToBits</a> 接口，支持与 <a href="core_package_intrinsics.html#uint16">UInt16</a> 互相转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-floattobits">FloatToBits</a></li>
+</ul>
+<h4 id="static-func-frombitsuint16"><a class="header" href="#static-func-frombitsuint16">static func fromBits(UInt16)</a></h4>
+<pre><code class="language-cangjie">public static func fromBits(bits: UInt16): Float16
+</code></pre>
+<p>功能：将指定的 <a href="core_package_intrinsics.html#uint16">UInt16</a> 数转换为 <a href="core_package_intrinsics.html#float16">Float16</a> 数。</p>
+<p>参数：</p>
+<ul>
+<li>bits: <a href="core_package_intrinsics.html#uint16">UInt16</a> - 要转换的数字。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#float16">Float16</a> - 转换结果，其位与参数 bits 值相同。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.unittest.*
+import std.unittest.testmacro.*
+
+main() {
+    let v = Float16.fromBits(0x4A40)
+    @Assert(v, 12.5)
+}
+</code></pre>
+<h4 id="func-tobits"><a class="header" href="#func-tobits">func toBits()</a></h4>
+<pre><code class="language-cangjie">public func toBits(): UInt16
+</code></pre>
+<p>功能：将指定的 <a href="core_package_intrinsics.html#float16">Float16</a> 数转换为以位表示的对应 <a href="core_package_intrinsics.html#uint16">UInt16</a> 数。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uint16">UInt16</a> - 转换结果，其值与 <a href="core_package_intrinsics.html#float16">Float16</a> 的位表示相同。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.unittest.*
+import std.unittest.testmacro.*
+
+main() {
+    @Assert(12.5f16.toBits(), 0x4A40)
+}
+</code></pre>
+<h3 id="extend-float16--hashable"><a class="header" href="#extend-float16--hashable">extend Float16 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Float16 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float16">Float16</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-1"><a class="header" href="#func-hashcode-1">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-float16--tostring"><a class="header" href="#extend-float16--tostring">extend Float16 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Float16 &lt;: ToString
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float16">Float16</a> 类型其扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>默认保留 6 位小数，如需其他精度 <a href="core_package_structs.html#struct-string">String</a> 请参考 <a href="../../format/format_package_api/format_package_interfaces.html#interface-formatter">Formatter</a> 扩展。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-2"><a class="header" href="#func-tostring-2">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#float16">Float16</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="float32"><a class="header" href="#float32">Float32</a></h2>
+<p>功能：表示 32 位浮点数，符合 <code>IEEE 754</code> 中的单精度格式（<code>binary32</code>）。</p>
+<h3 id="extend-float32--comparablefloat32"><a class="header" href="#extend-float32--comparablefloat32">extend Float32 &lt;: Comparable&lt;Float32&gt;</a></h3>
+<pre><code class="language-cangjie">extend Float32 &lt;: Comparable&lt;Float32&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float32">Float32</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#float32">Float32</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#float32">Float32</a>&gt;</li>
+</ul>
+<h4 id="func-comparefloat32"><a class="header" href="#func-comparefloat32">func compare(Float32)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: Float32): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#float32">Float32</a> 值与指定 <a href="core_package_intrinsics.html#float32">Float32</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#float32">Float32</a> - 待比较的另一个 <a href="core_package_intrinsics.html#float32">Float32</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-float32--floattobits"><a class="header" href="#extend-float32--floattobits">extend Float32 &lt;: FloatToBits</a></h3>
+<pre><code class="language-cangjie">extend Float32 &lt;: FloatToBits
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float32">Float32</a> 实现 <a href="core_package_interfaces.html#interface-floattobits">FloatToBits</a> 接口，支持与 <a href="core_package_intrinsics.html#uint32">UInt32</a> 互相转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-floattobits">FloatToBits</a></li>
+</ul>
+<h4 id="static-func-frombitsuint32"><a class="header" href="#static-func-frombitsuint32">static func fromBits(UInt32)</a></h4>
+<pre><code class="language-cangjie">public static func fromBits(bits: UInt32): Float32
+</code></pre>
+<p>功能：将指定的 <a href="core_package_intrinsics.html#uint32">UInt32</a> 数转换为 <a href="core_package_intrinsics.html#float32">Float32</a> 数。</p>
+<p>参数：</p>
+<ul>
+<li>bits: <a href="core_package_intrinsics.html#uint32">UInt32</a> - 要转换的数字。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#float32">Float32</a> - 转换结果，其位与参数 bits 值相同。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.unittest.*
+import std.unittest.testmacro.*
+
+main() {
+    let v = Float32.fromBits(0x41480000)
+    @Assert(v, 12.5)
+}
+</code></pre>
+<h4 id="func-tobits-1"><a class="header" href="#func-tobits-1">func toBits()</a></h4>
+<pre><code class="language-cangjie">public func toBits(): UInt32
+</code></pre>
+<p>功能：将指定的 <a href="core_package_intrinsics.html#float32">Float32</a> 数转换为以位表示的对应 <a href="core_package_intrinsics.html#uint32">UInt32</a> 数。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uint32">UInt32</a> - 转换结果，其值与 <a href="core_package_intrinsics.html#float32">Float32</a> 的位表示相同。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.unittest.*
+import std.unittest.testmacro.*
+
+main() {
+    @Assert(12.5f32.toBits(), 0x41480000)
+}
+</code></pre>
+<h3 id="extend-float32--hashable"><a class="header" href="#extend-float32--hashable">extend Float32 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Float32 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float32">Float32</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-2"><a class="header" href="#func-hashcode-2">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-float32--tostring"><a class="header" href="#extend-float32--tostring">extend Float32 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Float32 &lt;: ToString
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float32">Float32</a> 类型其扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>默认保留 6 位小数，如需其他精度 <a href="core_package_structs.html#struct-string">String</a> 请参考 <a href="../../format/format_package_api/format_package_interfaces.html#interface-formatter">Formatter</a> 扩展。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-3"><a class="header" href="#func-tostring-3">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#float32">Float32</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="float64"><a class="header" href="#float64">Float64</a></h2>
+<p>功能：表示 64 位浮点数，符合 <code>IEEE 754</code> 中的双精度格式（<code>binary64</code>）。</p>
+<h3 id="extend-float64--comparablefloat64"><a class="header" href="#extend-float64--comparablefloat64">extend Float64 &lt;: Comparable&lt;Float64&gt;</a></h3>
+<pre><code class="language-cangjie">extend Float64 &lt;: Comparable&lt;Float64&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float64">Float64</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#float64">Float64</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#float64">Float64</a>&gt;</li>
+</ul>
+<h4 id="func-comparefloat64"><a class="header" href="#func-comparefloat64">func compare(Float64)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: Float64): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#float64">Float64</a> 值与指定 <a href="core_package_intrinsics.html#float64">Float64</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#float64">Float64</a> - 待比较的另一个 <a href="core_package_intrinsics.html#float64">Float64</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-float64--floattobits"><a class="header" href="#extend-float64--floattobits">extend Float64 &lt;: FloatToBits</a></h3>
+<pre><code class="language-cangjie">extend Float64 &lt;: FloatToBits
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float64">Float64</a> 实现 <a href="core_package_interfaces.html#interface-floattobits">FloatToBits</a> 接口，支持与 <a href="core_package_intrinsics.html#uint64">UInt64</a> 互相转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-floattobits">FloatToBits</a></li>
+</ul>
+<h4 id="static-func-frombitsuint64"><a class="header" href="#static-func-frombitsuint64">static func fromBits(UInt64)</a></h4>
+<pre><code class="language-cangjie">public static func fromBits(bits: UInt64): Float64
+</code></pre>
+<p>功能：将指定的 <a href="core_package_intrinsics.html#uint64">UInt64</a> 数转换为 <a href="core_package_intrinsics.html#float64">Float64</a> 数。</p>
+<p>参数：</p>
+<ul>
+<li>bits: <a href="core_package_intrinsics.html#uint64">UInt64</a> - 要转换的数字。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#float64">Float64</a> - 转换结果，其位与参数 bits 值相同。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.unittest.*
+import std.unittest.testmacro.*
+
+main() {
+    let v = Float64.fromBits(0x4029000000000000)
+    @Assert(v, 12.5)
+}
+</code></pre>
+<h4 id="func-tobits-2"><a class="header" href="#func-tobits-2">func toBits()</a></h4>
+<pre><code class="language-cangjie">public func toBits(): UInt64
+</code></pre>
+<p>功能：将指定的 Float64 数转换为以位表示的对应 <a href="core_package_intrinsics.html#uint64">UInt64</a> 数。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uint64">UInt64</a> - 转换结果，其值与 <a href="core_package_intrinsics.html#float64">Float64</a> 的位表示相同。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.unittest.*
+import std.unittest.testmacro.*
+
+main() {
+    @Assert(12.5f64.toBits(), 0x4029000000000000)
+}
+</code></pre>
+<h3 id="extend-float64--hashable"><a class="header" href="#extend-float64--hashable">extend Float64 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Float64 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float64">Float64</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-3"><a class="header" href="#func-hashcode-3">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-float64--tostring"><a class="header" href="#extend-float64--tostring">extend Float64 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Float64 &lt;: ToString
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#float64">Float64</a> 类型其扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>默认保留 6 位小数，如需其他精度 <a href="core_package_structs.html#struct-string">String</a> 请参考 <a href="../../format/format_package_api/format_package_interfaces.html#interface-formatter">Formatter</a> 扩展。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-4"><a class="header" href="#func-tostring-4">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#float64">Float64</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="int16"><a class="header" href="#int16">Int16</a></h2>
+<p>功能：表示 16 位有符号整型，表示范围为 [-2^{15}, 2^{15} - 1]。</p>
+<h3 id="extend-int16--comparableint16"><a class="header" href="#extend-int16--comparableint16">extend Int16 &lt;: Comparable&lt;Int16&gt;</a></h3>
+<pre><code class="language-cangjie">extend Int16 &lt;: Comparable&lt;Int16&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int16">Int16</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#int16">Int16</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#int16">Int16</a>&gt;</li>
+</ul>
+<h4 id="func-compareint16"><a class="header" href="#func-compareint16">func compare(Int16)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: Int16): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#int16">Int16</a> 值与指定 <a href="core_package_intrinsics.html#int16">Int16</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#int16">Int16</a> - 待比较的另一个 <a href="core_package_intrinsics.html#int16">Int16</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-int16--countableint16"><a class="header" href="#extend-int16--countableint16">extend Int16 &lt;: Countable&lt;Int16&gt;</a></h3>
+<pre><code class="language-cangjie">extend Int16 &lt;: Countable&lt;Int16&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int16">Int16</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#int16">Int16</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#int16">Int16</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64"><a class="header" href="#func-nextint64">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): Int16
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#int16">Int16</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#int16">Int16</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int16">Int16</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#int16">Int16</a> 值。</li>
+</ul>
+<h4 id="func-position"><a class="header" href="#func-position">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#int16">Int16</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#int16">Int16</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#int16">Int16</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-int16--hashable"><a class="header" href="#extend-int16--hashable">extend Int16 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Int16 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int16">Int16</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-4"><a class="header" href="#func-hashcode-4">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-int16--tostring"><a class="header" href="#extend-int16--tostring">extend Int16 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Int16 &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#int16">Int16</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-5"><a class="header" href="#func-tostring-5">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#int16">Int16</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="int32"><a class="header" href="#int32">Int32</a></h2>
+<p>功能：表示 32 位有符号整型，表示范围为 [-2^{31}, 2^{31} - 1]。</p>
+<h3 id="extend-int32--comparableint32"><a class="header" href="#extend-int32--comparableint32">extend Int32 &lt;: Comparable&lt;Int32&gt;</a></h3>
+<pre><code class="language-cangjie">extend Int32 &lt;: Comparable&lt;Int32&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int32">Int32</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#int32">Int32</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#int32">Int32</a>&gt;</li>
+</ul>
+<h4 id="func-compareint32"><a class="header" href="#func-compareint32">func compare(Int32)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: Int32): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#int32">Int32</a> 值与指定 <a href="core_package_intrinsics.html#int32">Int32</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#int32">Int32</a> - 待比较的另一个 <a href="core_package_intrinsics.html#int32">Int32</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-int32--countableint32"><a class="header" href="#extend-int32--countableint32">extend Int32 &lt;: Countable&lt;Int32&gt;</a></h3>
+<pre><code class="language-cangjie">extend Int32 &lt;: Countable&lt;Int32&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int32">Int32</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#int32">Int32</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#int32">Int32</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-1"><a class="header" href="#func-nextint64-1">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): Int32
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#int32">Int32</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#int32">Int32</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int32">Int32</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#int32">Int32</a> 值。</li>
+</ul>
+<h4 id="func-position-1"><a class="header" href="#func-position-1">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#int32">Int32</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#int32">Int32</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#int32">Int32</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-int32--hashable"><a class="header" href="#extend-int32--hashable">extend Int32 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Int32 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int32">Int32</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-5"><a class="header" href="#func-hashcode-5">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-int32--tostring"><a class="header" href="#extend-int32--tostring">extend Int32 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Int32 &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#int32">Int32</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-6"><a class="header" href="#func-tostring-6">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#int32">Int32</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="int64"><a class="header" href="#int64">Int64</a></h2>
+<p>功能：表示 64 位有符号整型，表示范围为 [-2^{63}, 2^{63} - 1]。</p>
+<h3 id="extend-int64--comparableint64"><a class="header" href="#extend-int64--comparableint64">extend Int64 &lt;: Comparable&lt;Int64&gt;</a></h3>
+<pre><code class="language-cangjie">extend Int64 &lt;: Comparable&lt;Int64&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int64">Int64</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#int64">Int64</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#int64">Int64</a>&gt;</li>
+</ul>
+<h4 id="func-compareint64"><a class="header" href="#func-compareint64">func compare(Int64)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: Int64): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#int64">Int64</a> 值与指定 <a href="core_package_intrinsics.html#int64">Int64</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#int64">Int64</a> - 待比较的另一个 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ 如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-int64--countableint64"><a class="header" href="#extend-int64--countableint64">extend Int64 &lt;: Countable&lt;Int64&gt;</a></h3>
+<pre><code class="language-cangjie">extend Int64 &lt;: Countable&lt;Int64&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int64">Int64</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#int64">Int64</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#int64">Int64</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-2"><a class="header" href="#func-nextint64-2">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#int64">Int64</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</li>
+</ul>
+<h4 id="func-position-2"><a class="header" href="#func-position-2">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#int64">Int64</a> 值的位置信息，即返回该 <a href="core_package_intrinsics.html#int64">Int64</a> 值本身。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#int64">Int64</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-int64--hashable"><a class="header" href="#extend-int64--hashable">extend Int64 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Int64 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int64">Int64</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-6"><a class="header" href="#func-hashcode-6">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-int64--tostring"><a class="header" href="#extend-int64--tostring">extend Int64 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Int64 &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#int64">Int64</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-7"><a class="header" href="#func-tostring-7">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#int64">Int64</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="int8"><a class="header" href="#int8">Int8</a></h2>
+<p>功能：表示 8 位有符号整型，表示范围为 [-2^7, 2^7 - 1]。</p>
+<h3 id="extend-int8--comparableint8"><a class="header" href="#extend-int8--comparableint8">extend Int8 &lt;: Comparable&lt;Int8&gt;</a></h3>
+<pre><code class="language-cangjie">extend Int8 &lt;: Comparable&lt;Int8&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int8">Int8</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#int8">Int8</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#int8">Int8</a>&gt;</li>
+</ul>
+<h4 id="func-compareint8"><a class="header" href="#func-compareint8">func compare(Int8)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: Int8): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#int8">Int8</a> 值与指定 <a href="core_package_intrinsics.html#int8">Int8</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#int8">Int8</a> - 待比较的另一个 <a href="core_package_intrinsics.html#int8">Int8</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-int8--countableint8"><a class="header" href="#extend-int8--countableint8">extend Int8 &lt;: Countable&lt;Int8&gt;</a></h3>
+<pre><code class="language-cangjie">extend Int8 &lt;: Countable&lt;Int8&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int8">Int8</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#int8">Int8</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#int8">Int8</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-3"><a class="header" href="#func-nextint64-3">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): Int8
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#int8">Int8</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#int8">Int8</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int8">Int8</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#int8">Int8</a> 值。</li>
+</ul>
+<h4 id="func-position-3"><a class="header" href="#func-position-3">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#int8">Int8</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#int8">Int8</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#int8">Int8</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-int8--hashable"><a class="header" href="#extend-int8--hashable">extend Int8 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Int8 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#int8">Int8</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-7"><a class="header" href="#func-hashcode-7">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-int8--tostring"><a class="header" href="#extend-int8--tostring">extend Int8 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Int8 &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#int8">Int8</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-8"><a class="header" href="#func-tostring-8">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#int8">Int8</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="intnative"><a class="header" href="#intnative">IntNative</a></h2>
+<p>功能：表示平台相关的有符号整型，其长度与当前系统的位宽一致。</p>
+<h3 id="extend-intnative--comparableintnative"><a class="header" href="#extend-intnative--comparableintnative">extend IntNative &lt;: Comparable&lt;IntNative&gt;</a></h3>
+<pre><code class="language-cangjie">extend IntNative &lt;: Comparable&lt;IntNative&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#intnative">IntNative</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#intnative">IntNative</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#intnative">IntNative</a>&gt;</li>
+</ul>
+<h4 id="func-compareintnative"><a class="header" href="#func-compareintnative">func compare(IntNative)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: IntNative): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值与指定 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#intnative">IntNative</a> - 待比较的另一个 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-intnative--countableintnative"><a class="header" href="#extend-intnative--countableintnative">extend IntNative &lt;: Countable&lt;IntNative&gt;</a></h3>
+<pre><code class="language-cangjie">extend IntNative &lt;: Countable&lt;IntNative&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#intnative">IntNative</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#intnative">IntNative</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#intnative">IntNative</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-4"><a class="header" href="#func-nextint64-4">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): IntNative
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#intnative">IntNative</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值。</li>
+</ul>
+<h4 id="func-position-4"><a class="header" href="#func-position-4">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#intnative">IntNative</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-intnative--hashable"><a class="header" href="#extend-intnative--hashable">extend IntNative &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend IntNative &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#intnative">IntNative</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-8"><a class="header" href="#func-hashcode-8">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-intnative--tostring"><a class="header" href="#extend-intnative--tostring">extend IntNative &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend IntNative &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#intnative">IntNative</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-9"><a class="header" href="#func-tostring-9">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#intnative">IntNative</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="rune"><a class="header" href="#rune">Rune</a></h2>
+<p>功能：表示 unicode 字符集中的字符。</p>
+<p>表示范围为 <code>Unicode scalar value</code>，即从 <code>\u{0000}</code> 到 <code>\u{D7FF}</code>，以及从 <code>\u{E000}</code> 到 <code>\u{10FFF}</code> 的字符。</p>
+<h3 id="extend-rune--runeextension"><a class="header" href="#extend-rune--runeextension">extend Rune &lt;: RuneExtension</a></h3>
+<pre><code class="language-cangjie">extend Rune &lt;: RuneExtension
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#rune">Rune</a> 类型实现一系列扩展方法，主要为在 Ascii 字符集范围内的一些字符判断、转换等操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-runeextension">RuneExtension</a></li>
+</ul>
+<h4 id="static-func-fromutf8arrayuint8-int64"><a class="header" href="#static-func-fromutf8arrayuint8-int64">static func fromUtf8(Array&lt;UInt8&gt;, Int64)</a></h4>
+<pre><code class="language-cangjie">public static func fromUtf8(arr: Array&lt;UInt8&gt;, index: Int64): (Rune, Int64)
+</code></pre>
+<p>功能：将字节数组中的指定元素，根据 UTF-8 编码规则转换成字符，并告知字符占用字节长度。</p>
+<p>参数：</p>
+<ul>
+<li>arr: <a href="core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="core_package_intrinsics.html#uint8">UInt8</a>&gt; - 待转换字节所在的字节数组。</li>
+<li>index: <a href="core_package_intrinsics.html#int64">Int64</a> - 待转换字节在数组中的下标。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>(<a href="core_package_intrinsics.html#rune">Rune</a>, <a href="core_package_intrinsics.html#int64">Int64</a>) - 转换得到的字符，以及该字符占用的字节长度。</li>
+</ul>
+<h4 id="static-func-getpreviousfromutf8arrayuint8-int64"><a class="header" href="#static-func-getpreviousfromutf8arrayuint8-int64">static func getPreviousFromUtf8(Array&lt;UInt8&gt;, Int64)</a></h4>
+<pre><code class="language-cangjie">public static func getPreviousFromUtf8(arr: Array&lt;UInt8&gt;, index: Int64): (Rune, Int64)
+</code></pre>
+<p>功能：获取字节数组中指定索引对应的字节所在的 UTF-8 编码字符，同时返回该字符首位字节码在数组中的索引。</p>
+<p>当指定了一个索引，那么函数会找到数组对应索引位置并且根据 UTF-8 规则，查看该字节码是否是字符的首位字节码，如果不是就继续向前遍历，直到该字节码是首位字节码，然后利用字节码序列找到对应的字符。</p>
+<p>参数：</p>
+<ul>
+<li>arr: <a href="core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="core_package_intrinsics.html#uint8">UInt8</a>&gt; - 待从中获取字符的字节数组。</li>
+<li>index: <a href="core_package_intrinsics.html#int64">Int64</a> - 待查找字符在数组中的索引。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>(<a href="core_package_intrinsics.html#rune">Rune</a>, <a href="core_package_intrinsics.html#int64">Int64</a>) - 找到的字符，以及该字符首位字节码在数组中的索引。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果找不到对应首位字节码，即指定字节所在位置的字节不符合 UTF-8 编码，抛出异常。</li>
+</ul>
+<h4 id="static-func-intoutf8arrayrune-arrayuint8-int64"><a class="header" href="#static-func-intoutf8arrayrune-arrayuint8-int64">static func intoUtf8Array(Rune, Array&lt;UInt8&gt;, Int64)</a></h4>
+<pre><code class="language-cangjie">public static func intoUtf8Array(c: Rune, arr: Array&lt;UInt8&gt;, index: Int64): Int64
+</code></pre>
+<p>功能：该函数会把字符转成字节码序列然后覆盖 <a href="core_package_structs.html#struct-arrayt">Array</a> 数组内指定位置的字节码。</p>
+<p>参数：</p>
+<ul>
+<li>c: <a href="core_package_intrinsics.html#rune">Rune</a> - 待转换的字符。</li>
+<li>arr: <a href="core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="core_package_intrinsics.html#uint8">UInt8</a>&gt; - 待覆盖的 <a href="core_package_structs.html#struct-arrayt">Array</a> 数组。</li>
+<li>index: <a href="core_package_intrinsics.html#int64">Int64</a> - 目标位置的起始索引。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 字符的字节码长度，例如中文是三个字节码长度。</li>
+</ul>
+<h4 id="static-func-utf8sizearrayuint8-int64"><a class="header" href="#static-func-utf8sizearrayuint8-int64">static func utf8Size(Array&lt;UInt8&gt;, Int64)</a></h4>
+<pre><code class="language-cangjie">public static func utf8Size(arr: Array&lt;UInt8&gt;, index: Int64): Int64
+</code></pre>
+<p>功能：该函数会返回字节数组指定索引位置为起始的字符占用的字节数。</p>
+<p>在 UTF-8 编码中，ASCII 码首位字节第一位不为 1，其他长度的字符首位字节开头 1 的个数表明了该字符对应的字节码长度，该函数通过扫描首位，判断字节码长度。如果索引对应的不是首位字节码，就会抛出异常。</p>
+<p>参数：</p>
+<ul>
+<li>arr: <a href="core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="core_package_intrinsics.html#uint8">UInt8</a>&gt; - 待获取字符的字节数组。</li>
+<li>index: <a href="core_package_intrinsics.html#int64">Int64</a> - 指定字符的索引。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 字符的字节码长度，例如中文是三个字节码长度。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果索引位置的字节码不符合首位字节码规则，会抛出异常。</li>
+</ul>
+<h4 id="static-func-utf8sizerune"><a class="header" href="#static-func-utf8sizerune">static func utf8Size(Rune)</a></h4>
+<pre><code class="language-cangjie">public static func utf8Size(c: Rune): Int64
+</code></pre>
+<p>功能：返回字符对应的 UTF-8 编码的字节码长度，例如中文字符的字节码长度是 3。</p>
+<p>参数：</p>
+<ul>
+<li>c: <a href="core_package_intrinsics.html#rune">Rune</a> - 待计算 UTF-8 字节码长度的字符。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 字符的 UTF-8 字节码长度。</li>
+</ul>
+<h4 id="func-isascii"><a class="header" href="#func-isascii">func isAscii()</a></h4>
+<pre><code class="language-cangjie">public func isAscii(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 中的字符。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciicontrol"><a class="header" href="#func-isasciicontrol">func isAsciiControl()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiControl(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 控制字符。其取值范围为 [00, 1F] 和 {7F} 的并集。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 控制字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciigraphic"><a class="header" href="#func-isasciigraphic">func isAsciiGraphic()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiGraphic(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 图形字符。其取值范围为 [21, 7E]。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 图形字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciihex"><a class="header" href="#func-isasciihex">func isAsciiHex()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiHex(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 十六进制字符。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 十六进制字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciiletter"><a class="header" href="#func-isasciiletter">func isAsciiLetter()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiLetter(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 字母字符。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 字母字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciilowercase"><a class="header" href="#func-isasciilowercase">func isAsciiLowerCase()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiLowerCase(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 小写字符。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 小写字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciinumber"><a class="header" href="#func-isasciinumber">func isAsciiNumber()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiNumber(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 数字字符。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 数字字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciinumberorletter"><a class="header" href="#func-isasciinumberorletter">func isAsciiNumberOrLetter()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiNumberOrLetter(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 数字或拉丁字母字符。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 数字或拉丁字母字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciioct"><a class="header" href="#func-isasciioct">func isAsciiOct()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiOct(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 八进制字符。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 八进制字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciipunctuation"><a class="header" href="#func-isasciipunctuation">func isAsciiPunctuation()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiPunctuation(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 标点符号字符。其取值范围为 [21, 2F]、[3A, 40]、[5B, 60] 和 [7B, 7E] 的并集。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 标点符号字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciiuppercase"><a class="header" href="#func-isasciiuppercase">func isAsciiUpperCase()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiUpperCase(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 大写字符。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 大写字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-isasciiwhitespace"><a class="header" href="#func-isasciiwhitespace">func isAsciiWhiteSpace()</a></h4>
+<pre><code class="language-cangjie">public func isAsciiWhiteSpace(): Bool
+</code></pre>
+<p>功能：判断字符是否是 Ascii 空白字符。其取值范围为 [09, 0D] 和 {20} 的并集。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#bool">Bool</a> - 如果是 Ascii 空白字符返回 true，否则返回 false。</li>
+</ul>
+<h4 id="func-toasciilowercase"><a class="header" href="#func-toasciilowercase">func toAsciiLowerCase()</a></h4>
+<pre><code class="language-cangjie">public func toAsciiLowerCase(): Rune
+</code></pre>
+<p>功能：将字符转换为 Ascii 小写字符，如果无法转换则保持现状。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#rune">Rune</a> - 转换后的字符，如果无法转换则返回原来的 <a href="core_package_intrinsics.html#rune">Rune</a>。</li>
+</ul>
+<h4 id="func-toasciiuppercase"><a class="header" href="#func-toasciiuppercase">func toAsciiUpperCase()</a></h4>
+<pre><code class="language-cangjie">public func toAsciiUpperCase(): Rune
+</code></pre>
+<p>功能：将字符转换为 Ascii 大写字符，如果无法转换则保持现状。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#rune">Rune</a> - 转换后的字符，如果无法转换则返回原来的 <a href="core_package_intrinsics.html#rune">Rune</a>。</li>
+</ul>
+<h3 id="extend-rune--comparablerune"><a class="header" href="#extend-rune--comparablerune">extend Rune &lt;: Comparable&lt;Rune&gt;</a></h3>
+<pre><code class="language-cangjie">extend Rune &lt;: Comparable&lt;Rune&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#rune">Rune</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#rune">Rune</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#rune">Rune</a>&gt;</li>
+</ul>
+<h4 id="func-comparerune"><a class="header" href="#func-comparerune">func compare(Rune)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: Rune): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#rune">Rune</a> 实例与指定 <a href="core_package_intrinsics.html#rune">Rune</a> 实例的大小关系。</p>
+<p><a href="core_package_intrinsics.html#rune">Rune</a> 的大小关系指的是它们对应的 unicode 码点的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#rune">Rune</a> - 待比较的另一个 <a href="core_package_intrinsics.html#rune">Rune</a> 实例。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-rune--countablerune"><a class="header" href="#extend-rune--countablerune">extend Rune &lt;: Countable&lt;Rune&gt;</a></h3>
+<pre><code class="language-cangjie">extend Rune &lt;: Countable&lt;Rune&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#rune">Rune</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#rune">Rune</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#rune">Rune</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-5"><a class="header" href="#func-nextint64-5">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): Rune
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#rune">Rune</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#rune">Rune</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#rune">Rune</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#rune">Rune</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="core_package_exceptions.html#class-overflowexception">OverflowException</a> - 如果与 <a href="core_package_intrinsics.html#int64">Int64</a> 数进行加法运算后为不合法的 Unicode 值，抛出异常。</li>
+</ul>
+<h4 id="func-position-5"><a class="header" href="#func-position-5">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#rune">Rune</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#rune">Rune</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#rune">Rune</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-rune--hashable"><a class="header" href="#extend-rune--hashable">extend Rune &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Rune &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#rune">Rune</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-9"><a class="header" href="#func-hashcode-9">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-rune--tostring"><a class="header" href="#extend-rune--tostring">extend Rune &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Rune &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#rune">Rune</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-10"><a class="header" href="#func-tostring-10">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#rune">Rune</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="uint16"><a class="header" href="#uint16">UInt16</a></h2>
+<p>功能：表示 16 位无符号整型，表示范围为 [0, 2^{16} - 1]。</p>
+<h3 id="extend-uint16--comparableuint16"><a class="header" href="#extend-uint16--comparableuint16">extend UInt16 &lt;: Comparable&lt;UInt16&gt;</a></h3>
+<pre><code class="language-cangjie">extend UInt16 &lt;: Comparable&lt;UInt16&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint16">UInt16</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#uint16">UInt16</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#uint16">UInt16</a>&gt;</li>
+</ul>
+<h4 id="func-compareuint16"><a class="header" href="#func-compareuint16">func compare(UInt16)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: UInt16): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值与指定 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#uint16">UInt16</a> - 待比较的另一个 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-uint16--countableuint16"><a class="header" href="#extend-uint16--countableuint16">extend UInt16 &lt;: Countable&lt;UInt16&gt;</a></h3>
+<pre><code class="language-cangjie">extend UInt16 &lt;: Countable&lt;UInt16&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint16">UInt16</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#uint16">UInt16</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#uint16">UInt16</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-6"><a class="header" href="#func-nextint64-6">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): UInt16
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uint16">UInt16</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值。</li>
+</ul>
+<h4 id="func-position-6"><a class="header" href="#func-position-6">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#uint16">UInt16</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-uint16--hashable"><a class="header" href="#extend-uint16--hashable">extend UInt16 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend UInt16 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint16">UInt16</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-10"><a class="header" href="#func-hashcode-10">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-uint16--tostring"><a class="header" href="#extend-uint16--tostring">extend UInt16 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend UInt16 &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#uint16">UInt16</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-11"><a class="header" href="#func-tostring-11">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#uint16">UInt16</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="uint32"><a class="header" href="#uint32">UInt32</a></h2>
+<p>功能：表示 32 位无符号整型，表示范围为 [0, 2^{32} - 1]。</p>
+<h3 id="extend-uint32--comparableuint32"><a class="header" href="#extend-uint32--comparableuint32">extend UInt32 &lt;: Comparable&lt;UInt32&gt;</a></h3>
+<pre><code class="language-cangjie">extend UInt32 &lt;: Comparable&lt;UInt32&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint32">UInt32</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#uint32">UInt32</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#uint32">UInt32</a>&gt;</li>
+</ul>
+<h4 id="func-compareuint32"><a class="header" href="#func-compareuint32">func compare(UInt32)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: UInt32): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值与指定 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#uint32">UInt32</a> - 待比较的另一个 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-uint32--countableuint32"><a class="header" href="#extend-uint32--countableuint32">extend UInt32 &lt;: Countable&lt;UInt32&gt;</a></h3>
+<pre><code class="language-cangjie">extend UInt32 &lt;: Countable&lt;UInt32&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint32">UInt32</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#uint32">UInt32</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#uint32">UInt32</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-7"><a class="header" href="#func-nextint64-7">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): UInt32
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uint32">UInt32</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值。</li>
+</ul>
+<h4 id="func-position-7"><a class="header" href="#func-position-7">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#uint32">UInt32</a> 转换为 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-uint32--hashable"><a class="header" href="#extend-uint32--hashable">extend UInt32 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend UInt32 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint32">UInt32</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-11"><a class="header" href="#func-hashcode-11">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-uint32--tostring"><a class="header" href="#extend-uint32--tostring">extend UInt32 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend UInt32 &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#uint32">UInt32</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-12"><a class="header" href="#func-tostring-12">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#uint32">UInt32</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="uint64"><a class="header" href="#uint64">UInt64</a></h2>
+<p>功能：表示 64 位无符号整型，表示范围为 [0, 2^{64} - 1]。</p>
+<h3 id="extend-uint64--comparableuint64"><a class="header" href="#extend-uint64--comparableuint64">extend UInt64 &lt;: Comparable&lt;UInt64&gt;</a></h3>
+<pre><code class="language-cangjie">extend UInt64 &lt;: Comparable&lt;UInt64&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint64">UInt64</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#uint64">UInt64</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#uint64">UInt64</a>&gt;</li>
+</ul>
+<h4 id="func-compareuint64"><a class="header" href="#func-compareuint64">func compare(UInt64)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: UInt64): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值与指定 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#uint64">UInt64</a> - 待比较的另一个 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-uint64--countableuint64"><a class="header" href="#extend-uint64--countableuint64">extend UInt64 &lt;: Countable&lt;UInt64&gt;</a></h3>
+<pre><code class="language-cangjie">extend UInt64 &lt;: Countable&lt;UInt64&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint64">UInt64</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#uint64">UInt64</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#uint64">UInt64</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-8"><a class="header" href="#func-nextint64-8">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): UInt64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uint64">UInt64</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值。</li>
+</ul>
+<h4 id="func-position-8"><a class="header" href="#func-position-8">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#uint64">UInt64</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-uint64--hashable"><a class="header" href="#extend-uint64--hashable">extend UInt64 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend UInt64 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint64">UInt64</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-12"><a class="header" href="#func-hashcode-12">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-uint64--tostring"><a class="header" href="#extend-uint64--tostring">extend UInt64 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend UInt64 &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#uint64">UInt64</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-13"><a class="header" href="#func-tostring-13">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#uint64">UInt64</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="uint8"><a class="header" href="#uint8">UInt8</a></h2>
+<p>功能：表示 8 位无符号整型，表示范围为 [0, 2^8 - 1]。</p>
+<h3 id="extend-uint8--comparableuint8"><a class="header" href="#extend-uint8--comparableuint8">extend UInt8 &lt;: Comparable&lt;UInt8&gt;</a></h3>
+<pre><code class="language-cangjie">extend UInt8 &lt;: Comparable&lt;UInt8&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint8">UInt8</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#uint8">UInt8</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#uint8">UInt8</a>&gt;</li>
+</ul>
+<h4 id="func-compareuint8"><a class="header" href="#func-compareuint8">func compare(UInt8)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: UInt8): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值与指定 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#uint8">UInt8</a> - 待比较的另一个 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-uint8--countableuint8"><a class="header" href="#extend-uint8--countableuint8">extend UInt8 &lt;: Countable&lt;UInt8&gt;</a></h3>
+<pre><code class="language-cangjie">extend UInt8 &lt;: Countable&lt;UInt8&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint8">UInt8</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#uint8">UInt8</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#uint8">UInt8</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-9"><a class="header" href="#func-nextint64-9">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): UInt8
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uint8">UInt8</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值。</li>
+</ul>
+<h4 id="func-position-9"><a class="header" href="#func-position-9">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#uint8">UInt8</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-uint8--hashable"><a class="header" href="#extend-uint8--hashable">extend UInt8 &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend UInt8 &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uint8">UInt8</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-13"><a class="header" href="#func-hashcode-13">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-uint8--tostring"><a class="header" href="#extend-uint8--tostring">extend UInt8 &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend UInt8 &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#uint8">UInt8</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-14"><a class="header" href="#func-tostring-14">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#uint8">UInt8</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="uintnative"><a class="header" href="#uintnative">UIntNative</a></h2>
+<p>功能：表示平台相关的无符号整型，其长度与当前系统的位宽一致。</p>
+<h3 id="extend-uintnative--comparableuintnative"><a class="header" href="#extend-uintnative--comparableuintnative">extend UIntNative &lt;: Comparable&lt;UIntNative&gt;</a></h3>
+<pre><code class="language-cangjie">extend UIntNative &lt;: Comparable&lt;UIntNative&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 类型扩展 <a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="core_package_intrinsics.html#uintnative">UIntNative</a>&gt; 接口，支持比较操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#uintnative">UIntNative</a>&gt;</li>
+</ul>
+<h4 id="func-compareuintnative"><a class="header" href="#func-compareuintnative">func compare(UIntNative)</a></h4>
+<pre><code class="language-cangjie">public func compare(rhs: UIntNative): Ordering
+</code></pre>
+<p>功能：判断当前 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值与指定 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值的大小关系。</p>
+<p>参数：</p>
+<ul>
+<li>rhs: <a href="core_package_intrinsics.html#uintnative">UIntNative</a> - 待比较的另一个 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_enums.html#enum-ordering">Ordering</a> - 如果大于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.GT；如果等于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="core_package_enums.html#enum-ordering">Ordering</a>.LT。</li>
+</ul>
+<h3 id="extend-uintnative--countable"><a class="header" href="#extend-uintnative--countable">extend UIntNative &lt;: Countable</a></h3>
+<pre><code class="language-cangjie">extend UIntNative &lt;: Countable&lt;UIntNative&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 类型扩展 <a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="core_package_intrinsics.html#uintnative">UIntNative</a>&gt; 接口，支持计数操作。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-countablet">Countable</a>&lt;<a href="#uintnative">UIntNative</a>&gt;</li>
+</ul>
+<h4 id="func-nextint64-10"><a class="header" href="#func-nextint64-10">func next(Int64)</a></h4>
+<pre><code class="language-cangjie">public func next(right: Int64): UIntNative
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值。</p>
+<p>参数：</p>
+<ul>
+<li>right: <a href="core_package_intrinsics.html#int64">Int64</a> - 往右数的个数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#uintnative">UIntNative</a> - 往右数 <code>right</code> 后所到位置的 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值。</li>
+</ul>
+<h4 id="func-position-10"><a class="header" href="#func-position-10">func position()</a></h4>
+<pre><code class="language-cangjie">public func position(): Int64
+</code></pre>
+<p>功能：获取当前 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值的位置信息，即将该 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 转换为 <a href="core_package_intrinsics.html#int64">Int64</a> 值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 当前 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值的位置信息。</li>
+</ul>
+<h3 id="extend-uintnative--hashable"><a class="header" href="#extend-uintnative--hashable">extend UIntNative &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend UIntNative &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-14"><a class="header" href="#func-hashcode-14">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-uintnative--tostring"><a class="header" href="#extend-uintnative--tostring">extend UIntNative &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend UIntNative &lt;: ToString
+</code></pre>
+<p>功能：这里为 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 类型扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-15"><a class="header" href="#func-tostring-15">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#uintnative">UIntNative</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+<h2 id="unit"><a class="header" href="#unit">Unit</a></h2>
+<p>功能：表示仓颉语言中只关心副作用而不关心值的表达式的类型。</p>
+<p>例如，print 函数、赋值表达式、复合赋值表达式、自增和自减表达式、循环表达式，它们的类型都是 <a href="core_package_intrinsics.html#unit">Unit</a>。</p>
+<p><a href="core_package_intrinsics.html#unit">Unit</a> 类型只有一个值，也是它的字面量：()。除了赋值、判等和判不等外，<a href="core_package_intrinsics.html#unit">Unit</a> 类型不支持其他操作。</p>
+<h3 id="extend-unit--equatableunit"><a class="header" href="#extend-unit--equatableunit">extend Unit &lt;: Equatable&lt;Unit&gt;</a></h3>
+<pre><code class="language-cangjie">extend Unit &lt;: Equatable&lt;Unit&gt;
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#unit">Unit</a> 类型扩展 <a href="core_package_interfaces.html#interface-equatablet">Equatable</a>&lt;<a href="core_package_intrinsics.html#unit">Unit</a>&gt; 接口。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-equatablet">Equatable</a>&lt;<a href="#unit">Unit</a>&gt;</li>
+</ul>
+<h3 id="extend-unit--hashable"><a class="header" href="#extend-unit--hashable">extend Unit &lt;: Hashable</a></h3>
+<pre><code class="language-cangjie">extend Unit &lt;: Hashable
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#unit">Unit</a> 类型扩展 <a href="core_package_interfaces.html#interface-hashable">Hashable</a> 接口，支持计算哈希值。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-hashable">Hashable</a></li>
+</ul>
+<h4 id="func-hashcode-15"><a class="header" href="#func-hashcode-15">func hashCode()</a></h4>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取哈希值，<a href="core_package_intrinsics.html#unit">Unit</a> 的哈希值为 0。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_intrinsics.html#int64">Int64</a> - 哈希值。</li>
+</ul>
+<h3 id="extend-unit--tostring"><a class="header" href="#extend-unit--tostring">extend Unit &lt;: ToString</a></h3>
+<pre><code class="language-cangjie">extend Unit &lt;: ToString
+</code></pre>
+<p>功能：为 <a href="core_package_intrinsics.html#unit">Unit</a> 类型其扩展 <a href="core_package_interfaces.html#interface-tostring">ToString</a> 接口，实现向 <a href="core_package_structs.html#struct-string">String</a> 类型的转换。</p>
+<p><a href="core_package_intrinsics.html#unit">Unit</a> 的字符串表示是 &quot;()&quot;。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h4 id="func-tostring-16"><a class="header" href="#func-tostring-16">func toString()</a></h4>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：将 <a href="core_package_intrinsics.html#unit">Unit</a> 值转换为可输出的字符串。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="core_package_structs.html#struct-string">String</a> - 转化后的字符串。</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../std/core/core_package_api/core_package_types.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../std/core/core_package_api/core_package_interfaces.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../std/core/core_package_api/core_package_types.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../std/core/core_package_api/core_package_interfaces.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../highlight.js"></script>
+        <script src="../../../assets/elasticlunr.js"></script>
+        <script src="../../../assets/fzf.umd.js"></script>
+        <script src="../../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %output | compare %f
-// ASSERT: scan In extend B!
-// ASSERT: scan func g in B
-
 class B {
     func g(): Int64 {
         println("func g in B");

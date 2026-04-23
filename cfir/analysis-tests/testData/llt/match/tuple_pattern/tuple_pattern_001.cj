@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args | compare %f
-// ASSERT: scan Allen got 90
-
 main(): Int64 {
     let scoreTuple = ("Allen", 90)
     var scoreResult: String = match (scoreTuple) {

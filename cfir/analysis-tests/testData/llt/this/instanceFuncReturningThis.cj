@@ -4,12 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %f %cmp_opt
-
 public open class Base {
     public open func g(): This {
         println("return Base");
-        Base().f()
+        <!TYPE_MISMATCH!>Base().f()<!>
     }
     public func f(): This {
         this
@@ -26,14 +24,3 @@ public class Sub <: Base {
 main() {
     Sub().g().subOnly()
 }
-
-/* SCAN
-error: mismatched types
-  ==> instanceFuncReturningThis.cj:12:9:
-   | 
-12 |         Base().f()
-   |         ^^^^^^^^^^ expected 'This', found 'Class-Base'
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC-PIPE-0: %run %run_opt %n.%suffix
-
 open class Parent {
     public static func Check<T1, T2>(arg: T1): Int64 {
         0

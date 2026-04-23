@@ -28,7 +28,7 @@ import org.cangnova.cangjie.name.Name
  * 锁定 source-backed light declaration 的文档恢复链路。
  *
  * 这里验证 light declaration 并不会把文档能力旁路掉，而是能通过 origin/source PSI
- * 回到 Analysis API 的标准 `CaDocProvider` 主线。
+ * 回到 Analysis API 的标准 `findCDoc()` 主线。
  */
 class AnalysisApiLightDeclarationDocumentationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/lightDeclarationDocs",

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// EXEC: %run %run_opt %output %run_args
-
 sealed interface Color {}
 
 class Red <: Color {}
@@ -27,6 +24,3 @@ func f(c: Color) {
 main() {
     f(Red())
 }
-
-/* SCAN
-*/ 

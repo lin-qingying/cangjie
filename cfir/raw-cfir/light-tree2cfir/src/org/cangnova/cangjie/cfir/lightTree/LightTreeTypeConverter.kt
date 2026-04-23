@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.cfir.CfirQualifierPart
+import org.cangnova.cangjie.cfir.builder.buildQualifierPart
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
@@ -26,7 +28,7 @@ fun convertTypeReference(
     source: CharSequence,
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CfirTypeRef {
-    if (typeRefNode == null) return buildImplicitTypeRef()
+    if (typeRefNode == null) return buildImplicitTypeRef {}
     // TYPE_REFERENCE 内部包含一个具体的类型元素子节点
     var typeElement: LighterASTNode? = null
     tree.forEachChildren(typeRefNode) { child ->
@@ -39,7 +41,7 @@ fun convertTypeReference(
             typeElement = child
         }
     }
-    val element = typeElement ?: return buildImplicitTypeRef()
+    val element = typeElement ?: return buildImplicitTypeRef {}
     return convertTypeElement(element, typeRefNode, tree, source, toSource)
 }
 
@@ -130,12 +132,10 @@ private fun convertUserType(
     source: CharSequence,
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CfirTypeRef {
-    val qualifier = buildQualifierFromUserType(typeElement, tree, source)
-    val typeArguments = collectTypeArguments(typeElement, tree, source, toSource)
+    val qualifier = buildQualifierFromUserType(typeElement, tree, source, toSource)
     return buildUserTypeRef {
         this.source = typeRefNode.toCjSourceElement(toSource)
         this.qualifier += qualifier
-        this.typeArguments += typeArguments
     }
 }
 
@@ -147,13 +147,14 @@ private fun buildQualifierFromUserType(
     userTypeNode: LighterASTNode,
     tree: FlyweightCapableTreeStructure<LighterASTNode>,
     source: CharSequence,
-): List<Name> {
-    val segments = mutableListOf<Name>()
+    toSource: (LighterASTNode) -> AbstractCjSourceElement,
+): List<CfirQualifierPart> {
+    val segments = mutableListOf<CfirQualifierPart>()
 
     // 递归处理嵌套的 qualifier
     val nestedUserType = tree.findChildByType(userTypeNode, CjNodeTypes.USER_TYPE)
     if (nestedUserType != null) {
-        segments.addAll(buildQualifierFromUserType(nestedUserType, tree, source))
+        segments.addAll(buildQualifierFromUserType(nestedUserType, tree, source, toSource))
     }
 
     // 提取当前节点的 REFERENCE_EXPRESSION
@@ -161,7 +162,13 @@ private fun buildQualifierFromUserType(
     if (refExpr != null) {
         val name = getNodeText(refExpr, source)
         if (name.isNotEmpty()) {
-            segments.add(Name.identifier(name))
+            segments.add(
+                buildQualifierPart {
+                    this.source = toSource(refExpr) as? CjSourceElement
+                    this.name = Name.identifier(name)
+                    typeArguments += collectTypeArguments(userTypeNode, tree, source, toSource)
+                }
+            )
         }
     }
 
@@ -208,7 +215,7 @@ private fun convertFunctionType(
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CfirTypeRef {
     val parameterTypes = mutableListOf<CfirTypeRef>()
-    var returnType: CfirTypeRef = buildImplicitTypeRef()
+    var returnType: CfirTypeRef = buildImplicitTypeRef {}
 
     val paramList = tree.findChildByType(typeElement, CjNodeTypes.VALUE_PARAMETER_LIST)
     if (paramList != null) {

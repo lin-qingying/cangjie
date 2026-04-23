@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %diag_json %f -o %output
-
 interface Printable {}
 
 interface Runnable {}
@@ -16,12 +14,9 @@ interface I {
 }
 
 class Implementation <: I {
-    public static func id<T>(x: T): T where T <: Runnable {
+    public static func id<T>(x: T): T where T <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>Runnable<!> {
         return x
     }
 }
 
 main() {}
-
-// ASSERT: scan-1 sema_generic_constraint_not_looser
-// ASSERT: scan "Errors": 1

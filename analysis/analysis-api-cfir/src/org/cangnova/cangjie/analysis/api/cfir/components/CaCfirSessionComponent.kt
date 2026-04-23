@@ -37,6 +37,7 @@ internal interface CaCfirSessionComponent : CaSessionComponent {
      * 将 low-level 诊断转换成当前组件生命周期下的公开诊断对象。
      */
     fun CjPsiDiagnostic.asPublicDiagnostic() = asCaDiagnostic(token)
+    fun ConeCangJieType.asCaType(): CaType = asCaType(analysisSession)
 
     /**
      * 断言当前公开类型确实由 CFIR 类型驱动，并返回底层 Cone 类型。

@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg/pkg.cj -o pkg.%middle
-// EXEC: %compiler %cmp_opt %n.cj pkg.%middle -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 internal import pkg.*
 
 main(): Int64 {

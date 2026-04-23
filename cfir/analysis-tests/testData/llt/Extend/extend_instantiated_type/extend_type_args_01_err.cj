@@ -4,31 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 class A {}
 
-extend<T> A {}
+extend<T> <!EXTEND_GENERIC_USAGE!>A<!> {}
 
-extend<T, K> A {}
+extend<T, K> <!EXTEND_GENERIC_USAGE!>A<!> {}
 
 main() {
 }
-
-/* SCAN
-error: type parameter 'T' must be used in extended type
-  ==> extend_type_args_01_err.cj:11:11:
-   | 
-11 | extend<T> A {}
-   |           ^ 
-   | 
-
-error: type parameters 'T', 'K' must be used in extended type
-  ==> extend_type_args_01_err.cj:13:14:
-   | 
-13 | extend<T, K> A {}
-   |              ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

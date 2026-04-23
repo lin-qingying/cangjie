@@ -4,11 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 class d {
     public func test() {}
-    public var b = test
+    public var b = <!USED_BEFORE_INITIALIZATION!>test<!>
 }
 
 main() {
@@ -16,14 +14,3 @@ main() {
     var b = a.test
     return 0
 }
-
-/* SCAN
-error: 'test' is not allowed to be accessed before all member variables are initialized
-  ==> class9.cj:11:20:
-   | 
-11 |     public var b = test
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

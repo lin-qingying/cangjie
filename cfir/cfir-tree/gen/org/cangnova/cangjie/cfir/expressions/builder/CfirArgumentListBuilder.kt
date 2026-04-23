@@ -35,3 +35,14 @@ inline fun buildArgumentList(init: CfirArgumentListBuilder.() -> Unit = {}): Cfi
     }
     return CfirArgumentListBuilder().apply(init).build()
 }
+
+@OptIn(ExperimentalContracts::class)
+inline fun buildArgumentListCopy(original: CfirArgumentList, init: CfirArgumentListBuilder.() -> Unit = {}): CfirArgumentList {
+    contract {
+        callsInPlace(init, InvocationKind.EXACTLY_ONCE)
+    }
+    val copyBuilder = CfirArgumentListBuilder()
+    copyBuilder.source = original.source
+    copyBuilder.arguments.addAll(original.arguments)
+    return copyBuilder.apply(init).build()
+}

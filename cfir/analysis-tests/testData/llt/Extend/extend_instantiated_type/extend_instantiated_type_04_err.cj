@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 class A<T> {}
 
 extend<T> A<T> {}
@@ -20,16 +18,5 @@ main() {
     let a1 = A<Int64>()
     let a2 = A<Rune>()
     a1.test()
-    a2.test()
+    a2.<!NOT_MEMBER_OF!>test<!>()
 }
-
-/* SCAN
-error: 'test' is not a member of class 'A<Rune>'
-  ==> extend_instantiated_type_04_err.cj:23:8:
-   | 
-23 |     a2.test()
-   |        ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

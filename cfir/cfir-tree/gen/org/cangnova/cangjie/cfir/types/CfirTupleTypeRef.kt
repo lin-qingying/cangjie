@@ -17,6 +17,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirTupleTypeRef : CfirTypeRef() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
+    abstract override val customRenderer: Boolean
     abstract val elementTypeRefs: List<CfirTypeRef>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =

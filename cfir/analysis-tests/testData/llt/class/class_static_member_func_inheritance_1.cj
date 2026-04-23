@@ -4,12 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// EXEC: %run %run_opt %n.%suffix
-
-// ASSERT: regex-not core dump
-// ASSERT: regex-not stack trace
-
 open class C1 {
     public static func foo(): Int64 {
         return 1

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: scan 'this' is not allowed to be used in arguments of constructor call
-
 class A {
     public init() {
         this
@@ -15,10 +12,10 @@ class A {
         1
     }
     public init(a: Int64) {
-        get(this)
+        get(<!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>)
     }
     public init(a: Bool) {
-        this(this)
+        this(<!ILLEGAL_THIS_OR_SUPER_CALL!>this<!>)
     }
     public init(a: A) {}
 }

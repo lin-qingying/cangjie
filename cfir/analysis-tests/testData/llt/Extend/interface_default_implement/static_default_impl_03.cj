@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// (CJNATIVE)EXEC-0: %run %run_opt %output %run_args
-// (not CJNATIVE)EXEC-1: %run %run_opt %output %run_args
-
 interface I1 {
     static func foo() {
         1

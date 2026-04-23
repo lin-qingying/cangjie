@@ -4,25 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 open class C0 {}
 
 open class C1 <: C0 {
-    public var x = super
+    public var x = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>
 }
 
 main(): Int64 {
     return 1
 }
-
-/* SCAN
-error: invalid super expression, it can only be used on the left-hand side of a dot
-  ==> class_super_alone_invalid_1.cj:12:20:
-   | 
-12 |     public var x = super
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

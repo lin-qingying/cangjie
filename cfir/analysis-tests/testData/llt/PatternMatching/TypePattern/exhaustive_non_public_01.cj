@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 public abstract class A {
     init() {}
 }
@@ -15,24 +13,12 @@ class B <: A {}
 class C <: A {}
 
 func f(x: A) {
-    match (x) {
+    <!NON_EXHAUSTIVE_MATCH!>match (x) {
         case _: B => 0
         case _: C => 1
-    }
+    }<!>
 }
 
 main() {
     f(B())
 }
-
-/* SCAN
-error: non-exhaustive patterns
-  ==> exhaustive_non_public_01.cj:18:12:
-   | 
-18 |     match (x) {
-   |            ^ the selector is of type 'Class-A'
-   | 
-   # note: _ is not covered
-
-1 error generated, 1 error printed.
-*/

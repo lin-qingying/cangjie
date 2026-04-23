@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f %cmp_opt
 @Annotation[target: [MemberFunction]]
 public class APILevel {
     public const init() {}

@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ./pkga.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkga.cj -o pkga.%middle
-// ERRCHECK: %compiler %cmp_opt pkga.%middle %f -o %output
 
 internal import pkga.*
 
@@ -21,24 +19,12 @@ extend B <: J { // ok, sealed class can implement new interface
 }
 
 func f(x: I) {
-    match (x) {
+    <!NON_EXHAUSTIVE_MATCH!>match (x) {
         case c: B => c.g()
         case a: A => a.f()
-    }
+    }<!>
 }
 
 main() {
     f(C())
 }
-
-/* SCAN
-error: non-exhaustive patterns
-  ==> pass.cj:24:12:
-   | 
-24 |     match (x) {
-   |            ^ the selector is of type 'Interface-I'
-   | 
-   # note: _ is not covered
-
-1 error generated, 1 error printed.
-*/

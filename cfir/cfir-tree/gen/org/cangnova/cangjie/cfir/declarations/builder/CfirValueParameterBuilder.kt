@@ -37,7 +37,7 @@ class CfirValueParameterBuilder {
     lateinit var symbol: CfirValueParameterSymbol
     lateinit var containingDeclarationSymbol: CfirBasedSymbol<*>
     var isNamed: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
-    lateinit var status: CfirDeclarationStatus
+    var status: CfirDeclarationStatus = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
     val typeParameters: MutableList<CfirTypeParameter> = mutableListOf()
     lateinit var returnTypeRef: CfirTypeRef
     lateinit var name: Name

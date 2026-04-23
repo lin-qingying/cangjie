@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %import-cangjie-stdx %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %set_stdx_path %run %run_opt %n.%suffix 2>&1 | compare %f
-// ASSERT: scan call f
-
 internal import std.collection.*
 internal import stdx.serialization.serialization.*
 

@@ -24,7 +24,7 @@ import org.cangnova.cangjie.type.model.SimpleTypeMarker
  *   │   │   ├── ConeClassLikeType（class/interface 实例类型）
  *   │   │   ├── ConeStructType（struct 值类型）
  *   │   │   ├── ConeEnumType（enum 代数数据类型）
- *   │   │   ├── ConeFuncType（函数类型）
+ *   │   │   ├── ConeFunctionType（函数类型）
  *   │   │   ├── ConeTupleType（元组类型）
  *   │   │   ├── ConeVArrayType（VArray 定长数组类型）
  *   │   │   ├── ConePointerType（CPointer 指针类型）
@@ -51,7 +51,7 @@ import org.cangnova.cangjie.type.model.SimpleTypeMarker
  * - ConeClassLikeType
  * - ConeStructType
  * - ConeEnumType
- * - ConeFuncType
+ * - ConeFunctionType
  * - ConeTupleType
  * - ConeVArrayType
  * - ConePointerType
@@ -63,13 +63,16 @@ import org.cangnova.cangjie.type.model.SimpleTypeMarker
  * - ConeQuestType
  * - ConeErrorType
  */
-sealed class ConeCangJieType : CangJieTypeMarker {
+sealed class ConeCangJieType : CangJieTypeMarker ,ConeCangJieTypeProjection(){
     /** 泛型类型实参。仓颉泛型是不变的，类型实参只能是具体类型。 */
     abstract val typeArguments: List<ConeTypeProjection>
     abstract val attributes: ConeAttributes
     final override fun toString(): String {
         return renderForDebugging()
     }
+    @Deprecated("Useless call. Receiver is already a ConeCangJieType.", level = DeprecationLevel.ERROR)
+    final override val type: ConeCangJieType
+        get() = this
     open val isUnit: Boolean get() = false
     open val isNothing: Boolean get() = false
     open val isError: Boolean get() = false

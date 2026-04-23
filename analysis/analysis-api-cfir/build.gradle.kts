@@ -30,6 +30,8 @@ dependencies {
     implementation(project(":analysis:low-level-api-cfir"))
     implementation(project(":analysis:decompiled"))
     implementation(project(":analysis:stubs"))
+    implementation(project(":analysis:cj-references"))
+
     implementation(project(":analysis:symbol-light-declarations"))
     implementation(project(":cfir:entrypoint"))
     implementation(project(":cfir:cfir-tree"))

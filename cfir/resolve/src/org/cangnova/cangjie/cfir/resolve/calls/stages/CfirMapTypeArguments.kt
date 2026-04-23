@@ -29,7 +29,7 @@ object CfirMapTypeArguments : ResolutionStage() {
     private fun buildTypeArgumentMapping(candidate: Candidate): TypeArgumentMapping {
         val explicitTypeArguments = candidate.callInfo.typeArguments
             .mapNotNull { it as? CfirResolvedTypeRef }
-            .map { ConeTypeProjection(it.coneType) }
+            .map { it.coneType }
 
         if (explicitTypeArguments.isEmpty()) {
             return TypeArgumentMapping.NoExplicitArguments

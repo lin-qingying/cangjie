@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
-import org.cangnova.cangjie.cfir.resolve.body.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail

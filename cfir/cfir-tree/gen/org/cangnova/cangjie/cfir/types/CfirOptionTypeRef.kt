@@ -16,6 +16,7 @@ import org.cangnova.cangjie.source.CjSourceElement
  */
 abstract class CfirOptionTypeRef : CfirUnresolvedTypeRef() {
     abstract override val annotations: List<CfirAnnotation>
+    abstract override val customRenderer: Boolean
     abstract override val source: CjSourceElement
     abstract val componentTypeRef: CfirTypeRef
 

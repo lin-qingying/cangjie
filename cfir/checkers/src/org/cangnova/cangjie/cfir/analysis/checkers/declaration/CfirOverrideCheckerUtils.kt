@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -76,7 +77,7 @@ private fun CfirCallableSymbol<*>.ownerClassId(session: org.cangnova.cangjie.cfi
     return callableId.classId ?: session.cfirProvider.getContainingClass(this)?.classId
 }
 
-internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: CfirFunctionSymbol<*>): List<CfirFunctionSymbol<*>> {
+internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: CfirNamedFunctionSymbol): List<CfirFunctionSymbol<*>> {
     val targetSignature = functionSymbol.stableSignatureKey()
     val targetIsStatic = functionSymbol.isStaticMember()
     val result = linkedSetOf<CfirFunctionSymbol<*>>()

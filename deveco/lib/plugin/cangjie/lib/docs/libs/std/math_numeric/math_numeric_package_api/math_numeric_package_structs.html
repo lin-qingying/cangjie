@@ -1,0 +1,2778 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>结构体 - 仓颉编程语言库 API</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../../favicon.svg">
+        <link rel="shortcut icon" href="../../../favicon.png">
+        <link rel="stylesheet" href="../../../css/variables.css">
+        <link rel="stylesheet" href="../../../css/general.css">
+        <link rel="stylesheet" href="../../../css/chrome.css">
+        <link rel="stylesheet" href="../../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../../highlight.css">
+        <link rel="stylesheet" href="../../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../../assets/style.css">
+        <link rel="stylesheet" href="../../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item expanded "><a href="../../../libs_overview_ohos.html"><strong aria-hidden="true">1.</strong> 仓颉编程语言库 API</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item expanded "><a href="../../../std/std_module_overview_ohos.html"><strong aria-hidden="true">1.1.</strong> std 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_overview.html"><strong aria-hidden="true">1.1.1.</strong> std.core 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_funcs.html"><strong aria-hidden="true">1.1.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_types.html"><strong aria-hidden="true">1.1.1.2.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_intrinsics.html"><strong aria-hidden="true">1.1.1.3.</strong> 内置类型</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_interfaces.html"><strong aria-hidden="true">1.1.1.4.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_classes.html"><strong aria-hidden="true">1.1.1.5.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_enums.html"><strong aria-hidden="true">1.1.1.6.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_structs.html"><strong aria-hidden="true">1.1.1.7.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/core/core_package_api/core_package_exceptions.html"><strong aria-hidden="true">1.1.1.8.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.1.9.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/core/core_samples/core_spawn_sample.html"><strong aria-hidden="true">1.1.1.9.1.</strong> 仓颉并发编程示例</a></li><li class="chapter-item "><a href="../../../std/core/core_samples/core_cstring_sample.html"><strong aria-hidden="true">1.1.1.9.2.</strong> 使用 CString 与 C 代码交互示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/argopt/argopt_package_overview.html"><strong aria-hidden="true">1.1.2.</strong> std.argopt 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_package_api/argopt_package_classes.html"><strong aria-hidden="true">1.1.2.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/long_argument_parse.html"><strong aria-hidden="true">1.1.2.2.1.</strong> 长命令行参数解析</a></li><li class="chapter-item "><a href="../../../std/argopt/argopt_samples/short_argument_parse.html"><strong aria-hidden="true">1.1.2.2.2.</strong> 短命令行参数解析</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/ast/ast_package_overview.html"><strong aria-hidden="true">1.1.3.</strong> std.ast 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_funcs.html"><strong aria-hidden="true">1.1.3.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_interfaces.html"><strong aria-hidden="true">1.1.3.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_classes.html"><strong aria-hidden="true">1.1.3.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_enums.html"><strong aria-hidden="true">1.1.3.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_structs.html"><strong aria-hidden="true">1.1.3.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/ast/ast_package_api/ast_package_exceptions.html"><strong aria-hidden="true">1.1.3.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.3.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/ast/ast_samples/context.html"><strong aria-hidden="true">1.1.3.7.1.</strong> Macro With Context</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/dump.html"><strong aria-hidden="true">1.1.3.7.2.</strong> 语法树节点打印</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/operate.html"><strong aria-hidden="true">1.1.3.7.3.</strong> 操作 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/parse.html"><strong aria-hidden="true">1.1.3.7.4.</strong> 将仓颉源码解析为 AST 对象示例</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/report.html"><strong aria-hidden="true">1.1.3.7.5.</strong> 自定义报错接口</a></li><li class="chapter-item "><a href="../../../std/ast/ast_samples/traverse.html"><strong aria-hidden="true">1.1.3.7.6.</strong> 自定义访问函数遍历 AST 对象示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/binary/binary_package_overview.html"><strong aria-hidden="true">1.1.4.</strong> std.binary 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/binary/binary_package_api/binary_package_interfaces.html"><strong aria-hidden="true">1.1.4.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/collection/collection_package_overview.html"><strong aria-hidden="true">1.1.5.</strong> std.collection 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_function.html"><strong aria-hidden="true">1.1.5.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_interface.html"><strong aria-hidden="true">1.1.5.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_class.html"><strong aria-hidden="true">1.1.5.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/colleciton_package_struct.html"><strong aria-hidden="true">1.1.5.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_api/collection_package_exception.html"><strong aria-hidden="true">1.1.5.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.5.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_append_insert.html"><strong aria-hidden="true">1.1.5.6.1.</strong> ArrayList 的 append/insert 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_get_set.html"><strong aria-hidden="true">1.1.5.6.2.</strong> ArrayList 的 get/set 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_arraylist_remove_clear_slice.html"><strong aria-hidden="true">1.1.5.6.3.</strong> ArrayList 的 remove/clear/slice 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_get_put_contains.html"><strong aria-hidden="true">1.1.5.6.4.</strong> Hashmap 的 get/put/contains 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashmap_putall_remove_clear.html"><strong aria-hidden="true">1.1.5.6.5.</strong> HashMap 的 putAll/remove/clear 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_hashset_put_iterator_remove.html"><strong aria-hidden="true">1.1.5.6.6.</strong> HashSet 的 put/iterator/remove 函数</a></li><li class="chapter-item "><a href="../../../std/collection/collection_package_samples/sample_iterator.html"><strong aria-hidden="true">1.1.5.6.7.</strong> 迭代器操作函数</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_overview.html"><strong aria-hidden="true">1.1.6.</strong> std.collection.concurrent 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_interface.html"><strong aria-hidden="true">1.1.6.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_package_api/collection_concurrent_class.html"><strong aria-hidden="true">1.1.6.2.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.6.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_concurrenthashmap.html"><strong aria-hidden="true">1.1.6.3.1.</strong> ConcurrentHashMap 使用示例</a></li><li class="chapter-item "><a href="../../../std/collection_concurrent/collection_concurrent_samples/sample_noblocking_queue.html"><strong aria-hidden="true">1.1.6.3.2.</strong> NonBlockingQueue 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/console/console_package_overview.html"><strong aria-hidden="true">1.1.7.</strong> std.console 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_package_api/console_package_class.html"><strong aria-hidden="true">1.1.7.1.</strong> 类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.7.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/console/console_samples/console_sample.html"><strong aria-hidden="true">1.1.7.2.1.</strong> Console 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/convert/convert_package_overview.html"><strong aria-hidden="true">1.1.8.</strong> std.convert 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_package_api/convert_package_interfaces.html"><strong aria-hidden="true">1.1.8.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.8.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/convert/convert_samples/convert_samples.html"><strong aria-hidden="true">1.1.8.2.1.</strong> covert 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_overview.html"><strong aria-hidden="true">1.1.9.</strong> std.crypto.cipher 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/cipher/cipher_package_api/cipher_package_interfaces.html"><strong aria-hidden="true">1.1.9.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_overview.html"><strong aria-hidden="true">1.1.10.</strong> std.crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_funcs.html"><strong aria-hidden="true">1.1.10.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/crypto/digest/digest_package_api/digest_package_interfaces.html"><strong aria-hidden="true">1.1.10.2.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_overview.html"><strong aria-hidden="true">1.1.11.</strong> std.database.sql 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_interfaces.html"><strong aria-hidden="true">1.1.11.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_classes.html"><strong aria-hidden="true">1.1.11.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_enums.html"><strong aria-hidden="true">1.1.11.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_package_api/database_sql_package_exceptions.html"><strong aria-hidden="true">1.1.11.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.11.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_driver.html"><strong aria-hidden="true">1.1.11.5.1.</strong> 实现数据库驱动查询功能示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_get_connection.html"><strong aria-hidden="true">1.1.11.5.2.</strong> 获取数据库连接示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_modify_table.html"><strong aria-hidden="true">1.1.11.5.3.</strong> 删除表、创建表示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_operations.html"><strong aria-hidden="true">1.1.11.5.4.</strong> 执行数据库操作语句示例</a></li><li class="chapter-item "><a href="../../../std/database_sql/database_sql_samples/db_transactions.html"><strong aria-hidden="true">1.1.11.5.5.</strong> 执行事务控制语句示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/format/format_package_overview.html"><strong aria-hidden="true">1.1.12.</strong> std.format 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_package_api/format_package_interfaces.html"><strong aria-hidden="true">1.1.12.1.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.12.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/format/format_samples/format_samples.html"><strong aria-hidden="true">1.1.12.2.1.</strong> format 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/fs/fs_package_overview.html"><strong aria-hidden="true">1.1.13.</strong> std.fs 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_classes.html"><strong aria-hidden="true">1.1.13.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_enums.html"><strong aria-hidden="true">1.1.13.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_structs.html"><strong aria-hidden="true">1.1.13.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/fs/fs_package_api/fs_package_exceptions.html"><strong aria-hidden="true">1.1.13.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.13.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/fs/fs_samples/directory_samples.html"><strong aria-hidden="true">1.1.13.5.1.</strong> Directory 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/file_samples.html"><strong aria-hidden="true">1.1.13.5.2.</strong> File 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/fileinfo_samples.html"><strong aria-hidden="true">1.1.13.5.3.</strong> FileInfo 示例</a></li><li class="chapter-item "><a href="../../../std/fs/fs_samples/path_samples.html"><strong aria-hidden="true">1.1.13.5.4.</strong> Path 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/io/io_package_overview.html"><strong aria-hidden="true">1.1.14.</strong> std.io 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_interfaces.html"><strong aria-hidden="true">1.1.14.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_classes.html"><strong aria-hidden="true">1.1.14.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_enums.html"><strong aria-hidden="true">1.1.14.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/io/io_package_api/io_package_exceptions.html"><strong aria-hidden="true">1.1.14.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.14.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_input_stream.html"><strong aria-hidden="true">1.1.14.5.1.</strong> BufferedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/buffered_output_stream.html"><strong aria-hidden="true">1.1.14.5.2.</strong> BufferedOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/byte_array_stream.html"><strong aria-hidden="true">1.1.14.5.3.</strong> ByteArrayStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/chained_input_stream.html"><strong aria-hidden="true">1.1.14.5.4.</strong> ChainedInputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/multi_output_stream.html"><strong aria-hidden="true">1.1.14.5.5.</strong> MultiOutputStream 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_reader.html"><strong aria-hidden="true">1.1.14.5.6.</strong> StringReader 示例</a></li><li class="chapter-item "><a href="../../../std/io/io_samples/string_writer.html"><strong aria-hidden="true">1.1.14.5.7.</strong> StringWriter 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_overview.html"><strong aria-hidden="true">1.1.15.</strong> std.log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_interfaces.html"><strong aria-hidden="true">1.1.15.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_classes.html"><strong aria-hidden="true">1.1.15.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/log/stdlog_package_api/stdlog_package_enums.html"><strong aria-hidden="true">1.1.15.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.15.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/log/stdlog_samples/stdlog_sample.html"><strong aria-hidden="true">1.1.15.4.1.</strong> 日志打印示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/math/math_package_overview.html"><strong aria-hidden="true">1.1.16.</strong> std.math 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_funcs.html"><strong aria-hidden="true">1.1.16.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_interfaces.html"><strong aria-hidden="true">1.1.16.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/math/math_package_api/math_package_enums.html"><strong aria-hidden="true">1.1.16.3.</strong> 枚举</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.16.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math/math_samples/math_basic_operation.html"><strong aria-hidden="true">1.1.16.4.1.</strong> 数学基础运算示例</a></li></ol></li></ol></li><li class="chapter-item expanded "><a href="../../../std/math_numeric/math_numeric_package_overview.html"><strong aria-hidden="true">1.1.17.</strong> std.math.numeric 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_funcs.html"><strong aria-hidden="true">1.1.17.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html"><strong aria-hidden="true">1.1.17.2.</strong> 枚举</a></li><li class="chapter-item expanded "><a href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_structs.html" class="active"><strong aria-hidden="true">1.1.17.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.17.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.1.</strong> BigInt 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_prop.html"><strong aria-hidden="true">1.1.17.4.2.</strong> BigInt 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/bigInt_compare_opration.html"><strong aria-hidden="true">1.1.17.4.3.</strong> BigInt 大小比较示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_arithmetic.html"><strong aria-hidden="true">1.1.17.4.4.</strong> Decimal 基础数学运算示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_basic_prop.html"><strong aria-hidden="true">1.1.17.4.5.</strong> Decimal 基本属性示例</a></li><li class="chapter-item "><a href="../../../std/math_numeric/math_numeric_samples/decimal_compare_opration.html"><strong aria-hidden="true">1.1.17.4.6.</strong> Decimal 大小比较示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_overview.html"><strong aria-hidden="true">1.1.18.</strong> std.objectpool 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/objectpool/objectpool_package_api/objectpool_package_classes.html"><strong aria-hidden="true">1.1.18.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/os/os_package_overview.html"><strong aria-hidden="true">1.1.19.</strong> std.os 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os/os_package_api/os_package_funcs.html"><strong aria-hidden="true">1.1.19.1.</strong> 函数</a></li></ol></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_overview.html"><strong aria-hidden="true">1.1.20.</strong> std.os.posix 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_constants_vars.html"><strong aria-hidden="true">1.1.20.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_package_api/os_posix_package_funcs.html"><strong aria-hidden="true">1.1.20.2.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.20.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_content_samples.html"><strong aria-hidden="true">1.1.20.3.1.</strong> 文件内容相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_file_info_samples.html"><strong aria-hidden="true">1.1.20.3.2.</strong> 文件信息相关操作</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_get_os_envinfo_samples.html"><strong aria-hidden="true">1.1.20.3.3.</strong> 获取各类系统信息</a></li><li class="chapter-item "><a href="../../../std/os_posix/os_posix_samples/os_posix_process_samples.html"><strong aria-hidden="true">1.1.20.3.4.</strong> 进程相关信息操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_overview.html"><strong aria-hidden="true">1.1.21.</strong> std.os.process 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_classes.html"><strong aria-hidden="true">1.1.21.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_enums.html"><strong aria-hidden="true">1.1.21.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_package_api/os_process_package_exceptions.html"><strong aria-hidden="true">1.1.21.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.21.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_currentprocess_sample.html"><strong aria-hidden="true">1.1.21.4.1.</strong> 当前进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_rm_file_win_platform_sample.html"><strong aria-hidden="true">1.1.21.4.2.</strong> Windows 平台子进程结束后删除子进程可执行文件</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_sample.html"><strong aria-hidden="true">1.1.21.4.3.</strong> 任意进程相关操作</a></li><li class="chapter-item "><a href="../../../std/os_process/os_process_samples/os_process_subprocess_sample.html"><strong aria-hidden="true">1.1.21.4.4.</strong> 子进程相关操作</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_overview.html"><strong aria-hidden="true">1.1.22.</strong> std.overflow 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_interfaces.html"><strong aria-hidden="true">1.1.22.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_package_api/overflow_package_exceptions.html"><strong aria-hidden="true">1.1.22.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.22.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/option.html"><strong aria-hidden="true">1.1.22.3.1.</strong> 返回 Option 策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/saturating.html"><strong aria-hidden="true">1.1.22.3.2.</strong> 饱和策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/throwing.html"><strong aria-hidden="true">1.1.22.3.3.</strong> 抛出异常策略的示例</a></li><li class="chapter-item "><a href="../../../std/overflow/overflow_samples/wrapping.html"><strong aria-hidden="true">1.1.22.3.4.</strong> 高位截断策略的示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/random/random_package_overview.html"><strong aria-hidden="true">1.1.23.</strong> std.random 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/random/random_package_api/random_package_classes.html"><strong aria-hidden="true">1.1.23.1.</strong> 类</a></li></ol></li><li class="chapter-item "><a href="../../../std/regex/regex_package_overview.html"><strong aria-hidden="true">1.1.24.</strong> std.regex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_classes.html"><strong aria-hidden="true">1.1.24.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_structs.html"><strong aria-hidden="true">1.1.24.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/regex/regex_package_api/regex_package_exceptions.html"><strong aria-hidden="true">1.1.24.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.24.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/regex/regex_samples/regex_sample.html"><strong aria-hidden="true">1.1.24.4.1.</strong> Regex 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_overview.html"><strong aria-hidden="true">1.1.25.</strong> std.runtime 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_funcs.html"><strong aria-hidden="true">1.1.25.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/runtime/runtime_package_api/runtime_package_structs.html"><strong aria-hidden="true">1.1.25.2.</strong> 结构体</a></li></ol></li><li class="chapter-item "><a href="../../../std/socket/socket_package_overview.html"><strong aria-hidden="true">1.1.26.</strong> std.socket 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_constants_vars.html"><strong aria-hidden="true">1.1.26.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_interfaces.html"><strong aria-hidden="true">1.1.26.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_classes.html"><strong aria-hidden="true">1.1.26.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_enums.html"><strong aria-hidden="true">1.1.26.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_structs.html"><strong aria-hidden="true">1.1.26.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/socket/socket_package_api/socket_package_exceptions.html"><strong aria-hidden="true">1.1.26.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.26.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/socket/socket_samples/socket_option.html"><strong aria-hidden="true">1.1.26.7.1.</strong> 属性配置使用用例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/tcp.html"><strong aria-hidden="true">1.1.26.7.2.</strong> TCP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/udp.html"><strong aria-hidden="true">1.1.26.7.3.</strong> UDP 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix.html"><strong aria-hidden="true">1.1.26.7.4.</strong> UNIX 使用示例</a></li><li class="chapter-item "><a href="../../../std/socket/socket_samples/unix_datagram.html"><strong aria-hidden="true">1.1.26.7.5.</strong> UnixDatagram 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sort/sort_package_overview.html"><strong aria-hidden="true">1.1.27.</strong> std.sort 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_funcs.html"><strong aria-hidden="true">1.1.27.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sort/sort_package_api/sort_package_interfaces.html"><strong aria-hidden="true">1.1.27.2.</strong> 接口</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.27.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sort/sort_samples/sort_sample_array.html"><strong aria-hidden="true">1.1.27.3.1.</strong> 对 Array 进行排序</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/sync/sync_package_overview.html"><strong aria-hidden="true">1.1.28.</strong> std.sync 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_constants_vars.html"><strong aria-hidden="true">1.1.28.1.</strong> 变量&常量</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_funcs.html"><strong aria-hidden="true">1.1.28.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_interfaces.html"><strong aria-hidden="true">1.1.28.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_classes.html"><strong aria-hidden="true">1.1.28.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_enums.html"><strong aria-hidden="true">1.1.28.5.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_structs.html"><strong aria-hidden="true">1.1.28.6.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/sync/sync_package_api/sync_package_exceptions.html"><strong aria-hidden="true">1.1.28.7.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.28.8.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/sync/sync_samples/sync_samples.html"><strong aria-hidden="true">1.1.28.8.1.</strong> 示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/time/time_package_overview.html"><strong aria-hidden="true">1.1.29.</strong> std.time 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_interfaces.html"><strong aria-hidden="true">1.1.29.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_classes.html"><strong aria-hidden="true">1.1.29.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_enums.html"><strong aria-hidden="true">1.1.29.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_structs.html"><strong aria-hidden="true">1.1.29.4.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/time/time_package_api/time_package_exceptions.html"><strong aria-hidden="true">1.1.29.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.29.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_compare.html"><strong aria-hidden="true">1.1.29.6.1.</strong> DateTime 比较</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_parse.html"><strong aria-hidden="true">1.1.29.6.2.</strong> DateTime 与 String 类型的转换</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_prop.html"><strong aria-hidden="true">1.1.29.6.3.</strong> 获取日期时间信息</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/datetime_tz.html"><strong aria-hidden="true">1.1.29.6.4.</strong> 同一时间在不同时区的本地时间</a></li><li class="chapter-item "><a href="../../../std/time/time_samples/monotime_test.html"><strong aria-hidden="true">1.1.29.6.5.</strong> 利用 MonoTime 作计时</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unicode/unicode_package_overview.html"><strong aria-hidden="true">1.1.30.</strong> std.unicode 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unicode/unicode_package_api/unicode_package_interfaces.html"><strong aria-hidden="true">1.1.30.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_overview.html"><strong aria-hidden="true">1.1.31.</strong> std.unittest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_functions.html"><strong aria-hidden="true">1.1.31.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_interfaces.html"><strong aria-hidden="true">1.1.31.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_classes.html"><strong aria-hidden="true">1.1.31.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_enums.html"><strong aria-hidden="true">1.1.31.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_structs.html"><strong aria-hidden="true">1.1.31.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_package_api/unittest_package_exceptions.html"><strong aria-hidden="true">1.1.31.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.31.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_getting_started.html"><strong aria-hidden="true">1.1.31.7.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_basics.html"><strong aria-hidden="true">1.1.31.7.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_parameterized_tests.html"><strong aria-hidden="true">1.1.31.7.3.</strong> 参数化测试</a></li><li class="chapter-item "><a href="../../../std/unittest/unittest_samples/unittest_dynamic_tests.html"><strong aria-hidden="true">1.1.31.7.4.</strong> 动态测试</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_overview.html"><strong aria-hidden="true">1.1.32.</strong> std.unittest.mock 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_functions.html"><strong aria-hidden="true">1.1.32.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_interfaces.html"><strong aria-hidden="true">1.1.32.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_classes.html"><strong aria-hidden="true">1.1.32.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_enums.html"><strong aria-hidden="true">1.1.32.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_package_api/unittest_mock_package_exceptions.html"><strong aria-hidden="true">1.1.32.5.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.1.32.6.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_getting_started.html"><strong aria-hidden="true">1.1.32.6.1.</strong> 快速入门</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_basics.html"><strong aria-hidden="true">1.1.32.6.2.</strong> 基础概念</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_stubs.html"><strong aria-hidden="true">1.1.32.6.3.</strong> 桩</a></li><li class="chapter-item "><a href="../../../std/unittest_mock/unittest_mock_samples/mock_framework_verification.html"><strong aria-hidden="true">1.1.32.6.4.</strong> 验证</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_overview.html"><strong aria-hidden="true">1.1.33.</strong> std.unittest.mock.mockmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_mock_mockmacro/unittest_mock_mockmacro_package_api/unittest_mock_mockmacro_package_macros.html"><strong aria-hidden="true">1.1.33.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_overview.html"><strong aria-hidden="true">1.1.34.</strong> std.unittest.testmacro 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_testmacro/unittest_testmacro_package_api/unittest_testmacro_package_macros.html"><strong aria-hidden="true">1.1.34.1.</strong> 宏</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_overview.html"><strong aria-hidden="true">1.1.35.</strong> std.unittest.common 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_functions.html"><strong aria-hidden="true">1.1.35.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_interfaces.html"><strong aria-hidden="true">1.1.35.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_classes.html"><strong aria-hidden="true">1.1.35.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_common/unittest_common_package_api/unittest_common_package_enums.html"><strong aria-hidden="true">1.1.35.4.</strong> 枚举</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_overview.html"><strong aria-hidden="true">1.1.36.</strong> unittest.diff</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_diff/unittest_diff_package_api/unittest_diff_package_interfaces.html"><strong aria-hidden="true">1.1.36.1.</strong> 接口</a></li></ol></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_overview.html"><strong aria-hidden="true">1.1.37.</strong> unittest.prop_test</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_functions.html"><strong aria-hidden="true">1.1.37.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_interfaces.html"><strong aria-hidden="true">1.1.37.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_classes.html"><strong aria-hidden="true">1.1.37.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../std/unittest_prop_test/unittest_prop_test_package_api/unittest_prop_test_package_structs.html"><strong aria-hidden="true">1.1.37.4.</strong> 结构体</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../compress/compress_module_overview.html"><strong aria-hidden="true">1.2.</strong> compress 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_overview.html"><strong aria-hidden="true">1.2.1.</strong> compress.zlib 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_classes.html"><strong aria-hidden="true">1.2.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_enums.html"><strong aria-hidden="true">1.2.1.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_package_api/zlib_package_exceptions.html"><strong aria-hidden="true">1.2.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.2.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/deflate_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.1.</strong> Deflate 格式数据的压缩和解压</a></li><li class="chapter-item "><a href="../../../compress/zlib/zlib_samples/gzip_compress_decompress.html"><strong aria-hidden="true">1.2.1.4.2.</strong> Gzip 格式数据的压缩和解压</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/crypto_module_overview.html"><strong aria-hidden="true">1.3.</strong> crypto 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_overview.html"><strong aria-hidden="true">1.3.1.</strong> crypto.crypto 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_classes.html"><strong aria-hidden="true">1.3.1.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_structs.html"><strong aria-hidden="true">1.3.1.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_package_api/crypto_package_exceptions.html"><strong aria-hidden="true">1.3.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_secure_random.html"><strong aria-hidden="true">1.3.1.4.1.</strong> SecureRandom 使用</a></li><li class="chapter-item "><a href="../../../crypto/crypto/crypto_samples/sample_crypto.html"><strong aria-hidden="true">1.3.1.4.2.</strong> SM4 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/digest/crypto_digest_package_overview.html"><strong aria-hidden="true">1.3.2.</strong> crypto.digest 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_classes.html"><strong aria-hidden="true">1.3.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_structs.html"><strong aria-hidden="true">1.3.2.2.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/digest/digest_package_api/digest_package_exceptions.html"><strong aria-hidden="true">1.3.2.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.2.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/digest/digest_samples/sample_digest.html"><strong aria-hidden="true">1.3.2.4.1.</strong> digest 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_overview.html"><strong aria-hidden="true">1.3.3.</strong> crypto.keys 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_classes.html"><strong aria-hidden="true">1.3.3.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_enums.html"><strong aria-hidden="true">1.3.3.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/keys/keys_package_api/keys_package_structs.html"><strong aria-hidden="true">1.3.3.3.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.3.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/keys/keys_samples/sample_keys.html"><strong aria-hidden="true">1.3.3.4.1.</strong> keys 使用</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_overview.html"><strong aria-hidden="true">1.3.4.</strong> crypto.x509 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_type.html"><strong aria-hidden="true">1.3.4.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_interfaces.html"><strong aria-hidden="true">1.3.4.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_classes.html"><strong aria-hidden="true">1.3.4.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_enums.html"><strong aria-hidden="true">1.3.4.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_structs.html"><strong aria-hidden="true">1.3.4.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../crypto/x509/x509_package_api/x509_package_exceptions.html"><strong aria-hidden="true">1.3.4.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.3.4.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../crypto/x509/x509_samples/sample_x509.html"><strong aria-hidden="true">1.3.4.7.1.</strong> x509 使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/encoding_module_overview.html"><strong aria-hidden="true">1.4.</strong> encoding 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_overview.html"><strong aria-hidden="true">1.4.1.</strong> encoding.base64 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_package_api/base64_package_funcs.html"><strong aria-hidden="true">1.4.1.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.1.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/base64/base64_samples/base64.html"><strong aria-hidden="true">1.4.1.2.1.</strong> Byte 数组和 Base64 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/hex/hex_package_overview.html"><strong aria-hidden="true">1.4.2.</strong> encoding.hex 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_package_api/hex_package_funcs.html"><strong aria-hidden="true">1.4.2.1.</strong> 函数</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.2.2.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/hex/hex_samples/hex.html"><strong aria-hidden="true">1.4.2.2.1.</strong> Byte 数组和 Hex 互转</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json/json_package_overview.html"><strong aria-hidden="true">1.4.3.</strong> encoding.json 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_interfaces.html"><strong aria-hidden="true">1.4.3.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_classes.html"><strong aria-hidden="true">1.4.3.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_enums.html"><strong aria-hidden="true">1.4.3.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json/json_package_api/encoding_json_package_exceptions.html"><strong aria-hidden="true">1.4.3.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.3.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_array_sample.html"><strong aria-hidden="true">1.4.3.5.1.</strong> JsonArray 使用示例</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/json_value_sample.html"><strong aria-hidden="true">1.4.3.5.2.</strong> JsonValue 和 String 互相转换</a></li><li class="chapter-item "><a href="../../../encoding/json/json_samples/to_json_sample.html"><strong aria-hidden="true">1.4.3.5.3.</strong> JsonValue 与 DataModel 的转换</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_overview.html"><strong aria-hidden="true">1.4.4.</strong> encoding.json.stream 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_interfaces.html"><strong aria-hidden="true">1.4.4.1.</strong> 接口</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_classes.html"><strong aria-hidden="true">1.4.4.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_enums.html"><strong aria-hidden="true">1.4.4.3.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_package_api/encoding_json_stream_package_structs.html"><strong aria-hidden="true">1.4.4.4.</strong> 结构体</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.4.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_reader.html"><strong aria-hidden="true">1.4.4.5.1.</strong> 使用 Json Stream 进行反序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writer.html"><strong aria-hidden="true">1.4.4.5.2.</strong> 使用 Json Stream 进行序列化</a></li><li class="chapter-item "><a href="../../../encoding/json_stream/json_stream_samples/sample_json_writeconfig.html"><strong aria-hidden="true">1.4.4.5.3.</strong> WriteConfig 使用示例</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../encoding/url/url_package_overview.html"><strong aria-hidden="true">1.4.5.</strong> encoding.url 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_classes.html"><strong aria-hidden="true">1.4.5.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../encoding/url/url_package_api/url_package_exceptions.html"><strong aria-hidden="true">1.4.5.2.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.4.5.3.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../encoding/url/url_samples/form.html"><strong aria-hidden="true">1.4.5.3.1.</strong> Form 的构造使用</a></li><li class="chapter-item "><a href="../../../encoding/url/url_samples/url_parse.html"><strong aria-hidden="true">1.4.5.3.2.</strong> URL 解析函数 parse 的使用</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../fuzz/fuzz_module_overview.html"><strong aria-hidden="true">1.5.</strong> fuzz 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_overview.html"><strong aria-hidden="true">1.5.1.</strong> fuzz.fuzz 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_constants_vars.html"><strong aria-hidden="true">1.5.1.1.</strong> 常量变量</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_classes.html"><strong aria-hidden="true">1.5.1.2.</strong> 类</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_package_api/fuzz_package_exceptions.html"><strong aria-hidden="true">1.5.1.3.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.5.1.4.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/basic_fuzzing_test.html"><strong aria-hidden="true">1.5.1.4.1.</strong> 测试猜测字符功能</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/dataprovider_usage.html"><strong aria-hidden="true">1.5.1.4.2.</strong> 使用 DataProvider 功能进行测试</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/fake_coverage_usage.html"><strong aria-hidden="true">1.5.1.4.3.</strong> 使用 FakeCoverage 避免 DataProvider 模式下 Fuzz 异常终止</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_cj-fuzz_usage.html"><strong aria-hidden="true">1.5.1.4.4.</strong> 打印 fuzz 使用方法</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/print_coverage.html"><strong aria-hidden="true">1.5.1.4.5.</strong> 实验性特性-覆盖率信息打印</a></li><li class="chapter-item "><a href="../../../fuzz/fuzz/fuzz_samples/stack_backtrace_missing_solution.html"><strong aria-hidden="true">1.5.1.4.6.</strong> 栈回溯缺失的处理方案</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../log/log_module_overview.html"><strong aria-hidden="true">1.6.</strong> log 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_overview.html"><strong aria-hidden="true">1.6.1.</strong> log 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_types.html"><strong aria-hidden="true">1.6.1.1.</strong> 类型别名</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_funcs.html"><strong aria-hidden="true">1.6.1.2.</strong> 函数</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_interfaces.html"><strong aria-hidden="true">1.6.1.3.</strong> 接口</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_classes.html"><strong aria-hidden="true">1.6.1.4.</strong> 类</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_structs.html"><strong aria-hidden="true">1.6.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../log/log/log_package_api/log_package_exceptions.html"><strong aria-hidden="true">1.6.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.6.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../log/log/log_samples/log_sample.html"><strong aria-hidden="true">1.6.1.7.1.</strong> 日志打印示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/net_module_overview.html"><strong aria-hidden="true">1.7.</strong> net 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_overview.html"><strong aria-hidden="true">1.7.1.</strong> net.http 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_funcs.html"><strong aria-hidden="true">1.7.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_interfaces.html"><strong aria-hidden="true">1.7.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_classes.html"><strong aria-hidden="true">1.7.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_enums.html"><strong aria-hidden="true">1.7.1.4.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_structs.html"><strong aria-hidden="true">1.7.1.5.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/http/http_package_api/http_package_exceptions.html"><strong aria-hidden="true">1.7.1.6.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.1.7.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/http/http_samples/http_client.html"><strong aria-hidden="true">1.7.1.7.1.</strong> client</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/cookie.html"><strong aria-hidden="true">1.7.1.7.2.</strong> cookie</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/log.html"><strong aria-hidden="true">1.7.1.7.3.</strong> log</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/http_server.html"><strong aria-hidden="true">1.7.1.7.4.</strong> server</a></li><li class="chapter-item "><a href="../../../net/http/http_samples/webSocket.html"><strong aria-hidden="true">1.7.1.7.5.</strong> webSocket</a></li></ol></li></ol></li><li class="chapter-item "><a href="../../../net/tls/tls_package_overview.html"><strong aria-hidden="true">1.7.2.</strong> net.tls 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_classes.html"><strong aria-hidden="true">1.7.2.1.</strong> 类</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_enums.html"><strong aria-hidden="true">1.7.2.2.</strong> 枚举</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_structs.html"><strong aria-hidden="true">1.7.2.3.</strong> 结构体</a></li><li class="chapter-item "><a href="../../../net/tls/tls_package_api/tls_package_exceptions.html"><strong aria-hidden="true">1.7.2.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.7.2.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../net/tls/tls_samples/cert_key.html"><strong aria-hidden="true">1.7.2.5.1.</strong> 服务端证书及公钥在一份文件中</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/client.html"><strong aria-hidden="true">1.7.2.5.2.</strong> 客户端示例</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/hot_update_cert.html"><strong aria-hidden="true">1.7.2.5.3.</strong> 证书热更新</a></li><li class="chapter-item "><a href="../../../net/tls/tls_samples/server.html"><strong aria-hidden="true">1.7.2.5.4.</strong> 服务端示例</a></li></ol></li></ol></li></ol></li><li class="chapter-item "><a href="../../../serialization/serialization_module_overview.html"><strong aria-hidden="true">1.8.</strong> serialization 模块</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_overview.html"><strong aria-hidden="true">1.8.1.</strong> serialization.serialization 包</a><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_functions.html"><strong aria-hidden="true">1.8.1.1.</strong> 函数</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_interfaces.html"><strong aria-hidden="true">1.8.1.2.</strong> 接口</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_classes.html"><strong aria-hidden="true">1.8.1.3.</strong> 类</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_package_api/serialization_package_exceptions.html"><strong aria-hidden="true">1.8.1.4.</strong> 异常类</a></li><li class="chapter-item "><div><strong aria-hidden="true">1.8.1.5.</strong> 示例教程</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_and_deserialize_class.html"><strong aria-hidden="true">1.8.1.5.1.</strong> class 序列化和反序列化</a></li><li class="chapter-item "><a href="../../../serialization/serialization/serialization_samples/serialize_hashmap_and_hashset.html"><strong aria-hidden="true">1.8.1.5.2.</strong> HashSet 和 HashMap 序列化</a></li></ol></li></ol></li></ol></li></ol></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">仓颉编程语言库 API</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="结构体"><a class="header" href="#结构体">结构体</a></h1>
+<h2 id="struct-bigint"><a class="header" href="#struct-bigint">struct BigInt</a></h2>
+<pre><code class="language-cangjie">public struct BigInt &lt;: Comparable&lt;BigInt&gt; &amp; Hashable &amp; ToString
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 定义为任意精度（二进制）的有符号整数。仓颉的 struct <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 用于任意精度有符号整数的计算，类型转换等。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#struct-bigint">BigInt</a>&gt;</li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-hashable">Hashable</a></li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h3 id="prop-bitlen"><a class="header" href="#prop-bitlen">prop bitLen</a></h3>
+<pre><code class="language-cangjie">public prop bitLen: Int64
+</code></pre>
+<p>功能：获取此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的最短 bit 长度。如 -3 (101) 返回 3，-1 (11) 返回 2，0 (0) 返回 1。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-sign"><a class="header" href="#prop-sign">prop sign</a></h3>
+<pre><code class="language-cangjie">public prop sign: Int64
+</code></pre>
+<p>功能：获取此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的符号。正数返回 1；0 返回 0；负数返回 -1。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="initarraybyte"><a class="header" href="#initarraybyte">init(Array&lt;Byte&gt;)</a></h3>
+<pre><code class="language-cangjie">public init(bytes: Array&lt;Byte&gt;)
+</code></pre>
+<p>功能：通过大端的 <a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a> 数组以补码形式构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>数据存储方法有以下两种：</p>
+<ul>
+<li>
+<p>大端存储方式：高位字节存放在低位地址。</p>
+</li>
+<li>
+<p>小端存储方式：将数据的低位字节存放在内存的高位地址。</p>
+</li>
+</ul>
+<p>参数：</p>
+<ul>
+<li>bytes: <a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; - 大端二进制补码数组，数组长度不能为空。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当传入空数组时，抛此异常。</li>
+</ul>
+<h3 id="initbool-arraybyte"><a class="header" href="#initbool-arraybyte">init(Bool, Array&lt;Byte&gt;)</a></h3>
+<pre><code class="language-cangjie">public init(sign: Bool, magnitude: Array&lt;Byte&gt;)
+</code></pre>
+<p>功能：通过符号位和真值的绝对值构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。视空数组为 0。</p>
+<p>参数：</p>
+<ul>
+<li>sign: <a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 符号。true 表示非负数，false 表示负数。</li>
+<li>magnitude: <a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; - 真值绝对值的二进制原码。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>sign</code> 为 false 且传入的数组为 0 时，抛此异常。</li>
+</ul>
+<h3 id="initbool-int64-random"><a class="header" href="#initbool-int64-random">init(Bool, Int64, Random)</a></h3>
+<pre><code class="language-cangjie">public init(sign: Bool, bitLen: Int64, rand!: Random = Random())
+</code></pre>
+<p>功能：通过指定正负、bit 长度和随机数种子构建一个随机的 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。bit 长度需要大于 0。</p>
+<p>参数：</p>
+<ul>
+<li>sign: <a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 指定随机 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的正负。</li>
+<li>bitLen: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 指定随机 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的 bit 长度上限。</li>
+<li>rand!: <a href="../../random/random_package_api/random_package_classes.html#class-random">Random</a> - 指定的随机数种子。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果指定的 bit 长度小于等于 0，则抛此异常。</li>
+</ul>
+<h3 id="initint16"><a class="header" href="#initint16">init(Int16)</a></h3>
+<pre><code class="language-cangjie">public init(n: Int16)
+</code></pre>
+<p>功能：通过 16 位有符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> - 16 位有符号整数。</li>
+</ul>
+<h3 id="initint32"><a class="header" href="#initint32">init(Int32)</a></h3>
+<pre><code class="language-cangjie">public init(n: Int32)
+</code></pre>
+<p>功能：通过 32 位有符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 32 位有符号整数。</li>
+</ul>
+<h3 id="initint64"><a class="header" href="#initint64">init(Int64)</a></h3>
+<pre><code class="language-cangjie">public init(n: Int64)
+</code></pre>
+<p>功能：通过 64 位有符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 64 位有符号整数。</li>
+</ul>
+<h3 id="initint8"><a class="header" href="#initint8">init(Int8)</a></h3>
+<pre><code class="language-cangjie">public init(n: Int8)
+</code></pre>
+<p>功能：通过 8 位有符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> - 8 位有符号整数。</li>
+</ul>
+<h3 id="initintnative"><a class="header" href="#initintnative">init(IntNative)</a></h3>
+<pre><code class="language-cangjie">public init(n: IntNative)
+</code></pre>
+<p>功能：通过平台相关有符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#intnative">IntNative</a> - 平台相关有符号整数。</li>
+</ul>
+<h3 id="initstring-int64"><a class="header" href="#initstring-int64">init(String, Int64)</a></h3>
+<pre><code class="language-cangjie">public init(s: String, base!: Int64 = 10)
+</code></pre>
+<p>功能：通过字符串和进制构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体，支持 2 进制到 36 进制。</p>
+<p>字符串的规则如下，即开头是可选的符号（正号或负号），接一串字符串表示的数字：</p>
+<p>IntegerString : (SignString)? ValueString</p>
+<ul>
+<li>
+<p>SignString    : + | -</p>
+</li>
+<li>
+<p>ValueString   : Digits</p>
+<ul>
+<li>
+<p>Digits: Digit | Digit Digits</p>
+<ul>
+<li>
+<p>Digit         : '0' ~ '9' | 'A' ~ 'Z' | 'a' ~ 'z'</p>
+<ul>
+<li>
+<p>如果 Digit 在 '0' ~ '9' 内， 需要满足 (Digit - '0') &lt; base；</p>
+</li>
+<li>
+<p>如果 Digit 在 'A' ~ 'Z' 内， 需要满足 (Digit - 'A') + 10 &lt; base；</p>
+</li>
+<li>
+<p>如果 Digit 在 'a' ~ 'z' 内， 需要满足 (Digit - 'A') + 10 &lt; base。</p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>参数：</p>
+<ul>
+<li>s: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 用于构建 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体的字符串。字符串规则为，开头可选一个正号（+）或者负号（-）。接下来必选非空阿拉伯数字或大小写拉丁字母的字符序列，大小写字符含义一样，'a' 和 'A' 的大小等于十进制的 10，'b' 和 'B' 的大小等于十进制的 11，以此类推。序列中的字符大小不得大于等于进制大小。</li>
+<li>base!: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 进制。字符串所表示的进制，范围为 [2, 36]。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果字符串 <code>s</code> 不符合上述规则，或 <code>base</code> 表示的进制不在 [2, 36] 区间内，抛此异常。</li>
+</ul>
+<h3 id="inituint16"><a class="header" href="#inituint16">init(UInt16)</a></h3>
+<pre><code class="language-cangjie">public init(n: UInt16)
+</code></pre>
+<p>功能：通过 16 位无符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#uint16">UInt16</a> - 16 位无符号整数。</li>
+</ul>
+<h3 id="inituint32"><a class="header" href="#inituint32">init(UInt32)</a></h3>
+<pre><code class="language-cangjie">public init(n: UInt32)
+</code></pre>
+<p>功能：通过 32 位无符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#uint32">UInt32</a> - 32 位无符号整数。</li>
+</ul>
+<h3 id="inituint64"><a class="header" href="#inituint64">init(UInt64)</a></h3>
+<pre><code class="language-cangjie">public init(n: UInt64)
+</code></pre>
+<p>功能：通过 64 位无符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> - 64 位无符号整数。</li>
+</ul>
+<h3 id="inituint8"><a class="header" href="#inituint8">init(UInt8)</a></h3>
+<pre><code class="language-cangjie">public init(n: UInt8)
+</code></pre>
+<p>功能：通过 8 位无符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#uint8">UInt8</a> - 8 位无符号整数。</li>
+</ul>
+<h3 id="inituintnative"><a class="header" href="#inituintnative">init(UIntNative)</a></h3>
+<pre><code class="language-cangjie">public init(n: UIntNative)
+</code></pre>
+<p>功能：通过平台相关无符号整数构建一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 结构体。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#uintnative">UIntNative</a> - 平台相关无符号整数。</li>
+</ul>
+<h3 id="static-func-randomprobableprimeint64-uint64-random"><a class="header" href="#static-func-randomprobableprimeint64-uint64-random">static func randomProbablePrime(Int64, UInt64, Random)</a></h3>
+<pre><code class="language-cangjie">public static func randomProbablePrime(bitLen: Int64, certainty: UInt64, rand!: Random = Random()): BigInt
+</code></pre>
+<p>功能：通过可选的随机数种子构建一个随机的 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 素数，素数的 bit 长度不超过入参 <code>bitLen</code>。</p>
+<p>显然，素数必定是大于等于 2 的整数，因此 <code>bitLen</code> 必须大于等于 2。素数检测使用 Miller-Rabin 素数测试算法。Miller-Rabin 测试会有概率将一个合数判定为素数，其出错概率随着入参 <code>certainty</code> 的增加而减少。</p>
+<p>参数：</p>
+<ul>
+<li>bitLen: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 所要生成的随机素数的 bit 长度的上限。</li>
+<li>certainty: <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> - 生成的随机素数通过 Miller-Rabin 素数测试算法的次数，通过的次数越多，将合数误判为素数的概率越低。</li>
+<li>rand!: <a href="../../random/random_package_api/random_package_classes.html#class-random">Random</a> - 指定的随机数种子。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回生成的随机素数。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果指定的 bit 长度小于等于 1，则抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let randomProbablePrime = BigInt.randomProbablePrime(6, 3)
+    println(randomProbablePrime)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">11
+</code></pre>
+<h3 id="func-clearbitint64"><a class="header" href="#func-clearbitint64">func clearBit(Int64)</a></h3>
+<pre><code class="language-cangjie">public func clearBit(index: Int64): BigInt
+</code></pre>
+<p>功能：通过将指定索引位置的 bit 修改为 0 来构造一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</p>
+<p>参数：</p>
+<ul>
+<li>index: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 需要设置的 bit 位置的索引。<code>index</code> 需要大于等于 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新的 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是将原 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的 <code>index</code> 处的 bit 改为 0 的产物。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果入参 <code>index</code> 小于 0，则抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1024)
+    let clearBit = bigInt.clearBit(10)
+    println(clearBit)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="func-comparebigint"><a class="header" href="#func-comparebigint">func compare(BigInt)</a></h3>
+<pre><code class="language-cangjie">public func compare(that: BigInt): Ordering
+</code></pre>
+<p>功能：判断 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的关系。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a> - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的关系。如果等于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.EQ；如果小于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.LT；如果大于，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.GT。</li>
+</ul>
+<h3 id="func-divandmodbigint"><a class="header" href="#func-divandmodbigint">func divAndMod(BigInt)</a></h3>
+<pre><code class="language-cangjie">public func divAndMod(that: BigInt): (BigInt, BigInt)
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的除法运算。</p>
+<p>与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相除，返回商和模。此除法运算的行为与基础类型保持一致，即商向靠近 0 的方向取整，模的符号与被除数保持一致。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 除数。除数不得为 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>(<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>, <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>) - 商和模。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 除数为 0 抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1025)
+    let that = BigInt(512)
+    let (div, mod) = bigInt.divAndMod(that)
+    println(div)
+    println(mod)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">2
+1
+</code></pre>
+<h3 id="func-flipbitint64"><a class="header" href="#func-flipbitint64">func flipBit(Int64)</a></h3>
+<pre><code class="language-cangjie">public func flipBit(index: Int64): BigInt
+</code></pre>
+<p>功能：通过翻转指定索引位置的 bit 来构造一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</p>
+<p>参数：</p>
+<ul>
+<li>index: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 需要翻转的 bit 位置的索引。<code>index</code> 需要大于等于 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新的 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是将原 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> <code>index</code> 处的 bit 翻转后的产物。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果入参 <code>index</code> 小于 0，则抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1024)
+    let flipBit = bigInt.flipBit(10)
+    println(flipBit)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="func-hashcode"><a class="header" href="#func-hashcode">func hashCode()</a></h3>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：计算并返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的哈希值。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1024)
+    let hashCode = bigInt.hashCode()
+    println(hashCode)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">1024
+</code></pre>
+<h3 id="func-isprobableprimeuint64"><a class="header" href="#func-isprobableprimeuint64">func isProbablePrime(UInt64)</a></h3>
+<pre><code class="language-cangjie">public func isProbablePrime(certainty: UInt64): Bool
+</code></pre>
+<p>功能：判断一个数是不是素数。</p>
+<blockquote>
+<p><strong>说明：</strong></p>
+<p>该函数使用了 Miller-Rabin 测试算法，此算法的准确率会随着 certainty 参数的增加而增加。如果该数是素数，那么 Miller-Rabin 测试必定返回 true；如果该数是合数（期待返回 false），那么会有低于 1/4<sup>certainty</sup> 概率返回 true。素数只对大于等于 2 的正整数有意义，即负数，0，1 都不是素数。</p>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>certainty: <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> - 需要执行 Miller-Rabin 测试的次数。注意，如果测试次数为 0，表示不测试，那么总是返回 true（即不是素数的数也必定返回 true）。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 如果使用此函数测定了一个数为素数，则返回 true；不为素数，则返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1024)
+    let isProbablePrime = bigInt.isProbablePrime(10)
+    println(isProbablePrime)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">false
+</code></pre>
+<h3 id="func-lowestonebit"><a class="header" href="#func-lowestonebit">func lowestOneBit()</a></h3>
+<pre><code class="language-cangjie">public func lowestOneBit(): Int64
+</code></pre>
+<p>功能：判断为 1 的最低位的 bit 的位置。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 返回为 1 的最低位的 bit 的位置。如果 bit 全为 0，则返回 -1。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(-1)
+    let lowestOneBit = bigInt.lowestOneBit()
+    println(lowestOneBit)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="func-modinversebigint"><a class="header" href="#func-modinversebigint">func modInverse(BigInt)</a></h3>
+<pre><code class="language-cangjie">public func modInverse(that: BigInt): BigInt
+</code></pre>
+<p>功能：求模逆元。</p>
+<p>模逆元 r 满足 $(this * r) % that == 1$。显然，<code>this</code> 和 <code>that</code> 必须互质。当 <code>that</code> 为 正负 1 时，结果总是 0。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。入参不得为 0，且需要与 <code>this</code> 互质。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回模逆元。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当 <code>this</code> 和 <code>that</code> 不互质或 <code>that</code> 为 0 时，抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1025)
+    let that = BigInt(512)
+    let modInverse = bigInt.modInverse(that)
+    println(modInverse)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">1
+</code></pre>
+<h3 id="func-modpow"><a class="header" href="#func-modpow">func modPow</a></h3>
+<pre><code class="language-cangjie">public func modPow(n: BigInt, m!: ?BigInt = None): BigInt
+</code></pre>
+<p>功能：计算此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的 n 次幂模 <code>m</code> 的结果，并返回。</p>
+<p>模的规则与基础类型一致，即模的符号与被除数保持一致。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 指数，必须为非负数。</li>
+<li>m!: ?<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 除数，此入参不得为 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 乘方后取模的运算结果。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 除数为 0 抛此异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 指数为负数时抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(2)
+    let n = BigInt(10)
+    let modPow = bigInt.modPow(n)
+    println(modPow)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">1024
+</code></pre>
+<h3 id="func-quobigint"><a class="header" href="#func-quobigint">func quo(BigInt)</a></h3>
+<pre><code class="language-cangjie">public func quo(that: BigInt): BigInt
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的除法运算。</p>
+<p>与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相除，返回结果。此除法运算的行为与<a href="#operator-func-bigint-10">运算符重载函数</a>区别于，如果被除数为负数，此函数的结果向着远离 0 的方向取整，保证余数大于等于 0。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 除数。除数不得为 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相除后的结果</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 除数为 0 抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1025)
+    let that = BigInt(512)
+    let quo = bigInt.quo(that)
+    println(quo)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">2
+</code></pre>
+<h3 id="func-quoandrembigint"><a class="header" href="#func-quoandrembigint">func quoAndRem(BigInt)</a></h3>
+<pre><code class="language-cangjie">public func quoAndRem(that: BigInt): (BigInt, BigInt)
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的除法运算。</p>
+<p>与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相除，返回商和余数。此除法运算的行为与 <a href="#func-divandmodbigint">divAndMod</a> 函数区别于，如果被除数为负数，此函数的结果向着远离 0 的方向取整，保证余数总是大于等于 0。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 除数。除数不得为 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>(<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>, <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>) - 商和余数。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 除数为 0 抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1025)
+    let that = BigInt(512)
+    let (quo, rem) = bigInt.quoAndRem(that)
+    println(quo)
+    println(rem)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">2
+1
+</code></pre>
+<h3 id="func-rembigint"><a class="header" href="#func-rembigint">func rem(BigInt)</a></h3>
+<pre><code class="language-cangjie">public func rem(that: BigInt): BigInt
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的模运算。</p>
+<p>与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相除，返回余数。余数的结果总是大于等于 0。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 除数。除数不得为 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相除后的余数。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 除数为 0 抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(1025)
+    let that = BigInt(512)
+    let rem = bigInt.rem(that)
+    println(rem)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">1
+</code></pre>
+<h3 id="func-setbitint64"><a class="header" href="#func-setbitint64">func setBit(Int64)</a></h3>
+<pre><code class="language-cangjie">public func setBit(index: Int64): BigInt
+</code></pre>
+<p>功能：通过将指定索引位置的 bit 修改为 1 来构造一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</p>
+<p>参数：</p>
+<ul>
+<li>index: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 需要设置的 bit 位置的索引。<code>index</code> 需要大于等于 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新的 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是将原 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> <code>index</code> 处的 bit 改为 1 的产物。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果入参 <code>index</code> 小于 0，则抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(0)
+    let setBit = bigInt.setBit(10)
+    println(setBit)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">1024
+</code></pre>
+<h3 id="func-testbitint64"><a class="header" href="#func-testbitint64">func testBit(Int64)</a></h3>
+<pre><code class="language-cangjie">public func testBit(index: Int64): Bool
+</code></pre>
+<p>功能：判断指定位置的 bit 信息，如果指定位置的 bit 为 0，则返回 false；为 1，则返回 true。</p>
+<p>参数：</p>
+<ul>
+<li>index: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 需要知道的 bit 的索引。<code>index</code> 需要大于等于 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 指定位置的 bit 信息。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果入参 <code>index</code> 小于 0，则抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(-1)
+    let testBit = bigInt.testBit(100)
+    println(testBit)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">true
+</code></pre>
+<h3 id="func-tobytes"><a class="header" href="#func-tobytes">func toBytes()</a></h3>
+<pre><code class="language-cangjie">public func toBytes(): Array&lt;Byte&gt;
+</code></pre>
+<p>功能：计算并返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的大端补码字节数组。</p>
+<p>字节数组最低索引的最低位为符号位，如 128 返回 [0, 128]（符号位为 0），-128 返回 [128]（符号位为 1）。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-arrayt">Array</a>&lt;<a href="../../core/core_package_api/core_package_types.html#type-byte">Byte</a>&gt; - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的大端补码字节数组。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(0x400)
+    let toBytes = bigInt.toBytes()
+    println(toBytes)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">[4, 0]
+</code></pre>
+<h3 id="func-toint16overflowstrategy"><a class="header" href="#func-toint16overflowstrategy">func toInt16(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toInt16(overflowHandling!: OverflowStrategy = throwing): Int16
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(0x8000_0000_0000)
+    let toInt16 = bigInt.toInt16(overflowHandling: saturating)
+    println(toInt16)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">32767
+</code></pre>
+<h3 id="func-toint32overflowstrategy"><a class="header" href="#func-toint32overflowstrategy">func toInt32(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toInt32(overflowHandling!: OverflowStrategy = throwing): Int32
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(0x8000_0000_00FF)
+    let toInt32 = bigInt.toInt32(overflowHandling: wrapping)
+    println(toInt32)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">255
+</code></pre>
+<h3 id="func-toint64overflowstrategy"><a class="header" href="#func-toint64overflowstrategy">func toInt64(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toInt64(overflowHandling!: OverflowStrategy = throwing): Int64
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(&quot;800000000000000000&quot;, base: 16)
+    let toInt64 = bigInt.toInt64(overflowHandling: wrapping)
+    println(toInt64)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="func-toint8overflowstrategy"><a class="header" href="#func-toint8overflowstrategy">func toInt8(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toInt8(overflowHandling!: OverflowStrategy = throwing): Int8
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(1024)
+    let toInt8 = bigInt.toInt8(overflowHandling: saturating)
+    println(toInt8)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">127
+</code></pre>
+<h3 id="func-tointnativeoverflowstrategy"><a class="header" href="#func-tointnativeoverflowstrategy">func toIntNative(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toIntNative(overflowHandling!: OverflowStrategy = throwing): IntNative
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#intnative">IntNative</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#intnative">IntNative</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#intnative">IntNative</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(&quot;800000000000000000&quot;, base: 16)
+    let toIntNative = bigInt.toIntNative(overflowHandling: wrapping)
+    println(toIntNative)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="func-tostring"><a class="header" href="#func-tostring">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：计算并返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的十进制字符串表示。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的十进制字符串。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(0x400)
+    let toString = bigInt.toString()
+    println(toString)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">1024
+</code></pre>
+<h3 id="func-tostringint64"><a class="header" href="#func-tostringint64">func toString(Int64)</a></h3>
+<pre><code class="language-cangjie">public func toString(base: Int64): String
+</code></pre>
+<p>功能：计算并返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的任意进制字符串表示。</p>
+<p>参数：</p>
+<ul>
+<li>base: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 进制。字符串所表示的进制，范围为 [2, 36]。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的 <code>base</code> 进制字符串。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(0x400)
+    let toString = bigInt.toString(2)
+    println(toString)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">10000000000
+</code></pre>
+<h3 id="func-touint16overflowstrategy"><a class="header" href="#func-touint16overflowstrategy">func toUInt16(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUInt16(overflowHandling!: OverflowStrategy = throwing): UInt16
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uint16">UInt16</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uint16">UInt16</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint16">UInt16</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(&quot;800000000000000000&quot;, base: 16)
+    let toUInt16 = bigInt.toUInt16(overflowHandling: wrapping)
+    println(toUInt16)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="func-touint32overflowstrategy"><a class="header" href="#func-touint32overflowstrategy">func toUInt32(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUInt32(overflowHandling!: OverflowStrategy = throwing): UInt32
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uint32">UInt32</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uint32">UInt32</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint32">UInt32</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(&quot;800000000000000000&quot;, base: 16)
+    let toUInt32 = bigInt.toUInt32(overflowHandling: wrapping)
+    println(toUInt32)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="func-touint64overflowstrategy"><a class="header" href="#func-touint64overflowstrategy">func toUInt64(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUInt64(overflowHandling!: OverflowStrategy = throwing): UInt64
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(&quot;-800000000000000000&quot;, base: 16)
+    let toUInt64 = bigInt.toUInt64(overflowHandling: saturating)
+    println(toUInt64)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="func-touint8overflowstrategy"><a class="header" href="#func-touint8overflowstrategy">func toUInt8(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUInt8(overflowHandling!: OverflowStrategy = throwing): UInt8
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uint8">UInt8</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uint8">UInt8</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint8">UInt8</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(&quot;800000000000000000&quot;, base: 16)
+    try {
+        bigInt.toUInt8(overflowHandling: throwing)
+    } catch (e: OverflowException) {
+        println(e.message)
+    }
+    return
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">Out of range of the UInt8
+</code></pre>
+<h3 id="func-touintnativeoverflowstrategy"><a class="header" href="#func-touintnativeoverflowstrategy">func toUIntNative(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUIntNative(overflowHandling!: OverflowStrategy = throwing): UIntNative
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uintnative">UIntNative</a> 类型，支持自定义溢出策略。</p>
+<p>参数：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。
+<ul>
+<li>&quot;throwing&quot;：异常模式。出现溢出抛出异常。</li>
+<li>&quot;wrapping&quot;：溢出模式。出现溢出高位截断。</li>
+<li>&quot;saturating&quot;：边界值模式。出现溢出，当前值大于目标类型的 MAX 值，返回目标类型 MAX 值，当前值小于目标类型的 MIN 值，返回目标类型 MIN 值。</li>
+</ul>
+</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uintnative">UIntNative</a> - 返回转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+import std.math.numeric.OverflowStrategy
+
+main() {
+    let bigInt = BigInt(&quot;-800000000000000000&quot;, base: 16)
+    let toUIntNative = bigInt.toUIntNative(overflowHandling: saturating)
+    println(toUIntNative)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="operator-func-"><a class="header" href="#operator-func-">operator func !()</a></h3>
+<pre><code class="language-cangjie">public operator func !(): BigInt
+</code></pre>
+<p>功能：按位非。将操作数中的二进制位 0 变 1，1 变 0。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 按位非的结果。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let no = !bigInt
+    println(no)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="operator-func-bigint"><a class="header" href="#operator-func-bigint">operator func !=(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(that: BigInt): Bool
+</code></pre>
+<p>功能：判不等运算。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 判不等运算的另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 判不等的结果。不等返回 true，相等返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let that = BigInt(&quot;-2&quot;)
+    println(bigInt != that)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">true
+</code></pre>
+<h3 id="operator-func-bigint-1"><a class="header" href="#operator-func-bigint-1">operator func %(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func %(that: BigInt): BigInt
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的模运算。</p>
+<p>取模运算的行为与基础类型保持一致，即符号与被除数保持一致。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 除数。除数不得为 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相模后的结果。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 除数为 0 抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-23456789123456789&quot;)
+    let that = BigInt(&quot;-23456789123456789&quot;)
+    let mod = bigInt % that
+    println(mod)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="operator-func-bigint-2"><a class="header" href="#operator-func-bigint-2">operator func &amp;(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func &amp;(that: BigInt): BigInt
+</code></pre>
+<p>功能：按位与。其功能是参与运算的两数各对应的二进位相与。只有对应的两个二进位都为 1 时，结果位才为 1。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 按位与运算的另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的按位与的结果。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;8&quot;)
+    let that = BigInt(&quot;7&quot;)
+    let and = bigInt &amp; that
+    println(and)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">0
+</code></pre>
+<h3 id="operator-func-bigint-3"><a class="header" href="#operator-func-bigint-3">operator func *(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func *(that: BigInt): BigInt
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 乘法。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 乘数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相乘后的结果。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let that = BigInt(&quot;-23456789123456789&quot;)
+    let mul = bigInt * that
+    println(mul)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">23456789123456789
+</code></pre>
+<h3 id="operator-func-uint64"><a class="header" href="#operator-func-uint64">operator func **(UInt64)</a></h3>
+<pre><code class="language-cangjie">public operator func **(n: UInt64): BigInt
+</code></pre>
+<p>功能：求 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的 n 次幂。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> - 指数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 幂运算结果。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-2&quot;)
+    let power = bigInt ** 64
+    println(power.toString(16))
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">10000000000000000
+</code></pre>
+<h3 id="operator-func-bigint-4"><a class="header" href="#operator-func-bigint-4">operator func +(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func +(that: BigInt): BigInt
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 加法。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 加数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相加后的结果。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;123456789123456789&quot;)
+    let that = BigInt(&quot;-23456789123456789&quot;)
+    let plus = bigInt + that
+    println(plus)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">100000000000000000
+</code></pre>
+<h3 id="operator-func--"><a class="header" href="#operator-func--">operator func -()</a></h3>
+<pre><code class="language-cangjie">public operator func -(): BigInt
+</code></pre>
+<p>功能：求 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的相反数。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的相反数。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-23456789123456789&quot;)
+    let opposite = -bigInt
+    println(opposite)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">23456789123456789
+</code></pre>
+<h3 id="operator-func--bigint"><a class="header" href="#operator-func--bigint">operator func -(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func -(that: BigInt): BigInt
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 减法。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 减数。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相减后的结果。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;100000000000000000&quot;)
+    let that = BigInt(&quot;-23456789123456789&quot;)
+    let sub = bigInt - that
+    println(sub)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">123456789123456789
+</code></pre>
+<h3 id="operator-func-bigint-5"><a class="header" href="#operator-func-bigint-5">operator func &lt;(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;(that: BigInt): Bool
+</code></pre>
+<p>功能：小于比较运算。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 小于比较运算的另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 比较的结果。小于返回 true，否则返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let that = BigInt(&quot;-2&quot;)
+    println(bigInt &lt; that)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">false
+</code></pre>
+<h3 id="operator-func-int64"><a class="header" href="#operator-func-int64">operator func &lt;&lt;(Int64)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;&lt;(n: Int64): BigInt
+</code></pre>
+<p>功能：左移运算。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 左移 n 位，n 需要大于等于 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 左移 n 位的结果。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 入参小于 0 时抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let leftShift = bigInt &lt;&lt; 64
+    println(leftShift.toString(16))
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">-10000000000000000
+</code></pre>
+<h3 id="operator-func-bigint-6"><a class="header" href="#operator-func-bigint-6">operator func &lt;=(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;=(that: BigInt): Bool
+</code></pre>
+<p>功能：小于等于比较运算。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 小于等于比较运算的另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 比较的结果。小于等于返回 true，否则返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let that = BigInt(&quot;-2&quot;)
+    println(bigInt &lt;= that)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">false
+</code></pre>
+<h3 id="operator-func-bigint-7"><a class="header" href="#operator-func-bigint-7">operator func ==(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(that: BigInt): Bool
+</code></pre>
+<p>功能：判等运算。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 判等运算的另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 判等的结果。相等返回 true，不等返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let that = BigInt(&quot;-2&quot;)
+    println(bigInt == that)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">false
+</code></pre>
+<h3 id="operator-func-bigint-8"><a class="header" href="#operator-func-bigint-8">operator func &gt;(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;(that: BigInt): Bool
+</code></pre>
+<p>功能：大于比较运算。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 大于比较运算的另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 比较的结果。大于返回 true，否则返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let that = BigInt(&quot;-2&quot;)
+    println(bigInt &gt; that)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">true
+</code></pre>
+<h3 id="operator-func-bigint-9"><a class="header" href="#operator-func-bigint-9">operator func &gt;=(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;=(that: BigInt): Bool
+</code></pre>
+<p>功能：大于等于比较运算。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 大于等于比较运算的另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 比较的结果。大于等于返回 true，否则返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let that = BigInt(&quot;-2&quot;)
+    println(bigInt &gt;= that)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">true
+</code></pre>
+<h3 id="operator-func-int64-1"><a class="header" href="#operator-func-int64-1">operator func &gt;&gt;(Int64)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;&gt;(n: Int64): BigInt
+</code></pre>
+<p>功能：右移运算。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 右移 n 位，n 需要大于等于 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 右移 n 位的结果。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 入参小于 0 时抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let rightShift = bigInt &gt;&gt; 10000
+    println(rightShift)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">-1
+</code></pre>
+<h3 id="operator-func-bigint-10"><a class="header" href="#operator-func-bigint-10">operator func /(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func /(that: BigInt): BigInt
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 除法。</p>
+<p>除法运算的行为与基础类型保持一致，即结果向靠近 0 的方向取整。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 除数。除数不得为 0。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 一个新 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>，它是此 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 与另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 相除后的结果。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-arithmeticexception">ArithmeticException</a> - 除数为 0 抛此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-23456789123456789&quot;)
+    let that = BigInt(&quot;-23456789123456789&quot;)
+    let div = bigInt / that
+    println(div)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">1
+</code></pre>
+<h3 id="operator-func-bigint-11"><a class="header" href="#operator-func-bigint-11">operator func ^(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func ^(that: BigInt): BigInt
+</code></pre>
+<p>功能：按位异或。其功能是参与运算的两数各对应的二进位相异或。二进制位结果不相同时，异或结果为 1；二进制位结果相同时，异或结果为 0。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 按位异或运算的另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的按位异或的结果。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;-1&quot;)
+    let that = BigInt(&quot;7&quot;)
+    let xor = bigInt ^ that
+    println(xor)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">-8
+</code></pre>
+<h3 id="operator-func-bigint-12"><a class="header" href="#operator-func-bigint-12">operator func |(BigInt)</a></h3>
+<pre><code class="language-cangjie">public operator func |(that: BigInt): BigInt
+</code></pre>
+<p>功能：按位或。其功能是参与运算的两数各对应的二进位相或。只有对应的两个二进位都为 0 时，结果位才为 0。</p>
+<p>参数：</p>
+<ul>
+<li>that: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 按位或运算的另外一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 返回与另一个 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 的按位或的结果。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.BigInt
+
+main() {
+    let bigInt = BigInt(&quot;8&quot;)
+    let that = BigInt(&quot;7&quot;)
+    let or = bigInt | that
+    println(or)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">15
+</code></pre>
+<h2 id="struct-decimal"><a class="header" href="#struct-decimal">struct Decimal</a></h2>
+<pre><code class="language-cangjie">public struct Decimal &lt;: Comparable&lt;Decimal&gt; &amp; Hashable &amp; ToString
+</code></pre>
+<p>功能：<a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 用于表示任意精度的有符号的十进制数。允许操作过程指定结果精度及舍入规则。提供基础类型 (<a href="../../core/core_package_api/core_package_types.html#type-int">Int</a>、<a href="../../core/core_package_api/core_package_types.html#type-uint">UInt</a>、<a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a>、<a href="../../core/core_package_api/core_package_intrinsics.html#float16">Float</a>等) 与 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 类型互相转换能力，支持 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象基本属性查询等能力，支持基础数学运算操作，提供对象比较、hash、字符串打印等基础能力。</p>
+<p>父类型：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-comparablet">Comparable</a>&lt;<a href="#struct-decimal">Decimal</a>&gt;</li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-hashable">Hashable</a></li>
+<li><a href="../../core/core_package_api/core_package_interfaces.html#interface-tostring">ToString</a></li>
+</ul>
+<h3 id="prop-precision"><a class="header" href="#prop-precision">prop precision</a></h3>
+<pre><code class="language-cangjie">public prop precision: Int64
+</code></pre>
+<p>功能：获取 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 精度值，即无标度整数部分十进制有效数字位数，非负数。如果精度值为0，表示无精度限制。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-scale"><a class="header" href="#prop-scale">prop scale</a></h3>
+<pre><code class="language-cangjie">public prop scale: Int32
+</code></pre>
+<p>功能：获取 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 标度值。</p>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a></p>
+<h3 id="prop-sign-1"><a class="header" href="#prop-sign-1">prop sign</a></h3>
+<pre><code class="language-cangjie">public prop sign: Int64
+</code></pre>
+<p>功能：获取 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 实例符号值。</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 值大于 0，返回 1；</li>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 值等于 0，返回 0；</li>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 值小于 0，返回 -1。</li>
+</ul>
+<p>类型：<a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a></p>
+<h3 id="prop-value"><a class="header" href="#prop-value">prop value</a></h3>
+<pre><code class="language-cangjie">public prop value: BigInt
+</code></pre>
+<p>功能：获取 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 无标度整数值，<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 承载。</p>
+<p>类型：<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a></p>
+<h3 id="initbigint"><a class="header" href="#initbigint">init(BigInt)</a></h3>
+<pre><code class="language-cangjie">public init(val: BigInt)
+</code></pre>
+<p>功能：通过有符号大整数 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 构建 <code>Deciaml</code> 结构体。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 有符号大整数值。</li>
+</ul>
+<h3 id="initbigint-int32"><a class="header" href="#initbigint-int32">init(BigInt, Int32)</a></h3>
+<pre><code class="language-cangjie">public init(val: BigInt, scale: Int32)
+</code></pre>
+<p>功能：通过有符号大整数 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 和标度值构建 <code>Deciaml</code> 结构体。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 有符号大整数值。</li>
+<li>scale: <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 标度值。</li>
+</ul>
+<h3 id="initfloat16"><a class="header" href="#initfloat16">init(Float16)</a></h3>
+<pre><code class="language-cangjie">public init(val: Float16)
+</code></pre>
+<p>功能：通过 16 位有符号浮点数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>由于部分十进制小数无法通过二进制浮点数精确表示，此构造函数以精确值构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，传入浮点数值可能与最终构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象字符串打印值不一致。</p>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#float16">Float16</a> - 16 位有符号二进制浮点数。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当入参为 <code>inf</code>、<code>-inf</code> 或 <code>nan</code> 时，抛出此异常。</li>
+</ul>
+<h3 id="initfloat32"><a class="header" href="#initfloat32">init(Float32)</a></h3>
+<pre><code class="language-cangjie">public init(val: Float32)
+</code></pre>
+<p>功能：通过 32 位有符号浮点数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>由于部分十进制小数无法通过二进制浮点数精确表示，此构造函数以精确值构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，传入浮点数值可能与最终构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象字符串打印值不一致。</p>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a> - 32 位有符号二进制浮点数。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当入参为 <code>inf</code>、<code>-inf</code> 或 <code>nan</code> 时，抛出此异常。</li>
+</ul>
+<h3 id="initfloat64"><a class="header" href="#initfloat64">init(Float64)</a></h3>
+<pre><code class="language-cangjie">public init(val: Float64)
+</code></pre>
+<p>功能：通过 64 位有符号浮点数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>由于部分十进制小数无法通过二进制浮点数精确表示，此构造函数以精确值构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，传入浮点数值可能与最终构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象字符串打印值不一致。</p>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - 64 位有符号二进制浮点数。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当入参为 <code>inf</code>、<code>-inf</code> 或 <code>nan</code> 时，抛出此异常。</li>
+</ul>
+<h3 id="initint16-1"><a class="header" href="#initint16-1">init(Int16)</a></h3>
+<pre><code class="language-cangjie">public init(val: Int16)
+</code></pre>
+<p>功能：通过 16 位有符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 结构体。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> - 16 位有符号整数。</li>
+</ul>
+<h3 id="initint32-1"><a class="header" href="#initint32-1">init(Int32)</a></h3>
+<pre><code class="language-cangjie">public init(val: Int32)
+</code></pre>
+<p>功能：通过 32 位有符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 32 位有符号整数。</li>
+</ul>
+<h3 id="initint64-1"><a class="header" href="#initint64-1">init(Int64)</a></h3>
+<pre><code class="language-cangjie">public init(val: Int64)
+</code></pre>
+<p>功能：通过 64 位有符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 64 位有符号整数。</li>
+</ul>
+<h3 id="initint8-1"><a class="header" href="#initint8-1">init(Int8)</a></h3>
+<pre><code class="language-cangjie">public init(val: Int8)
+</code></pre>
+<p>功能：通过 8 位有符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 结构体。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> - 8 位有符号整数。</li>
+</ul>
+<h3 id="initintnative-1"><a class="header" href="#initintnative-1">init(IntNative)</a></h3>
+<pre><code class="language-cangjie">public init(val: IntNative)
+</code></pre>
+<p>功能：通过 32 位或 64 位 (具体长度与平台相关) 有符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#intnative">IntNative</a> - 32 位或 64位有符号整数。</li>
+</ul>
+<h3 id="initstring"><a class="header" href="#initstring">init(String)</a></h3>
+<pre><code class="language-cangjie">public init(val: String)
+</code></pre>
+<p>功能：通过规定格式字符串构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 结构体。默认采用精度值为0，即无限精度进行构建。字符串需满足如下格式，即开头可选的符号（正号或负号），接 ValueString 字符串，再接可选的 ExponentString 字符串：</p>
+<p><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 字符串: (SignString)? ValueString (ExponentString)?</p>
+<ul>
+<li>
+<p>SignString：+ | -</p>
+</li>
+<li>
+<p>ValueString：IntegerPart.(FractionPart)? | .FractionPart | IntegerPart</p>
+<ul>
+<li>
+<p>IntegerPart：Digits</p>
+</li>
+<li>
+<p>FractionPart：Digits</p>
+</li>
+<li>
+<p>Digits: Digit | Digit Digits</p>
+<ul>
+<li>Digit：'0' ~ '9'</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>ExponentString：ExponentIndicator (SignString)? IntegerPart</p>
+<ul>
+<li>ExponentIndicator：e | E</li>
+</ul>
+</li>
+</ul>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 规定格式字符串。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当入参字符串不满足规定格式时，抛此异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当构建值标度溢出时，抛此异常。</li>
+</ul>
+<h3 id="inituint16-1"><a class="header" href="#inituint16-1">init(UInt16)</a></h3>
+<pre><code class="language-cangjie">public init(val: UInt16)
+</code></pre>
+<p>功能：通过 16 位无符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#uint16">UInt16</a> - 16 位无符号整数。</li>
+</ul>
+<h3 id="inituint32-1"><a class="header" href="#inituint32-1">init(UInt32)</a></h3>
+<pre><code class="language-cangjie">public init(val: UInt32)
+</code></pre>
+<p>功能：通过 32 位无符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#uint32">UInt32</a> - 32 位无符号整数。</li>
+</ul>
+<h3 id="inituint64-1"><a class="header" href="#inituint64-1">init(UInt64)</a></h3>
+<pre><code class="language-cangjie">public init(val: UInt64)
+</code></pre>
+<p>功能：通过 64 位无符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> - 64 位无符号整数。</li>
+</ul>
+<h3 id="inituint8-1"><a class="header" href="#inituint8-1">init(UInt8)</a></h3>
+<pre><code class="language-cangjie">public init(val: UInt8)
+</code></pre>
+<p>功能：通过 8 位无符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#uint8">UInt8</a> - 8 位无符号整数。</li>
+</ul>
+<h3 id="inituintnative-1"><a class="header" href="#inituintnative-1">init(UIntNative)</a></h3>
+<pre><code class="language-cangjie">public init(val: UIntNative)
+</code></pre>
+<p>功能：通过 32 位或 64 位 (具体长度与平台相关) 无符号整数构建 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。默认采用精度值为0，即无限精度进行构建。</p>
+<p>参数：</p>
+<ul>
+<li>val: <a href="../../core/core_package_api/core_package_intrinsics.html#uintnative">UIntNative</a> - 32 位或 64位无符号整数。</li>
+</ul>
+<h3 id="func-comparedecimal"><a class="header" href="#func-comparedecimal">func compare(Decimal)</a></h3>
+<pre><code class="language-cangjie">public func compare(d: Decimal): Ordering
+</code></pre>
+<p>功能：比较当前对象与入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，返回比较结果值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 待比较对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a> - 返回比较结果，当前对象小于入参时，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.LT，大于入参时，返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.GT，否则返回 <a href="../../core/core_package_api/core_package_enums.html#enum-ordering">Ordering</a>.EQ。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(-5)
+    let B = Decimal(3)
+
+    let C = A.compare(B)
+    println(C)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">Ordering.LT
+</code></pre>
+<h3 id="func-divwithprecisiondecimal-int64-roundingmode"><a class="header" href="#func-divwithprecisiondecimal-int64-roundingmode">func divWithPrecision(Decimal, Int64, RoundingMode)</a></h3>
+<pre><code class="language-cangjie">public func divWithPrecision(d: Decimal, precision: Int64, roundingMode!: RoundingMode = HALF_EVEN): Decimal
+</code></pre>
+<p>功能：除法运算，支持自定义运算精度和舍入方式，除以入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，返回结果值，如果结果精度超过 <code>precision</code> 指定精度，则根据指定的精度对除法运算结果进行舍入。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 除数对象。</li>
+<li>precision: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 精度值。</li>
+<li>roundingMode!: <a href="../../math/math_package_api/math_package_enums.html#enum-roundingmode">RoundingMode</a> - 舍入规则。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 生成一个新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，用于存储除法运算结果值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当除数为 0 时，抛出此异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当除法结果值范围超过 [-(maxValue(precision) * (10 <sup><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a>.MAX</sup>)), maxValue(precision) * (10 <sup><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a>.MAX</sup>)] 时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(2)
+    let B = Decimal(3)
+    let C = A.divWithPrecision(B, 0)
+    println(&quot;C = ${C}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">C = 0.6666666666666666666666666666666667
+</code></pre>
+<h3 id="func-divandremdecimal"><a class="header" href="#func-divandremdecimal">func divAndRem(Decimal)</a></h3>
+<pre><code class="language-cangjie">public func divAndRem(d: Decimal): (BigInt, Decimal)
+</code></pre>
+<p>功能：除法取商和余数运算，除以入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，返回整数商值和余数值。结果保留实际精度值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 除数对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li>(<a href="math_numeric_package_structs.html#struct-bigint">BigInt</a>, <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a>) - 生成一个元组对象，分别用于存储整数商值结果和余数结果值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当除数为 0 时，抛出此异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当除法结果值范围超过 [-(maxValue(precision) * (10 <sup><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a>.MAX</sup>)), maxValue(precision) * (10 <sup><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a>.MAX</sup>)] 时，抛出此异常。</li>
+</ul>
+<h3 id="func-hashcode-1"><a class="header" href="#func-hashcode-1">func hashCode()</a></h3>
+<pre><code class="language-cangjie">public func hashCode(): Int64
+</code></pre>
+<p>功能：获取当前对象哈希值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 返回当前对象哈希值。</li>
+</ul>
+<h3 id="func-isinteger"><a class="header" href="#func-isinteger">func isInteger()</a></h3>
+<pre><code class="language-cangjie">public func isInteger(): Bool
+</code></pre>
+<p>功能：判断当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象是否为整数。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 返回当前对象是否为整数判断结果。当前对象为整数时返回 true，否则返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(100)
+    println(&quot;${A}.isInteger() = ${A.isInteger()}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">100.isInteger() = true
+</code></pre>
+<h3 id="func-powwithprecisionint64-int64-roundingmode"><a class="header" href="#func-powwithprecisionint64-int64-roundingmode">func powWithPrecision(Int64, Int64, RoundingMode)</a></h3>
+<pre><code class="language-cangjie">​public func powWithPrecision(n: Int64, precision: Int64, roundingMode!: RoundingMode = HALF_EVEN): Decimal
+</code></pre>
+<p>功能：乘方运算，支持自定义运算精度和舍入方式，获取当前对象为底数，入参 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 为指数的乘方运算结果，如果运算结果超过 <code>precision</code> 指定的精度，则根据指定的精度对乘方结果进行舍入。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 乘方运算的指数值。</li>
+<li>precision: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 精度值。</li>
+<li>roundingMode!: <a href="../../math/math_package_api/math_package_enums.html#enum-roundingmode">RoundingMode</a> - 舍入规则。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 生成一个新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，用于存储乘方运算结果值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当乘方运算结果标度值溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(2.5)
+    println(&quot;A.powWithPrecision(3, 0) = ${A.powWithPrecision(3, 0, roundingMode: HALF_EVEN)}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.powWithPrecision(3, 0) = 15.625
+</code></pre>
+<h3 id="func-rescaleint32-roundingmode"><a class="header" href="#func-rescaleint32-roundingmode">func reScale(Int32, RoundingMode)</a></h3>
+<pre><code class="language-cangjie">public func reScale(newScale: Int32, roundingMode!: RoundingMode = HALF_EVEN): Decimal
+</code></pre>
+<p>功能：调整 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象标度值，允许指定舍入规则，返回标度调整后新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。</p>
+<p>参数：</p>
+<ul>
+<li>newScale: <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 新的标度值。</li>
+<li>roundingMode!: <a href="../../math/math_package_api/math_package_enums.html#enum-roundingmode">RoundingMode</a> - 舍入规则。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 新的标度值的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(1.234568)
+    println(&quot;A.reScale(3) = ${A.reScale(3)}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.reScale(3) = 1.235
+</code></pre>
+<h3 id="func-removetrailingzeros"><a class="header" href="#func-removetrailingzeros">func removeTrailingZeros()</a></h3>
+<pre><code class="language-cangjie">public func removeTrailingZeros(): Decimal
+</code></pre>
+<p>功能：对当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象移除尾部零，不改变对象数值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 新的无尾部零的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(1.00)
+    println(&quot;A.removeTrailingZeros() = ${A.removeTrailingZeros()}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.removeTrailingZeros() = 1
+</code></pre>
+<h3 id="func-roundwithprecisionint64-roundingmode"><a class="header" href="#func-roundwithprecisionint64-roundingmode">func roundWithPrecision(Int64, RoundingMode)</a></h3>
+<pre><code class="language-cangjie">public func roundWithPrecision(precision: Int64, roundingMode!: RoundingMode = HALF_EVEN): Decimal
+</code></pre>
+<p>功能：按照指定舍入精度和舍入规则对当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象进行舍入操作。</p>
+<p>参数：</p>
+<ul>
+<li>precision: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 精度值。</li>
+<li>roundingMode!: <a href="../../math/math_package_api/math_package_enums.html#enum-roundingmode">RoundingMode</a> - 舍入规则。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 舍入操作生成的新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当舍入操作结果标度值溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(1.0)
+    println(&quot;A.roundWithPrecision(1.0) = ${A.roundWithPrecision(0, roundingMode: HALF_EVEN)}&quot;)
+    let B = Decimal(0.1f16).roundWithPrecision(5, roundingMode: UP)
+    println(&quot;B = ${B}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.roundWithPrecision(1.0) = 1
+B = 0.099976
+</code></pre>
+<h3 id="func-scaleunit"><a class="header" href="#func-scaleunit">func scaleUnit()</a></h3>
+<pre><code class="language-cangjie">public func scaleUnit(): Decimal
+</code></pre>
+<p>功能：对当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象返回标度单位，即数值为 1 ，标度值与当前对象相等的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 标度单位 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(100)
+    println(&quot;A.scaleUnit() = ${A.scaleUnit()}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.scaleUnit() = 1
+</code></pre>
+<h3 id="func-shiftpointint32"><a class="header" href="#func-shiftpointint32">func shiftPoint(Int32)</a></h3>
+<pre><code class="language-cangjie">public func shiftPoint(n: Int32): Decimal
+</code></pre>
+<p>功能：移动当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象小数点 <code>abs(n)</code> 位返回结果对象，当 n 为正数时，左移小数点，n 为负数时，右移小数点，n 为零时，返回当前对象。</p>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 指定小数点移动位数及方向。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 对当前对象小数点移动指定位数后生成新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(25)
+    println(&quot;A.shiftPoint(1) = ${A.shiftPoint(1)}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.shiftPoint(-1) = 2.5
+</code></pre>
+<h3 id="func-sqrtwithprecisionint64-roundingmode"><a class="header" href="#func-sqrtwithprecisionint64-roundingmode">func sqrtWithPrecision(Int64, RoundingMode)</a></h3>
+<pre><code class="language-cangjie">public func sqrtWithPrecision(precision: Int64, roundingMode!: RoundingMode = HALF_EVEN): Decimal
+</code></pre>
+<p>功能：开方运算，支持自定义运算精度和结果舍入方式，获取当前对象开方结果，如果运算结果超过 <code>presision</code> 指定的精度，则根据指定的精度对开方结果进行舍入。</p>
+<p>参数：</p>
+<ul>
+<li>precision: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 精度值。</li>
+<li>roundingMode!: <a href="../../math/math_package_api/math_package_enums.html#enum-roundingmode">RoundingMode</a> - 舍入规则。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 返回入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 的算术平方根，根据输入精度和舍入方式进行取整。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 如果被计算平方根的对象为负数，则抛此异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当计算平方根操作结果标度值溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.*
+
+main() {
+    let n: Decimal = Decimal(&quot;2&quot;)
+    let s = n.sqrtWithPrecision(2)
+    println(s)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">1.4
+</code></pre>
+<h3 id="func-tobigint"><a class="header" href="#func-tobigint">func toBigInt()</a></h3>
+<pre><code class="language-cangjie">public func toBigInt(): BigInt
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 类型。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> - 转换后的 <a href="math_numeric_package_structs.html#struct-bigint">BigInt</a> 值。</li>
+</ul>
+<h3 id="func-toengstring"><a class="header" href="#func-toengstring">func toEngString()</a></h3>
+<pre><code class="language-cangjie">public func toEngString(): String
+</code></pre>
+<p>功能：以工程计数法的形式打印输出 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，指数为 3 的倍数, 当值小于 0 时以 “-” 开头后跟十进制数字，大于等于 0 时，直接打印输出数字，不额外添加 “+”。指数小于 0 时同样遵循以上规则。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 工程计数法形式的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 字符串。</li>
+</ul>
+<h3 id="func-toscistring"><a class="header" href="#func-toscistring">func toSciString()</a></h3>
+<pre><code class="language-cangjie">public func toSciString(): String
+</code></pre>
+<p>功能：以科学计数法的形式打印输出 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，当值小于 0 时以 “-” 开头后跟十进制数字，大于等于 0 时，直接打印输出数字，不额外添加 “+”。指数小于 0 时同样遵循以上规则。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 科学计数法形式的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 字符串。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(6.25)
+    println(&quot;A.toFloat16() = ${A.toFloat16()}&quot;)
+    println(&quot;A.toFloat32() = ${A.toFloat32()}&quot;)
+    println(&quot;A.toFloat64() = ${A.toFloat64()}&quot;)
+    println(&quot;A.toBigInt() = ${A.toBigInt()}&quot;)
+    println(&quot;A.toEngString() = ${A.toEngString()}&quot;)
+    println(&quot;A.toSciString() = ${A.toSciString()}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.toFloat16() = 6.250000
+A.toFloat32() = 6.250000
+A.toFloat64() = 6.250000
+A.toBigInt() = 6
+A.toEngString() = 6.25E0
+A.toSciString() = 6.25E0
+</code></pre>
+<h3 id="func-tofloat16"><a class="header" href="#func-tofloat16">func toFloat16()</a></h3>
+<pre><code class="language-cangjie">public func toFloat16(): Float16
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#float16">Float16</a> 类型。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#float16">Float16</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#float16">Float16</a> 值，溢出时，当前值为正数，返回 <code>inf</code>，当前值为负数，返回 <code>-inf</code>。</li>
+</ul>
+<h3 id="func-tofloat32"><a class="header" href="#func-tofloat32">func toFloat32()</a></h3>
+<pre><code class="language-cangjie">public func toFloat32(): Float32
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a> 类型。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#float32">Float32</a> 值，溢出时，当前值为正数，返回 <code>inf</code>，当前值为负数，返回 <code>-inf</code>。</li>
+</ul>
+<h3 id="func-tofloat64"><a class="header" href="#func-tofloat64">func toFloat64()</a></h3>
+<pre><code class="language-cangjie">public func toFloat64(): Float64
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 类型。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#float64">Float64</a> 值，溢出时，当前值为正数，返回 <code>inf</code>，当前值为负数，返回 <code>-inf</code>。</li>
+</ul>
+<h3 id="func-toint16overflowstrategy-1"><a class="header" href="#func-toint16overflowstrategy-1">func toInt16(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toInt16(overflowHandling!: OverflowStrategy = throwing): Int16
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#int16">Int16</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<h3 id="func-toint32overflowstrategy-1"><a class="header" href="#func-toint32overflowstrategy-1">func toInt32(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toInt32(overflowHandling!: OverflowStrategy = throwing): Int32
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<h3 id="func-toint64overflowstrategy-1"><a class="header" href="#func-toint64overflowstrategy-1">func toInt64(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toInt64(overflowHandling!: OverflowStrategy = throwing): Int64
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<h3 id="func-toint8overflowstrategy-1"><a class="header" href="#func-toint8overflowstrategy-1">func toInt8(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toInt8(overflowHandling!: OverflowStrategy = throwing): Int8
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#int8">Int8</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<h3 id="func-tointnativeoverflowstrategy-1"><a class="header" href="#func-tointnativeoverflowstrategy-1">func toIntNative(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toIntNative(overflowHandling!: OverflowStrategy = throwing): IntNative
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#intnative">IntNative</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#intnative">IntNative</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#intnative">IntNative</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(6.25)
+    println(&quot;A.toInt8() = ${A.toInt8()}&quot;)
+    println(&quot;A.toInt16() = ${A.toInt16()}&quot;)
+    println(&quot;A.toInt32() = ${A.toInt32()}&quot;)
+    println(&quot;A.toInt64() = ${A.toInt64()}&quot;)
+    println(&quot;A.toIntNative() = ${A.toIntNative()}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.toInt8() = 6
+A.toInt16() = 6
+A.toInt32() = 6
+A.toInt64() = 6
+A.toIntNative() = 6
+</code></pre>
+<h3 id="func-tostring-1"><a class="header" href="#func-tostring-1">func toString()</a></h3>
+<pre><code class="language-cangjie">public func toString(): String
+</code></pre>
+<p>功能：以不带指数形式打印输出 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，小于 0 时以 “-” 开头后跟十进制数字，大于等于 0 时，直接打印输出数字，不额外添加 “+”。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_structs.html#struct-string">String</a> - 不带指数形式的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 字符串。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(-5)
+    let B = Decimal(3 ** 5)
+
+    println(&quot;A.hashCode() = ${A.hashCode()}&quot;)
+    println(&quot;B.toString() = ${B.toString()}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.hashCode() = 155
+B.toString() = 243
+</code></pre>
+<h3 id="func-touint16overflowstrategy-1"><a class="header" href="#func-touint16overflowstrategy-1">func toUInt16(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUInt16(overflowHandling!: OverflowStrategy = throwing): UInt16
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uint16">UInt16</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uint16">UInt16</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint16">UInt16</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<h3 id="func-touint32overflowstrategy-1"><a class="header" href="#func-touint32overflowstrategy-1">func toUInt32(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUInt32(overflowHandling!: OverflowStrategy = throwing): UInt32
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uint32">UInt32</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uint32">UInt32</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint32">UInt32</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<h3 id="func-touint64overflowstrategy-1"><a class="header" href="#func-touint64overflowstrategy-1">func toUInt64(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUInt64(overflowHandling!: OverflowStrategy = throwing): UInt64
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint64">UInt64</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<h3 id="func-touint8overflowstrategy-1"><a class="header" href="#func-touint8overflowstrategy-1">func toUInt8(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUInt8(overflowHandling!: OverflowStrategy = throwing): UInt8
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uint8">UInt8</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHanding!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uint8">UInt8</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uint8">UInt8</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<h3 id="func-touintnativeoverflowstrategy-1"><a class="header" href="#func-touintnativeoverflowstrategy-1">func toUIntNative(OverflowStrategy)</a></h3>
+<pre><code class="language-cangjie">public func toUIntNative(overflowHandling!: OverflowStrategy = throwing): UIntNative
+</code></pre>
+<p>功能：将当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象转化为 <a href="../../core/core_package_api/core_package_intrinsics.html#uintnative">UIntNative</a> 类型，支持自定义溢出策略。</p>
+<p>入参：</p>
+<ul>
+<li>overflowHandling!: <a href="math_numeric_package_enums.html#enum-overflowstrategy">OverflowStrategy</a> - 转换溢出策略。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#uintnative">UIntNative</a> - 转换后的 <a href="../../core/core_package_api/core_package_intrinsics.html#uintnative">UIntNative</a> 值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当不指定溢出策略或溢出策略为 <code>throwing</code> 转换溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(6.25)
+    println(&quot;A.toUInt8() = ${A.toUInt8()}&quot;)
+    println(&quot;A.toUInt16() = ${A.toUInt16()}&quot;)
+    println(&quot;A.toUInt32() = ${A.toUInt32()}&quot;)
+    println(&quot;A.toUInt64() = ${A.toUInt64()}&quot;)
+    println(&quot;A.toUIntNative() = ${A.toUIntNative()}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A.toUInt8() = 6
+A.toUInt16() = 6
+A.toUInt32() = 6
+A.toUInt64() = 6
+A.toUIntNative() = 6
+</code></pre>
+<h3 id="operator-func-decimal"><a class="header" href="#operator-func-decimal">operator func !=(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func !=(d: Decimal): Bool
+</code></pre>
+<p>功能：不等比较运算，不等运算符重载，判断入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象与当前对象是否不相等，返回比较结果值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 待比较对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 返回不等比较运算结果。当前对象不等于入参时，返回 true，否则返回 false。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(-5)
+    let B = Decimal(3)
+
+    println(&quot; -A = ${-A}&quot;)
+    println(&quot; A &lt;= B = ${ A &lt;= B}&quot;)
+    println(&quot; A != B = ${ A != B}&quot;)
+}
+</code></pre>
+<p>运行结果：</p>
+<pre><code class="language-cangjie">-A = 5
+A &lt;= B = true
+A != B = true
+</code></pre>
+<h3 id="operator-func-decimal-1"><a class="header" href="#operator-func-decimal-1">operator func *(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func *(d: Decimal): Decimal
+</code></pre>
+<p>功能：乘法运算，乘法运算符重载，乘以入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，返回结果值。保留乘法运算结果实际精度值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 乘数对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 生成一个新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，用于存储乘法运算结果值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当两个乘数标度值相加溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(2)
+    let B = Decimal(3)
+    let C = A * B
+    println(&quot;C = ${C}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">C = 6
+</code></pre>
+<h3 id="operator-func-int64-2"><a class="header" href="#operator-func-int64-2">operator func **(Int64)</a></h3>
+<pre><code class="language-cangjie">public operator func **(n: Int64): Decimal
+</code></pre>
+<p>功能：乘方运算，乘方运算符重载，获取当前对象为底数，入参 <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> 为指数的乘方运算结果，其中指数为入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象的整数部分。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>指数为负值且结果为无限小数场景时，默认采用 IEEE 754-2019 decimal128 对结果进行舍入。</p>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>n: <a href="../../core/core_package_api/core_package_intrinsics.html#int64">Int64</a> - 乘方运算的指数值。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 生成一个新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，用于存储乘方运算结果值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当乘方运算结果标度值溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(2.5)
+    println(&quot;A ** 3 = ${A ** 3}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">A ** 3 = 15.625
+</code></pre>
+<h3 id="operator-func-decimal-2"><a class="header" href="#operator-func-decimal-2">operator func +(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func +(d: Decimal): Decimal
+</code></pre>
+<p>功能：加法运算，加法运算符重载，加上入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，返回结果值。结果保留实际精度值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 加数对象。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当两个加数标度值相减溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(2)
+    let B = Decimal(3)
+    let C = A + B
+    println(&quot;C = ${C}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">C = 5
+</code></pre>
+<h3 id="operator-func---1"><a class="header" href="#operator-func---1">operator func -()</a></h3>
+<pre><code class="language-cangjie">public operator func -(): Decimal
+</code></pre>
+<p>功能：取反运算，一元负数运算符重载，对当前 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象取反，返回结果值。保留取反运算结果实际精度值。</p>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 生成一个新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，用于存储取反结果值。</li>
+</ul>
+<h3 id="operator-func--decimal"><a class="header" href="#operator-func--decimal">operator func -(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func -(d: Decimal): Decimal
+</code></pre>
+<p>功能：减法运算，减法运算符重载，减去入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，返回结果值。保留减法运算结果实际精度值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 减数对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 生成一个新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，用于存储减法运算结果值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当被减数与减数标度值相减溢出时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(2)
+    let B = Decimal(3)
+    let C = A - B
+    println(&quot;C = ${C}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">C = -1
+</code></pre>
+<h3 id="operator-func-decimal-3"><a class="header" href="#operator-func-decimal-3">operator func &lt;(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;(d: Decimal): Bool
+</code></pre>
+<p>功能：小于比较运算，小于运算符重载，判断入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象是否小于当前对象，返回比较结果值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 待比较对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 返回小于比较运算结果。当前对象小于入参时，返回 true，否则返回 false。</li>
+</ul>
+<h3 id="operator-func-decimal-4"><a class="header" href="#operator-func-decimal-4">operator func &lt;=(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func &lt;=(d: Decimal): Bool
+</code></pre>
+<p>功能：小于等于比较运算，小于等于运算符重载，判断入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象是否小于等于当前对象，返回比较结果值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 待比较对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 返回小于等于比较运算结果。当前对象小于等于入参时，返回 true，否则返回 false</li>
+</ul>
+<h3 id="operator-func-decimal-5"><a class="header" href="#operator-func-decimal-5">operator func ==(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func ==(d: Decimal): Bool
+</code></pre>
+<p>功能：等于比较运算，等于运算符重载，判断入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象与当前对象是否相等，返回比较结果值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 待比较对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 返回等于比较运算结果。当前对象等于入参时，返回 true，否则返回 false。</li>
+</ul>
+<h3 id="operator-func-decimal-6"><a class="header" href="#operator-func-decimal-6">operator func &gt;(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;(d: Decimal): Bool
+</code></pre>
+<p>功能：大于比较运算，大于运算符重载，判断入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象是否大于当前对象，返回比较结果值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 待比较对象</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 返回大于比较运算结果。当前对象大于入参时，返回 true，否则返回 false</li>
+</ul>
+<h3 id="operator-func-decimal-7"><a class="header" href="#operator-func-decimal-7">operator func &gt;=(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func &gt;=(d: Decimal): Bool
+</code></pre>
+<p>功能：大于等于比较运算，大于等于运算符重载，判断入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象是否大于等于当前对象，返回比较结果值。</p>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 待比较对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_intrinsics.html#bool">Bool</a> - 返回大于等于比较运算结果。当前对象大于等于入参时，返回 true，否则返回 false。</li>
+</ul>
+<h3 id="operator-func-decimal-8"><a class="header" href="#operator-func-decimal-8">operator func /(Decimal)</a></h3>
+<pre><code class="language-cangjie">public operator func /(d: Decimal): Decimal
+</code></pre>
+<p>功能：除法运算，除法运算符重载，除以入参 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，返回结果值。</p>
+<blockquote>
+<p><strong>注意：</strong></p>
+<p>结果为无限小数场景时，默认采用 IEEE 754-2019 decimal128 对结果进行舍入。</p>
+</blockquote>
+<p>参数：</p>
+<ul>
+<li>d: <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 除数对象。</li>
+</ul>
+<p>返回值：</p>
+<ul>
+<li><a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> - 生成一个新的 <a href="math_numeric_package_structs.html#struct-decimal">Decimal</a> 对象，用于存储除法运算结果值。</li>
+</ul>
+<p>异常：</p>
+<ul>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-illegalargumentexception">IllegalArgumentException</a> - 当除数为 0 时，抛出此异常。</li>
+<li><a href="../../core/core_package_api/core_package_exceptions.html#class-overflowexception">OverflowException</a> - 当除法结果值范围超过 [-(maxValue(precision) * (10 <sup><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a>.MAX</sup>)), maxValue(precision) * (10 <sup><a href="../../core/core_package_api/core_package_intrinsics.html#int32">Int32</a>.MAX</sup>)] 时，抛出此异常。</li>
+</ul>
+<p>示例：</p>
+<pre><code class="language-cangjie">import std.math.numeric.Decimal
+
+main(): Unit {
+    let A = Decimal(2)
+    let B = Decimal(3)
+    let C = A / B
+    println(&quot;C = ${C}&quot;)
+}
+</code></pre>
+<p>运行结果:</p>
+<pre><code class="language-text">C = 0.6666666666666666666666666666666667
+</code></pre>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../../std/math_numeric/math_numeric_package_api/math_numeric_package_enums.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../../std/math_numeric/math_numeric_samples/bigInt_basic_arithmetic.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../../elasticlunr.min.js"></script>
+        <script src="../../../mark.min.js"></script>
+        <script src="../../../searcher.js"></script>
+
+        <script src="../../../clipboard.min.js"></script>
+        <script src="../../../highlight.js"></script>
+        <script src="../../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../../highlight.js"></script>
+        <script src="../../../assets/elasticlunr.js"></script>
+        <script src="../../../assets/fzf.umd.js"></script>
+        <script src="../../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

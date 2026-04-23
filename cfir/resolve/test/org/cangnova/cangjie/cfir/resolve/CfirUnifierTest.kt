@@ -63,8 +63,8 @@ class CfirUnifierTest {
         val placeholderT = ConeTypeParameterType(variable.lookupTag, isPlaceholder = true)
 
         // (Int32) -> T  <:  (T) -> Int64
-        val argFn = ConeFuncType(listOf(ConePrimitiveType.INT32), placeholderT)
-        val paramFn = ConeFuncType(listOf(placeholderT), ConePrimitiveType.INT64)
+        val argFn = ConeFunctionType(listOf(ConePrimitiveType.INT32), placeholderT)
+        val paramFn = ConeFunctionType(listOf(placeholderT), ConePrimitiveType.INT64)
 
         unifier.unify(argFn, paramFn, CfirConstraintPosition.ArgumentPosition(0))
 

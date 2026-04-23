@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 main(): Int64 {
     let arr1 = Array<Int64>(3) {i => i}
     if (arr1[2] != 2) {

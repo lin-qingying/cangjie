@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %output | compare %f
-// ASSERT: scan In f of extend TimeUnit!
-// ASSERT: scan Some(1)
-
 enum TimeUnit<T1, T2> {
     | Year(T1)
     | Month(T1, T2)

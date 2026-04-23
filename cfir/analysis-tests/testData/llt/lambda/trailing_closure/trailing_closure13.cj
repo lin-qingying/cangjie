@@ -4,28 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 main(): Int64 {
     var x = {t: Int64 => 1}
-    x {}
-    x {}
+    x <!TYPE_MISMATCH!>{}<!>
+    x <!TYPE_MISMATCH!>{}<!>
 }
-
-/* SCAN
-error: mismatched types
-  ==> trailing_closure13.cj:11:7:
-   | 
-11 |     x {}
-   |       ^^ expected 'Int64', found '() -> Unit'
-   | 
-
-error: mismatched types
-  ==> trailing_closure13.cj:12:7:
-   | 
-12 |     x {}
-   |       ^^ expected 'Int64', found '() -> Unit'
-   | 
-
-2 errors generated, 2 errors printed.
-*/

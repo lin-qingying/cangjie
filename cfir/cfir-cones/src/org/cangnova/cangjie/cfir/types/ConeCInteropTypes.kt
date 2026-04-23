@@ -9,8 +9,6 @@ class ConePointerType(
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
 
-    override val typeArguments: List<ConeTypeProjection> get() = listOf(ConeTypeProjection(pointeeType))
-
     override fun equals(other: Any?): Boolean =
         other is ConePointerType && pointeeType == other.pointeeType
 

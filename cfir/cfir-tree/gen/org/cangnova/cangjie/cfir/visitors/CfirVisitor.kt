@@ -5,10 +5,7 @@
 
 package org.cangnova.cangjie.cfir.visitors
 
-import org.cangnova.cangjie.cfir.CfirAnnotationContainer
-import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.CfirTargetElement
+import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.expressions.*
@@ -364,6 +361,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitUnresolvedTypeRef(unresolvedTypeRef: CfirUnresolvedTypeRef, data: D): R =
         visitElement(unresolvedTypeRef, data)
+
+    open fun visitQualifierPart(qualifierPart: CfirQualifierPart, data: D): R =
+        visitElement(qualifierPart, data)
 
     open fun visitUserTypeRef(userTypeRef: CfirUserTypeRef, data: D): R =
         visitElement(userTypeRef, data)

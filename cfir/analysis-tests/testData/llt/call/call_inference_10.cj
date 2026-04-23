@@ -4,15 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %n.%suffix
-
 class A<B> {
-    func foo<C>(): C where C <: B {
+    func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>C<!>>(): C where C <: B {
         throw Exception("no impl")
     }
 }
 
-func bar<B, C>(a: A<B>): C where C <: B {
+func bar<B, <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>C<!>>(a: A<B>): C where C <: B {
     throw Exception("no impl")
 }
 
@@ -30,21 +28,3 @@ func use() {
 }
 
 main() {}
-
-/* SCAN
-error: the upper bound 'Generics-B' of generic parameter 'Generics-C' must be class or interface
-  ==> call_inference_10.cj:10:14:
-   | 
-10 |     func foo<C>(): C where C <: B {
-   |              ^ 
-   | 
-
-error: the upper bound 'Generics-B' of generic parameter 'Generics-C' must be class or interface
-  ==> call_inference_10.cj:15:13:
-   | 
-15 | func bar<B, C>(a: A<B>): C where C <: B {
-   |             ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

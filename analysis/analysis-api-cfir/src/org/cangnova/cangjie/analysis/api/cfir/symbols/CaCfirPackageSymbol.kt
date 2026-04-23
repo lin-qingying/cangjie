@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbolCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPackageSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
@@ -20,11 +21,11 @@ import org.cangnova.cangjie.name.Name
  *
  * 对齐 Kotlin 的 `KaFirPackageSymbol` 落位，把 package 叶子从巨型模型文件中拆出。
  */
-internal class CaCfirPackageSymbolImpl(
+internal class CaCfirPackageSymbol(
     override val fqName: FqName,
-    containingModule: CaModule,
-    token: CaLifetimeToken,
-) : CaCfirSymbolBase(containingModule, token), CaPackageSymbol, CaNamedSymbol {
+    override val containingModule: CaModule,
+    override val token: CaLifetimeToken,
+) : CaPackageSymbol, CaNamedSymbol, CaLifetimeOwner {
     override val psi: PsiElement?
         get() = null
 

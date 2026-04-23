@@ -4,8 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%compiler %cmp_opt %f  2>&1 | compare %f
-// ASSERT: regex-not warning.*are not used
+// EXEC: %compiler %cmp_opt %f -o %n.%suffix
+// EXEC: %run %run_opt %n.%suffix
 
 type Parse<T, Result> = (Array<T>) -> ?(Result*Array<T>)
 

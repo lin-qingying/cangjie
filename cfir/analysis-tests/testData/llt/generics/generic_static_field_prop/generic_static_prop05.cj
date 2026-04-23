@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 class Class {
     static var b: Int64 = 1
 }
@@ -15,60 +13,17 @@ struct A<T> {}
 extend<T> A<T> where T <: Class {
     static prop c: Int64 {
         get() {
-            T.b // error
+            <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>.b // error
         }
     }
     mut static prop d: Int64 {
         get() {
-            T.b // error
+            <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>.b // error
         }
         set(_) {
-            T.b // error
+            <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>.b // error
         }
     }
 }
 
 main() {}
-
-/* SCAN
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> generic_static_prop05.cj:18:13:
-   | 
-18 |             T.b // error
-   |             ^ 
-   | 
-note: generic argument declaration here
-  ==> generic_static_prop05.cj:15:8:
-   | 
-15 | extend<T> A<T> where T <: Class {
-   |        ^ 
-   | 
-
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> generic_static_prop05.cj:23:13:
-   | 
-23 |             T.b // error
-   |             ^ 
-   | 
-note: generic argument declaration here
-  ==> generic_static_prop05.cj:15:8:
-   | 
-15 | extend<T> A<T> where T <: Class {
-   |        ^ 
-   | 
-
-error: static member cannot depend on generic parameter 'Generics-T'
-  ==> generic_static_prop05.cj:26:13:
-   | 
-26 |             T.b // error
-   |             ^ 
-   | 
-note: generic argument declaration here
-  ==> generic_static_prop05.cj:15:8:
-   | 
-15 | extend<T> A<T> where T <: Class {
-   |        ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

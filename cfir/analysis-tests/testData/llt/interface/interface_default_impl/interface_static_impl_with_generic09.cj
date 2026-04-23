@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-PIPE: %run %run_opt %output %run_args 
-
 interface I1<T1> {
     static func test(a: T1): T1 {
         return a

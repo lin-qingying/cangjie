@@ -1,0 +1,1096 @@
+<!DOCTYPE HTML>
+<html lang="zh-cn" class="ayu" dir="ltr">
+    <head>
+            <script type="text/x-mathjax-config">
+                MathJax.Hub.Config({
+                    showProcessingMessages: false,
+                    messageStyle: "none",
+                    extensions: ['tex2jax.js'],
+                    jax: ['input/TeX', 'output/HTML-CSS'],
+                    tex2jax: {
+                        inlineMath: [ ['$','$'], ["\\(","\\)"] ],
+                        displayMath: [ ['$$','$$'], ["\\[","\\]"] ],
+                        processEscapes: true
+                    },
+                    "HTML-CSS": { availableFonts: ["STIX", "TeX"] }
+                });
+            </script>
+            
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>框架接口 - API 参考</title>
+
+
+        <!-- Custom HTML head -->
+        
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="../../favicon.svg">
+        <link rel="shortcut icon" href="../../favicon.png">
+        <link rel="stylesheet" href="../../css/variables.css">
+        <link rel="stylesheet" href="../../css/general.css">
+        <link rel="stylesheet" href="../../css/chrome.css">
+        <link rel="stylesheet" href="../../css/print.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="../../FontAwesome/css/font-awesome.css">
+        <link rel="stylesheet" href="../../fonts/fonts.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" href="../../highlight.css">
+        <link rel="stylesheet" href="../../tomorrow-night.css">
+        <link rel="stylesheet" href="../../ayu-highlight.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="../../assets/style.css">
+        <link rel="stylesheet" href="../../assets/theme.css">
+
+        <!-- MathJax -->
+        <script async src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    </head>
+    <body class="sidebar-visible no-js">
+    <div id="body-container">
+        <!-- Provide site root to javascript -->
+        <script>
+            var path_to_root = "../../";
+            var default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? "ayu" : "ayu";
+        </script>
+
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                var theme = localStorage.getItem('mdbook-theme');
+                var sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            var theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            var html = document.querySelector('html');
+            html.classList.remove('ayu')
+            html.classList.add(theme);
+            var body = document.querySelector('body');
+            body.classList.remove('no-js')
+            body.classList.add('js');
+        </script>
+
+        <input type="checkbox" id="sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            var body = document.querySelector('body');
+            var sidebar = null;
+            var sidebar_toggle = document.getElementById("sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+            }
+            sidebar_toggle.checked = sidebar === 'visible';
+            body.classList.remove('sidebar-visible');
+            body.classList.add("sidebar-" + sidebar);
+        </script>
+
+        <nav id="sidebar" class="sidebar" aria-label="Table of contents">
+            <div class="sidebar-scrollbox">
+                <ol class="chapter"><li class="chapter-item "><a href="../../cover0.html"><strong aria-hidden="true">1.</strong> API参考（封面）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.</strong> 仓颉API</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">2.1.</strong> Ability框架</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability.html"><strong aria-hidden="true">2.1.1.</strong> Ability</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityStage.html"><strong aria-hidden="true">2.1.2.</strong> AbilityStage</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-context.html"><strong aria-hidden="true">2.1.3.</strong> AbilityContext</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-want.html"><strong aria-hidden="true">2.1.4.</strong> Want</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-wantConstant.html"><strong aria-hidden="true">2.1.5.</strong> wantConstant</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-errorManager.html"><strong aria-hidden="true">2.1.6.</strong> errorManager</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry.html"><strong aria-hidden="true">2.1.7.</strong> AbilityDelegatorRegistry</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-abilityDelegator.html"><strong aria-hidden="true">2.1.8.</strong> AbilityDelegator</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-abilityDelegatorRegistry-shellCmdResult.html"><strong aria-hidden="true">2.1.9.</strong> shellCmdResult</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/support-definitions.html"><strong aria-hidden="true">2.2.1.</strong> 系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-common-event-manager.html"><strong aria-hidden="true">2.2.2.</strong> ohos.common_event_manager（公共事件模块）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-emitter.html"><strong aria-hidden="true">2.2.3.</strong> ohos.emitter（事件处理调度）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-manager.html"><strong aria-hidden="true">2.2.4.</strong> ohos.notification_manager（通知管理模块）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.5.</strong> application</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-application-eventHub.html"><strong aria-hidden="true">2.2.5.1.</strong> EventHub</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.6.</strong> commonEvent</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventData.html"><strong aria-hidden="true">2.2.6.1.</strong> CommonEventData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventPublishData.html"><strong aria-hidden="true">2.2.6.2.</strong> CommonEventPublishData</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscriber.html"><strong aria-hidden="true">2.2.6.3.</strong> CommonEventSubscriber</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-inner-commonEvent-commonEventSubscribeInfo.html"><strong aria-hidden="true">2.2.6.4.</strong> CommonEventSubscribeInfo</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.7.</strong> notification</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationRequest.html"><strong aria-hidden="true">2.2.7.1.</strong> NotificationRequest</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-notification-notificationContent.html"><strong aria-hidden="true">2.2.7.2.</strong> NotificationContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.2.8.</strong> 公共事件定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ability.html"><strong aria-hidden="true">2.2.8.1.</strong> 元能力子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-account.html"><strong aria-hidden="true">2.2.8.2.</strong> 账号子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-ans.html"><strong aria-hidden="true">2.2.8.3.</strong> 通知服务公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-bundleManager.html"><strong aria-hidden="true">2.2.8.4.</strong> 包管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-filemanagement.html"><strong aria-hidden="true">2.2.8.5.</strong> 文件管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-locale.html"><strong aria-hidden="true">2.2.8.6.</strong> 语言子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-mms.html"><strong aria-hidden="true">2.2.8.7.</strong> 短信应用公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-netmanager.html"><strong aria-hidden="true">2.2.8.8.</strong> 网络管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-nfc.html"><strong aria-hidden="true">2.2.8.9.</strong> NFC子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-powermgr.html"><strong aria-hidden="true">2.2.8.10.</strong> 电源管理子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-resourceschedule.html"><strong aria-hidden="true">2.2.8.11.</strong> 资源调度子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-screenlock.html"><strong aria-hidden="true">2.2.8.12.</strong> 主题框架子系统-锁屏管理公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-telephony.html"><strong aria-hidden="true">2.2.8.13.</strong> 电话服务子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-time.html"><strong aria-hidden="true">2.2.8.14.</strong> 时间时区子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-usb.html"><strong aria-hidden="true">2.2.8.15.</strong> USB子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-wifi.html"><strong aria-hidden="true">2.2.8.16.</strong> Wifi子系统公共事件定义</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/common_event/cj-commonEvent-window.html"><strong aria-hidden="true">2.2.8.17.</strong> 窗口管理子系统公共事件定义</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager.html"><strong aria-hidden="true">2.3.1.</strong> ohos.bundle_manager（bundleManager管理）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.3.2.</strong> bundle_manager</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-abilityInfo.html"><strong aria-hidden="true">2.3.2.1.</strong> AbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-applicationInfo.html"><strong aria-hidden="true">2.3.2.2.</strong> ApplicationInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-bundleInfo.html"><strong aria-hidden="true">2.3.2.3.</strong> BundleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-extensionAbilityInfo.html"><strong aria-hidden="true">2.3.2.4.</strong> ExtensionAbilityInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-hapModuleInfo.html"><strong aria-hidden="true">2.3.2.5.</strong> HapModuleInfo</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-bundleManager-metadata.html"><strong aria-hidden="true">2.3.2.6.</strong> Metadata</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-animator.html"><strong aria-hidden="true">2.4.1.</strong> ohos.animator（动画）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-font.html"><strong aria-hidden="true">2.4.2.</strong> ohos.font（自定义字体）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-measure.html"><strong aria-hidden="true">2.4.3.</strong> ohos.measure（文本计算）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-prompt.html"><strong aria-hidden="true">2.4.4.</strong> ohos.prompt_action（弹窗）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-router.html"><strong aria-hidden="true">2.4.5.</strong> ohos.router（页面路由）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-display.html"><strong aria-hidden="true">2.5.1.</strong> ohos.display（屏幕属性）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-colorManager.html"><strong aria-hidden="true">2.5.2.</strong> ohos.colorManager（色彩管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-window.html"><strong aria-hidden="true">2.5.3.</strong> ohos.window（窗口）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-image.html"><strong aria-hidden="true">2.6.1.</strong> ohos.multimedia.image（图片处理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-i18n.html"><strong aria-hidden="true">2.7.1.</strong> ohos.i18n（国际化-I18n）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resource-manager.html"><strong aria-hidden="true">2.7.2.</strong> ohos.resource_manager（资源管理）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-backgroundTaskManager.html"><strong aria-hidden="true">2.8.1.</strong> ohos.resourceschedule.backgroundTaskManager（后台任务管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-resourceschedule-workScheduler.html"><strong aria-hidden="true">2.8.2.</strong> ohos.resourceschedule.workScheduler（延迟任务调度）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-ability-access-ctrl.html"><strong aria-hidden="true">2.9.1.</strong> ohos.abilityAccessCtrl（程序访问控制管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-crypto.html"><strong aria-hidden="true">2.9.2.</strong> ohos.security.crypto（加解密算法库框架）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-huks.html"><strong aria-hidden="true">2.9.3.</strong> ohos.security.huks（通用密钥库系统）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-user-auth.html"><strong aria-hidden="true">2.9.4.</strong> ohos.userIAM.userAuth（用户认证）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-asset.html"><strong aria-hidden="true">2.9.5.</strong> ohos.asset_store（关键资产存储服务）</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.9.6.</strong> 访问控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/security/AccessToken/cj-permissions-for-all.html"><strong aria-hidden="true">2.9.6.1.</strong> 应用权限列表</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-distributedKVStore.html"><strong aria-hidden="true">2.10.1.</strong> ohos.data.distributed（分布式键值数据库）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-preferences.html"><strong aria-hidden="true">2.10.2.</strong> ohos.data.preferences（用户首选项）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-data-relationalStore.html"><strong aria-hidden="true">2.10.3.</strong> ohos.data.relationalStore（关系型数据库）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fileuri.html"><strong aria-hidden="true">2.11.1.</strong> ohos.file.fileuri（文件URI）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-fs.html"><strong aria-hidden="true">2.11.2.</strong> ohos.file.fs（文件管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-file-picker.html"><strong aria-hidden="true">2.11.3.</strong> ohos.file.picker（选择器）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-telephony-data.html"><strong aria-hidden="true">2.12.1.</strong> ohos.telephony.call（拨打电话）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-vibrator.html"><strong aria-hidden="true">2.13.1.</strong> ohos.vibrator（振动）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-connection.html"><strong aria-hidden="true">2.14.1.</strong> ohos.net.connection（网络连接管理）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-net-http.html"><strong aria-hidden="true">2.14.2.</strong> ohos.net.http（数据请求）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-request.html"><strong aria-hidden="true">2.14.3.</strong> ohos.request（上传下载）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hiappevent.html"><strong aria-hidden="true">2.15.1.</strong> ohos.hiAppEvent（应用事件打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracechain.html"><strong aria-hidden="true">2.15.2.</strong> ohos.hiTraceChain（分布式跟踪）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hitracemeter.html"><strong aria-hidden="true">2.15.3.</strong> ohos.hiTraceMeter（性能打点）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-hilog.html"><strong aria-hidden="true">2.15.4.</strong> ohos.hilog (HiLog日志打印)</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-pasteboard.html"><strong aria-hidden="true">2.15.5.</strong> ohos.pasteboard（剪切板）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-date-time.html"><strong aria-hidden="true">2.15.6.</strong> ohos.systemDateTime（系统时间、时区）</a></li><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-webview.html"><strong aria-hidden="true">2.15.7.</strong> ohos.web.webview（Webview）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-device-info.html"><strong aria-hidden="true">2.16.1.</strong> ohos.deviceInfo（设备信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.17.</strong> 系统参数</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-system-parameterEnhance-sys.html"><strong aria-hidden="true">2.17.1.</strong> ohos.systemParameterEnhance（系统参数）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.18.</strong> 其他</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-base.html"><strong aria-hidden="true">2.18.1.</strong> ohos.base（公共回调信息）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.19.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/apis/cj-apis-uitest.html"><strong aria-hidden="true">2.19.1.</strong> ohos.ui_test（UI测试）</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.</strong> 错误码参考</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-universal.html"><strong aria-hidden="true">2.20.1.</strong> 通用错误码</a></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.2.</strong> 包管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-bundle.html"><strong aria-hidden="true">2.20.2.1.</strong> 包管理子系统通用错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.3.</strong> 公共事件与通知</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-CommonEventService.html"><strong aria-hidden="true">2.20.3.1.</strong> 事件错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-notification.html"><strong aria-hidden="true">2.20.3.2.</strong> 通知错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.4.</strong> UI界面</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-animator.html"><strong aria-hidden="true">2.20.4.1.</strong> 动画错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.5.</strong> 图形图像</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-colorspace-manager.html"><strong aria-hidden="true">2.20.5.1.</strong> 色彩管理错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-display.html"><strong aria-hidden="true">2.20.5.2.</strong> 屏幕错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-window.html"><strong aria-hidden="true">2.20.5.3.</strong> 窗口错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.6.</strong> 媒体</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-image.html"><strong aria-hidden="true">2.20.6.1.</strong> Image错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.7.</strong> 资源管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-i18n.html"><strong aria-hidden="true">2.20.7.1.</strong> I18n错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-resource-manager.html"><strong aria-hidden="true">2.20.7.2.</strong> 资源管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.8.</strong> 后台任务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-backgroundTaskMgr.html"><strong aria-hidden="true">2.20.8.1.</strong> backgroundTaskManager错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-workScheduler.html"><strong aria-hidden="true">2.20.8.2.</strong> workScheduler错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.9.</strong> 安全</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-access-token.html"><strong aria-hidden="true">2.20.9.1.</strong> 访问控制错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-huks.html"><strong aria-hidden="true">2.20.9.2.</strong> huks错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-crypto.html"><strong aria-hidden="true">2.20.9.3.</strong> crypto错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-asset.html"><strong aria-hidden="true">2.20.9.4.</strong> 关键资产存储服务错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.10.</strong> 数据管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-data-rdb.html"><strong aria-hidden="true">2.20.10.1.</strong> 关系型数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-distributedKVStore.html"><strong aria-hidden="true">2.20.10.2.</strong> 分布式键值数据库错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-preferences.html"><strong aria-hidden="true">2.20.10.3.</strong> 用户首选项错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.11.</strong> 文件管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-filemanagement.html"><strong aria-hidden="true">2.20.11.1.</strong> 文件管理子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.12.</strong> 电话服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-telephony.html"><strong aria-hidden="true">2.20.12.1.</strong> 电话子系统错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.13.</strong> 传感器服务</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-vibrator.html"><strong aria-hidden="true">2.20.13.1.</strong> vibrator错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.14.</strong> 网络管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-request.html"><strong aria-hidden="true">2.20.14.1.</strong> 上传下载错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-http.html"><strong aria-hidden="true">2.20.14.2.</strong> HTTP错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-net-connection.html"><strong aria-hidden="true">2.20.14.3.</strong> 网络连接管理错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.15.</strong> 系统基础能力</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-hiappevent.html"><strong aria-hidden="true">2.20.15.1.</strong> 应用事件打点错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-pasteboard.html"><strong aria-hidden="true">2.20.15.2.</strong> 剪贴板错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-errorManager.html"><strong aria-hidden="true">2.20.15.3.</strong> 错误观察器错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-time.html"><strong aria-hidden="true">2.20.15.4.</strong> 时间时区错误码</a></li><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-webview.html"><strong aria-hidden="true">2.20.15.5.</strong> Web错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.16.</strong> 设备管理</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-system-parameter.html"><strong aria-hidden="true">2.20.16.1.</strong> 系统参数错误码</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">2.20.17.</strong> 测试</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/errorcodes/cj-errorcode-uitest.html"><strong aria-hidden="true">2.20.17.1.</strong> uitest错误码</a></li></ol></li></ol></li></ol></li><li class="chapter-item expanded "><div><strong aria-hidden="true">3.</strong> 仓颉组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.</strong> 组件通用信息</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.1.1.</strong> 通用事件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-click.html"><strong aria-hidden="true">3.1.1.1.</strong> 点击事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-touch.html"><strong aria-hidden="true">3.1.1.2.</strong> 触摸事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-appear.html"><strong aria-hidden="true">3.1.1.3.</strong> 挂载卸载事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-drag.html"><strong aria-hidden="true">3.1.1.4.</strong> 拖拽事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-key.html"><strong aria-hidden="true">3.1.1.5.</strong> 按键事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-focus.html"><strong aria-hidden="true">3.1.1.6.</strong> 焦点事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-mouse.html"><strong aria-hidden="true">3.1.1.7.</strong> 鼠标事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-component-area-change-event.html"><strong aria-hidden="true">3.1.1.8.</strong> 组件区域变化事件</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-events-keyboardshortcut.html"><strong aria-hidden="true">3.1.1.9.</strong> 组件快捷键事件</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.</strong> 通用属性</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-size.html"><strong aria-hidden="true">3.1.2.1.</strong> 尺寸设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-location.html"><strong aria-hidden="true">3.1.2.2.</strong> 位置设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-layout-constraints.html"><strong aria-hidden="true">3.1.2.3.</strong> 布局约束</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-flex-layout.html"><strong aria-hidden="true">3.1.2.4.</strong> Flex布局</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-border.html"><strong aria-hidden="true">3.1.2.5.</strong> 边框设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-background.html"><strong aria-hidden="true">3.1.2.6.</strong> 背景设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-opacity.html"><strong aria-hidden="true">3.1.2.7.</strong> 透明度设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-visibility.html"><strong aria-hidden="true">3.1.2.8.</strong> 显隐控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-enable.html"><strong aria-hidden="true">3.1.2.9.</strong> 禁用控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-overlay.html"><strong aria-hidden="true">3.1.2.10.</strong> 浮层</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-z-order.html"><strong aria-hidden="true">3.1.2.11.</strong> Z序控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transform.html"><strong aria-hidden="true">3.1.2.12.</strong> 图形变换</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-image-effect.html"><strong aria-hidden="true">3.1.2.13.</strong> 图像效果</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-shap-clip.html"><strong aria-hidden="true">3.1.2.14.</strong> 形状裁剪</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-gradient-color.html"><strong aria-hidden="true">3.1.2.15.</strong> 颜色渐变</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-popup.html"><strong aria-hidden="true">3.1.2.16.</strong> Popup控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-menu.html"><strong aria-hidden="true">3.1.2.17.</strong> 菜单控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-focus.html"><strong aria-hidden="true">3.1.2.18.</strong> 焦点控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-component-id.html"><strong aria-hidden="true">3.1.2.19.</strong> 组件标识</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-color.html"><strong aria-hidden="true">3.1.2.20.</strong> 前景色设置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-foreground-blur-style.html"><strong aria-hidden="true">3.1.2.21.</strong> 组件内容模糊</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-touch-target.html"><strong aria-hidden="true">3.1.2.22.</strong> 触摸热区设置</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.1.2.23.</strong> 模态转场设置</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-bindcontentcover.html"><strong aria-hidden="true">3.1.2.23.1.</strong> 全屏模态转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sheet-transition.html"><strong aria-hidden="true">3.1.2.23.2.</strong> 半模态转场</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-text-style.html"><strong aria-hidden="true">3.1.2.24.</strong> 文本通用</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-expand-safe-area.html"><strong aria-hidden="true">3.1.2.25.</strong> 安全区域</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-renderfit.html"><strong aria-hidden="true">3.1.2.26.</strong> 组件内容填充方式</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.2.</strong> 基础组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-alphabet-indexer.html"><strong aria-hidden="true">3.2.1.</strong> AlphabetIndexer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-blank.html"><strong aria-hidden="true">3.2.2.</strong> Blank</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-button.html"><strong aria-hidden="true">3.2.3.</strong> Button</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkbox.html"><strong aria-hidden="true">3.2.4.</strong> Checkbox</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-checkboxgroup.html"><strong aria-hidden="true">3.2.5.</strong> CheckboxGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-datapanel.html"><strong aria-hidden="true">3.2.6.</strong> DataPanel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-datepicker.html"><strong aria-hidden="true">3.2.7.</strong> Datepicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-divider.html"><strong aria-hidden="true">3.2.8.</strong> Divider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-gauge.html"><strong aria-hidden="true">3.2.9.</strong> Gauge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-image.html"><strong aria-hidden="true">3.2.10.</strong> Image</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-imageSpan.html"><strong aria-hidden="true">3.2.11.</strong> ImageSpan</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-loadingprogress.html"><strong aria-hidden="true">3.2.12.</strong> LoadingProgress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menu.html"><strong aria-hidden="true">3.2.13.</strong> Menu</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitem.html"><strong aria-hidden="true">3.2.14.</strong> MenuItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-menuitemgroup.html"><strong aria-hidden="true">3.2.15.</strong> MenuItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-progress.html"><strong aria-hidden="true">3.2.16.</strong> Progress</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-qrcode.html"><strong aria-hidden="true">3.2.17.</strong> QRCode</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-radio.html"><strong aria-hidden="true">3.2.18.</strong> Radio</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rating.html"><strong aria-hidden="true">3.2.19.</strong> Rating</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richeditor.html"><strong aria-hidden="true">3.2.20.</strong> RichEditor</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-richtext.html"><strong aria-hidden="true">3.2.21.</strong> RichText</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-scrollbar.html"><strong aria-hidden="true">3.2.22.</strong> ScrollBar</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-search.html"><strong aria-hidden="true">3.2.23.</strong> Search</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-select.html"><strong aria-hidden="true">3.2.24.</strong> Select</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-slider.html"><strong aria-hidden="true">3.2.25.</strong> Slider</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-span.html"><strong aria-hidden="true">3.2.26.</strong> Span</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepper.html"><strong aria-hidden="true">3.2.27.</strong> Stepper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-stepperitem.html"><strong aria-hidden="true">3.2.28.</strong> Stepperitem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-text.html"><strong aria-hidden="true">3.2.29.</strong> Text</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textarea.html"><strong aria-hidden="true">3.2.30.</strong> TextArea</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textclock.html"><strong aria-hidden="true">3.2.31.</strong> TextClock</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textinput.html"><strong aria-hidden="true">3.2.32.</strong> TextInput</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-textpicker.html"><strong aria-hidden="true">3.2.33.</strong> TextPicker</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-texttimer.html"><strong aria-hidden="true">3.2.34.</strong> TextTimer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-toggle.html"><strong aria-hidden="true">3.2.35.</strong> Toggle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-web.html"><strong aria-hidden="true">3.2.36.</strong> Web</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.3.</strong> 容器组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-badge.html"><strong aria-hidden="true">3.3.1.</strong> Badge</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-column.html"><strong aria-hidden="true">3.3.2.</strong> Column</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-columnsplit.html"><strong aria-hidden="true">3.3.3.</strong> ColumnSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-flex.html"><strong aria-hidden="true">3.3.4.</strong> Flex</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-col.html"><strong aria-hidden="true">3.3.5.</strong> GridCol</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-row.html"><strong aria-hidden="true">3.3.6.</strong> GridRow</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid.html"><strong aria-hidden="true">3.3.7.</strong> Grid</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-grid-item.html"><strong aria-hidden="true">3.3.8.</strong> GridItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list.html"><strong aria-hidden="true">3.3.9.</strong> List</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-listitem.html"><strong aria-hidden="true">3.3.10.</strong> ListItem</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-list-group.html"><strong aria-hidden="true">3.3.11.</strong> ListItemGroup</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-panel.html"><strong aria-hidden="true">3.3.12.</strong> Panel</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-refresh.html"><strong aria-hidden="true">3.3.13.</strong> Refresh</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-relativecontainer.html"><strong aria-hidden="true">3.3.14.</strong> RelativeContainer</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-row.html"><strong aria-hidden="true">3.3.15.</strong> Row</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-rowsplit.html"><strong aria-hidden="true">3.3.16.</strong> RowSplit</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-scroll.html"><strong aria-hidden="true">3.3.17.</strong> Scroll</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-stack.html"><strong aria-hidden="true">3.3.18.</strong> Stack</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-swiper.html"><strong aria-hidden="true">3.3.19.</strong> Swiper</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabs.html"><strong aria-hidden="true">3.3.20.</strong> Tabs</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-container-tabcontent.html"><strong aria-hidden="true">3.3.21.</strong> TabContent</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.4.</strong> 绘制组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-circle.html"><strong aria-hidden="true">3.4.1.</strong> Circle</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-line.html"><strong aria-hidden="true">3.4.2.</strong> Line</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-rect.html"><strong aria-hidden="true">3.4.3.</strong> Rect</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-shape.html"><strong aria-hidden="true">3.4.4.</strong> Shape</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.5.</strong> 画布组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas.html"><strong aria-hidden="true">3.5.1.</strong> Canvas</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-gradient.html"><strong aria-hidden="true">3.5.2.</strong> CanvasGradient</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-canvas-rendering-context-2d.html"><strong aria-hidden="true">3.5.3.</strong> CanvasRenderingContext2D</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-components-imagebitmap.html"><strong aria-hidden="true">3.5.4.</strong> ImageBitmap</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.6.</strong> 渲染控制</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-ifelse.html"><strong aria-hidden="true">3.6.1.</strong> if/else</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-foreach.html"><strong aria-hidden="true">3.6.2.</strong> ForEach</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-rendering-control-lazyforeach.html"><strong aria-hidden="true">3.6.3.</strong> LazyForEach</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.</strong> 动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-animation.html"><strong aria-hidden="true">3.7.1.</strong> 属性动画</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-methods-animateTo.html"><strong aria-hidden="true">3.7.2.</strong> 显式动画</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.7.3.</strong> 转场动画</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-page-transition.html"><strong aria-hidden="true">3.7.3.1.</strong> 页面间转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-transition.html"><strong aria-hidden="true">3.7.3.2.</strong> 组件内转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-sharedTransition.html"><strong aria-hidden="true">3.7.3.3.</strong> 共享元素转场</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-universal-attributes-geometryTransition.html"><strong aria-hidden="true">3.7.3.4.</strong> 组件内隐式共享元素转场</a></li></ol></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.8.</strong> 全局UI方法</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><div><strong aria-hidden="true">3.8.1.</strong> 弹窗</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-alert-dialog-box.html"><strong aria-hidden="true">3.8.1.1.</strong> 警告弹窗</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-customdialog.html"><strong aria-hidden="true">3.8.1.2.</strong> 自定义弹窗</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-methods-menu.html"><strong aria-hidden="true">3.8.2.</strong> 菜单</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.9.</strong> 自定义组件</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-custom-component-lifecycle.html"><strong aria-hidden="true">3.9.1.</strong> 自定义组件的生命周期</a></li></ol></li><li class="chapter-item "><div><strong aria-hidden="true">3.10.</strong> 类型定义</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-enums.html"><strong aria-hidden="true">3.10.1.</strong> 基础类型定义</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-basic-components-pixel-units.html"><strong aria-hidden="true">3.11.</strong> 像素单位</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-state-management-manual.html"><strong aria-hidden="true">3.12.</strong> 状态管理</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-config.html"><strong aria-hidden="true">3.13.</strong> 应用配置</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-thread.html"><strong aria-hidden="true">3.14.</strong> 线程控制</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid.html"><strong aria-hidden="true">3.15.</strong> 混合开发V1</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj_appendix-hybrid-v2.html"><strong aria-hidden="true">3.16.</strong> 混合开发V2</a></li><li class="chapter-item "><div><strong aria-hidden="true">3.17.</strong> 管理应用拥有的状态</div><a class="toggle"><div>❱</div></a></li><li><ol class="section"><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-app-storage.html"><strong aria-hidden="true">3.17.1.</strong> AppStorage（应用全局的UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-local-storage.html"><strong aria-hidden="true">3.17.2.</strong> LocalStorage（页面级UI状态存储）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-persistent-storage.html"><strong aria-hidden="true">3.17.3.</strong> PersistentStorage（持久化存储UI状态）</a></li><li class="chapter-item "><a href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html"><strong aria-hidden="true">3.17.4.</strong> Environment（设备环境查询）</a></li></ol></li><li class="chapter-item expanded "><a href="../../source_zh_cn/arkui-cj/cj_ui_framework.html" class="active"><strong aria-hidden="true">3.18.</strong> 框架接口</a></li></ol></li><li class="chapter-item "><a href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html"><strong aria-hidden="true">4.</strong> 仓颉与ArkTS互操作库</a></li><li class="chapter-item "><a href="../../source_zh_cn/cj-libs-api.html"><strong aria-hidden="true">5.</strong> 仓颉编程语言库API</a></li></ol>
+            </div>
+            <div id="sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <!-- Track and set sidebar scroll position -->
+        <script>
+            var sidebarScrollbox = document.querySelector('#sidebar .sidebar-scrollbox');
+            sidebarScrollbox.addEventListener('click', function(e) {
+                if (e.target.tagName === 'A') {
+                    sessionStorage.setItem('sidebar-scroll', sidebarScrollbox.scrollTop);
+                }
+            }, { passive: true });
+            var sidebarScrollTop = sessionStorage.getItem('sidebar-scroll');
+            sessionStorage.removeItem('sidebar-scroll');
+            if (sidebarScrollTop) {
+                // preserve sidebar scroll position when navigating via links within sidebar
+                sidebarScrollbox.scrollTop = sidebarScrollTop;
+            } else {
+                // scroll sidebar to current active section when navigating via "next/previous chapter" buttons
+                var activeSection = document.querySelector('#sidebar .active');
+                if (activeSection) {
+                    activeSection.scrollIntoView({ block: 'center' });
+                }
+            }
+        </script>
+
+        <div id="page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                                <div id="menu-bar-hover-placeholder"></div>
+                <div id="menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="sidebar-toggle" class="icon-button" for="sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="sidebar">
+                            <i class="fa fa-bars"></i>
+                        </label>
+                        <button id="theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="theme-list">
+                            <i class="fa fa-paint-brush"></i>
+                        </button>
+                        <ul id="theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="ayu">Ayu</button></li>
+                        </ul>
+                        <button id="search-toggle" class="icon-button" type="button" title="Search. (Shortkey: s)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="S" aria-controls="searchbar">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">API 参考</h1>
+
+                    <div class="right-buttons">
+                        <a href="../../print.html" title="Print this book" aria-label="Print this book">
+                            <i id="print-button" class="fa fa-print"></i>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="search-wrapper" class="hidden">
+                    <form id="searchbar-outer" class="searchbar-outer">
+                        <input type="search" id="searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="searchresults-outer" aria-describedby="searchresults-header">
+                    </form>
+                    <div id="searchresults-outer" class="searchresults-outer hidden">
+                        <div id="searchresults-header" class="searchresults-header"></div>
+                        <ul id="searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="content" class="content">
+                    <main>
+                        <h1 id="框架接口"><a class="header" href="#框架接口">框架接口</a></h1>
+<p>此页面记录UI框架使用的公开接口，应用开发者禁止使用，否则会产生无法预期的结果。</p>
+<h2 id="函数"><a class="header" href="#函数">函数</a></h2>
+<h3 id="lazyforeachcreatetint64-customview-idatasourcet-itemgenfunctypet-keygenfunctypet"><a class="header" href="#lazyforeachcreatetint64-customview-idatasourcet-itemgenfunctypet-keygenfunctypet">LazyForEach.create&lt;T&gt;(Int64, CustomView, IDataSource&lt;T&gt;, ItemGenFuncType&lt;T&gt;, KeyGenFuncType&lt;T&gt;)</a></h3>
+<pre><code class="language-cangjie">public func create&lt;T&gt;(viewID: Int64, parentView: CustomView, dataSource: IDataSource&lt;T&gt;,
+    itemGeneratorFunc!: ItemGenFuncType&lt;T&gt;, keyGeneratorFunc!: KeyGenFuncType&lt;T&gt; = {data: T, idx: Int64 =&gt;
+        uniqueKey_++
+        return &quot;${viewID} - ${idx} - ${uniqueKey_}&quot;}): LazyForEach
+</code></pre>
+<p>LazyForEach组件的create函数，供框架状态管理使用。</p>
+<h3 id="lazyforeachlazyforeachpop"><a class="header" href="#lazyforeachlazyforeachpop">LazyForEach.lazyForEachPop()</a></h3>
+<pre><code class="language-cangjie">public func lazyForEachPop(): Unit
+</code></pre>
+<p>LazyForEach组件的lazyForEachPop函数，供框架状态管理使用。</p>
+<h3 id="foreachcreatetint64-customview-arrayliket-itemgenfunctypet-keygenfunctypet"><a class="header" href="#foreachcreatetint64-customview-arrayliket-itemgenfunctypet-keygenfunctypet">ForEach.create&lt;T&gt;(Int64, CustomView, ArrayLike&lt;T&gt;, ItemGenFuncType&lt;T&gt;, KeyGenFuncType&lt;T&gt;)</a></h3>
+<pre><code class="language-cangjie">public static func create&lt;T&gt;(viewID: Int64, parentView: CustomView, dataSource: ArrayLike&lt;T&gt;,
+    itemGeneratorFunc!: ItemGenFuncType&lt;T&gt;, keyGeneratorFunc!: KeyGenFuncType&lt;T&gt; = { realData: T, idx: Int64 =&gt;
+        match(realData) {
+            case realDataStr: ToString =&gt; realDataStr.toString()
+            case _ =&gt; idx.toString()
+        }
+    }): Unit
+</code></pre>
+<p>ForEach组件的create函数，供框架状态管理使用。</p>
+<h3 id="genchild"><a class="header" href="#genchild">genChild()</a></h3>
+<pre><code class="language-cangjie">public func genChild(): Unit
+</code></pre>
+<p>组件的genChild函数，供框架状态管理使用。</p>
+<h3 id="persistentstorageonstateupdatestring-arraylistint64"><a class="header" href="#persistentstorageonstateupdatestring-arraylistint64">PersistentStorage.onStateUpdate(String, ArrayList&lt;Int64&gt;)</a></h3>
+<pre><code class="language-cangjie">public func onStateUpdate(info: String, dependentElmtIds: ArrayList&lt;Int64&gt;): Unit
+</code></pre>
+<p>PersistentStorage组件的onStateUpdate函数，供框架状态管理使用。</p>
+<h3 id="persistentstorageonstateupdatestring"><a class="header" href="#persistentstorageonstateupdatestring">PersistentStorage.onStateUpdate(String)</a></h3>
+<pre><code class="language-cangjie">public func onStateUpdate(info: String): Unit
+</code></pre>
+<p>PersistentStorage组件的onStateUpdate函数，供框架状态管理使用。</p>
+<h3 id="persistentstoragenotifyreadstring"><a class="header" href="#persistentstoragenotifyreadstring">PersistentStorage.notifyRead(String)</a></h3>
+<pre><code class="language-cangjie">public func notifyRead(info: String): Unit
+</code></pre>
+<p>PersistentStorage组件的notifyRead函数，供框架状态管理使用。</p>
+<h3 id="persistentstorageabouttobedeleted"><a class="header" href="#persistentstorageabouttobedeleted">PersistentStorage.aboutToBeDeleted()</a></h3>
+<pre><code class="language-cangjie">public func aboutToBeDeleted(): Unit
+</code></pre>
+<p>PersistentStorage组件的aboutToBeDeleted函数，供框架状态管理使用。</p>
+<h3 id="loadnativeviewcustomview"><a class="header" href="#loadnativeviewcustomview">loadNativeView(CustomView)</a></h3>
+<pre><code class="language-cangjie">public func loadNativeView(view: CustomView): Bool
+</code></pre>
+<p>UI 框架使用的基础函数。</p>
+<h3 id="loadnativeview"><a class="header" href="#loadnativeview">loadNativeView()</a></h3>
+<pre><code class="language-cangjie">public func InitEventManager(): Unit
+</code></pre>
+<p>UI 框架使用的基础函数。</p>
+<h3 id="ohosndkcustomviewdeletecustomviewbyidint32"><a class="header" href="#ohosndkcustomviewdeletecustomviewbyidint32">OHOSNDKCustomViewDeleteCustomViewById(Int32)</a></h3>
+<pre><code class="language-cangjie">public func OHOSNDKCustomViewDeleteCustomViewById(elmtId: Int32): Int32
+</code></pre>
+<p>UI 框架使用的基础函数。</p>
+<h3 id="observedpropertycreatepropstring"><a class="header" href="#observedpropertycreatepropstring">ObservedProperty.createProp(String)</a></h3>
+<pre><code class="language-cangjie">public func createProp(info: String): ObservedProperty&lt;T&gt;
+</code></pre>
+<p>状态管理框架使用的基础函数。</p>
+<h3 id="observedpropertygetinner"><a class="header" href="#observedpropertygetinner">ObservedProperty.getInner()</a></h3>
+<pre><code class="language-cangjie">public func getInner(): T
+</code></pre>
+<p>状态管理框架使用的基础函数。</p>
+<h3 id="getresourcecolorcjresource"><a class="header" href="#getresourcecolorcjresource">getResourceColor(CJResource)</a></h3>
+<pre><code class="language-cangjie">public func getResourceColor(content: CJResource): Color
+</code></pre>
+<p>UI 框架使用的基础函数。</p>
+<h3 id="getresourcelengthcjresource"><a class="header" href="#getresourcelengthcjresource">getResourceLength(CJResource)</a></h3>
+<pre><code class="language-cangjie">public func getResourceLength(content: CJResource): Length
+</code></pre>
+<p>UI 框架使用的基础函数。</p>
+<h3 id="getresourcemediacjresource"><a class="header" href="#getresourcemediacjresource">getResourceMedia(CJResource)</a></h3>
+<pre><code class="language-cangjie">public func getResourceMedia(content: CJResource): String
+</code></pre>
+<p>UI 框架使用的基础函数。</p>
+<h3 id="getresourcepluralstringpluralresource"><a class="header" href="#getresourcepluralstringpluralresource">getResourcePluralString(PluralResource)</a></h3>
+<pre><code class="language-cangjie">public func getResourcePluralString(content: PluralResource): String
+</code></pre>
+<p>UI 框架使用的基础函数。</p>
+<h3 id="getresourcestringcjresource"><a class="header" href="#getresourcestringcjresource">getResourceString(CJResource)</a></h3>
+<pre><code class="language-cangjie">public func getResourceString(content: CJResource): String
+</code></pre>
+<p>UI 框架使用的基础函数。</p>
+<h3 id="hascontainer"><a class="header" href="#hascontainer">hasContainer()</a></h3>
+<pre><code class="language-cangjie">public func hasContainer(): Bool
+</code></pre>
+<p>判断是否在容器上下文中，UI 框架使用。</p>
+<h3 id="thrownativeerrorstring"><a class="header" href="#thrownativeerrorstring">throwNativeError(String)</a></h3>
+<pre><code class="language-cangjie">public func throwNativeError(msg: String): Unit
+</code></pre>
+<p>内部接口，UI 框架使用。</p>
+<h3 id="cstringtostringoption"><a class="header" href="#cstringtostringoption">CString.toStringOption()</a></h3>
+<pre><code class="language-cangjie">public func toStringOption(): ?String
+</code></pre>
+<p>内部接口，UI 框架使用。</p>
+<h2 id="类"><a class="header" href="#类">类</a></h2>
+<h3 id="customview"><a class="header" href="#customview">CustomView</a></h3>
+<pre><code class="language-cangjie">public abstract class CustomView {
+    public let nativeView: View
+    public init(parent: Option&lt;CustomView&gt;, localStorage: Option&lt;LocalStorage&gt;)
+    public func getLocalStorage(): LocalStorage
+    public func declareWatch&lt;T&gt;(propMember: ObservedProperty&lt;T&gt;, callBack: () -&gt; Unit)
+    public func build(): Unit
+    public func updateDirtyElements()
+    public func purgeDeletedElmtIds(rmElmtIds: ArrayList&lt;Int64&gt;)
+    public func forEachUpdateFunction&lt;T&gt;(
+        elmtId: Int64, arr: ArrayLike&lt;T&gt;, itemGenFunc!: (T, Int64) -&gt; Unit,
+        keyGeneratorFunc!: (T, Int64) -&gt; String = { realData: T, idx: Int64 =&gt;
+            match(realData) {
+                case realDataStr: ToString =&gt; idx.toString() + &quot;_&quot; + realDataStr.toString()
+                case _ =&gt; idx.toString()
+            }
+        }
+    ): Unit
+    public func observeComponentCreation(compilerAssignedUpdateFunc: UpdateFuncNew): Unit
+    public static func create(view: CustomView)
+    public func addProvideVar(value: ObservedPropertyAbstract, name: String)
+    public func initializeConsume(name: String): ObservedPropertyAbstract
+    public func onStateUpdate(stateInfo: String): Unit
+    public func notifyRead(stateInfo: String): Unit
+    public func onStateUpdate(stateInfo: String, dependentElmtIds: ArrayList&lt;Int64&gt;): Unit
+    public func id(): Int64
+    public func findChildById(id: Int64): Option&lt;CustomView&gt;
+    public func markLazyForEachProcess(groupId: String): Unit
+    public func resetLazyForEachProcess(): Unit
+    public func removeChildGroupById(groupId: String): Bool
+    public func addChildById(id: Int64, child: CustomView): Unit
+    public func aboutToBeDeleted(): Unit
+    public func ifElseBranchUpdateFunction(branchId: Int32, branchFunc: () -&gt; Unit)
+    public func beSubscribe(observable: Observable): Unit
+    public static func deleteCustomViewById(elmtId: Int64)
+    public func getRootComponentId(): Int64
+    public func observeForEachCreation(forEachUpdateFunc: UpdateFuncNew): Int64
+}
+</code></pre>
+<p>UI 框架使用的组件基础类。</p>
+<h3 id="containerbase"><a class="header" href="#containerbase">ContainerBase</a></h3>
+<pre><code class="language-cangjie">public abstract class ContainerBase {
+    public open override func initial()
+}
+</code></pre>
+<p>UI 框架使用的组件基础类。</p>
+<h3 id="baseview"><a class="header" href="#baseview">BaseView</a></h3>
+<pre><code class="language-cangjie">public abstract class BaseView {
+    public init() {}
+    public open func build(): Unit {}
+    public open func rerender(): Unit {}
+    protected open func aboutToAppear(): Unit {}
+}
+</code></pre>
+<p>UI 框架使用的组件基础类。</p>
+<h3 id="remoteview"><a class="header" href="#remoteview">RemoteView</a></h3>
+<pre><code class="language-cangjie">public abstract class RemoteView {
+    public init()
+    public func build(): Unit
+    public open func rerender(): Unit
+    public open func purgeVariableDependenciesOnElmtId(removedElmtId: Int64): Unit
+}
+</code></pre>
+<p>UI 框架使用的组件基础类。</p>
+<h3 id="cjentry"><a class="header" href="#cjentry">CJEntry</a></h3>
+<pre><code class="language-cangjie">public class CJEntry {
+    public static func getInstance(): CJEntry
+    public func registerEntry(name: String, call: ()-&gt;Bool): Unit
+}
+</code></pre>
+<p>用于提供被Native调用的全局函数。</p>
+<h3 id="callbackcjareachangedevent"><a class="header" href="#callbackcjareachangedevent">CallbackCJAreaChangedEvent</a></h3>
+<pre><code class="language-cangjie">public class CallbackCJAreaChangedEvent {
+    public CallbackCJAreaChangedEvent(let closure: (CJArea, CJArea)-&gt;Unit)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbackcjvisibleareachangeevent"><a class="header" href="#callbackcjvisibleareachangeevent">CallbackCJVisibleAreaChangeEvent</a></h3>
+<pre><code class="language-cangjie">public class CallbackCJVisibleAreaChangeEvent {
+    public CallbackCJVisibleAreaChangeEvent(let closure: (Bool, Float64)-&gt;Unit)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbackfficheckboxgroupresult"><a class="header" href="#callbackfficheckboxgroupresult">CallbackFFiCheckboxGroupResult</a></h3>
+<pre><code class="language-cangjie">public class CallbackFFiCheckboxGroupResult {
+    public CallbackFFiCheckboxGroupResult(let closure: (FFiCheckboxGroupResult)-&gt;Unit)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbackcjimagecomplete"><a class="header" href="#callbackcjimagecomplete">CallbackCJImageComplete</a></h3>
+<pre><code class="language-cangjie">public class CallbackCJImageComplete {
+    public CallbackCJImageComplete(let closure: (CJImageComplete)-&gt;Unit)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbackcjimageerror"><a class="header" href="#callbackcjimageerror">CallbackCJImageError</a></h3>
+<pre><code class="language-cangjie">public class CallbackCJImageError {
+    public CallbackCJImageError(let closure: (CJImageError)-&gt;Unit)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbackoffset"><a class="header" href="#callbackoffset">CallbackOffset</a></h3>
+<pre><code class="language-cangjie">public class CallbackOffset {
+    public CallbackOffset(let closure: (OffsetResult)-&gt;Unit)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbacktextpickerresult"><a class="header" href="#callbacktextpickerresult">CallbackTextPickerResult</a></h3>
+<pre><code class="language-cangjie">public class CallbackTextPickerResult {
+    public CallbackTextPickerResult(let closure: (TextPickerResult)-&gt;Unit)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbackscrollbegin"><a class="header" href="#callbackscrollbegin">CallbackScrollBegin</a></h3>
+<pre><code class="language-cangjie">public class CallbackScrollBegin {
+    public CallbackScrollBegin(let closure: (Float64, Float64)-&gt;FfiOffsetRemain)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbackcjwebresourcerequest"><a class="header" href="#callbackcjwebresourcerequest">CallbackCJWebResourceRequest</a></h3>
+<pre><code class="language-cangjie">public class CallbackCJWebResourceRequest {
+    CallbackCJWebResourceRequest(let closure: (FfiWebResourceRequest) -&gt; Bool)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="callbackcjtransitionevent"><a class="header" href="#callbackcjtransitionevent">CallbackCJTransitionEvent</a></h3>
+<pre><code class="language-cangjie">public class CallbackCJTransitionEvent {
+    public CallbackCJTransitionEvent(let closuer: (CJRouteType, Float64)-&gt;Unit)
+    public func invoke(argc: Int32, argv: CPointer&lt;CPointer&lt;Unit&gt;&gt;, res: CPointer&lt;Unit&gt;): Unit
+}
+</code></pre>
+<p>用于提供框架调用的回调函数。</p>
+<h3 id="hybridcomponentbase"><a class="header" href="#hybridcomponentbase">HybridComponentBase</a></h3>
+<pre><code class="language-cangjie">public open class HybridComponentBase {
+    public static func registerHybridComponent(compName: String, loadHandle: () -&gt; CPointer&lt;Unit&gt;, unloadHandle: () -&gt; Unit)
+}
+</code></pre>
+<p>混合组件基础类，供混合框架使用。</p>
+<h3 id="ffivectorbool"><a class="header" href="#ffivectorbool">FFIVectorBool</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorBool {
+    public init(vec: VectorBoolHandle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: Bool): Unit
+    public func getElement(index: Int64): Bool
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorBoolHandle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectorfloat32"><a class="header" href="#ffivectorfloat32">FFIVectorFloat32</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorFloat32 {
+    public init(vec: VectorFloat32Handle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: Float32): Unit
+    public func getElement(index: Int64): Float32
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorFloat32Handle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectorfloat64"><a class="header" href="#ffivectorfloat64">FFIVectorFloat64</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorFloat64 {
+    public init(vec: VectorFloat64Handle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: Float64): Unit
+    public func getElement(index: Int64): Float64
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorFloat64Handle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectorint32"><a class="header" href="#ffivectorint32">FFIVectorInt32</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorInt32 {
+    public init(vec: VectorInt32Handle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: Int32): Unit
+    public func getElement(index: Int64): Int32
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorInt32Handle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectorint64"><a class="header" href="#ffivectorint64">FFIVectorInt64</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorInt64 {
+    public init(vec: VectorInt64Handle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: Int64): Unit
+    public func getElement(index: Int64): Int64
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorInt64Handle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectornavigationitem"><a class="header" href="#ffivectornavigationitem">FFIVectorNavigationItem</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorNavigationItem {
+    public init(vec: VectorNavigationItemHandle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: NavigationItemFFI): Unit
+    public func getElement(index: Int64): NavigationItemFFI
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorNavigationItemHandle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectorstring"><a class="header" href="#ffivectorstring">FFIVectorString</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorString {
+    public init(vec: VectorStringHandle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: String): Unit
+    public func getElement(index: Int64): String
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorStringHandle
+}
+
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectoruint32"><a class="header" href="#ffivectoruint32">FFIVectorUInt32</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorUInt32 {
+    public init(vec: VectorUInt32Handle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: UInt32): Unit
+    public func getElement(index: Int64): UInt32
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorUInt32Handle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectoruint8"><a class="header" href="#ffivectoruint8">FFIVectorUInt8</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorUInt8 {
+    public init(vec: VectorUInt8Handle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: UInt8): Unit
+    public func getElement(index: Int64): UInt8
+    public func free(): Unit
+    public func getSize(): Int64
+    public func getNativeHandle(): VectorUInt8Handle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectorffiimage"><a class="header" href="#ffivectorffiimage">FfiVectorFfiImage</a></h3>
+<pre><code class="language-cangjie">public class FfiVectorFfiImage {
+    public init(vec: VectorFfiImageHandle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: FfiImage): Unit
+    public func free(): Unit
+    public func getNativeHandle(): VectorFfiImageHandle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="ffivectorcjint64"><a class="header" href="#ffivectorcjint64">FFIVectorCJInt64</a></h3>
+<pre><code class="language-cangjie">public class FFIVectorCJInt64 {
+    public init(vec: VectorCJInt64Handle)
+    public init(size: Int64)
+    public func setElement(index: Int64, value: Int64): Unit
+    public func free(): Unit
+    public func getNativeHandle(): VectorCJInt64Handle
+}
+</code></pre>
+<p>FFI 容器类型，供框架使用。</p>
+<h3 id="interactableview"><a class="header" href="#interactableview">InteractableView</a></h3>
+<pre><code class="language-cangjie">public open class InteractableView {
+    public open func onClick(callback: (ClickEvent)-&gt;Unit): This
+    public func onAppear(callback: ()-&gt;Unit): This
+    public func onDisAppear(callback: ()-&gt;Unit): This
+    public func onTouch(callback: (TouchEvent)-&gt;Unit): This
+    public func onHover(callback: (Bool)-&gt;Unit): This
+    public func onAreaChange(callback: (Area, Area)-&gt;Unit): This
+    public func onVisibleAreaChange(raitos: Array&lt;Float64&gt;, callback: (Bool, Float64)-&gt;Unit): This
+    public func onMouse(callback: (MouseEvent)-&gt;Unit): This
+    public func onKeyEvent(callback: (KeyEvent)-&gt;Unit): This
+    public func onFocus(callback: ()-&gt;Unit): This
+    public func onBlur(callback: ()-&gt;Unit): This
+    public func onDragStart(callback: (DragInfo)-&gt; DragItemInfo): This
+    public func onDragStart(callback: (DragInfo)-&gt; (() -&gt; Unit)): This
+    public func onDragStart(callback: (DragInfo)-&gt; Unit): This
+    public func onDragEnter(callback: (DragInfo)-&gt;Unit): This
+    public func onDragMove(callback: (DragInfo)-&gt;Unit): This
+    public func onDragLeave(callback: (DragInfo)-&gt;Unit): This
+    public func onDrop(callback: (DragInfo)-&gt;Unit): This
+}
+</code></pre>
+<p>UI 框架使用的组件基础类。</p>
+<h3 id="legalcallcheck"><a class="header" href="#legalcallcheck">LegalCallCheck</a></h3>
+<pre><code class="language-cangjie">public class LegalCallCheck {
+    public static func check(vb: ViewBuilder)
+    public static func check(cv: CustomView)
+}
+</code></pre>
+<p>UI 框架使用的组件基础类。</p>
+<h3 id="mainthreadcontext"><a class="header" href="#mainthreadcontext">MainThreadContext</a></h3>
+<pre><code class="language-cangjie">public class MainThreadContext {
+    public func end(): Unit
+    public func hasEnded(): Bool
+}
+</code></pre>
+<p>框架使用的线程上下文。</p>
+<h3 id="observable"><a class="header" href="#observable">Observable</a></h3>
+<pre><code class="language-cangjie">public open class Observable {
+    public func subscribe(observer: Observer): Unit
+    public func unsubscribe(observer: Observer): Unit
+    public func isSubscribed(observer: Observer): Bool
+    public func numberOfSubscribers(): Int64
+    public func unsubscribeAll(): Unit
+    public func getObserversSize(): Int64
+}
+</code></pre>
+<p>框架状态管理使用的基础类。</p>
+<h3 id="observedcomplexabstract"><a class="header" href="#observedcomplexabstract">ObservedComplexAbstract</a></h3>
+<pre><code class="language-cangjie">public abstract class ObservedComplexAbstract {
+    public func subscribeInner(observer: Observer): Unit
+    public func unsubscribeInner(observer: Observer): Unit
+    public func set(v: ObservedComplexAbstract): Unit
+    public func inheritObservers(newObservers: ArrayList&lt;Observer&gt;)
+    public func setDependentElementIds(dependentElementIds: ArrayList&lt;Int64&gt;)
+    public func getInfo(): String
+    public func setInfo(info: String)
+    public func getPropsInfo(): ArrayList&lt;String&gt;
+    public func addPropsInfo(info: String): Unit
+    public func notifyChanges()
+}
+</code></pre>
+<p>框架状态管理使用的基础类。</p>
+<h3 id="observedobject"><a class="header" href="#observedobject">ObservedObject</a></h3>
+<pre><code class="language-cangjie">public abstract class ObservedObject {
+    public func addPublishVar(publishVar: ObservedPropertyAbstract)
+    public func getPublishVar(): ArrayList&lt;ObservedPropertyAbstract&gt;
+    public func subscribeInner(observer: Observer): Unit
+    public func unsubscribeInner(observer: Observer): Unit
+}
+</code></pre>
+<p>框架状态管理使用的基础类。</p>
+<h3 id="observedpropertyabstract"><a class="header" href="#observedpropertyabstract">ObservedPropertyAbstract</a></h3>
+<pre><code class="language-cangjie">public abstract class ObservedPropertyAbstract {
+    public init(info: String)
+    public func getInfo(): String
+    public func subscribeEx(observer: Observer): Unit
+    public func unsubscribeEx(observer: Observer): Unit
+    public func notifyChanges()
+    public func purgeDependencyOnElmtId(rmElmtId: Int64): Unit
+}
+</code></pre>
+<p>框架状态管理使用的基础类。</p>
+<h3 id="subscribermanager"><a class="header" href="#subscribermanager">SubscriberManager</a></h3>
+<pre><code class="language-cangjie">public class SubscriberManager {
+    public static func getInstance(): SubscriberManager
+    public func makeId(): Int64
+    public func has(id: Int64): Bool
+    public func get(id: Int64): Option&lt;Observer&gt;
+    public func delete(value: Observer): Unit
+    public func add(value: Observer): Bool
+    public func sizeOfManager(): Int64
+    public func dumpSubscriberInfo(): Unit
+}
+</code></pre>
+<p>框架状态管理使用的基础类。</p>
+<h3 id="view"><a class="header" href="#view">View</a></h3>
+<pre><code class="language-cangjie">public open class View {
+    public static func create(view: View): Unit
+    public static func create(remoteId: Int64): View
+    public func markNeedUpdate(): Unit
+    public func needsUpdate(): Bool
+    public func markStatic(): Unit
+    public func isStatic(): Bool
+    public func destroy(): Unit
+    public func syncInstanceId(): Unit
+    public func restoreInstanceId(): Unit
+    public func finishUpdateFunc(elmtId: Int64): Unit
+    public func getDeletedElemtIds(): ArrayList&lt;Int64&gt;
+    public func deletedElmtIdsHaveBeenPurged(elmtIds: ArrayList&lt;Int64&gt;): Unit
+}
+</code></pre>
+<p>UI 框架使用的基础类。</p>
+<h3 id="viewbase"><a class="header" href="#viewbase">ViewBase</a></h3>
+<pre><code class="language-cangjie">public open class ViewBase {
+    public func initial(): Unit
+    public func pop(): Unit
+    public func update(): Unit
+    public func id(): Int64
+    public func key(value: String): This
+    public func layoutPriority(value: Int32): This
+}
+</code></pre>
+<p>UI 框架使用的基础类。</p>
+<h3 id="viewabstract"><a class="header" href="#viewabstract">ViewAbstract</a></h3>
+<pre><code class="language-cangjie">public open class ViewAbstract {
+    public func initial(): Unit
+    public func pop(): Unit
+    public func update(): Unit
+    public func id(): Int64
+    public func key(value: String): This
+    public func layoutPriority(value: Int32): This
+}
+</code></pre>
+<p>UI 框架使用的基础类。</p>
+<h3 id="viewbuilder"><a class="header" href="#viewbuilder">ViewBuilder</a></h3>
+<pre><code class="language-cangjie">public class ViewBuilder {
+    public ViewBuilder(public let build: () -&gt; Unit)
+}
+</code></pre>
+<p>UI 框架使用的基础类。</p>
+<h3 id="viewstackprocessor"><a class="header" href="#viewstackprocessor">ViewStackProcessor</a></h3>
+<pre><code class="language-cangjie">public class ViewStackProcessor {
+    public static func AllocateNewElmetIdForNextComponent(): Int64
+    public static func StartGetAccessRecordingFor(elmtId: Int64): Unit
+    public static func GetElmtIdToAccountFor(): Int64
+    public static func StopGetAccessRecording(): Unit
+    public static func ImplicitPopBeforeContinue(): Unit
+    public static func GetArkUINodeById(elmtId: Int64): CPointer&lt;Unit&gt;
+    public static func SetCustomView(elmtId: Int64): Unit
+}
+</code></pre>
+<p>UI 框架使用的基础类。</p>
+<h3 id="localstorageinterop"><a class="header" href="#localstorageinterop">LocalStorageInterOp</a></h3>
+<pre><code class="language-cangjie">public open class LocalStorageInterOp {
+    public static func getOrCreate(): LocalStorageInterOp
+    public func aboutToBeDeleted(): Bool
+    public func has(propName: String): Bool
+    public func keys()
+    public func size(): Int64
+    public func get&lt;T&gt;(propName: String): T
+    public func set&lt;T&gt;(propName: String, value: T): Bool
+    public func setOrCreate&lt;T&gt;(propName: String, value: T): Bool
+    public func link&lt;T&gt;(propName: String): ObservedProperty&lt;T&gt;
+    public func setAndLink&lt;T&gt;(propName: String, value: T): ObservedProperty&lt;T&gt;
+    public func `prop`&lt;T&gt;(propName: String): ObservedProperty&lt;T&gt;
+    public func setAndProp&lt;T&gt;(propName: String, value: T): ObservedProperty&lt;T&gt;
+    public func delete(propName: String): Bool
+    public func clear(): Bool
+    public func hasChanged(context: JSContext, callInfo: JSCallInfo): JSValue
+}
+</code></pre>
+<p>LocalStorage 内部使用的类。</p>
+<h3 id="appresource"><a class="header" href="#appresource">AppResource</a></h3>
+<pre><code class="language-cangjie">public open class AppResource {
+    public init(id: Int64, ty: UInt32, paramsArr: Array&lt;Any&gt;, moduleName: String, bundleName: String)
+    public func toJSValue(ctx: JSContext): JSValue
+    public static func fromJSValue(ctx: JSContext, value: JSValue): AppResource
+}
+</code></pre>
+<p>资源引用类型</p>
+<h3 id="cjresource"><a class="header" href="#cjresource">CJResource</a></h3>
+<pre><code class="language-cangjie">public class CJResource {
+    public init(id: Int64, ty: UInt32, params: String, paramsArr: Array&lt;Any&gt;, moduleName!: String = &quot;&quot;, bundleName!: String = &quot;&quot;, moduleType!: String = 0)
+}
+</code></pre>
+<p>资源引用类型，继承自AppResource</p>
+<h3 id="pluralresource"><a class="header" href="#pluralresource">PluralResource</a></h3>
+<pre><code class="language-cangjie">public class PluralResource {
+    public init(id: Int64, ty: UInt32, count: Int64, plural: Int64, paramsArr: Array&lt;Any&gt;, moduleName!: String = &quot;&quot;, bundleName!: String = &quot;, moduleType!: String = 0)
+}
+</code></pre>
+<p>资源引用类型，继承自AppResource</p>
+<h2 id="结构体"><a class="header" href="#结构体">结构体</a></h2>
+<h3 id="fficheckboxgroupresult"><a class="header" href="#fficheckboxgroupresult">FFiCheckboxGroupResult</a></h3>
+<pre><code class="language-cangjie">public struct FFiCheckboxGroupResult{
+    public FFiCheckboxGroupResult(
+        public let status: Int32,
+        public let size: Int64,
+        public let nameBuffer: CPointer&lt;CString&gt;
+    )
+}
+</code></pre>
+<p>全局结构体，供框架使用。</p>
+<h3 id="textpickerresult"><a class="header" href="#textpickerresult">TextPickerResult</a></h3>
+<pre><code class="language-cangjie">public struct TextPickerResult {
+    public TextPickerResult(
+        public let value: CString,
+        public let index: UInt32
+    )
+}
+</code></pre>
+<p>全局结构体，供框架使用。</p>
+<h3 id="ffioffsetremain"><a class="header" href="#ffioffsetremain">FfiOffsetRemain</a></h3>
+<pre><code class="language-cangjie">public struct FfiOffsetRemain {
+    public FfiOffsetRemain(
+        let dxRemain: Float64,
+        let dyRemain: Float64
+    )
+}
+</code></pre>
+<p>全局结构体，供框架使用。</p>
+<h3 id="if"><a class="header" href="#if">If</a></h3>
+<pre><code class="language-cangjie">public struct If {
+    public init(subcomponent: () -&gt; Unit)
+    public static func branchId(value: Int32): Unit
+    public static func getBranchId(): Int32
+    public func pop(): Unit
+    public func initial(): Unit
+    public func update(): Unit
+    public func genChild(): Unit
+    public static func removeBranchId(parentId: Int32): Unit
+    public static func setBranchId(parentId: Int32, branchId: Int32, childId: Int32): Unit
+}
+</code></pre>
+<p>if/else 组件的定义结构体，供 UI 框架使用。</p>
+<h3 id="atcndkcustomviewpackage"><a class="header" href="#atcndkcustomviewpackage">AtCNDKCustomViewPackage</a></h3>
+<pre><code class="language-cangjie">public struct AtCNDKCustomViewPackage {
+}
+</code></pre>
+<p>全局结构体，供框架使用。</p>
+<h3 id="jsvalue_"><a class="header" href="#jsvalue_">JSValue_</a></h3>
+<pre><code class="language-cangjie">public struct JSValue_ {
+    JSValue_(
+        let value: UInt64
+    )
+}
+</code></pre>
+<p>互操作 JS 内部类型，供互操作框架使用。</p>
+<h3 id="carrint32"><a class="header" href="#carrint32">CArrInt32</a></h3>
+<pre><code class="language-cangjie">public struct CArrInt32 {
+    public CArrInt32(
+        public let head: CPointer&lt;Int32&gt;,
+        public let size: Int64
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="externalstring"><a class="header" href="#externalstring">ExternalString</a></h3>
+<pre><code class="language-cangjie">public struct ExternalString {
+    public init(value: String)
+    public func isNull(): Bool
+    public func toString(): String
+    public unsafe func free(): Unit
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativelength"><a class="header" href="#nativelength">NativeLength</a></h3>
+<pre><code class="language-cangjie">public struct NativeLength {
+    public NativeLength(
+        public let value: Float64,
+        public let unitType: Int32
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoffset"><a class="header" href="#nativeoffset">NativeOffset</a></h3>
+<pre><code class="language-cangjie">public struct NativeOffset {
+    public NativeOffset(
+        // Float64 -&gt; vp
+        public let dx: NativeLength,
+        public let dy: NativeLength
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptionbool"><a class="header" href="#nativeoptionbool">NativeOptionBool</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionBool {
+    public NativeOptionBool(
+        public let hasValue: Bool,
+        public let value: Bool
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptioncarrint32"><a class="header" href="#nativeoptioncarrint32">NativeOptionCArrInt32</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionCArrInt32 {
+    public NativeOptionCArrInt32(
+        public let hasValue: Bool,
+        public let value: CArrInt32
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptioncstring"><a class="header" href="#nativeoptioncstring">NativeOptionCString</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionCString {
+    public NativeOptionCString(
+        public let hasValue: Bool,
+        public let value: CString
+    )
+    public func free()
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptioncallback"><a class="header" href="#nativeoptioncallback">NativeOptionCallBack</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionCallBack {
+    public NativeOptionCallBack(
+        public let hasValue: Bool,
+        public let value: Int64
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptionfloat32"><a class="header" href="#nativeoptionfloat32">NativeOptionFloat32</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionFloat32 {
+    public NativeOptionFloat32(
+        public let hasValue: Bool,
+        public let value: Float32
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptionfloat64"><a class="header" href="#nativeoptionfloat64">NativeOptionFloat64</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionFloat64 {
+    public NativeOptionFloat64(
+        public let hasValue: Bool,
+        public let value: Float64
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptionint32"><a class="header" href="#nativeoptionint32">NativeOptionInt32</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionInt32 {
+    public NativeOptionInt32(
+        public let hasValue: Bool,
+        public let value: Int32
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptionint64"><a class="header" href="#nativeoptionint64">NativeOptionInt64</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionInt64 {
+    public NativeOptionInt64(
+        public let hasValue: Bool,
+        public let value: Int64
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptionlength"><a class="header" href="#nativeoptionlength">NativeOptionLength</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionLength {
+    public NativeOptionLength(
+        public let hasValue: Bool,
+        public let value: NativeLength
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativeoptionuint32"><a class="header" href="#nativeoptionuint32">NativeOptionUInt32</a></h3>
+<pre><code class="language-cangjie">public struct NativeOptionUInt32 {
+    public NativeOptionUInt32(
+        public let hasValue: Bool,
+        public let value: UInt32
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="nativerectangle"><a class="header" href="#nativerectangle">NativeRectangle</a></h3>
+<pre><code class="language-cangjie">public struct NativeRectangle {
+    public NativeRectangle(
+        let x: Float64,
+        let xUnit: Int32,
+        let y: Float64,
+        let yUnit: Int32,
+        let width: Float64,
+        let widthUnit: Int32,
+        let height: Float64,
+        let heightUnit: Int32
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="navigationitemffi"><a class="header" href="#navigationitemffi">NavigationItemFFI</a></h3>
+<pre><code class="language-cangjie">public struct NavigationItemFFI {
+    public NavigationItemFFI(
+        let value: CString,
+        let icon: CString,
+        let action: Int64
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="elementnameparams"><a class="header" href="#elementnameparams">ElementNameParams</a></h3>
+<pre><code class="language-cangjie">public struct ElementNameParams {
+    public ElementNameParams(
+        let deviceId: CString,
+        let bundleName: CString,
+        let abilityName: CString,
+        let moduleName: CString
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h3 id="permissionrequestresult"><a class="header" href="#permissionrequestresult">PermissionRequestResult</a></h3>
+<pre><code class="language-cangjie">public struct PermissionRequestResult {
+    public PermissionRequestResult(
+        public let permissions: Array&lt;String&gt;,
+        public let authResults: Array&lt;Int32&gt;
+    )
+}
+</code></pre>
+<p>框架内使用结构体。</p>
+<h2 id="接口"><a class="header" href="#接口">接口</a></h2>
+<h3 id="arraylike"><a class="header" href="#arraylike">ArrayLike</a></h3>
+<pre><code class="language-cangjie">public interface ArrayLike&lt;T&gt; {
+    prop size: Int64
+    operator func [](idx: Int64, value!: T): Unit
+    operator func [](idx: Int64): T
+}
+</code></pre>
+<p>内部接口，框架使用。</p>
+<h3 id="cstringextend"><a class="header" href="#cstringextend">CStringExtend</a></h3>
+<pre><code class="language-cangjie">public interface CStringExtend {
+    func free(): Unit
+}
+</code></pre>
+<p>内部接口，框架使用。</p>
+<h3 id="componentbaset"><a class="header" href="#componentbaset">ComponentBase&lt;T&gt;</a></h3>
+<pre><code class="language-cangjie">public interface ComponentBase&lt;T&gt; {
+    func pop(): Unit
+    func key(value: String): T
+    func id(value: String): T
+    func initial(): Unit
+    func update(): Unit
+}
+</code></pre>
+<p>内部接口，框架使用。</p>
+<h3 id="componentbase_containt"><a class="header" href="#componentbase_containt">ComponentBase_Contain&lt;T&gt;</a></h3>
+<pre><code class="language-cangjie">public interface ComponentBase_Contain&lt;T&gt; {
+    func pop(): Unit
+    func genChild(): Unit
+    func initial()
+}
+</code></pre>
+<p>内部接口，框架使用。</p>
+<h3 id="componentrender"><a class="header" href="#componentrender">ComponentRender</a></h3>
+<pre><code class="language-cangjie">public interface ComponentRender {
+    func initial(): Unit
+    func update(): Unit
+}
+</code></pre>
+<p>内部接口，框架使用。</p>
+<h3 id="observer"><a class="header" href="#observer">Observer</a></h3>
+<pre><code class="language-cangjie">public interface Observer {
+    func onStateUpdate(info: String, dependentElmtIds: ArrayList&lt;Int64&gt;): Unit
+    func onStateUpdate(info: String): Unit
+    func notifyRead(info: String): Unit
+    func id(): Int64
+    func aboutToBeDeleted(): Unit
+}
+</code></pre>
+<p>内部接口，框架使用。</p>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+                            <a rel="prev" href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                                <i class="fa fa-angle-left"></i>
+                            </a>
+
+                            <a rel="next prefetch" href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html" class="mobile-nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                                <i class="fa fa-angle-right"></i>
+                            </a>
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+                    <a rel="prev" href="../../source_zh_cn/arkui-cj/cj-appendix-environment.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                        <i class="fa fa-angle-left"></i>
+                    </a>
+
+                    <a rel="next prefetch" href="../../source_zh_cn/arkinterop/cj-ark-interop-apis.html" class="nav-chapters next" title="Next chapter" aria-label="Next chapter" aria-keyshortcuts="Right">
+                        <i class="fa fa-angle-right"></i>
+                    </a>
+            </nav>
+
+        </div>
+
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="../../elasticlunr.min.js"></script>
+        <script src="../../mark.min.js"></script>
+        <script src="../../searcher.js"></script>
+
+        <script src="../../clipboard.min.js"></script>
+        <script src="../../highlight.js"></script>
+        <script src="../../book.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="../../highlight.js"></script>
+        <script src="../../assets/elasticlunr.js"></script>
+        <script src="../../assets/fzf.umd.js"></script>
+        <script src="../../assets/sidebar.js"></script>
+
+
+    </div>
+    </body>
+</html>

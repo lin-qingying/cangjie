@@ -1,8 +1,8 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 
-import org.cangnova.cangjie.analysis.api.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
+import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator

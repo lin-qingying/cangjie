@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
-// Assert scan 1,2,3
-
 enum TimeUnit {
     Year(Int32)
     | Month(Int32, Int32)

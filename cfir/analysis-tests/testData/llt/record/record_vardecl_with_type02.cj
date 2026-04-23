@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// EXEC: %run %run_opt %n.%suffix
-
 struct RA<T> {
     public RA(let a!: Int64 = 10) {}
 }
@@ -18,6 +15,3 @@ main() {
     }
     return 1
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

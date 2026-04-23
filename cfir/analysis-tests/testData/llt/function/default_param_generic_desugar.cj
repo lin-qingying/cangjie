@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-
 public interface Cloneable<T> {}
 
 public interface MockCommonClientInterface<T, TList> where T <: Cloneable<T>, TList <: Cloneable<TList> {}

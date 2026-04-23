@@ -19,6 +19,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 
 internal class CfirOptionTypeRefImpl(
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
+    override val customRenderer: Boolean,
     override val source: CjSourceElement,
     override var componentTypeRef: CfirTypeRef,
 ) : CfirOptionTypeRef() {
