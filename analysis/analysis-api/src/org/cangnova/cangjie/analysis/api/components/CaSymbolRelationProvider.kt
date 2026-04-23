@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 
 interface CaSymbolRelationProvider : CaLifetimeOwner {
@@ -17,6 +18,7 @@ interface CaSymbolRelationProvider : CaLifetimeOwner {
      * 2. 不把底层 substitution override / fake override 细节泄漏给调用方。
      */
     val CaCallableSymbol.directlyOverriddenSymbols: Sequence<CaCallableSymbol>
+    public val CaCallableSymbol.intersectionOverriddenSymbols: List<CaCallableSymbol>
 
     /**
      * 当前 callable 递归覆盖到的全部显式声明集合。
@@ -39,6 +41,13 @@ interface CaSymbolRelationProvider : CaLifetimeOwner {
      * 与 [isSubClassOf] 相同，这里同样不把类自身视为直接子类。
      */
     fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean
+
+    /**
+     * 返回 `actual` 声明对应的 `expect` 声明集合。
+     *
+     * 仓颉当前没有 expect/actual 语言语义，但框架接口与 Kotlin 对位保持一致。
+     */
+    fun CaDeclarationSymbol.getExpectsForActual(): List<CaDeclarationSymbol>
 }
 
 /**
@@ -72,5 +81,12 @@ context(session: CaSession)
 fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean {
     return with(session) {
         isDirectSubClassOf(superClass)
+    }
+}
+
+context(session: CaSession)
+fun CaDeclarationSymbol.getExpectsForActual(): List<CaDeclarationSymbol> {
+    return with(session) {
+        getExpectsForActual()
     }
 }

@@ -4,15 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%frontendCompiler %typecheck %diag_json %f 2>&1 | compare %f
-
 interface I {}
 
 class A<T> where T <: I {}
 
-extend<T> A<T> where T <: String {}
+extend<T> A<T> where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>String<!> {}
 
 main() {}
-
-// ASSERT: scan-1 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 1

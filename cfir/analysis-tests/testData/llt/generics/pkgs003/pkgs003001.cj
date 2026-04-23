@@ -5,11 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkgs003001a
-// EXEC: %frontendCompiler %typecheck %cmp_opt pkgs003001a/pkgs003001a.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkgs003001a/pkgs003001a.cj -o pkgs003001a/pkgs003001a.%middle
-// EXEC: %frontendCompiler %typecheck %cmp_opt pkgs003001a/pkgs003001a.%middle %n.cj --import-path pkgs003001a
-// EXEC: %compiler %cmp_opt pkgs003001a/pkgs003001a.%middle %n.cj --import-path pkgs003001a -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 // Test condition: package with several generic functions along with normal functions is imported
 
 internal import pkgs003001a.NormalFunc

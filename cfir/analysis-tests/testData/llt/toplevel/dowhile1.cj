@@ -4,30 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 var i = 0
-var b: Int32 = do {
+var b: Int32 = <!TYPE_MISMATCH!>do {
     i++
-} while (5)
-
-/* SCAN
-error: mismatched types
-  ==> dowhile1.cj:10:16:
-   | 
-10 |   var b: Int32 = do {
-   |  ________________^
-11 | |     i++
-12 | | } while (5)
-   | |___________^ expected 'Int32', found 'Unit'
-   | 
-
-error: cannot convert an integer literal to type 'Bool'
-  ==> dowhile1.cj:12:10:
-   | 
-12 | } while (5)
-   |          ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/
+} while (<!TYPE_MISMATCH!>5<!>)<!>

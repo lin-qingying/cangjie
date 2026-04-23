@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 struct R {
     private var x: Int64 = 2
     public func a() {
@@ -24,26 +22,8 @@ struct A {
 }
 
 main(): Int64 {
-    R().a().a
-    R().b
+    R().a().<!INVISIBLE_MEMBER!>a<!>
+    R().<!INVISIBLE_MEMBER!>b<!>
 
     return 0
 }
-
-/* SCAN
-error: can not access function 'a'
-  ==> record_access_control1.cj:27:5:
-   | 
-27 |     R().a().a
-   |     ^ 
-   | 
-
-error: can not access function 'b'
-  ==> record_access_control1.cj:28:5:
-   | 
-28 |     R().b
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

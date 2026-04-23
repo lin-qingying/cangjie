@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRORCHECK: %compiler %cmp_opt %f
-// ASSERT: scan-1 error: cannot assign to immutable value
-
 interface IA {
     mut prop x: Int64
 }
@@ -17,7 +14,7 @@ class A<T> where T <: IA {
         this.t = t
     }
     func foo() {
-        t.x = t.x + 1
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>t.x<!> = t.x + 1
     }
 }
 

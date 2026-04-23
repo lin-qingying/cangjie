@@ -4,15 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %diag_json %f -o %output 2>&1 | compare %f
 
 func test(): Int64 {
-    let assign = {a: Int64 => a = 0}
+    let assign = {a: Int64 => <!CANNOT_ASSIGN_TO_IMMUTABLE!>a<!> = 0}
     return 0
 }
 
 main() {
     return test()
 }
-
-// ASSERT: scan sema_cannot_assign_to_immutable

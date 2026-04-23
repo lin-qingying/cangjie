@@ -19,7 +19,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
@@ -106,7 +106,7 @@ internal class ScopeBasedTowerLevel(
     private fun CfirCallableSymbol<*>.isDirectCallableValueCandidate(): Boolean {
         if (!isBound) return false
         val declaration = cfir as? CfirVariable ?: return false
-        return declaration.returnTypeRef.coneTypeOrNull is ConeFuncType
+        return declaration.returnTypeRef.coneTypeOrNull is ConeFunctionType
     }
 }
 

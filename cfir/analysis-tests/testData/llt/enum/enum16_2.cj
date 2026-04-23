@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 package p
 
 enum E {
@@ -22,7 +20,7 @@ func g() {
     f(1) // ok
     E.f(1) // ok
     f(1, 2) // ok, find f(a: Int64, b: Int64)
-    f(1, 2, 3) // ok, find E.f(Int64, Int64, Int64)
+    f(1, 2, <!TOO_MANY_ARGUMENTS!>3<!>) // ok, find E.f(Int64, Int64, Int64)
 }
 
 var A = 0 // conflict with A
@@ -50,20 +48,3 @@ func g2() {
     F(1) // ok
     let y: C // ok
 }
-
-/* SCAN
-error: extra argument given for parameter list '(Int64, Int64)' in call
-  ==> enum16_2.cj:25:6:
-   | 
-25 |     f(1, 2, 3) // ok, find E.f(Int64, Int64, Int64)
-   |      ^^^^^^^^^ expected 2 arguments, found 3
-   | 
-note: found candidate
-  ==> enum16_2.cj:18:6:
-   | 
-18 | func f(a: Int64, b: Int64) {}
-   |      ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

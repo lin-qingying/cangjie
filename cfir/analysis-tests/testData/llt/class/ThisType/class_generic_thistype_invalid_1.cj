@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-// ASSERT: regex-not core dump
-// ASSERT: regex-not stack trace
-
 var aa = 0
 
 class Data<T> {

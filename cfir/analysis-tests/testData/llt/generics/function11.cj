@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %n.%suffix
-
 func g<A, B>(a: A): B {
     let b = g<A, B>(a)
     return b

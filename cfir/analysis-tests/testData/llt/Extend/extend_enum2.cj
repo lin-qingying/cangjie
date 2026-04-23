@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %import-cangjie-stdx %n.cj -o %output
-// EXEC: %set_stdx_path %run %run_opt %output
-
 package problem
 public import stdx.encoding.json.*
 

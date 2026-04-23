@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 main() {
     return 2
 }
@@ -14,7 +12,7 @@ struct R <: I {
     public var a: Int32 = 8
 
     public func c(b: Int32): Int32 {
-        let a = cc
+        let a = <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>cc<!>
         return 0
     }
 }
@@ -23,14 +21,3 @@ interface I {
     mut func cc() {
     }
 }
-
-/* SCAN
-error: immutable function 'c' cannot access mutable function 'cc'
-  ==> record_mut_invalid_15.cj:17:17:
-   | 
-17 |         let a = cc
-   |                 ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

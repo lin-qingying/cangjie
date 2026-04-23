@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %output | compare %f
-
 main() {
     let num = 0
 
@@ -18,8 +15,3 @@ main() {
     println(newNum)
     println(newNum is String)
 }
-
-/* SCAN
-let x= 1
-true
-*/

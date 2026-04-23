@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt  %f  -o %output
-
 package pkg
 
 main(): Int64 {
@@ -21,7 +19,7 @@ class A<T> {
             return 1
         }
     }
-    public var b = match (Data.U) {
+    public var b = match (Data.<!NOT_MEMBER_OF!>U<!>) {
         case _: T => 2 // class T{}
         case x: Data => 0
         case _ => 5
@@ -33,14 +31,3 @@ class T {}
 enum Data {
     T | V
 }
-
-/* SCAN
-error: 'U' is not a member of enum 'Data'
-  ==> generic_variants_0902.cj:24:32:
-   | 
-24 |     public var b = match (Data.U) {
-   |                                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

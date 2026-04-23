@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-// ASSERT: scan 6
-
 interface I2 {
     static prop p3: Int64 {
         get() {

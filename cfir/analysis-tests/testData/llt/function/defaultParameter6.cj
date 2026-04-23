@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output
-// EXEC: %run %run_opt %output
-
 package my_test
 
 public interface From<S, T> {

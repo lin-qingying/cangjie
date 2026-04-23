@@ -7,8 +7,7 @@ import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariabl
 import org.cangnova.cangjie.cfir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeFixVariableConstraintPosition
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemUtilContext
@@ -23,14 +22,14 @@ import org.cangnova.cangjie.type.model.TypeVariableMarker
 
 object ConeConstraintSystemUtilContext : ConstraintSystemUtilContext {
     override fun getBuiltinFunctionTypeConstructor(parametersNumber: Int): TypeConstructorMarker {
-        return ConeFuncType(
+        return ConeFunctionType(
             parameterTypes = List(parametersNumber) { ConePrimitiveType.NOTHING },
             returnType = ConePrimitiveType.NOTHING,
         )
     }
 
     override fun CangJieTypeMarker.extractBuiltinFunctionArgumentTypes(): List<CangJieTypeMarker> {
-        return (this as? ConeFuncType)?.parameterTypes.orEmpty()
+        return (this as? ConeFunctionType)?.parameterTypes.orEmpty()
     }
 
     override fun CangJieTypeMarker.unCapture(): CangJieTypeMarker = this

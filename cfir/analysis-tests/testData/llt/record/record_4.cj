@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 struct B {
     public static let d: Int64 = 1
     public let lambda: () -> Int64 = {=> d}
@@ -17,5 +15,3 @@ main(): Int64 {
     }
     return 1
 }
-// ASSERT: regex-not core dump
-// ASSERT: regex-not stack trace

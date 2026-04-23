@@ -8,6 +8,7 @@ package org.cangnova.cangjie.cfir.declarations
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -31,6 +32,7 @@ sealed class CfirClassLikeDeclaration : CfirMemberDeclaration() {
     abstract val declarations: List<CfirDeclaration>
     abstract val name: Name
     abstract val superTypeRefs: List<CfirTypeRef>
+    abstract val scopeProvider: CfirScopeProvider
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitClassLikeDeclaration(this, data)

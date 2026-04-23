@@ -232,6 +232,7 @@ class PsiRawCfirBuilder(
                         this.symbol = symbol
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
+                        scopeProvider = baseScopeProvider
                         attributes = declarationAttributes(psi)
                         status = convertDeclarationStatus(psi)
                         typeParameters.addAll(classTypeParameters)
@@ -251,6 +252,7 @@ class PsiRawCfirBuilder(
                         this.symbol = symbol
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
+                        scopeProvider = baseScopeProvider
                         attributes = declarationAttributes(psi)
                         status = convertDeclarationStatus(psi)
                         typeParameters.addAll(classTypeParameters)
@@ -274,6 +276,7 @@ class PsiRawCfirBuilder(
                         this.symbol = symbol
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
+                        scopeProvider = baseScopeProvider
                         attributes = declarationAttributes(psi)
                         status = convertDeclarationStatus(psi)
                         typeParameters.addAll(classTypeParameters)
@@ -304,6 +307,7 @@ class PsiRawCfirBuilder(
                         this.symbol = symbol
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
+                        scopeProvider = baseScopeProvider
                         attributes = declarationAttributes(psi)
                         status = convertDeclarationStatus(psi)
                         typeParameters.addAll(classTypeParameters)
@@ -677,6 +681,7 @@ class PsiRawCfirBuilder(
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
+                    scopeProvider = baseScopeProvider
 
                     attributes = CfirDeclarationAttributes.EMPTY
                     status = convertDeclarationStatus(psi)
@@ -694,14 +699,15 @@ class PsiRawCfirBuilder(
             val enumConstructorName =
                 psi.name?.let { Name.identifier(it) } ?: Name.special("<anonymous-enum-constructor>")
             val valueTypeRefs = psi.typeReferences.map { convertTypeRef(it) }
-            val valueParameters = valueTypeRefs.mapIndexed { index, valueTypeRef ->
-                buildEnumConstructorValueParameter(
-                    source = valueTypeRef.source ?: psi.toCjPsiSourceElement(),
-                    name = enumConstructorPayloadParameterName(index),
-                    returnTypeRef = valueTypeRef,
-                )
-            }
             return buildSourceDeclaration(CfirEnumConstructorSymbol(callableIdFor(enumConstructorName))) { symbol ->
+                val valueParameters = valueTypeRefs.mapIndexed { index, valueTypeRef ->
+                    buildEnumConstructorValueParameter(
+                        source = valueTypeRef.source ?: psi.toCjPsiSourceElement(),
+                        name = enumConstructorPayloadParameterName(index),
+                        returnTypeRef = valueTypeRef,
+                        containingDeclarationSymbol = symbol,
+                    )
+                }
                 buildEnumConstructor {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     source = psi.toCjPsiSourceElement()

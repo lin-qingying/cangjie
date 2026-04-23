@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 interface I {
     static func f1(): Unit
     static func f2(): Unit {
@@ -18,40 +16,10 @@ interface I {
 
 interface I2 {
     static func f4(): Unit {
-        I.f2() // error
+        <!INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL!>I.f2()<!> // error
     }
 }
 
 main() {
-    I.f3() // error
+    <!INTERFACE_CALL_WITH_UNIMPLEMENTED_CALL!>I.f3()<!> // error
 }
-
-/* SCAN
-error: static invocation contains unimplemented static function 'f1'
-  ==> static_member_ass03.cj:21:9:
-   | 
-21 |         I.f2() // error
-   |         ^^^^ 
-   | 
-note: indirect use of unimplemented function reference here
-  ==> static_member_ass03.cj:12:9:
-   | 
-12 |         f1()
-   |         ^^ 
-   | 
-
-error: static invocation contains unimplemented static function 'f1'
-  ==> static_member_ass03.cj:26:5:
-   | 
-26 |     I.f3() // error
-   |     ^^^^ 
-   | 
-note: indirect use of unimplemented function reference here
-  ==> static_member_ass03.cj:12:9:
-   | 
-12 |         f1()
-   |         ^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

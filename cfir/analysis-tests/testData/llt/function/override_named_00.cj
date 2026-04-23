@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-5: %run %run_opt %output %run_args
-
 open class A {
     protected open func f(a!: Int32): Int32 {
         a + 1

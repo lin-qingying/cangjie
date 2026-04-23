@@ -9,6 +9,8 @@ import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
+import org.cangnova.cangjie.analysis.api.types.CaPrimitiveType
+import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
@@ -18,8 +20,10 @@ import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisS
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -51,6 +55,8 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
     fun presetRendering(mainFile: CjFile, mainModule: CjTestModule) {
         val cachedValueReference = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
             .last { reference -> reference.referencedName == "cachedValue" }
+        val cachedTransformDeclaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
+            .single { declaration -> declaration.name == "cachedTransform" }
 
         analyzeForTest(mainFile) {
             val fileScope = mainFile.getFileScope()
@@ -60,7 +66,11 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
             val holderSymbol = fileScope.classifierSymbol("Holder")
             val resultSymbol = fileScope.classifierSymbol("Result")
             val greetSymbol = fileScope.callableSymbol("greet")
+            val sideEffectSymbol = fileScope.callableSymbol("sideEffect")
+            val intValueSymbol = fileScope.callableSymbol("intValue")
+            val floatValueSymbol = fileScope.callableSymbol("floatValue")
             val cachedLocalSymbol = cachedValueReference.resolveToSymbol() as CaLocalVariableSymbol
+            val cachedTransformSymbol = cachedTransformDeclaration.symbol
             val stateProperty = holderSymbol.declaredMemberScope.propertySymbol("state")
 
             assertEquals(
@@ -131,6 +141,10 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
                 greetSymbol.render(CaDeclarationRendererForDebug.WITH_SHORT_NAMES_WITH_PLACEHOLDER_DETAILS).contains("fallback!: Int64 = ..."),
                 "placeholder detail preset 应输出参数默认值占位文本。",
             )
+            assertEquals(
+                "func sideEffect(flag: Bool)",
+                sideEffectSymbol.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES),
+            )
 
             val renderedProperty = stateProperty.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES_WITH_BODY)
             assertTrue(renderedProperty.startsWith("prop state: Int64"))
@@ -148,6 +162,14 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
             assertEquals(
                 "let cachedValue: Int64 = 42",
                 cachedLocalSymbol.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES_WITH_INITIALIZERS),
+            )
+            assertEquals(
+                "func cachedTransform(value: Int64): Int64",
+                cachedTransformSymbol.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES),
+            )
+            assertTrue(
+                cachedTransformSymbol.render(CaDeclarationRendererForSource.WITH_SHORT_NAMES_WITH_BODY).contains("return value + cachedValue"),
+                "局部函数 renderer 应能恢复函数体而不是在 symbol 恢复阶段抛异常。",
             )
 
             assertTrue(
@@ -206,6 +228,20 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
                 "closure (sample.renderer.presets.User, ...) -> sample.renderer.presets.Base",
                 normalizeTypeRendering(closureFunctionType.render(CaTypeRendererForDebug.WITH_QUALIFIED_NAMES)),
             )
+
+            val unitType = sideEffectSymbol.returnType
+            val boolType = sideEffectSymbol.valueParameters.single().returnType
+            val intType = intValueSymbol.returnType
+            val floatType = floatValueSymbol.returnType
+
+            assertTrue(unitType is CaPrimitiveType)
+            assertTrue(unitType !is CaUsualClassType)
+            assertEquals("Unit", normalizeTypeRendering(unitType.render(CaTypeRendererForSource.WITH_SHORT_NAMES)))
+            assertEquals("Bool", normalizeTypeRendering(boolType.render(CaTypeRendererForSource.WITH_SHORT_NAMES)))
+            assertEquals("Int32", normalizeTypeRendering(intType.render(CaTypeRendererForSource.WITH_SHORT_NAMES)))
+            assertEquals("Float64", normalizeTypeRendering(floatType.render(CaTypeRendererForSource.WITH_SHORT_NAMES)))
+            assertEquals(PrimitiveTypeKind.UNIT, (unitType as CaPrimitiveType).kind)
+            assertEquals(null, unitType.classLikeSymbol)
 
             assertEquals(mainModule.caModule, userSymbol.containingModule)
         }

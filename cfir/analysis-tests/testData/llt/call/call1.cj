@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT:regex ambiguous match for function call
-
 func foo1(a: Int64, b: Int64, c: Int32): Int32 {
     1
 }
@@ -30,8 +27,8 @@ func foo2(a: ((B, C)) -> B): Int32 {
 }
 
 main() {
-    let a = foo1(1, 2, 3)
+    let a = <!AMBIGUOUS_FUNCTION_CALL!>foo1<!>(1, 2, 3)
     let b = {x: (B, C) => C()}
-    let c = foo2(b)
+    let c = <!AMBIGUOUS_FUNCTION_CALL!>foo2<!>(b)
     return 0
 }

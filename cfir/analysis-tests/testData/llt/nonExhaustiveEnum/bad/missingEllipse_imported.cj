@@ -5,18 +5,12 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: %n.lib.cj
-// EXEC: %compiler %n.lib.cj %compile_lib_opt -o liba.%middle
-// ERRCHECK: %compiler %f liba.%middle %cmp_opt
 
 import a.*
 
 main() {
     let a = A<Int64>.B
-    match (a) {
+    <!NON_EXHAUSTIVE_MATCH!>match (a) {
         case B => 0
-    }
+    }<!>
 }
-
-// ASSERT: scan error: non-exhaustive patterns
-// ASSERT: scan # note: _ is not covered
-// ASSERT: scan 1 error generated, 1 error printed.

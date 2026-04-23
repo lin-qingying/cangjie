@@ -8,7 +8,7 @@ package example
 
 @Annotation
 public class A {
-    public const init(p0!: example_XX = example_XX.ALL) {}
+    public const init(p0!: <!UNRESOLVED_REFERENCE!>example_XX<!> = <!UNRESOLVED_REFERENCE!>example_XX<!>.ALL) {}
 }
 
 main() {}

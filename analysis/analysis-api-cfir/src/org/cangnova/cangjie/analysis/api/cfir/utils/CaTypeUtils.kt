@@ -1,11 +1,13 @@
 package org.cangnova.cangjie.analysis.api.cfir.utils
 
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.types.CaClassErrorType
 import org.cangnova.cangjie.analysis.api.types.CaErrorType
 import org.cangnova.cangjie.analysis.api.types.CaFunctionType
 import org.cangnova.cangjie.analysis.api.types.CaIntersectionType
+import org.cangnova.cangjie.analysis.api.types.CaPrimitiveType
 import org.cangnova.cangjie.analysis.api.types.CaTupleType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.api.types.CaTypeParameterType
@@ -15,11 +17,13 @@ import org.cangnova.cangjie.analysis.api.types.CaUnionType
 import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeUnionType
+import org.cangnova.cangjie.cfir.types.type
 
 /**
  * 对齐 Kotlin `analysis-api-fir/utils/typeUtils.kt` 的 type helper 集合。
@@ -34,11 +38,12 @@ internal fun <C : ConeCangJieType, T : CaType> createTypePointer(
     typeFactory: (C, CaCfirSession) -> T?,
 ): CaTypePointer<T> = CaGenericTypePointer(coneType, typeFactory)
 
+@OptIn(CaImplementationDetail::class)
 private class CaGenericTypePointer<C : ConeCangJieType, T : CaType>(
     private val coneType: C,
     private val typeFactory: (C, CaCfirSession) -> T?,
 ) : CaTypePointer<T> {
-    override fun restoreType(session: CaSession): T? {
+    override fun restore(session: CaSession): T? {
         val cfirSession = session as? CaCfirSession ?: return null
         return typeFactory(coneType, cfirSession)
     }
@@ -47,7 +52,10 @@ private class CaGenericTypePointer<C : ConeCangJieType, T : CaType>(
 internal fun restoreUsualClassType(coneType: ConeCangJieType, session: CaCfirSession): CaUsualClassType? =
     coneType.asCaType(session) as? CaUsualClassType
 
-internal fun restoreFunctionType(coneType: ConeFuncType, session: CaCfirSession): CaFunctionType? =
+internal fun restorePrimitiveType(coneType: ConePrimitiveType, session: CaCfirSession): CaPrimitiveType? =
+    coneType.asCaType(session) as? CaPrimitiveType
+
+internal fun restoreFunctionType(coneType: ConeFunctionType, session: CaCfirSession): CaFunctionType? =
     coneType.asCaType(session) as? CaFunctionType
 
 internal fun restoreTupleType(coneType: ConeTupleType, session: CaCfirSession): CaTupleType? =
@@ -78,6 +86,6 @@ internal fun ConeCangJieType.asPublicTypeProjections(analysisSession: CaCfirSess
 
 internal fun ConeTypeProjection.asPublicTypeProjection(analysisSession: CaCfirSession): CaTypeProjection =
     CaTypeProjection(
-        type = type?.asCaType(analysisSession),
+        type = type.asCaType(analysisSession),
         token = analysisSession.token,
     )

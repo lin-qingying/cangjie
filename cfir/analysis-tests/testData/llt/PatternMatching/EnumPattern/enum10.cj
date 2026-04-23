@@ -4,7 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
+// DIAGNOSTICS: -UNUSED_VARIABLE
 
 enum TimeUnit {
     Year(Int32)
@@ -17,26 +17,8 @@ main(): Int64 {
     var time = Day(1, 2, 3)
     var d = match (time) {
         case Year(y) => y
-        case Year(z) | Month(y, _) => z
+        case Year(<!VAR_IN_OR_PATTERN!>z<!>) | Month(<!VAR_IN_OR_PATTERN!>y<!>, _) => <!UNRESOLVED_REFERENCE!>z<!>
         case _ => -1
     }
     return 0
 }
-
-/* SCAN
-error: cannot introduce variables in patterns connected by '|'
-  ==> enum10.cj:20:19:
-   | 
-20 |         case Year(z) | Month(y, _) => z
-   |                   ^          ~ 
-   | 
-
-error: undeclared identifier 'z'
-  ==> enum10.cj:20:39:
-   | 
-20 |         case Year(z) | Month(y, _) => z
-   |                                       ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %diag_json %f 2>&1 | compare %f
-
 struct S {
     func foo(): Int {
         1
@@ -16,13 +14,10 @@ interface I2 {
     func foo(): String
 }
 
-func bar<T>(x: T) where T <: S & I2 {
+func bar<T>(x: T) where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>S<!> & I2 {
 }
 
-class A<T> where T <: S & I2 {}
+class A<T> where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>S<!> & I2 {}
 
 main() {
 }
-
-// ASSERT: scan-2 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 2

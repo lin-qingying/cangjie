@@ -4,11 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
+// DIAGNOSTICS: -UNUSED_EXPRESSION
 
 struct C {
-    static init() {}
-    static init() {
+    <!CONFLICTING_OVERLOADS!>static init()<!> {}
+    <!CONFLICTING_OVERLOADS!>static init()<!> {
         1
     }
 }
@@ -16,20 +16,3 @@ struct C {
 main() {
     return 0
 }
-
-/* SCAN
-error: static constructor 'init' has overload conflicts
-  ==> static_init_02.cj:11:12:
-   | 
-11 |     static init() {
-   |            ^^^^ 
-   | 
-note: conflict with the declaration
-  ==> static_init_02.cj:10:12:
-   | 
-10 |     static init() {}
-   |            ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

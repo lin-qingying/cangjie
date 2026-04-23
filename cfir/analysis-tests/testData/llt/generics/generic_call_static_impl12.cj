@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// EXEC: %run %run_opt %n.%suffix 2>&1 
 
 public interface PrintAble {
     static func test(): Int64 {

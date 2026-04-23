@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 public class Buff<E> {
     public var myData2: Array<Option<E>> = [Option<E>.None]
     public var c = match (myData2[0]) {

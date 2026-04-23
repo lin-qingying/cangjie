@@ -1,16 +1,20 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.getClassLikePublicSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolBase
+import org.cangnova.cangjie.analysis.api.components.CaClassTypeBuilder
 import org.cangnova.cangjie.analysis.api.components.CaTypeCreator
+import org.cangnova.cangjie.analysis.api.components.CaTypeParameterTypeBuilder
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseTypeCreator
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.types.CaFunctionType
 import org.cangnova.cangjie.analysis.api.types.CaIntersectionType
 import org.cangnova.cangjie.analysis.api.types.CaTupleType
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.analysis.api.types.CaTypeParameterType
 import org.cangnova.cangjie.analysis.api.types.CaUnionType
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
@@ -18,11 +22,10 @@ import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
-import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.ConeAttributes
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
@@ -34,59 +37,36 @@ import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.name.ClassId
 
 /**
- * 对齐 Kotlin `KaFirTypeCreator` 的组件落位。
+ * 对齐 Kotlin `CaCfirTypeCreator` 的组件落位。
  *
  * 所有公开类型构造都必须直接绑定当前 use-site session 的 CFIR 类型系统，
  * 避免外部自行拼接低层 `Cone*Type` 后再倒灌回 Analysis API。
  */
+@OptIn(CaImplementationDetail::class)
 internal class CaCfirTypeCreator(
     override val analysisSessionProvider: () -> CaCfirSession,
-) : CaBaseSessionComponent<CaCfirSession>(), CaTypeCreator, CaCfirSessionComponent {
-    override fun buildClassLikeType(
+) : CaBaseTypeCreator<CaCfirSession>(), CaCfirSessionComponent {
+    override fun buildClassType(
         classId: ClassId,
-        typeArguments: List<CaType>,
-    ): CaClassLikeType = withValidityAssertion {
-        val classLikeSymbol = analysisSession.getClassLikePublicSymbol(classId)
-            ?: error("当前 use-site session 中不可见的 class-like 声明无法构造类型：`${classId.asString()}`")
-        buildClassLikeType(classLikeSymbol, typeArguments)
+        init: CaClassTypeBuilder.() -> Unit
+    ): CaType {
+        TODO("Not yet implemented")
     }
 
-    override fun buildClassLikeType(
+    override fun buildClassType(
         symbol: CaClassLikeSymbol,
-        typeArguments: List<CaType>,
-    ): CaClassLikeType = withValidityAssertion {
-        val cfirClassLikeSymbol = symbol as? CaCfirClassLikeSymbolBase<*>
-            ?: error("仅支持通过 CFIR class-like 符号构造类型：${symbol::class.simpleName}")
-        val coneArguments = typeArguments.asConeTypeArguments("class-like 类型构造")
-        val coneType = when (val backingSymbol = cfirClassLikeSymbol.backingSymbol) {
-            is CfirClassSymbol -> ConeClassLikeType(backingSymbol.toLookupTag(), coneArguments, ConeAttributes.Empty)
-            is CfirInterfaceSymbol -> ConeClassLikeType(
-                lookupTag = backingSymbol.toLookupTag(),
-                typeArguments = coneArguments,
-                attributes = ConeAttributes.Empty,
-                isInterface = true,
-            )
-            is CfirStructSymbol -> ConeStructType(backingSymbol.toLookupTag(), coneArguments, ConeAttributes.Empty)
-            is CfirEnumSymbol -> ConeEnumType(
-                lookupTag = backingSymbol.toLookupTag(),
-                typeArguments = coneArguments,
-                attributes = ConeAttributes.Empty,
-                isRefEnum = backingSymbol.isRefEnum,
-            )
-            is CfirTypeAliasSymbol -> ConeTypeAliasType(
-                classId = backingSymbol.classId,
-                typeArguments = coneArguments,
-                attributes = ConeAttributes.Empty,
-            )
-            is CfirPrimitiveTypeSymbol -> {
-                require(coneArguments.isEmpty()) {
-                    "原始类型 `${backingSymbol.kind.typeName}` 不能携带类型实参"
-                }
-                ConePrimitiveType(backingSymbol.kind, ConeAttributes.Empty)
-            }
-        }
-        coneType.asPublicType() as CaClassLikeType
+        init: CaClassTypeBuilder.() -> Unit
+    ): CaType {
+        TODO("Not yet implemented")
     }
+
+    override fun buildTypeParameterType(
+        symbol: CaTypeParameterSymbol,
+        init: CaTypeParameterTypeBuilder.() -> Unit
+    ): CaTypeParameterType {
+        TODO("Not yet implemented")
+    }
+
 
     override fun buildFunctionType(
         parameterTypes: List<CaType>,
@@ -95,7 +75,7 @@ internal class CaCfirTypeCreator(
         isClosureType: Boolean,
         hasVariableLengthArgument: Boolean,
     ): CaFunctionType = withValidityAssertion {
-        ConeFuncType(
+        ConeFunctionType(
             parameterTypes = parameterTypes.asConeTypes("函数类型构造"),
             returnType = returnType.requireCfirConeType("函数类型构造"),
             isCFunc = isCFunction,
@@ -139,5 +119,5 @@ internal class CaCfirTypeCreator(
      * 因此这里严格按“不变投影”构造类型实参。
      */
     private fun Iterable<CaType>.asConeTypeArguments(owner: String): List<ConeTypeProjection> =
-        asConeTypes(owner).map { coneType -> ConeTypeProjection(coneType) }
+        asConeTypes(owner)
 }

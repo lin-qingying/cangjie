@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex-not at least one case should be wildcard pattern or variable pattern in match case
-
 main():Int64 {
     let a = 10
     var b = match (a) {
@@ -15,6 +12,3 @@ main():Int64 {
     }
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

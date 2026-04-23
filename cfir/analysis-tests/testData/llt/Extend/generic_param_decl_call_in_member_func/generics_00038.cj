@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 interface I1 {}
 
 open class C1 <: I1 {
@@ -81,12 +79,12 @@ class C<M> {
 }
 
 interface A1<M> where M <: C1 & I1 {
-    prop p1: Int64 {
+    prop <!EXTEND_MEMBER_CANNOT_SHADOW!>p1<!>: Int64 {
         get() {
             0
         }
     }
-    static prop p2: Int64 {
+    static prop <!EXTEND_MEMBER_CANNOT_SHADOW!>p2<!>: Int64 {
         get() {
             0
         }
@@ -136,21 +134,3 @@ main() {
     }
     return 1
 }
-
-/* SCAN
-error: extend member 'p1' is not allowed to shadow members of 'extend Class-A2<Class-C2>'
-  ==> generics_00038.cj:84:10:
-   | 
-84 |     prop p1: Int64 {
-   |          ^^ 
-   | 
-
-error: extend member 'p2' is not allowed to shadow members of 'extend Class-A2<Class-C2>'
-  ==> generics_00038.cj:89:17:
-   | 
-89 |     static prop p2: Int64 {
-   |                 ^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ../../apilevel.cj ./std
-// EXEC: %compiler %cmp_opt %compile_lib_opt apilevel.cj -o apilevel.%middle
-// ERRCHECK: %compiler %cmp_opt --import-path ./std/ %f apilevel.%middle --cfg=APILevel_level=11 -Woff all
 
 import std.argopt.*
 import std.ast.*
@@ -48,17 +46,6 @@ import std.unittest.prop_test.*
 import std.unittest.testmacro.*
 
 main() {
-    ArgOpt()
+    <!APILEVEL_REF_HIGHER!>ArgOpt()<!>
     0
 }
-
-/* SCAN
-error: cannot reference 'ArgOpt'(level: 12) which higher than level of the current scope(level: 11)
-  ==> importall.cj:51:5:
-   | 
-51 |     ArgOpt()
-   |     ^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

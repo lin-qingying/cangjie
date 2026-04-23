@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %f 2>&1 | compare %f
-
 interface I1 {
     func f1(): Int32
 }
@@ -21,6 +19,3 @@ class C <: I1 & I2 {
         2
     }
 }
-
-/* SCAN
-*/ 

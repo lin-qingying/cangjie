@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 class A<T> {
     public func test(a: T) {}
     public func test(a: Int16) {}
@@ -18,6 +16,3 @@ main(): Int64 {
     A<Int32>().i()
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

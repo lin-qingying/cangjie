@@ -101,7 +101,7 @@ class CfirLocalScope private constructor(
      * 对齐 K2：快速判定当前 scope 是否**可能**包含指定名字。
      * 局部作用域三栏命中任一即返回 true，供 tower resolve 的热路径提前跳过空 scope。
      */
-    fun mayContainName(name: Name): Boolean {
+    override fun mayContainName(name: Name): Boolean {
         return variables.containsKey(name) || functions[name].isNotEmpty() || classLikeSymbols.containsKey(name)
     }
 

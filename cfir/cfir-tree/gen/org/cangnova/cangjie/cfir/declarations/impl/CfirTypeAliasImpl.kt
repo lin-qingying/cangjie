@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -33,6 +34,7 @@ class CfirTypeAliasImpl @CfirImplementationDetail constructor(
     override var deprecationsProvider: DeprecationsProvider,
     override val declarations: MutableList<CfirDeclaration>,
     override val superTypeRefs: MutableList<CfirTypeRef>,
+    override val scopeProvider: CfirScopeProvider,
     override val symbol: CfirTypeAliasSymbol,
     override var status: CfirDeclarationStatus,
     override val typeParameters: MutableList<CfirTypeParameter>,

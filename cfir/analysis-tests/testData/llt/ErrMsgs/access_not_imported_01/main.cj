@@ -5,13 +5,9 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg.cj -o pkg.%middle
-// ERRCHECK: %compiler %cmp_opt %diag_json %f -o %output
 
 internal import pkg.a
 
 main() {
-    println(pkg.b)
+    println(pkg.<!UNRESOLVED_REFERENCE!>b<!>)
 }
-
-// ASSERT: scan sema_undeclared_identifier

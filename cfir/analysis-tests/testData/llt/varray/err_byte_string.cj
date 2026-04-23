@@ -4,21 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 func f(_: VArray<Byte, $3>) {}
 
 main() {
-    f("123".toArray())
+    f(<!TYPE_MISMATCH!>"123".toArray()<!>)
 }
-
-/* SCAN
-error: mismatched types
-  ==> err_byte_string.cj:12:7:
-   | 
-12 |     f("123".toArray())
-   |       ^^^^^^^^^^^^^^^ expected 'VArray<UInt8, $3>', found 'Struct-Array<UInt8>'
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -65,7 +65,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -486,7 +486,7 @@ class CfirCallResolver(
                                         components.returnTypeCalculator.tryCalculateReturnType(it.cfir).coneType
                                     }
 
-                                    if (singleExpectedCandidate?.isSuccessful == false && declarationType is ConeFuncType) {
+                                    if (singleExpectedCandidate?.isSuccessful == false && declarationType is ConeFunctionType) {
                                         createConeDiagnosticForCandidateWithError(
                                             singleExpectedCandidate.lowestApplicability,
                                             singleExpectedCandidate,

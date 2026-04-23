@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-
 main() {
     let a = Some(1)
     let b = Some(3)

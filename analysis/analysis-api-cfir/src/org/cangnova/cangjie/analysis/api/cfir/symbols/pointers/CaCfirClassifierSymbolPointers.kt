@@ -4,9 +4,6 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassLikeSymbolCache
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbolCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFileSymbolCacheKey
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPackageSymbolCacheKey
-import org.cangnova.cangjie.analysis.api.cfir.symbols.createFileSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.getClassLikePublicSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.getPackagePublicSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.restoreExtendPublicSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
@@ -20,14 +17,14 @@ internal class CaCfirPackageSymbolPointer(
     private val cacheKey: CaCfirPackageSymbolCacheKey,
 ) : CaCfirSymbolPointerBase<CaPackageSymbol>() {
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaPackageSymbol? =
-        restoreSession(session)?.getPackagePublicSymbol(cacheKey.fqName)
+        restoreSession(session)?.getPackageSymbol(cacheKey.fqName)
 }
 
 internal class CaCfirFileSymbolPointer(
     private val cacheKey: CaCfirFileSymbolCacheKey,
 ) : CaCfirSymbolPointerBase<org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol>() {
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol? =
-        restoreSession(session)?.createFileSymbol(cacheKey.file)
+        restoreSession(session)?.let { with(it) { cacheKey.file.symbol } }
 }
 
 internal class CaCfirClassLikeSymbolPointer<S : CaSymbol>(
@@ -35,7 +32,7 @@ internal class CaCfirClassLikeSymbolPointer<S : CaSymbol>(
     private val symbolType: Class<S>,
 ) : CaCfirSymbolPointerBase<S>() {
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): S? =
-        symbolType.castOrNull(restoreSession(session)?.getClassLikePublicSymbol(cacheKey.classId))
+        symbolType.castOrNull(restoreSession(session)?.getClassLikeSymbol(cacheKey.classId))
 }
 
 internal class CaCfirExtendSymbolPointer(

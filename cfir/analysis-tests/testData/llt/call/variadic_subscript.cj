@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args 2>&1 | compare %f
-
 class A {
     operator func [](x: Array<Int8>) {
         x.size
@@ -20,7 +17,3 @@ main() {
     let a = A()
     a[1] = a[1, 2, 3, 4]
 }
-
-/* SCAN
-5
-*/

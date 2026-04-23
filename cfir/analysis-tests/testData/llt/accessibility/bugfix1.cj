@@ -6,8 +6,6 @@
 
 // LEVLE: 0
 // DEPENDENCE: %n.pkg.cj
-// EXEC: %compiler %n.pkg.cj %compile_lib_opt -o liba.%lib_extension
-// EXEC: %compiler %f liba.%lib_extension %cmp_opt 
 
 package b
 import a.*

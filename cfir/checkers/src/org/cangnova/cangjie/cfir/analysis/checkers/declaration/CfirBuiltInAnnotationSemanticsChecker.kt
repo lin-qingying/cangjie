@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjCallExpression

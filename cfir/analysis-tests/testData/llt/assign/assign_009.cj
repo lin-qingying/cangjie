@@ -4,34 +4,15 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 interface I {
     mut prop b: Int64 {
         get() {
             0
         }
         set(v) {
-            v = v
+            <!CANNOT_ASSIGN_TO_IMMUTABLE!>v<!> = v
         }
     }
 }
 
 main() {}
-
-/* SCAN
-error: cannot assign to immutable value
-  ==> assign_009.cj:15:13:
-   | 
-15 |             v = v
-   |             ^^^^^ 
-   | 
-note: parameter 'v' is immutable
-  ==> assign_009.cj:14:13:
-   | 
-14 |         set(v) {
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

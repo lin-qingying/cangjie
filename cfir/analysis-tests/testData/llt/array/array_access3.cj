@@ -1,7 +1,4 @@
-// (CJNATIVE) EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
-
-func test<T>(a : T) : Bool where T <: Array<Bool> {
+func test<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>(a : T) : Bool where T <: Array<Bool> {
     if (a.isEmpty()) {
         return false
     }
@@ -14,18 +11,6 @@ main() {
     }
     return 0
 }
-
-/* SCAN
-error: the upper bound 'Struct-Array<Bool>' of generic parameter 'Generics-T' must be class or interface
- ==> array_access3.cj:4:11:
-  | 
-4 | func test<T>(a : T) : Bool where T <: Array<Bool> {
-  |           ^ 
-  | 
-
-1 error generated, 1 error printed.
-*/
-
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

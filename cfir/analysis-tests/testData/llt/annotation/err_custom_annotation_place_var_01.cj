@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 @Annotation
 public class A {
     const init() {}
@@ -13,24 +11,10 @@ public class A {
 
 class B {
     func f() {
-        @A
+        <!ANNOTATION_CUSTOM_PLACE!>@A<!>
         let x = 0
         x
     }
 }
 
 main() {}
-
-/* SCAN
-error: cannot use custom annotation
-  ==> err_custom_annotation_place_var_01.cj:17:13:
-   | 
-16 |         @A
-   |         ~~ 
-17 |         let x = 0
-   |             ^ 
-   | 
-   # note: custom annotations can only be used on non-local declarations
-
-1 error generated, 1 error printed.
-*/

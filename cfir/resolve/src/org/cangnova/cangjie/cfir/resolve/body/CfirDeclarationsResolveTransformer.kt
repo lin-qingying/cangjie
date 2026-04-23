@@ -5,7 +5,6 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.scopes.CfirScope
@@ -22,14 +21,15 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
+import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -532,7 +532,7 @@ open class CfirDeclarationsResolveTransformer(
         return buildList {
             // 声明解析阶段同样要先看到当前文件顶层声明，保证后续类型与 extend 规则建立在正确的本地符号之上。
             add(CfirFileDeclaredTopLevelScope(file))
-            add(CfirPackageMemberScope(file.packageDirective.packageFqName, symbolProvider))
+            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
             add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
             add(CfirExplicitStarImportingScope(imports, symbolProvider))
             add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
@@ -627,19 +627,51 @@ open class CfirDeclarationsResolveTransformer(
         ) as F
 
         if (result.returnTypeRef is CfirImplicitTypeRef) {
-            val body = result.body
-            val inferredType = body?.coneTypeOrNull
-                ?: (body?.statements?.singleOrNull() as? CfirReturnExpression)?.result?.coneTypeOrNull
-            if (inferredType != null) {
-                val resolved = result.returnTypeRef.resolvedTypeFromPrototype(
-                    inferredType,
-                    result.returnTypeRef.source,
-                )
-                result.replaceReturnTypeRef(resolved)
-            }
+            val inferredType = inferFunctionReturnType(result)
+            val resolved = result.returnTypeRef.resolvedTypeFromPrototype(
+                inferredType,
+                result.returnTypeRef.source,
+            )
+            result.replaceReturnTypeRef(resolved)
         }
 
         return result
+    }
+
+    /**
+     * 从当前函数 CFG 已确认可达的返回结果里推断函数返回类型。
+     *
+     * 返回结果统一包含：
+     * - 显式 `return expr`
+     * - 函数体正常流出时的 block 尾表达式
+     *
+     * 这样可以让“最后一条表达式是返回值”与显式 return 共享同一套推断入口，
+     * 并自动排除 CFG 上不可达的块尾表达式。
+     */
+    private fun inferFunctionReturnType(function: CfirFunction): ConeCangJieType {
+        val returnExpressions = components.dataFlowAnalyzer.returnExpressionsOfFunction(function)
+        if (returnExpressions.isEmpty()) {
+            return session.builtinTypes.unitType
+        }
+
+        val expressionTypes = returnExpressions.map { expression ->
+            expression.coneTypeOrNull ?: ConeErrorType(ConeSimpleDiagnostic("Postponed inference"))
+        }
+
+        if (expressionTypes.size == 1) {
+            return expressionTypes.single()
+        }
+
+        val commonType = session.typeContext.commonSuperTypeOrNull(expressionTypes)
+        if (commonType != null && commonType !is ConeErrorType) {
+            return commonType
+        }
+
+        val message = expressionTypes.joinToString(
+            prefix = "The types ",
+            postfix = " do not have the smallest common supertype",
+        ) { "'$it'" }
+        return ConeErrorType(ConeSimpleDiagnostic(message))
     }
 
     /**
@@ -734,7 +766,7 @@ open class CfirDeclarationsResolveTransformer(
         val classId = resolveClassId(klass)
             ?: return ConeErrorType(ConeSimpleDiagnostic("cannot resolve class id for constructor owner"))
         val typeArguments = klass.typeParameters.map { parameter ->
-            ConeTypeProjection(ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag()))
+            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
         }
         val lookupTag = ConeClassLikeLookupTagImpl(classId)
         return when (klass) {

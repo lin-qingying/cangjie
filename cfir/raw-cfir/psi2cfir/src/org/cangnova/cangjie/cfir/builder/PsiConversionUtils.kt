@@ -1,9 +1,11 @@
 package org.cangnova.cangjie.cfir.builder
 
+import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.builder.buildQualifierPart
 import org.cangnova.cangjie.cfir.types.builder.buildBasicTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildFunctionTypeRef
@@ -80,22 +82,30 @@ private fun CjUserType.toCfirUserTypeRef(
     ref: CjTypeReference,
     toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
 ): CfirUserTypeRef {
-    val qualifier = buildQualifierFromUserType(this)
-    val typeArguments = typeArguments.map { it.typeReference.toCfirOrImplicitTypeRef(toSource) }
+    val qualifier = buildQualifierFromUserType(this, toSource)
     return buildUserTypeRef {
         source = ref.toCjSourceElement(toSource)
         this.qualifier += qualifier
-        this.typeArguments += typeArguments
     }
 }
 
-private fun buildQualifierFromUserType(userType: CjUserType): List<Name> {
-    val segments = mutableListOf<Name>()
+private fun buildQualifierFromUserType(
+    userType: CjUserType,
+    toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
+): List<CfirQualifierPart> {
+    val segments = mutableListOf<CfirQualifierPart>()
     var current: CjUserType? = userType
     while (current != null) {
         val name = current.referencedName
         if (name != null) {
-            segments.add(0, Name.identifier(name))
+            segments.add(
+                0,
+                buildQualifierPart {
+                    source = current.referenceExpression?.let(toSource) as? CjSourceElement
+                    this.name = Name.identifier(name)
+                    typeArguments += current.typeArguments.map { it.typeReference.toCfirOrImplicitTypeRef(toSource) }
+                }
+            )
         }
         current = current.qualifier
     }

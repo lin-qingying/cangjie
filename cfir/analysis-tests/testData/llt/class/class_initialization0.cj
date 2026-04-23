@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-
 class A <: B {
-    public var a = b
+    public var a = <!USED_BEFORE_INITIALIZATION!>b<!>
 }
 
 open class B {
@@ -17,14 +15,3 @@ open class B {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: super member 'b' is not allowed to be used before calling super()
-  ==> class_initialization0.cj:10:20:
-   | 
-10 |     public var a = b
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

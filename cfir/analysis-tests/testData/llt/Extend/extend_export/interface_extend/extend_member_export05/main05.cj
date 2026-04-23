@@ -6,9 +6,6 @@
 
 // LEVEL: 0
 // DEPENDENCE: ./testa.cj ./testb3.cj ./%n.cjnative.expect
-// EXEC: %compiler %cmp_opt %compile_lib_opt testa.cj -o a.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt testb3.cj -o b.%middle
-// (CJNATIVE) EXEC-PIPE-1: %compiler %cmp_opt b.%middle a.%middle %f -o %output 2>&1 | compare %n.cjnative.expect
 
 package b.a
 

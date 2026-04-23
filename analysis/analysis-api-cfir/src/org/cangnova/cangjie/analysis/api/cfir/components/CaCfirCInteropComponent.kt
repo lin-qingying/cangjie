@@ -3,8 +3,8 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.backingPsiIfApplicable
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.interop.CaInteropBackend
@@ -60,22 +60,17 @@ internal class CaCfirInteropInfoImpl(
 ) : CaInteropInfo
 
 internal fun CaCfirSession.getInteropInfo(element: CjElement): CaInteropInfo? {
-    return getOrCreateInteropInfo(element) {
-        resolveInteropOwner(element)?.let(::buildInteropInfo)
-    }
+    return resolveInteropOwner(element)?.let(::buildInteropInfo)
 }
 
 internal fun CaCfirSession.getInteropInfo(symbol: CaSymbol): CaInteropInfo? {
-    val key = symbol.publicSymbolCacheKeyOrNull() ?: return null
-    return getOrCreateSymbolInteropInfo(key) {
-        val sourcePsi = when (symbol) {
-            is CaCfirBackedSymbol<*> -> symbolQueries.lookupSourcePsi(symbol.backingSymbol)
-            else -> null
-        } ?: return@getOrCreateSymbolInteropInfo null
-        val owner = resolveInteropOwner(sourcePsi as? CjElement ?: return@getOrCreateSymbolInteropInfo null)
-            ?: return@getOrCreateSymbolInteropInfo null
-        buildInteropInfo(owner)
-    }
+    val sourcePsi = when (symbol) {
+        is CaCfirBackedSymbol<*> -> symbol.backingSymbol.backingPsiIfApplicable
+        else -> null
+    } ?: return null
+    val owner = resolveInteropOwner(sourcePsi as? CjElement ?: return null)
+        ?: return null
+    return buildInteropInfo(owner)
 }
 
 /**

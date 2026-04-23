@@ -4,49 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 func test1(v: Any) {}
 
 func test2(v: ToString) {}
 
 main() {
-    let x = Some(None)
-    test1(None)
-    test2(None)
+    let x = <!UNABLE_TO_INFER_GENERIC_FUNC!>Some(<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None<!>)<!>
+    test1(<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None<!>)
+    test2(<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None<!>)
     0
 }
-
-/* SCAN
-error: generic type should be used with type argument
-  ==> enum37.cj:14:18:
-   | 
-14 |     let x = Some(None)
-   |                  ^ 
-   | 
-
-error: unable to infer generic argument of this function
-  ==> enum37.cj:14:13:
-   | 
-14 |     let x = Some(None)
-   |             ^^^^ 
-   | 
-note: no information known for type variable 'Generics-T'
-  ==> (package std.core)option.cj:11:20:
-
-error: generic type should be used with type argument
-  ==> enum37.cj:15:11:
-   | 
-15 |     test1(None)
-   |           ^ 
-   | 
-
-error: generic type should be used with type argument
-  ==> enum37.cj:16:11:
-   | 
-16 |     test2(None)
-   |           ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

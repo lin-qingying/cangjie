@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 main(): Int64 {
     if (foo2().get(2) != 1) {
         print("${foo2().get(2)}")

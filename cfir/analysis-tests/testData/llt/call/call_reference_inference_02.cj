@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 class A {
     func test() {
         1
@@ -23,29 +21,6 @@ class A {
 
 main() {
     let a = A()
-    let b = a.test
+    let b = a.<!AMBIGUOUS_USE!>test<!>
     return 0
 }
-
-/* SCAN
-error: ambiguous use of 'test'
-  ==> call_reference_inference_02.cj:26:13:
-   | 
-26 |     let b = a.test
-   |             ^^^^^^ 
-   | 
-note: found candidate
-  ==> call_reference_inference_02.cj:10:10:
-   | 
-10 |     func test() {
-   |          ^^^^ 
-   | 
-note: found candidate
-  ==> call_reference_inference_02.cj:13:10:
-   | 
-13 |     func test(a: String) {
-   |          ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

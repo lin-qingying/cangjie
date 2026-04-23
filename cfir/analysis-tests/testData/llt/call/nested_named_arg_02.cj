@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%frontendCompiler %cmp_opt %f 2>&1 | compare %f
-
 internal import std.collection.*
 
 class A {
@@ -14,17 +12,6 @@ class A {
 
 func foo() {}
 
-var test = ArrayList<A>([A(foo)])
+var test = ArrayList<A>([A(<!NEED_NAMED_ARGUMENT!>foo<!>)])
 
 main() {}
-
-/* SCAN
-error: missing argument prefix 'run:' for named parameter
-  ==> nested_named_arg_02.cj:17:28:
-   | 
-17 | var test = ArrayList<A>([A(foo)])
-   |                            ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,13 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 sealed interface I {
     func f() {
-        match (this) {
+        <!NON_EXHAUSTIVE_MATCH!>match (this) {
             case _: A => 1
-        }
+        }<!>
     }
 }
 
@@ -21,15 +19,3 @@ class A <: I {}
 main() {
     1.f()
 }
-
-/* SCAN
-error: non-exhaustive patterns
-  ==> non_exhaustive_extend_00.cj:11:16:
-   | 
-11 |         match (this) {
-   |                ^^^^ the selector is of type 'Interface-I'
-   | 
-   # note: _ is not covered
-
-1 error generated, 1 error printed.
-*/

@@ -4,22 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 const x = 0
-const y = "${x}"
+const y = <!EXPECT_CONST!>"${x}"<!>
 
 main() {
     println(y)
 }
-
-/* SCAN
-error: expected 'const' expression guaranteed to be evaluated at compile time
-  ==> err_lit_const.cj:10:11:
-   | 
-10 | const y = "${x}"
-   |           ^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

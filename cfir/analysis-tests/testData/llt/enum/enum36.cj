@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// EXEC: %run %run_opt %output %run_args
-
 package pkg
 
 enum E<T> {

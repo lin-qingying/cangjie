@@ -36,6 +36,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
     val enumSymbolType = type("symbols", "CfirEnumSymbol")
     val classLikeSymbolType = type("symbols", "CfirClassLikeSymbol").withArgs(TreeTypeRef.Star)
 //    val cfirClassifierSymbolWithClassId = type("symbols", "CfirClassifierSymbolWithClassId").withArgs(TreeTypeRef.Star)
+val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
     val typeAliasSymbolType = type("symbols", "CfirTypeAliasSymbol")
     val typeParameterSymbolType = type("symbols", "CfirTypeParameterSymbol")
@@ -267,6 +268,7 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("name", nameType)
 
         +listField("superTypeRefs", typeRef, withTransform = true)
+        +field("scopeProvider", cfirScopeProviderType)
 
     }
 
@@ -1065,11 +1067,16 @@ object CfirTree : AbstractCfirTreeBuilder() {
         +field("source", sourceElementType, nullable = false)
     }
 
+    val qualifierPart: Element by element(Other, name = "QualifierPart") {
+        +field("source", sourceElementType, nullable = true, isChild = false)
+        +field("name", nameType)
+        +FieldSets.typeArguments
+    }
+
     val userTypeRef: Element by element(TypeRef, name = "UserTypeRef") {
         parent(unresolvedTypeRef)
 
-        +listField("qualifier", nameType)
-        +FieldSets.typeArguments
+        +listField("qualifier", qualifierPart, withReplace = true, withTransform = true, useMutableOrEmpty = true)
     }
 
     val basicTypeRef: Element by element(TypeRef, name = "BasicTypeRef") {

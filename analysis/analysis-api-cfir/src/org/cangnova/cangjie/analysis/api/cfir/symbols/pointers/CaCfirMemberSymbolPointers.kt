@@ -41,11 +41,11 @@ internal class CaCfirMemberFunctionSymbolPointer(
     override fun CaCfirSession.chooseCandidateAndCreateSymbol(ownerSymbol: CaDeclarationContainerSymbol): CaNamedFunctionSymbol? {
         val candidates = when (ownerSymbol) {
             is org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol -> with(this) {
-                ownerSymbol.declaredMemberScope.getCallableSymbols(name)
+                ownerSymbol.declaredMemberScope.callables(name).toList()
             }
 
             is org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol -> with(this) {
-                ownerSymbol.declaredMemberScope.getCallableSymbols(name)
+                ownerSymbol.declaredMemberScope.callables(name).toList()
             }
 
             else -> emptyList()

@@ -4,20 +4,18 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 open class Base {}
 
 class Sub <: Base {}
 
 class A<X> {
-    public func f<Y>(x: Y): X where Y <: X {
+    public func f<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>Y<!>>(x: Y): X where Y <: X {
         x
     }
 }
 
 class B<X> where X <: Base {
-    public func f<Y>(x: Y): X where Y <: X {
+    public func f<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>Y<!>>(x: Y): X where Y <: X {
         x
     }
 }
@@ -27,21 +25,3 @@ main() {
     B<Base>().f<Sub>(Sub())
     0
 }
-
-/* SCAN
-error: the upper bound 'Generics-X' of generic parameter 'Generics-Y' must be class or interface
-  ==> generic_constraint6.cj:14:19:
-   | 
-14 |     public func f<Y>(x: Y): X where Y <: X {
-   |                   ^ 
-   | 
-
-error: the upper bound 'Generics-X' of generic parameter 'Generics-Y' must be class or interface
-  ==> generic_constraint6.cj:20:19:
-   | 
-20 |     public func f<Y>(x: Y): X where Y <: X {
-   |                   ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

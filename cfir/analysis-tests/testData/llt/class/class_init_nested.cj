@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %f
-
 class Test {
     public var a: Int32 = 1
     public var b: Int32 = 0
@@ -41,5 +39,3 @@ func run(): Int64 {
 main(): Int64 {
     return run()
 }
-
-// ASSERT: regex-not .

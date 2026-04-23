@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.scopes
 
-import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 
@@ -9,6 +9,5 @@ import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
  */
 internal class CaCfirDeclaredMemberScope(
     declaredMemberScope: CfirContainingNamesAwareScope,
-    analysisSession: CaCfirSession,
-    token: CaLifetimeToken,
-) : CaCfirBasedScope<CfirContainingNamesAwareScope>(declaredMemberScope, analysisSession, token)
+    builder: CaSymbolByCfirBuilder,
+) : CaCfirDelegatingNamesAwareScope(declaredMemberScope, builder)

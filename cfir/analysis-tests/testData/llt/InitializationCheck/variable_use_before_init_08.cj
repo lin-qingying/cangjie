@@ -4,10 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 class A {
-    static var v: Int64
+    static var <!TYPE_UNINITIALIZED_STATIC_FIELD!>v<!>: Int64
     static init() {
         for (i in 1..3) {
             v = i
@@ -24,21 +22,3 @@ main() {
     }
     return 1
 }
-
-/* SCAN
-error: the static member variable 'v' is not initialized
-  ==> variable_use_before_init_08.cj:10:5:
-   | 
-10 |     static var v: Int64
-   |     ^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: you may add an initializer inline or initialize the variable in the 'static init'
-note: static init defined here
-  ==> variable_use_before_init_08.cj:11:12:
-   | 
-11 |     static init() {
-   |            ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

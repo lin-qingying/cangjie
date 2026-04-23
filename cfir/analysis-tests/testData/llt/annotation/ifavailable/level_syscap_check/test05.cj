@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: apilevel.cj canIUse.cj device_info.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt apilevel.cj -o apilevel.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt device_info.cj -o device_info.%middle
-// ERRCHECK: %compiler %noColor %cmp_opt_chir2hlir %f device_info.%middle -o %output --cfg=APILevel_level=20
 
 import ohos.labels.*
 import ohos.device_info.*
@@ -17,26 +14,8 @@ public func f23() {}
 
 main() {
     @IfAvailable(level: 22, {=> 
-        f23() // error
+        <!APILEVEL_REF_HIGHER!>f23()<!> // error
     }, {=>
-        f23() // error
+        <!APILEVEL_REF_HIGHER!>f23()<!> // error
     })
 }
-
-/* SCAN
-error: cannot reference 'f23'(level: 23) which higher than level of the current scope(level: 22)
-  ==> test05.cj:20:9:
-   | 
-20 |         f23() // error
-   |         ^^^^^ 
-   | 
-
-error: cannot reference 'f23'(level: 23) which higher than level of the current scope(level: 20)
-  ==> test05.cj:22:9:
-   | 
-22 |         f23() // error
-   |         ^^^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

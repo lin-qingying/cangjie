@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: %n.pkg.cj
-// EXEC: %compiler %n.pkg.cj %compile_lib_opt -o lib%n.%lib_extension
-// EXEC: %compiler %f lib%n.%lib_extension
 
 import a.*
 

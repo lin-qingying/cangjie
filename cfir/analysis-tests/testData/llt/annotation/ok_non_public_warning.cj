@@ -4,11 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// EXEC: %run %run_opt %output %run_args
-
 @Annotation
-class A {
+class <!ANNOTATION_NON_PUBLIC!>A<!> {
     const init() {}
 }
 
@@ -16,14 +13,3 @@ class A {
 class B {}
 
 main() {}
-
-/* SCAN
-warning: '@Annotation' modifying non-'public' class is invisible at runtime
-  ==> ok_non_public_warning.cj:11:7:
-   | 
-11 | class A {
-   |       ^ 
-   | 
-
-1 warning generated, 1 warning printed.
-*/

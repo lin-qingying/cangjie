@@ -5,20 +5,16 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: level_syscap_check/canIUse.cj level_syscap_check/device_info.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt device_info.cj -o device_info.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt canIUse.cj -o canIUse.%middle
-// ERRCHECK: %compiler %cmp_opt %diag_json %f device_info.%middle canIUse.%middle
-// ASSERT: scan-3 sema_ifavailable_level_limit
 
 import ohos.base.canIUse
 import ohos.device_info.DeviceInfo
 
 main() {
-    @IfAvailable(level: 18, { => }, { => })
+    <!IFAVAILABLE_LEVEL_LIMIT!>@IfAvailable(level: 18, { => }, { => })<!>
     @IfAvailable(level: 19, { => }, { => })
     @IfAvailable(syscap: "xxx", 
-        { => @IfAvailable(level: 18, { => }, { => }) },
-        { => @IfAvailable(level: 18, { => }, { => }) }
+        { => <!IFAVAILABLE_LEVEL_LIMIT!>@IfAvailable(level: 18, { => }, { => })<!> },
+        { => <!IFAVAILABLE_LEVEL_LIMIT!>@IfAvailable(level: 18, { => }, { => })<!> }
     )
     0
 }

@@ -14,12 +14,18 @@ internal fun CfirTypeRef.renderStableKey(): String = when (this) {
     is CfirResolvedTypeRef -> "resolved:${coneType.renderStableSemanticKey()}"
     is CfirUserTypeRef -> buildString {
         append("user:")
-        append(qualifier.joinToString("."))
-        if (typeArguments.isNotEmpty()) {
-            append('<')
-            append(typeArguments.joinToString(",") { it.renderStableKey() })
-            append('>')
-        }
+        append(
+            qualifier.joinToString(".") { qualifierPart ->
+                buildString {
+                    append(qualifierPart.name.asString())
+                    if (qualifierPart.typeArguments.isNotEmpty()) {
+                        append('<')
+                        append(qualifierPart.typeArguments.joinToString(",") { it.renderStableKey() })
+                        append('>')
+                    }
+                }
+            }
+        )
     }
     is CfirOptionTypeRef -> "option:${componentTypeRef.renderStableKey()}"
     is CfirBasicTypeRef -> "basic:${name.asString()}"

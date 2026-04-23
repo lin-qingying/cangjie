@@ -4,25 +4,12 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 class A<T> {
     static var c = 5
 }
 
 main() {
     try {
-        A.c >>= 0
+        <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>A<!>.c >>= 0
     } catch (d: NoneValueException) {}
 }
-
-/* SCAN
-error: generic type should be used with type argument
-  ==> type_access_infer_01.cj:15:9:
-   | 
-15 |         A.c >>= 0
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

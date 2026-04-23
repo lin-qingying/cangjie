@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %f -o %output %cmp_opt
-
 enum A {
     | B | C(Int64) | ...
 }
@@ -13,14 +11,12 @@ enum A {
 var a = B
 
 main() {
-    while (let B | _ <- a) {
+    while (let <!DIFFERENT_OR_PATTERN!>B | _<!> <- a) {
         break
     }
-    if (let B | _ <- a) {
+    if (let <!DIFFERENT_OR_PATTERN!>B | _<!> <- a) {
         0
     } else {
         1
     }
 }
-
-// ASSERT: scan-2 error: patterns connected by '|' should be of the same kind

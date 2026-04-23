@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output
-
 main(): Int64 {
     const x: Int8 = -20;
     1 + (x / (7 | 1) + (if (true) {

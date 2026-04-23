@@ -8,7 +8,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CandidateFactoriesAndCollectors
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerResolveTask

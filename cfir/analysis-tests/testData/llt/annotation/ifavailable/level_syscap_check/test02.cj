@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: canIUse.cj device_info.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt canIUse.cj -o canIUse.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt device_info.cj -o device_info.%middle
-// EXEC: %compiler %cmp_opt %f canIUse.%middle device_info.%middle
 
 import ohos.device_info.*
 import ohos.base.*

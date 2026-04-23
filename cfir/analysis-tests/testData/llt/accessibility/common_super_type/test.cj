@@ -5,6 +5,3 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pa pb
-// EXEC: %compiler %cmp_opt %compile_lib_opt -p pa -o libpa.a
-// ERRCHECK: %compiler %cmp_opt --diagnostic-format=json libpa.a -p pb
-// ASSERT: regex sema_mismatched_types

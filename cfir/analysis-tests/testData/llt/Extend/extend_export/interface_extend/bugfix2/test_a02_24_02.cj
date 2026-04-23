@@ -32,12 +32,6 @@
 */
 
 // DEPENDENCE: ./aux_extend_test_a02_24.cj ./aux_test_a02_24.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt aux_test_a02_24.cj -o a.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt aux_extend_test_a02_24.cj -o b.%middle
-// (not CJNATIVE) EXEC: %compiler %cmp_opt a.%middle b.%middle %f -o %output
-// (CJNATIVE) EXEC: %compiler %cmp_opt %f b.%middle a.%middle -o %output
-// EXEC-PIPE-0: %run %output
-
 package a.b.c.d
 
 import a.b.c.*

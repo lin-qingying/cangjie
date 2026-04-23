@@ -178,10 +178,22 @@ internal sealed class LLCfirTargetResolver(
         action()
     }
 
+    @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
+    protected open fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
+        action()
+    }
+
     final override fun withClass(cfirClass: CfirClass, action: () -> Unit) {
         withContainingDeclaration(cfirClass) {
             @Suppress("DEPRECATION_ERROR")
             withContainingClass(cfirClass, action)
+        }
+    }
+
+    final override fun withExtend(cfirExtend: CfirExtend, action: () -> Unit) {
+        withContainingDeclaration(cfirExtend) {
+            @Suppress("DEPRECATION_ERROR")
+            withContainingExtend(cfirExtend, action)
         }
     }
 

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 import std.core
 // Test for type priority.
 class Array {

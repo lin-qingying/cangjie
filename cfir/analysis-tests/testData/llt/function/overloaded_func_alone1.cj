@@ -4,11 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 main(): Int64 {
-    var a = foo
-    var b: Int64 = match (foo) {
+    var a = <!AMBIGUOUS_USE!>foo<!>
+    var b: Int64 = match (<!AMBIGUOUS_USE!>foo<!>) {
         case x: () -> Unit => 1
         case x: (Float32) -> Int64 => 0
         case x: (Float64) -> Int64 => 3
@@ -17,10 +15,10 @@ main(): Int64 {
     if (b != 0) {
         return 1
     }
-    foo
+    <!AMBIGUOUS_USE!>foo<!>
     var c = match {
-        case true => foo
-        case _ => foo
+        case true => <!AMBIGUOUS_USE!>foo<!>
+        case _ => <!AMBIGUOUS_USE!>foo<!>
     }
     return 0
 }
@@ -36,132 +34,3 @@ public func foo(x: Float64) {
 public func foo(x: Float64, y: String) {
     return Int64(x)
 }
-
-/* SCAN
-error: ambiguous use of 'foo'
-  ==> overloaded_func_alone1.cj:10:13:
-   | 
-10 |     var a = foo
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:28:13:
-   | 
-28 | public func foo(x: Float32) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:32:13:
-   | 
-32 | public func foo(x: Float64) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:36:13:
-   | 
-36 | public func foo(x: Float64, y: String) {
-   |             ^^^ 
-   | 
-
-error: ambiguous use of 'foo'
-  ==> overloaded_func_alone1.cj:11:27:
-   | 
-11 |     var b: Int64 = match (foo) {
-   |                           ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:28:13:
-   | 
-28 | public func foo(x: Float32) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:32:13:
-   | 
-32 | public func foo(x: Float64) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:36:13:
-   | 
-36 | public func foo(x: Float64, y: String) {
-   |             ^^^ 
-   | 
-
-error: ambiguous use of 'foo'
-  ==> overloaded_func_alone1.cj:20:5:
-   | 
-20 |     foo
-   |     ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:28:13:
-   | 
-28 | public func foo(x: Float32) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:32:13:
-   | 
-32 | public func foo(x: Float64) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:36:13:
-   | 
-36 | public func foo(x: Float64, y: String) {
-   |             ^^^ 
-   | 
-
-error: ambiguous use of 'foo'
-  ==> overloaded_func_alone1.cj:22:22:
-   | 
-22 |         case true => foo
-   |                      ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:28:13:
-   | 
-28 | public func foo(x: Float32) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:32:13:
-   | 
-32 | public func foo(x: Float64) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:36:13:
-   | 
-36 | public func foo(x: Float64, y: String) {
-   |             ^^^ 
-   | 
-
-error: ambiguous use of 'foo'
-  ==> overloaded_func_alone1.cj:23:19:
-   | 
-23 |         case _ => foo
-   |                   ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:28:13:
-   | 
-28 | public func foo(x: Float32) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:32:13:
-   | 
-32 | public func foo(x: Float64) {
-   |             ^^^ 
-   | 
-note: found candidate
-  ==> overloaded_func_alone1.cj:36:13:
-   | 
-36 | public func foo(x: Float64, y: String) {
-   |             ^^^ 
-   | 
-
-5 errors generated, 5 errors printed.
-*/

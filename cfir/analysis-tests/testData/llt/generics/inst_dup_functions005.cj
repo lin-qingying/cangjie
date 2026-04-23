@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
 open class A {}
 
@@ -18,48 +17,6 @@ class E<X, Y> {
 }
 
 main() {
-    E<A, Int64>.f(A(), 1)
+    <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>E<A, Int64><!>.<!AMBIGUOUS_FUNCTION_CALL!>f<!>(A(), 1)
     return 0;
 }
-
-/* SCAN
-error: ambiguous match for function call 'f'
-  ==> inst_dup_functions005.cj:21:17:
-   | 
-21 |     E<A, Int64>.f(A(), 1)
-   |                 ^ 
-   | 
-note: found candidate
-  ==> inst_dup_functions005.cj:12:24:
-   | 
-12 |     public static func f(a: X, b: Y) {
-   |                        ^ 
-   | 
-note: found candidate
-  ==> inst_dup_functions005.cj:15:24:
-   | 
-15 |     public static func f(a: A, b: Int64) {
-   |                        ^ 
-   | 
-
-error: generic instantiation 'E<Class-A, Int64>' causes ambiguous function 'f'
-  ==> inst_dup_functions005.cj:21:5:
-   | 
-21 |     E<A, Int64>.f(A(), 1)
-   |     ^^^^^^^^^^^ 
-   | 
-note: found candidate
-  ==> inst_dup_functions005.cj:12:24:
-   | 
-12 |     public static func f(a: X, b: Y) {
-   |                        ^ 
-   | 
-note: found candidate
-  ==> inst_dup_functions005.cj:15:24:
-   | 
-15 |     public static func f(a: A, b: Int64) {
-   |                        ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

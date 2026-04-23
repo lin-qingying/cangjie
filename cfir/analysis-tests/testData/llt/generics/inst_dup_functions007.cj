@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-
 public class Test<T> {
     public var a: Int64 = 11
     private Test(x: T) {
@@ -17,29 +15,6 @@ public class Test<T> {
 }
 
 main(): Int64 {
-    Test<Int64>(1)
+    <!GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS!>Test<Int64><!>(1)
     return 0
 }
-
-/* SCAN
-error: generic instantiation 'Test<Int64>' causes ambiguous function 'init'
-  ==> inst_dup_functions007.cj:20:5:
-   | 
-20 |     Test<Int64>(1)
-   |     ^^^^^^^^^^^ 
-   | 
-note: found candidate
-  ==> inst_dup_functions007.cj:11:13:
-   | 
-11 |     private Test(x: T) {
-   |             ^^^^ 
-   | 
-note: found candidate
-  ==> inst_dup_functions007.cj:14:12:
-   | 
-14 |     public init(x: Int64) {
-   |            ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

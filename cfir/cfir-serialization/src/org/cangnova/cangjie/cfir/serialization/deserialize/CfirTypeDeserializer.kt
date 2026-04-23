@@ -104,7 +104,7 @@ class CfirTypeDeserializer(
         val len = semaTy.typeArgsLength
         if (len == 0) return emptyList()
         return (0 until len).map { index ->
-            ConeTypeProjection(deserializeTypeFromField(semaTy.typeArgs(index)))
+            deserializeTypeFromField(semaTy.typeArgs(index))
         }
     }
 
@@ -154,7 +154,7 @@ class CfirTypeDeserializer(
             ?: return errorType("Func missing FuncTyInfo")
         val paramTypes = deserializeTypeArgs(semaTy).map { it.type }
         val returnType = deserializeTypeFromField(info.retType)
-        return ConeFuncType(
+        return ConeFunctionType(
             parameterTypes = paramTypes,
             returnType = returnType,
             isCFunc = info.isC,
@@ -168,7 +168,7 @@ class CfirTypeDeserializer(
 
     private fun convertArrayType(semaTy: SemaTy): ConeCangJieType {
         val elementProjection = deserializeTypeArgs(semaTy).singleOrNull()
-            ?: ConeTypeProjection(errorType("Array missing element type"))
+            ?: errorType("Array missing element type")
         return ConeStructType(
             lookupTag = ConeClassLikeLookupTagImpl(StdlibClassIds.Array),
             typeArguments = listOf(elementProjection),

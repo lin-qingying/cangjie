@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 class A {
     // mut prop can be defined together with const init
     mut prop x: Int64 {
@@ -17,7 +15,7 @@ class A {
 
     const func f() {
         // but reference to the mut prop is not const expression
-        x
+        <!EXPECT_CONST!>x<!>
     }
 
     const init() {}
@@ -28,14 +26,3 @@ main() {
     a.x = 0
     a.x
 }
-
-/* SCAN
-error: expected 'const' expression
-  ==> err_class_mut_prop.cj:20:9:
-   | 
-20 |         x
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

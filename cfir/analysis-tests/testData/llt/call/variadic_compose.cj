@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-4: %run %run_opt %output %run_args
-
 func f(x: Array<Int8>) {
     x.size
 }

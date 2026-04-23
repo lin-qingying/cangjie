@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
-import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -12,7 +11,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.name.Name
@@ -43,7 +42,7 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
         val targetTypeRef = expression.typeArguments.firstOrNull() as? CfirResolvedTypeRef
         val targetType = targetTypeRef?.coneType
 
-        if (targetType == null || targetType is ConeFuncType || targetType is ConeTupleType || targetType.classIdOrPrimitiveClassId == null) {
+        if (targetType == null || targetType is ConeFunctionType || targetType is ConeTupleType || targetType.classIdOrPrimitiveClassId == null) {
             reporter.reportOn(source, CfirErrors.MOCK_UNSUPPORTED_TYPE)
             return
         }

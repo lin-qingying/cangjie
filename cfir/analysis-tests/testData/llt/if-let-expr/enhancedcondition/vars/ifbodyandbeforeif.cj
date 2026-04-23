@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f
-
 main() {
     let a = Some(1)
     if (let Some(a) <- a) {

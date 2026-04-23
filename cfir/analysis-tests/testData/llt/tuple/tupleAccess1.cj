@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix | compare %f
-// ASSERT: scan 2
-
 main() {
     let a = (1, 2)
     let b = a[0x01]

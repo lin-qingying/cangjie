@@ -9,7 +9,7 @@ import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 
 /**
  * CFIR substitutor 的统一抽象基类。

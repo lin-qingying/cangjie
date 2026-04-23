@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
-
 struct R1 {
     public var i = 0
 }
@@ -17,7 +15,7 @@ extend R1 {
     }
 
     public func goo(): Unit {
-        foo()
+        <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>foo<!>()
     }
 
     public func hoo(): Unit {
@@ -30,7 +28,7 @@ interface I1 {
     }
 
     func goo(): Unit {
-        foo()
+        <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>foo<!>()
     }
 
     func hoo(): Unit {
@@ -40,21 +38,3 @@ interface I1 {
 main() {
     return 1
 }
-
-/* SCAN
-error: immutable function 'goo' cannot access mutable function 'foo'
-  ==> record_extend_mut_invalid_8.cj:20:9:
-   | 
-20 |         foo()
-   |         ^ 
-   | 
-
-error: immutable function 'goo' cannot access mutable function 'foo'
-  ==> record_extend_mut_invalid_8.cj:33:9:
-   | 
-33 |         foo()
-   |         ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

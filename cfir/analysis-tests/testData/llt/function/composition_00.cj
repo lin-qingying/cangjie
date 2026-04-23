@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-36: %run %run_opt %output %run_args
-
 func composition(f: (Int64) -> Int64, g: (Int64) -> Int64): (Int64) -> Int64 {
     return {x: Int64 => f(g(x))}
 }

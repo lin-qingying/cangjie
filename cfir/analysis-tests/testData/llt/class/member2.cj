@@ -4,33 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 class A {
     public var a: Int64 = 1
 }
 
 main() {
-    A().a<Bool>
+    <!GENERIC_ARGUMENT_NO_MATCH!>A().a<Bool><!>
     let a1: ?A = A()
-    let r1 = a1?.a<Bool>
+    let r1 = <!GENERIC_ARGUMENT_NO_MATCH!>a1?.a<Bool><!>
     return 0
 }
-
-/* SCAN
-error: type argument's number does not match type parameter's number
-  ==> member2.cj:14:5:
-   | 
-14 |     A().a<Bool>
-   |     ^^^^^^^^^^ 
-   | 
-
-error: type argument's number does not match type parameter's number
-  ==> member2.cj:16:14:
-   | 
-16 |     let r1 = a1?.a<Bool>
-   |              ^^^^^^^^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

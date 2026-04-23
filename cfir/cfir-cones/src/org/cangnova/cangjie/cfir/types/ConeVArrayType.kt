@@ -11,8 +11,6 @@ class ConeVArrayType(
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
 
-    override val typeArguments: List<ConeTypeProjection> get() = listOf(ConeTypeProjection(elementType))
-
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is ConeVArrayType) return false

@@ -121,7 +121,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         constPattern, wildcardPattern, bindingPattern, varOrEnumPattern, tuplePattern, enumPattern, typePattern,
 
         // -------- 类型引用节点 --------
-        resolvedTypeRef, userTypeRef, basicTypeRef, implicitTypeRef, functionTypeRef, tupleTypeRef, varrayTypeRef,
+        qualifierPart, resolvedTypeRef, userTypeRef, basicTypeRef, implicitTypeRef, functionTypeRef, tupleTypeRef, varrayTypeRef,
 
         // -------- 引用节点 --------
         namedReference, resolvedNamedReference, errorReference, thisReference,

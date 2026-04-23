@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.analysis.api.impl.base.components
 
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.CaSignatureSubstitutor
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.signatures.CaCallableSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaFunctionSignature
-import org.cangnova.cangjie.analysis.api.signatures.CaSignature
 import org.cangnova.cangjie.analysis.api.signatures.CaVariableSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
@@ -12,54 +14,45 @@ import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 
 /**
- * `CaSignatureSubstitutor` 的通用默认流程。
+ * 对齐 Kotlin `KaBaseSignatureSubstitutor`。
  *
- * 这里严格对齐 Kotlin `KaBaseSignatureSubstitutor` 的主线思路：
- * 1. `asSignature()` 由后端提供具体签名构造；
- * 2. `substitute()` 统一复用 `Empty` 快路径；
- * 3. function / variable 族通过精确返回类型保留公开 API 语义。
+ * 公共 callable 入口只做 function / variable 两族分派，
+ * 具体签名构造由后端子类在精确族分支上提供。
  */
+@CaImplementationDetail
 abstract class CaBaseSignatureSubstitutor<T : CaSession> :
     CaBaseSessionComponent<T>(),
     CaSignatureSubstitutor {
-    protected abstract fun <S : CaCallableSymbol> buildSignature(symbol: S): CaSignature<S>
+    abstract override fun <S : CaFunctionSymbol> S.asSignature(): CaFunctionSignature<S>
 
-    protected open fun <S : CaFunctionSymbol> buildFunctionSignature(symbol: S): CaFunctionSignature<S> {
-        @Suppress("UNCHECKED_CAST")
-        return buildSignature(symbol) as CaFunctionSignature<S>
-    }
+    abstract override fun <S : CaVariableSymbol> S.asSignature(): CaVariableSignature<S>
 
-    protected open fun <S : CaVariableSymbol> buildVariableSignature(symbol: S): CaVariableSignature<S> {
-        @Suppress("UNCHECKED_CAST")
-        return buildSignature(symbol) as CaVariableSignature<S>
-    }
-
-    final override fun <S : CaCallableSymbol> S.asSignature(): CaSignature<S> = withValidityAssertion {
-        buildSignature(this@asSignature)
-    }
-
-    final override fun <S : CaFunctionSymbol> S.asSignature(): CaFunctionSignature<S> = withValidityAssertion {
-        buildFunctionSignature(this@asSignature)
-    }
-
-    final override fun <S : CaVariableSymbol> S.asSignature(): CaVariableSignature<S> = withValidityAssertion {
-        buildVariableSignature(this@asSignature)
-    }
-
-    final override fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaSignature<S> = withValidityAssertion {
+    @OptIn(CaExperimentalApi::class)
+    override fun <S : CaFunctionSymbol> S.substitute(substitutor: CaSubstitutor): CaFunctionSignature<S> = withValidityAssertion {
         if (substitutor is CaSubstitutor.Empty) return asSignature()
         return asSignature().substitute(substitutor)
     }
 
-    final override fun <S : CaFunctionSymbol> S.substitute(substitutor: CaSubstitutor): CaFunctionSignature<S> = withValidityAssertion {
+    @OptIn(CaExperimentalApi::class)
+    override fun <S : CaVariableSymbol> S.substitute(substitutor: CaSubstitutor): CaVariableSignature<S> = withValidityAssertion {
         if (substitutor is CaSubstitutor.Empty) return asSignature()
-        @Suppress("UNCHECKED_CAST")
-        return asSignature().substitute(substitutor) as CaFunctionSignature<S>
+        return asSignature().substitute(substitutor)
     }
 
-    final override fun <S : CaVariableSymbol> S.substitute(substitutor: CaSubstitutor): CaVariableSignature<S> = withValidityAssertion {
-        if (substitutor is CaSubstitutor.Empty) return asSignature()
-        @Suppress("UNCHECKED_CAST")
-        return asSignature().substitute(substitutor) as CaVariableSignature<S>
+    @OptIn(CaExperimentalApi::class)
+    override fun <S : CaCallableSymbol> S.substitute(substitutor: CaSubstitutor): CaCallableSignature<S> = withValidityAssertion {
+        when (this) {
+            is CaFunctionSymbol -> substitute(substitutor)
+            is CaVariableSymbol -> substitute(substitutor)
+            else -> error("Unsupported callable signature substitution for `${this::class.simpleName}`")
+        }
+    }
+
+    override fun <S : CaCallableSymbol> S.asSignature(): CaCallableSignature<S> = withValidityAssertion {
+        when (this) {
+            is CaFunctionSymbol -> asSignature()
+            is CaVariableSymbol -> asSignature()
+            else -> error("Unsupported callable signature construction for `${this::class.simpleName}`")
+        }
     }
 }

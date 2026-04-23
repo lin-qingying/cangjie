@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.types.ConeInferenceContext
 import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.types.isOption
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import java.util.LinkedList

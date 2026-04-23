@@ -4,21 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main() {
     let _ = 'c' + unsafe {
-        let _ = "${x}"
+        let _ = "${<!UNRESOLVED_REFERENCE!>x<!>}"
     }
 }
-
-/* SCAN
-error: undeclared identifier 'x'
-  ==> err_var_with_pattern_00.cj:11:20:
-   | 
-11 |         let _ = "${x}"
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

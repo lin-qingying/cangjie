@@ -4,28 +4,9 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 main() {
     match ((1, 1)) {
-        case (x: Int64, x: Int64) => ()
+        case (x: Int64, <!REDECLARATION!>x<!>: Int64) => ()
         case (_, _) => ()
     }
 }
-
-/* SCAN
-error: redefinition of declaration 'x'
-  ==> type12.cj:11:25:
-   | 
-11 |         case (x: Int64, x: Int64) => ()
-   |                         ^ 
-   | 
-note: 'x' is previously declared here
-  ==> type12.cj:11:15:
-   | 
-11 |         case (x: Int64, x: Int64) => ()
-   |               ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

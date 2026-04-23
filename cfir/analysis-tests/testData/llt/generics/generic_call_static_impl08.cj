@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix 2>&1 | compare %f
-// ASSERT: scan I3 f1
-
 interface I1 {
     static func f(): Unit {}
 }

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-// EXEC: %run %run_opt %output %run_args
-
 var res: Int32 = 0
 
 struct Aoo {

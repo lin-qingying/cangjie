@@ -4,19 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main() {
-    - - - - - - - - - - - - - - - - - - - - - - - -x
+    - - - - - - - - - - - - - - - - - - - - - - - -<!UNRESOLVED_REFERENCE!>x<!>
 }
-
-/* SCAN
-error: undeclared identifier 'x'
-  ==> timeout_04.cj:10:52:
-   | 
-10 |     - - - - - - - - - - - - - - - - - - - - - - - -x
-   |                                                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

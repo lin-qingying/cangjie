@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %f %cmp_opt
-
 
 @Annotation[target: [GlobalVariable]]
 public class APILevel {
@@ -15,7 +13,7 @@ public class APILevel {
     }
 }
 
-@APILevel[11]
+<!ANNOTATION_NOT_APPLICABLE_JFFI!>@APILevel[11]<!>
 func foo() {}
 
 @Annotation[target: [MemberFunction]]
@@ -26,13 +24,13 @@ public class APMLevel {
     }
 }
 
-@APMLevel[11]
+<!ANNOTATION_NOT_APPLICABLE_JFFI!>@APMLevel[11]<!>
 func bar() {}
 
 class M {
-    @APILevel[3]
+    <!ANNOTATION_NOT_APPLICABLE_JFFI!>@APILevel[3]<!>
     func bar() {}
-    @APMLevel[3]
+    <!ANNOTATION_NOT_APPLICABLE_JFFI!>@APMLevel[3]<!>
     var t = 3
 }
 
@@ -42,35 +40,3 @@ main() {
     M().bar()
     0
 }
-
-/* SCAN
-error: '@APILevel' not applicable to global function
-  ==> globalvar_on_globalfunc.cj:18:1:
-   | 
-18 | @APILevel[11]
-   | ^^^^^^^^^^^^^ 
-   | 
-
-error: '@APMLevel' not applicable to global function
-  ==> globalvar_on_globalfunc.cj:29:1:
-   | 
-29 | @APMLevel[11]
-   | ^^^^^^^^^^^^^ 
-   | 
-
-error: '@APILevel' not applicable to member function
-  ==> globalvar_on_globalfunc.cj:33:5:
-   | 
-33 |     @APILevel[3]
-   |     ^^^^^^^^^^^^ 
-   | 
-
-error: '@APMLevel' not applicable to member variable
-  ==> globalvar_on_globalfunc.cj:35:5:
-   | 
-35 |     @APMLevel[3]
-   |     ^^^^^^^^^^^^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

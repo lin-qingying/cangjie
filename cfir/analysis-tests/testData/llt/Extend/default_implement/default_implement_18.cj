@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args 2>&1 | compare %f
-// (CJNATIVE)ASSERT: scan 2
-// (not CJNATIVE)ASSERT: scan 1
-
 interface I1 <: I<Int64> {
     func foo(a: Int64): Unit {
         println(2)

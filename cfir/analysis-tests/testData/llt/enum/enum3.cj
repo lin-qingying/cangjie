@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-
 enum TimeUnit1 {
     Hour
     | Year
@@ -18,18 +16,7 @@ enum TimeUnit2 {
 func run(): Int64 {
     var time = TimeUnit2.Month
     var res: Int32 = match (time) {
-        case Month(Hour) => 2020
+        case <!ENUM_PATTERN_PARAM_SIZE_ERROR!>Month(Hour)<!> => 2020
     }
     return 0
 }
-
-/* SCAN
-error: enum pattern's parameters size is wrong
-  ==> enum3.cj:21:14:
-   | 
-21 |         case Month(Hour) => 2020
-   |              ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

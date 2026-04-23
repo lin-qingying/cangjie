@@ -4,9 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
-open class Boo<T> where T <: Int64 {
+open class Boo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: Int64 {
     public static func foo<V>(x: T, y: V) {
         x + 1
     }
@@ -25,14 +23,3 @@ main() {
     }
     return 0
 }
-
-/* SCAN
-error: the upper bound 'Int64' of generic parameter 'Generics-T' must be class or interface
- ==> class_redef_14.cj:9:16:
-  | 
-9 | open class Boo<T> where T <: Int64 {
-  |                ^ 
-  | 
-
-1 error generated, 1 error printed.
-*/

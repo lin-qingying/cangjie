@@ -96,8 +96,8 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjExpression

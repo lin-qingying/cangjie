@@ -5,11 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ./f2 ./g1
-// EXEC: %compiler %cmp_opt %compile_lib_opt -Woff all %overflowOpt -p ./f2 -o f2.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt -Woff all %overflowOpt -p ./g1 -o g1.%middle
-// EXEC: %compiler %cmp_opt f2.%middle g1.%middle %overflowOpt -p ./ -o %output
-// EXEC: %run %run_opt %output
-
 // random seed:1731854046694
 // All global variable need to be defined before use!
 

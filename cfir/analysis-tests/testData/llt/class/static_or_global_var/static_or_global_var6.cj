@@ -4,12 +4,10 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 class A {
     static var AFLAG: Bool
     static init() {
-        AFLAG = B.BFLAG
+        AFLAG = B.<!USED_BEFORE_INITIALIZATION!>BFLAG<!>
     }
 }
 
@@ -20,5 +18,3 @@ class B {
 main(): Int64 {
     0
 }
-
-// ASSERT: scan global/static variable 'BFLAG' is used before initialization during initializing 'AFLAG'

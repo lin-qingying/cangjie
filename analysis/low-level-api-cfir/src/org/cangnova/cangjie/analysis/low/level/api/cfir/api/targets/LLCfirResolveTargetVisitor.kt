@@ -4,6 +4,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets
 
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 
 /**
@@ -22,6 +23,12 @@ internal interface LLCfirResolveTargetVisitor {
      * Will be called for each nested [CfirClass] on the path.
      */
     fun withClass(cfirClass: CfirClass, action: () -> Unit): Unit = action()
+
+    /**
+     * Access to elements inside [CfirExtend] will be performed inside [action].
+     * Will be called for each nested `extend` container on the path.
+     */
+    fun withExtend(cfirExtend: CfirExtend, action: () -> Unit): Unit = action()
 
     /**
      * This method will be performed on some target element depends on [LLCfirResolveTarget] implementation.

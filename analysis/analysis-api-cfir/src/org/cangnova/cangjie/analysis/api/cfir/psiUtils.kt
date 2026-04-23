@@ -4,6 +4,9 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.realPsi
@@ -53,3 +56,21 @@ fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope): PsiElement? {
 
     return declaration.realPsi?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
 }
+
+
+/**
+ * Finds [PsiElement] which will be used as go-to referenced element for [KtPsiReference]
+ * For data classes & enums generated members like `copy` `componentN`, `values` it will return corresponding enum/data class
+ * Otherwise, behaves the same way as [findPsi] returns exact PSI declaration corresponding to passed [CfirDeclaration]
+ */
+internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope): PsiElement? {
+    return if (
+        this is CfirCallableDeclaration /*&&
+        !this.symbol.isTypeAliasedConstructor*/ // typealiased constructors should not be unwrapped
+    ) {
+        unwrapFakeOverridesOrDelegated().psi
+    } else {
+        psi
+    } /*?: CfirSyntheticFunctionInterfaceSourceProvider.findPsi(this, scope)*/
+}
+

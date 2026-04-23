@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.initDefaultResolveState
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
@@ -92,6 +93,7 @@ class CfirBuiltinSymbolProvider(
             symbol = symbol,
             name = kind.classId.shortClassName,
             kind = kind,
+            scopeProvider = session.cangjieScopeProvider,
             origin = CfirDeclarationOrigin.Synthetic.Default,
             attributes = CfirDeclarationAttributes.EMPTY,
             declarations = buildPrimitiveMembers(kind).toMutableList(),

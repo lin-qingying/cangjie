@@ -3,6 +3,7 @@ package org.cangnova.cangjie.utils.exceptions
 import com.intellij.openapi.diagnostic.ControlFlowException
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.project.IndexNotReadyException
+import org.cangnova.cangjie.utils.isProcessCanceledException
 import java.util.concurrent.CancellationException
 
 /**
@@ -10,9 +11,13 @@ import java.util.concurrent.CancellationException
  *
  * Examples of such exceptions include [ProcessCanceledException] and [IndexNotReadyException].
  */
-fun shouldIjPlatformExceptionBeRethrown(exception: Throwable): Boolean = when (exception) {
-    is CancellationException -> true
-    is ControlFlowException -> true
-    is IndexNotReadyException -> true
-    else -> false
+fun shouldIjPlatformExceptionBeRethrown(exception: Throwable): Boolean {
+    if (exception.isProcessCanceledException()) return true
+
+    return when (exception) {
+        is CancellationException -> true
+        is ControlFlowException -> true
+        is IndexNotReadyException -> true
+        else -> false
+    }
 }

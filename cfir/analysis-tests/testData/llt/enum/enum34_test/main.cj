@@ -5,10 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: pkg.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg.cj -o pkg.%middle
-// EXEC: %compiler %cmp_opt pkg.%middle %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix | compare %f
-// ASSERT: scan ADD 1 SUB 2 3struct
 
 internal import pkg.*
 

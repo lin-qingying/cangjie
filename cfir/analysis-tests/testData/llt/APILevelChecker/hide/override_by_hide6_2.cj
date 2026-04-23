@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: hide.cj hide_use1.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt hide.cj -o hide.%middle
-// ERRCHECK: %compiler %cmp_opt %compile_lib_opt hide.%middle %n.cj -o %n.%suffix -Woff all
 
 package ohos.dep
 
@@ -18,7 +16,7 @@ public interface I1 {
 
 @!Hide
 public class A1 <: I1 {
-    public func foo() {}
+    public func <!HIDE_MISSING_HIDE!>foo<!>() {}
 }
 
 @!Hide
@@ -37,7 +35,7 @@ public interface I3 {
 
 @!Hide[isChecked: true]
 public class A3 <: I3 {
-    public func foo() {}
+    public func <!HIDE_DIFF_PARAM!>foo<!>() {}
 }
 
 @!Hide[isChecked: true]
@@ -47,48 +45,5 @@ public interface I4 {
 
 @!Hide[isChecked: false]
 public class A4 <: I4 {
-    public func foo() {}
+    public func <!HIDE_DIFF_PARAM!>foo<!>() {}
 }
-
-/* SCAN
-error: should be marked with '@!Hide' to be hidden
-  ==> override_by_hide6_2.cj:16:5:
-   | 
-16 |     func foo() {}
-   |     ^^^^^^^^^^^^^ 
-   | 
-note: the override function is marked with '@!Hide'
-  ==> override_by_hide6_2.cj:21:5:
-   | 
-21 |     public func foo() {}
-   |     ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-error: the parameter 'isChecked' of '@!Hide' is true
-  ==> override_by_hide6_2.cj:40:5:
-   | 
-40 |     public func foo() {}
-   |     ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-note: should be same with
-  ==> override_by_hide6_2.cj:35:5:
-   | 
-35 |     func foo() {}
-   |     ^^^^^^^^^^^^^ 
-   | 
-
-error: the parameter 'isChecked' of '@!Hide' is false
-  ==> override_by_hide6_2.cj:50:5:
-   | 
-50 |     public func foo() {}
-   |     ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-note: should be same with
-  ==> override_by_hide6_2.cj:45:5:
-   | 
-45 |     func foo() {}
-   |     ^^^^^^^^^^^^^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f
-
 open class Father {
     public var age = 40
 }
@@ -20,7 +18,7 @@ class Son <: Father {
 main(): Int64 {
     var target = Father()
     var res = match (target) {
-        case son: Son | father: Father => 0
+        case <!VAR_IN_OR_PATTERN!>son<!>: Son | <!VAR_IN_OR_PATTERN!>father<!>: Father => 0
         case _ => -1
     }
     if (res == 20) {
@@ -28,14 +26,3 @@ main(): Int64 {
     }
     return 1
 }
-
-/* SCAN
-error: cannot introduce variables in patterns connected by '|'
-  ==> type07.cj:23:14:
-   | 
-23 |         case son: Son | father: Father => 0
-   |              ^^^        ~~~~~~ 
-   | 
-
-1 error generated, 1 error printed.
-*/

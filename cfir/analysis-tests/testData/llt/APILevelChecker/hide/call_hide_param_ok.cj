@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: hide.cj call_hide_param_dep.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt hide.cj -o hide.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt call_hide_param_dep.cj -o call_hide_param_dep.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt call_hide_param_dep.%middle hide.%middle %n.cj -o %n.%suffix -Woff all
 
 package ohos.default
 

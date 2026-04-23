@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 struct S0 {
     var t0 = 0
 }
@@ -28,19 +26,6 @@ func foo(f: () -> S2) {
 
 main() {
     let s2 = [S2()]
-    foo {=> S2()}.t2.f()
+    foo {=> S2()}.t2.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f<!>()
     println(s2[0].t2.t1.t0)
 }
-
-/* SCAN
-error: cannot use mutable function on immutable value
-  ==> mut_function_10.cj:31:5:
-   | 
-31 |     foo {=> S2()}.t2.f()
-   |     ^^^^^^^^^^^^^    ~ is a mutable function
-   |     |
-   |     is immutable
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler -Woff unused %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
-
 func f(a: Int8, b: Int8) {
     a + b
 }

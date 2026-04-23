@@ -4,13 +4,11 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt --diagnostic-format=json %f 2>&1 | compare %f
-
 main(): Int64 {
     var a: Int64
     func b() {
         do {
-            a = 1 // captured before initialization
+            <!CAPTURE_BEFORE_INITIALIZATION!>a<!> = 1 // captured before initialization
         } while (a == 0)
         return a
     }
@@ -18,5 +16,3 @@ main(): Int64 {
     b()
     return 0
 }
-
-// ASSERT: scan sema_capture_before_initialization

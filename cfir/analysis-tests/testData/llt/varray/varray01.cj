@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-// RUN-EXEC-PIPE-0: %run %run_opt %output %run_args
-
 main() {
     /** Initialization **/
     let arr1: VArray<Int64, $5> = [1, 2, 3, 4, 5] // ok

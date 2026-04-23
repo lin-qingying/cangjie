@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
-
 open class Base {
     public let val = 1
 }
@@ -15,21 +13,10 @@ open class Data <: Base {
 }
 
 class Derived <: Data {
-    public static let val = 3
+    public static let <!INHERIT_MEMBER_KIND_INCONSISTENT!>val<!> = 3
 }
 
 main(): Int64 {
     var res = Derived.val
     return 0
 }
-
-/* SCAN
-error: static member 'val' cannot have the same name with non-static member in parent class or interfaces
-  ==> class_shadow4.cj:18:5:
-   | 
-18 |     public static let val = 3
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

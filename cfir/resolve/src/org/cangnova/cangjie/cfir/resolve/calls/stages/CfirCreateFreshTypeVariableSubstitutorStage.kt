@@ -16,8 +16,9 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConePlaceholderType
-import org.cangnova.cangjie.cfir.types.ConeSubstitutor
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.ConeTypeVariable
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemOperation
 
 /**

@@ -16,6 +16,3 @@ struct Data {
 main(): Int64 {
     return run()
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-// ASSERT: regex-not type check of binary expression fails
-
 main(): Int64 {
     var a: Int8 = 1
     var b: Int16 = 1

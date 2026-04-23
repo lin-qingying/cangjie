@@ -4,12 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args | compare %f
-// ASSERT: scan 18
-// ASSERT: scan 3.000000
-// ASSERT: scan 3.000000
-
 internal import std.math.*
 
 main() {

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-0: %compiler %cmp_opt %f -o %output | compare %f
-// ASSERT: scan-not Semantic check should ensure only one candidate will be chosen.
-
 //    Symbol
 //      /\
 //     B  H

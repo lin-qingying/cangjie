@@ -1336,6 +1336,7 @@ class LightTreeRawCfirExpressionBuilder(
     // ===== Lambda =====
 
     private fun convertLambda(node: LighterASTNode): CfirAnonymousFunctionExpression {
+        val functionSymbol = CfirAnonymousFunctionSymbol()
         val valueParams = mutableListOf<org.cangnova.cangjie.cfir.declarations.CfirValueParameter>()
         var bodyNode: LighterASTNode? = null
 
@@ -1347,7 +1348,7 @@ class LightTreeRawCfirExpressionBuilder(
                 CjNodeTypes.VALUE_PARAMETER_LIST -> {
                     tree.forEachChildren(child) { param ->
                         if (param.tokenType == CjNodeTypes.VALUE_PARAMETER) {
-                            valueParams.add(declarationBuilder.convertValueParameter(param))
+                            valueParams.add(declarationBuilder.convertValueParameter(param, functionSymbol))
                         }
                     }
                 }
@@ -1361,7 +1362,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
         val hasExplicitParameterList = valueParams.isNotEmpty()
 
-        val anonymousFunction = buildSourceDeclaration(CfirAnonymousFunctionSymbol()) { symbol ->
+        val anonymousFunction = buildSourceDeclaration(functionSymbol) { symbol ->
             buildAnonymousFunction {
                 source = node.toSource()
                 this.symbol = symbol

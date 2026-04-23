@@ -17,7 +17,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeFuncType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
 import org.cangnova.cangjie.cfir.types.ConePointerType
 import org.cangnova.cangjie.cfir.types.ConeStructType
@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnionType
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.arrayElementType
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 
@@ -55,7 +56,7 @@ object CfirExtendTargetLegalityChecker : CfirExtendChecker() {
 
         val targetIsIllegal = when (targetConeType) {
             is ConeClassLikeType -> targetConeType.isInterface
-            is ConeFuncType,
+            is ConeFunctionType,
             is ConeTupleType,
             is ConeVArrayType,
             is ConePointerType,
@@ -326,7 +327,7 @@ private fun ConeCangJieType.containsTypeParameter(parameterName: String): Boolea
     is ConeEnumType -> typeArguments.any { it.type.containsTypeParameter(parameterName) }
     is ConeTypeAliasType -> typeArguments.any { it.type.containsTypeParameter(parameterName) } ||
         (expandedType?.containsTypeParameter(parameterName) == true)
-    is ConeFuncType -> parameterTypes.any { it.containsTypeParameter(parameterName) } ||
+    is ConeFunctionType -> parameterTypes.any { it.containsTypeParameter(parameterName) } ||
         returnType.containsTypeParameter(parameterName)
     is ConeTupleType -> elementTypes.any { it.containsTypeParameter(parameterName) }
     is ConeVArrayType -> elementType.containsTypeParameter(parameterName)

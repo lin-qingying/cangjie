@@ -103,8 +103,8 @@ class CaCfirSessionProvider(
     private fun createAnalysisSession(useSiteModule: CaModule): CaCfirSession {
         val resolutionFacade = resolutionFacadeService.getResolutionFacade(useSiteModule)
         val token = tokenFactory.create(project, resolutionFacade.useSiteCfirSession.createValidityTracker())
-        return CaCfirSession.create(
-            project = project,
+        return CaCfirSession.createAnalysisSessionByResolutionFacade(
+
             resolutionFacade = resolutionFacade,
             token = token,
         )

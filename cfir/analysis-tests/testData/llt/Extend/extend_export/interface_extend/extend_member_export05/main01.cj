@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: ./testa.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt testa.cj -o a.%middle
-// EXEC-PIPE-0: %compiler %cmp_opt a.%middle %f -o %output
-
 package b.c
 
 import a.*

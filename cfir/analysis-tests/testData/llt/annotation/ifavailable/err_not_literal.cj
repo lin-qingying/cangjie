@@ -4,12 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %f %cmp_opt
-
 const v = 11
 
 main() {
-    @IfAvailable(level:v, { => println(0) }, {=>println(3)})
+    @IfAvailable(level:<!IFAVAILABLE_ARG_NOT_LITERAL!>v<!>, { => println(0) }, {=>println(3)})
 }
-
-// ASSERT: scan error: the first argument of @IfAvailable expression must be a literal expression

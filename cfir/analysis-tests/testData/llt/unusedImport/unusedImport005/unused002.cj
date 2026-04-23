@@ -1,5 +1,3 @@
-// EXEC-PIPE: %compiler %cmp_opt %diag_json %f -o %output 2>&1 | compare %f
-
 import std.deriving.Derive
 @Derive[Equatable]
 class A{
@@ -11,8 +9,6 @@ class A{
 
 main() {
 }
-
-// ASSERT: scan-not sema_unused_import
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

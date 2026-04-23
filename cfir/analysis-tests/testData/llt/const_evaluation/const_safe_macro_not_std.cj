@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %n.cj 2>&1 | compare %f
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace
 
 package example
 

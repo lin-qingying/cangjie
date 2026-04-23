@@ -8,9 +8,13 @@ import org.cangnova.cangjie.analysis.api.components.CaSymbolRelationProvider
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -38,11 +42,14 @@ internal class CaCfirSymbolRelationProvider(
                 ?: return@withValidityAssertion emptySequence()
 
             analysisSession.collectDirectlyOverriddenCallableSymbols(backingSymbol)
-                .map(analysisSession::getPublicSymbol)
+                .map { symbol -> analysisSession.getPublicSymbol(symbol) }
                 .filterIsInstance<CaCallableSymbol>()
                 .distinctStableCallables()
                 .asSequence()
         }
+
+    override val CaCallableSymbol.intersectionOverriddenSymbols: List<CaCallableSymbol>
+        get() = withValidityAssertion { emptyList() }
 
     override val CaCallableSymbol.allOverriddenSymbols: Sequence<CaCallableSymbol>
         get() = withValidityAssertion {
@@ -71,6 +78,10 @@ internal class CaCfirSymbolRelationProvider(
 
     override fun CaClassSymbol.isDirectSubClassOf(superClass: CaClassSymbol): Boolean = withValidityAssertion {
         isSubclassOf(superClass, allowIndirect = false)
+    }
+
+    override fun CaDeclarationSymbol.getExpectsForActual(): List<CaDeclarationSymbol> = withValidityAssertion {
+        emptyList()
     }
 
     private fun CaCallableSymbol.mayHaveOverriddenSymbols(): Boolean {
@@ -157,7 +168,13 @@ internal class CaCfirSymbolRelationProvider(
         val ownerClassId = backingSymbol.callableId.classId
             ?: cfirSession.cfirProvider.getContainingClass(backingSymbol)?.classId
             ?: return emptyList()
-        val memberScope = scopeQueries.queryMemberScope(ownerClassId) ?: return emptyList()
+        val ownerClass = cfirSession.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir as? CfirClass
+            ?: return emptyList()
+        val memberScope = cfirSession.cangjieScopeProvider.getUseSiteMemberScope(
+            ownerClass,
+            cfirSession,
+            getScopeSessionFor(cfirSession),
+        )
 
         return when (backingSymbol) {
             is CfirNamedFunctionSymbol -> buildList {

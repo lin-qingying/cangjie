@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-
 struct A<T> {}
 
 extend<T> A<T> {
@@ -17,7 +15,5 @@ extend<T> A<T> {
 }
 
 main(): Int64 {
-    return A.p
+    return <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>A<!>.p
 }
-
-// ASSERT: regex generic type should be used with type argument

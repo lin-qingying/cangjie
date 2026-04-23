@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-
 main(): Int64 {
     return 0
 }
@@ -15,16 +13,5 @@ func case03<T>() {
 }
 
 func case04() {
-    case03
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>case03<!>
 }
-
-/* SCAN
-error: type arguments needed for the generic function 'case03'
-  ==> call27.cj:18:5:
-   | 
-18 |     case03
-   |     ^^^^^^ cannot infer type arguments for the generic function
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC-PIPE: %run %run_opt %output %run_args | compare %f
-// ASSERT: scan 273
-// ASSERT: scan -27000
-
 enum List<A> {
     Nil | Cons(A, List<A>)
 }

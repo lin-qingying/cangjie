@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
-
 import std.collection.HashMap
 
 class A {
@@ -17,12 +15,10 @@ class A {
 class C {
     static let MAP = HashMap<String, String>()
     public static func fun(): Int64 {
-        MAP.size
+        <!USED_BEFORE_INITIALIZATION!>MAP<!>.size
     }
 }
 
 main(): Int64 {
     0
 }
-
-// ASSERT: scan global/static variable 'MAP' is used before initialization during initializing 'A.init'

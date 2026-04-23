@@ -137,7 +137,7 @@ internal class StubBasedCfirDeserializationContext(
     val dispatchReceiver = relativeClassName?.let {
         ConeClassLikeType(
             ClassId(packageFqName, it).toLookupTag(),
-            allTypeParameters.map { typeParameter -> ConeTypeProjection(ConeTypeParameterTypeImpl(typeParameter.toLookupTag())) },
+            allTypeParameters.map { typeParameter -> ConeTypeParameterTypeImpl(typeParameter.toLookupTag()) },
         )
     }
 
@@ -392,7 +392,7 @@ internal class StubBasedCfirMemberDeserializer(
             attributes = CfirDeclarationAttributes.EMPTY
             returnTypeRef = ConeClassLikeType(
                 classSymbol.toLookupTag(),
-                typeParameters.map { ConeTypeProjection(ConeTypeParameterTypeImpl(it.symbol.toLookupTag())) },
+                typeParameters.map { ConeTypeParameterTypeImpl(it.symbol.toLookupTag())},
             ).toCfirResolvedTypeRef(CjFakePsiSourceElement(classOrObject, CjFakeSourceElementKind.ClassSelfTypeRef))
             status = buildResolvedStatus(constructor.visibility, Modality.FINAL)
             isLocal = false
@@ -416,7 +416,7 @@ internal class StubBasedCfirMemberDeserializer(
             attributes = CfirDeclarationAttributes.EMPTY
             returnTypeRef = ConeClassLikeType(
                 classSymbol.toLookupTag(),
-                typeParameters.map { ConeTypeProjection(ConeTypeParameterTypeImpl(it.symbol.toLookupTag())) },
+                typeParameters.map { ConeTypeParameterTypeImpl(it.symbol.toLookupTag()) },
             ).toCfirResolvedTypeRef(CjFakePsiSourceElement(classOrObject, CjFakeSourceElementKind.ClassSelfTypeRef))
             status = buildResolvedStatus(constructor.visibility, Modality.FINAL)
             isLocal = false

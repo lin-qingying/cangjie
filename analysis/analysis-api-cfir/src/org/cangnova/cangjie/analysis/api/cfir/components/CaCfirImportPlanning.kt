@@ -13,8 +13,9 @@ import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningOperation
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
+import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
+import org.cangnova.cangjie.analysis.api.resolution.symbol
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
-import org.cangnova.cangjie.analysis.api.resolution.target
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
@@ -32,6 +33,7 @@ import org.cangnova.cangjie.psi.CjImportDirective
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
+import org.cangnova.cangjie.analysis.api.cfir.symbols.completionDecisionKey
 
 /**
  * CFIR 补全候选决策实现。
@@ -95,55 +97,51 @@ internal fun CaCfirSession.checkCompletionCandidate(
     symbol: CaSymbol,
     position: CjElement,
 ): CaCompletionCandidateDecision {
-    return getOrCreateCompletionDecision(symbol, position) {
-        val file = position.containingFile as? CjFile
-            ?: error("补全候选判定只能在 CjFile 内执行：${position::class.simpleName}")
-        val importPath = symbol.asTopLevelImportPath()
-        val visible = with(this) { symbol.isVisible() }
-        val status = when {
-            !visible -> CaCompletionCandidateStatus.HIDDEN
-            symbol is CaFileSymbol -> CaCompletionCandidateStatus.HIDDEN
-            symbol is CaPackageSymbol -> CaCompletionCandidateStatus.DIRECT
-            isDirectlyReachable(symbol, file) -> CaCompletionCandidateStatus.DIRECT
-            importPath != null -> CaCompletionCandidateStatus.REQUIRES_IMPORT
-            else -> CaCompletionCandidateStatus.HIDDEN
-        }
-        CaCfirCompletionCandidateDecisionImpl(
-            symbol = symbol,
-            status = status,
-            requiredImport = importPath?.takeIf { status == CaCompletionCandidateStatus.REQUIRES_IMPORT },
-            token = token,
-        )
+    val file = position.containingFile as? CjFile
+        ?: error("补全候选判定只能在 CjFile 内执行：${position::class.simpleName}")
+    val importPath = symbol.asTopLevelImportPath()
+    val visible = with(this) { symbol.isVisible() }
+    val status = when {
+        !visible -> CaCompletionCandidateStatus.HIDDEN
+        symbol is CaFileSymbol -> CaCompletionCandidateStatus.HIDDEN
+        symbol is CaPackageSymbol -> CaCompletionCandidateStatus.DIRECT
+        isDirectlyReachable(symbol, file) -> CaCompletionCandidateStatus.DIRECT
+        importPath != null -> CaCompletionCandidateStatus.REQUIRES_IMPORT
+        else -> CaCompletionCandidateStatus.HIDDEN
     }
+    return CaCfirCompletionCandidateDecisionImpl(
+        symbol = symbol,
+        status = status,
+        requiredImport = importPath?.takeIf { status == CaCompletionCandidateStatus.REQUIRES_IMPORT },
+        token = token,
+    )
 }
 
 /**
  * 收集文件内可进行缩短的限定引用。
  */
 internal fun CaCfirSession.collectReferenceShorteningPlan(file: CjFile): CaReferenceShorteningPlan {
-    return getOrCreateReferenceShorteningPlan(file) {
-        val operations = PsiTreeUtil.collectElementsOfType(file, CjDotQualifiedExpression::class.java)
-            .mapNotNull { expression ->
-                val target = resolveShorteningTarget(expression) ?: return@mapNotNull null
-                if (!target.canBeShortenedAsStandaloneReference()) return@mapNotNull null
-                val shortName = target.shortNameOrNull() ?: return@mapNotNull null
-                if (expression.text == shortName.asString()) return@mapNotNull null
-                val decision = checkCompletionCandidate(target, expression)
-                if (decision.status == CaCompletionCandidateStatus.HIDDEN) return@mapNotNull null
-                CaCfirReferenceShorteningOperationImpl(
-                    expression = expression,
-                    target = target,
-                    shortName = shortName,
-                    decision = decision,
-                    token = token,
-                )
-            }
-        CaCfirReferenceShorteningPlanImpl(
-            file = file,
-            operations = operations,
-            token = token,
-        )
-    }
+    val operations = PsiTreeUtil.collectElementsOfType(file, CjDotQualifiedExpression::class.java)
+        .mapNotNull { expression ->
+            val target = resolveShorteningTarget(expression) ?: return@mapNotNull null
+            if (!target.canBeShortenedAsStandaloneReference()) return@mapNotNull null
+            val shortName = target.shortNameOrNull() ?: return@mapNotNull null
+            if (expression.text == shortName.asString()) return@mapNotNull null
+            val decision = checkCompletionCandidate(target, expression)
+            if (decision.status == CaCompletionCandidateStatus.HIDDEN) return@mapNotNull null
+            CaCfirReferenceShorteningOperationImpl(
+                expression = expression,
+                target = target,
+                shortName = shortName,
+                decision = decision,
+                token = token,
+            )
+        }
+    return CaCfirReferenceShorteningPlanImpl(
+        file = file,
+        operations = operations,
+        token = token,
+    )
 }
 
 /**
@@ -179,42 +177,39 @@ internal fun CaCfirSession.collectReferenceShortenings(
  * 结合当前文件引用和缩短规划结果，生成导入保留、去重、删除与补齐方案。
  */
 internal fun CaCfirSession.collectImportOptimizationPlan(file: CjFile): CaImportOptimizationPlan {
-    return getOrCreateImportOptimizationPlan(file) {
-        val currentImports = file.importDirectivesItem
-        // 导入优化只应统计“实际代码体中的引用名”，不能把 import 自身的短名误判为已使用。
-        val referencedNames = PsiTreeUtil.collectElementsOfType(file, CjSimpleNameExpression::class.java)
-            .filter { reference -> reference.getStrictParentOfType<CjImportDirective>() == null }
-            .map(CjSimpleNameExpression::referencedNameAsName)
-            .toSet()
-        val duplicateImports = linkedSetOf<CjImportInfo>()
-        val seenImports = linkedSetOf<ImportPath>()
-        currentImports.forEach { importInfo ->
-            val importPath = importInfo.importPathOrNull() ?: return@forEach
-            if (!seenImports.add(importPath)) {
-                duplicateImports += importInfo
-            }
+    val currentImports = file.importDirectivesItem
+    val referencedNames = PsiTreeUtil.collectElementsOfType(file, CjSimpleNameExpression::class.java)
+        .filter { reference -> reference.getStrictParentOfType<CjImportDirective>() == null }
+        .map(CjSimpleNameExpression::referencedNameAsName)
+        .toSet()
+    val duplicateImports = linkedSetOf<CjImportInfo>()
+    val seenImports = linkedSetOf<ImportPath>()
+    currentImports.forEach { importInfo ->
+        val importPath = importInfo.importPathOrNull() ?: return@forEach
+        if (!seenImports.add(importPath)) {
+            duplicateImports += importInfo
         }
-        val shorteningPlan = collectReferenceShorteningPlan(file)
-        val missingImports = shorteningPlan.operations
-            .mapNotNull { operation -> operation.decision.requiredImport }
-            .distinct()
-            .filterNot(seenImports::contains)
-        val unusedImports = currentImports.filter { importInfo ->
-            if (importInfo in duplicateImports) return@filter false
-            val importPath = importInfo.importPathOrNull() ?: return@filter false
-            if (importPath.isAllUnder) return@filter false
-            val importedName = importPath.importedName ?: return@filter false
-            importedName !in referencedNames && importPath !in missingImports
-        }
-        CaCfirImportOptimizationPlanImpl(
-            file = file,
-            retainedImports = currentImports - duplicateImports - unusedImports.toSet(),
-            duplicateImports = duplicateImports.toList(),
-            unusedImports = unusedImports,
-            missingImports = missingImports,
-            token = token,
-        )
     }
+    val shorteningPlan = collectReferenceShorteningPlan(file)
+    val missingImports = shorteningPlan.operations
+        .mapNotNull { operation -> operation.decision.requiredImport }
+        .distinct()
+        .filterNot(seenImports::contains)
+    val unusedImports = currentImports.filter { importInfo ->
+        if (importInfo in duplicateImports) return@filter false
+        val importPath = importInfo.importPathOrNull() ?: return@filter false
+        if (importPath.isAllUnder) return@filter false
+        val importedName = importPath.importedName ?: return@filter false
+        importedName !in referencedNames && importPath !in missingImports
+    }
+    return CaCfirImportOptimizationPlanImpl(
+        file = file,
+        retainedImports = currentImports - duplicateImports - unusedImports.toSet(),
+        duplicateImports = duplicateImports.toList(),
+        unusedImports = unusedImports,
+        missingImports = missingImports,
+        token = token,
+    )
 }
 
 private fun CaCfirSession.resolveShorteningTarget(expression: CjDotQualifiedExpression): CaSymbol? {
@@ -222,8 +217,8 @@ private fun CaCfirSession.resolveShorteningTarget(expression: CjDotQualifiedExpr
     return when (selector) {
         is CjCallExpression -> with(this) {
             selector.referenceExpression?.resolveToSymbol()
-                ?: selector.resolveToCall()?.target
-                ?: expression.resolveToCall()?.target
+                ?: selector.resolveToCall()?.successfulFunctionCallOrNull()?.symbol
+                ?: expression.resolveToCall()?.successfulFunctionCallOrNull()?.symbol
         }
         is CjReferenceExpression -> with(this) { selector.resolveToSymbol() }
         else -> null
@@ -244,16 +239,17 @@ private fun CaSymbol.canBeShortenedAsStandaloneReference(): Boolean = when (this
 
 private fun CaCfirSession.isDirectlyReachable(symbol: CaSymbol, file: CjFile): Boolean {
     val shortName = symbol.shortNameOrNull() ?: return false
-    val fileDeclaredScope = scopeQueries.queryFileDeclaredScope(file)
-    val packageScope = scopeQueries.queryPackageScope(file.packageFqName)
-    val visibleSymbols = buildList {
-        fileDeclaredScope.processClassifiersByName(shortName) { add(it) }
-        fileDeclaredScope.processCallablesByName(shortName) { add(it) }
-        packageScope?.processClassifiersByName(shortName) { add(it) }
-        packageScope?.processCallablesByName(shortName) { add(it) }
+    val visibleSymbols = buildList<CaSymbol> {
+        with(this@isDirectlyReachable) {
+            file.getFileScope().classifiers(shortName).forEach(::add)
+            file.getFileScope().callables(shortName).forEach(::add)
+        }
+        getPackageScope(file.packageFqName)?.let { packageScope ->
+            packageScope.classifiers(shortName).forEach(::add)
+            packageScope.callables(shortName).forEach(::add)
+        }
     }
     return visibleSymbols
-        .map(::getPublicSymbol)
         .any { visibleSymbol -> with(this) { visibleSymbol.isEquivalentTo(symbol) } }
 }
 

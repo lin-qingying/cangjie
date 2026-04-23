@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %f 2>&1
-
 let var1: Class25<Enum319> = Class25<Enum319>()
 let var2: Class50<Enum319> = Class50<Enum319>()
 

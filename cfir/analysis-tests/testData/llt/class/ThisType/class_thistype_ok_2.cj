@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output
-// EXEC: %run %run_opt %output %run_args
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 class C1 {
     public var x = 0
     public func foo1(): This {

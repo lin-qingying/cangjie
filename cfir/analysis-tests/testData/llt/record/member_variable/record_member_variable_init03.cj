@@ -4,11 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 let g: Int64 = 1
 
 struct A {

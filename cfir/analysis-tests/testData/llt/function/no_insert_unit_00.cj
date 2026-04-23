@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// EXEC: %run %run_opt %output %run_args
-// ASSERT: regex-not warning
-
 func f(x: Int64) {
     return {
         =>

@@ -4,41 +4,14 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-
 main() {
     var a: Int64
     var b: Int64
-    if ((1, b) == (1, 2)) {
+    if ((1, <!USED_BEFORE_INITIALIZATION!>b<!>) == (1, 2)) {
         print(1)
     }
-    if (b == 1) {
+    if (<!USED_BEFORE_INITIALIZATION!>b<!> == 1) {
         a = 1
     }
-    return b - a - a
+    return <!USED_BEFORE_INITIALIZATION!>b<!> - a - a
 }
-
-/* SCAN
-error: variable 'b' is used before initialization
-  ==> variable_use_before_init_02.cj:12:13:
-   | 
-12 |     if ((1, b) == (1, 2)) {
-   |             ^ 
-   | 
-
-error: variable 'b' is used before initialization
-  ==> variable_use_before_init_02.cj:15:9:
-   | 
-15 |     if (b == 1) {
-   |         ^ 
-   | 
-
-error: variable 'b' is used before initialization
-  ==> variable_use_before_init_02.cj:18:12:
-   | 
-18 |     return b - a - a
-   |            ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

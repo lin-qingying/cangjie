@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // DEPENDENCE: test2.cj
-// EXEC: %compiler %cmp_opt %f test2.cj -o %output
-// EXEC: %run %run_opt %output
 
 // Test for using decl defined by varWithPatternDecl which is in the file the has bigger fileID than current fileID.
 func test() {
