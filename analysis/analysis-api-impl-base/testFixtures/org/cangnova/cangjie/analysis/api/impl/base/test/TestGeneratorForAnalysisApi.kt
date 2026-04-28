@@ -1,11 +1,14 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test
 
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisSessionMode
+import org.cangnova.cangjie.analysis.api.impl.base.test.dsl.AnalysisApiTestGenerator
+import org.cangnova.cangjie.analysis.api.impl.base.test.dsl.FrontendConfiguratorTestModel
+import org.cangnova.cangjie.analysis.api.impl.base.test.dsl.generateAnalysisApiTests
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
+import org.jetbrains.kotlin.generators.dsl.TestGroup
+import org.jetbrains.kotlin.generators.dsl.TestGroupSuite
+import org.jetbrains.kotlin.generators.model.SimpleTestClassModel
+import org.jetbrains.kotlin.generators.model.TestInfraRevision
 import java.io.File
 
 /**
@@ -39,12 +42,19 @@ object TestGeneratorForAnalysisApi {
      * 该入口同时服务于代码生成与一致性校验任务，避免两套逻辑漂移。
      */
     fun generatedSuites(projectRoot: File): List<GeneratedAnalysisApiSuiteFile> {
-        return buildList {
-            GeneratedAnalysisApiTestRegistry.models.forEach { model ->
-                model.supportedModuleKinds.forEach { moduleKind ->
-                    GeneratedAnalysisApiTestRegistry.supportedVariantsFor(moduleKind).forEach { variant ->
-                        add(buildSuite(projectRoot, model, moduleKind, variant))
-                    }
+        val suite = TestGroupSuite(TestInfraRevision.StandardJUnit5, defaultSkipTestAllFilesCheck = false)
+        AnalysisApiTestGenerator(
+            suite = suite,
+            configuratorFactories = listOf(CaCfirAnalysisApiTestConfiguratorFactory),
+        ).run {
+            generateAnalysisApiTests()
+        }
+
+        return suite.testGroups.flatMap { group ->
+            group.testClasses.flatMap { testClass ->
+                val configuratorModel = testClass.methodModels.filterIsInstance<FrontendConfiguratorTestModel>().single()
+                testClass.testModels.filterIsInstance<SimpleTestClassModel>().map { model ->
+                    buildSuite(projectRoot, group, testClass, model, configuratorModel)
                 }
             }
         }
@@ -52,31 +62,47 @@ object TestGeneratorForAnalysisApi {
 
     private fun buildSuite(
         projectRoot: File,
-        model: GeneratedAnalysisApiModel,
-        moduleKind: TestModuleKind,
-        variant: GeneratedAnalysisApiVariant,
+        group: TestGroup,
+        testClass: TestGroup.TestClass,
+        model: SimpleTestClassModel,
+        configuratorModel: FrontendConfiguratorTestModel,
     ): GeneratedAnalysisApiSuiteFile {
-        val testDataRoot = projectRoot.resolve(model.modelRelativePath)
+        val modelRelativePath = model.rootFile.relativeToOrSelf(projectRoot).invariantSeparatorsPath
+        val testDataRoot = projectRoot.resolve(modelRelativePath)
         require(testDataRoot.isDirectory) { "testData root not found: ${testDataRoot.path}" }
 
-        val generatedClassName = variant.generatedClassName(moduleKind, model.baseName)
+        val generatedClassName = testClass.suiteTestClassName.substringAfterLast('.')
         val outputFile = projectRoot.resolve("$generatedOutputRoot/$generatedClassName.kt")
         return GeneratedAnalysisApiSuiteFile(
             outputFile = outputFile,
-            content = render(model, moduleKind, variant, testDataRoot, projectRoot, generatedClassName),
+            content = render(
+                model = model,
+                modelRelativePath = modelRelativePath,
+                moduleKind = configuratorModel.data.moduleKind,
+                configuratorModel = configuratorModel,
+                testDataRoot = testDataRoot,
+                projectRoot = projectRoot,
+                generatedClassName = generatedClassName,
+                abstractClassQualifiedName = testClass.baseTestClassName,
+            ),
+            modelRelativePath = modelRelativePath,
+            includedFilePattern = model.filenamePattern.pattern(),
         )
     }
 
     private fun render(
-        model: GeneratedAnalysisApiModel,
+        model: SimpleTestClassModel,
+        modelRelativePath: String,
         moduleKind: TestModuleKind,
-        variant: GeneratedAnalysisApiVariant,
+        configuratorModel: FrontendConfiguratorTestModel,
         testDataRoot: File,
         projectRoot: File,
         generatedClassName: String,
+        abstractClassQualifiedName: String,
     ): String = buildString {
-        val abstractClassSimpleName = model.abstractClassQualifiedName.substringAfterLast('.')
-        val patternLiteral = model.includedFilePattern(moduleKind).replace("\\", "\\\\")
+        val abstractClassSimpleName = abstractClassQualifiedName.substringAfterLast('.')
+        val pattern = model.filenamePattern.pattern()
+        val patternLiteral = pattern.replace("\\", "\\\\")
 
         appendLine("package $generatedPackage")
         appendLine()
@@ -92,17 +118,17 @@ object TestGeneratorForAnalysisApi {
         appendLine("import org.junit.jupiter.api.Test")
         appendLine("import java.io.File")
         appendLine("import java.util.regex.Pattern")
-        appendLine("import ${model.abstractClassQualifiedName}")
+        appendLine("import $abstractClassQualifiedName")
         appendLine()
         appendLine("/** AUTO-GENERATED by TestGeneratorForAnalysisApi. DO NOT EDIT MANUALLY. */")
-        appendLine("@TestMetadata(\"${model.modelRelativePath}\")")
+        appendLine("@TestMetadata(\"$modelRelativePath\")")
         appendLine("class $generatedClassName : $abstractClassSimpleName() {")
         appendLine("    override val configurator = CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(")
         appendLine("        AnalysisApiTestConfiguratorFactoryData(")
-        appendLine("            frontend = FrontendKind.${variant.frontend.name},")
+        appendLine("            frontend = FrontendKind.${configuratorModel.data.frontend.name},")
         appendLine("            moduleKind = TestModuleKind.${moduleKind.name},")
-        appendLine("            analysisSessionMode = AnalysisSessionMode.${variant.analysisSessionMode.name},")
-        appendLine("            analysisApiMode = AnalysisApiMode.${variant.analysisApiMode.name},")
+        appendLine("            analysisSessionMode = AnalysisSessionMode.${configuratorModel.data.analysisSessionMode.name},")
+        appendLine("            analysisApiMode = AnalysisApiMode.${configuratorModel.data.analysisApiMode.name},")
         appendLine("        ),")
         appendLine("    )")
         appendLine()
@@ -110,7 +136,7 @@ object TestGeneratorForAnalysisApi {
         appendLine("    fun testAllFilesPresentInModel() {")
         appendLine("        CjTestUtil.assertAllTestsPresentByMetadata(")
         appendLine("            this::class.java,")
-        appendLine("            File(\"${model.modelRelativePath}\"),")
+        appendLine("            File(\"$modelRelativePath\"),")
         appendLine("            Pattern.compile(\"$patternLiteral\"),")
         appendLine("            true,")
         appendLine("        )")
@@ -120,11 +146,11 @@ object TestGeneratorForAnalysisApi {
             builder = this,
             directory = testDataRoot,
             projectRoot = projectRoot,
-            variant = variant,
+            configuratorModel = configuratorModel,
             model = model,
             moduleKind = moduleKind,
             abstractClassSimpleName = abstractClassSimpleName,
-            includedFileRegex = Regex(model.includedFilePattern(moduleKind)),
+            includedFileRegex = Regex(pattern),
             includePatternLiteral = patternLiteral,
             indent = "    ",
         )
@@ -136,8 +162,8 @@ object TestGeneratorForAnalysisApi {
         builder: StringBuilder,
         directory: File,
         projectRoot: File,
-        variant: GeneratedAnalysisApiVariant,
-        model: GeneratedAnalysisApiModel,
+        configuratorModel: FrontendConfiguratorTestModel,
+        model: SimpleTestClassModel,
         moduleKind: TestModuleKind,
         abstractClassSimpleName: String,
         includedFileRegex: Regex,
@@ -173,10 +199,10 @@ object TestGeneratorForAnalysisApi {
             builder.appendLine("${indent}inner class $nestedClassName : $abstractClassSimpleName() {")
             builder.appendLine("${indent}    override val configurator = CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(")
             builder.appendLine("${indent}        AnalysisApiTestConfiguratorFactoryData(")
-            builder.appendLine("${indent}            frontend = FrontendKind.${variant.frontend.name},")
+            builder.appendLine("${indent}            frontend = FrontendKind.${configuratorModel.data.frontend.name},")
             builder.appendLine("${indent}            moduleKind = TestModuleKind.${moduleKind.name},")
-            builder.appendLine("${indent}            analysisSessionMode = AnalysisSessionMode.${variant.analysisSessionMode.name},")
-            builder.appendLine("${indent}            analysisApiMode = AnalysisApiMode.${variant.analysisApiMode.name},")
+            builder.appendLine("${indent}            analysisSessionMode = AnalysisSessionMode.${configuratorModel.data.analysisSessionMode.name},")
+            builder.appendLine("${indent}            analysisApiMode = AnalysisApiMode.${configuratorModel.data.analysisApiMode.name},")
             builder.appendLine("${indent}        ),")
             builder.appendLine("${indent}    )")
             builder.appendLine()
@@ -194,7 +220,7 @@ object TestGeneratorForAnalysisApi {
                 builder = builder,
                 directory = subdirectory,
                 projectRoot = projectRoot,
-                variant = variant,
+                configuratorModel = configuratorModel,
                 model = model,
                 moduleKind = moduleKind,
                 abstractClassSimpleName = abstractClassSimpleName,
@@ -226,4 +252,6 @@ object TestGeneratorForAnalysisApi {
 data class GeneratedAnalysisApiSuiteFile(
     val outputFile: File,
     val content: String,
+    val modelRelativePath: String,
+    val includedFilePattern: String,
 )

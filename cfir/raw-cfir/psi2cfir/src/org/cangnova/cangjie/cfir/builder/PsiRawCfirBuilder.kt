@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -506,7 +507,7 @@ class PsiRawCfirBuilder(
                     attributes = CfirDeclarationAttributes.EMPTY
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
-                    status = convertDeclarationStatus(psi)
+                    status = convertMainFunctionStatus(psi)
                     returnTypeRef = convertTypeRef(psi.typeReference)
                     valueParameters.addAll(valueParams)
                     this.body = body
@@ -2003,9 +2004,14 @@ class PsiRawCfirBuilder(
             return convertDeclarationStatus(owner, psi)
         }
 
+        private fun convertMainFunctionStatus(psi: CjMainFunction): CfirDeclarationStatus {
+            return convertDeclarationStatus(psi, psi, defaultVisibility = Visibilities.Public)
+        }
+
         private fun convertDeclarationStatus(
             owner: CjModifierListOwner,
-            declaration: CjDeclaration
+            declaration: CjDeclaration,
+            defaultVisibility: Visibility? = null,
         ): CfirDeclarationStatus {
             val modifiers = owner.modifierList
             val isVisibilityExplicit = modifiers?.let {
@@ -2019,7 +2025,7 @@ class PsiRawCfirBuilder(
                         it.hasModifier(CjTokens.OPEN_KEYWORD) ||
                         it.hasModifier(CjTokens.SEALED_KEYWORD)
             } == true
-            val defaultVisibility = when {
+            val effectiveDefaultVisibility = defaultVisibility ?: when {
                 context.inLocalContext -> Visibilities.Local
                 containerSymbolIfAny is CfirInterfaceSymbol -> Visibilities.Public
                 else -> Visibilities.Internal
@@ -2031,7 +2037,7 @@ class PsiRawCfirBuilder(
                     modifiers?.hasModifier(CjTokens.PRIVATE_KEYWORD) == true -> Visibilities.Private
                     modifiers?.hasModifier(CjTokens.PROTECTED_KEYWORD) == true -> Visibilities.Protected
                     modifiers?.hasModifier(CjTokens.INTERNAL_KEYWORD) == true -> Visibilities.Internal
-                    else -> defaultVisibility
+                    else -> effectiveDefaultVisibility
                 },
                 isVisibilityExplicit = isVisibilityExplicit,
                 isModalityExplicit = isModalityExplicit,

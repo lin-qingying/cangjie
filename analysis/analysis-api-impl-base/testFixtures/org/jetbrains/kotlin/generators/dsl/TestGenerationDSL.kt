@@ -1,0 +1,158 @@
+package org.jetbrains.kotlin.generators.dsl
+
+import org.jetbrains.kotlin.generators.MethodGenerator
+import org.jetbrains.kotlin.generators.model.AnnotationModel
+import org.jetbrains.kotlin.generators.model.MethodModel
+import org.jetbrains.kotlin.generators.model.SimpleTestClassModel
+import org.jetbrains.kotlin.generators.model.TestClassModel
+import org.jetbrains.kotlin.generators.model.TestInfraRevision
+import org.jetbrains.kotlin.generators.util.TestGeneratorUtil
+import org.jetbrains.kotlin.generators.util.extractTagsFromDirectory
+import org.jetbrains.kotlin.test.TargetBackend
+import java.io.File
+import java.util.regex.Pattern
+
+fun TestGroupSuite.forEachTestClassParallel(f: (TestGroup.TestClass) -> Unit) {
+    testGroups
+        .parallelStream()
+        .flatMap { it.testClasses.stream() }
+        .sorted(compareByDescending { it.testModels.sumOf { it.methods.size } })
+        .forEach(f)
+}
+
+class TestGroupSuite(val testInfraRevision: TestInfraRevision, val defaultSkipTestAllFilesCheck: Boolean) {
+    val testGroups: MutableList<TestGroup> = mutableListOf()
+
+    fun testGroup(
+        testsRoot: String,
+        testDataRoot: String,
+        testRunnerMethodName: String = MethodGenerator.DEFAULT_RUN_TEST_METHOD_NAME,
+        init: TestGroup.() -> Unit,
+    ) {
+        testGroups += TestGroup(
+            testsRoot,
+            testDataRoot,
+            testRunnerMethodName,
+            testInfraRevision,
+            defaultSkipTestAllFilesCheck,
+        ).apply(init)
+    }
+}
+
+class TestGroup(
+    private val testsRoot: String,
+    val testDataRoot: String,
+    val testRunnerMethodName: String,
+    val testInfraRevision: TestInfraRevision,
+    val defaultSkipTestAllFilesCheck: Boolean,
+) {
+    val testClasses: MutableList<TestClass> = mutableListOf()
+
+    inline fun <reified T> testClass(
+        suiteTestClassName: String = getDefaultSuiteTestClassName(T::class.java.simpleName),
+        annotations: List<AnnotationModel> = emptyList(),
+        noinline init: TestClass.() -> Unit,
+    ) {
+        val testKClass = T::class.java
+        testClass(testKClass, testKClass.name, suiteTestClassName, annotations, init)
+    }
+
+    fun testClass(
+        testKClass: Class<*>,
+        baseTestClassName: String = testKClass.name,
+        suiteTestClassName: String = getDefaultSuiteTestClassName(baseTestClassName.substringAfterLast('.')),
+        annotations: List<AnnotationModel> = emptyList(),
+        init: TestClass.() -> Unit,
+    ) {
+        testClasses += TestClass(testKClass, baseTestClassName, suiteTestClassName, annotations).apply(init)
+    }
+
+    inner class TestClass(
+        val testKClass: Class<*>,
+        val baseTestClassName: String,
+        val suiteTestClassName: String,
+        val annotations: List<AnnotationModel>,
+    ) {
+        val testDataRoot: String
+            get() = this@TestGroup.testDataRoot
+        val baseDir: String
+            get() = this@TestGroup.testsRoot
+
+        val testModels = ArrayList<TestClassModel>()
+        val methodModels = mutableListOf<MethodModel<*>>()
+
+        fun method(method: MethodModel<*>) {
+            methodModels += method
+        }
+
+        fun modelForDirectoryBasedTest(
+            relativePath: String,
+            testDirectoryName: String,
+            extension: String? = "kt",
+            excludeParentDirs: Boolean = false,
+            recursive: Boolean = true,
+            targetBackend: TargetBackend? = null,
+            excludedPattern: String? = null,
+        ) {
+            model(
+                "${relativePath}/${testDirectoryName}",
+                extension = extension,
+                recursive = recursive,
+                excludeParentDirs = excludeParentDirs,
+                targetBackend = targetBackend,
+                excludedPattern = excludedPattern,
+                testClassName = testDirectoryName.replaceFirstChar { it.uppercaseChar() } + testKClass.simpleName,
+            )
+        }
+
+        fun model(
+            relativeRootPath: String = "",
+            recursive: Boolean = true,
+            excludeParentDirs: Boolean = false,
+            extension: String? = "kt",
+            pattern: String = if (extension == null) """^([^.]+)$""" else """^(.+)\.$extension$""",
+            excludedPattern: String? = null,
+            testMethod: String = "doTest",
+            testClassName: String? = null,
+            targetBackend: TargetBackend? = null,
+            excludeDirs: List<String> = listOf(),
+            excludeDirsRecursively: List<String> = listOf(),
+            skipTestAllFilesCheck: Boolean = defaultSkipTestAllFilesCheck,
+        ) {
+            val rootFile = File("$testDataRoot/$relativeRootPath")
+            val compiledPattern = Pattern.compile(pattern)
+            val compiledExcludedPattern = excludedPattern?.let { Pattern.compile(it) }
+            val className = testClassName ?: TestGeneratorUtil.fileNameToJavaIdentifier(rootFile)
+            require(targetBackend != TargetBackend.ANY) { "TargetBackend.ANY is not allowed, please specify target backend explicitly" }
+            if (testInfraRevision == TestInfraRevision.StandardJUnit5) {
+                require(targetBackend == null) { "TargetBackend shouldn't be defined for JUnit5" }
+            }
+            testModels.add(
+                SimpleTestClassModel(
+                    testInfraRevision,
+                    File(testDataRoot),
+                    rootFile,
+                    recursive,
+                    excludeParentDirs,
+                    compiledPattern,
+                    compiledExcludedPattern,
+                    testMethod,
+                    className,
+                    targetBackend,
+                    excludeDirs,
+                    excludeDirsRecursively,
+                    testRunnerMethodName,
+                    annotations,
+                    extractTagsFromDirectory(rootFile),
+                    methodModels,
+                    skipTestAllFilesCheck,
+                ),
+            )
+        }
+    }
+}
+
+fun getDefaultSuiteTestClassName(baseTestClassName: String): String {
+    require(baseTestClassName.startsWith("Abstract")) { "Doesn't start with \"Abstract\": $baseTestClassName" }
+    return baseTestClassName.substringAfter("Abstract") + "Generated"
+}

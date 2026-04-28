@@ -9,6 +9,9 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.source.toCjPsiSourceElement
 
 /**
  * 函数语义检查器（Function 分组）
@@ -67,13 +70,16 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
         if (returnTypeRef is CfirErrorTypeRef && returnTypeRef.delegatedTypeRef == null) {
             if (declaration is CfirNamedFunction && declaration.body != null) {
                 reporter.reportOn(
-                    source = declaration.source,
+                    source = declaration.nameDiagnosticSource(),
                     factory = CfirErrors.UNABLE_TO_INFER_RETURN_TYPE,
                 )
             }
         }
     }
 }
+
+private fun CfirNamedFunction.nameDiagnosticSource() =
+    (source?.psi as? CjNamedFunction)?.nameIdentifier?.toCjPsiSourceElement() ?: source
 
 /**
  * 默认参数限制检查器

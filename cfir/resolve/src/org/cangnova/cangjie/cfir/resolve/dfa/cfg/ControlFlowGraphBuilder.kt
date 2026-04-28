@@ -506,13 +506,27 @@ class ControlFlowGraphBuilder private constructor(
         val result = linkedSetOf<CfirExpression>()
 
         fun CFGNode<*>.returnExpression(): CfirExpression? = when (this) {
-            is BlockExitNode -> (fir.statements.lastOrNull() as? CfirExpression)?.takeUnless { it is CfirReturnExpression }
+            is BlockExitNode -> {
+                if (previousNodes.all { it is StubNode }) {
+                    null
+                } else {
+                    val statements = fir.statements
+                    if (statements.dropLast(1).any { it is CfirReturnExpression }) {
+                        null
+                    } else {
+                        (statements.lastOrNull() as? CfirExpression)?.takeUnless { it is CfirReturnExpression }
+                    }
+                }
+            }
             is JumpNode -> (fir as? CfirReturnExpression)?.result
             else -> null
         }
 
         exitNode.previousNodes
-            .filter { exitNode.edgeFrom(it).kind.usedInCfa && exitNode.edgeFrom(it).label == NormalPath }
+            .filter {
+                val edge = exitNode.edgeFrom(it)
+                edge.kind.usedInCfa && !edge.kind.isDead && edge.label == NormalPath
+            }
             .mapNotNullTo(result) { it.returnExpression() }
         nonDirectJumps[exitNode].mapNotNullTo(result) { it.returnExpression() }
         return result

@@ -16,12 +16,14 @@ import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
@@ -663,7 +665,7 @@ open class CfirDeclarationsResolveTransformer(
         }
 
         val commonType = session.typeContext.commonSuperTypeOrNull(expressionTypes)
-        if (commonType != null && commonType !is ConeErrorType) {
+        if (commonType != null && commonType !is ConeErrorType && commonType.isAcceptableInferredReturnType(expressionTypes)) {
             return commonType
         }
 
@@ -672,6 +674,21 @@ open class CfirDeclarationsResolveTransformer(
             postfix = " do not have the smallest common supertype",
         ) { "'$it'" }
         return ConeErrorType(ConeSimpleDiagnostic(message))
+    }
+
+    /**
+     * 函数隐式返回类型不能只因为所有候选都可装箱到 `Any` 就吞掉推断失败。
+     *
+     * 仓颉允许 `class` 返回值与基本类型共同推断为 `Any`；但纯基本类型/值类型候选之间
+     * 若唯一公共父类型退化到 `Any`，官方语义仍要求报告“没有最小公共父类型”。
+     */
+    private fun ConeCangJieType.isAcceptableInferredReturnType(expressionTypes: List<ConeCangJieType>): Boolean {
+        if (!isAnyType()) return true
+        return expressionTypes.any { it is ConeClassLikeType && !it.isAnyType() }
+    }
+
+    private fun ConeCangJieType.isAnyType(): Boolean {
+        return this === ConeAnyType || (this is ConeClassLikeType && classId == StdlibClassIds.Any)
     }
 
     /**

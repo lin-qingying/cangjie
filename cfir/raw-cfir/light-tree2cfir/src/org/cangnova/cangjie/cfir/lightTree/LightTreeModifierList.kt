@@ -73,13 +73,17 @@ class LightTreeModifierList(
     /**
      * 转换为 [CfirDeclarationStatus]，与 [AbstractRawCfirBuilder.buildDeclarationStatus] 对齐。
      */
-    fun toDeclarationStatus(inLocalContext: Boolean, inInterfaceContext: Boolean): CfirDeclarationStatus {
-        val defaultVisibility = when {
+    fun toDeclarationStatus(
+        inLocalContext: Boolean,
+        inInterfaceContext: Boolean,
+        defaultVisibility: Visibility? = null,
+    ): CfirDeclarationStatus {
+        val effectiveDefaultVisibility = defaultVisibility ?: when {
             inLocalContext -> Visibilities.Local
             inInterfaceContext -> Visibilities.Public
             else -> Visibilities.Internal
         }
-        val effectiveVisibility = if (isVisibilityExplicit) visibility else defaultVisibility
+        val effectiveVisibility = if (isVisibilityExplicit) visibility else effectiveDefaultVisibility
         val status = CfirDeclarationStatusImpl(
             visibility = effectiveVisibility,
             modality = Modality.convertFromFlags(isSealed, isAbstract, isOpen),

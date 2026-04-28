@@ -33,6 +33,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         val containingFunction = context.findClosestDeclaration<CfirFunction> { it.body === block } ?: return
         if (containingFunction.returnTypeRef is CfirImplicitTypeRef) return
 
+        if (block.statements.dropLast(1).any { it is CfirReturnExpression }) return
         val tailExpression = block.statements.lastOrNull() as? CfirExpression ?: return
         if (tailExpression is CfirReturnExpression) return
 
