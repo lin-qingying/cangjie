@@ -50,7 +50,7 @@ object GeneratedAnalysisApiTestConsistencyChecker {
             buildString {
                 appendLine("tests-gen 中存在注册表之外的 generated runner：")
                 unexpectedFiles.sorted().forEach { path -> appendLine(path) }
-                appendLine("请清理多余文件，或修正 GeneratedAnalysisApiTestRegistry。")
+                appendLine("请清理多余文件，或修正 Analysis API generated test DSL。")
             }
         }
     }

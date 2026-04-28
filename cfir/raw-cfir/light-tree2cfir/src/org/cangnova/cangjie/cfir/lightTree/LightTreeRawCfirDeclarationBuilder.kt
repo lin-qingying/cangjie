@@ -25,6 +25,8 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.descriptors.Visibility
+import org.cangnova.cangjie.descriptors.Visibilities
 
 /**
  * LightTree → Raw CFIR 声明构建器（对齐 PsiRawCfirBuilder 的声明转换部分）。
@@ -41,9 +43,11 @@ class LightTreeRawCfirDeclarationBuilder(
     val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) : AbstractLightTreeRawCfirBuilder(session, tree, source, context) {
 
-    private fun LightTreeModifierList.toDeclarationStatusForCurrentContext(): CfirDeclarationStatus {
+    private fun LightTreeModifierList.toDeclarationStatusForCurrentContext(
+        defaultVisibility: Visibility? = null,
+    ): CfirDeclarationStatus {
         val inInterfaceContext = !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
-        return toDeclarationStatus(context.inLocalContext, inInterfaceContext)
+        return toDeclarationStatus(context.inLocalContext, inInterfaceContext, defaultVisibility)
     }
 
     // ===== AbstractRawCfirBuilder 抽象方法实现 =====
@@ -363,7 +367,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext()
+                status = modifiers.toDeclarationStatusForCurrentContext(defaultVisibility = Visibilities.Public)
                 this.returnTypeRef = returnTypeRef
                 this.valueParameters.addAll(valueParams)
                 this.body = body
