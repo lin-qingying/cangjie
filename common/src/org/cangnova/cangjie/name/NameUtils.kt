@@ -32,11 +32,6 @@ object NameUtils {
     fun contextReceiverName(index: Int): Name =
         Name.identifier("${CONTEXT_RECEIVER_PREFIX}_$index")
 
-    // "pkg/someScript.kts" -> "SomeScript"
-    @JvmStatic
-    fun getScriptNameForFile(filePath: String): Name =
-        Name.identifier(getPackagePartClassNamePrefix(filePath.substringAfterLast('/').substringBeforeLast('.')))
-
     @JvmStatic
     fun getPackagePartClassNamePrefix(shortFileName: String): String =
         shortFileName.ifEmpty { "_" }

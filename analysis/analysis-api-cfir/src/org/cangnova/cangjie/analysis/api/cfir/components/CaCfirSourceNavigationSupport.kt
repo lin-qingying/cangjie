@@ -29,7 +29,7 @@ internal fun CaSymbol.decompiledContainingPackageFqName(): FqName? = when (this)
     is CaClassLikeSymbol -> classId?.packageFqName
     is CaExtendSymbol -> {
         val declarationPsi = when (this) {
-            is CaCfirExtendSymbol -> extendPsi?.containingFile as? CjFile
+            is CaCfirExtendSymbol -> backingPsi?.containingFile as? CjFile
             else -> (this as? CaDeclarationSymbol)?.psi?.containingFile as? CjFile
         }
         declarationPsi?.packageFqName

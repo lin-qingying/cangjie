@@ -5,10 +5,12 @@
 
 package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
 
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.roots.OrderRootType
 import com.intellij.openapi.roots.ProjectFileIndex
 import com.intellij.openapi.roots.ProjectRootManager
+import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
@@ -105,13 +107,14 @@ class CaIdeProjectStructureState(
 
         val containingItem = element.containingFile as? PsiFileSystemItem
             ?: error("无法为 `${element::class.simpleName}` 选择 Analysis API use-site module：元素不位于 PSI 文件中。")
-        val virtualFile = containingItem.virtualFile
-            ?: error("无法为 `${element::class.simpleName}` 选择 Analysis API use-site module：PSI 文件没有 VirtualFile。")
 
         val cjFile = containingItem as? CjFile
         if (cjFile != null && isDanglingLikeFile(cjFile)) {
             return danglingFileModuleFor(cjFile)
         }
+
+        val virtualFile = containingItem.virtualFile
+            ?: error("无法为 `${element::class.simpleName}` 选择 Analysis API use-site module：PSI 文件没有 VirtualFile。")
 
         if (projectFileIndex.isInLibrarySource(virtualFile)) {
             return librarySourceModuleFor(virtualFile)
@@ -299,8 +302,7 @@ class CaIdeProjectStructureState(
     }
 
     private fun danglingFileModuleFor(file: CjFile): CaDanglingFileModuleImpl {
-        val virtualFile = file.virtualFile
-            ?: error("代码片段 `${file.name}` 缺少 VirtualFile，无法构建游离文件模块。")
+        val virtualFile = file.viewProvider.virtualFile
         val pathKey = virtualFile.path.ifBlank { virtualFile.url }
         val contextModule = danglingFileContextModuleFor(file)
         return danglingFileModulesByPath.compute(pathKey) { _, existingModule ->
@@ -569,11 +571,7 @@ private sealed class CaIdeMutableModule(
         get() = CaTargetPlatform.IDE
 
     override val baseContentScope: GlobalSearchScope =
-        if (includeLibrariesInScope) {
-            GlobalSearchScope.filesWithLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })
-        } else {
-            GlobalSearchScope.filesWithoutLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })
-        }
+        CaIdeModuleContentScope(project, scopeRoots.mapNotNull { it.virtualFile }, includeLibrariesInScope)
 
     fun tryStartDependencyRefresh(snapshotStamp: SnapshotStamp): Boolean {
         synchronized(dependencyRefreshLock) {
@@ -622,6 +620,43 @@ private sealed class CaIdeMutableModule(
         data class Refreshing(val snapshotStamp: SnapshotStamp) : DependencyRefreshState
         data class Completed(val snapshotStamp: SnapshotStamp) : DependencyRefreshState
     }
+}
+
+/**
+ * IDE module 的根目录作用域。
+ *
+ * `GlobalSearchScope.files*Scope` 只把传入的根 VirtualFile 当成精确文件集合；
+ * source root / library root 是目录时，必须按祖先关系递归包含其子文件，否则
+ * `canBeAnalysed` 会拒绝同一源码模块里的普通 `.cj` 文件。
+ */
+private class CaIdeModuleContentScope(
+    private val owningProject: Project,
+    private val roots: List<VirtualFile>,
+    private val includeLibrariesInScope: Boolean,
+) : GlobalSearchScope(owningProject) {
+    override fun contains(file: VirtualFile): Boolean =
+        roots.any { root -> root.isValid && file.isValid && root.containsFile(file) }
+
+    /**
+     * IntelliJ 在高亮、注入和文件视图切换路径上可能给出同一路径的不同 VirtualFile 包装。
+     * 模块内容范围表达的是 root 到文件的路径包含关系，因此这里同时按对象祖先关系和 URL
+     * 祖先关系判断，避免 Analysis API 把同一源码根下的声明误判为越界 PSI。
+     */
+    private fun VirtualFile.containsFile(file: VirtualFile): Boolean =
+        this == file ||
+            VfsUtilCore.isAncestor(this, file, false) ||
+            VfsUtilCore.isEqualOrAncestor(url, file.url)
+
+    override fun isSearchInModuleContent(aModule: Module): Boolean =
+        !includeLibrariesInScope
+
+    override fun isSearchInLibraries(): Boolean =
+        includeLibrariesInScope
+
+    override fun getProject(): Project? = owningProject
+
+    override fun toString(): String =
+        "CangJie IDE module content scope (${roots.joinToString { it.presentableUrl }})"
 }
 
 /**

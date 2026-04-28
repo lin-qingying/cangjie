@@ -1,9 +1,12 @@
 import org.gradle.api.tasks.JavaExec
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     kotlin("jvm")
     id("analysis-coverage-convention")
     id("java-test-fixtures")
+    id("generated-sources")
+
     id("project-tests-convention")
 }
 
@@ -16,6 +19,21 @@ sourceSets {
         generatedTestDir()
     }
     "testFixtures" { none() }
+}
+
+allprojects {
+    tasks.withType<KotlinJvmCompile>().configureEach {
+        compilerOptions.optIn.addAll(
+            listOf(
+                "org.cangnova.cangjie.analysis.api.CaImplementationDetail",
+                "org.cangnova.cangjie.analysis.api.CaExperimentalApi",
+                "org.cangnova.cangjie.analysis.api.CaNonPublicApi",
+                "org.cangnova.cangjie.analysis.api.CaIdeApi",
+                "org.cangnova.cangjie.analysis.api.CaPlatformInterface",
+                "org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponentImplementationDetail",
+            )
+        )
+    }
 }
 
 /**
@@ -153,3 +171,15 @@ if (path == ":analysis:analysis-api-cfir") {
         )
     }
 }
+
+generatedSourcesTask(
+    taskName = "generateDiagnostics",
+    generatorProject = ":analysis:analysis-api-cfir:analysis-api-cfir-generator",
+    generatorMainClass = "org.cangnova.cangjie.analysis.api.cfir.generator.MainKt",
+    argsProvider = { generationRoot ->
+        listOf(
+            "org.cangnova.cangjie.analysis.api.cfir.diagnostics",
+            generationRoot.toString(),
+        )
+    }
+)

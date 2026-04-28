@@ -8,7 +8,6 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
@@ -35,8 +34,7 @@ internal class CaCfirValueParameterSymbol private constructor(
     internal val stableParameterIndex: Int? = null,
     private val explicitParameterPsi: org.cangnova.cangjie.psi.CjParameter? = null,
 ) : CaValueParameterSymbol(),
-    CaCfirCjBasedSymbol<org.cangnova.cangjie.psi.CjParameter, CfirValueParameterSymbol>,
-    CaCfirVariableSymbolSupport<CfirValueParameterSymbol> {
+    CaCfirCjBasedSymbol<org.cangnova.cangjie.psi.CjParameter, CfirValueParameterSymbol> {
     override val cfirSymbol: CfirValueParameterSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
 
@@ -61,14 +59,11 @@ internal class CaCfirValueParameterSymbol private constructor(
         explicitParameterPsi = parameterPsi,
     )
 
-    override val backingSymbol: CfirValueParameterSymbol
-        get() = cfirSymbol
-
     override val containingModule: CaModule
         get() = analysisSession.useSiteModule
 
     private val parameterDeclaration: CfirValueParameter
-        get() = backingSymbol.cfir
+        get() = cfirSymbol.cfir
 
     override val annotations: CaAnnotationList
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
@@ -83,16 +78,16 @@ internal class CaCfirValueParameterSymbol private constructor(
         get() = null
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { receiverTypeImpl }
+        get() = withValidityAssertion { cfirSymbol.cfir.dispatchReceiverType?.let(builder.typeBuilder::buildType) }
 
     override val returnType: CaType
-        get() = withValidityAssertion { returnTypeImpl }
+        get() = withValidityAssertion { cfirSymbol.returnType(builder) }
 
     override val location: CaSymbolLocation
         get() = CaSymbolLocation.LOCAL
 
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
-        val owner = (ownerSymbol ?: containingDeclaration) as? CaSymbol
+        val owner = ownerSymbol ?: builder.buildSymbol(cfirSymbol.containingDeclarationSymbol)
             ?: error("Value parameter `${name}` is missing pointer-restorable owner")
         val parameterIndex = stableParameterIndex
             ?: error("Value parameter `${name}` is missing stable parameter index")
@@ -100,7 +95,7 @@ internal class CaCfirValueParameterSymbol private constructor(
     }
 
     override val name: Name
-        get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: backingSymbol.name }
+        get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
 
     override val isLet: Boolean
         get() = !parameterDeclaration.isVar
@@ -125,9 +120,6 @@ internal class CaCfirValueParameterSymbol private constructor(
 
     override val isModalityExplicit: Boolean
         get() = false
-
-    override val containingDeclaration: CaSymbol?
-        get() = ownerSymbol ?: analysisSession.findContainingDeclarationSymbol(psi)
 
     private val resolvedParameterPsi: org.cangnova.cangjie.psi.CjParameter?
         get() = parameterDeclaration.source?.psi as? org.cangnova.cangjie.psi.CjParameter

@@ -7,7 +7,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.CfirCallableSignature
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.name.Name
@@ -54,7 +54,7 @@ internal class CaCfirMemberFunctionSymbolPointer(
         return candidates
             .filterIsInstance<CaNamedFunctionSymbol>()
             .singleOrNull { candidate ->
-                val backingSymbol = (candidate as? CaCfirBackedSymbol<*>)?.backingSymbol
+                val backingSymbol = (candidate as? CaCfirSymbol<*>)?.cfirSymbol
                 signature.hasTheSameSignature(
                     backingSymbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*> ?: return@singleOrNull false
                 )

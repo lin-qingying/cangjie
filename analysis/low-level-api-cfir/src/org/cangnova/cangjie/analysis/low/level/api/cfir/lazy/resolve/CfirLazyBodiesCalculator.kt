@@ -71,7 +71,7 @@ object CfirLazyBodiesCalculator {
         val annotationPsi = annotationCall.psi as? CjAnnotation
             ?: errorWithCfirSpecificEntries(
                 "Annotation PSI is not found for lazy argument reconstruction",
-                fir = annotationCall,
+                cfir = annotationCall,
                 psi = annotationCall.psi,
             )
 
@@ -84,7 +84,7 @@ object CfirLazyBodiesCalculator {
         val rebuiltAnnotation = CfirElementFinder.findElementIn<CfirAnnotationCall>(rebuiltFile) { it.psi == annotationPsi }
             ?: errorWithCfirSpecificEntries(
                 "Rebuilt annotation call was not found",
-                fir = rebuiltFile,
+                cfir = rebuiltFile,
                 psi = annotationPsi,
             )
 
@@ -103,7 +103,7 @@ private inline fun <reified T : CfirDeclaration> revive(
     val rootNonLocalDeclaration = psi as? CjElement
         ?: errorWithCfirSpecificEntries(
             "PSI is not available for lazy body reconstruction",
-            fir = designation.target,
+            cfir = designation.target,
             psi = psi,
         )
 
@@ -161,14 +161,14 @@ private fun calculateLazyBodyForProperty(designation: CfirDesignation) {
 
     property.getter?.let { getter ->
         val recreatedGetter = recreatedProperty.getter
-            ?: errorWithCfirSpecificEntries("Recreated getter is missing", fir = recreatedProperty, psi = recreatedProperty.psi)
+            ?: errorWithCfirSpecificEntries("Recreated getter is missing", cfir = recreatedProperty, psi = recreatedProperty.psi)
         replaceLazyBody(getter, recreatedGetter)
         replaceLazyValueParameters(getter, recreatedGetter)
     }
 
     property.setter?.let { setter ->
         val recreatedSetter = recreatedProperty.setter
-            ?: errorWithCfirSpecificEntries("Recreated setter is missing", fir = recreatedProperty, psi = recreatedProperty.psi)
+            ?: errorWithCfirSpecificEntries("Recreated setter is missing", cfir = recreatedProperty, psi = recreatedProperty.psi)
         replaceLazyBody(setter, recreatedSetter)
         replaceLazyValueParameters(setter, recreatedSetter)
     }

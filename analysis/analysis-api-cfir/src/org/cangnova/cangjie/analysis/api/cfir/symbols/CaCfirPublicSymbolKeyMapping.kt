@@ -142,19 +142,19 @@ internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? 
     }
 
     is CaCfirValueParameterSymbol -> {
-        val ownerKey = (containingDeclaration as? CaSymbol)?.publicSymbolCacheKeyOrNull() ?: return null
+        val ownerKey = builder.buildSymbol(cfirSymbol.containingDeclarationSymbol).publicSymbolCacheKeyOrNull() ?: return null
         val parameterIndex = stableParameterIndex ?: return null
         CaCfirValueParameterSymbolCacheKey(ownerKey, parameterIndex, name)
     }
 
     is CaCfirTypeParameterSymbol -> {
-        val owner = containingDeclaration ?: return null
+        val owner = builder.buildSymbol(cfirSymbol.containingDeclarationSymbol)
         val ownerKey = owner.publicSymbolCacheKeyOrNull() ?: return null
         val parameterIndex = stableParameterIndex ?: return null
         CaCfirTypeParameterSymbolCacheKey(ownerKey, name, parameterIndex)
     }
 
-    is CaCfirCallableSymbolSupport<*> -> backingSymbol.publicSymbolCacheKeyOrNull(analysisSession)
+    is CaCfirSymbol<*> -> (cfirSymbol as? CfirCallableSymbol<*>)?.publicSymbolCacheKeyOrNull(analysisSession)
     else -> null
 }
 

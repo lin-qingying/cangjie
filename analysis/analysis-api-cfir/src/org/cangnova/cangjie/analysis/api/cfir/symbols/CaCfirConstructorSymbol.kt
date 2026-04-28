@@ -34,8 +34,7 @@ internal class CaCfirConstructorSymbol private constructor(
     override val analysisSession: CaCfirSession,
     override val lazyCfirSymbol: Lazy<CfirConstructorSymbol>,
 ) : CaConstructorSymbol(),
-    CaCfirCjBasedSymbol<CjConstructor<*>, CfirConstructorSymbol>,
-    CaCfirBackedSymbol<CfirConstructorSymbol> {
+    CaCfirCjBasedSymbol<CjConstructor<*>, CfirConstructorSymbol> {
     override val cfirSymbol: CfirConstructorSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
 
@@ -51,9 +50,6 @@ internal class CaCfirConstructorSymbol private constructor(
         lazyCfirSymbol = lazyOf(symbol),
     )
 
-    override val backingSymbol: CfirConstructorSymbol
-        get() = cfirSymbol
-
     override val containingModule: CaModule
         get() = analysisSession.useSiteModule
 
@@ -68,9 +64,6 @@ internal class CaCfirConstructorSymbol private constructor(
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
-
-    override val containingDeclaration
-        get() = withValidityAssertion { analysisSession.findContainingDeclarationSymbol(psi) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
         get() = withValidityAssertion {
@@ -98,10 +91,12 @@ internal class CaCfirConstructorSymbol private constructor(
         get() = withValidityAssertion { cfirSymbol.returnType(builder) }
 
     override val location: CaSymbolLocation
-        get() = withValidityAssertion { analysisSession.locationForDeclaration(this) }
+        get() = withValidityAssertion { CaSymbolLocation.CLASS }
 
     override fun createPointer(): CaSymbolPointer<CaConstructorSymbol> = withValidityAssertion {
-        createStableCallablePointer(CaConstructorSymbol::class.java)
+        psiBasedSymbolPointerOfTypeIfSource<CaConstructorSymbol> { psi ->
+            (psi as? CjConstructor<*>)?.symbol
+        } ?: error("Constructor symbol cannot create a stable pointer")
     }
 
     override val isStatic: Boolean

@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.references.CaCfirReference
 import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
 import org.cangnova.cangjie.analysis.api.components.CaResolver
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.resolution.CaCallInfo
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol

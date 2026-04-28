@@ -41,7 +41,7 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * we cannot transform class member declaration under the class lock – we have to take the corresponding declaration lock
  * to avoid concurrent issues.
  *
- * So, at least we have a different implementation for transformations of such declarations as [CfirFile], [CfirScript] and [CfirClass].
+ * So, at least we have a different implementation for transformations of such declarations as [CfirFile] and [CfirClass].
  *
  * Due to lazy resolution, we have to maintain the resolution order explicitly in some cases as we are not guaranteed by default that all
  * dependencies or outer declarations are resolved before the target one.
@@ -74,9 +74,9 @@ internal sealed class LLCfirTargetResolver(
 
     /**
      * @param context used as a context in the case of exception
-     * @return the last class from [containingDeclarations]
+     * @return the last class-like declaration from [containingDeclarations]
      */
-    fun containingClass(context: CfirDeclaration): CfirClass {
+    fun containingClassLike(context: CfirDeclaration): CfirClassLikeDeclaration {
         val containingDeclaration = containingDeclarations.lastOrNull() ?: errorWithAttachment("Containing declaration is not found") {
             withCfirEntry("context", context)
             withCfirDesignationEntry("designation", resolveTarget.designation)
@@ -85,8 +85,8 @@ internal sealed class LLCfirTargetResolver(
         }
 
         requireWithAttachment(
-            containingDeclaration is CfirClass,
-            { "${CfirClass::class.simpleName} expected, but ${containingDeclaration::class.simpleName} found" },
+            containingDeclaration is CfirClassLikeDeclaration,
+            { "${CfirClassLikeDeclaration::class.simpleName} expected, but ${containingDeclaration::class.simpleName} found" },
         ) {
             withCfirEntry("context", context)
             withCfirDesignationEntry("designation", resolveTarget.designation)
@@ -98,14 +98,14 @@ internal sealed class LLCfirTargetResolver(
     }
 
     /**
-     * 基于当前解析栈查找最近的外围 class。
+     * 基于当前解析栈查找最近的外围 class-like 声明。
      *
-     * LL 解析路径总会先压入 file，再按需压入外层 class。
-     * 对于非法源码或文件级错误恢复产物，constructor 可能并不真正位于 class 内。
-     * 此时不能把 file 误当成 class 并强行报框架错误，而应仅在确有外围 class 时建立该依赖。
+     * LL 解析路径总会先压入 file，再按需压入外层 class-like。
+     * 对于非法源码或文件级错误恢复产物，constructor 可能并不真正位于 class-like 内。
+     * 此时不能把 file 误当成 class-like 并强行报框架错误，而应仅在确有外围容器时建立该依赖。
      */
-    fun containingClassOrNull(): CfirClass? {
-        return containingDeclarations.lastOrNull { it is CfirClass } as? CfirClass
+    fun containingClassLikeOrNull(): CfirClassLikeDeclaration? {
+        return containingDeclarations.lastOrNull { it is CfirClassLikeDeclaration } as? CfirClassLikeDeclaration
     }
 
     protected inline fun withContainingDeclaration(declaration: CfirDeclaration, action: () -> Unit) {
@@ -155,7 +155,7 @@ internal sealed class LLCfirTargetResolver(
 
             // constructor shares types inside delegation call with the containing class
             target is CfirConstructor -> {
-                containingClassOrNull()?.lazyResolveToPhase(resolverPhase)
+                containingClassLikeOrNull()?.lazyResolveToPhase(resolverPhase)
             }
 
         }
@@ -173,8 +173,8 @@ internal sealed class LLCfirTargetResolver(
         action()
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    protected open fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
+    @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
+    protected open fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
         action()
     }
 
@@ -184,9 +184,21 @@ internal sealed class LLCfirTargetResolver(
     }
 
     final override fun withClass(cfirClass: CfirClass, action: () -> Unit) {
+        withClassLike(cfirClass, action)
+    }
+
+    final override fun withClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
+        withContainingDeclaration(cfirClassLike) {
+            @Suppress("DEPRECATION_ERROR")
+            withContainingClassLike(cfirClassLike, action)
+        }
+    }
+
+    @Deprecated("Use withClassLike instead", level = DeprecationLevel.HIDDEN)
+    protected fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
         withContainingDeclaration(cfirClass) {
             @Suppress("DEPRECATION_ERROR")
-            withContainingClass(cfirClass, action)
+            withContainingClassLike(cfirClass, action)
         }
     }
 
@@ -289,7 +301,7 @@ internal sealed class LLCfirTargetResolver(
      * @see LLCfirLockProvider.withJumpingLock
      */
     protected open fun handleCycleInResolution(target: CfirElementWithResolveState) {
-        errorWithCfirSpecificEntries("Resolution cycle is detected", fir = target)
+        errorWithCfirSpecificEntries("Resolution cycle is detected", cfir = target)
     }
 
     /**
@@ -340,9 +352,9 @@ internal sealed class LLCfirTargetResolver(
 
 private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: CfirValueParameter?
     get() {
-        val ownerClass = symbol.callableId.classId?.let(moduleData.session.symbolProvider::getClassLikeSymbolByClassId)?.cfir as? CfirClass
+        val ownerClassLike = symbol.callableId.classId?.let(moduleData.session.symbolProvider::getClassLikeSymbolByClassId)?.cfir as? CfirClassLikeDeclaration
             ?: return null
-        val primaryConstructor = ownerClass.declarations.firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
+        val primaryConstructor = ownerClassLike.declarations.firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
             ?: return null
         return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
     }

@@ -135,7 +135,12 @@ internal class LLCangJieSourceSymbolProvider(
         val classLikeDeclaration = context ?: declarationProvider.getClassLikeDeclarationByClassId(classId) ?: return null
 
         if (classLikeDeclaration.getClassId() == null) return null
-        return findClassLikeSymbol(classId, classLikeDeclaration) { CfirElementFinder.findClassifierWithClassId(it, classId) }
+        return findClassLikeSymbol(classId, classLikeDeclaration) { file ->
+            // 这里已经拿到了精确 PSI，优先按同一份声明做映射，
+            // 避免仅靠 ClassId 路径搜索时被当前 CFIR 结构差异误伤。
+            (CfirElementFinder.findDeclaration(file, classLikeDeclaration) as? CfirClassLikeDeclaration)
+                ?: CfirElementFinder.findClassifierWithClassId(file, classId)
+        }
     }
 
     private fun computeClassLikeSymbolByPsi(declaration: CjClassLikeDeclaration): CfirClassLikeSymbol<*>? {

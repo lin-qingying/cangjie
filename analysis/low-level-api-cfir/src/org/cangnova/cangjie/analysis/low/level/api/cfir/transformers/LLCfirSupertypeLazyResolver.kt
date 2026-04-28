@@ -43,10 +43,10 @@ internal object LLCfirSupertypeLazyResolver : LLCfirLazyResolver(CfirResolvePhas
 private class LLCfirSuperTypeTargetResolver(
     target: LLCfirResolveTarget,
 ) : LLCfirTargetResolver(target, CfirResolvePhase.SUPER_TYPES) {
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
-        if (cfirClass.resolvePhase < resolverPhase) {
-            performResolve(cfirClass)
+    @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
+    override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
+        if (cfirClassLike.resolvePhase < resolverPhase) {
+            performResolve(cfirClassLike)
         }
         action()
     }

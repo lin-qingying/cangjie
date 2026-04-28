@@ -101,6 +101,10 @@ class CaBaseResolutionScope(
             return cachedSearchScopeContains(element.virtualFile)
         }
 
+        /*
+         * 与 Kotlin `KaBaseResolutionScope` 一致，这里必须检查 view provider 的 VirtualFile。
+         * dangling / in-memory PSI 的模块边界依赖该文件，不能回退到 original physical file。
+         */
         val psiFile = element.containingFile
         val virtualFile = psiFile.viewProvider.virtualFile
         return cachedSearchScopeContains(virtualFile)

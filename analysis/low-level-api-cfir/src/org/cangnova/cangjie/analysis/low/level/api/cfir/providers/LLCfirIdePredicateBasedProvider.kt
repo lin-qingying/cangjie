@@ -24,6 +24,7 @@ import org.cangnova.cangjie.cfir.caches.getValue
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.extensions.*
@@ -301,6 +302,10 @@ private inline fun CfirDeclaration.forEachDirectChildDeclaration(crossinline act
 
         override fun visitClassLikeDeclaration(classLikeDeclaration: CfirClassLikeDeclaration) {
             action(classLikeDeclaration)
+        }
+
+        override fun visitExtend(extend: CfirExtend) {
+            action(extend)
         }
     })
 }

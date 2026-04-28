@@ -4,7 +4,7 @@ import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.buildSymbol
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirCallableSymbolSupport
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.cfir.types.AbstractCaCfirSubstitutor
 import org.cangnova.cangjie.analysis.api.cfir.utils.cached
 import org.cangnova.cangjie.analysis.api.impl.base.signatures.CaBaseVariableSignature
@@ -105,7 +105,7 @@ internal class CaCfirVariableDummySignature<out S : CaVariableSymbol>(
  */
 @OptIn(CaExperimentalApi::class)
 internal fun <S : CaFunctionSymbol> CaCfirSession.renderFunctionSignature(symbol: S): CaFunctionSignature<S> {
-    val cfirSymbol = (symbol as? CaCfirCallableSymbolSupport<*>)?.backingSymbol as? CfirFunctionSymbol<*>
+    val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbol as? CfirFunctionSymbol<*>
         ?: error("CFIR function signature construction requires a CFIR-backed function symbol")
     return CaCfirFunctionDummySignature(token, cfirSymbol, cfirSymbolBuilder)
 }
@@ -115,7 +115,8 @@ internal fun <S : CaFunctionSymbol> CaCfirSession.renderFunctionSignature(symbol
  */
 @OptIn(CaExperimentalApi::class)
 internal fun <S : CaVariableSymbol> CaCfirSession.renderVariableSignature(symbol: S): CaVariableSignature<S> {
-    val cfirSymbol = (symbol as? CaCfirCallableSymbolSupport<*>)?.backingSymbol
+    val cfirSymbol = (symbol as? CaCfirSymbol<*>)?.cfirSymbol
+        as? org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol<*>
         ?: error("CFIR variable signature construction requires a CFIR-backed variable symbol")
     return CaCfirVariableDummySignature(token, cfirSymbol, cfirSymbolBuilder)
 }

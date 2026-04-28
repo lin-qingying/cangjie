@@ -356,9 +356,9 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             is CfirTypeParameter,
             is CfirPatternVariable,
             is CfirPatternBindingVariable,
-                -> errorWithCfirSpecificEntries("Unexpected declaration ${declaration::class.simpleName}", fir = declaration)
+                -> errorWithCfirSpecificEntries("Unexpected declaration ${declaration::class.simpleName}", cfir = declaration)
 
-            else -> errorWithCfirSpecificEntries("Unexpected declaration ${declaration::class.simpleName}", fir = declaration)
+            else -> errorWithCfirSpecificEntries("Unexpected declaration ${declaration::class.simpleName}", cfir = declaration)
         }
 
         /**

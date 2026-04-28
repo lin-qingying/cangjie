@@ -25,7 +25,6 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callabl
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaLocalVariableSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaNamedFunctionSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaScriptSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaValueParameterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaClassLikeSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaExtendSymbolRenderer
@@ -50,7 +49,6 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaScriptSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
@@ -95,7 +93,6 @@ class CaDeclarationRenderer private constructor(
     val enumConstructorRenderer: CaEnumConstructorSymbolRenderer,
     val valueParameterRenderer: CaValueParameterSymbolRenderer,
     val typeParameterRenderer: CaTypeParameterSymbolRenderer,
-    val scriptRenderer: CaScriptSymbolRenderer,
 ) {
     fun renderDeclaration(
         analysisSession: CaSession,
@@ -130,7 +127,6 @@ class CaDeclarationRenderer private constructor(
             is CaValueParameterSymbol -> valueParameterRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaVariableSymbol -> localVariableRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaTypeParameterSymbol -> typeParameterRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaScriptSymbol -> scriptRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this, printer)
             else -> {
                 modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, printer)
@@ -181,7 +177,6 @@ class CaDeclarationRenderer private constructor(
             enumConstructorRenderer = current.enumConstructorRenderer
             valueParameterRenderer = current.valueParameterRenderer
             typeParameterRenderer = current.typeParameterRenderer
-            scriptRenderer = current.scriptRenderer
             action()
         }.build()
     }
@@ -224,7 +219,6 @@ class CaDeclarationRenderer private constructor(
         lateinit var enumConstructorRenderer: CaEnumConstructorSymbolRenderer
         lateinit var valueParameterRenderer: CaValueParameterSymbolRenderer
         lateinit var typeParameterRenderer: CaTypeParameterSymbolRenderer
-        lateinit var scriptRenderer: CaScriptSymbolRenderer
 
         fun build(): CaDeclarationRenderer = CaDeclarationRenderer(
             nameRenderer = nameRenderer,
@@ -264,7 +258,6 @@ class CaDeclarationRenderer private constructor(
             enumConstructorRenderer = enumConstructorRenderer,
             valueParameterRenderer = valueParameterRenderer,
             typeParameterRenderer = typeParameterRenderer,
-            scriptRenderer = scriptRenderer,
         )
     }
 

@@ -154,8 +154,7 @@ private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeC
             isUninferredParameter,
             delegatedType,
             typeArguments,
-            newAttributes,
-            nullable
+            newAttributes
         )
         is ConeQuestType -> ConeQuestType(newAttributes)
         is ConeTypeVariableType -> ConeTypeVariableType(typeConstructor, newAttributes)
@@ -185,8 +184,7 @@ private fun ConeCangJieType.withReplacedArguments(newArguments: List<ConeTypePro
             isUninferredParameter,
             delegatedType,
             newArguments,
-            attributes,
-            nullable
+            attributes
         )
         else -> this
     }

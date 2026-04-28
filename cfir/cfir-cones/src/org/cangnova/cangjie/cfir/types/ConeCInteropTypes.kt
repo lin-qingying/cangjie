@@ -36,4 +36,8 @@ class ConeCStringType(
  */
 object ConeAnyType : ConeRigidType(), ConeTypeConstructorMarker {
     override val attributes: ConeAttributes get() = ConeAttributes.Empty
+
+    override fun equals(other: Any?): Boolean = this === other
+
+    override fun hashCode(): Int = System.identityHashCode(this)
 }

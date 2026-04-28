@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import com.intellij.openapi.util.TextRange
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.components.CaReferenceShortener
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion

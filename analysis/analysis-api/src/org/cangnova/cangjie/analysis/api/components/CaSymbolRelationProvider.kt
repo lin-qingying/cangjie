@@ -8,6 +8,14 @@ import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 
 interface CaSymbolRelationProvider : CaLifetimeOwner {
+    /**
+     * 语义上直接包含当前符号的声明符号。
+     *
+     * 对齐 Kotlin Analysis API 的 `KaSymbolRelationProvider.containingDeclaration`：
+     * 该关系由 session component 统一计算，而不是由每个 symbol 叶子各自持有。
+     */
+    val CaSymbol.containingDeclaration: CaDeclarationSymbol?
+
     fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean
 
     /**
@@ -55,6 +63,10 @@ interface CaSymbolRelationProvider : CaLifetimeOwner {
  * 在保留 session component 成员扩展的同时，补齐 `context(session)` 顶层 bridge，
  * 让调用方可以直接在 analyze 上下文中以自然语法访问符号关系能力。
  */
+context(session: CaSession)
+val CaSymbol.containingDeclaration: CaDeclarationSymbol?
+    get() = with(session) { containingDeclaration }
+
 context(session: CaSession)
 fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean {
     return with(session) {

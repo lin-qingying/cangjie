@@ -38,12 +38,24 @@
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModuleProvider"
     />
     <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.projectStructure.CaModuleProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBaseModuleProvider"
+    />
+    <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeContentScopeRefiner"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeResolutionScopeProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModuleDependentsProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.CangJieMessageBusProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.platform.CangJieProjectMessageBusProvider"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker"
@@ -53,7 +65,6 @@
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeSessionInvalidationService"
     />
-
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker"

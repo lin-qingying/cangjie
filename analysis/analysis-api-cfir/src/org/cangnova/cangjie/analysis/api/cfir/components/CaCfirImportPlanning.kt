@@ -1,39 +1,22 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
-import org.cangnova.cangjie.analysis.api.cfir.*
-
 import com.intellij.openapi.util.TextRange
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbol
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningOperation
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningPlan
+import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
 import org.cangnova.cangjie.analysis.api.resolution.symbol
-import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
-import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
-import org.cangnova.cangjie.analysis.api.symbols.name
+import org.cangnova.cangjie.analysis.api.symbols.*
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjCallExpression
-import org.cangnova.cangjie.psi.CjDotQualifiedExpression
-import org.cangnova.cangjie.psi.CjElement
-import org.cangnova.cangjie.psi.CjExpression
-import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjImportInfo
-import org.cangnova.cangjie.psi.CjImportDirective
-import org.cangnova.cangjie.psi.CjReferenceExpression
-import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
-import org.cangnova.cangjie.analysis.api.cfir.symbols.completionDecisionKey
 
 /**
  * CFIR 补全候选决策实现。

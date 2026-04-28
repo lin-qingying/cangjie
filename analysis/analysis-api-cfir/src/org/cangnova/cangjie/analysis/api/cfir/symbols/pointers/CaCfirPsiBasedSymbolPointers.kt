@@ -2,12 +2,16 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols.pointers
 
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
-import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbolByPsi
+import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
+import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjFunctionLiteral
+import org.cangnova.cangjie.psi.CjPatternVariable
+import org.cangnova.cangjie.psi.CjTypeParameter
 
 /**
  * source-only / local 符号的 PSI-based pointer。
@@ -23,7 +27,7 @@ internal class CaCfirAnonymousFunctionSymbolPointer(
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaAnonymousFunctionSymbol? {
         val cfirSession = restoreSession(session) ?: return null
         val psi = pointer.element ?: return null
-        return cfirSession.getPublicSymbolByPsi<CaAnonymousFunctionSymbol>(psi)
+        return with(cfirSession) { (psi as? CjFunctionLiteral)?.symbol }
     }
 }
 
@@ -35,7 +39,7 @@ internal class CaCfirLocalVariableSymbolPointer(
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaLocalVariableSymbol? {
         val cfirSession = restoreSession(session) ?: return null
         val psi = pointer.element ?: return null
-        return cfirSession.getPublicSymbolByPsi<CaLocalVariableSymbol>(psi)
+        return with(cfirSession) { (psi as? CjPatternVariable)?.symbol as? CaLocalVariableSymbol }
     }
 }
 
@@ -47,7 +51,7 @@ internal class CaCfirPatternVariableSymbolPointer(
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaPatternVariableSymbol? {
         val cfirSession = restoreSession(session) ?: return null
         val psi = pointer.element ?: return null
-        return cfirSession.getPublicSymbolByPsi<CaPatternVariableSymbol>(psi)
+        return with(cfirSession) { (psi as? CjPatternVariable)?.symbol }
     }
 }
 
@@ -59,7 +63,7 @@ internal class CaCfirPatternBindingSymbolPointer(
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaPatternBindingSymbol? {
         val cfirSession = restoreSession(session) ?: return null
         val psi = pointer.element ?: return null
-        return cfirSession.getPublicSymbolByPsi<CaPatternBindingSymbol>(psi)
+        return with(cfirSession) { (psi as? CjBindingPattern)?.symbol }
     }
 }
 
@@ -71,7 +75,7 @@ internal class CaCfirSourceTypeParameterSymbolPointer(
     override fun restoreSymbol(session: org.cangnova.cangjie.analysis.api.CaSession): CaTypeParameterSymbol? {
         val cfirSession = restoreSession(session) ?: return null
         val psi = pointer.element ?: return null
-        return cfirSession.getPublicSymbolByPsi<CaTypeParameterSymbol>(psi)
+        return with(cfirSession) { (psi as? CjTypeParameter)?.symbol }
     }
 }
 

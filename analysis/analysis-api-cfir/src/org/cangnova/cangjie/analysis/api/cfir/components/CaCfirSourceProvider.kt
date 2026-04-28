@@ -3,9 +3,9 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol

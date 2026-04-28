@@ -5,14 +5,10 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 
 /**
  * 函数语义检查器（Function 分组）
@@ -68,7 +64,7 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirFunction) {
         val returnTypeRef = declaration.returnTypeRef
-        if (returnTypeRef is CfirResolvedTypeRef && returnTypeRef.coneType is ConeErrorType) {
+        if (returnTypeRef is CfirErrorTypeRef && returnTypeRef.delegatedTypeRef == null) {
             if (declaration is CfirNamedFunction && declaration.body != null) {
                 reporter.reportOn(
                     source = declaration.source,

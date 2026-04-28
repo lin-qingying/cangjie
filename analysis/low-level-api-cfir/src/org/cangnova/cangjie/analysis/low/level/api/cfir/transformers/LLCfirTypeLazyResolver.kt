@@ -61,14 +61,14 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
         transformer.withFileScope(cfirFile, action)
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
-        cfirClass.lazyResolveToPhase(resolverPhase.previous)
-        transformer.withClassDeclarationCleanup(cfirClass) {
-            performCustomResolveUnderLock(cfirClass) {
-                transformer.resolveClassTypes(cfirClass)
+    @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
+    override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
+        cfirClassLike.lazyResolveToPhase(resolverPhase.previous)
+        transformer.withClassDeclarationCleanup(cfirClassLike) {
+            performCustomResolveUnderLock(cfirClassLike) {
+                transformer.resolveClassTypes(cfirClassLike)
             }
-            transformer.withClassScopes(cfirClass, action)
+            transformer.withClassScopes(cfirClassLike, action)
         }
     }
 

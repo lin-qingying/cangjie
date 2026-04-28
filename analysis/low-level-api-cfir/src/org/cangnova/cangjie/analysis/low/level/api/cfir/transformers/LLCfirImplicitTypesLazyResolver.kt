@@ -12,7 +12,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefI
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -90,7 +90,7 @@ private class LLCfirImplicitBodyTargetResolver(
                 }
             }
 
-            is CfirClass, is CfirExtend, is CfirTypeAlias, is CfirFile, is CfirCodeFragment -> {
+            is CfirClassLikeDeclaration, is CfirExtend, is CfirTypeAlias, is CfirFile, is CfirCodeFragment -> {
                 // 这些声明在仓颉 IMPLICIT_TYPES 阶段无 body 级隐式类型求解入口
             }
 

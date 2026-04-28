@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.components.CaImportOptimizer
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.psi.CjFile
