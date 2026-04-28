@@ -23,6 +23,48 @@ inline fun <S : CaSession, R> PsiElement?.withPsiValidityAssertion(builder: () -
     builder()
 }
 
+/**
+ * 校验单个 PSI 后在当前 session component 生命周期内执行 [builder]。
+ */
+@CaImplementationDetail
+context(component: CaBaseSessionComponent<S>)
+inline fun <S : CaSession, R> withPsiValidityAssertion(
+    element: PsiElement?,
+    builder: () -> R,
+): R = element.withPsiValidityAssertion(builder)
+
+/**
+ * 校验多个 PSI 后在当前 session component 生命周期内执行 [builder]。
+ */
+@CaImplementationDetail
+context(component: CaBaseSessionComponent<S>)
+inline fun <S : CaSession, R> withPsiValidityAssertion(
+    vararg elements: PsiElement?,
+    builder: () -> R,
+): R = component.withValidityAssertion {
+    for (element in elements) {
+        element?.checkValidity()
+    }
+
+    builder()
+}
+
+/**
+ * 校验 PSI 集合后在当前 session component 生命周期内执行 [builder]。
+ */
+@CaImplementationDetail
+context(component: CaBaseSessionComponent<S>)
+inline fun <S : CaSession, R> withPsiValidityAssertion(
+    elements: Iterable<PsiElement?>,
+    builder: () -> R,
+): R = component.withValidityAssertion {
+    for (element in elements) {
+        element?.checkValidity()
+    }
+
+    builder()
+}
+
 @CaImplementationDetail
 context(component: CaBaseSessionComponent<S>)
 fun <S : CaSession> PsiElement.checkValidity() {

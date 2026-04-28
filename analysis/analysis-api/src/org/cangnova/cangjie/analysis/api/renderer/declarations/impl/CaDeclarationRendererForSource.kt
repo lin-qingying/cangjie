@@ -27,7 +27,6 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callabl
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaLocalVariableSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaNamedFunctionSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaScriptSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaValueParameterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaClassLikeSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaExtendSymbolRenderer
@@ -87,7 +86,6 @@ object CaDeclarationRendererForSource {
         enumConstructorRenderer = CaEnumConstructorSymbolRenderer.AS_SOURCE
         valueParameterRenderer = CaValueParameterSymbolRenderer.AS_SOURCE
         typeParameterRenderer = CaTypeParameterSymbolRenderer.AS_SOURCE
-        scriptRenderer = CaScriptSymbolRenderer.AS_SOURCE
     }
 
     val WITH_QUALIFIED_NAMES_WITH_MEMBERS: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {

@@ -17,6 +17,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.Name
@@ -33,8 +34,7 @@ internal class CaCfirTypeParameterSymbol private constructor(
     internal val stableParameterIndex: Int? = null,
 ) : CaTypeParameterSymbol,
     CaNamedSymbol,
-    CaCfirCjBasedSymbol<org.cangnova.cangjie.psi.CjTypeParameter, CfirTypeParameterSymbol>,
-    CaCfirBackedSymbol<CfirTypeParameterSymbol> {
+    CaCfirCjBasedSymbol<org.cangnova.cangjie.psi.CjTypeParameter, CfirTypeParameterSymbol> {
     override val cfirSymbol: CfirTypeParameterSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
 
@@ -51,9 +51,6 @@ internal class CaCfirTypeParameterSymbol private constructor(
         stableParameterIndex = stableParameterIndex,
     )
 
-    override val backingSymbol: CfirTypeParameterSymbol
-        get() = cfirSymbol
-
     override val containingModule: CaModule
         get() = analysisSession.useSiteModule
 
@@ -64,13 +61,10 @@ internal class CaCfirTypeParameterSymbol private constructor(
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val name: Name
-        get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: backingSymbol.name }
+        get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
 
     override val upperBounds: List<CaType>
-        get() = withValidityAssertion { backingSymbol.cfir.bounds.mapNotNull { bound -> bound.coneTypeOrNull?.let(builder.typeBuilder::buildType) } }
-
-    override val containingDeclaration: CaSymbol?
-        get() = withValidityAssertion { analysisSession.findContainingDeclarationSymbol(psi) }
+        get() = withValidityAssertion { cfirSymbol.cfir.bounds.mapNotNull { bound -> bound.coneTypeOrNull?.let(builder.typeBuilder::buildType) } }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion { CaSymbolVisibility.LOCAL }
@@ -85,10 +79,16 @@ internal class CaCfirTypeParameterSymbol private constructor(
         get() = withValidityAssertion { false }
 
     override val location: CaSymbolLocation
-        get() = withValidityAssertion { backingPsi?.location ?: CaSymbolLocation.LOCAL }
+        get() = withValidityAssertion {
+            when {
+                backingPsi != null -> backingPsi.location
+                cfirSymbol.containingDeclarationSymbol is CfirClassLikeSymbol<*> -> CaSymbolLocation.CLASS
+                else -> CaSymbolLocation.LOCAL
+            }
+        }
 
     override fun createPointer(): CaSymbolPointer<CaAnnotatedSymbol> = withValidityAssertion {
-        val owner = containingDeclaration
+        val owner = builder.buildSymbol(cfirSymbol.containingDeclarationSymbol)
         if (owner == null) {
             val sourcePsi = psi ?: error("Source-only type parameter `${name}` is missing PSI")
             return@withValidityAssertion CaCfirSourceTypeParameterSymbolPointer(sourcePsi)

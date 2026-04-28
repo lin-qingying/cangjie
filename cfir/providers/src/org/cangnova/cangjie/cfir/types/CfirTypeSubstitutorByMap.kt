@@ -51,7 +51,6 @@ class CfirTypeSubstitutorByMap(
                     delegatedType = delegatedType,
                     typeArguments = typeArguments ?: type.typeArguments,
                     attributes = type.attributes,
-                    nullable = type.nullable,
                 )
             }
             else -> null

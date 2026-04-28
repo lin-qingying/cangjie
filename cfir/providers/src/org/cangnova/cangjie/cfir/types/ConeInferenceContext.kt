@@ -13,8 +13,6 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
-import org.cangnova.cangjie.cfir.types.AbstractConeSubstitutor
-import org.cangnova.cangjie.cfir.types.ConeEmptySubstitutor
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.descriptors.Visibilities

@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -32,7 +33,7 @@ internal object LLContainingClassCalculator {
      * Returns a containing class symbol for the given symbol, computing it solely from the source information
      * and information inside CFIR nodes.
      */
-    fun getContainingClassSymbol(symbol: CfirBasedSymbol<*>): CfirClassSymbol? {
+    fun getContainingClassSymbol(symbol: CfirBasedSymbol<*>): CfirClassLikeSymbol<*>? {
         if (!symbol.origin.isLazyResolvable) {
             // Handle only source or source-based declarations for now as below we use the PSI tree
             return null
@@ -45,7 +46,7 @@ internal object LLContainingClassCalculator {
         if (symbol is CfirCallableSymbol<*>) {
             val containingClassLookupTag = symbol.containingClassLookupTag()
             if (containingClassLookupTag != null) {
-                return containingClassLookupTag.toClassSymbol(symbol.cfir.moduleData.session) as? CfirClassSymbol
+                return containingClassLookupTag.toClassSymbol(symbol.cfir.moduleData.session) as? CfirClassLikeSymbol<*>
             }
         }
 
@@ -81,13 +82,13 @@ internal object LLContainingClassCalculator {
         else -> false
     }
 
-    private fun computeContainingClass(symbol: CfirBasedSymbol<*>, psi: CjTypeStatement?): CfirClassSymbol? {
+    private fun computeContainingClass(symbol: CfirBasedSymbol<*>, psi: CjTypeStatement?): CfirClassLikeSymbol<*>? {
         if (psi == null) {
             return null
         }
 
         val module = symbol.llCfirModuleData.caModule
         val resolutionFacade = module.getResolutionFacade(module.project)
-        return psi.resolveToCfirSymbolOfType<CfirClassSymbol>(resolutionFacade)
+        return psi.resolveToCfirSymbolOfType<CfirClassLikeSymbol<*>>(resolutionFacade)
     }
 }

@@ -1,23 +1,55 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.getPublicSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirTypeParameterSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.publicSymbolCacheKeyOrNull
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
 import org.cangnova.cangjie.analysis.api.components.CaSymbolRelationProvider
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
-import org.cangnova.cangjie.cfir.session.ProcessorAction
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
+import org.cangnova.cangjie.analysis.api.symbols.isTopLevel
+import org.cangnova.cangjie.analysis.api.symbols.symbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.originalDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
+import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjDeclaration
+import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjModifierList
+import org.cangnova.cangjie.psi.CjParameter
+import org.cangnova.cangjie.psi.CjPrimaryConstructor
+import org.cangnova.cangjie.psi.CjTypeStatement
+import org.cangnova.cangjie.psi.psiUtil.parentOfType
+import org.cangnova.cangjie.psi.psiUtil.parents
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjRealSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
 /**
  * 符号关系组件。
@@ -25,6 +57,169 @@ import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 internal class CaCfirSymbolRelationProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaSymbolRelationProvider {
+    override val CaSymbol.containingDeclaration: CaDeclarationSymbol?
+        get() = withValidityAssertion {
+            if (!hasParentSymbol(this@containingDeclaration)) {
+                return@withValidityAssertion null
+            }
+
+            getContainingDeclarationForDependentDeclaration(this@containingDeclaration)?.let { return@withValidityAssertion it }
+
+            val cfirSymbol = (this@containingDeclaration as? CaCfirSymbol<*>)?.cfirSymbol ?: return@withValidityAssertion null
+            val symbolModule = cfirSymbol.llCfirModuleData.caModule
+
+            if (symbolModule is CaDanglingFileModule && symbolModule.resolutionMode == CaDanglingFileResolutionMode.IGNORE_SELF) {
+                if (hasParentPsi(this@containingDeclaration)) {
+                    return@withValidityAssertion getContainingDeclarationByPsi(this@containingDeclaration)
+                }
+            }
+
+            when (this@containingDeclaration) {
+                is CaLocalVariableSymbol,
+                is CaAnonymousFunctionSymbol,
+                    -> {
+                    return@withValidityAssertion getContainingDeclarationByPsi(this@containingDeclaration)
+                }
+
+                is CaCallableSymbol -> {
+                    cfirSymbol.getContainingClassSymbol()?.let { outerClass ->
+                        return@withValidityAssertion analysisSession.cfirSymbolBuilder.buildSymbol(outerClass) as? CaDeclarationSymbol
+                    }
+                }
+
+                is CaClassLikeSymbol -> {
+                    cfirSymbol.getContainingClassSymbol()?.let { outerClass ->
+                        return@withValidityAssertion analysisSession.cfirSymbolBuilder.buildSymbol(outerClass) as? CaDeclarationSymbol
+                    }
+                }
+            }
+
+            return@withValidityAssertion getContainingDeclarationByPsi(this@containingDeclaration)
+        }
+
+    private fun getContainingDeclarationForDependentDeclaration(symbol: CaSymbol): CaDeclarationSymbol? {
+        return when (symbol) {
+            is CaPropertyAccessorSymbol -> symbol.owningProperty
+
+            is CaCfirValueParameterSymbol ->
+                analysisSession.cfirSymbolBuilder.buildSymbol(symbol.cfirSymbol.containingDeclarationSymbol) as? CaDeclarationSymbol
+
+            is CaCfirTypeParameterSymbol ->
+                analysisSession.cfirSymbolBuilder.buildSymbol(symbol.cfirSymbol.containingDeclarationSymbol) as? CaDeclarationSymbol
+
+            else -> null
+        }
+    }
+
+    private fun hasParentSymbol(symbol: CaSymbol): Boolean {
+        return when (symbol) {
+            is CaPackageSymbol,
+            is CaFileSymbol,
+                -> false
+
+            !is CaDeclarationSymbol -> false
+            else -> !symbol.isTopLevel
+        }
+    }
+
+    private fun getContainingDeclarationByPsi(symbol: CaSymbol): CaDeclarationSymbol? {
+        val containingDeclaration = getContainingPsi(symbol) ?: return null
+        return with(analysisSession) { containingDeclaration.symbol }
+    }
+
+    private fun getContainingPsi(symbol: CaSymbol): CjDeclaration? {
+        val source = (symbol as? CaCfirSymbol<*>)?.cfirSymbol?.cfir?.source
+            ?: errorWithAttachment("PSI should present for declaration built by CangJie code") {
+                withPsiEntry("symbolPsi", (symbol as? CaDeclarationSymbol)?.psi)
+            }
+
+        return getContainingPsi(symbol, source)
+    }
+
+    private fun getContainingPsi(symbol: CaSymbol, source: CjSourceElement): CjDeclaration? {
+        getContainingPsiForFakeSource(source)?.let { return it }
+
+        val psi = source.psi
+            ?: errorWithAttachment("PSI not found for source kind '${source.kind}'") {}
+
+        if (source.kind != CjRealSourceElementKind) {
+            errorWithAttachment("Cannot compute containing PSI for unknown source kind '${source.kind}' (${psi::class.simpleName})") {
+                withPsiEntry("psi", psi)
+            }
+        }
+
+        if (isSyntheticSymbolWithParentSource(symbol)) {
+            return psi as CjDeclaration
+        }
+
+        if (isOrdinarySymbolWithSource(symbol)) {
+            val result = psi.getContainingPsiDeclaration()
+            if (result == null) {
+                val containingFile = psi.containingFile
+                if (containingFile is CjCodeFragment) {
+                    return null
+                }
+
+                if (psi.parentOfType<CjModifierList>() != null) {
+                    return null
+                }
+
+                errorWithAttachment("Containing declaration should present for nested declaration ${psi::class}") {
+                    withPsiEntry("psi", psi)
+                }
+            }
+
+            return result
+        }
+
+        errorWithAttachment("Unsupported declaration origin ${symbol.origin} ${psi::class}") {
+            withPsiEntry("psi", psi)
+        }
+    }
+
+    private fun hasParentPsi(symbol: CaSymbol): Boolean {
+        val source = (symbol as? CaCfirSymbol<*>)?.cfirSymbol?.cfir?.source?.takeIf { it.psi is CjElement } ?: return false
+
+        return getContainingPsiForFakeSource(source) != null ||
+            isSyntheticSymbolWithParentSource(symbol) ||
+            isOrdinarySymbolWithSource(symbol)
+    }
+
+    private fun isSyntheticSymbolWithParentSource(symbol: CaSymbol): Boolean {
+        return when (symbol.origin) {
+            else -> false
+        }
+    }
+
+    private fun isOrdinarySymbolWithSource(symbol: CaSymbol): Boolean {
+        return symbol.origin == CaSymbolOrigin.SOURCE
+    }
+
+    private fun getContainingPsiForFakeSource(source: CjSourceElement): CjDeclaration? {
+        return when (source.kind) {
+            CjFakeSourceElementKind.ImplicitConstructor -> source.psi as CjDeclaration
+            CjFakeSourceElementKind.PropertyFromParameter -> (source.psi as CjParameter).ownerFunction as? CjPrimaryConstructor
+            CjFakeSourceElementKind.EnumGeneratedDeclaration -> source.psi as CjDeclaration
+            CjFakeSourceElementKind.DataClassGeneratedMembers -> when (val psi = source.psi) {
+                is CjTypeStatement -> psi
+                is CjParameter -> (psi.ownerFunction as? CjPrimaryConstructor)?.getContainingTypeStatement()
+                is CjPrimaryConstructor -> psi.getContainingTypeStatement()
+                else -> null
+            }
+            else -> null
+        }
+    }
+
+    private fun PsiElement.getContainingPsiDeclaration(): CjDeclaration? {
+        for (parent in parents) {
+            if (parent is CjDeclaration) {
+                return parent.originalDeclaration ?: parent
+            }
+        }
+
+        return null
+    }
+
     override fun CaSymbol.isEquivalentTo(other: CaSymbol): Boolean = withValidityAssertion {
         this@isEquivalentTo === other ||
             (this@isEquivalentTo.publicSymbolCacheKeyOrNull() != null &&
@@ -37,12 +232,12 @@ internal class CaCfirSymbolRelationProvider(
                 return@withValidityAssertion emptySequence()
             }
 
-            val backingSymbol = (this@directlyOverriddenSymbols as? CaCfirBackedSymbol<*>)
-                ?.backingSymbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>
+            val backingSymbol = (this@directlyOverriddenSymbols as? CaCfirSymbol<*>)
+                ?.cfirSymbol as? org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>
                 ?: return@withValidityAssertion emptySequence()
 
             analysisSession.collectDirectlyOverriddenCallableSymbols(backingSymbol)
-                .map { symbol -> analysisSession.getPublicSymbol(symbol) }
+                .map { symbol -> analysisSession.cfirSymbolBuilder.buildSymbol(symbol) }
                 .filterIsInstance<CaCallableSymbol>()
                 .distinctStableCallables()
                 .asSequence()

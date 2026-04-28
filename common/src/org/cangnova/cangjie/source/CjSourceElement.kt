@@ -505,19 +505,9 @@ sealed class CjFakeSourceElementKind(final override val shouldSkipErrorTypeRepor
     object PropertyTypeFromGetterReturnType : CjFakeSourceElementKind()
 
     /**
-     * Scripts get implicit imports from their configurations
+     * Implicit imports supplied by the language configuration.
      */
     object ImplicitImport : CjFakeSourceElementKind(shouldSkipErrorTypeReporting = true)
-
-    /**
-     * For provided parameters inside a script
-     */
-    object ScriptParameter : CjFakeSourceElementKind()
-
-    /**
-     * For script base class
-     */
-    object ScriptBaseClass : CjFakeSourceElementKind(shouldSkipErrorTypeReporting = true)
 
     /**
      * For repl base class.

@@ -35,17 +35,13 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedQualifierPart
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.name.ClassId
@@ -184,7 +180,7 @@ class CfirTypeResolverImpl(
         val resolvedClass = resolvedQualifier.declaration
             ?: return ConeErrorType(
                 resolvedQualifier.diagnostic
-                    ?: ConeUnresolvedTypeQualifierError(typeRef.toDiagnosticQualifierParts())
+                    ?: ConeUnresolvedTypeQualifierError(typeRef.qualifier)
             )
 
         val classId = checkNotNull(resolvedQualifier.classId) {
@@ -331,7 +327,7 @@ class CfirTypeResolverImpl(
             return if (declaration != null) {
                 QualifiedClassLikeResolution(classId, declaration, null)
             } else {
-                QualifiedClassLikeResolution(classId, null, ConeUnresolvedSymbolError(classId))
+                QualifiedClassLikeResolution(classId, null, ConeUnresolvedTypeQualifierError(typeRef.qualifier))
             }
         }
 
@@ -342,13 +338,13 @@ class CfirTypeResolverImpl(
             return QualifiedClassLikeResolution(fullClassId, declaration, null)
         }
         if (packageExists(fullPackageFqName)) {
-            return QualifiedClassLikeResolution(fullClassId, null, ConeUnresolvedSymbolError(fullClassId))
+            return QualifiedClassLikeResolution(fullClassId, null, ConeUnresolvedTypeQualifierError(typeRef.qualifier))
         }
 
         return QualifiedClassLikeResolution(
             classId = null,
             declaration = null,
-            diagnostic = ConeUnresolvedTypeQualifierError(typeRef.toDiagnosticQualifierParts()),
+            diagnostic = ConeUnresolvedTypeQualifierError(typeRef.qualifier),
         )
     }
 
@@ -399,14 +395,6 @@ class CfirTypeResolverImpl(
             }
         }
     }
-
-    private fun CfirUserTypeRef.toDiagnosticQualifierParts(): List<ConeUnresolvedQualifierPart> =
-        qualifier.map { qualifierPart ->
-            ConeUnresolvedQualifierPart(
-                name = qualifierPart.name,
-                typeArguments = qualifierPart.typeArguments,
-            )
-        }
 
     private fun List<Name>.toFqName(): FqName =
         if (isEmpty()) FqName.ROOT else FqName(joinToString(".") { it.asString() })

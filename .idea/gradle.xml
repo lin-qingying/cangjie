@@ -35,6 +35,7 @@
             <option value="$PROJECT_DIR$/analysis" />
             <option value="$PROJECT_DIR$/analysis/analysis-api" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-cfir/analysis-api-cfir-generator" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-standalone" />
@@ -139,6 +140,7 @@
                   <project path="$PROJECT_DIR$/analysis" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-cfir" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-api-cfir/analysis-api-cfir-generator" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-standalone" />
@@ -250,6 +252,7 @@
             <option value="$PROJECT_DIR$/analysis" />
             <option value="$PROJECT_DIR$/analysis/analysis-api" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-cfir/analysis-api-cfir-generator" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-standalone" />
@@ -365,6 +368,7 @@
                   <project path="$PROJECT_DIR$/analysis" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-cfir" />
+                  <project path="$PROJECT_DIR$/analysis/analysis-api-cfir/analysis-api-cfir-generator" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
                   <project path="$PROJECT_DIR$/analysis/analysis-api-standalone" />
@@ -476,6 +480,7 @@
             <option value="$PROJECT_DIR$/analysis" />
             <option value="$PROJECT_DIR$/analysis/analysis-api" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-cfir" />
+            <option value="$PROJECT_DIR$/analysis/analysis-api-cfir/analysis-api-cfir-generator" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-impl-base" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-platform-interface" />
             <option value="$PROJECT_DIR$/analysis/analysis-api-standalone" />

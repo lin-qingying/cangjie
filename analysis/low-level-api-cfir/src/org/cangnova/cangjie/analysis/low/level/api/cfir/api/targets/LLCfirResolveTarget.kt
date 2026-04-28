@@ -10,7 +10,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecif
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -35,10 +34,10 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
     val cfirFile: CfirFile? get() = designation.fileOrNull
 
     /**
-     * The list of [CfirFile] and [CfirClass] which are
+     * The list of [CfirFile] and [CfirClassLikeDeclaration] which are
      * the required to go from file to target declarations in the top-down order.
      *
-     * If resolve target is [CfirFile] or [CfirClass] itself, it's not included into the [path].
+     * If resolve target is [CfirFile] or [CfirClassLikeDeclaration] itself, it's not included into the [path].
      */
     val path: List<CfirDeclaration> get() = designation.path
 
@@ -71,12 +70,12 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
     ) {
         if (pathIterator.hasNext()) {
             when (val declaration = pathIterator.next()) {
-                is CfirClass -> visitor.withClass(declaration) { goToTarget(pathIterator, visitor) }
+                is CfirClassLikeDeclaration -> visitor.withClassLike(declaration) { goToTarget(pathIterator, visitor) }
                 is CfirExtend -> visitor.withExtend(declaration) { goToTarget(pathIterator, visitor) }
                 is CfirFile -> visitor.withFile(declaration) { goToTarget(pathIterator, visitor) }
                 else -> errorWithCfirSpecificEntries(
                     "Unexpected declaration in path: ${declaration::class.simpleName}",
-                    fir = declaration,
+                    cfir = declaration,
                 )
             }
         } else {
@@ -110,9 +109,9 @@ internal sealed class LLCfirResolveTarget(val designation: CfirDesignation) {
             path.mapTo(this) {
                 when (it) {
                     is CfirFile -> it.name
-                    is CfirClass -> it.name
+                    is CfirClassLikeDeclaration -> it.name
                     is CfirExtend -> it.psi?.text ?: it::class.simpleName ?: "<extend>"
-                    else -> errorWithCfirSpecificEntries("Unsupported path declaration: ${it::class.simpleName}", fir = it)
+                    else -> errorWithCfirSpecificEntries("Unsupported path declaration: ${it::class.simpleName}", cfir = it)
                 }
             }
 

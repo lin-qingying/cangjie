@@ -21,25 +21,25 @@ import kotlin.contracts.contract
 fun errorWithCfirSpecificEntries(
     message: String,
     cause: Exception? = null,
-    fir: CfirElement? = null,
+    cfir: CfirElement? = null,
     coneType: ConeCangJieType? = null,
     psi: PsiElement? = null,
     additionalInfos: ExceptionAttachmentBuilder.() -> Unit = {},
 ): Nothing {
-    throw buildErrorWithCfirSpecificEntries(message, cause, fir, coneType, psi, additionalInfos)
+    throw buildErrorWithCfirSpecificEntries(message, cause, cfir, coneType, psi, additionalInfos)
 }
 
 fun buildErrorWithCfirSpecificEntries(
     message: String,
     cause: Exception? = null,
-    fir: CfirElement? = null,
+    cfir: CfirElement? = null,
     coneType: ConeCangJieType? = null,
     psi: PsiElement? = null,
     additionalInfos: ExceptionAttachmentBuilder.() -> Unit = {},
 ): Throwable =
     buildErrorWithAttachment(message, cause) {
-        if (fir != null) {
-            withCfirEntry("fir", fir)
+        if (cfir != null) {
+            withCfirEntry("cfir", cfir)
         }
 
         if (psi != null) {

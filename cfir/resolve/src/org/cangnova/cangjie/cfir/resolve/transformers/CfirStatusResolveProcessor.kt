@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.transformers
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
@@ -192,8 +193,8 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
     val currentStatus = status
     if (currentStatus is CfirResolvedDeclarationStatus) return
 
-    if (this is CfirValueParameter) {
-        // 对齐 Kotlin FIR：value parameter 属于 statusless declaration，
+    if (this is CfirValueParameter || this is CfirConstructor) {
+        // 对齐仓颉当前 tree/status 语义：value parameter 与 constructor 都不承载独立 modality。
         // STATUS 发布时直接收敛到稳定 resolved status，而不是参与常规模态推导。
         replaceStatus(currentStatus.resolvedForStatuslessDeclaration())
         return

@@ -42,7 +42,7 @@ internal sealed class FileStructureElement(
     companion object {
         fun recorderFor(fir: CfirDeclaration): CfirElementsRecorder = when (fir) {
             is CfirFile -> RootStructureElement.Recorder(fir)
-            is CfirClass -> ClassDeclarationStructureElement.Recorder(fir)
+            is CfirClassLikeDeclaration -> ClassDeclarationStructureElement.Recorder(fir)
             is CfirExtend -> ExtendDeclarationStructureElement.Recorder(fir)
             else -> DeclarationStructureElement.Recorder
         }
@@ -136,7 +136,7 @@ internal class CjToCfirMapping(private val elementMapper: LLElementMapper) {
 
 internal class ClassDeclarationStructureElement(
     file: CfirFile,
-    clazz: CfirClass,
+    clazz: CfirClassLikeDeclaration,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElement(
     declaration = clazz,
@@ -148,7 +148,7 @@ internal class ClassDeclarationStructureElement(
         )
     ),
 ) {
-    class Recorder(firClass: CfirClass) : CfirElementContainerRecorder(
+    class Recorder(firClass: CfirClassLikeDeclaration) : CfirElementContainerRecorder(
         container = firClass,
         declarationsToIgnore = firClass.declarationsToIgnore,
     )
@@ -175,7 +175,7 @@ internal class ExtendDeclarationStructureElement(
 }
 
 /** @see ClassDeclarationStructureElement */
-internal val CfirClass.declarationsToIgnore: Set<CfirDeclaration>
+internal val CfirClassLikeDeclaration.declarationsToIgnore: Set<CfirDeclaration>
     get() = declarations.filterNot(CfirDeclaration::isPartOfClassStructureElement).toSet()
 
 internal val CfirExtend.declarationsToIgnore: Set<CfirDeclaration>
@@ -213,7 +213,8 @@ internal abstract class CfirElementContainerRecorder(
 /**
  * Whether a class member declaration is a part of the [ClassDeclarationStructureElement].
  *
- * [CfirClass] stands as an anchor for synthetic declarations which it produces (like an implicit constructor).
+ * [CfirClassLikeDeclaration] 作为 class-like 结构单元的锚点；
+ * regular class 产生的 synthetic 声明（如 implicit constructor）也归并在此结构单元中。
  * This is necessary to process diagnostics from such elements as they don't have real sources
  * (and a dedicated [FileStructureElement] as a consequence).
  *

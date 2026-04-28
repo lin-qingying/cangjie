@@ -160,7 +160,7 @@ internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContract
                 }
 
                 is CfirInProcessOfResolvingToJumpingPhaseState -> {
-                    errorWithCfirSpecificEntries("$stateSnapshot state are not allowed to be inside non-jumping lock", fir = this)
+                    errorWithCfirSpecificEntries("$stateSnapshot state are not allowed to be inside non-jumping lock", cfir = this)
                 }
             }
         }
@@ -210,7 +210,7 @@ internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContract
                 stateSnapshotAfter.barrier.countDown()
             }
             is CfirResolvedToPhaseState, is CfirInProcessOfResolvingToJumpingPhaseState -> {
-                errorWithCfirSpecificEntries("phase is unexpectedly unlocked $stateSnapshotAfter", fir = this)
+                errorWithCfirSpecificEntries("phase is unexpectedly unlocked $stateSnapshotAfter", cfir = this)
             }
         }
     }
@@ -355,7 +355,7 @@ internal class LLCfirLockProvider(private val checker: LLCfirLazyResolveContract
                 }
 
                 is CfirInProcessOfResolvingToPhaseStateWithoutBarrier, is CfirInProcessOfResolvingToPhaseStateWithBarrier -> {
-                    errorWithCfirSpecificEntries("$currentState state are not allowed to be inside jumping lock", fir = this)
+                    errorWithCfirSpecificEntries("$currentState state are not allowed to be inside jumping lock", cfir = this)
                 }
             }
         }

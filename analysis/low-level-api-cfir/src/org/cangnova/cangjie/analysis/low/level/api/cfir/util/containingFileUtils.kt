@@ -21,6 +21,11 @@ fun CfirElementWithResolveState.getContainingFile(): CfirFile? {
         is CfirValueParameter -> containingDeclarationSymbol.cfir.getContainingFile()
         is CfirCallableDeclaration -> provider.getCfirCallableContainerFile(symbol)
         is CfirClassLikeDeclaration -> provider.getCfirClassifierContainerFileIfAny(symbol)
+        is CfirExtend -> {
+            // extend 在仓颉框架里是文件级声明，不属于 Kotlin FIR 现成的 callable/class-like 分支。
+            // low-level API 必须直接复用模块缓存里的“声明 -> CfirFile”归属关系，不能把它落回 unsupported。
+            llCfirResolvableSession?.moduleComponents?.cache?.getContainerCfirFile(this)
+        }
         is CfirCodeFragment -> {
             val cjFile = psi?.containingFile as? CjFile
                 ?: error("File for code fragment cannot be null")
@@ -29,6 +34,6 @@ fun CfirElementWithResolveState.getContainingFile(): CfirFile? {
             moduleComponents.cache.getCachedCfirFile(cjFile)
                 ?: error("Cfir file for code fragment cannot be null")
         }
-        else -> errorWithCfirSpecificEntries("Unsupported declaration ${this::class}", fir = this)
+        else -> errorWithCfirSpecificEntries("Unsupported declaration ${this::class}", cfir = this)
     }
 }

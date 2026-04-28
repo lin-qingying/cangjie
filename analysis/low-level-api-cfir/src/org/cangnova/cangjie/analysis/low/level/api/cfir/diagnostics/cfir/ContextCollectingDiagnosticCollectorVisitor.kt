@@ -71,6 +71,7 @@ internal object PersistenceContextCollector {
     ): CheckerContextForProvider {
         val isLocal = when (declaration) {
             is CfirClassLikeDeclaration -> false
+            is CfirExtend -> false
             is CfirCallableDeclaration -> declaration.symbol.isLocalForLazyResolutionPurposes
             is CfirCodeFragment -> false
             else -> errorWithAttachment("Unsupported declaration ${declaration::class}") {

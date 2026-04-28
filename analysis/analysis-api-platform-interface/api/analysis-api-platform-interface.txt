@@ -1,5 +1,12 @@
 # analysis-api-platform-interface
 
+## org/cangnova/cangjie/analysis/api/platform/KotlinAnalysisInWriteActionListener.kt
+package org.cangnova.cangjie.analysis.api.platform
+public interface KotlinAnalysisInWriteActionListener
+KotlinAnalysisInWriteActionListener.public fun onEnteringAnalysisInWriteAction()
+KotlinAnalysisInWriteActionListener.public fun afterLeavingAnalysisInWriteAction()
+KotlinAnalysisInWriteActionListener.public companion object
+KotlinAnalysisInWriteActionListener.Companion.public val TOPIC: Topic<KotlinAnalysisInWriteActionListener>
 ## org/cangnova/cangjie/analysis/api/platform/CaPlatformSettings.kt
 package org.cangnova.cangjie.analysis.api.platform
 public interface CaPlatformSettings

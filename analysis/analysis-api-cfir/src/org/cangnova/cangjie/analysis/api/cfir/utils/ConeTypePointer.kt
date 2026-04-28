@@ -113,7 +113,6 @@ internal fun <T : ConeCangJieType> T.createPointer(
                 delegatedType = delegatedType?.createPointer(builder)?.restore(session),
                 typeArguments = typeArguments.map { projection -> projection.createPointer(builder).restore(session) ?: return@ConeSimpleTypePointer null },
                 attributes = attributes,
-                nullable = nullable,
             )
         }
 

@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.diagnostic
 
+import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -23,32 +24,15 @@ sealed interface ConeUnresolvedError : ConeDiagnostic
 /**
  * 类型限定名逐段解析失败。
  *
- * 对齐 Kotlin FIR `ConeUnresolvedTypeQualifierError`，保留每一段 qualifier 的名字与显式类型实参，
- * 供 analysis-api 和 low-level API 做高保真投影。
+ * 对齐 Kotlin FIR `ConeUnresolvedTypeQualifierError`。
  */
-data class ConeUnresolvedQualifierPart(
-    val name: Name,
-    val typeArguments: List<CfirTypeRef>,
-)
-
-data class ConeUnresolvedTypeQualifierError(
-    val qualifiers: List<ConeUnresolvedQualifierPart>,
+class ConeUnresolvedTypeQualifierError(
+    val qualifiers: List<CfirQualifierPart>,
 ) : ConeUnresolvedError {
-    override val reason: String = buildString {
-        append("unresolved type qualifier: ")
-        append(
-            qualifiers.joinToString(".") { qualifier ->
-                buildString {
-                    append(qualifier.name.asString())
-                    if (qualifier.typeArguments.isNotEmpty()) {
-                        append('<')
-                        append(qualifier.typeArguments.joinToString(",") { it.toString() })
-                        append('>')
-                    }
-                }
-            }
-        )
-    }
+    val qualifier: String get() = qualifiers.joinToString(separator = ".") { it.name.asString() }
+    override val reason: String get() = "Symbol not found for $qualifier"
+    override val readableDescriptionAsTypeConstructor: String
+        get() = "Unresolved qualified name: $qualifier"
 }
 
 data class ConeUnresolvedReferenceError(

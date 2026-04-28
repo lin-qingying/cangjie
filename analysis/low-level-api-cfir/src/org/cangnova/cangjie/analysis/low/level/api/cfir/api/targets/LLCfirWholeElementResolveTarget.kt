@@ -10,7 +10,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecif
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.forEachDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isDeclarationContainer
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -31,7 +31,7 @@ internal class LLCfirWholeElementResolveTarget(designation: CfirDesignation) : L
         when {
             element !is CfirDeclaration || !element.isDeclarationContainer -> {}
 
-            element is CfirClass -> visitor.withClass(element) {
+            element is CfirClassLikeDeclaration -> visitor.withClassLike(element) {
                 element.forEachDeclaration {
                     visitTargetElement(it, visitor)
                 }
@@ -49,7 +49,7 @@ internal class LLCfirWholeElementResolveTarget(designation: CfirDesignation) : L
                 }
             }
 
-            else -> errorWithCfirSpecificEntries("Unexpected declaration: ${element::class.simpleName}", fir = element)
+            else -> errorWithCfirSpecificEntries("Unexpected declaration: ${element::class.simpleName}", cfir = element)
         }
     }
 

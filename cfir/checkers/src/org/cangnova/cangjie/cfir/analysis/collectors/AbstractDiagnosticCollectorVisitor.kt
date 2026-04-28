@@ -20,6 +20,10 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.util.PrivateForInline
@@ -97,6 +101,33 @@ abstract class AbstractDiagnosticCollectorVisitor(
         withStatement(expression) {
             checkElement(expression)
             expression.acceptChildren(this, null)
+        }
+    }
+
+    override fun visitTypeRef(typeRef: CfirTypeRef, data: Nothing?) {
+        if (typeRef.source?.kind?.shouldSkipErrorTypeReporting == false) {
+            withTypeRefAnnotationContainer(typeRef) {
+                checkElement(typeRef)
+                visitNestedElements(typeRef)
+            }
+        }
+    }
+
+    override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: Nothing?) {
+        visitResolvedTypeRef(errorTypeRef, data)
+    }
+
+    override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: Nothing?) {
+        val resolvedTypeRefType = resolvedTypeRef.coneType
+        if (resolvedTypeRefType is ConeErrorType) {
+            visitTypeRef(resolvedTypeRef, data)
+        }
+        if (resolvedTypeRef.source?.kind?.shouldSkipErrorTypeReporting == true) return
+        withTypeRefAnnotationContainer(resolvedTypeRef) {
+            if (resolvedTypeRefType !is ConeErrorType) {
+                checkElement(resolvedTypeRef)
+            }
+            resolvedTypeRef.delegatedTypeRef?.accept(this, data)
         }
     }
 
@@ -214,6 +245,19 @@ abstract class AbstractDiagnosticCollectorVisitor(
             context.dropStatement()
         }
     }
+
+    private inline fun <R> withTypeRefAnnotationContainer(annotationContainer: CfirTypeRef, block: () -> R): R {
+        var containingTypeRef = context.annotationContainers.lastOrNull() as? CfirResolvedTypeRef
+        while (containingTypeRef != null && containingTypeRef.delegatedTypeRef != annotationContainer) {
+            containingTypeRef = containingTypeRef.delegatedTypeRef as? CfirResolvedTypeRef
+        }
+        return if (containingTypeRef != null) {
+            block()
+        } else {
+            withAnnotationContainer(annotationContainer, block)
+        }
+    }
+
     protected open fun visitNestedElements(element: CfirElement) {
         element.acceptChildren(this, null)
     }

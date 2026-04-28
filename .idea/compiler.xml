@@ -2,6 +2,9 @@
 <project version="4">
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="17">
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-fir-generator" target="21" />
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-fir-generator.main" target="21" />
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-fir-generator.test" target="21" />
       <module name="cangjie.buildSrc" target="21" />
       <module name="cangjie.buildSrc.main" target="21" />
       <module name="cangjie.buildSrc.test" target="21" />
@@ -35,6 +38,12 @@
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="cangjie.analysis.analysis-api" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-cfir" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-fir-generator" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-fir-generator.main" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-cfir.analysis-api-fir-generator.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-cfir.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-cfir.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-cfir.testFixtures" options="-proc:none" />

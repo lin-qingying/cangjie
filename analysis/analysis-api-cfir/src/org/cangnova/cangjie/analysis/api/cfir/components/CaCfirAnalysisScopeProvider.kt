@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.components.CaAnalysisScopeProvider
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseAnalysisScopeProviderEx
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
 

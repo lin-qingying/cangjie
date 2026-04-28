@@ -1,9 +1,12 @@
 package org.cangnova.cangjie.cfir.resolve.transformers
 
+import org.cangnova.cangjie.cfir.CfirQualifierPart
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.TypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
@@ -17,6 +20,7 @@ import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
+import org.cangnova.cangjie.name.FqName
 
 /**
  * 对齐 Kotlin `FirSpecificTypeResolverTransformer`：
@@ -113,8 +117,36 @@ class CfirSpecificTypeResolverTransformer(
             }
             annotations += typeRef.annotations
             delegatedTypeRef = typeRef
-            partiallyResolvedTypeRef = tryCalculatingPartiallyResolvedTypeRef(typeRef, data)
-            this.diagnostic = diagnostic
+            val partiallyResolvedTypeRef = tryCalculatingPartiallyResolvedTypeRef(typeRef, data)
+            this.partiallyResolvedTypeRef = partiallyResolvedTypeRef
+            this.diagnostic = when {
+                diagnostic is ConeUnresolvedTypeQualifierError -> {
+                    ConeUnresolvedTypeQualifierError(smallestUnresolvablePrefix(diagnostic.qualifiers, partiallyResolvedTypeRef))
+                }
+                else -> diagnostic
+            }
+        }
+    }
+
+    /**
+     * 返回给定限定名中最小的不可解析前缀。
+     *
+     * 对齐 Kotlin FIR `FirSpecificTypeResolverTransformer.smallestUnresolvablePrefix`。
+     */
+    private fun smallestUnresolvablePrefix(
+        qualifiers: List<CfirQualifierPart>,
+        partiallyResolvedTypeRef: CfirResolvedTypeRef?,
+    ): List<CfirQualifierPart> {
+        val totalQualifierCount = qualifiers.size
+        val resolvedQualifierCount = (partiallyResolvedTypeRef?.delegatedTypeRef as? CfirUserTypeRef)?.qualifier?.size
+            ?: calculatePartiallyResolvablePackageSegments(qualifiers)
+
+        val unresolvedQualifierCount = totalQualifierCount - resolvedQualifierCount
+
+        return if (unresolvedQualifierCount > 1) {
+            qualifiers.dropLast(unresolvedQualifierCount - 1)
+        } else {
+            qualifiers
         }
     }
 
@@ -154,13 +186,35 @@ class CfirSpecificTypeResolverTransformer(
             if (resolvedType is ConeErrorType || diagnostic != null) continue
 
             return buildResolvedTypeRef {
-                source = typeRefToTry.source
+                source = qualifiersToTry.last().source
                 coneType = resolvedType
                 delegatedTypeRef = typeRefToTry
             }
         }
 
         return null
+    }
+
+    /**
+     * 计算限定名左侧可解析为包名的段数。
+     *
+     * 对齐 Kotlin FIR `calculatePartiallyResolvablePackageSegments`。
+     */
+    private fun calculatePartiallyResolvablePackageSegments(qualifiers: List<CfirQualifierPart>): Int {
+        if (qualifiers.size <= 1) {
+            return 0
+        }
+
+        val packageSegmentsToTry = qualifiers.mapTo(mutableListOf()) { it.name.asString() }
+
+        while (packageSegmentsToTry.size > 1) {
+            packageSegmentsToTry.removeLast()
+            if (session.symbolProvider.hasPackage(FqName.fromSegments(packageSegmentsToTry))) {
+                return packageSegmentsToTry.size
+            }
+        }
+
+        return 0
     }
 
     override fun transformResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: TypeResolutionConfiguration): CfirTypeRef {

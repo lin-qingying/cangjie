@@ -20,10 +20,10 @@ internal object FileElementFactory {
         cfirFile: CfirFile,
         moduleComponents: LLCfirModuleResolveComponents,
     ): FileStructureElement = when (cfirDeclaration) {
-        is CfirClass -> {
+        is CfirClassLikeDeclaration -> {
             cfirDeclaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE.previous)
 
-            lazyResolveClassGeneratedMembers(cfirDeclaration)
+            lazyResolveClassGeneratedMembersIfNeeded(cfirDeclaration)
             ClassDeclarationStructureElement(cfirFile, cfirDeclaration, moduleComponents)
         }
 
@@ -50,7 +50,12 @@ internal object FileElementFactory {
         }
     }
 
-    private fun lazyResolveClassGeneratedMembers(cfirClass: CfirClass) {
+    /**
+     * 只有 regular class 目前会在结构单元上挂 synthetic 成员。
+     * interface / 其他 class-like 共享同一 file-structure 路径，但不引入额外生成成员解析。
+     */
+    private fun lazyResolveClassGeneratedMembersIfNeeded(cfirClassLike: CfirClassLikeDeclaration) {
+        val cfirClass = cfirClassLike as? CfirClass ?: return
         val classMembersToResolve = cfirClass.declarations.filter(CfirDeclaration::isPartOfClassStructureElement)
 
         if (classMembersToResolve.isEmpty()) return

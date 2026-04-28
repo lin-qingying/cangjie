@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeInconsistentError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericConstraintNotLooserError
@@ -71,6 +72,7 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory1
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory2
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory4
+import org.cangnova.cangjie.cfir.diagnostics.requireNotNull
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
@@ -916,6 +918,18 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             session,
         )
 
+        is ConeUnresolvedTypeQualifierError -> {
+            when {
+                source?.kind == CjRealSourceElementKind -> {
+                    val lastQualifier = this.qualifiers.last()
+                    CfirErrors.UNRESOLVED_REFERENCE.createOn(lastQualifier.source, lastQualifier.name.asString(), null, session)
+                }
+                else -> {
+                    CfirErrors.UNRESOLVED_REFERENCE.createOn(source, this.qualifier, null, session)
+                }
+            }
+        }
+
         // ── resolve 管线补齐映射 ──
 
         is ConeCannotRefToPackageNameError -> CfirErrors.CANNOT_REF_TO_PKG_NAME.on(
@@ -1287,6 +1301,14 @@ private fun CjDiagnosticFactory2<String, String?>.on(
     b: String?,
     session: CfirSession,
 ): CjDiagnostic? = on(source, a, b, null, diagnosticContext(session))
+
+@OptIn(InternalDiagnosticFactoryMethod::class)
+private fun CjDiagnosticFactory2<String, String?>.createOn(
+    source: AbstractCjSourceElement?,
+    a: String,
+    b: String?,
+    session: CfirSession,
+): CjDiagnostic? = on(source.requireNotNull(), a, b, null, diagnosticContext(session))
 
 @OptIn(InternalDiagnosticFactoryMethod::class)
 private fun <A, B, C> CjDiagnosticFactory3<A, B, C>.on(

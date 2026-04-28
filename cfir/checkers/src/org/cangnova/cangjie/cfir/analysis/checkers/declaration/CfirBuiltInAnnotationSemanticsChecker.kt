@@ -3,7 +3,6 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemanticsSupport
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -22,13 +21,11 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAnnotation
-import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
 import org.cangnova.cangjie.psi.CjConstantExpression
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjModifierListOwner
 import org.cangnova.cangjie.psi.CjParameter
-import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjStringTemplateExpression
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.ValueArgument

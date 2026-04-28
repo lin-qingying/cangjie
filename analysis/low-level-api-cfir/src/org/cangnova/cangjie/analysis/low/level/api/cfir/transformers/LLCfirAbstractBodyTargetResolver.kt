@@ -41,14 +41,20 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
         }
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
+    @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
+    override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
         val declarationsTransformer = transformer.declarationsTransformer
         val context = declarationsTransformer.context
-        context.withContainingClass(cfirClass) {
-            context.withScopesForClass(cfirClass, declarationsTransformer.components) {
+        val actionWithScopes = {
+            context.withScopesForClass(cfirClassLike, declarationsTransformer.components) {
                 action()
             }
+        }
+
+        if (cfirClassLike is CfirClass) {
+            context.withContainingClass(cfirClassLike, actionWithScopes)
+        } else {
+            actionWithScopes()
         }
     }
 

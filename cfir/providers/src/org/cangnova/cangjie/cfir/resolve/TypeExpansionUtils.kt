@@ -187,7 +187,6 @@ private fun ConeCangJieType.substituteTypeParameters(
                     delegatedType = substitutedDelegatedType,
                     typeArguments = substitutedArguments ?: typeArguments,
                     attributes = attributes,
-                    nullable = nullable,
                 )
             }
         }
@@ -245,7 +244,13 @@ private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeC
         is ConeIntersectionType -> ConeIntersectionType(intersectedTypes, newAttributes)
         is ConeUnionType -> ConeUnionType(unionTypes, newAttributes)
         is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, typeArguments, newAttributes)
-        is ConeErrorType -> ConeErrorType(diagnostic, isUninferredParameter, delegatedType, typeArguments, newAttributes, nullable)
+        is ConeErrorType -> ConeErrorType(
+            diagnostic,
+            isUninferredParameter,
+            delegatedType,
+            typeArguments,
+            newAttributes
+        )
         is ConeQuestType -> ConeQuestType(newAttributes)
         is ConeTypeVariableType -> ConeTypeVariableType(typeConstructor, newAttributes)
         is ConePlaceholderType -> ConePlaceholderType(debugName, newAttributes)

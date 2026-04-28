@@ -5,7 +5,9 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.asCaDiagnostic
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
+import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponent
+import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponentImplementationDetail
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
@@ -21,6 +23,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
  *
  * 这些能力必须集中在这一层，避免各组件重复书写相同的桥接逻辑。
  */
+@OptIn(CaSessionComponentImplementationDetail::class)
 internal interface CaCfirSessionComponent : CaSessionComponent {
     val analysisSession: CaCfirSession
 
@@ -32,6 +35,7 @@ internal interface CaCfirSessionComponent : CaSessionComponent {
      * 并转换成公开 [CaType]。
      */
     fun ConeCangJieType.asPublicType(): CaType = asCaType(analysisSession)
+    fun CjPsiDiagnostic.asCaDiagnostic(): CaDiagnosticWithPsi<*> = asCaDiagnostic(analysisSession)
 
     /**
      * 将 low-level 诊断转换成当前组件生命周期下的公开诊断对象。

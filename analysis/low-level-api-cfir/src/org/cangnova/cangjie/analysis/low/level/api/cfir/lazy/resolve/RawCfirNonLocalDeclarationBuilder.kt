@@ -48,7 +48,7 @@ internal object RawCfirNonLocalDeclarationBuilder {
             else -> errorWithCfirSpecificEntries(
                 "Unexpected non-local declaration root",
                 psi = rootNonLocalDeclaration,
-                fir = designation.target,
+                cfir = designation.target,
             )
         }
     }
@@ -62,7 +62,7 @@ internal object RawCfirNonLocalDeclarationBuilder {
             ?: errorWithCfirSpecificEntries(
                 "No rebuilt CFIR declaration was found for non-local PSI",
                 psi = declaration,
-                fir = designation.target,
+                cfir = designation.target,
             )
     }
 }
