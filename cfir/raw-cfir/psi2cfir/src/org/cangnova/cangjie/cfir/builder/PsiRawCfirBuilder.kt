@@ -17,8 +17,10 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.builder.*
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
+import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
@@ -863,14 +865,38 @@ class PsiRawCfirBuilder(
             }
         }
 
+        private inline fun CjElement.toCfirStatement(errorReasonLazy: () -> String): CfirStatement {
+            val cfir = when (this) {
+                is CjDeclaration -> convertDeclaration(this)
+                is CjExpression -> convertExpression(this)
+                else -> buildErrorExpressionNode {
+                    source = toCjPsiSourceElement()
+                    diagnostic = ConeSimpleDiagnostic(errorReasonLazy())
+                }
+            }
+
+            return when (cfir) {
+                is CfirStatement -> cfir
+                else -> buildErrorExpressionNode {
+                    source = toCjPsiSourceElement()
+                    diagnostic = ConeSimpleDiagnostic(errorReasonLazy())
+                    nonExpressionElement = cfir
+                }
+            }
+        }
+
         fun convertBlock(psi: CjBlockExpression): CfirBlock {
             val statements = withLocalContext {
-                psi.statements.map { stmt ->
-                    when (stmt) {
-                        is CjPatternVariable -> convertPatternVariable(stmt)
-                        is CjNamedFunction -> convertFunction(stmt)
-                        is CjDeclaration -> convertDeclaration(stmt)
-                        else -> convertExpression(stmt)
+                buildList {
+                    for (stmt in psi.statements) {
+                        val cfirStatement = stmt.toCfirStatement { "Statement expected: ${stmt.text}" }
+                        val isForLoopBlock =
+                            cfirStatement is CfirBlock && cfirStatement.source?.kind == CjFakeSourceElementKind.DesugaredForLoop
+                        if (cfirStatement !is CfirBlock || isForLoopBlock || cfirStatement.annotations.isNotEmpty()) {
+                            add(cfirStatement)
+                        } else {
+                            addAll(cfirStatement.statements)
+                        }
                     }
                 }
             }

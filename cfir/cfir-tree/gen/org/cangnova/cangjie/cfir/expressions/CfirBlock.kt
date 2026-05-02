@@ -18,7 +18,7 @@ abstract class CfirBlock : CfirExpression() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
-    abstract val statements: List<CfirElement>
+    abstract val statements: List<CfirStatement>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitBlock(this, data)

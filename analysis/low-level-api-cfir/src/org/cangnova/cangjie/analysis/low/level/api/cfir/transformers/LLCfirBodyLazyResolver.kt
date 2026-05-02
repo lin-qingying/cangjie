@@ -384,7 +384,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
                         performedAnalysesCount = performedAnalysesCount,
                         analysisStateSnapshot = LLPartialBodyAnalysisSnapshot(
                             result = LLPartialBodyAnalysisResult(
-                                statements = block.statements.take(index).map { it as CfirStatement },
+                                statements = block.statements.take(index),
                                 defaultParameterValues = collectDefaultParameterValues(declaration)
                             ),
                             towerDataContext = context.towerDataContext.createSnapshot(keepMutable = true),

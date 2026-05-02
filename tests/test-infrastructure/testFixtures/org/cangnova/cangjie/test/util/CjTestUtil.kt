@@ -1,13 +1,17 @@
 package org.cangnova.cangjie.test.util
 
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiFileFactory
+import com.intellij.psi.impl.PsiFileFactoryImpl
+import com.intellij.testFramework.LightVirtualFile
+import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjPsiFactory
 import org.cangnova.cangjie.test.TestMetadata
 import org.cangnova.cangjie.utils.convertLineSeparators
 import java.io.File
 import java.io.FileNotFoundException
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.util.Locale
 import java.util.regex.Pattern
 import kotlin.io.path.createTempDirectory
@@ -44,7 +48,11 @@ object CjTestUtil {
     @JvmStatic
     fun createFile(name: String, text: String, project: Project): CjFile {
         val shortName = name.substringAfterLast('/').substringAfterLast('\\')
-        return CjPsiFactory(project, markGenerated = false).createFile(shortName, text.convertLineSeparators())
+        val virtualFile = LightVirtualFile(shortName, CangJieLanguage, text.convertLineSeparators())
+        virtualFile.charset = StandardCharsets.UTF_8
+
+        val factory = PsiFileFactory.getInstance(project) as PsiFileFactoryImpl
+        return factory.trySetupPsiForFile(virtualFile, CangJieLanguage, true, false) as CjFile
     }
 
     @JvmStatic

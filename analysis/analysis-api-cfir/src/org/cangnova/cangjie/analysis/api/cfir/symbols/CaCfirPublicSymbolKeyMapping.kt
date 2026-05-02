@@ -154,6 +154,14 @@ internal fun CaSymbol.publicSymbolCacheKeyOrNull(): CaCfirPublicSymbolCacheKey? 
         CaCfirTypeParameterSymbolCacheKey(ownerKey, name, parameterIndex)
     }
 
+    is CaCfirPatternVariableSymbol -> psi?.let { localPsi ->
+        CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_VARIABLE)
+    }
+
+    is CaCfirPatternBindingSymbol -> psi?.let { localPsi ->
+        CaCfirPsiSymbolCacheKey(localPsi, CaCfirPsiSymbolKind.PATTERN_BINDING)
+    }
+
     is CaCfirSymbol<*> -> (cfirSymbol as? CfirCallableSymbol<*>)?.publicSymbolCacheKeyOrNull(analysisSession)
     else -> null
 }

@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.expectedSubstitutedRetur
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetClassName
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetFunctionName
 import org.cangnova.cangjie.analysis.api.components.buildSubstitutor
+import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjClass
@@ -34,7 +35,7 @@ abstract class AbstractSignatureSubstitutionTest : AbstractAnalysisApiComponentT
             val callableSymbol = getTopLevelCallableSymbols(
                 mainFile.packageFqName,
                 Name.identifier(directives.targetFunctionName),
-            ).singleOrNull()
+            ).singleOrNull() as? CaFunctionSymbol
             val signature = callableSymbol?.asSignature()
 
             assertNotNull(classSymbol, "签名替换测试需要可恢复的 class-like 符号。")
@@ -43,7 +44,7 @@ abstract class AbstractSignatureSubstitutionTest : AbstractAnalysisApiComponentT
 
             val substitutor = buildSubstitutor {
                 substitution(
-                    typeParameter = signature!!.typeParameters.single(),
+                    typeParameter = callableSymbol!!.typeParameters.single(),
                     type = classSymbol!!.defaultType,
                 )
             }
@@ -55,7 +56,7 @@ abstract class AbstractSignatureSubstitutionTest : AbstractAnalysisApiComponentT
             )
             assertEquals(
                 directives.expectedSubstitutedReturnType,
-                normalizeTypeRendering(substitutedSignature.returnType!!.render()),
+                normalizeTypeRendering(substitutedSignature.returnType.render()),
             )
         }
     }

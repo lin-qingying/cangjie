@@ -91,8 +91,8 @@ class AnalysisApiSymbolEquivalenceTest : AbstractAnalysisApiExecutionTest(
 
             val extendMemberNames = (extendDeclaration.symbol as CaExtendSymbol)
                 .declaredMemberScope
-                .getCallableSymbols(Name.identifier("prettyPrint"))
-            assertTrue(extendMemberNames.isNotEmpty())
+                .callables(Name.identifier("prettyPrint"))
+            assertTrue(extendMemberNames.any())
         }
     }
 }

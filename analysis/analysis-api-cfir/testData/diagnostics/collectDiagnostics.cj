@@ -1,5 +1,5 @@
 import ghost.pkg.MissingSymbol
 
-func main() {
+ main() {
     let answer = 42
 }

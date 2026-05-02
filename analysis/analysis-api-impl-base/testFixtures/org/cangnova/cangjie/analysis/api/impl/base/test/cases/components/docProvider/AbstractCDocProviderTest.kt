@@ -4,8 +4,12 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.components.findCDoc
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.lexer.cdoc.parser.CDocKnownTag
+import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
+import org.cangnova.cangjie.psi.CjImplementationDetail
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjNonPublicApi
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -21,7 +25,11 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  *
  * 不在这里镜像 Kotlin 的 constructor/property/script 派生规则。
  */
-@OptIn(org.cangnova.cangjie.analysis.api.CaNonPublicApi::class)
+@OptIn(
+    org.cangnova.cangjie.analysis.api.CaNonPublicApi::class,
+    CjNonPublicApi::class,
+    CjImplementationDetail::class,
+)
 abstract class AbstractCDocProviderTest : AbstractAnalysisApiComponentTest() {
     override fun doTestByMainFile(
         mainFile: CjFile,
@@ -41,8 +49,8 @@ abstract class AbstractCDocProviderTest : AbstractAnalysisApiComponentTest() {
         assertEquals("Document", docComment.findSectionByTag(CDocKnownTag.SEE)?.getSubjectName())
 
         analyzeForTest(reference) {
-            val declarationDescriptor = declaration.symbol.findCDoc()
-            val referenceDescriptor = reference.resolveToSymbol()?.findCDoc()
+            val declarationDescriptor: CDocCommentDescriptor? = declaration.symbol.findCDoc()
+            val referenceDescriptor: CDocCommentDescriptor? = (reference.resolveToSymbol() as? CaDeclarationSymbol)?.findCDoc()
 
             assertEquals("Greets the caller.", declarationDescriptor?.primaryTag?.getContent())
             assertEquals("Greets the caller.", referenceDescriptor?.primaryTag?.getContent())

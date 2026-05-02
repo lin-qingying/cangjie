@@ -406,6 +406,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(callableDeclaration)
         parent(targetElement)
         parent(controlFlowGraphOwner)
+        parent(statement)
         customParentInVisitor = callableDeclaration
         +declaredSymbol(functionSymbolType)
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
@@ -477,6 +478,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
     val variable: Element by sealedElement(Declaration, name = "Variable") {
         parent(callableDeclaration)
+        parent(statement)
         +declaredSymbol(variableSymbolType)
         +field("status", declarationStatusType, withReplace = true, withTransform = true)
         +field("initializer", expression, nullable = true, withReplace = true, withTransform = true)
@@ -572,7 +574,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         needTransformOtherChildren()
 
         parent(expression)
-        +listField("statements", rootElement, withTransform = true)
+        +listField("statements", statement, withTransform = true)
     }
 
     val lazyBlock: Element by element(Expression, name = "LazyBlock") {
@@ -1012,7 +1014,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(pattern)
         +field("name", nameType)
         +field("typeRef", typeRef, nullable = true, withTransform = true)
-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = false, isChild = false)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
         +field("nestedPattern", pattern, nullable = true, withTransform = true)
     }
 
@@ -1025,7 +1027,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
     val varOrEnumPattern: Element by element(Pattern, name = "VarOrEnumPattern") {
         parent(pattern)
         +field("name", nameType)
-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = false, isChild = false)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
     }
 
     val tuplePattern: Element by element(Pattern, name = "TuplePattern") {
@@ -1043,7 +1045,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(pattern)
         +field("typeRef", typeRef, withTransform = true)
         +field("bindingName", nameType, nullable = true)
-        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = false, isChild = false)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
     }
 
     val typeRef: Element by sealedElement(TypeRef) {

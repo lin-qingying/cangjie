@@ -47,4 +47,10 @@ class CfirIdeDependentSourceModuleElementDiagnosticsTestGenerated : AbstractElem
     fun testUnresolvedReferenceElement() {
         runTest("analysis/analysis-api/testData/components/diagnosticProvider/elementDiagnostics/unresolvedReferenceElement.cj")
     }
+
+    @TestMetadata("unresolvedReturnTypeElement.cj")
+    @Test
+    fun testUnresolvedReturnTypeElement() {
+        runTest("analysis/analysis-api/testData/components/diagnosticProvider/elementDiagnostics/unresolvedReturnTypeElement.cj")
+    }
 }

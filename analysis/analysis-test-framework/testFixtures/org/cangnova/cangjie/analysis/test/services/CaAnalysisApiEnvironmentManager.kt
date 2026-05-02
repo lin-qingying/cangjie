@@ -1,12 +1,14 @@
 package org.cangnova.cangjie.analysis.test.services
 
 import com.intellij.lang.LanguageParserDefinitions
+import com.intellij.mock.MockApplication
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.Application
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.CangjieCoreApplicationEnvironment
 import org.cangnova.cangjie.CangjieCoreProjectEnvironment
+import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
@@ -47,6 +49,11 @@ class CaAnalysisApiEnvironmentManagerImpl(
 
     override fun initializeEnvironment() {
         sharedCoreEnvironment
+        (getApplication() as MockApplication).apply {
+            if (getServiceIfCreated(CaBuiltinsVirtualFileProvider::class.java) == null) {
+                registerService(CaBuiltinsVirtualFileProvider::class.java, CaBuiltinsVirtualFileProviderTestImpl())
+            }
+        }
 
         /**
          * Analysis API 测试需要直接在内存 PSI 上工作，因此这里显式注册 ParserDefinition，

@@ -438,6 +438,7 @@ companion object{
     inner class CallableSymbolBuilder {
         fun buildCallableSymbol(cfirSymbol: CfirCallableSymbol<*>): CaCallableSymbol = when (cfirSymbol) {
             is CfirFunctionSymbol<*> -> functionBuilder.buildFunctionSymbol(cfirSymbol)
+            is CfirPropertySymbol -> variableBuilder.buildVariableSymbol(cfirSymbol)
             is CfirVariableSymbol<*> -> variableBuilder.buildVariableSymbol(cfirSymbol)
             else -> throwUnexpectedElementError(cfirSymbol)
         }

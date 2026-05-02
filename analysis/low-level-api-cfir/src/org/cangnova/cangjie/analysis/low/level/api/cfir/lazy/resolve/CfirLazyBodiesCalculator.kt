@@ -24,8 +24,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirErrorPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
@@ -135,11 +138,11 @@ private fun replaceLazyBody(target: CfirFunction, copy: CfirFunction) {
 private val CfirCallableDeclaration.originalPsi: PsiElement?
     get() = unwrapFakeOverridesOrDelegated().psi
 
-private fun calculateLazyBodiesForFunction(designation: CfirDesignation) {
-    val function = designation.target as CfirNamedFunction
+private inline fun <reified F : CfirFunction> calculateLazyBodiesForFunction(designation: CfirDesignation) {
+    val function = designation.target as F
     require(needCalculatingLazyBodyForFunction(function))
 
-    val recreatedFunction = revive<CfirNamedFunction>(designation, function.originalPsi)
+    val recreatedFunction = revive<F>(designation, function.originalPsi)
     replaceLazyBody(function, recreatedFunction)
     replaceLazyValueParameters(function, recreatedFunction)
 }
@@ -225,9 +228,39 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirNamedFunction {
         if (needCalculatingLazyBodyForFunction(namedFunction)) {
-            calculateLazyBodiesForFunction(CfirDesignation(data, namedFunction))
+            calculateLazyBodiesForFunction<CfirNamedFunction>(CfirDesignation(data, namedFunction))
         }
         return namedFunction
+    }
+
+    override fun transformMainFunction(
+        mainFunction: CfirMainFunction,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirMainFunction {
+        if (needCalculatingLazyBodyForFunction(mainFunction)) {
+            calculateLazyBodiesForFunction<CfirMainFunction>(CfirDesignation(data, mainFunction))
+        }
+        return mainFunction
+    }
+
+    override fun transformMacroDeclaration(
+        macroDeclaration: CfirMacroDeclaration,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirMacroDeclaration {
+        if (needCalculatingLazyBodyForFunction(macroDeclaration)) {
+            calculateLazyBodiesForFunction<CfirMacroDeclaration>(CfirDesignation(data, macroDeclaration))
+        }
+        return macroDeclaration
+    }
+
+    override fun transformFinalizer(
+        finalizer: CfirFinalizer,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirFinalizer {
+        if (needCalculatingLazyBodyForFunction(finalizer)) {
+            calculateLazyBodiesForFunction<CfirFinalizer>(CfirDesignation(data, finalizer))
+        }
+        return finalizer
     }
 
     override fun transformConstructor(

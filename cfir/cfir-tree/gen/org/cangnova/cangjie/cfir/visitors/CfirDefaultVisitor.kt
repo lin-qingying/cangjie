@@ -80,9 +80,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: D): R =
         visitFunction(propertyAccessor, data)
 
-    override fun visitVariable(variable: CfirVariable, data: D): R =
-        visitCallableDeclaration(variable, data)
-
     override fun visitFieldVariable(fieldVariable: CfirFieldVariable, data: D): R =
         visitVariable(fieldVariable, data)
 

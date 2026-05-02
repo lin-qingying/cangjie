@@ -16,6 +16,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaGlobalSearchScopeMerger
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
@@ -63,7 +64,7 @@ class CaBaseResolutionScopeProvider : CaResolutionScopeProvider {
             }
         }
 
-        return scopes.reduce(GlobalSearchScope::uniteWith)
+        return CaGlobalSearchScopeMerger.getInstance(module.project).union(scopes)
     }
 
     private fun createBuiltinsScope(project: Project): GlobalSearchScope {

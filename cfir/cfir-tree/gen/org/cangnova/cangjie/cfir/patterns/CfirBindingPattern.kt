@@ -32,5 +32,7 @@ abstract class CfirBindingPattern : CfirPattern() {
 
     abstract fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirBindingPattern
 
+    abstract fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirBindingPattern
+
     abstract fun <D> transformNestedPattern(transformer: CfirTransformer<D>, data: D): CfirBindingPattern
 }

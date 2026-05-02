@@ -97,10 +97,10 @@ class CfirClassUseSiteMemberScope(
         processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
     ): ProcessorAction {
         for (parent in parentScopes) {
-            val candidates = mutableListOf<CfirNamedFunctionSymbol>()
-            parent.processFunctionsByName(functionSymbol.name) { candidates += it }
-            for (candidate in candidates) {
-                if (processor(candidate, parent) == ProcessorAction.STOP) {
+            val candidates = mutableListOf<MemberWithBaseScope<CfirNamedFunctionSymbol>>()
+            parent.processFunctionsByName(functionSymbol.name) { candidates += MemberWithBaseScope(it, parent) }
+            for (candidate in filterOutOverridden(candidates, CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope)) {
+                if (processor(candidate.symbol, candidate.scope) == ProcessorAction.STOP) {
                     return ProcessorAction.STOP
                 }
             }
@@ -113,10 +113,10 @@ class CfirClassUseSiteMemberScope(
         processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
     ): ProcessorAction {
         for (parent in parentScopes) {
-            val candidates = mutableListOf<CfirPropertySymbol>()
-            parent.processPropertiesByName(propertySymbol.name) { candidates += it }
-            for (candidate in candidates) {
-                if (processor(candidate, parent) == ProcessorAction.STOP) {
+            val candidates = mutableListOf<MemberWithBaseScope<CfirPropertySymbol>>()
+            parent.processPropertiesByName(propertySymbol.name) { candidates += MemberWithBaseScope(it, parent) }
+            for (candidate in filterOutOverridden(candidates, CfirTypeScope::processDirectOverriddenPropertiesWithBaseScope)) {
+                if (processor(candidate.symbol, candidate.scope) == ProcessorAction.STOP) {
                     return ProcessorAction.STOP
                 }
             }
@@ -285,4 +285,61 @@ class CfirClassUseSiteMemberScope(
 
 private fun declarationSelfType(symbol: CfirClassLikeSymbol<*>): ConeCangJieType? {
     return symbol.takeIf { it.isBound }?.constructType()
+}
+
+private data class MemberWithBaseScope<S : CfirCallableSymbol<*>>(
+    val symbol: S,
+    val scope: CfirTypeScope,
+)
+
+private typealias ProcessOverriddenWithBaseScope<S> =
+        CfirTypeScope.(S, (S, CfirTypeScope) -> ProcessorAction) -> ProcessorAction
+
+/**
+ * 对齐 Kotlin FIR `FirOverrideUtils.filterOutOverridden`。
+ *
+ * 仓颉当前没有 FIR 的 intersection result 模型；这里保留 Kotlin 的过滤位置和
+ * “用 direct overridden 链判断候选之间覆盖关系”的语义，避免父 scope 返回已被其它父候选覆盖的成员。
+ */
+private fun <S : CfirCallableSymbol<*>> filterOutOverridden(
+    extractedOverridden: Collection<MemberWithBaseScope<S>>,
+    processAllOverridden: ProcessOverriddenWithBaseScope<S>,
+): Collection<MemberWithBaseScope<S>> {
+    return extractedOverridden.filter { overridden1 ->
+        extractedOverridden.none { overridden2 ->
+            overridden1 !== overridden2 && overrides(overridden2, overridden1.symbol, processAllOverridden)
+        }
+    }
+}
+
+private fun <S : CfirCallableSymbol<*>> overrides(
+    member: MemberWithBaseScope<S>,
+    target: S,
+    overriddenProducer: ProcessOverriddenWithBaseScope<S>,
+): Boolean {
+    val visited = linkedSetOf<Pair<CfirTypeScope, S>>()
+
+    fun visit(current: MemberWithBaseScope<S>): Boolean {
+        if (!visited.add(current.scope to current.symbol)) return false
+
+        var found = false
+        current.scope.overriddenProducer(current.symbol) { overridden, baseScope ->
+            when {
+                overridden == target -> {
+                    found = true
+                    ProcessorAction.STOP
+                }
+
+                visit(MemberWithBaseScope(overridden, baseScope)) -> {
+                    found = true
+                    ProcessorAction.STOP
+                }
+
+                else -> ProcessorAction.NEXT
+            }
+        }
+        return found
+    }
+
+    return visit(member)
 }

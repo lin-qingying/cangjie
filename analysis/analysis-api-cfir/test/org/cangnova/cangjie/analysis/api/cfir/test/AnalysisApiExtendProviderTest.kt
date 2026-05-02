@@ -54,11 +54,11 @@ class AnalysisApiExtendProviderTest : AbstractAnalysisApiExecutionTest(
 
             assertEquals(
                 "prettyPrint",
-                packageExtend.declaredMemberScope.getCallableSymbols(Name.identifier("prettyPrint")).first().name?.asString(),
+                packageExtend.declaredMemberScope.callables(Name.identifier("prettyPrint")).first().name?.asString(),
             )
             assertEquals(
                 "prettyPrint",
-                classExtend.declaredMemberScope.getCallableSymbols(Name.identifier("prettyPrint")).first().name?.asString(),
+                classExtend.declaredMemberScope.callables(Name.identifier("prettyPrint")).first().name?.asString(),
             )
 
             val restoredByPsi = extendDeclaration.symbol as CaExtendSymbol

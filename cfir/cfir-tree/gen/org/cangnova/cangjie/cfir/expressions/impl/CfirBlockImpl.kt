@@ -7,12 +7,12 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -23,7 +23,7 @@ class CfirBlockImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
-    override val statements: MutableList<CfirElement>,
+    override val statements: MutableList<CfirStatement>,
 ) : CfirBlock() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {

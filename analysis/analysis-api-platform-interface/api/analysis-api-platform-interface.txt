@@ -62,6 +62,12 @@ public interface CaContentScopeRefiner
 CaContentScopeRefiner.public fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope
 CaContentScopeRefiner.public companion object
 CaContentScopeRefiner.Companion.public fun getInstance(project: Project): CaContentScopeRefiner?
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaGlobalSearchScopeMerger.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CaGlobalSearchScopeMerger
+CaGlobalSearchScopeMerger.public fun union(scopes: Collection<GlobalSearchScope>): GlobalSearchScope
+CaGlobalSearchScopeMerger.public companion object
+CaGlobalSearchScopeMerger.Companion.public fun getInstance(project: Project): CaGlobalSearchScopeMerger
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaModuleProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public interface CaModuleProvider
@@ -73,6 +79,15 @@ CaModuleProvider.public fun getModuleByStableName(stableModuleName: String): CaM
 CaModuleProvider.public fun getModuleByDescription(moduleDescription: String): CaModule?
 CaModuleProvider.public companion object
 CaModuleProvider.Companion.public fun getInstance(project: Project): CaModuleProvider
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieGlobalSearchScopeMergeStrategy.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CangJieGlobalSearchScopeMergeStrategy<T : Any>
+CangJieGlobalSearchScopeMergeStrategy.public val targetType: KClass<T>
+CangJieGlobalSearchScopeMergeStrategy.public fun uniteScopes(scopes: List<T>): List<GlobalSearchScope>
+CangJieGlobalSearchScopeMergeStrategy.public companion object
+CangJieGlobalSearchScopeMergeStrategy.Companion.public val EP_NAME: ExtensionPointName<CangJieGlobalSearchScopeMergeStrategy<*>>
+CangJieGlobalSearchScopeMergeStrategy.Companion.public fun getMergeStrategies(project: Project): List<CangJieGlobalSearchScopeMergeStrategy<*>>
+public interface CangJieIntersectionScopeMergeTarget
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieProjectStructureProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public data class CaProjectStructureSnapshot( val allModules: List<CaModule>, val allResolvableModules: List<CaModule>, val allSourceLikeModules: List<CaModule>, val allSourceFiles: List<PsiFileSystemItem>, )

@@ -50,15 +50,23 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile,
         // to avoid inconsistency between physical psi and its copy during completion
         findSourceNonLocalCfirDeclarationByProvider(
             firDeclarationProvider = { declaration ->
-                if (declaration is CjClassLikeDeclaration) {
+                if (declaration is CjExtend) {
+                    CfirElementFinder.findDeclaration(cfirFile, declaration)
+                } else if (declaration is CjClassLikeDeclaration) {
                     declaration.findCfir(provider)
                 } else {
                     val containingTypeStatement = declaration.containingTypeStatement
-                    val declarations = if (containingTypeStatement != null) {
-                        val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration
-                        containerClassLikeCfir?.declarations
-                    } else {
-                        cfirFile.declarations
+                    val declarations = when (containingTypeStatement) {
+                        is CjExtend -> {
+                            val containerExtendCfir = CfirElementFinder.findDeclaration(cfirFile, containingTypeStatement) as? CfirExtend
+                            containerExtendCfir?.declarations
+                        }
+                        is CjClassLikeDeclaration -> {
+                            val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration
+                            containerClassLikeCfir?.declarations
+                        }
+                        null -> cfirFile.declarations
+                        else -> null
                     }
 
                     // It is possible that we will not be able to find the needed declaration here when the code is invalid
@@ -115,6 +123,9 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
         is CjTypeStatement,
         is CjProperty,
         is CjNamedFunction,
+        is CjMainFunction,
+        is CjMacroDeclaration,
+        is CjFinalizer,
         is CjConstructor<*>,
         is CjTypeAlias,
             -> firDeclarationProvider(this)
