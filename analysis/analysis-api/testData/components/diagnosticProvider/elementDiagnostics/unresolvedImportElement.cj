@@ -1,9 +1,7 @@
-// FILE: unresolvedImportElement.cj
-// TARGET_ELEMENT_TEXT: MissingSymbol
-// EXPECTED_ELEMENT_DIAGNOSTIC: UNRESOLVED_IMPORT
+// LOOK_UP_FOR_ELEMENT_OF_TYPE: CjNameReferenceExpression
 package sample.diagnostics
 
-import ghost.pkg.MissingSymbol
+import <caret>ghost.pkg.MissingSymbol
 
 func main() {
     let answer = 42

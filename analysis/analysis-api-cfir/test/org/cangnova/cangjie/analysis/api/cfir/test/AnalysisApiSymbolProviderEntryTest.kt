@@ -70,7 +70,7 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
 
         analyzeForTest(mainFile) {
             fun assertRestoresToSamePsi(psi: PsiElement, symbol: CaSymbol) {
-                val originalPsi = symbol.getOriginalPsi()
+                val originalPsi = symbol.psi
                 assertNotNull(originalPsi, "Symbol `${symbol::class.simpleName}` should keep original PSI.")
                 assertSame(psi, originalPsi)
             }
@@ -111,7 +111,7 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             assertEquals("value", setterSymbol.parameter.name.asString())
             assertEquals(
                 "prettyPrint",
-                extendSymbol.declaredMemberScope.getCallableSymbols(Name.identifier("prettyPrint")).single().name?.asString(),
+                extendSymbol.declaredMemberScope.callables(Name.identifier("prettyPrint")).single().name?.asString(),
             )
         }
     }

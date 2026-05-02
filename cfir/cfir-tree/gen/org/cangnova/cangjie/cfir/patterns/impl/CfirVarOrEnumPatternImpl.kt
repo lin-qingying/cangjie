@@ -20,9 +20,17 @@ internal class CfirVarOrEnumPatternImpl(
     override var bindingVariable: CfirPatternBindingVariable?,
 ) : CfirVarOrEnumPattern() {
 
-    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}
+    override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
+        bindingVariable?.accept(visitor, data)
+    }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirVarOrEnumPatternImpl {
+        transformBindingVariable(transformer, data)
+        return this
+    }
+
+    override fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirVarOrEnumPatternImpl {
+        bindingVariable = bindingVariable?.transform(transformer, data)
         return this
     }
 }

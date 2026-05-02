@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.CfirTargetElement
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.references.CfirControlFlowGraphReference
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -21,7 +22,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 /**
  * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.function]
  */
-sealed class CfirFunction : CfirCallableDeclaration(), CfirTargetElement, CfirControlFlowGraphOwner {
+sealed class CfirFunction : CfirCallableDeclaration(), CfirTargetElement, CfirControlFlowGraphOwner, CfirStatement {
     abstract override val source: CjSourceElement?
     abstract override val moduleData: CfirModuleData
     abstract override val annotations: List<CfirAnnotation>

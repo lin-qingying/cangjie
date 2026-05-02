@@ -100,10 +100,6 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitFunction(propertyAccessor)
     }
 
-    override fun visitVariable(variable: CfirVariable) {
-        visitCallableDeclaration(variable)
-    }
-
     override fun visitFieldVariable(fieldVariable: CfirFieldVariable) {
         visitVariable(fieldVariable)
     }

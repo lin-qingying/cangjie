@@ -53,4 +53,10 @@ class CfirStandaloneDependentSourceModuleCollectDiagnosticsTestGenerated : Abstr
     fun testUnresolvedReference() {
         runTest("analysis/analysis-api/testData/components/diagnosticProvider/collectDiagnostics/unresolvedReference.cj")
     }
+
+    @TestMetadata("unresolvedReturnType.cj")
+    @Test
+    fun testUnresolvedReturnType() {
+        runTest("analysis/analysis-api/testData/components/diagnosticProvider/collectDiagnostics/unresolvedReturnType.cj")
+    }
 }

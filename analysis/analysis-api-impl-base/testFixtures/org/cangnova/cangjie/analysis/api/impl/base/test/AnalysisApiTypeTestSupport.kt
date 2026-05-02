@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Assertions.assertNotNull
  * 这一层只服务公开 Analysis API 契约：
  * 1. 通过测试模块里的源码声明恢复稳定 `CaClassLikeSymbol`
  * 2. 基于公开 `CaTypeCreator` 构造各种 `CaType`
- * 3. 在需要时校验 `buildClassLikeType(classId)` 与 `buildClassLikeType(symbol)` 一致
+ * 3. 在需要时校验 `buildClassType(classId)` 与 `buildClassType(symbol)` 一致
  */
 internal object AnalysisApiTypeTestSupport {
     context(session: CaSession)
@@ -105,15 +105,23 @@ internal object AnalysisApiTypeTestSupport {
             "class-like type 构造要求稳定 ClassId：${symbol::class.simpleName}"
         }
 
-        val byClassId = with(session) { buildClassLikeType(classId, typeArguments) }
-        val bySymbol = with(session) { buildClassLikeType(symbol, typeArguments) }
+        val byClassId = with(session) {
+            buildClassType(classId) {
+                typeArguments.forEach { argument(it) }
+            }
+        } as CaClassLikeType
+        val bySymbol = with(session) {
+            buildClassType(symbol) {
+                typeArguments.forEach { argument(it) }
+            }
+        } as CaClassLikeType
 
         assertEquals(
             normalizeTypeRender(with(session) { byClassId.render(CaTypeRendererForSource.WITH_QUALIFIED_NAMES) }),
             normalizeTypeRender(with(session) { bySymbol.render(CaTypeRendererForSource.WITH_QUALIFIED_NAMES) }),
-            "buildClassLikeType(classId) 与 buildClassLikeType(symbol) 结果不一致。",
+            "buildClassType(classId) 与 buildClassType(symbol) 结果不一致。",
         )
-        assertNotNull(with(session) { byClassId.classLikeSymbol }, "构造后的 class-like type 应可恢复 classLikeSymbol。")
+        assertNotNull(byClassId.symbol, "构造后的 class-like type 应可恢复 symbol。")
         return byClassId
     }
 

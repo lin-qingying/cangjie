@@ -6,9 +6,9 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedCallableName
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedExplicitReceiverType
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetCallText
-import org.cangnova.cangjie.analysis.api.resolution.CaCallKind
-import org.cangnova.cangjie.analysis.api.resolution.CaCallOrigin
+import org.cangnova.cangjie.analysis.api.resolution.calls
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
+import org.cangnova.cangjie.analysis.api.resolution.symbol
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.psi.CjCallExpression
@@ -37,19 +37,18 @@ abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
             assertNotNull(callInfo, "成员调用应产生调用解析结果。")
             assertNotNull(successfulCall, "成员调用应成功解析为函数调用。")
             assertEquals(1, callInfo!!.calls.size, "当前成功调用主链应只暴露唯一调用。")
-            assertEquals(CaCallKind.FUNCTION, successfulCall!!.kind)
-            assertEquals(CaCallOrigin.REGULAR, successfulCall.origin)
-            assertEquals(directives.expectedCallableName, successfulCall.calleeName?.asString())
-            assertEquals(directives.expectedCallableName, successfulCall.target?.name?.asString())
+            assertEquals(directives.expectedCallableName, successfulCall!!.symbol.name?.asString())
             assertEquals(
                 directives.expectedExplicitReceiverType,
-                successfulCall.explicitReceiverType?.render()?.let(::normalizeTypeRendering),
+                successfulCall.dispatchReceiver?.type?.render()?.let(::normalizeTypeRendering),
             )
             assertEquals(
                 expectedArgumentTypes,
-                successfulCall.argumentTypes.map { it?.render()?.let(::normalizeTypeRendering) },
+                successfulCall.valueArgumentMapping.keys.map { argument ->
+                    argument.expressionType?.render()?.let(::normalizeTypeRendering)
+                },
             )
-            assertEquals(0, successfulCall.typeArgumentCount)
+            assertEquals(0, successfulCall.typeArgumentsMapping.size)
         }
     }
 

@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.cfir
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -43,18 +42,9 @@ private object SubstitutedOverrideOriginalKey : CfirDeclarationDataKey()
 var <D : CfirCallableDeclaration>
         D.originalForSubstitutionOverrideAttr: D? by CfirDeclarationDataRegistry.data(SubstitutedOverrideOriginalKey)
 
-var CfirDeclarationAttributes.originalForSubstitutionOverrideSymbolAttr: CfirCallableSymbol<*>?
-        by CfirDeclarationDataRegistry.attributesAccessor(SubstitutedOverrideOriginalKey)
-
-var CfirCallableDeclaration.originalForSubstitutionOverrideSymbolAttr: CfirCallableSymbol<*>?
-    get() = attributes.originalForSubstitutionOverrideSymbolAttr
-    set(value) {
-        attributes.originalForSubstitutionOverrideSymbolAttr = value
-    }
-
 inline val <reified D : CfirCallableDeclaration> D.originalForSubstitutionOverride: D?
     get() = if (isSubstitutionOverride) {
-        originalForSubstitutionOverrideAttr ?: (originalForSubstitutionOverrideSymbolAttr?.cfir as? D)
+        originalForSubstitutionOverrideAttr
     } else {
         null
     }

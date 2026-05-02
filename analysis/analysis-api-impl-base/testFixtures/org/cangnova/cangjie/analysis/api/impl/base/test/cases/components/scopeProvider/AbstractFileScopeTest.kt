@@ -1,18 +1,15 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider
 
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTestDirectives
-import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertTrue
 
 /**
  * `scopeProvider.fileScope` 的抽象测试。
  *
- * 文件作用域既要显式暴露当前文件符号，也要通过统一的 `CaScope`
- * 协议暴露当前文件上下文中按名字可查询到的公开声明。
+ * 文件作用域通过统一的 `CaScope` 协议暴露当前文件上下文中按名字可查询到的公开声明。
  */
 abstract class AbstractFileScopeTest : AbstractScopeProviderTest() {
     override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
@@ -26,11 +23,6 @@ abstract class AbstractFileScopeTest : AbstractScopeProviderTest() {
         analyzeForTest(mainFile) {
             val fileScope = mainFile.getFileScope()
             val packageScope = getPackageScope(mainFile.packageFqName)
-
-            assertTrue(
-                fileScope.symbols.any { symbol -> symbol is CaFileSymbol && symbol.file == mainFile },
-                "文件作用域应显式包含当前文件符号。",
-            )
 
             assertScopeContents(
                 scope = fileScope,

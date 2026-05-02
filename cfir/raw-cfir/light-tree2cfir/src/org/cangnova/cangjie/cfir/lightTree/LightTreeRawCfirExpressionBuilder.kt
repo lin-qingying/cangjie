@@ -14,8 +14,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
+import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
@@ -130,14 +132,40 @@ class LightTreeRawCfirExpressionBuilder(
 
     // ===== Block =====
 
+    private inline fun LighterASTNode.toCfirStatement(errorReasonLazy: () -> String): CfirStatement {
+        val cfir = when {
+            isDeclarationToken(tokenType) -> declarationBuilder.convertDeclaration(this)
+            isExpressionToken(tokenType) -> convertExpression(this)
+            else -> buildErrorExpressionNode {
+                source = toSource()
+                diagnostic = ConeSimpleDiagnostic(errorReasonLazy())
+            }
+        }
+
+        return when (cfir) {
+            is CfirStatement -> cfir
+            else -> buildErrorExpressionNode {
+                source = toSource()
+                diagnostic = ConeSimpleDiagnostic(errorReasonLazy())
+                nonExpressionElement = cfir
+            }
+        }
+    }
+
     fun convertBlock(node: LighterASTNode): CfirBlock {
         val statements = withLocalContext {
-            val stmts = mutableListOf<CfirElement>()
+            val stmts = mutableListOf<CfirStatement>()
             tree.forEachChildren(node) { child ->
                 val tt = child.tokenType
-                when {
-                    isDeclarationToken(tt) -> stmts.add(declarationBuilder.convertDeclaration(child))
-                    isExpressionToken(tt) -> stmts.add(convertExpression(child))
+                if (isDeclarationToken(tt) || isExpressionToken(tt)) {
+                    val cfirStatement = child.toCfirStatement { "Statement expected: ${child.asText()}" }
+                    val isForLoopBlock =
+                        cfirStatement is CfirBlock && cfirStatement.source?.kind == CjFakeSourceElementKind.DesugaredForLoop
+                    if (cfirStatement !is CfirBlock || isForLoopBlock || cfirStatement.annotations.isNotEmpty()) {
+                        stmts.add(cfirStatement)
+                    } else {
+                        stmts.addAll(cfirStatement.statements)
+                    }
                 }
             }
             stmts

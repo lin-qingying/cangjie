@@ -1,4 +1,6 @@
-<idea-plugin>
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+  <xi:include href="/META-INF/analysis-api/cangjie-analysis-api-platform-interface.xml"/>
+
   <extensionPoints>
     <extensionPoint
         qualifiedName="org.cangnova.cangjie.psiReferenceProvider"
@@ -47,7 +49,11 @@
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeResolutionScopeProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBaseResolutionScopeProvider"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaGlobalSearchScopeMerger"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CangJieOptimizingGlobalSearchScopeMerger"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProvider"

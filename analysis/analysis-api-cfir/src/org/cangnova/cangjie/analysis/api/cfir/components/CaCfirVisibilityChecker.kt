@@ -58,14 +58,14 @@ internal class CaCfirVisibilityChecker(
                     is CaCfirExtendSymbol -> analysisSession.restoreExtendPublicSymbol(stableIdentity)
                     else -> null
                 }
-                restoredSymbol === this@isVisible
+                restoredSymbol.isSameVisibleSymbolAs(this@isVisible)
             }
 
             is CaClassLikeSymbol -> {
                 val restoredSymbol = when (this@isVisible) {
                     else -> classId?.let(analysisSession::getClassLikeSymbol)
                 }
-                restoredSymbol === this@isVisible
+                restoredSymbol.isSameVisibleSymbolAs(this@isVisible)
             }
 
             is CaCallableSymbol -> {
@@ -86,10 +86,17 @@ internal class CaCfirVisibilityChecker(
                     }
                     else -> null
                 }
-                restoredSymbol === this@isVisible
+                restoredSymbol.isSameVisibleSymbolAs(this@isVisible)
             }
 
             else -> false
+        }
+    }
+
+    private fun CaSymbol?.isSameVisibleSymbolAs(expected: CaSymbol): Boolean {
+        val restored = this ?: return false
+        return with(analysisSession) {
+            restored.isEquivalentTo(expected)
         }
     }
 

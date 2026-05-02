@@ -26,15 +26,27 @@ import org.cangnova.cangjie.analysis.api.symbols.isTopLevel
 import org.cangnova.cangjie.analysis.api.symbols.symbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.llCfirModuleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.originalDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
 import org.cangnova.cangjie.cfir.session.ProcessorAction
-import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
@@ -360,16 +372,10 @@ internal class CaCfirSymbolRelationProvider(
     private fun CaCfirSession.collectDirectlyOverriddenCallableSymbols(
         backingSymbol: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>,
     ): List<org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>> {
-        val ownerClassId = backingSymbol.callableId.classId
-            ?: cfirSession.cfirProvider.getContainingClass(backingSymbol)?.classId
+        backingSymbol.lazyResolveToPhase(CfirResolvePhase.EXTENSIONS)
+        val memberScope = overrideOwnerScope(backingSymbol)
             ?: return emptyList()
-        val ownerClass = cfirSession.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir as? CfirClass
-            ?: return emptyList()
-        val memberScope = cfirSession.cangjieScopeProvider.getUseSiteMemberScope(
-            ownerClass,
-            cfirSession,
-            getScopeSessionFor(cfirSession),
-        )
+        memberScope.processCallableByName(backingSymbol.cfir)
 
         return when (backingSymbol) {
             is CfirNamedFunctionSymbol -> buildList {
@@ -387,6 +393,60 @@ internal class CaCfirSymbolRelationProvider(
             }
 
             else -> emptyList()
+        }
+    }
+
+    private fun CaCfirSession.overrideOwnerScope(
+        backingSymbol: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>,
+    ): CfirTypeScope? {
+        val originalSymbol = backingSymbol.unwrapSubstitutionOverrides()
+        cfirSession.extendProvider.getContainingExtend(originalSymbol)?.let { extend ->
+            return targetUseSiteMemberScope(extend)
+        }
+
+        val ownerClassId = originalSymbol.callableId.classId
+            ?: cfirSession.cfirProvider.getContainingClass(originalSymbol)?.classId
+            ?: return null
+        val ownerClass = cfirSession.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)
+            ?: return null
+        return ownerClass.cfir.unsubstitutedScope(
+            cfirSession,
+            getScopeSessionFor(cfirSession),
+            withForcedTypeCalculator = false,
+            memberRequiredPhase = null,
+        )
+    }
+
+    /**
+     * 仓颉 `extend` 成员的 override owner 是被扩展类型的 use-site scope。
+     *
+     * Kotlin 没有语言级 `extend` 容器，因此这里只复用 Kotlin 的 scope 入口形状：
+     * 先确定真实 owner type，再在 owner 的 use-site member scope 上查询 direct overridden。
+     */
+    private fun CaCfirSession.targetUseSiteMemberScope(
+        extend: CfirExtend,
+    ): CfirTypeScope? {
+        val extendedType = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return null
+        val targetClassId = extendedType.classIdOrPrimitiveClassId ?: return null
+        val targetSymbol = cfirSession.symbolProvider.getClassLikeSymbolByClassId(targetClassId) ?: return null
+        val rawScope = CfirClassUseSiteMemberScope(
+            session = cfirSession,
+            classSymbol = targetSymbol,
+            symbolProvider = cfirSession.symbolProvider,
+            extendProvider = cfirSession.extendProvider,
+            directSupertypeProvider = cfirSession.directSupertypeProviderOrNull,
+            ownerType = extendedType,
+        )
+        return CfirClassSubstitutionScope(cfirSession, rawScope, extendedType)
+    }
+
+    private fun CfirTypeScope.processCallableByName(
+        declaration: org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration,
+    ) {
+        when (declaration) {
+            is CfirNamedFunction -> processFunctionsByName(declaration.name) {}
+            is CfirProperty -> processPropertiesByName(declaration.name) {}
+            else -> Unit
         }
     }
 }

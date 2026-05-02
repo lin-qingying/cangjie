@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForDe
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.types.CaPrimitiveType
@@ -181,9 +182,11 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
                 "property accessor placeholder preset 应输出 setter 占位体。",
             )
 
-            val userType = buildClassLikeType(userSymbol)
-            val baseType = buildClassLikeType(baseSymbol)
-            val boxOfUserType = buildClassLikeType(boxSymbol, listOf(userType))
+            val userType = buildClassType(userSymbol)
+            val baseType = buildClassType(baseSymbol)
+            val boxOfUserType = buildClassType(boxSymbol) {
+                argument(userType)
+            }
             val tupleType = buildTupleType(listOf(userType, baseType))
             val intersectionType = buildIntersectionType(listOf(userType, baseType))
             val unionType = buildUnionType(listOf(userType, baseType))
@@ -230,7 +233,7 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
             )
 
             val unitType = sideEffectSymbol.returnType
-            val boolType = sideEffectSymbol.valueParameters.single().returnType
+            val boolType = (sideEffectSymbol as CaFunctionSymbol).valueParameters.single().returnType
             val intType = intValueSymbol.returnType
             val floatType = floatValueSymbol.returnType
 
@@ -252,17 +255,17 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
     }
 
     private fun org.cangnova.cangjie.analysis.api.scopes.CaScope.classifierSymbol(name: String): CaClassLikeSymbol {
-        return getClassifierSymbols(Name.identifier(name))
+        return classifiers(Name.identifier(name))
             .filterIsInstance<CaClassLikeSymbol>()
             .single()
     }
 
     private fun org.cangnova.cangjie.analysis.api.scopes.CaScope.callableSymbol(name: String): CaCallableSymbol {
-        return getCallableSymbols(Name.identifier(name)).single()
+        return callables(Name.identifier(name)).single()
     }
 
     private fun org.cangnova.cangjie.analysis.api.scopes.CaScope.propertySymbol(name: String): CaPropertySymbol {
-        return getCallableSymbols(Name.identifier(name))
+        return callables(Name.identifier(name))
             .filterIsInstance<CaPropertySymbol>()
             .single()
     }

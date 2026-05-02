@@ -1,6 +1,5 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.symbols
 
-import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceTestUtils.findUsageSimpleName
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceSymbolTestDirectives
@@ -35,7 +34,7 @@ abstract class AbstractSymbolByReferenceTest : AbstractAnalysisApiComponentTest(
             assertEquals(directives.expectedSymbolClass, symbol!!::class.simpleName)
             assertEquals(directives.expectedSymbolName, symbol.name?.asString())
 
-            val originalPsi = symbol.getOriginalPsi()
+            val originalPsi = symbol.psi
             assertNotNull(originalPsi, "symbol 应能回到 original PSI")
             assertEquals(directives.expectedOriginalPsiClass, originalPsi!!::class.simpleName)
         }

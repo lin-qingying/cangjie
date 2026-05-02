@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.components
 
+import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.scopes.CaScope
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
@@ -32,3 +33,90 @@ interface CaScopeProvider : CaLifetimeOwner {
 
     val CaType.scope: CaScope?
 }
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public fun CjFile.getFileScope(): CaScope {
+    return with(session) {
+        getFileScope()
+    }
+}
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public fun getPackageScope(packageFqName: FqName): CaScope? {
+    return with(session) {
+        getPackageScope(packageFqName)
+    }
+}
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public val CaPackageSymbol.packageScope: CaScope
+    get() = with(session) { packageScope }
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public val CaDeclarationContainerSymbol.combinedDeclaredMemberScope: CaScope
+    get() = with(session) { combinedDeclaredMemberScope }
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public val CaClassLikeSymbol.declaredMemberScope: CaScope
+    get() = with(session) { declaredMemberScope }
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public val CaExtendSymbol.declaredMemberScope: CaScope
+    get() = with(session) { declaredMemberScope }
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public val CaClassLikeSymbol.memberScope: CaScope
+    get() = with(session) { memberScope }
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public val CaDeclarationContainerSymbol.memberScope: CaScope
+    get() = with(session) { memberScope }
+
+/**
+ * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ *
+ * 对齐 Kotlin Analysis API `KaScopeProvider` 的 context bridge。
+ */
+context(session: CaSession)
+public val CaType.scope: CaScope?
+    get() = with(session) { scope }

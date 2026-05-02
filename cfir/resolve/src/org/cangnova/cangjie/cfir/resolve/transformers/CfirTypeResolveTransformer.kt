@@ -17,10 +17,15 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
@@ -147,7 +152,31 @@ class CfirTypeResolveTransformer(
         return extend
     }
 
+    override fun transformNamedFunction(
+        namedFunction: CfirNamedFunction,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirNamedFunction = transformFunctionHeader(namedFunction, data) as CfirNamedFunction
+
+    override fun transformMainFunction(
+        mainFunction: CfirMainFunction,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirMainFunction = transformFunctionHeader(mainFunction, data) as CfirMainFunction
+
+    override fun transformMacroDeclaration(
+        macroDeclaration: CfirMacroDeclaration,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirMacroDeclaration = transformFunctionHeader(macroDeclaration, data) as CfirMacroDeclaration
+
+    override fun transformFinalizer(
+        finalizer: CfirFinalizer,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirFinalizer = transformFunctionHeader(finalizer, data) as CfirFinalizer
+
     override fun transformFunction(function: CfirFunction, data: CfirTypeResolutionConfiguration): CfirFunction {
+        return transformFunctionHeader(function, data)
+    }
+
+    private fun transformFunctionHeader(function: CfirFunction, data: CfirTypeResolutionConfiguration): CfirFunction {
         val configuration = data
             .withTopContainer(function)
             .withAdditionalTypeParameters(function.typeParameters)
@@ -185,9 +214,16 @@ class CfirTypeResolveTransformer(
             .withAdditionalTypeParameters(property.typeParameters)
         property.transformTypeParameters(this, configuration)
         property.transformReturnTypeRef(this, configuration)
+        property.transformGetter(this, configuration)
+        property.transformSetter(this, configuration)
         bumpPhase(property)
         return property
     }
+
+    override fun transformPropertyAccessor(
+        propertyAccessor: CfirPropertyAccessor,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirPropertyAccessor = transformFunctionHeader(propertyAccessor, data) as CfirPropertyAccessor
 
     override fun transformVariable(variable: CfirVariable, data: CfirTypeResolutionConfiguration): CfirVariable {
         bumpPhase(variable)

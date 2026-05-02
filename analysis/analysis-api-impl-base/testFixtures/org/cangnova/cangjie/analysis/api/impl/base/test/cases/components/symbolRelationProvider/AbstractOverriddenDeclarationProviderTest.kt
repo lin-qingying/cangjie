@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.symbol
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.components.containingDeclaration
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceTestUtils.isExtendMemberDeclaration

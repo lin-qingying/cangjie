@@ -41,3 +41,41 @@ interface CaSymbol : CaLifetimeOwner {
  */
 val CaSymbol.name: Name?
     get() = (this as? CaNamedSymbol)?.name
+
+/**
+ * 以指定 PSI 类型读取当前符号对应的 PSI；类型不匹配时抛出 [ClassCastException]。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaSymbol.psi()`。
+ */
+public inline fun <reified PSI : PsiElement> CaSymbol.psi(): PSI =
+    psi as PSI
+
+/**
+ * 以指定 PSI 类型读取当前符号对应的 PSI；类型不匹配时返回 `null`。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaSymbol.psiSafe()`。
+ */
+public inline fun <reified PSI : PsiElement> CaSymbol.psiSafe(): PSI? =
+    psi as? PSI
+
+/**
+ * 当前符号来源为源码时读取 PSI；非源码符号返回 `null`。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaSymbol.sourcePsi()`。
+ */
+public inline fun <reified PSI : PsiElement> CaSymbol.sourcePsi(): PSI? {
+    if (origin != CaSymbolOrigin.SOURCE) return null
+
+    return psi as PSI
+}
+
+/**
+ * 当前符号来源为源码且 PSI 类型匹配时读取 PSI；否则返回 `null`。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaSymbol.sourcePsiSafe()`。
+ */
+public inline fun <reified PSI : PsiElement> CaSymbol.sourcePsiSafe(): PSI? {
+    if (origin != CaSymbolOrigin.SOURCE) return null
+
+    return psi as? PSI
+}

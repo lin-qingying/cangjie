@@ -8,12 +8,12 @@
 package org.cangnova.cangjie.cfir.expressions.builder
 
 import kotlin.contracts.*
-import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.impl.CfirBlockImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
@@ -23,7 +23,7 @@ class CfirBlockBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
-    val statements: MutableList<CfirElement> = mutableListOf()
+    val statements: MutableList<CfirStatement> = mutableListOf()
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirBlock {

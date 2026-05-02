@@ -14,6 +14,9 @@ import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModul
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructureProviderImpl
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructureProvider
+import org.cangnova.cangjie.analysis.test.framework.services.ExpressionMarkerProvider
+import org.cangnova.cangjie.analysis.test.framework.services.ExpressionMarkersSourceFilePreprocessor
+import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerApplicationServices
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerProjectExtensionPoints
@@ -32,6 +35,8 @@ import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.impl.JUnit5Assertions
 import java.nio.file.Path
 import java.nio.file.Paths
+import kotlin.io.path.exists
+import kotlin.io.path.nameWithoutExtension
 
 /**
  * 所有 Analysis API 测试的统一基座。
@@ -55,7 +60,7 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
      * 允许具体测试把额外的文件或模块指令容器接入框架。
      */
     open val additionalDirectives: List<DirectivesContainer>
-        get() = emptyList()
+        get() = listOf(ExpressionMarkerProvider.Directives)
 
     protected open fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
         throw UnsupportedOperationException(
@@ -127,9 +132,72 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
     }
 
     protected open fun isMainFile(file: CjFile, module: CjTestModule): Boolean {
+        val expressionMarkerProvider = testServices.expressionMarkerProvider
+        if (expressionMarkerProvider?.getCaretOrNull(file) != null ||
+            expressionMarkerProvider?.getSelectionOrNull(file) != null
+        ) {
+            return true
+        }
+
         val fileNameWithoutExtension = file.virtualFile?.nameWithoutExtension
             ?: file.name.substringBeforeLast('.', file.name)
         return fileNameWithoutExtension == "main" || fileNameWithoutExtension == module.name
+    }
+
+    /**
+     * 按当前测试数据路径解析并断言 Analysis API golden 输出文件。
+     *
+     * 文件命名和变体解析规则对齐 Kotlin `AbstractAnalysisApiBasedTest.assertEqualsToTestOutputFile`：
+     * 默认输出为同目录同名 `.txt`，`configurator.testPrefixes` 中靠后的变体优先级更高。
+     */
+    @Suppress("UnusedReceiverParameter")
+    protected fun AssertionsService.assertEqualsToTestOutputFile(
+        actual: String,
+        extension: String = ".txt",
+        subdirectoryName: String? = null,
+        testPrefixes: List<String> = configurator.testPrefixes,
+    ) {
+        assertEqualsToFile(
+            expectedFile = getTestOutputFile(
+                extension = extension,
+                subdirectoryName = subdirectoryName,
+                testPrefixes = testPrefixes,
+            ).toFile(),
+            actual = actual,
+        )
+    }
+
+    /**
+     * 返回当前测试数据对应的输出文件；若存在变体文件，则按 `testPrefixes` 顺序取最后一个匹配项。
+     */
+    protected fun getTestOutputFile(
+        extension: String = "txt",
+        subdirectoryName: String? = null,
+        testPrefixes: List<String> = configurator.testPrefixes,
+    ): Path {
+        for (variant in testPrefixes) {
+            findVariantTestOutputFile(extension, subdirectoryName, variant)?.let { return it }
+        }
+        return getDefaultTestOutputFile(extension, subdirectoryName)
+    }
+
+    private fun getDefaultTestOutputFile(extension: String, subdirectoryName: String?): Path =
+        buildTestOutputFilePath(extension, subdirectoryName, variant = null)
+
+    private fun findVariantTestOutputFile(extension: String, subdirectoryName: String?, variant: String): Path? =
+        buildTestOutputFilePath(extension, subdirectoryName, variant).takeIf { it.exists() }
+
+    private fun buildTestOutputFilePath(extension: String, subdirectoryName: String?, variant: String?): Path {
+        val extensionWithDot = "." + extension.removePrefix(".")
+        val baseName = testDataPath.nameWithoutExtension
+        val directoryPath = subdirectoryName?.let { testDataPath.resolveSibling(it) } ?: testDataPath.parent
+
+        val relativePath = if (variant != null) {
+            "$baseName.$variant$extensionWithDot"
+        } else {
+            baseName + extensionWithDot
+        }
+        return directoryPath.resolve(relativePath)
     }
 
     protected fun runTest(path: String) {
@@ -195,8 +263,14 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         testServices.register(AssertionsService::class, JUnit5Assertions)
         testServices.register(
             SourceFileProvider::class,
-            SourceFileProvider(preprocessors = listOf(MetaInfosCleanupPreprocessor(testServices))),
+            SourceFileProvider(
+                preprocessors = listOf(
+                    ExpressionMarkersSourceFilePreprocessor(testServices),
+                    MetaInfosCleanupPreprocessor(testServices),
+                ),
+            ),
         )
+        testServices.register(ExpressionMarkerProvider::class, ExpressionMarkerProvider())
         testServices.register(
             CjTestModuleStructureProvider::class,
             CjTestModuleStructureProviderImpl(testServices),
