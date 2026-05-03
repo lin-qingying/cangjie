@@ -21,16 +21,13 @@ fun interface CaCallableReturnTypeRenderer {
                 declarationRenderer: CaDeclarationRenderer,
                 printer: PrettyPrinter,
             ->
-
             if (symbol is CaConstructorSymbol) return@CaCallableReturnTypeRenderer
             val type = declarationRenderer.declarationTypeApproximator.approximateType(
                 analysisSession,
                 symbol.returnType,
-
             )
             if (!declarationRenderer.returnTypeFilter.shouldRenderReturnType(analysisSession, type, symbol)) return@CaCallableReturnTypeRenderer
             declarationRenderer.typeRenderer.renderType(analysisSession, type, printer)
-
         }
     }
 }

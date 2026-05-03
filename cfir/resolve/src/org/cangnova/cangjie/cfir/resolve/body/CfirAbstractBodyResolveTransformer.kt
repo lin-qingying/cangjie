@@ -6,13 +6,16 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
+import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.CfirSamResolver
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.inference.CfirCallCompleter
 import org.cangnova.cangjie.cfir.resolve.providers.CfirAccessibilityFileScope
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractPhaseTransformer
@@ -25,8 +28,12 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import kotlinx.collections.immutable.toPersistentList
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
@@ -186,6 +193,16 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     override var implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformer(phase) {
     /**
+     * 对齐 Kotlin `FirAbstractBodyResolveTransformerDispatcher.typeResolverTransformer`。
+     *
+     * `prepareSignatureForBodyResolve(...)` 等路径会直接把 declaration 的 typeRef 交给 dispatcher，
+     * 因而 dispatcher 必须像 Kotlin 一样承担 body resolve 内的显式类型解析职责。
+     */
+    protected val typeResolverTransformer: CfirSpecificTypeResolverTransformer by lazy(LazyThreadSafetyMode.NONE) {
+        CfirSpecificTypeResolverTransformer(session)
+    }
+
+    /**
      * 对齐 Kotlin `FirAbstractBodyResolveTransformerDispatcher.preserveCFGForClasses`。
      * 主干 body resolve 默认保留 class CFG，low-level resolver 可覆写关闭。
      */
@@ -222,6 +239,35 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         @Suppress("UNCHECKED_CAST")
         element.transformChildren(this, data)
         return element
+    }
+
+    override fun transformTypeRef(typeRef: CfirTypeRef, data: ResolutionMode): CfirResolvedTypeRef {
+        val resolvedTypeRef = if (typeRef is CfirResolvedTypeRef) {
+            if (typeRef is CfirErrorTypeRef) {
+                typeRef.transformPartiallyResolvedTypeRef(this, data)
+            }
+            typeRef
+        } else {
+            typeResolverTransformer.transformTypeRef(
+                typeRef,
+                CfirTypeResolutionConfiguration(
+                    scopes = components.createCurrentScopeList(),
+                    containingClassDeclarations = context.containingClassDeclarations.toList(),
+                    useSiteFile = context.file,
+                    topContainer = context.containerIfAny,
+                ),
+            ) as CfirResolvedTypeRef
+        }
+
+        return resolvedTypeRef.transformAnnotations(this, data) as CfirResolvedTypeRef
+    }
+
+    override fun transformImplicitTypeRef(implicitTypeRef: CfirImplicitTypeRef, data: ResolutionMode): CfirTypeRef {
+        if (data !is ResolutionMode.UpdateImplicitTypeRef) {
+            return implicitTypeRef
+        }
+
+        return data.newTypeRef.transformSingle(this, data)
     }
 
     override fun transformFile(file: CfirFile, data: ResolutionMode): CfirFile {

@@ -24,7 +24,9 @@ fun interface CaFieldSymbolRenderer {
                 }
                 append(" ")
                 declarationRenderer.nameRenderer.renderName(analysisSession, symbol, declarationRenderer, this)
-                declarationRenderer.returnTypeRenderer.renderReturnType(analysisSession, symbol, declarationRenderer, this)
+                withPrefix(": ") {
+                    declarationRenderer.returnTypeRenderer.renderReturnType(analysisSession, symbol, declarationRenderer, this)
+                }
             }
             declarationRenderer.variableInitializerRenderer.renderInitializer(analysisSession, symbol, printer)
         }

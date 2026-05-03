@@ -41,8 +41,10 @@ import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.extendIndexStore
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
@@ -96,6 +98,12 @@ internal class CaCfirSymbolRelationProvider(
                 }
 
                 is CaCallableSymbol -> {
+                    (cfirSymbol as? CfirCallableSymbol<*>)?.let { callableSymbol ->
+                        analysisSession.cfirSession.extendIndexStore.containingExtendOf(callableSymbol.unwrapSubstitutionOverrides())?.let { extend ->
+                            return@withValidityAssertion analysisSession.cfirSymbolBuilder.buildExtendSymbol(extend.symbol)
+                        }
+                    }
+
                     cfirSymbol.getContainingClassSymbol()?.let { outerClass ->
                         return@withValidityAssertion analysisSession.cfirSymbolBuilder.buildSymbol(outerClass) as? CaDeclarationSymbol
                     }
@@ -116,7 +124,8 @@ internal class CaCfirSymbolRelationProvider(
             is CaPropertyAccessorSymbol -> symbol.owningProperty
 
             is CaCfirValueParameterSymbol ->
-                analysisSession.cfirSymbolBuilder.buildSymbol(symbol.cfirSymbol.containingDeclarationSymbol) as? CaDeclarationSymbol
+                symbol.ownerSymbol as? CaDeclarationSymbol
+                    ?: analysisSession.cfirSymbolBuilder.buildSymbol(symbol.cfirSymbol.containingDeclarationSymbol) as? CaDeclarationSymbol
 
             is CaCfirTypeParameterSymbol ->
                 analysisSession.cfirSymbolBuilder.buildSymbol(symbol.cfirSymbol.containingDeclarationSymbol) as? CaDeclarationSymbol

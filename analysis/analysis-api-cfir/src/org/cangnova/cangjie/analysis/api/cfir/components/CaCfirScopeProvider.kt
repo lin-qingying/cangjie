@@ -4,9 +4,9 @@ import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.cfir.*
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDelegatingNamesAwareScope
+import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDeclaredMemberScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirFileScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirPackageScope
-import org.cangnova.cangjie.analysis.api.cfir.scopes.CaCfirDeclaredMemberScope
 import org.cangnova.cangjie.analysis.api.cfir.scopes.CfirSingleExtendDeclaredMemberScope
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassDeclaredMemberScope
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.name.FqName
@@ -82,7 +83,13 @@ internal class CaCfirScopeProvider(
     override val CaDeclarationContainerSymbol.combinedDeclaredMemberScope: CaScope
         get() = withValidityAssertion {
             when (this@combinedDeclaredMemberScope) {
-                is CaClassLikeSymbol -> (this@combinedDeclaredMemberScope as CaClassLikeSymbol).memberScope
+                is CaClassLikeSymbol -> {
+                    val classSymbol = requireClassLikeSymbol(this@combinedDeclaredMemberScope)
+                    CaCfirDeclaredMemberScope(
+                        CfirClassDeclaredMemberScope(classSymbol.cfirSymbol),
+                        analysisSession.cfirSymbolBuilder,
+                    )
+                }
                 else -> error("当前仅 class-like 声明容器支持 combinedDeclaredMemberScope：${this@combinedDeclaredMemberScope::class.simpleName}")
             }
         }
@@ -90,22 +97,10 @@ internal class CaCfirScopeProvider(
     override val CaClassLikeSymbol.declaredMemberScope: CaScope
         get() = withValidityAssertion {
             val classSymbol = requireClassLikeSymbol(this@declaredMemberScope)
-            val classDeclaration = classSymbol.cfirSymbol.cfir
-            val cfirScope = when (classDeclaration) {
-                is CfirClass -> analysisSession.cfirSession.cangjieScopeProvider.getDeclarationSiteMemberScope(
-                    classDeclaration,
-                    analysisSession.cfirSession,
-                    getScopeSession(),
-                )
-
-                else -> classDeclaration.unsubstitutedScope(
-                    analysisSession.cfirSession,
-                    getScopeSession(),
-                    withForcedTypeCalculator = false,
-                    memberRequiredPhase = null,
-                )
-            }
-            CaCfirDeclaredMemberScope(cfirScope, analysisSession.cfirSymbolBuilder)
+            CaCfirDeclaredMemberScope(
+                CfirClassDeclaredMemberScope(classSymbol.cfirSymbol),
+                analysisSession.cfirSymbolBuilder,
+            )
         }
 
     override val org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol.declaredMemberScope: CaScope

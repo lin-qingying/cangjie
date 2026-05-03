@@ -14,9 +14,9 @@ import org.cangnova.cangjie.analysis.api.types.CaTypePointer
 import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.renderForDebugging
@@ -58,7 +58,7 @@ internal class CaCfirUsualClassType(
     override val qualifiers: List<CaResolvedClassTypeQualifier>
         get() = withValidityAssertion {
             when (coneType) {
-                is ConeClassLikeType -> UsualClassTypeQualifierBuilder.buildQualifiers(coneType, builder)
+                is ConeClassifierType -> UsualClassTypeQualifierBuilder.buildQualifiers(coneType, builder)
                 is ConeTypeAliasType -> listOf(
                     CaCfirResolvedClassTypeQualifierImpl(
                         name = symbol.name,
@@ -88,7 +88,7 @@ internal class CaCfirUsualClassType(
     override fun toString(): String = coneType.renderForDebugging()
 
     private fun resolveClassLikeSymbol(): CfirClassLikeSymbol<*>? = when (coneType) {
-        is ConeClassLikeType -> coneType.lookupTag.toSymbol(builder.analysisSession.cfirSession)
+        is ConeClassifierType -> coneType.lookupTag.toSymbol(builder.analysisSession.cfirSession)
         is ConeTypeAliasType -> coneType.classId.toSymbol(builder.analysisSession.cfirSession)
         else -> null
     }

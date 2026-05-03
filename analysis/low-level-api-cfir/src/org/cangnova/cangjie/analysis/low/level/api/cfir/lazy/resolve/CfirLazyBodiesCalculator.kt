@@ -24,13 +24,16 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirErrorPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
@@ -44,6 +47,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
 import org.cangnova.cangjie.psi.CjElement
 import org.jetbrains.annotations.TestOnly
 
@@ -177,6 +181,14 @@ private fun calculateLazyBodyForProperty(designation: CfirDesignation) {
     }
 }
 
+private inline fun <reified V : CfirVariable> calculateLazyInitializerForVariable(designation: CfirDesignation) {
+    val variable = designation.target as V
+    require(needCalculatingLazyInitializerForVariable(variable))
+
+    val recreatedVariable = revive<V>(designation, variable.originalPsi)
+    variable.replaceInitializer(recreatedVariable.initializer)
+}
+
 private fun needCalculatingLazyBodyForConstructor(constructor: CfirConstructor): Boolean =
     needCalculatingLazyBodyForFunction(constructor)
 
@@ -186,6 +198,11 @@ private fun needCalculatingLazyBodyForFunction(function: CfirFunction): Boolean 
 private fun needCalculatingLazyBodyForProperty(property: CfirProperty): Boolean =
     property.getter?.let(::needCalculatingLazyBodyForFunction) == true ||
             property.setter?.let(::needCalculatingLazyBodyForFunction) == true
+
+private fun needCalculatingLazyInitializerForVariable(variable: CfirVariable): Boolean {
+    if (variable.initializer != null) return false
+    return (variable.originalPsi as? CjDeclarationWithInitializer)?.hasInitializer() == true
+}
 
 private fun calculateLazyBodyForCodeFragment(designation: CfirDesignation) {
     val codeFragment = designation.target as CfirCodeFragment
@@ -288,6 +305,26 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
             calculateLazyBodyForProperty(CfirDesignation(data, property))
         }
         return property
+    }
+
+    override fun transformFieldVariable(
+        fieldVariable: CfirFieldVariable,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirFieldVariable {
+        if (needCalculatingLazyInitializerForVariable(fieldVariable)) {
+            calculateLazyInitializerForVariable<CfirFieldVariable>(CfirDesignation(data, fieldVariable))
+        }
+        return fieldVariable
+    }
+
+    override fun transformPatternVariable(
+        patternVariable: CfirPatternVariable,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirPatternVariable {
+        if (needCalculatingLazyInitializerForVariable(patternVariable)) {
+            calculateLazyInitializerForVariable<CfirPatternVariable>(CfirDesignation(data, patternVariable))
+        }
+        return patternVariable
     }
 
     override fun transformCodeFragment(

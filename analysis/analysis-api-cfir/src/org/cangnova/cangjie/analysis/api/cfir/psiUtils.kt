@@ -7,16 +7,20 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.diagnostics.CaDiagnosticWithPsi
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
+import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
+import org.cangnova.cangjie.cfir.session.extendIndexStore
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
@@ -97,6 +101,8 @@ internal val CjDeclaration.location: CaSymbolLocation
         return when (parent) {
             null -> CaSymbolLocation.TOP_LEVEL
 
+            is CjExtend -> CaSymbolLocation.EXTEND
+
             is CjTypeStatement -> CaSymbolLocation.CLASS
 
             is CjDeclarationWithBody,
@@ -111,6 +117,48 @@ internal val CjDeclaration.location: CaSymbolLocation
             }
         }
     }
+
+/**
+ * 在缺少源码 PSI 时，统一按 CFIR 语义恢复 callable 的声明位置。
+ *
+ * Kotlin 这里只有 top-level / class / local；仓颉额外补上 extend 成员归属，
+ * 并且仍然放在同一层 location 推导入口，而不是散落到各个 symbol 叶子类中。
+ */
+internal fun CaCfirSession.getCallableSymbolLocation(
+    cfirSymbol: CfirCallableSymbol<*>,
+    backingPsi: CjDeclaration?,
+): CaSymbolLocation {
+    backingPsi?.let { return it.location }
+    if (cfirSymbol.rawStatus.visibility == Visibilities.Local) {
+        return CaSymbolLocation.LOCAL
+    }
+    if (cfirSession.extendIndexStore.containingExtendOf(cfirSymbol.unwrapSubstitutionOverrides()) != null) {
+        return CaSymbolLocation.EXTEND
+    }
+    return if (cfirSymbol.containingClassLookupTag()?.classId == null) {
+        CaSymbolLocation.TOP_LEVEL
+    } else {
+        CaSymbolLocation.CLASS
+    }
+}
+
+/**
+ * 公开 `receiverType` 时只暴露仓颉源码显式存在的 receiver 语义。
+ *
+ * 普通类成员的 dispatch receiver 是隐式宿主，不应被渲染成 `Owner.member`；
+ * 当前仅 extend 成员需要把该接收者公开为 receiverType。
+ */
+internal fun CaCfirSession.getExplicitCallableReceiverType(
+    cfirSymbol: CfirCallableSymbol<*>,
+    backingPsi: CjDeclaration?,
+    builder: CaSymbolByCfirBuilder,
+): CaType? {
+    if (getCallableSymbolLocation(cfirSymbol, backingPsi) != CaSymbolLocation.EXTEND) {
+        return null
+    }
+
+    return (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
+}
 
 /**
  * 按 raw CFIR builder 的规则从 PSI 推导 callable 可见性。

@@ -442,11 +442,12 @@ class PsiRawCfirBuilder(
             defaultReturnTypeRef: CfirTypeRef,
             propertySymbol: CfirPropertySymbol,
         ): CfirPropertyAccessor {
-            val valueParams = psi.valueParameters.map { parameter -> convertValueParameter(parameter) }
+            val accessorSymbol = CfirPropertyAccessorSymbol()
+            val valueParams = psi.valueParameters.map { parameter -> convertValueParameter(parameter, accessorSymbol) }
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
             val body = psi.buildCfirBody(functionTarget)
 
-            return buildSourceDeclaration(CfirPropertyAccessorSymbol()) { symbol ->
+            return buildSourceDeclaration(accessorSymbol) { symbol ->
                 buildPropertyAccessor {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     source = psi.toCjPsiSourceElement()
@@ -494,11 +495,12 @@ class PsiRawCfirBuilder(
         }
 
         fun convertMainFunction(psi: CjMainFunction): CfirMainFunction {
-            val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val mainFunctionSymbol = CfirMainFunctionSymbol(callableIdFor(Name.identifier("main")))
+            val valueParams = psi.valueParameters.map { convertValueParameter(it, mainFunctionSymbol) }
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
             val body = psi.buildCfirBody(functionTarget)
 
-            return buildSourceDeclaration(CfirMainFunctionSymbol(callableIdFor(Name.identifier("main")))) { symbol ->
+            return buildSourceDeclaration(mainFunctionSymbol) { symbol ->
                 buildMainFunction {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     source = psi.toCjPsiSourceElement()
@@ -519,11 +521,12 @@ class PsiRawCfirBuilder(
 
         fun convertMacroDeclaration(psi: CjMacroDeclaration): CfirMacroDeclaration {
             val name = psi.nameAsSafeName
-            val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val macroSymbol = CfirMacroDeclarationSymbol(callableIdFor(name))
+            val valueParams = psi.valueParameters.map { convertValueParameter(it, macroSymbol) }
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
             val body = psi.buildCfirBody(functionTarget)
 
-            return buildSourceDeclaration(CfirMacroDeclarationSymbol(callableIdFor(name))) { symbol ->
+            return buildSourceDeclaration(macroSymbol) { symbol ->
                 buildMacroDeclaration {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     source = psi.toCjPsiSourceElement()
@@ -544,11 +547,12 @@ class PsiRawCfirBuilder(
         }
 
         fun convertFinalizer(psi: CjFinalizer): CfirFinalizer {
-            val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val finalizerSymbol = CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))
+            val valueParams = psi.valueParameters.map { convertValueParameter(it, finalizerSymbol) }
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
             val body = psi.buildCfirBody(functionTarget)
 
-            return buildSourceDeclaration(CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))) { symbol ->
+            return buildSourceDeclaration(finalizerSymbol) { symbol ->
                 buildFinalizer {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     source = psi.toCjPsiSourceElement()
@@ -599,11 +603,12 @@ class PsiRawCfirBuilder(
         }
 
         private fun convertConstructor(psi: CjConstructor<*>, isPrimary: Boolean): CfirConstructor {
-            val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
+            val valueParams = psi.valueParameters.map { convertValueParameter(it, constructorSymbol) }
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
             val body = psi.buildCfirBody(functionTarget)
 
-            return buildSourceDeclaration(CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))) { symbol ->
+            return buildSourceDeclaration(constructorSymbol) { symbol ->
                 if (isPrimary) {
                     buildPrimaryConstructor {
                         resolvePhase = CfirResolvePhase.RAW_CFIR
@@ -727,7 +732,7 @@ class PsiRawCfirBuilder(
 
         fun convertValueParameter(
             psi: CjParameter,
-            containingSymbol: CfirBasedSymbol<*>? = null,
+            containingSymbol: CfirBasedSymbol<*>,
         ): CfirValueParameter {
             return buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(psi.nameAsSafeName))) { symbol ->
                 buildValueParameter {
@@ -744,7 +749,7 @@ class PsiRawCfirBuilder(
                     returnTypeRef = convertTypeRef(psi.typeReference)
                     name = psi.nameAsSafeName
                     defaultValue = psi.defaultValue?.let { convertExpression(it) }
-                    containingDeclarationSymbol = containingSymbol ?: symbol
+                    containingDeclarationSymbol = containingSymbol
                 }
             }
         }
@@ -1608,14 +1613,15 @@ class PsiRawCfirBuilder(
         // ---- Lambda ----
 
         private fun convertLambda(psi: CjLambdaExpression): CfirAnonymousFunctionExpression {
-            val valueParams = psi.valueParameters.map { convertValueParameter(it) }
+            val anonymousFunctionSymbol = CfirAnonymousFunctionSymbol()
+            val valueParams = psi.valueParameters.map { convertValueParameter(it, anonymousFunctionSymbol) }
             val hasExplicitParameterList = psi.valueParameters.isNotEmpty()
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = true)
             val body = withFunctionTarget(functionTarget) {
                 psi.bodyExpression?.let { convertBlock(it) }
             }
 
-            val anonymousFunction = buildSourceDeclaration(CfirAnonymousFunctionSymbol()) { symbol ->
+            val anonymousFunction = buildSourceDeclaration(anonymousFunctionSymbol) { symbol ->
                 buildAnonymousFunction {
                     source = psi.toCjPsiSourceElement()
                     this.symbol = symbol

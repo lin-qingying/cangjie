@@ -51,3 +51,10 @@ abstract class BodyResolveComponents : SessionAndScopeSessionHolder {
     abstract val integerLiteralAndOperatorApproximationTransformer: IntegerLiteralAndOperatorApproximationTransformer
     abstract val inlineFunction: CfirFunction?
 }
+
+/**
+ * 对齐 Kotlin `BodyResolveComponents.createCurrentScopeList()`：
+ * body resolve 内部的类型解析统一从当前 tower-data 可见 scope 线性视图取上下文。
+ */
+fun BodyResolveComponents.createCurrentScopeList(): List<CfirScope> =
+    towerDataElements.asReversed().mapNotNull { it.scope }
