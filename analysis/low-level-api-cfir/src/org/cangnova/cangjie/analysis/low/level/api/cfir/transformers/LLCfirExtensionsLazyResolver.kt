@@ -1,15 +1,14 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
-import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractTreeTransformer
-import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.extendIndexStoreOrNull
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.visitors.transformSingle
@@ -30,7 +29,12 @@ private class LLCfirExtensionsTargetResolver(
     private val transformer = LLCfirExtensionsResolveTransformer(resolveTargetSession)
 
     override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean {
-        val files = (runCatching { resolveTargetSession.cfirProvider }.getOrNull() as? CfirProviderImpl)?.getAllFiles().orEmpty()
+        val files = (resolveTargetSession as? LLCfirResolvableModuleSession)
+            ?.moduleComponents
+            ?.cache
+            ?.getAllCachedCfirFilesForResolution()
+            ?.toList()
+            .orEmpty()
         if (files.isNotEmpty()) {
             resolveTargetSession.extendIndexStoreOrNull?.rebuild(files, resolveTargetSession.typeResolver)
         }

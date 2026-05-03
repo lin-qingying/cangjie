@@ -185,6 +185,20 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
     phase: CfirResolvePhase,
     override var implicitTypeOnly: Boolean = false,
 ) : CfirAbstractBodyResolveTransformer(phase) {
+    /**
+     * 对齐 Kotlin `FirAbstractBodyResolveTransformerDispatcher.preserveCFGForClasses`。
+     * 主干 body resolve 默认保留 class CFG，low-level resolver 可覆写关闭。
+     */
+    open val preserveCFGForClasses: Boolean
+        get() = !implicitTypeOnly
+
+    /**
+     * 对齐 Kotlin `FirAbstractBodyResolveTransformerDispatcher.buildCfgForFiles`。
+     * 主干 body resolve 默认构建 file CFG，low-level resolver 可覆写关闭，
+     * 再由 LL resolver 在 designated 路径上单独计算 file CFG。
+     */
+    open val buildCfgForFiles: Boolean
+        get() = !implicitTypeOnly
 
     abstract override val context: BodyResolveContext
 

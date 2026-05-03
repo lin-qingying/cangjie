@@ -68,6 +68,10 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
             default("bodyResolveState", "CfirPropertyBodyResolveState.NOTHING_RESOLVED")
         }
 
+        builder(matchExpression) {
+            default("exhaustiveness", "CfirMatchExhaustivenessStatus.Unknown")
+        }
+
         builder(valueParameter) {
             default("status", "DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS")
             additionalImports(defaultStatusForStatuslessDeclarationsType)

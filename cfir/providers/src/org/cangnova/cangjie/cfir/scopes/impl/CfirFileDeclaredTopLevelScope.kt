@@ -3,7 +3,9 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.scopes.CfirPackageScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -21,6 +23,19 @@ import org.cangnova.cangjie.name.Name
 class CfirFileDeclaredTopLevelScope(
     private val file: CfirFile,
 ) : CfirPackageScope() {
+    /**
+     * 顶层 pattern variable 容器不直接参与名字解析；
+     * 只有其内部 binding variable 才是当前文件真正可见的顶层 callable。
+     */
+    private val topLevelPatternBindingsByName: Map<Name, List<CfirCallableSymbol<*>>> = buildMap {
+        file.declarations
+            .asSequence()
+            .filterIsInstance<CfirPatternVariable>()
+            .flatMap { declaration -> declaration.pattern.bindingVariables().asSequence() }
+            .forEach { bindingVariable ->
+                put(bindingVariable.name, get(bindingVariable.name).orEmpty() + bindingVariable.symbol)
+            }
+    }
 
     private val classifiersByName: Map<Name, List<CfirClassLikeSymbol<*>>> = buildMap {
         file.declarations
@@ -66,6 +81,10 @@ class CfirFileDeclaredTopLevelScope(
             .asSequence()
             .filterIsInstance<CfirProperty>()
             .forEach { declaration -> append(declaration.name, declaration.symbol) }
+
+        topLevelPatternBindingsByName.forEach { (name, symbols) ->
+            symbols.forEach { symbol -> append(name, symbol) }
+        }
     }
 
     override fun getCallableNames(): Set<Name> = callablesByName.keys

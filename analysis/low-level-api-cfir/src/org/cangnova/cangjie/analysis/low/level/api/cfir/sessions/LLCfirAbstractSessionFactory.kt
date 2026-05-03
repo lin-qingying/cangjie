@@ -26,6 +26,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirIdeRegisteredPluginAnnotations
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirLibrarySessionProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirSessionExtendProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLNameConflictsTracker
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.*
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedCangJieSymbolProvider
@@ -178,7 +179,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
             register(
                 CfirExtendProvider::class,
-                CfirSessionExtendProvider(this, extendIndexStore),
+                LLCfirSessionExtendProvider(this, extendIndexStore),
             )
 
             registerCompilerPluginServices(project, resolutionScope)

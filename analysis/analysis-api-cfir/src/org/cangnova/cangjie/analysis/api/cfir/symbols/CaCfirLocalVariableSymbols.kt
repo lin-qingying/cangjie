@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
+import org.cangnova.cangjie.analysis.api.cfir.getAllowedPsi
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPatternBindingSymbolPointer
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPatternVariableSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -110,7 +111,7 @@ internal class CaCfirPatternVariableSymbol private constructor(
         get() = analysisSession.useSiteModule
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsi ?: cfirSymbol.cfir.getAllowedPsi() }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -186,7 +187,7 @@ internal class CaCfirPatternBindingSymbol private constructor(
         get() = analysisSession.useSiteModule
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsi ?: cfirSymbol.cfir.getAllowedPsi() }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }

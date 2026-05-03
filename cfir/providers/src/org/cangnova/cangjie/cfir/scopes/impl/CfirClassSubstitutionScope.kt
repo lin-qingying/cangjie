@@ -265,6 +265,18 @@ class CfirClassSubstitutionScope(
     }
 
     private fun substitutionOverrideOrigin(symbol: CfirCallableSymbol<*>): CfirDeclarationOrigin {
+        val ownerExtend = session.extendProvider.getContainingExtend(symbol)
+        if (ownerExtend != null) {
+            val ownerClassId = (ownerExtend.extendedTypeRef as? CfirResolvedTypeRef)
+                ?.coneType
+                ?.classIdOrPrimitiveClassId
+            return if (ownerClassId != null && ownerClassId == dispatchReceiverType.classIdOrPrimitiveClassId) {
+                CfirDeclarationOrigin.SubstitutionOverride.CallSite
+            } else {
+                CfirDeclarationOrigin.SubstitutionOverride.DeclarationSite
+            }
+        }
+
         val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
         return if (ownerClassId != null && ownerClassId == dispatchReceiverType.classIdOrPrimitiveClassId) {
             CfirDeclarationOrigin.SubstitutionOverride.CallSite
@@ -274,17 +286,19 @@ class CfirClassSubstitutionScope(
     }
 
     private fun computeCallableSubstitutor(symbol: CfirCallableSymbol<*>): ConeSubstitutor? {
+        val ownerExtend = session.extendProvider.getContainingExtend(symbol)
+            ?.takeIf(session.extendProvider::isExtendAccessible)
+        if (ownerExtend != null) {
+            return findExtendDeclarationSubstitutor(ownerExtend)
+        }
+
         val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
         if (ownerClassId != null) {
             val concreteOwnerType = concreteTypeForOwner(ownerClassId) ?: return null
             val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir ?: return null
             return createClassLikeDeclarationSubstitutor(ownerDeclaration, concreteOwnerType)
         }
-
-        val ownerExtend = session.extendProvider.getContainingExtend(symbol)
-            ?.takeIf(session.extendProvider::isExtendAccessible)
-            ?: return null
-        return findExtendDeclarationSubstitutor(ownerExtend)
+        return null
     }
 
     private fun concreteTypeForOwner(ownerClassId: ClassId): ConeCangJieType? {

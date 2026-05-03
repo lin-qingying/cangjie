@@ -37,22 +37,19 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.cases.restrictedAnalysis
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractSymbolPointerRestoreTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.symbols.AbstractSymbolByReferenceTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.types.AbstractTypePointerConsistencyTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 
 fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     component("scopeProvider") {
-        test<AbstractFileScopeTest> { model(it, "fileScope", pattern = exactStemPattern("fileScopeQueries", it)) }
-        test<AbstractPackageScopeTest> { model(it, "packageScope", pattern = exactStemPattern("packageScopeQueries", it)) }
-        test<AbstractMemberScopeTest> { model(it, "memberScope", pattern = exactStemPattern("memberScopeQueries", it)) }
-        test<AbstractTypeScopeTest> { model(it, "typeScope", pattern = exactStemPattern("typeScopeQueries", it)) }
+        test<AbstractFileScopeTest> { model(it, "fileScope") }
+        test<AbstractPackageScopeTest> { model(it, "packageScope") }
+        test<AbstractMemberScopeTest> { model(it, "memberScope") }
+        test<AbstractTypeScopeTest> { model(it, "typeScope") }
     }
 
     component("resolver") {
-        group("singleByPsi") {
-            test<AbstractResolveSymbolTest> { model(it, "", pattern = exactStemPattern("resolveSymbol", it)) }
-            test<AbstractResolveCallTest> { model(it, "", pattern = exactStemPattern("memberCallInfo", it)) }
-        }
+        test<AbstractResolveSymbolTest> { model(it, "singleByPsi") }
+        test<AbstractResolveCallTest> { model(it, "singleByPsi") }
     }
 
     component("containingDeclarationProvider") {
@@ -77,8 +74,8 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     }
 
     component("expressionTypeProvider") {
-        test<AbstractExpressionTypeTest> { model(it, "expressionType", pattern = exactStemPattern("expressionType", it)) }
-        test<AbstractDeclarationReturnTypeTest> { model(it, "declarationReturnType", pattern = exactStemPattern("declarationReturnType", it)) }
+        test<AbstractExpressionTypeTest> { model(it, "expressionType") }
+        test<AbstractDeclarationReturnTypeTest> { model(it, "declarationReturnType") }
     }
 
     component("expressionInfoProvider") {
@@ -95,7 +92,7 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     }
 
     component("symbolProvider") {
-        test<AbstractTopLevelSymbolProviderTest> { model(it, "topLevelLookup", pattern = exactStemPattern("topLevelLookup", it)) }
+        test<AbstractTopLevelSymbolProviderTest> { model(it, "topLevelLookup") }
     }
 
     group("symbols") {
@@ -103,7 +100,7 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     }
 
     component("renderer") {
-        test<AbstractRendererTest> { model(it, "basicRendering", pattern = exactStemPattern("basicRendering", it)) }
+        test<AbstractRendererTest> { model(it, "basicRendering") }
     }
 
     component("symbolDeclarationRenderer") {
@@ -111,14 +108,14 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     }
 
     component("imports") {
-        test<AbstractDefaultImportsTest> { model(it, "defaultImports", pattern = exactStemPattern("defaultImports", it)) }
-        test<AbstractImportOptimizationPlanTest> { model(it, "importOptimization", pattern = exactStemPattern("importOptimization", it)) }
+        test<AbstractDefaultImportsTest> { model(it, "defaultImports") }
+        test<AbstractImportOptimizationPlanTest> { model(it, "importOptimization") }
     }
 
     component("references") {
-        test<AbstractReferenceShorteningPlanTest> { model(it, "referenceShortening", pattern = exactStemPattern("referenceShortening", it)) }
-        test<AbstractReferenceShortenerTest> { model(it, "shortenRange", pattern = exactStemPattern("shortenRange", it)) }
-        test<AbstractReferenceShortenerForWholeFileTest> { model(it, "shortenWholeFile", pattern = exactStemPattern("shortenWholeFile", it)) }
+        test<AbstractReferenceShorteningPlanTest> { model(it, "referenceShortening") }
+        test<AbstractReferenceShortenerTest> { model(it, "shortenRange") }
+        test<AbstractReferenceShortenerForWholeFileTest> { model(it, "shortenWholeFile") }
     }
 
     group("imports") {
@@ -130,7 +127,7 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     }
 
     component("docProvider") {
-        test<AbstractCDocProviderTest> { model(it, "cdoc", pattern = exactStemPattern("cdoc", it)) }
+        test<AbstractCDocProviderTest> { model(it, "cdoc") }
     }
 
     group("usages") {
@@ -138,45 +135,40 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     }
 
     component("substitutors") {
-        test<AbstractSignatureSubstitutionTest> { model(it, "signatureSubstitution", pattern = exactStemPattern("signatureSubstitution", it)) }
+        test<AbstractSignatureSubstitutionTest> { model(it, "signatureSubstitution") }
     }
 
     group("types/typePointers") {
-        test<AbstractTypePointerConsistencyTest> { model(it, "consistency", pattern = exactStemPattern("typePointerRestoration", it)) }
+        test<AbstractTypePointerConsistencyTest> { model(it, "consistency") }
     }
 
     group("sessions") {
-        test<AbstractSymbolPointerRestoreTest> { model(it, "symbolPointers", pattern = exactStemPattern("symbolPointerRestore", it)) }
+        test<AbstractSymbolPointerRestoreTest> { model(it, "symbolPointers") }
     }
 
     group("restrictedAnalysis") {
-        test<AbstractRestrictedAnalysisRejectionTest> { model(it, "restriction", pattern = exactStemPattern("restrictedAnalysisRejection", it)) }
-        test<AbstractRestrictedAnalysisExceptionWrappingTest> { model(it, "exceptionWrapping", pattern = exactStemPattern("restrictedAnalysisException", it)) }
+        test<AbstractRestrictedAnalysisRejectionTest> { model(it, "restriction") }
+        test<AbstractRestrictedAnalysisExceptionWrappingTest> { model(it, "exceptionWrapping") }
     }
 
     group("projectStructure/moduleKinds") {
         test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.CodeFragment)) {
-            model(it, "codeFragment", pattern = exactStemPattern("codeFragment", it))
+            model(it, "codeFragment")
         }
         test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.NotUnderContentRoot)) {
-            model(it, "notUnderContentRoot", pattern = exactStemPattern("notUnderContentRoot", it))
+            model(it, "notUnderContentRoot")
         }
         test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.LibrarySource)) {
-            model(it, "librarySource", pattern = exactStemPattern("librarySource", it))
+            model(it, "librarySource")
         }
         test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.LibraryBinary)) {
-            model(it, "libraryBinary", pattern = exactStemPattern("libraryBinary", it))
+            model(it, "libraryBinary")
         }
         test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.Builtins)) {
-            model(it, "builtins", pattern = exactStemPattern("builtins", it))
+            model(it, "builtins")
         }
         test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.LibraryFallbackDependencies)) {
-            model(it, "libraryFallbackDependencies", pattern = exactStemPattern("libraryFallbackDependencies", it))
+            model(it, "libraryFallbackDependencies")
         }
     }
 }
-
-private fun exactStemPattern(fileStem: String, data: AnalysisApiTestConfiguratorFactoryData): String =
-    "^$fileStem\\.${data.defaultTestFileExtension()}$"
-
-private fun AnalysisApiTestConfiguratorFactoryData.defaultTestFileExtension(): String = "cj"

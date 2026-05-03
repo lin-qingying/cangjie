@@ -81,14 +81,14 @@ open class CfirDeclarationsResolveTransformer(
      * 包装 file 级别的 scope / DFA 生命周期。对齐 K2 `CfirDeclarationsResolveTransformer.withFile`：
      * 进入 `context.withFile`、装配 imports、开启 file CFG，最后把 CFG 写回 file。
      */
-    protected open fun withFile(file: CfirFile, action: () -> CfirFile): CfirFile {
+    open fun withFile(file: CfirFile, action: () -> CfirFile): CfirFile {
         val savedContext = context.towerDataContext
         try {
             return context.withFile(file) {
                 val importScopes = createImportingScopes(file)
                 context.addNonLocalScopes(importScopes)
 
-                dataFlowAnalyzer.enterFile(file, buildGraph = true)
+                dataFlowAnalyzer.enterFile(file, buildGraph = transformer.buildCfgForFiles)
                 val result = action()
                 dataFlowAnalyzer.exitFile()?.let { graph ->
                     file.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
@@ -167,8 +167,8 @@ open class CfirDeclarationsResolveTransformer(
     /**
      * 进入 class body 的 DFA 区间；exit 后把 CFG 写回 class。对齐 K2 `forRegularClassBody`。
      */
-    protected open fun forClassBody(klass: CfirClass, action: () -> Unit) {
-        dataFlowAnalyzer.enterClass(klass, buildGraph = true)
+    open fun forClassBody(klass: CfirClass, action: () -> Unit) {
+        dataFlowAnalyzer.enterClass(klass, buildGraph = transformer.preserveCFGForClasses)
         context.withContainingClass(klass) {
             action()
         }

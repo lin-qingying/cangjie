@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.CjPsiDiagnostic
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -22,12 +23,39 @@ import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.psi.psiUtil.getParentOfTypes2
+import org.cangnova.cangjie.source.CjFakePsiSourceElement
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjRealPsiSourceElement
+import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
 
 internal fun CjPsiDiagnostic.asCaDiagnostic(analysisSession: CaCfirSession): CaDiagnosticWithPsi<*> {
     return CJ_DIAGNOSTIC_CONVERTER.convert(analysisSession, this as CjDiagnostic)
 }
+
+private val allowedFakeElementKinds = setOf(
+    CjFakeSourceElementKind.FromUseSiteTarget,
+    CjFakeSourceElementKind.PropertyFromParameter,
+    CjFakeSourceElementKind.ItLambdaParameter,
+    CjFakeSourceElementKind.EnumGeneratedDeclaration,
+    CjFakeSourceElementKind.DataClassGeneratedMembers,
+    CjFakeSourceElementKind.ImplicitConstructor,
+    CjFakeSourceElementKind.ImplicitJavaAnnotationConstructor,
+    CjFakeSourceElementKind.SamConstructor,
+    CjFakeSourceElementKind.JavaRecordComponentFunction,
+    CjFakeSourceElementKind.PatternBindingVariable,
+)
+
+@OptIn(SuspiciousFakeSourceCheck::class)
+internal fun CfirElement.getAllowedPsi(): PsiElement? = when (val source = source) {
+    null -> null
+    is CjRealPsiSourceElement -> source.psi
+    is CjFakePsiSourceElement -> if (source.kind in allowedFakeElementKinds) psi else null
+    else -> null
+}
+
+internal fun CfirElement.findPsi(): PsiElement? = getAllowedPsi()
 
 /**
  * 直接从 PSI 修饰符读取声明可见性。
@@ -137,7 +165,7 @@ fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope): PsiElement? {
         cfir
     }
 
-    return declaration.realPsi?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
+    return declaration.findPsi()?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
 }
 
 

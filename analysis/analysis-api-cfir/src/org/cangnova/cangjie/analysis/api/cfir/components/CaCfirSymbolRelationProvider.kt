@@ -31,6 +31,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
+import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
@@ -40,12 +42,12 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclaration
@@ -372,7 +374,6 @@ internal class CaCfirSymbolRelationProvider(
     private fun CaCfirSession.collectDirectlyOverriddenCallableSymbols(
         backingSymbol: org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>,
     ): List<org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol<*>> {
-        backingSymbol.lazyResolveToPhase(CfirResolvePhase.EXTENSIONS)
         val memberScope = overrideOwnerScope(backingSymbol)
             ?: return emptyList()
         memberScope.processCallableByName(backingSymbol.cfir)
@@ -413,7 +414,7 @@ internal class CaCfirSymbolRelationProvider(
             cfirSession,
             getScopeSessionFor(cfirSession),
             withForcedTypeCalculator = false,
-            memberRequiredPhase = null,
+            memberRequiredPhase = CfirResolvePhase.STATUS,
         )
     }
 
@@ -426,7 +427,17 @@ internal class CaCfirSymbolRelationProvider(
     private fun CaCfirSession.targetUseSiteMemberScope(
         extend: CfirExtend,
     ): CfirTypeScope? {
-        val extendedType = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return null
+        val extendedType = extend.extendedTypeRef.coneTypeOrNull
+            ?: cfirSession.typeResolver.resolveType(
+                typeRef = extend.extendedTypeRef,
+                configuration = CfirTypeResolutionConfiguration.EMPTY
+                    .withTopContainer(extend)
+                    .withAdditionalTypeParameters(extend.typeParameters),
+                areBareTypesAllowed = false,
+                isOperandOfIsOperator = false,
+                resolveDeprecations = false,
+                supertypeSupplier = SupertypeSupplier.Default,
+            ).type
         val targetClassId = extendedType.classIdOrPrimitiveClassId ?: return null
         val targetSymbol = cfirSession.symbolProvider.getClassLikeSymbolByClassId(targetClassId) ?: return null
         val rawScope = CfirClassUseSiteMemberScope(

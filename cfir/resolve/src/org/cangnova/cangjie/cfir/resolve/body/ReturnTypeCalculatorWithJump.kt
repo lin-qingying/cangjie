@@ -1,43 +1,45 @@
-﻿package org.cangnova.cangjie.cfir.resolve.body
+package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
-import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
+import org.cangnova.cangjie.cfir.containingClassLookupTag
+import org.cangnova.cangjie.cfir.isCopyCreatedInScope
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.getContainingClassSymbol
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
-import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
-import org.cangnova.cangjie.cfir.scopes.deferredCallableCopyReturnType
+import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculatorForFullBodyResolve
+import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
+import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
  * 带 designated resolve“跳转”能力的返回类型计算器。
- * 它服务于 IMPLICIT_TYPES 阶段：当目标声明尚未算出返回类型时，
- * 会临时跳到该声明执行 designated resolve，再读取其返回类型。
- * 通过 [implicitBodyResolveComputationSession] 的状态机避免递归依赖。
- * 参考 K2 `ReturnTypeCalculatorWithJump`。
+ *
+ * 对齐 Kotlin K2 `ReturnTypeCalculatorWithJump`：普通隐式返回类型通过 designated body resolve
+ * 按需推进；callable copy 的延迟返回类型通过 [CallableCopyTypeCalculator] 委托回同一条计算路径。
  */
-class ReturnTypeCalculatorWithJump(
-    private val session: CfirSession,
-    private val scopeSession: ScopeSession,
-    private val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
+open class ReturnTypeCalculatorWithJump(
+    protected val session: CfirSession,
+    protected val scopeSession: ScopeSession,
+    protected val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
 ) : ReturnTypeCalculator() {
     override val callableCopyTypeCalculator: CallableCopyTypeCalculator = CallableCopyTypeCalculatorWithJump()
 
-    override fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef? {
+    override fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
         if (declaration.isLocal) {
             return ReturnTypeCalculatorForFullBodyResolve.Default.tryCalculateReturnType(declaration)
         }
@@ -53,97 +55,91 @@ class ReturnTypeCalculatorWithJump(
             )
         }
 
-        // 1. 已有显式解析类型，直接返回
-        val typeRef = extractReturnTypeRef(declaration)
-        if (typeRef is CfirResolvedTypeRef) {
-            return typeRef
+        val returnTypeRef = declaration.returnTypeRef
+        if (returnTypeRef is CfirResolvedTypeRef) return returnTypeRef
+
+        if (declaration.canHaveDeferredReturnTypeCalculation) {
+            val resolvedTypeRef = callableCopyTypeCalculator.computeReturnType(declaration)
+            requireWithAttachment(
+                resolvedTypeRef is CfirResolvedTypeRef,
+                { "Unexpected return type: ${resolvedTypeRef?.let { it::class.simpleName }}" },
+            ) {
+                withCfirEntry("declaration", declaration)
+            }
+
+            return resolvedTypeRef
         }
 
-        declaration.attributes.deferredCallableCopyReturnType?.let {
-            (callableCopyTypeCalculator.computeReturnType(declaration) as? CfirResolvedTypeRef)?.let { resolvedTypeRef ->
-                return resolvedTypeRef
-            }
-        }
-
-        // 2. 不是隐式类型，无法继续推断
-        if (typeRef !is CfirImplicitTypeRef) {
-            return null
-        }
-
-        // 3. 需要推断，先检查当前计算状态
-        val symbol = extractSymbol(declaration) ?: return null
-        return when (val status = implicitBodyResolveComputationSession.getStatus(symbol)) {
-            is CfirImplicitBodyResolveComputationStatus.Computed -> {
-                extractResolvedTypeRef(status.transformedDeclaration)
-                    ?: resolvedTypeRefFromType(typeRef, status.resolvedType)
-            }
-            is CfirImplicitBodyResolveComputationStatus.Computing -> {
-                // 递归依赖时返回错误类型
-                resolvedTypeRefFromType(typeRef, ConeErrorType(ConeSimpleDiagnostic("recursive implicit type")))
-            }
-            is CfirImplicitBodyResolveComputationStatus.NotComputed -> {
-                // 瑙﹀彂 designated resolve
-                resolveDesignated(declaration)
-            }
-        }
+        return computeReturnTypeRef(declaration)
     }
 
-    /** 触发 designated resolve，并计算目标声明的返回类型。 */
-    private fun resolveDesignated(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
-        val typeRef = extractReturnTypeRef(declaration)
-        val symbol = extractSymbol(declaration)
-            ?: return resolvedTypeRefFromType(typeRef, ConeErrorType(ConeSimpleDiagnostic("no symbol for declaration")))
+    protected fun recursionInImplicitTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef =
+        buildErrorTypeRef {
+            diagnostic = ConeSimpleDiagnostic("Recursive implicit type", DiagnosticKind.RecursionInImplicitTypes)
+        }.also {
+            implicitBodyResolveComputationSession.calculateAndStoreNonTrivialLoop(declaration.symbol)
+        }
 
-        val result = implicitBodyResolveComputationSession.compute(symbol) {
-            // 鍒涘缓 designated transformer 瑙ｆ瀽姝ゅ０鏄?
-            val designatedTransformer = CfirDesignatedBodyResolveTransformer(
-                designation = declaration,
-                session = session,
-                scopeSession = scopeSession,
-                implicitBodyResolveComputationSession = implicitBodyResolveComputationSession,
-                returnTypeCalculator = this,
-            )
-            // 找到声明所在文件并执行转换
-            val file = findContainingFile(declaration)
-            if (file != null) {
-                designatedTransformer.transformFile(
-                    file,
-                    ResolutionMode.ContextIndependent,
+    private fun computeReturnTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
+        val symbol = declaration.symbol
+        val computedReturnType = when (val status = implicitBodyResolveComputationSession.getStatus(symbol)) {
+            is CfirImplicitBodyResolveComputationStatus.Computed -> status.resolvedTypeRef
+            is CfirImplicitBodyResolveComputationStatus.Computing -> recursionInImplicitTypeRef(declaration)
+            is CfirImplicitBodyResolveComputationStatus.NotComputed -> null
+        }
+
+        (computedReturnType ?: declaration.returnTypeRef as? CfirResolvedTypeRef)?.let { return it }
+        require(!declaration.isCopyCreatedInScope) {
+            "callableCopySubstitution was not calculated for callable copy: " +
+                    "$symbol with origin ${declaration.origin} and return type ${declaration.returnTypeRef}"
+        }
+
+        resolveDeclaration(declaration)
+        return declaration.returnTypeRef as? CfirResolvedTypeRef
+            ?: errorWithAttachment("${this::class.simpleName}: Return type cannot be calculated for ${declaration::class.simpleName}") {
+                withCfirEntry("declaration", declaration)
+            }
+    }
+
+    protected open fun resolveDeclaration(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
+        val file = session.cfirProvider.getContainingFile(declaration.symbol)
+        val containingClassLookupTag = declaration.symbol.containingClassLookupTag()
+        val outerClasses = generateSequence(containingClassLookupTag) { lookupTag ->
+            lookupTag.toSymbol(session)?.getContainingClassSymbol()?.toLookupTag()
+        }.mapTo(mutableListOf()) { lookupTag ->
+            lookupTag.toSymbol(session)?.cfir as? CfirClassLikeDeclaration
+        }
+
+        if (file == null || outerClasses.any { it == null }) {
+            return buildErrorTypeRef {
+                diagnostic = ConeSimpleDiagnostic(
+                    "Cannot calculate return type (local class/object?)",
+                    DiagnosticKind.InferenceError,
                 )
             }
-            // 返回转换后的声明
-            declaration
         }
-        return extractResolvedTypeRef(result)
-            ?: resolvedTypeRefFromType(typeRef, ConeErrorType(ConeSimpleDiagnostic("failed to resolve implicit type")))
-    }
 
-    private fun extractReturnTypeRef(declaration: CfirCallableDeclaration): CfirTypeRef = declaration.returnTypeRef
+        val designation = listOf(file) + outerClasses.filterNotNull().asReversed()
+        val transformer = CfirDesignatedBodyResolveTransformerForReturnTypeCalculator(
+            designation = (designation.drop(1) + declaration).iterator(),
+            session = session,
+            scopeSession = scopeSession,
+            implicitBodyResolveComputationSession = implicitBodyResolveComputationSession,
+            returnTypeCalculator = this,
+        )
 
-    private fun extractSymbol(declaration: CfirCallableDeclaration) =
-        declaration.symbol
+        designation.first().transform<CfirElement, ResolutionMode>(transformer, ResolutionMode.ContextDependent)
 
-    private fun extractResolvedTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef? {
-        val typeRef = extractReturnTypeRef(declaration)
-        return typeRef as? CfirResolvedTypeRef
-    }
+        val transformedDeclaration = transformer.lastResult as? CfirCallableDeclaration
+            ?: error("Unexpected lastResult: ${transformer.lastResult}")
 
-    private fun computeReturnTypeRef(declaration: CfirCallableDeclaration): CfirResolvedTypeRef? {
-        return extractResolvedTypeRef(declaration) ?: resolveDesignated(declaration)
-    }
-
-    private fun resolvedTypeRefFromType(prototype: CfirTypeRef?, type: ConeCangJieType): CfirResolvedTypeRef {
-        return prototype?.resolvedTypeFromPrototype(type, prototype.source)
-            ?: type.toCfirResolvedTypeRef()
-    }
-
-    /** 查找声明所在文件。 */
-    private fun findContainingFile(declaration: CfirCallableDeclaration): CfirFile? {
-        return session.cfirProvider.getContainingFile(declaration.symbol)
+        val newReturnTypeRef = transformedDeclaration.returnTypeRef
+        require(newReturnTypeRef is CfirResolvedTypeRef) { transformedDeclaration }
+        return newReturnTypeRef
     }
 
     private inner class CallableCopyTypeCalculatorWithJump : CallableCopyTypeCalculator.DeferredCallableCopyTypeCalculator() {
-        override fun CfirCallableDeclaration.getResolvedTypeRef(): CfirResolvedTypeRef? {
+        override fun CfirCallableDeclaration.getResolvedTypeRef(): CfirResolvedTypeRef {
             return this@ReturnTypeCalculatorWithJump.computeReturnTypeRef(this)
         }
     }

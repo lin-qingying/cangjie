@@ -536,6 +536,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
 
         override val declarationsTransformer: CfirDeclarationsResolveTransformer =
             CfirPartialBodyDeclarationResolveTransformer(this)
+
+        override val preserveCFGForClasses: Boolean get() = false
+        override val buildCfgForFiles: Boolean get() = false
     }
 
     /**

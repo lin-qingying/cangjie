@@ -3,7 +3,8 @@
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
 /**
  * 隐式返回类型推断的计算状态。
@@ -18,7 +19,7 @@ sealed class CfirImplicitBodyResolveComputationStatus {
 
     /** 已完成计算，并缓存解析后的类型与声明。 */
     class Computed(
-        val resolvedType: ConeCangJieType,
+        val resolvedTypeRef: CfirResolvedTypeRef,
         val transformedDeclaration: CfirCallableDeclaration,
     ) : CfirImplicitBodyResolveComputationStatus()
 }
@@ -33,6 +34,9 @@ class CfirImplicitBodyResolveComputationSession {
 
     /** 当前正在计算的符号栈，用于调试和错误报告。 */
     private val computingSymbolsStack = mutableListOf<CfirCallableSymbol<*>>()
+
+    /** 参与非平凡递归环的符号集合。 */
+    private val nonTrivialLoops = mutableSetOf<CfirCallableSymbol<*>>()
 
     /** 查询符号当前的计算状态。 */
     fun getStatus(symbol: CfirCallableSymbol<*>): CfirImplicitBodyResolveComputationStatus {
@@ -49,20 +53,71 @@ class CfirImplicitBodyResolveComputationSession {
         symbol: CfirCallableSymbol<*>,
         transformation: () -> D,
     ): D {
+        requireWithAttachment(statusMap[symbol] == null, { "Unexpected state in startComputing for $symbol: ${statusMap[symbol]}" })
         statusMap[symbol] = CfirImplicitBodyResolveComputationStatus.Computing
         computingSymbolsStack.add(symbol)
-        return try {
-            val result = transformation()
-            val resolvedType = extractResolvedType(result)
-            statusMap[symbol] = CfirImplicitBodyResolveComputationStatus.Computed(resolvedType, result)
-            result
-        } finally {
-            computingSymbolsStack.removeLastOrNull()
+
+        val result = transformation()
+        storeResult(symbol, result)
+        return result
+    }
+
+    private fun storeResult(
+        symbol: CfirCallableSymbol<*>,
+        transformedDeclaration: CfirCallableDeclaration,
+    ) {
+        requireWithAttachment(
+            statusMap[symbol] == CfirImplicitBodyResolveComputationStatus.Computing,
+            { "Unexpected state in storeResult for $symbol: ${statusMap[symbol]}" },
+        )
+
+        val returnTypeRef = transformedDeclaration.returnTypeRef
+        requireWithAttachment(returnTypeRef is CfirResolvedTypeRef, {
+            "Not CfirResolvedTypeRef (${transformedDeclaration.returnTypeRef}) in storeResult for: ${symbol.cfir}"
+        })
+
+        computingSymbolsStack.removeLast()
+        statusMap[symbol] = CfirImplicitBodyResolveComputationStatus.Computed(returnTypeRef, transformedDeclaration)
+    }
+
+    /**
+     * 计算并保存声明形成的非平凡递归环。
+     */
+    fun calculateAndStoreNonTrivialLoop(symbol: CfirCallableSymbol<*>) {
+        val loopTail = computingSymbolsStack.takeLastWhile { it != symbol }.takeIf { it.isNotEmpty() } ?: return
+
+        nonTrivialLoops += symbol
+        nonTrivialLoops += loopTail
+    }
+
+    /**
+     * 返回符号是否属于长度大于 1 的递归环。
+     */
+    fun belongToSomeNonTrivialLoop(symbol: CfirCallableSymbol<*>): Boolean {
+        return symbol in nonTrivialLoops
+    }
+
+    private var cycledSymbol: CfirCallableSymbol<*>? = null
+
+    /**
+     * 记录 jumping resolve 检测到递归时对应的符号。
+     */
+    fun pushCycledSymbol(symbol: CfirCallableSymbol<*>) {
+        requireWithAttachment(cycledSymbol == null, { "Nested recursion is not allowed" })
+        cycledSymbol = symbol
+    }
+
+    /**
+     * 取出并清空 jumping resolve 检测到的递归符号。
+     */
+    fun popCycledSymbolIfExists(): CfirCallableSymbol<*>? {
+        return cycledSymbol?.also {
+            cycledSymbol = null
         }
     }
 
     /** 从变换后的声明中提取已解析的返回类型。 */
-    private fun extractResolvedType(declaration: CfirCallableDeclaration): ConeCangJieType {
+    private fun extractResolvedType(declaration: CfirCallableDeclaration): org.cangnova.cangjie.cfir.types.ConeCangJieType {
         val typeRef = when (declaration) {
             is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.returnTypeRef
             is org.cangnova.cangjie.cfir.declarations.CfirProperty -> declaration.returnTypeRef

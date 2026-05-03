@@ -20,6 +20,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
@@ -178,8 +179,7 @@ fun main(args: Array<String>) {
                 alias<CfirDeclaration>("BasicDeclarationChecker")
                 alias<CfirMemberDeclaration>("MemberDeclarationChecker", false)
                 alias<CfirCallableDeclaration>("CallableDeclarationChecker", false).let {
-
-
+                    visitAlso<CfirPatternBindingVariable>(it)
                 }
                 alias<CfirFunction>("FunctionChecker", false).let {
                     visitAlso<CfirMacroDeclaration>(it)
