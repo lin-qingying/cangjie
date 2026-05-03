@@ -3,15 +3,19 @@ package org.cangnova.cangjie.cfir.resolve.services
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
@@ -111,7 +115,7 @@ class CfirTypeAwareSupertypeProviderImpl(
         extend: CfirExtend,
         concreteType: ConeCangJieType,
     ): List<ConeCangJieType> {
-        val targetPattern = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return emptyList()
+        val targetPattern = resolveExtendTypeRef(extend, extend.extendedTypeRef) ?: return emptyList()
         val substitutions = linkedMapOf<String, ConeCangJieType>()
         val extendTypeParameterNames = extend.typeParameters.mapTo(linkedSetOf()) { it.name.asString() }
 
@@ -124,9 +128,33 @@ class CfirTypeAwareSupertypeProviderImpl(
 
         val substitutor = substitutions.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap)
         return extend.superTypeRefs.mapNotNull { superTypeRef ->
-            val coneType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
+            val coneType = resolveExtendTypeRef(extend, superTypeRef) ?: return@mapNotNull null
             substitutor?.substituteOrSelf(coneType) ?: coneType
         }
+    }
+
+    /**
+     * LL source session 可能在 EXTENSIONS 阶段原地替换 extend typeRef 之前查询类型感知父类型。
+     *
+     * provider 层消费的仍然是同一份 extend 语义，因此未解析的 extend typeRef 要通过当前
+     * session 的 typeResolver，并以 extend 声明作为 top container 解析。
+     */
+    private fun resolveExtendTypeRef(
+        extend: CfirExtend,
+        typeRef: CfirTypeRef,
+    ): ConeCangJieType? {
+        if (typeRef is CfirResolvedTypeRef) return typeRef.coneType
+
+        return session.typeResolver.resolveType(
+            typeRef = typeRef,
+            configuration = CfirTypeResolutionConfiguration.EMPTY
+                .withTopContainer(extend)
+                .withAdditionalTypeParameters(extend.typeParameters),
+            areBareTypesAllowed = false,
+            isOperandOfIsOperator = false,
+            resolveDeprecations = false,
+            supertypeSupplier = SupertypeSupplier.Default,
+        ).type
     }
 
     /**

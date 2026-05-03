@@ -48,7 +48,7 @@ internal object LLCfirImplicitTypesLazyResolver : LLCfirLazyResolver(CfirResolve
  */
 internal typealias LLImplicitBodyResolveComputationSession = CfirImplicitBodyResolveComputationSession
 
-private class LLCfirImplicitBodyTargetResolver(
+internal class LLCfirImplicitBodyTargetResolver(
     target: LLCfirResolveTarget,
     llImplicitBodyResolveComputationSessionParameter: LLImplicitBodyResolveComputationSession? = null,
 ) : LLCfirAbstractBodyTargetResolver(
@@ -57,14 +57,29 @@ private class LLCfirImplicitBodyTargetResolver(
     llImplicitBodyResolveComputationSession =
         llImplicitBodyResolveComputationSessionParameter ?: LLImplicitBodyResolveComputationSession(),
 ) {
-    override val transformer = CfirImplicitAwareBodyResolveTransformer(
+    override val transformer = object : CfirImplicitAwareBodyResolveTransformer(
         session = resolveTargetSession,
         scopeSession = resolveTargetScopeSession,
         implicitBodyResolveComputationSession = llImplicitBodyResolveComputationSession,
         phase = resolverPhase,
         implicitTypeOnly = true,
         returnTypeCalculator = createReturnTypeCalculator(),
-    )
+    ) {
+        override val preserveCFGForClasses: Boolean get() = false
+        override val buildCfgForFiles: Boolean get() = false
+    }
+
+    /**
+     * 与 [LLCfirReturnTypeCalculatorWithJump.resolveDeclaration] 保持同步：
+     * jumping resolve 检测到递归时先记录符号，随后由返回类型计算器统一产出递归错误类型。
+     */
+    override fun handleCycleInResolution(target: CfirElementWithResolveState) {
+        requireWithAttachment(target is CfirCallableDeclaration, { "Resolution cycle is supposed to be only for callable declaration" }) {
+            withCfirEntry("target", target)
+        }
+
+        llImplicitBodyResolveComputationSession.pushCycledSymbol(target.symbol)
+    }
 
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {

@@ -6,12 +6,10 @@ import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.impl.base.references.CaBaseSimpleNameReference
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjConstructorCalleeExpression
 import org.cangnova.cangjie.psi.CjImportAlias
@@ -51,9 +49,7 @@ internal class CaCfirSimpleNameReference(
     }
 
     override fun CaCfirSession.computeSymbols(): Collection<CaSymbol> {
-        val qualifiedAccess = expression.getOrBuildCfir(resolutionFacade) as? CfirQualifiedAccessExpression ?: return emptyList()
-        val reference = qualifiedAccess.calleeReference as? CfirResolvedNamedReference ?: return emptyList()
-        val results = listOf(cfirSymbolBuilder.buildSymbol(reference.resolvedSymbol))
+        val results = CfirReferenceResolveHelper.resolveSimpleNameReference(this@CaCfirSimpleNameReference, this)
         //This fix-up needed to resolve annotation call into annotation constructor (but not into the annotation type)
         return fixUpAnnotationCallResolveToCtor(results)
     }

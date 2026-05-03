@@ -97,6 +97,10 @@ class DeclarationCheckersDiagnosticComponent(
         checkers.allInvalidDeclarationCheckers.check(invalidDeclaration, data)
     }
 
+    override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(patternBindingVariable, data)
+    }
+
     override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: CheckerContext) {
         checkers.allFunctionCheckers.check(macroDeclaration, data)
     }

@@ -79,6 +79,7 @@
       <module name="cangjie.analysis.decompiled.decompiler-to-psi" options="-proc:none" />
       <module name="cangjie.analysis.decompiled.decompiler-to-psi.main" options="-proc:none" />
       <module name="cangjie.analysis.decompiled.decompiler-to-psi.test" options="-proc:none" />
+      <module name="cangjie.analysis.decompiled.decompiler-to-psi.testFixtures" options="-proc:none" />
       <module name="cangjie.analysis.decompiled.decompiler-to-stubs" options="-proc:none" />
       <module name="cangjie.analysis.decompiled.decompiler-to-stubs.main" options="-proc:none" />
       <module name="cangjie.analysis.decompiled.decompiler-to-stubs.test" options="-proc:none" />

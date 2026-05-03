@@ -121,6 +121,7 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
 ): CfirDeclaration? {
     val candidate = when (this) {
         is CjTypeStatement,
+        is CjPatternVariable,
         is CjProperty,
         is CjNamedFunction,
         is CjMainFunction,

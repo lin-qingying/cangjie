@@ -29,7 +29,7 @@ class TestAllFilesPresentMethodModel(val classModel: SimpleTestClassModel) : Met
                 }
                 val excludePattern = classModel.excludePattern
                 p.print(
-                    "KtTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File(\"",
+                    "CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File(\"",
                     classModel.rootFile.getFilePath(),
                     "\"), Pattern.compile(\"",
                     StringUtil.escapeStringCharacters(classModel.filenamePattern.pattern()),

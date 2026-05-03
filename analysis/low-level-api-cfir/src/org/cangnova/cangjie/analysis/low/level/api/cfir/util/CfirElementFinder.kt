@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.patchDesignationPathIfNeeded
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirSession
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -292,6 +293,8 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
     }
 
     companion object {
+        private val PATTERN_VARIABLE_MAPPING_NAME = Name.special("<pattern-variable>")
+
         fun build(element: CfirDeclaration): CfirFileStructureNode = when (element) {
             is CfirFile -> Container(
                 element = element,
@@ -317,11 +320,21 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
         private fun convertDeclarations(
             declarations: List<CfirDeclaration>,
             destination: LinkedHashMap<Name, MutableList<CfirFileStructureNode>> = linkedMapOf(),
-        ): Map<Name, List<CfirFileStructureNode>> = declarations.groupByTo(
-            destination,
-            keySelector = ::mappingName,
-            valueTransform = ::build,
-        )
+        ): Map<Name, List<CfirFileStructureNode>> {
+            fun append(declaration: CfirDeclaration) {
+                destination.getOrPut(mappingName(declaration), ::mutableListOf).add(build(declaration))
+            }
+
+            declarations.forEach { declaration ->
+                append(declaration)
+
+                if (declaration is CfirPatternVariable && !declaration.isLocal) {
+                    declaration.pattern.bindingVariables().forEach(::append)
+                }
+            }
+
+            return destination
+        }
 
         /**
          * @see mappingNameByPsi
@@ -345,6 +358,8 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             is CfirFinalizer -> declaration.symbol.name
             is CfirProperty -> declaration.name
             is CfirFieldVariable -> declaration.symbol.name
+            is CfirPatternVariable -> PATTERN_VARIABLE_MAPPING_NAME
+            is CfirPatternBindingVariable -> declaration.name
             is CfirConstructor -> SpecialNames.INIT
             is CfirEnumConstructor -> declaration.name
             is CfirTypeAlias -> declaration.name
@@ -355,7 +370,6 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             is CfirPropertyAccessor,
             is CfirTypeParameter,
             is CfirPatternVariable,
-            is CfirPatternBindingVariable,
                 -> errorWithCfirSpecificEntries("Unexpected declaration ${declaration::class.simpleName}", cfir = declaration)
 
             else -> errorWithCfirSpecificEntries("Unexpected declaration ${declaration::class.simpleName}", cfir = declaration)
@@ -372,6 +386,7 @@ private sealed class CfirFileStructureNode(val element: CfirDeclaration) {
             is CjConstructor<*> -> SpecialNames.INIT
             is CjCodeFragment -> SpecialNames.NO_NAME_PROVIDED
             is CjEnumConstructor -> declaration.name?.let(Name::identifier)
+            is CjPatternVariable -> PATTERN_VARIABLE_MAPPING_NAME
             is CjTypeStatement, is CjTypeAlias, is CjNamedFunction, is CjProperty -> declaration.nameAsSafeName
             else -> null
         }

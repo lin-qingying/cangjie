@@ -32,8 +32,16 @@ internal abstract class ModuleFileCache {
 
     abstract fun getCachedCfirFile(cjFile: CjFile): CfirFile?
 
+    /**
+     * 返回当前 low-level session 已构建的 CFIR 文件。
+     *
+     * LL CFIR 没有主编译器 `CfirProviderImpl.getAllFiles()` 那样的全量文件入口；
+     * 已构建文件缓存就是 lazy resolve 阶段能安全推进的文件集合。
+     */
+    abstract fun getAllCachedCfirFilesForResolution(): Collection<CfirFile>
+
     @LLStatisticsOnlyApi
-    abstract fun getAllCachedCfirFiles(): Collection<CfirFile>
+    fun getAllCachedCfirFiles(): Collection<CfirFile> = getAllCachedCfirFilesForResolution()
 }
 
 internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleResolveComponents) : ModuleFileCache() {
@@ -49,5 +57,5 @@ internal class ModuleFileCacheImpl(override val moduleComponents: LLCfirModuleRe
     }
 
     @LLStatisticsOnlyApi
-    override fun getAllCachedCfirFiles(): Collection<CfirFile> = cjFileToCfirFile.values
+    override fun getAllCachedCfirFilesForResolution(): Collection<CfirFile> = cjFileToCfirFile.values
 }

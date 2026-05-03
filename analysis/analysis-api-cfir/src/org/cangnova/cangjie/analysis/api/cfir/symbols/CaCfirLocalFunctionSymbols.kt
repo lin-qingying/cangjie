@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
+import org.cangnova.cangjie.analysis.api.cfir.getAllowedPsi
 import org.cangnova.cangjie.analysis.api.cfir.location
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirAnonymousFunctionSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -66,7 +67,7 @@ internal class CaCfirAnonymousFunctionSymbol private constructor(
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
     override val psi: PsiElement?
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsi ?: cfirSymbol.cfir.getAllowedPsi() }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }

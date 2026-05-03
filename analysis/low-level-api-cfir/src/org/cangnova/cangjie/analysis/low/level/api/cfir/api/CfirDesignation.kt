@@ -112,8 +112,6 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
         is CfirErrorFunction,
         is CfirTypeParameter,
         is CfirValueParameter,
-        is CfirPatternVariable,
-        is CfirPatternBindingVariable,
             -> null
 
         is CfirNamedFunction,
@@ -122,6 +120,8 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
         is CfirFinalizer,
         is CfirProperty,
         is CfirFieldVariable,
+        is CfirPatternBindingVariable,
+        is CfirPatternVariable,
         is CfirConstructor,
         is CfirEnumConstructor,
             -> {

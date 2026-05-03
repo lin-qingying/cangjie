@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
@@ -206,6 +207,32 @@ class CfirTypeResolveTransformer(
         constructor.transformValueParameters(this, configuration)
         bumpPhase(constructor)
         return constructor
+    }
+
+    override fun transformEnumConstructor(
+        enumConstructor: CfirEnumConstructor,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirEnumConstructor {
+        val configuration = data
+            .withTopContainer(enumConstructor)
+            .withAdditionalTypeParameters(enumConstructor.typeParameters)
+        enumConstructor.transformTypeParameters(this, configuration)
+        if (enumConstructor.returnTypeRef is CfirImplicitTypeRef) {
+            val ownerEnum = data.topContainer as? CfirEnum
+            val ownerType = ownerEnum?.let(::buildConstructedTypeForConstructorOwner)
+                ?: ConeErrorType(ConeSimpleDiagnostic("cannot resolve enum constructor owner type"))
+            enumConstructor.replaceReturnTypeRef(
+                enumConstructor.returnTypeRef.resolvedTypeFromPrototype(
+                    ownerType,
+                    enumConstructor.returnTypeRef.source,
+                ),
+            )
+        } else {
+            enumConstructor.transformReturnTypeRef(this, configuration)
+        }
+        enumConstructor.transformValueParameters(this, configuration)
+        bumpPhase(enumConstructor)
+        return enumConstructor
     }
 
     override fun transformProperty(property: CfirProperty, data: CfirTypeResolutionConfiguration): CfirProperty {
