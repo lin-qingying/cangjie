@@ -4,9 +4,11 @@ import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendSemanticModel
 import org.cangnova.cangjie.cfir.session.extendIndexStore
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -42,6 +44,9 @@ internal data class CaCfirResolvedExtendIdentity(
  * 2. public `extendId` 继续保留现有文本投影，作为公开 API 的兼容视图。
  */
 internal fun CaCfirSession.resolveExtendIdentity(symbol: CfirExtendSymbol): CaCfirResolvedExtendIdentity {
+    // 仓颉 `extend` 的稳定身份建立在 EXTENSIONS 阶段后的语义模型上。
+    // 因此统一在 identity 入口推进到该阶段，再读取 extendIndexStore。
+    symbol.lazyResolveToPhase(CfirResolvePhase.EXTENSIONS)
     val semanticModel = cfirSession.extendIndexStore.modelForDeclaration(symbol.cfir)
         ?: error("Extend `${symbol}` is missing semantic model in extendIndexStore")
     val sourceExtendPsi = symbol.backingPsiIfApplicable as? CjExtend

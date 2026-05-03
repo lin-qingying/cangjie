@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.caSymbolModalityByModifiers
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
+import org.cangnova.cangjie.analysis.api.cfir.getCallableSymbolLocation
 import org.cangnova.cangjie.analysis.api.cfir.isOpenFromInterface
 import org.cangnova.cangjie.analysis.api.cfir.location
 import org.cangnova.cangjie.analysis.api.cfir.psiBasedDefaultCaModality
@@ -108,21 +109,13 @@ internal class CaCfirNamedFunctionSymbol private constructor(
         }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
 
     override val returnType: CaType
         get() = withValidityAssertion { createReturnType() }
 
     override val location: CaSymbolLocation
-        get() = withValidityAssertion {
-            when {
-                backingPsi != null -> backingPsi.location
-//                cfirSymbol.origin == CfirDeclarationOrigin.DynamicScope -> CaSymbolLocation.CLASS
-                cfirSymbol.rawStatus.visibility == Visibilities.Local -> CaSymbolLocation.LOCAL
-                cfirSymbol.containingClassLookupTag()?.classId == null -> CaSymbolLocation.TOP_LEVEL
-                else -> CaSymbolLocation.CLASS
-            }
-        }
+        get() = withValidityAssertion { analysisSession.getCallableSymbolLocation(cfirSymbol, backingPsi) }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion {
@@ -252,15 +245,13 @@ internal class CaCfirMainFunctionSymbol(
         get() = cfirSymbol.getCallableId()
 
     override val receiverType: CaType?
-        get() = (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)
 
     override val location: CaSymbolLocation
-        get() = if (cfirSymbol.rawStatus.visibility == Visibilities.Local) CaSymbolLocation.LOCAL
-        else if (cfirSymbol.containingClassLookupTag()?.classId == null) CaSymbolLocation.TOP_LEVEL
-        else CaSymbolLocation.CLASS
+        get() = analysisSession.getCallableSymbolLocation(cfirSymbol, backingPsi = null)
 
     override val visibility: CaSymbolVisibility
         get() = status?.visibility?.asPublicVisibility() ?: CaSymbolVisibility.PUBLIC
@@ -357,19 +348,13 @@ internal class CaCfirMacroSymbol private constructor(
         }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
 
     override val returnType: CaType
         get() = withValidityAssertion { createReturnType() }
 
     override val location: CaSymbolLocation
-        get() = withValidityAssertion {
-            backingPsi?.location ?: when {
-                cfirSymbol.rawStatus.visibility == Visibilities.Local -> CaSymbolLocation.LOCAL
-                cfirSymbol.containingClassLookupTag()?.classId == null -> CaSymbolLocation.TOP_LEVEL
-                else -> CaSymbolLocation.CLASS
-            }
-        }
+        get() = withValidityAssertion { analysisSession.getCallableSymbolLocation(cfirSymbol, backingPsi) }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion {

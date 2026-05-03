@@ -17,14 +17,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.withConeTypeEntry
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 internal object UsualClassTypeQualifierBuilder {
     fun buildQualifiers(
-        coneType: ConeClassLikeType,
+        coneType: ConeClassifierType,
         builder: CaSymbolByCfirBuilder
     ): List<CaResolvedClassTypeQualifier> {
 

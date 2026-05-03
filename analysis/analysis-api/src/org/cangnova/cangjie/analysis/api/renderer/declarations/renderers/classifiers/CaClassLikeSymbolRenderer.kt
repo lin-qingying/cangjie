@@ -25,7 +25,9 @@ fun interface CaClassLikeSymbolRenderer {
                 declarationRenderer.nameRenderer.renderName(analysisSession, symbol, declarationRenderer, this)
                 declarationRenderer.typeParametersRenderer.renderTypeParameters(analysisSession, symbol, declarationRenderer, this)
                 declarationRenderer.superTypeListRenderer.renderSuperTypeList(analysisSession, symbol, declarationRenderer, this)
-                declarationRenderer.classifierBodyRenderer.renderBody(analysisSession, symbol, declarationRenderer, this)
+                withPrefix(" ") {
+                    declarationRenderer.classifierBodyRenderer.renderBody(analysisSession, symbol, declarationRenderer, this)
+                }
             }
         }
     }

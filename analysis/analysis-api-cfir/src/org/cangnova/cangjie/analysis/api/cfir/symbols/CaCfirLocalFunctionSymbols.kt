@@ -22,7 +22,6 @@ import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
-import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFinalizerSymbol
 import org.cangnova.cangjie.name.ClassId
@@ -45,10 +44,7 @@ internal class CaCfirAnonymousFunctionSymbol private constructor(
     constructor(declaration: CjFunctionLiteral, session: CaCfirSession) : this(
         backingPsi = declaration,
         analysisSession = session,
-        lazyCfirSymbol = lazyCfirSymbol<CfirAnonymousFunctionExpression, CfirAnonymousFunctionSymbol>(
-            declaration,
-            session,
-        ) { expression -> expression.anonymousFunction.symbol },
+        lazyCfirSymbol = lazyCfirSymbol(declaration, session),
     )
 
     constructor(symbol: CfirAnonymousFunctionSymbol, session: CaCfirSession) : this(
@@ -76,7 +72,7 @@ internal class CaCfirAnonymousFunctionSymbol private constructor(
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
 
     override val returnType: CaType
         get() = withValidityAssertion { createReturnType() }
@@ -189,7 +185,7 @@ internal class CaCfirFinalizerSymbol private constructor(
         }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
 
     override val returnType: CaType
         get() = withValidityAssertion { createReturnType() }

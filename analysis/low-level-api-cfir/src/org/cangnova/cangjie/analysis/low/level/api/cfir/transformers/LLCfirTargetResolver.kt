@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTargetVisitor
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.withCfirDesignationE
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirLockProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirPhaseUpdater
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLFlightRecorder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkPhase
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
@@ -23,12 +25,17 @@ import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.originalIfFakeOverrideOrDelegated
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjPatternVariable
 
 /**
  * This class represents the resolver for each [CfirResolvePhase].
@@ -151,6 +158,11 @@ internal sealed class LLCfirTargetResolver(
             target is CfirProperty -> {
                 // We share type references and annotations with the original parameter
                 target.correspondingValueParameterFromPrimaryConstructor?.lazyResolveToPhase(resolverPhase)
+            }
+
+            target is CfirPatternBindingVariable -> {
+                // Pattern binding variables share implicit type resolution with the owning pattern variable.
+                target.owningPatternVariable?.lazyResolveToPhase(resolverPhase)
             }
 
             // constructor shares types inside delegation call with the containing class
@@ -357,4 +369,12 @@ private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: Cfir
         val primaryConstructor = ownerClassLike.declarations.firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
             ?: return null
         return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
+    }
+
+private val CfirPatternBindingVariable.owningPatternVariable: CfirPatternVariable?
+    get() {
+        val containingFile = moduleData.session.cfirProvider.getContainingFile(symbol) ?: return null
+        val bindingPsi = psi as? CjBindingPattern ?: return null
+        val ownerPsi = PsiTreeUtil.getParentOfType(bindingPsi, CjPatternVariable::class.java, false) ?: return null
+        return CfirElementFinder.findDeclaration(containingFile, ownerPsi) as? CfirPatternVariable
     }

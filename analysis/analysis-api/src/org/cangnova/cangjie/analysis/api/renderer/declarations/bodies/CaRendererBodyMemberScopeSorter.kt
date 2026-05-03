@@ -17,17 +17,10 @@ fun interface CaRendererBodyMemberScopeSorter {
 
 
         val ENUM_CONSTRUCTORS_AT_BEGINNING: CaRendererBodyMemberScopeSorter = CaRendererBodyMemberScopeSorter {
-                analysisSession: CaSession,
+                _: CaSession,
                 members: List<CaDeclarationSymbol>,
-                container: CaDeclarationContainerSymbol,
-
-            ->
-            members.sortedWith(
-                compareBy(
-                    { if (it is CaEnumConstructorSymbol) 0 else 1 },
-                    { it.name?.asString().orEmpty() },
-                ),
-            )
+                _: CaDeclarationContainerSymbol,
+            -> members.sortedBy { it !is CaEnumConstructorSymbol }
         }
     }
 }

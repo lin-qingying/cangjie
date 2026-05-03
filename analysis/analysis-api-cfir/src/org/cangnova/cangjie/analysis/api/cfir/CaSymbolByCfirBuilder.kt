@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirAnonymousFunctionSym
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirPropertyAccessorKind
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirClassSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirConstructorSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFieldSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirFinalizerSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirMacroSymbol
@@ -79,6 +80,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -281,10 +283,10 @@ companion object{
             kind: CaCfirPropertyAccessorKind,
         ): CaSymbol = when (kind) {
             CaCfirPropertyAccessorKind.GETTER ->
-                CaCfirPropertyGetterSymbol(backingSymbol, ownerSymbol, analysisSession)
+                CaCfirPropertyGetterSymbol(ownerSymbol)
 
             CaCfirPropertyAccessorKind.SETTER ->
-                CaCfirPropertySetterSymbol(backingSymbol, ownerSymbol, analysisSession)
+                CaCfirPropertySetterSymbol(ownerSymbol)
         }
 
         fun buildFunctionSymbol(symbol: CfirCallableSymbol<*>): CaFunctionSymbol = when (symbol) {
@@ -438,6 +440,7 @@ companion object{
     inner class CallableSymbolBuilder {
         fun buildCallableSymbol(cfirSymbol: CfirCallableSymbol<*>): CaCallableSymbol = when (cfirSymbol) {
             is CfirFunctionSymbol<*> -> functionBuilder.buildFunctionSymbol(cfirSymbol)
+            is CfirEnumConstructorSymbol -> CaCfirEnumConstructorSymbol(cfirSymbol, analysisSession)
             is CfirPropertySymbol -> variableBuilder.buildVariableSymbol(cfirSymbol)
             is CfirVariableSymbol<*> -> variableBuilder.buildVariableSymbol(cfirSymbol)
             else -> throwUnexpectedElementError(cfirSymbol)

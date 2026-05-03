@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassifierSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.name.Name
 
 
@@ -22,6 +23,18 @@ internal fun CfirScope.getCallableSymbols(
         yieldList {
             processPropertiesByName(name) { firSymbol ->
                 add(builder.callableBuilder.buildCallableSymbol(firSymbol))
+            }
+        }
+        yieldList {
+            processVariablesByName(name) { firSymbol ->
+                add(builder.callableBuilder.buildCallableSymbol(firSymbol))
+            }
+        }
+        yieldList {
+            processCallablesByName(name) { firSymbol ->
+                if (firSymbol is CfirEnumConstructorSymbol) {
+                    add(builder.callableBuilder.buildCallableSymbol(firSymbol))
+                }
             }
         }
     }

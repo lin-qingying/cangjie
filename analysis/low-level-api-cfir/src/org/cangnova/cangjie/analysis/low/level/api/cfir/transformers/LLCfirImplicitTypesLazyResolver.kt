@@ -25,6 +25,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
  * low-level 的隐式类型阶段解析器。
@@ -78,7 +80,7 @@ internal class LLCfirImplicitBodyTargetResolver(
             withCfirEntry("target", target)
         }
 
-        llImplicitBodyResolveComputationSession.pushCycledSymbol(target.symbol)
+        llImplicitBodyResolveComputationSession.pushCycledSymbol((target as CfirCallableDeclaration).symbol)
     }
 
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {

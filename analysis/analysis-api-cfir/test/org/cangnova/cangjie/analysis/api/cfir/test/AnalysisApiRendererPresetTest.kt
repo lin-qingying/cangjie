@@ -95,7 +95,7 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
             assertTrue(enumWithMembers.startsWith("enum Result {"))
             assertTrue(enumWithMembers.contains("Error(String)"))
             assertTrue(enumWithMembers.contains("Ok(Int64)"))
-            assertTrue(enumWithMembers.contains("func code(): Int64"))
+            assertTrue(enumWithMembers.contains("func code(): Int64"), enumWithMembers)
             assertTrue(
                 enumWithMembers.indexOf("Error(String)") < enumWithMembers.indexOf("func code(): Int64"),
                 "枚举构造器应排在普通成员之前。actual=$enumWithMembers",

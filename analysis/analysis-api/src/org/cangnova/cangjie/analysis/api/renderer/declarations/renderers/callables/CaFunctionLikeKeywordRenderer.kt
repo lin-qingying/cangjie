@@ -43,9 +43,11 @@ fun interface CaFunctionLikeKeywordRenderer {
                     declarationRenderer.typeParametersRenderer.renderTypeParameters(analysisSession, symbol, declarationRenderer, this)
                 }
                 if (symbol is CaValueParameterOwnerSymbol) {
-                    declarationRenderer.valueParametersRenderer.renderParameters(analysisSession, symbol, declarationRenderer, this)
+                    declarationRenderer.valueParametersRenderer.renderValueParameters(analysisSession, symbol, declarationRenderer, this)
                 }
-                declarationRenderer.returnTypeRenderer.renderReturnType(analysisSession, symbol, declarationRenderer, this)
+                withPrefix(": ") {
+                    declarationRenderer.returnTypeRenderer.renderReturnType(analysisSession, symbol, declarationRenderer, this)
+                }
                 declarationRenderer.functionLikeBodyRenderer.renderBody(analysisSession, symbol, declarationRenderer, this)
             }
         }

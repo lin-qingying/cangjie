@@ -175,7 +175,8 @@ class LLResolutionFacade internal constructor(
     }
 
     private fun findSourceCfirDeclarationViaResolve(cjDeclaration: CjExpression): CfirDeclaration {
-        return when (val cfir = getOrBuildCfirFor(cjDeclaration)) {
+        val targetExpression = cjDeclaration.unwrapForCfirLookup()
+        return when (val cfir = getOrBuildCfirFor(targetExpression)) {
             is CfirDeclaration -> cfir
             is CfirAnonymousFunctionExpression -> cfir.anonymousFunction
             else -> errorWithCfirSpecificEntries(
@@ -183,6 +184,20 @@ class LLResolutionFacade internal constructor(
                 cfir = cfir,
                 psi = cjDeclaration,
             )
+        }
+    }
+
+    /**
+     * 仓颉 lambda 的语法节点是 `CjFunctionLiteral`，但对应 CFIR 锚点是外层 `CjLambdaExpression`。
+     *
+     * 因此在“声明经由表达式回找 CFIR”这条 low-level 路径上，需要先把 function-literal 提升到
+     * 真正承载 `CfirAnonymousFunctionExpression` 的 PSI，再复用和 Kotlin 相同的
+     * `AnonymousFunctionExpression -> anonymousFunction` 恢复链。
+     */
+    private fun CjExpression.unwrapForCfirLookup(): CjExpression {
+        return when (this) {
+            is CjFunctionLiteral -> (parent as? CjLambdaExpression)?.unwrapForCfirLookup() ?: this
+            else -> this
         }
     }
 
