@@ -18,19 +18,8 @@ interface B<T> {
     }
 }
 
-class D <: A & B<Int32> {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class D<!> <: A & B<Int32> {}
 
 main() {
     return 1
 }
-
-/* SCAN
-error: interface function 'foo' must be implemented in 'D'
-  ==> class_no_override_modifier_invalid_7.cj:21:1:
-   | 
-21 | class D <: A & B<Int32> {}
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

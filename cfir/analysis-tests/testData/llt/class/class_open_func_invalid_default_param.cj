@@ -7,18 +7,7 @@
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 open class A {
-    public open func test(a!: Int64 = 1) {
+    public open func test(<!CANNOT_HAVE_DEFAULT_PARAM!>a!: Int64 = 1<!>) {
         0
     }
 }
-
-/* SCAN
-error: optional parameter cannot be used in 'open' function
-  ==> class_open_func_invalid_default_param.cj:10:27:
-   | 
-10 |     public open func test(a!: Int64 = 1) {
-   |                           ^^^^^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

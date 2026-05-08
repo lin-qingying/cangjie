@@ -8,21 +8,10 @@
 
 class C1 {
     public func foo(): This {
-        return C1()
+        return <!TYPE_MISMATCH!>C1()<!>
     }
 }
 
 main() {
     return 1
 }
-
-/* SCAN
-error: mismatched types
-  ==> class_thistype_invalid_4.cj:11:16:
-   | 
-11 |         return C1()
-   |                ^^^^ expected 'This', found 'Class-C1'
-   | 
-
-1 error generated, 1 error printed.
-*/

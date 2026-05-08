@@ -14,16 +14,5 @@ main(): Int64 {
 }
 
 class Boo {
-    public var d: Int32 = {=> 1}
+    public var d: Int32 = <!TYPE_MISMATCH!>{=> 1}<!>
 }
-
-/* SCAN
-error: mismatched types
-  ==> member3.cj:17:27:
-   | 
-17 |     public var d: Int32 = {=> 1}
-   |                           ^^^^^^ expected 'Int32', found '() -> Int64'
-   | 
-
-1 error generated, 1 error printed.
-*/

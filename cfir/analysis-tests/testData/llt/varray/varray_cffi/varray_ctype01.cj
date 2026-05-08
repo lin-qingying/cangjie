@@ -9,8 +9,5 @@
 struct A {}
 
 main() {
-    sizeOf<VArray<A, $3>>()
+    sizeOf<<!GENERIC_ARGUMENT_NO_MATCH!>VArray<A, $3><!>>()
 }
-
-// ASSERT: scan-1 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan "Errors": 1

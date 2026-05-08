@@ -21,23 +21,6 @@ extend<T> A<T> where T <: I2 {
     }
 }
 
-class B<T> <: A<T> & I1 {} // error
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class B<T><!> <: A<T> & I1 {} // error
 
 main() {}
-
-/* SCAN
-error: interface function 'foo' must be implemented in 'B'
-  ==> implement_by_super_extend01.cj:24:1:
-   | 
-24 | class B<T> <: A<T> & I1 {} // error
-   | ^ 
-   | 
-note: member function 'foo' in 'A''s extension may not be visible to 'B'
-  ==> implement_by_super_extend01.cj:19:17:
-   | 
-19 |     public func foo(): Unit {
-   |                 ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

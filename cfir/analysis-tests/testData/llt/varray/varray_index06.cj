@@ -6,10 +6,8 @@
 
 // ERRCHECK: %compiler %cmp_opt --diagnostic-format json %f -o %output
 
-// ASSERT: scan sema_mismatched_types
-
 main() {
     let data = "123"
     let arr: VArray<UInt8, $1> = [1]
-    let c = arr[data[1]]
+    let c = arr[<!TYPE_MISMATCH!>data[1]<!>]
 }
