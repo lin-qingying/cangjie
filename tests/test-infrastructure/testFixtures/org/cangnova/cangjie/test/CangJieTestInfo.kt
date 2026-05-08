@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.test
 
 import org.cangnova.cangjie.test.services.TestService
+import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.TestInfo
 import kotlin.jvm.optionals.getOrNull
 
@@ -18,3 +19,5 @@ fun TestInfo.toCangJieTestInfo():CangJieTestInfo {
         tags = this.tags
     )
 }
+
+val TestServices.testInfo: CangJieTestInfo by TestServices.testServiceAccessor()

@@ -57,6 +57,7 @@ import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjModifierList
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPrimaryConstructor
+import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.psiUtil.parentOfType
 import org.cangnova.cangjie.psi.psiUtil.parents
@@ -223,6 +224,11 @@ internal class CaCfirSymbolRelationProvider(
             CjFakeSourceElementKind.ImplicitConstructor -> source.psi as CjDeclaration
             CjFakeSourceElementKind.PropertyFromParameter -> (source.psi as CjParameter).ownerFunction as? CjPrimaryConstructor
             CjFakeSourceElementKind.EnumGeneratedDeclaration -> source.psi as CjDeclaration
+            CjFakeSourceElementKind.PatternBindingVariable -> {
+                val bindingPattern = source.psi as? CjBindingPattern ?: return null
+                val patternVariable = bindingPattern.variable ?: return null
+                patternVariable.parents.filterIsInstance<CjDeclaration>().firstOrNull { it != patternVariable }
+            }
             CjFakeSourceElementKind.DataClassGeneratedMembers -> when (val psi = source.psi) {
                 is CjTypeStatement -> psi
                 is CjParameter -> (psi.ownerFunction as? CjPrimaryConstructor)?.getContainingTypeStatement()

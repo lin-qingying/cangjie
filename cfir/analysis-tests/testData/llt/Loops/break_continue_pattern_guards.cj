@@ -1,8 +1,7 @@
 // EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// ASSERT: scan 'break' or 'continue' must be used inside a loop
 
 main() {
-  for (a in [1] where ([break, continue][0])) { }
+  for (a in [1] where ([<!INVALID_LOOP_CONTROL!>break<!>, <!INVALID_LOOP_CONTROL!>continue<!>][0])) { }
   return 0
 }
 

@@ -6,6 +6,7 @@ import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateDecision
 import org.cangnova.cangjie.analysis.api.completion.CaCompletionCandidateStatus
+import org.cangnova.cangjie.analysis.api.components.createUseSiteVisibilityChecker
 import org.cangnova.cangjie.analysis.api.imports.CaImportOptimizationPlan
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningCommand
 import org.cangnova.cangjie.analysis.api.imports.CaReferenceShorteningOperation
@@ -83,7 +84,16 @@ internal fun CaCfirSession.checkCompletionCandidate(
     val file = position.containingFile as? CjFile
         ?: error("补全候选判定只能在 CjFile 内执行：${position::class.simpleName}")
     val importPath = symbol.asTopLevelImportPath()
-    val visible = with(this) { symbol.isVisible() }
+    val visible = when (symbol) {
+        is CaDeclarationSymbol -> with(this) {
+            createUseSiteVisibilityChecker(
+                useSiteFile = file.symbol,
+                position = position,
+            ).isVisible(symbol)
+        }
+        is CaPackageSymbol -> true
+        else -> false
+    }
     val status = when {
         !visible -> CaCompletionCandidateStatus.HIDDEN
         symbol is CaFileSymbol -> CaCompletionCandidateStatus.HIDDEN

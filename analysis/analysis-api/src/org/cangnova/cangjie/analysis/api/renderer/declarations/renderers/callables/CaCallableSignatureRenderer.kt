@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.renderer.base.PrettyPrinter
 import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRenderer
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
@@ -45,6 +46,9 @@ fun interface CaCallableSignatureRenderer {
 
                         if (symbol is CaNamedSymbol) {
                             declarationRenderer.nameRenderer.renderName(analysisSession, symbol, declarationRenderer, this)
+                            if (symbol is CaValueParameterSymbol && symbol.isNamed) {
+                                append("!")
+                            }
                         }
                         if (symbol is CaTypeParameterOwnerSymbol) {
                             declarationRenderer.typeParametersRenderer.renderTypeParameters(analysisSession, symbol, declarationRenderer, this)

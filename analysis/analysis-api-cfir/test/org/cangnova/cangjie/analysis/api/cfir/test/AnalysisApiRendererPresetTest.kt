@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclaratio
 import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclarationRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForDebug
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
@@ -14,13 +15,6 @@ import org.cangnova.cangjie.analysis.api.types.CaPrimitiveType
 import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisSessionMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
@@ -42,15 +36,7 @@ import org.junit.jupiter.api.Test
 class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/rendererPresets",
 ) {
-    override val configurator: AnalysisApiTestConfigurator =
-        CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(
-            AnalysisApiTestConfiguratorFactoryData(
-                frontend = FrontendKind.Cfir,
-                moduleKind = TestModuleKind.Source,
-                analysisSessionMode = AnalysisSessionMode.Normal,
-                analysisApiMode = AnalysisApiMode.Standalone,
-            ),
-        )
+    override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
     @Test
     fun presetRendering(mainFile: CjFile, mainModule: CjTestModule) {

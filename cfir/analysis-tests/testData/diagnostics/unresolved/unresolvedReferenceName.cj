@@ -1,5 +1,4 @@
 // RUN_PIPELINE_TILL: FRONTEND
-main() {
+main(): Unit {
     <!UNRESOLVED_REFERENCE!>missingValue<!>
 }
-

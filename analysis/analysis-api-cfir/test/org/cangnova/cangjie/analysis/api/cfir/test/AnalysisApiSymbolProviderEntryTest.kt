@@ -18,7 +18,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjEnumConstructor
@@ -64,7 +64,11 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             accessor.isSetter
         }
         val functionLiteral = PsiTreeUtil.findChildrenOfType(mainFile, CjFunctionLiteral::class.java).single()
-        val patternVariable = PsiTreeUtil.findChildrenOfType(mainFile, CjPatternVariable::class.java).single()
+        val patternVariable = PsiTreeUtil.findChildrenOfType(mainFile, CjPatternVariable::class.java).single { variable ->
+            PsiTreeUtil.findChildrenOfType(variable, CjBindingPattern::class.java).any { binding ->
+                binding.name == "left"
+            }
+        }
         val patternBinding = PsiTreeUtil.findChildrenOfType(mainFile, CjBindingPattern::class.java)
             .single { binding -> binding.name == "left" }
 

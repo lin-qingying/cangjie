@@ -2,4 +2,4 @@
 class Host {}
 interface Display<T> {}
 
-extend<<!EXTEND_GENERIC_USAGE!>T<!>> Host <: Display<T> {}
+extend<T> <!EXTEND_GENERIC_USAGE!>Host<!> <: Display<T> {}

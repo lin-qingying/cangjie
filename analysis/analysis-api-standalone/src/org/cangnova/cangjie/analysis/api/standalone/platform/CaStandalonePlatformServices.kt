@@ -9,13 +9,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.CaDeserializedDeclarationsOrigin
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
@@ -38,7 +38,6 @@ import java.util.concurrent.atomic.AtomicLong
  * 而是由状态服务统一托管“当前激活的 standalone 模块图”，并同时实现：
  * - [CangJieProjectStructureProvider]
  * - [CaModuleProvider]
- * - [CaContentScopeRefiner]
  * - [CaModificationTracker]
  * - [CaSessionInvalidationService]
  *
@@ -59,10 +58,10 @@ class CaStandalonePlatformState(
         get() = requireProjectStructure().allSourceFiles
 
     val allResolvableModules: List<CaModule>
-        get() = requireProjectStructure().allResolvableModules
+        get() = requireProjectStructure().resolvableModules
 
     val allSourceLikeModules: List<CaModule>
-        get() = requireProjectStructure().allSourceLikeModules
+        get() = requireProjectStructure().sourceLikeModules
 
     val snapshot: CaProjectStructureSnapshot
         get() = requireProjectStructure().snapshot
@@ -95,10 +94,6 @@ class CaStandalonePlatformState(
 
     fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
         return requireProjectStructure().getModule(element, useSiteModule)
-    }
-
-    fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope {
-        return requireProjectStructure().getRefinedContentScope(module, baseContentScope)
     }
 
     fun getModuleModificationCount(module: CaModule): Long {
@@ -149,8 +144,12 @@ class CaStandaloneProjectStructureProvider(
         return state.getModule(element, useSiteModule)
     }
 
-    override val snapshot: CaProjectStructureSnapshot
-        get() = state.snapshot
+    override fun getImplementingModules(module: CaModule): List<CaModule> {
+        return state.allModules.filter { module in it.directDependsOnDependencies }
+    }
+
+    override val globalLanguageVersionSettings: LanguageVersionSettings
+        get() = LanguageVersionSettings.DEFAULT
 }
 
 /**
@@ -167,20 +166,6 @@ class CaStandaloneModuleProvider(
 
     override fun getModuleByStableName(stableModuleName: String): CaModule? {
         return state.getModuleByStableName(stableModuleName)
-    }
-}
-
-/**
- * Standalone 平台的 content-scope 服务委托。
- */
-class CaStandaloneContentScopeRefiner(
-    private val project: Project,
-) : CaContentScopeRefiner {
-    private val state: CaStandalonePlatformState
-        get() = CaStandalonePlatformState.getInstance(project)
-
-    override fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope {
-        return state.getRefinedContentScope(module, baseContentScope)
     }
 }
 

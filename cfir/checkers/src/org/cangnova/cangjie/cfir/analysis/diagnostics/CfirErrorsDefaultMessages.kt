@@ -256,6 +256,37 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_TYPE,
         )
         map.put(
+            CfirErrors.INVALID_CFUNC_PARAMETER_TYPE,
+            "arguments type of CFunc must be instantiated with CType, but ''{0}'' was found.",
+            RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.ONLY_CFUNC_CAN_USE_ANNOTATION,
+            "only CFunc can use ''{0}''",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.ILLEGAL_SCOPE_USE_OF_ANNOTATION,
+            "''{0}'' can only be used in top-level scope",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.THROW_EXPR_WITH_WRONG_TYPE,
+            "the object thrown must derive from ''core.Exception''",
+        )
+        map.put(
+            CfirErrors.CATCH_TYPE_MUST_EXTEND_EXCEPTION,
+            "the exception catch type must be class and extends from core.Exception or core.Error",
+        )
+        map.put(
+            CfirErrors.USELESS_EXCEPTION_TYPE,
+            "useless exception type",
+        )
+        map.put(
+            CfirErrors.RANGE_STEP_CANNOT_BE_ZERO,
+            "step cannot be zero in range expression",
+        )
+        map.put(
             CfirErrors.EFFECTS_FEATURE_DISABLED,
             "effects feature is disabled for ''{0}''.",
             RENDER_STRING,
@@ -833,6 +864,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // Unused
         // ================================================================
         map.put(CfirErrors.UNUSED_IMPORT, "unused import ''{0}''", RENDER_NULLABLE_FQNAME)
+        map.put(CfirErrors.UNUSED_EXPRESSION, "unused expression")
 
         // ================================================================
         // Mock

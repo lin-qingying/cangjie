@@ -12,6 +12,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
+import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -29,10 +31,32 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
 object CfirImportsChecker : CfirFileChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
+        val resolvedImports = context.session.importBindingStoreOrNull?.getBindings(declaration)?.imports.orEmpty()
+        val conflictingNames = resolvedImports
+            .groupBy { it.effectiveName }
+            .filterValues { sameNameBindings ->
+                sameNameBindings.size >= 2 &&
+                        sameNameBindings.map { it.stableTargetSignature() }.toSet().size > 1
+            }
+        val conflictingAliases = resolvedImports
+            .filter { it.importDirective.aliasName != null }
+            .groupBy { it.importDirective.aliasName!! }
+            .filterValues { sameAliasBindings ->
+                sameAliasBindings.size >= 2 &&
+                        sameAliasBindings.map { it.stableTargetSignature() }.toSet().size > 1
+            }
+
         declaration.imports.forEach { import ->
+            if (import.source?.kind?.shouldSkipErrorTypeReporting == true) return@forEach
             reportImportResolutionDiagnostic(import)
+
+            if (import.isConflictImport(conflictingNames, conflictingAliases)) {
+                reportImportConflict(import)
+            }
         }
-        val duplicateImports = reportImportConflicts(declaration.imports)
+        val duplicateImports = declaration.imports.filterTo(linkedSetOf()) { import ->
+            import.isConflictImport(conflictingNames, conflictingAliases)
+        }
         reportUnusedImports(declaration, duplicateImports)
     }
 
@@ -57,35 +81,12 @@ object CfirImportsChecker : CfirFileChecker() {
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun reportImportConflicts(imports: List<CfirImport>): Set<CfirImport> {
-        val duplicates = linkedSetOf<CfirImport>()
-        val groupedByEffectiveName = imports
-            .mapNotNull { import ->
-                val effectiveName = import.aliasName ?: import.importedFqName?.shortName()
-                effectiveName?.let { it to import }
-            }
-            .groupBy(keySelector = { it.first }, valueTransform = { it.second })
-
-        for ((name, conflicts) in groupedByEffectiveName) {
-            if (conflicts.size < 2) continue
-            duplicates += conflicts
-            reporter.reportOn(conflicts.first().source, CfirErrors.IMPORT_CONFLICT, name)
+    private fun reportImportConflict(import: CfirImport) {
+        val effectiveName = import.aliasName ?: import.importedFqName?.shortName() ?: return
+        reporter.reportOn(import.source, CfirErrors.IMPORT_CONFLICT, effectiveName)
+        import.aliasName?.let { aliasName ->
+            reporter.reportOn(import.source, CfirErrors.IMPORT_ALIAS_CONFLICT, aliasName)
         }
-
-        val groupedByAlias = imports
-            .mapNotNull { import ->
-                val aliasName = import.aliasName ?: return@mapNotNull null
-                aliasName to import
-            }
-            .groupBy(keySelector = { it.first }, valueTransform = { it.second })
-
-        for ((alias, conflicts) in groupedByAlias) {
-            if (conflicts.size < 2) continue
-            duplicates += conflicts
-            reporter.reportOn(conflicts.first().source, CfirErrors.IMPORT_ALIAS_CONFLICT, alias)
-        }
-
-        return duplicates
     }
 
     /**
@@ -258,4 +259,32 @@ object CfirImportsChecker : CfirFileChecker() {
         CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
         CjNodeTypes.REFERENCE_EXPRESSION,
     )
+
+    private fun CfirImport.isConflictImport(
+        conflictingNames: Map<Name, List<CfirResolvedImportBinding>>,
+        conflictingAliases: Map<Name, List<CfirResolvedImportBinding>>,
+    ): Boolean {
+        val sameImport = { binding: CfirResolvedImportBinding ->
+            binding.importDirective === this ||
+                    binding.importDirective.importedFqName == importedFqName &&
+                    binding.importDirective.aliasName == aliasName &&
+                    binding.importDirective.isAllUnder == isAllUnder
+        }
+
+        val effectiveName = aliasName ?: importedFqName?.shortName()
+        val hasNameConflict = effectiveName != null && conflictingNames[effectiveName]?.any(sameImport) == true
+        val hasAliasConflict = aliasName != null && conflictingAliases[aliasName]?.any(sameImport) == true
+        return hasNameConflict || hasAliasConflict
+    }
+
+    private fun CfirResolvedImportBinding.stableTargetSignature(): String {
+        val targetSignatures = targets.map { target -> target.toString() }.sorted()
+        return buildString {
+            append(importDirective.importedFqName?.asString() ?: "")
+            append('|')
+            append(importDirective.isAllUnder)
+            append('|')
+            append(targetSignatures.joinToString(";"))
+        }
+    }
 }

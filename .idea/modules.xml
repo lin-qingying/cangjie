@@ -14,6 +14,20 @@
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.main.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.test.iml" filepath="$PROJECT_DIR$/.idea/modules/compiler/cli/cangjie.compiler.cli.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/intellij-ide/cangjie.intellij-ide.iml" filepath="$PROJECT_DIR$/.idea/modules/intellij-ide/cangjie.intellij-ide.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/deveco-cangjie.iml" filepath="$PROJECT_DIR$/.idea/modules/deveco-cangjie.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/deveco-cangjie.modules.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/deveco-cangjie.modules.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/core/deveco-cangjie.modules.core.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/core/deveco-cangjie.modules.core.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/core/deveco-cangjie.modules.core.main.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/core/deveco-cangjie.modules.core.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/core/deveco-cangjie.modules.core.test.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/core/deveco-cangjie.modules.core.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/deveco-bridge/deveco-cangjie.modules.deveco-bridge.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/deveco-bridge/deveco-cangjie.modules.deveco-bridge.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/deveco-bridge/deveco-cangjie.modules.deveco-bridge.main.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/deveco-bridge/deveco-cangjie.modules.deveco-bridge.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/deveco-bridge/deveco-cangjie.modules.deveco-bridge.test.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/deveco-bridge/deveco-cangjie.modules.deveco-bridge.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/test-support/deveco-cangjie.modules.test-support.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/test-support/deveco-cangjie.modules.test-support.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/test-support/deveco-cangjie.modules.test-support.main.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/test-support/deveco-cangjie.modules.test-support.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/modules/test-support/deveco-cangjie.modules.test-support.test.iml" filepath="$PROJECT_DIR$/.idea/modules/modules/test-support/deveco-cangjie.modules.test-support.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/product/deveco-cangjie.product.iml" filepath="$PROJECT_DIR$/.idea/modules/product/deveco-cangjie.product.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/product/deveco-cangjie.product.main.iml" filepath="$PROJECT_DIR$/.idea/modules/product/deveco-cangjie.product.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/product/deveco-cangjie.product.test.iml" filepath="$PROJECT_DIR$/.idea/modules/product/deveco-cangjie.product.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" filepath="$PROJECT_DIR$/.idea/modules/repo/gradle-build-conventions/generators/gradle-build-conventions.generators.main.iml" />
     </modules>
   </component>

@@ -36,4 +36,10 @@ class CangJieContextReceiverStubImpl(
     private val label: String?,
 ) : CangJieStubBaseImpl<CjContextReceiver>(parent, elementType), CangJieContextReceiverStub {
     override fun getLabel() = label
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieContextReceiverStubImpl = CangJieContextReceiverStubImpl(
+        parent = newParent,
+        elementType = stubType as CjContextReceiverElementType,
+        label = label,
+    )
 }

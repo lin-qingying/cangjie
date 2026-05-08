@@ -27,6 +27,5 @@ func useHigherOrderFunctions() {
         value + 3
     }
 
-    let returned = makePrinter(4)
-    returned(5)
+    makePrinter(4)(5)
 }

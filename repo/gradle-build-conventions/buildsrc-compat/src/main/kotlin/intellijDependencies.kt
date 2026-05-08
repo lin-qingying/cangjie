@@ -23,4 +23,5 @@ fun Project.intellijPlatformUtil() = "com.jetbrains.intellij.platform:util:$inte
 fun Project.intellijPlatformUtilBase() = "com.jetbrains.intellij.platform:util-base:$intellijSdkVersion"
 fun Project.intellijUtilRt() = "com.jetbrains.intellij.platform:util-rt:$intellijSdkVersion"
 fun Project.intellijAnalysis() = "com.jetbrains.intellij.platform:analysis:$intellijSdkVersion"
+fun Project.intellijJDom() = "com.jetbrains.intellij.platform:util-jdom:$intellijSdkVersion"
 fun Project.intellijTestFramework() = "com.jetbrains.intellij.platform:test-framework:$intellijSdkVersion"

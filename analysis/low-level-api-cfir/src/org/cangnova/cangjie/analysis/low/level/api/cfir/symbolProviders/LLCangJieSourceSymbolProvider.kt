@@ -295,4 +295,10 @@ internal class LLCangJieSourceSymbolProvider(
     override fun hasPackage(fqName: FqName): Boolean {
         return packageProvider.doesPackageExist(fqName)
     }
+
+    internal override fun materializeTopLevelExtendFiles(): List<CfirFile> {
+        return declarationProvider.getTopLevelExtendFiles()
+            .distinctBy { file -> file.virtualFile ?: file }
+            .map(moduleComponents.cfirFileBuilder::buildRawCfirFileWithCaching)
+    }
 }

@@ -13,6 +13,7 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
@@ -32,6 +33,10 @@ interface CangJieDeclarationProvider : CangJieComposableProvider {
     fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction>
 
     fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile>
+
+    fun getTopLevelExtends(): Collection<CjExtend>
+
+    fun getTopLevelExtendFiles(): Collection<CjFile>
 
     fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>
 

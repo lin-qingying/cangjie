@@ -2,16 +2,20 @@
   <xi:include href="/META-INF/analysis-api/cangjie-analysis-api-impl-base.xml"/>
 
   <extensions defaultExtensionNs="com.intellij">
+    <applicationService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionOptions"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.permissions.CaStandaloneAnalysisPermissionOptions"
+    />
     <projectService
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformState"
     />
     <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneAnalysisPermissionChecker"
-    />
-    <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService"
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneRestrictedAnalysisService"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.platform.lifetime.CaAlwaysAccessibleLifetimeTokenFactory"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings"
@@ -24,10 +28,6 @@
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider"
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneModuleProvider"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneContentScopeRefiner"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider"

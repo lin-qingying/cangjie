@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.api.platform.CaCachedService
 import org.cangnova.cangjie.analysis.api.platform.declarations.*
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaDanglingFileModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieAnchorModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.utils.mergeInto
 import org.cangnova.cangjie.analysis.api.projectStructure.*
@@ -61,6 +62,11 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         CaResolutionScopeProvider.getInstance(project)
     }
 
+    @CaCachedService
+    private val projectStructureProvider: CangJieProjectStructureProvider by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        CangJieProjectStructureProvider.getInstance(project)
+    }
+
     abstract fun createSourcesSession(module: CaSourceModule): LLCfirSourcesSession
 
     abstract fun createResolvableLibrarySession(module: CaModule): LLCfirLibraryOrLibrarySourceResolvableModuleSession
@@ -80,7 +86,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
     fun createNotUnderContentRootResolvableSession(module: CaNotUnderContentRootModule): LLCfirNotUnderContentRootResolvableModuleSession {
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
-        val languageVersionSettings = LanguageVersionSettings.DEFAULT
+        val languageVersionSettings = projectStructureProvider.globalLanguageVersionSettings
         val scopeProvider = CfirCangJieScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
 
@@ -109,6 +115,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, provider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+            register(
+                CfirExtendProvider::class,
+                LLCfirSessionExtendProvider(this, extendIndexStore),
+            )
 
             val dependencyProvider = LLDependenciesSymbolProvider(this) {
                 buildList {
@@ -226,7 +236,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         }
 
         val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
-        val languageVersionSettings = LanguageVersionSettings.DEFAULT
+        val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
 
         val scopeProvider = CfirCangJieScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
@@ -254,6 +264,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             register(CfirProvider::class, cfirProvider)
 
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+            register(
+                CfirExtendProvider::class,
+                LLCfirSessionExtendProvider(this, extendIndexStore),
+            )
 
             // We need CfirRegisteredPluginAnnotations during extensions' registration process
             val annotationsResolver = project.createAnnotationResolver(binaryContentScope)
@@ -311,7 +325,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         val contentScope = module.contentScope
 
         return session.apply {
-            val languageVersionSettings = LanguageVersionSettings.DEFAULT
+            val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
             registerModuleData(moduleData)
             registerIdeComponents(project, languageVersionSettings, contentScope)
             register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)

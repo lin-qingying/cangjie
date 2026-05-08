@@ -5,7 +5,7 @@ package org.cangnova.cangjie.analysis.api.cfir.test.cases.generated.cases.compon
 import com.intellij.testFramework.TestDataPath;
 import org.cangnova.cangjie.test.util.CjTestUtil;
 import org.jetbrains.annotations.NotNull;
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory;
+import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory;
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData;
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator;
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind;

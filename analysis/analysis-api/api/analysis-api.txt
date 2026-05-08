@@ -305,7 +305,15 @@ CaTypeRelationChecker.public fun CaType.semanticallyEquals(other: CaType): Boole
 ## org/cangnova/cangjie/analysis/api/components/CaVisibilityChecker.kt
 package org.cangnova.cangjie.analysis.api.components
 public interface CaVisibilityChecker : CaLifetimeOwner
-CaVisibilityChecker.public fun CaSymbol.isVisible(): Boolean
+CaVisibilityChecker.public fun isVisible( candidateSymbol: CaDeclarationSymbol, useSiteFile: CaFileSymbol, receiverExpression: CjExpression? = null, position: PsiElement, ): Boolean
+CaVisibilityChecker.public fun createUseSiteVisibilityChecker( useSiteFile: CaFileSymbol, receiverExpression: CjExpression? = null, position: PsiElement, ): CaUseSiteVisibilityChecker
+CaVisibilityChecker.public fun CaCallableSymbol.isVisibleInClass(classSymbol: CaClassSymbol): Boolean
+CaVisibilityChecker.public fun isPublicApi(symbol: CaDeclarationSymbol): Boolean
+public interface CaUseSiteVisibilityChecker : CaLifetimeOwner
+CaUseSiteVisibilityChecker.public fun isVisible(candidateSymbol: CaDeclarationSymbol): Boolean
+public fun createUseSiteVisibilityChecker( useSiteFile: CaFileSymbol, receiverExpression: CjExpression? = null, position: PsiElement, ): CaUseSiteVisibilityChecker
+public fun CaCallableSymbol.isVisibleInClass(classSymbol: CaClassSymbol): Boolean
+public fun isPublicApi(symbol: CaDeclarationSymbol): Boolean
 ## org/cangnova/cangjie/analysis/api/dataFlow/CaDataFlowInfo.kt
 package org.cangnova.cangjie.analysis.api.dataFlow
 public interface CaDataFlowInfo : CaLifetimeOwner
@@ -323,13 +331,19 @@ CaBuiltinsVirtualFileProvider.public abstract fun getBuiltinVirtualFiles(): Set<
 CaBuiltinsVirtualFileProvider.public abstract fun createBuiltinsScope(project: Project): GlobalSearchScope
 CaBuiltinsVirtualFileProvider.public companion object
 CaBuiltinsVirtualFileProvider.Companion.public fun getInstance(): CaBuiltinsVirtualFileProvider
+## org/cangnova/cangjie/analysis/api/decompiled/CaBuiltinsRootAware.kt
+package org.cangnova.cangjie.analysis.api.decompiled
+public abstract interface class CaBuiltinsRootAware
+CaBuiltinsRootAware.public abstract fun getBuiltinRootVirtualFiles(): Set<VirtualFile>
 ## org/cangnova/cangjie/analysis/api/decompiled/CaDecompiledBinaryIndex.kt
 package org.cangnova.cangjie.analysis.api.decompiled
 public interface CaDecompiledBinaryIndex
 CaDecompiledBinaryIndex.public fun getBinaryFiles(module: CaLibraryModule): List<VirtualFile>
 CaDecompiledBinaryIndex.public fun getBinaryFiles(module: CaBuiltinsModule): List<VirtualFile>
+CaDecompiledBinaryIndex.public fun readPackageFqName(binaryFile: VirtualFile): FqName?
 CaDecompiledBinaryIndex.public fun findBinaryFile(module: CaLibraryModule, packageFqName: FqName): VirtualFile?
 CaDecompiledBinaryIndex.public fun findBinaryFile(module: CaBuiltinsModule, packageFqName: FqName): VirtualFile?
+CaDecompiledBinaryIndex.public fun findBuiltinsBinaryFile(packageFqName: FqName): VirtualFile?
 CaDecompiledBinaryIndex.public fun findOwningModule(binaryFile: VirtualFile): CaModule?
 CaDecompiledBinaryIndex.public companion object
 CaDecompiledBinaryIndex.Companion.public fun getInstance(project: Project): CaDecompiledBinaryIndex
@@ -339,6 +353,7 @@ public interface CaDecompiledPsiProvider
 CaDecompiledPsiProvider.public fun getDecompiledFile(binaryFile: VirtualFile): CjDecompiledFile?
 CaDecompiledPsiProvider.public fun findDecompiledFile(module: CaLibraryModule, packageFqName: FqName): CjDecompiledFile?
 CaDecompiledPsiProvider.public fun findDecompiledFile(module: CaBuiltinsModule, packageFqName: FqName): CjDecompiledFile?
+CaDecompiledPsiProvider.public fun findBuiltinsDecompiledFile(packageFqName: FqName): CjDecompiledFile?
 CaDecompiledPsiProvider.public companion object
 CaDecompiledPsiProvider.Companion.public fun getInstance(project: Project): CaDecompiledPsiProvider
 ## org/cangnova/cangjie/analysis/api/decompiled/CaDecompiledTextRenderer.kt
@@ -503,9 +518,6 @@ package org.cangnova.cangjie.analysis.api.lightDeclarations
 public interface CaLightDeclarationProvider
 CaLightDeclarationProvider.public fun getLightDeclaration(symbol: CaSymbol): CaLightDeclaration?
 CaLightDeclarationProvider.public fun getLightDeclarations(file: CjFile, useSiteModule: CaModule? = null): List<CaLightDeclaration>
-CaLightDeclarationProvider.public fun getLightDeclarations(module: CaModule): List<CaLightDeclaration>
-CaLightDeclarationProvider.public fun getPackageLightDeclaration(packageFqName: FqName, useSiteModule: CaModule): CaLightDeclaration?
-CaLightDeclarationProvider.public fun findLightDeclarations(packageFqName: FqName, name: Name, useSiteModule: CaModule): List<CaLightDeclaration>
 CaLightDeclarationProvider.public companion object
 CaLightDeclarationProvider.Companion.public fun getInstance(project: Project): CaLightDeclarationProvider
 ## org/cangnova/cangjie/analysis/api/lightDeclarations/CaLightExtendDeclaration.kt
@@ -582,7 +594,6 @@ CaModule.public val project: Project
 CaModule.public val moduleDescription: String
 CaModule.public class.simpleName ?: "CaModule"
 CaModule.public val stableModuleName: String?
-CaModule.public val targetPlatform: CaTargetPlatform
 CaModule.public val isResolvable: Boolean
 ## org/cangnova/cangjie/analysis/api/projectStructure/CaModuleProvider.kt
 package org.cangnova.cangjie.analysis.api.projectStructure
@@ -605,14 +616,6 @@ CaSourceModule.public val languageVersionSettings: LanguageVersionSettings
 CaSourceModule.public val psiRoots: List<PsiFileSystemItem>
 CaSourceModule.public override val moduleDescription: String
 CaSourceModule.public override val stableModuleName: String?
-## org/cangnova/cangjie/analysis/api/projectStructure/CaTargetPlatform.kt
-package org.cangnova.cangjie.analysis.api.projectStructure
-public data class CaTargetPlatform( val platformId: String, )
-CaTargetPlatform.public companion object
-CaTargetPlatform.Companion.public val DEFAULT
-CaTargetPlatform.Companion.public val IDE
-CaTargetPlatform.Companion.public val STANDALONE
-CaTargetPlatform.Companion.public val LSP
 ## org/cangnova/cangjie/analysis/api/projectStructure/danglingFiles.kt
 package org.cangnova.cangjie.analysis.api.projectStructure
 public enum class CaDanglingFileResolutionMode
@@ -840,6 +843,12 @@ public fun interface CaLocalVariableSymbolRenderer
 ## org/cangnova/cangjie/analysis/api/renderer/declarations/renderers/callables/CaNamedFunctionSymbolRenderer.kt
 package org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables
 public fun interface CaNamedFunctionSymbolRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/renderers/callables/CaPropertyGetterSymbolRenderer.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables
+public fun interface CaPropertyGetterSymbolRenderer
+## org/cangnova/cangjie/analysis/api/renderer/declarations/renderers/callables/CaPropertySetterSymbolRenderer.kt
+package org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables
+public fun interface CaPropertySetterSymbolRenderer
 ## org/cangnova/cangjie/analysis/api/renderer/declarations/renderers/callables/CaPropertySymbolRenderer.kt
 package org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables
 public fun interface CaPropertySymbolRenderer

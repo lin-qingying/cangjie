@@ -3,6 +3,6 @@ func takesInt(x: Int64): Int64 {
     return x
 }
 
-main() {
+main(): Unit {
     takesInt(<!ARGUMENT_TYPE_MISMATCH!>true<!>)
 }

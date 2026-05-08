@@ -24,13 +24,16 @@
 
 package org.cangnova.cangjie.lexer.cdoc.psi.impl
 
-import org.cangnova.cangjie.psi.psiUtil.getChildrenOfType
 import com.intellij.lang.ASTNode
+import com.intellij.psi.ContributedReferenceHost
+import com.intellij.psi.PsiReference
+import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
+import org.cangnova.cangjie.psi.psiUtil.getChildrenOfType
 
 /**
  *文档注释中描述单个类、方法或属性的部分由被记录的元素产生。例如，类的文档注释可以有类本身、其主构造函数和每个在主构造函数中定义的属性
  */
-class CDocSection(node: ASTNode) : CDocTag(node) {
+class CDocSection(node: ASTNode) : CDocTag(node), ContributedReferenceHost {
     /**
      *返回节的名称(引导节的文档标签的名称或对于默认部分为NULL)
      */
@@ -48,4 +51,12 @@ class CDocSection(node: ASTNode) : CDocTag(node) {
     }
 
     fun findTagByName(name: String): CDocTag? = findTagsByName(name).firstOrNull()
+
+    override fun getReference(): PsiReference? {
+        return references.firstOrNull()
+    }
+
+    override fun getReferences(): Array<out PsiReference?> {
+        return CangJieReferenceProvidersService.getReferencesFromProviders(this)
+    }
 }

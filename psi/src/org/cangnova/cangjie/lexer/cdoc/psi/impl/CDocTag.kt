@@ -110,12 +110,11 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
         }
         for (node in children) {
             val type = node.elementType
+            val nodeText = node.text
+            val isTextIndented = nodeText.isIndented()
+
             if (type == CDocTokens.CODE_BLOCK_TEXT) {
-                // If first line of code block
-                if (!isCodeBlock()) {
-                    indentedCodeBlock =
-                        indentedCodeBlock || node.text.startsWith(indentationWhiteSpaces) || node.text.startsWith("\t")
-                }
+                indentedCodeBlock = (!isCodeBlock() || indentedCodeBlock) && isTextIndented
                 startCodeBlock()
             } else if (CDocTokens.CONTENT_TOKENS.contains(type)) {
                 flushCodeBlock()
@@ -123,12 +122,9 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
             }
 
             if (CDocTokens.CONTENT_TOKENS.contains(type)) {
-                val isPlainContent = afterAsterisk && !isCodeBlock()
-// 如果内容尚未开始且不是缩进代码块的一部分
-// 并且不在带围栏的代码块内， 应该去掉前面空格
-                val trimLeadingSpaces = !(contentStarted || indentedCodeBlock) || isPlainContent
+                val trimLeadingSpaces = (!contentStarted || afterAsterisk) && !(isCodeBlock() || isTextIndented)
 
-                targetBuilder.append(if (trimLeadingSpaces) node.text.trimStart() else node.text)
+                targetBuilder.append(if (trimLeadingSpaces) nodeText.trimStart() else nodeText)
                 contentStarted = true
                 afterAsterisk = false
             }
@@ -136,7 +132,7 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
                 afterAsterisk = true
             }
             if (type == TokenType.WHITE_SPACE && contentStarted) {
-                targetBuilder.append("\n".repeat(StringUtil.countNewLines(node.text)))
+                targetBuilder.append("\n".repeat(StringUtil.countNewLines(nodeText)))
             }
             if (type == CDocElementTypes.CDOC_TAG) {
                 break
@@ -145,21 +141,25 @@ open class CDocTag(node: ASTNode) : CDocElementImpl(node) {
 
         flushCodeBlock()
 
-        return builder.toString().trimEnd(' ', '\t')
+        return builder.toString().trimEnd('\r', '\n', ' ', '\t')
     }
 
     private fun trimCommonIndent(builder: StringBuilder, prepend4WhiteSpaces: Boolean = false): String {
-        val lines = builder.toString().split('\n')
-        val minIndent = lines.filter { it.trim().isNotEmpty() }.minOfOrNull { it.calcIndent() } ?: 0
-        var processedLines = lines.map { it.drop(minIndent) }
-        if (prepend4WhiteSpaces) {
-            processedLines =
-                processedLines.map { if (it.isNotBlank()) it.prependIndent(indentationWhiteSpaces) else it }
+        val lines = builder.lines()
+        val minIndent = lines.filter { it.isNotBlank() }.minOfOrNull { it.calcIndent() } ?: 0
+
+        val processedLines = lines.map { line ->
+            if (line.isNotBlank()) {
+                line.drop(minIndent).let { if (prepend4WhiteSpaces) it.prependIndent(indentationWhiteSpaces) else it }
+            } else {
+                ""
+            }
         }
         return processedLines.joinToString("\n")
     }
 
     private fun String.calcIndent() = indexOfFirst { !it.isWhitespace() }
+    private fun String.isIndented() = startsWith(indentationWhiteSpaces) || startsWith("\t")
 
     companion object {
         val indentationWhiteSpaces = " ".repeat(4)

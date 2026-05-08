@@ -5,4 +5,3 @@ import <!UNRESOLVED_IMPORT!>gamma<!>.three.Other
 
 func importConflictSuite(): Unit {
 }
-

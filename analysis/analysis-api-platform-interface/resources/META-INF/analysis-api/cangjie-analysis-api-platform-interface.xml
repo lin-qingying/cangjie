@@ -15,5 +15,11 @@
         area="IDEA_PROJECT"
         dynamic="true"
     />
+    <extensionPoint
+        qualifiedName="org.cangnova.cangjie.cangjieContentScopeRefiner"
+        interface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner"
+        area="IDEA_PROJECT"
+        dynamic="true"
+    />
   </extensionPoints>
 </idea-plugin>

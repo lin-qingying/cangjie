@@ -5,6 +5,7 @@ import com.intellij.openapi.extensions.ExtensionPointName
 import com.intellij.openapi.project.Project
 import com.intellij.psi.ContributedReferenceHost
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiNameIdentifierOwner
 import com.intellij.psi.PsiReference
 import com.intellij.psi.impl.source.resolve.reference.ReferenceProvidersRegistry
 import com.intellij.psi.util.CachedValueProvider
@@ -14,8 +15,10 @@ import com.intellij.util.containers.ConcurrentFactoryMap
 import com.intellij.util.containers.MultiMap
 import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor
 import org.cangnova.cangjie.references.CangJiePsiReferenceProviderContributor.ReferenceProvider
+import org.cangnova.cangjie.psi.psiUtil.parentOfType
 
 /**
  * 对齐 Kotlin `KotlinReferenceProvidersServiceImpl` 的 contributor 分发实现。
@@ -50,6 +53,10 @@ internal class CangJieReferenceProvidersServiceImpl(
         }
 
     private fun doGetCangJieReferencesFromProviders(context: CjElement): Array<PsiReference> {
+        if (context is CjSimpleNameExpression && context.isDeclarationNameExpression()) {
+            return PsiReference.EMPTY_ARRAY
+        }
+
         val providers = providersBindingCache[context.javaClass]
         if (providers.isNullOrEmpty()) return PsiReference.EMPTY_ARRAY
 
@@ -90,4 +97,17 @@ internal class CangJieReferenceProvidersServiceImpl(
             LOG.error(t)
         }
     }
+}
+
+/**
+ * 仓颉的声明名 PSI 当前会物化成 [CjSimpleNameExpression]。
+ *
+ * Kotlin 的声明名通常不会沿着 simple-name reference provider 这条链路分发，
+ * 但仓颉这里如果不先过滤，会把 `let result = ...` 里的 `result` 错当成引用。
+ * 因此统一在 reference service 入口排除 declaration-name 场景，再继续 contributor 分发。
+ */
+private fun CjSimpleNameExpression.isDeclarationNameExpression(): Boolean {
+    val owner = parentOfType<PsiNameIdentifierOwner>(withSelf = true) ?: return false
+    val nameIdentifier = owner.nameIdentifier ?: return false
+    return referencedNameElement == nameIdentifier
 }

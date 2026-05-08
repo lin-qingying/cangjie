@@ -61,6 +61,18 @@ class CangJieNamedFunctionStubImpl(
     override fun hasBody() = hasBody
     override fun hasTypeParameterListBeforeFunctionName() = hasTypeParameterListBeforeFunctionName
 
+    override fun copyInto(newParent: StubElement<*>?): CangJieNamedFunctionStubImpl = CangJieNamedFunctionStubImpl(
+        parent = newParent,
+        element = stubType,
+        nameRef = nameRef,
+        isTopLevel = isTopLevel,
+        fqName = fqName,
+        hasBlockBody = hasBlockBody,
+        hasBody = hasBody,
+        hasTypeParameterListBeforeFunctionName = hasTypeParameterListBeforeFunctionName,
+        origin = origin,
+    )
+
     companion object
 }
 
@@ -79,6 +91,14 @@ class CangJieMainFunctionStubImpl(
 
     override fun getName() = StringRef.toString(nameRef)
     override fun isTopLevel() = true
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieMainFunctionStubImpl = CangJieMainFunctionStubImpl(
+        parent = newParent,
+        element = stubType,
+        nameRef = nameRef,
+        fqName = fqName,
+        origin = origin,
+    )
 }
 
 class CangJieMacroStubImpl(
@@ -105,4 +125,16 @@ class CangJieMacroStubImpl(
     override fun hasBlockBody() = hasBlockBody
     override fun hasBody() = hasBody
     override fun hasTypeParameterListBeforeFunctionName() = hasTypeParameterListBeforeFunctionName
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieMacroStubImpl = CangJieMacroStubImpl(
+        parent = newParent,
+        element = stubType,
+        nameRef = nameRef,
+        isTopLevel = isTopLevel,
+        fqName = fqName,
+        hasBlockBody = hasBlockBody,
+        hasBody = hasBody,
+        hasTypeParameterListBeforeFunctionName = hasTypeParameterListBeforeFunctionName,
+        origin = origin,
+    )
 }

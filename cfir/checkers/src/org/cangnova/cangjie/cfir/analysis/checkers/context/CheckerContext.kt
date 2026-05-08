@@ -8,10 +8,6 @@ import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.Severity
-import org.cangnova.cangjie.cfir.expressions.CfirAssignment
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -178,27 +174,14 @@ class MutableCheckerContext(
     override fun addElement(element: CfirElement): CheckerContextForProvider {
         if (mutableElements.lastOrNull() !== element) {
             mutableElements += element
-            if (element.isCallOrAssignmentCandidate()) {
-                mutableCallsOrAssignments += element
-            }
         }
         return this
     }
 
     override fun dropElement() {
         if (mutableElements.isNotEmpty()) {
-            val removed = mutableElements.removeLast()
-            if (removed.isCallOrAssignmentCandidate()) {
-                mutableCallsOrAssignments.removeLast()
-            }
+            mutableElements.removeLast()
         }
-    }
-
-    private fun CfirElement.isCallOrAssignmentCandidate(): Boolean {
-        return this is CfirFunctionCall ||
-                this is CfirNamedAccessExpression ||
-                this is CfirQualifiedAccessExpression ||
-                this is CfirAssignment
     }
 }
 

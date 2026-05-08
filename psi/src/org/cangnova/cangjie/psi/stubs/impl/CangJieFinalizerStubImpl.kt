@@ -41,4 +41,11 @@ class CangJieFinalizerStubImpl(
     override fun getName() = StringRef.toString(containingClassName)
     override fun isTopLevel() = false
     override fun hasBody() = hasBody
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieFinalizerStubImpl = CangJieFinalizerStubImpl(
+        parent = newParent,
+        elementType = stubType,
+        containingClassName = containingClassName,
+        hasBody = hasBody,
+    )
 }

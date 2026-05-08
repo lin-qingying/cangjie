@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.stubs
 
 import com.intellij.openapi.application.ApplicationManager
@@ -7,10 +9,10 @@ import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.CangJieCoreEnvironment
-import org.cangnova.cangjie.analysis.api.CaBuiltinsModule
-import org.cangnova.cangjie.analysis.api.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformState
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneProjectStructure
@@ -240,14 +242,11 @@ internal object CaStubTestSupport {
      */
     private class SimpleBuiltinsModule(
         override val project: com.intellij.openapi.project.Project,
-    ) : CaBuiltinsModule {
+    ) : CaModuleBase(), CaBuiltinsModule {
         override val builtinsName: String = "<stubs-test-builtins>"
 
-        override val targetPlatform: CaTargetPlatform
-            get() = CaTargetPlatform.STANDALONE
-
         override val isResolvable: Boolean
-            get() = false
+            get() = true
 
         override val baseContentScope: GlobalSearchScope
             get() = CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)

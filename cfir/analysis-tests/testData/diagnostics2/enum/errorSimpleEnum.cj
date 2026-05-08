@@ -33,14 +33,14 @@ func name(): Unit {
     let a = A1(1)
 
     let b = <!ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR!>A<!>(1)
-    let c: A = <!CANNOT_INFER_PARAMETER_TYPE!>None1<!>
+    let c: A = <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None1<!>
     let d: A = <!TYPE_MISMATCH!>None1<Int64><!>
 
     let e = None<Int64>
-    let f: Option1<Int64> = <!CANNOT_INFER_PARAMETER_TYPE!>None<!>
+    let f: Option1<Int64> = <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None<!>
 
     let g = <!CANNOT_INFER_PARAMETER_TYPE!>Some2<!>(1)
 
-    let f1 = Some<Float64>(<!ARGUMENT_TYPE_MISMATCH!>1<!>)
-    let g1 = None<Int64>
+    let fStd = Some<Float64>(<!ARGUMENT_TYPE_MISMATCH!>1<!>)
+    let gStd = None<Int64>
 }

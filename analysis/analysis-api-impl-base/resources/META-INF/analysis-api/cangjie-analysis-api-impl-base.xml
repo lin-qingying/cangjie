@@ -17,7 +17,7 @@
     />
     <applicationService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionOptions"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseAnalysisPermissionOptions"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.platform.permissions.CaDefaultAnalysisPermissionOptions"
     />
 
     <projectService
@@ -29,23 +29,8 @@
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.restrictedAnalysis.CaBaseRestrictedAnalysisService"
     />
     <projectService
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeProjectStructureState"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeProjectStructureProvider"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModuleProvider"
-    />
-    <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.projectStructure.CaModuleProvider"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBaseModuleProvider"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeContentScopeRefiner"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider"
@@ -56,20 +41,12 @@
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CangJieOptimizingGlobalSearchScopeMerger"
     />
     <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProvider"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModuleDependentsProvider"
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeProvider"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBaseContentScopeProvider"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.CangJieMessageBusProvider"
         serviceImplementation="org.cangnova.cangjie.analysis.api.platform.CangJieProjectMessageBusProvider"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeModificationTracker"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaIdeSessionInvalidationService"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTracker"
@@ -77,31 +54,11 @@
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTokenFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.platform.lifetime.CaReadActionConfinementLifetimeTokenFactory"
     />
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings"
         serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.CaBasePlatformSettings"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderFactory"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.declarations.CaIdeDeclarationProviderFactory"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderMerger"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.declarations.CaIdeDeclarationProviderMerger"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderFactory"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.packages.CaIdePackageProviderFactory"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderMerger"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.packages.CaIdePackageProviderMerger"
-    />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolverFactory"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.declarations.CaIdeAnnotationsResolverFactory"
     />
   </extensions>
 </idea-plugin>

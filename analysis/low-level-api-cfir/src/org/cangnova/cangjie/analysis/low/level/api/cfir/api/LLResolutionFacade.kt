@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 /*
  * Copyright 2026 LinQingYing. and contributors.
  *
@@ -46,6 +48,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment

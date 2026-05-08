@@ -11,12 +11,10 @@ main(): Int64 {
     while (true) {
         func test() {
             if (true) {
-                break
+                <!INVALID_LOOP_CONTROL!>break<!>
             }
         }
         test()
     }
     return 0
 }
-
-// ASSERT: regex 'break' or 'continue' must be used inside a loop

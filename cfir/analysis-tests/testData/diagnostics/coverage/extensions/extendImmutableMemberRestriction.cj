@@ -13,10 +13,13 @@ extend Record <: Marker {
             1
         }
         set(value) {
+            let _ = value
         }
     }
 
     operator func [](index: Int64, value!: Int64): Unit {
+        let _ = index
+        let _ = value
         return
     }
 }
@@ -27,10 +30,13 @@ extend Choice <: Marker {
             1
         }
         set(value) {
+            let _ = value
         }
     }
 
     operator func [](index: Int64, value!: Int64): Unit {
+        let _ = index
+        let _ = value
         return
     }
 }

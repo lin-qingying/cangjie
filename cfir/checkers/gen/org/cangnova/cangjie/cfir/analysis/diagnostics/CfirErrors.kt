@@ -121,6 +121,17 @@ object CfirErrors : CjDiagnosticsContainer() {
 
     // Interop
     val INVALID_CFUNC_RETURN_TYPE: CjDiagnosticFactory1<ConeCangJieType> = CjDiagnosticFactory1("CFIR_INVALID_CFUNC_RETURN_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
+    val INVALID_CFUNC_PARAMETER_TYPE: CjDiagnosticFactory1<ConeCangJieType> = CjDiagnosticFactory1("CFIR_INVALID_CFUNC_PARAMETER_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
+    val ONLY_CFUNC_CAN_USE_ANNOTATION: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ONLY_CFUNC_CAN_USE_ANNOTATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val ILLEGAL_SCOPE_USE_OF_ANNOTATION: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ILLEGAL_SCOPE_USE_OF_ANNOTATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+
+    // Exception
+    val THROW_EXPR_WITH_WRONG_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_THROW_EXPR_WITH_WRONG_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CATCH_TYPE_MUST_EXTEND_EXCEPTION: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CATCH_TYPE_MUST_EXTEND_EXCEPTION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
+    val USELESS_EXCEPTION_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_USELESS_EXCEPTION_TYPE", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
+
+    // Range
+    val RANGE_STEP_CANNOT_BE_ZERO: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_RANGE_STEP_CANNOT_BE_ZERO", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // Effects
     val EFFECTS_FEATURE_DISABLED: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_EFFECTS_FEATURE_DISABLED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjElement::class, getRendererFactory())
@@ -469,6 +480,7 @@ object CfirErrors : CjDiagnosticsContainer() {
 
     // Unused
     val UNUSED_IMPORT: CjDiagnosticFactory1<FqName> = CjDiagnosticFactory1("CFIR_UNUSED_IMPORT", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, CjImportItem::class, getRendererFactory())
+    val UNUSED_EXPRESSION: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_UNUSED_EXPRESSION", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, CjExpression::class, getRendererFactory())
 
     // Mock
     val MOCK_DISABLED: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_MOCK_DISABLED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

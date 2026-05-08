@@ -1,5 +1,4 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// IGNORE_ERRORS
-common class Repo
+<!NOT_MATCHED!>common class Repo {}<!>
 
-<!SPECIFIC_HAS_DIFFERENT_TYPE!>/* suggested message: specific declaration kind must match the paired common declaration kind. source: docs/diagnostics-gap-vs-official-cpp-sema-detailed.md */specific interface Repo {}<!>
+<!NOT_MATCHED, SPECIFIC_HAS_DIFFERENT_KIND!>specific interface Repo {}<!>

@@ -15,37 +15,7 @@ enum TimeUnit1<T> {
 }
 
 func codegenUnitTest(): Int32 {
-    var time1 = Year(1)
-    var time2 = TimeUnit.Month(r'a')
+    var time1 = <!AMBIGUOUS_CONSTRUCTOR_CALL!>Year<!>(1)
+    var time2 = TimeUnit.Month(<!TYPE_MISMATCH!>r'a'<!>)
     return 0
 }
-
-/* SCAN
-error: find multiple constructor 'Year' of enum declaration
-  ==> enum10.cj:18:17:
-   | 
-18 |     var time1 = Year(1)
-   |                 ^ 
-   | 
-note: found candidate
-  ==> enum10.cj:10:5:
-   | 
-10 |     Year(Int32) | Month(Int32)
-   |     ^ 
-   | 
-note: found candidate
-  ==> enum10.cj:14:5:
-   | 
-14 |     Year(T)
-   |     ^ 
-   | 
-
-error: cannot convert a character literal to type 'Int32'
-  ==> enum10.cj:19:32:
-   | 
-19 |     var time2 = TimeUnit.Month(r'a')
-   |                                ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

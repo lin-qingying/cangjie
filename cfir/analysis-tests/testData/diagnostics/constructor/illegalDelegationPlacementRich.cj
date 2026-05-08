@@ -1,6 +1,8 @@
 // RUN_PIPELINE_TILL: FRONTEND
 open class Base {
-    init(v: Int64) {}
+    init(v: Int64) {
+        let _ = v
+    }
 }
 
 class IllegalThisInMember {

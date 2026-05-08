@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -67,12 +68,14 @@ internal fun CaCfirSession.findDecompiledContainingFile(
 
     findInModule(preferredModule)?.let { return it }
 
-    projectStructure.allModules.filterIsInstance<CaBuiltinsModule>().forEach { module ->
-        if (module === preferredModule) return@forEach
-        psiProvider.findDecompiledFile(module, packageFqName)?.let { return it }
+    psiProvider.findBuiltinsDecompiledFile(packageFqName)?.let { decompiledFile ->
+        val builtinsModule = CangJieProjectStructureProvider.getModule(project, decompiledFile, useSiteModule = null)
+        if (builtinsModule !== preferredModule) {
+            return decompiledFile
+        }
     }
 
-    projectStructure.allModules.filterIsInstance<CaLibraryModule>().forEach { module ->
+    CaModuleProvider.getInstance(project).allModules.filterIsInstance<CaLibraryModule>().forEach { module ->
         if (module === preferredModule) return@forEach
         psiProvider.findDecompiledFile(module, packageFqName)?.let { return it }
     }

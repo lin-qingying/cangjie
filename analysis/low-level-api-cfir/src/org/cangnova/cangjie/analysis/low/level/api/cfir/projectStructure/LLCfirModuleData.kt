@@ -7,7 +7,6 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure
 
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionCache
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
@@ -53,7 +52,7 @@ open class LLCfirModuleData internal constructor(val caModule: CaModule) : CfirM
     }
 
     override val platform: CfirPlatform
-        get() = caModule.targetPlatform.toCfirPlatform()
+        get() = CfirPlatform.DEFAULT
 
     override val isCommon: Boolean
         get() = platform == CfirPlatform.DEFAULT
@@ -74,14 +73,4 @@ open class LLCfirModuleData internal constructor(val caModule: CaModule) : CfirM
 
     override fun equals(other: Any?): Boolean = this === other || other is LLCfirModuleData && caModule == other.caModule
     override fun hashCode(): Int = caModule.hashCode()
-}
-
-private fun CaTargetPlatform.toCfirPlatform(): CfirPlatform {
-    return when (platformId.lowercase()) {
-        "ohos" -> CfirPlatform.OHOS
-        "linux" -> CfirPlatform.LINUX
-        "windows" -> CfirPlatform.WINDOWS
-        "macos" -> CfirPlatform.MACOS
-        else -> CfirPlatform.DEFAULT
-    }
 }

@@ -6,16 +6,10 @@ import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationOri
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationOriginKind
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationProvider
 import org.cangnova.cangjie.analysis.api.lightDeclarations.documentation
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.light.declarations.CaLightCallableDeclarationImpl
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisSessionMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -33,15 +27,7 @@ import org.cangnova.cangjie.name.Name
 class AnalysisApiLightDeclarationDocumentationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/lightDeclarationDocs",
 ) {
-    override val configurator: AnalysisApiTestConfigurator =
-        CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(
-            AnalysisApiTestConfiguratorFactoryData(
-                frontend = FrontendKind.Cfir,
-                moduleKind = TestModuleKind.Source,
-                analysisSessionMode = AnalysisSessionMode.Normal,
-                analysisApiMode = AnalysisApiMode.Standalone,
-            ),
-        )
+    override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
     @Test
     fun sourceLightDeclarationDocs(mainFile: CjFile, mainModule: CjTestModule) {

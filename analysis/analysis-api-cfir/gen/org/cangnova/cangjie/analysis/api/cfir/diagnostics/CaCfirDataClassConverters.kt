@@ -146,6 +146,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions146()
     addConversions147()
     addConversions148()
+    addConversions149()
     addConversions150()
     addConversions151()
     addConversions152()
@@ -305,6 +306,12 @@ private fun CaDiagnosticConverterBuilder.addConversions6() {
     }
     add(CfirErrors.IFAVAILABLE_ARG_NOT_LITERAL) { cfirDiagnostic ->
         IfavailableArgNotLiteralImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.UNUSED_EXPRESSION) { cfirDiagnostic ->
+        UnusedExpressionImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -548,6 +555,13 @@ private fun CaDiagnosticConverterBuilder.addConversions23() {
             token,
         )
     }
+    add(CfirErrors.ONLY_CFUNC_CAN_USE_ANNOTATION) { cfirDiagnostic ->
+        OnlyCfuncCanUseAnnotationImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions24() {
@@ -588,6 +602,13 @@ private fun CaDiagnosticConverterBuilder.addConversions24() {
 private fun CaDiagnosticConverterBuilder.addConversions25() {
     add(CfirErrors.SUPER_TYPES_SELF_REFERENCE) { cfirDiagnostic ->
         SuperTypesSelfReferenceImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.ILLEGAL_SCOPE_USE_OF_ANNOTATION) { cfirDiagnostic ->
+        IllegalScopeUseOfAnnotationImpl(
             cfirDiagnostic.a,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
@@ -1164,6 +1185,12 @@ private fun CaDiagnosticConverterBuilder.addConversions65() {
     add(CfirErrors.PARAM_NAMED_MISMATCHED) { cfirDiagnostic ->
         ParamNamedMismatchedImpl(
             cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.RANGE_STEP_CANNOT_BE_ZERO) { cfirDiagnostic ->
+        RangeStepCannotBeZeroImpl(
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -2458,6 +2485,16 @@ private fun CaDiagnosticConverterBuilder.addConversions148() {
     }
 }
 
+private fun CaDiagnosticConverterBuilder.addConversions149() {
+    add(CfirErrors.INVALID_CFUNC_PARAMETER_TYPE) { cfirDiagnostic ->
+        InvalidCfuncParameterTypeImpl(
+            cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.a),
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
 private fun CaDiagnosticConverterBuilder.addConversions150() {
     add(CfirErrors.MISMATCHED_TYPES_BECAUSE) { cfirDiagnostic ->
         MismatchedTypesBecauseImpl(
@@ -2477,6 +2514,12 @@ private fun CaDiagnosticConverterBuilder.addConversions150() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions151() {
+    add(CfirErrors.CATCH_TYPE_MUST_EXTEND_EXCEPTION) { cfirDiagnostic ->
+        CatchTypeMustExtendExceptionImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.INVALID_INOUT_ARGUMENT) { cfirDiagnostic ->
         InvalidInoutArgumentImpl(
             cfirDiagnostic as CjPsiDiagnostic,
@@ -2825,6 +2868,12 @@ private fun CaDiagnosticConverterBuilder.addConversions175() {
             token,
         )
     }
+    add(CfirErrors.USELESS_EXCEPTION_TYPE) { cfirDiagnostic ->
+        UselessExceptionTypeImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.COMMON_SPECIFIC_ANNOTATION_NOT_ALLOWED) { cfirDiagnostic ->
         CommonSpecificAnnotationNotAllowedImpl(
             cfirDiagnostic.a,
@@ -3135,6 +3184,12 @@ private fun CaDiagnosticConverterBuilder.addConversions193() {
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions194() {
+    add(CfirErrors.THROW_EXPR_WITH_WRONG_TYPE) { cfirDiagnostic ->
+        ThrowExprWithWrongTypeImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
     add(CfirErrors.EXTEND_REF_TARGET_CANNOT_BE_JAVA_IMPL) { cfirDiagnostic ->
         ExtendRefTargetCannotBeJavaImplImpl(
             cfirDiagnostic as CjPsiDiagnostic,

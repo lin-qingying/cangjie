@@ -62,4 +62,14 @@ class CangJieVariableStubImpl(
     override fun isTopLevel(): Boolean = isTopLevel
     override fun hasInitializer(): Boolean = hasInitializer
     override fun hasReturnTypeRef(): Boolean = hasReturnTypeRef
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieVariableStubImpl = CangJieVariableStubImpl(
+        parent = newParent,
+        patternKind = patternKind,
+        isVar = isVar,
+        isTopLevel = isTopLevel,
+        hasInitializer = hasInitializer,
+        hasReturnTypeRef = hasReturnTypeRef,
+        origin = origin,
+    )
 }

@@ -3,7 +3,7 @@ func positional(a: Int64, b: Int64): Int64 {
     return a + b
 }
 
-func positionalDefault(a: Int64 = 0, b: Int64 = 0): Int64 {
+func positionalDefault(a!: Int64 = 0, b!: Int64 = 0): Int64 {
     return a + b
 }
 
@@ -11,7 +11,7 @@ func named(top!: Int64, left!: Int64): Int64 {
     return top + left
 }
 
-func mixedFriendly(top!: Int64, plain: Int64): Int64 {
+func mixedFriendly(plain: Int64, top!: Int64): Int64 {
     return top + plain
 }
 
@@ -24,15 +24,15 @@ func testTooManyArguments(): Unit {
 }
 
 func testNamedArgumentsNotAllowed(): Unit {
-    positionalDefault(<!NAMED_ARGUMENTS_NOT_ALLOWED!>a<!>: 1, <!NAMED_ARGUMENTS_NOT_ALLOWED!>b<!>: 2)
+    positional(<!NAMED_ARGUMENTS_NOT_ALLOWED!>a<!>: 1, <!NAMED_ARGUMENTS_NOT_ALLOWED!>b<!>: 2)
 }
 
 func testNamedParameterNotFound(): Unit {
-    named(top: 1, <!NAMED_PARAMETER_NOT_FOUND!>right<!>: 2, left: 3)
+    named(top: 1, <!NAMED_PARAMETER_NOT_FOUND!>right<!>: 2)
 }
 
 func testArgumentPassedTwice(): Unit {
-    named(top: 1, <!ARGUMENT_PASSED_TWICE!>top<!>: 2, left: 3)
+    named(top: 1, <!ARGUMENT_PASSED_TWICE!>top<!>: 2)
 }
 
 func testMixingNamedAndPositionalArguments(): Unit {

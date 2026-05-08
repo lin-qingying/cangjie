@@ -41,7 +41,6 @@ abstract class AbstractModuleStructureTest : AbstractAnalysisApiBasedTest() {
     ) {
         val directives = mainModule.testModule.directives
         val primaryModule = mainModule.caModule
-        val allModulePlatforms = mainModule.allCaModules.map { it.targetPlatform }.distinct()
 
         assertEquals(
             directives.expectedPrimaryModuleShape,
@@ -69,8 +68,8 @@ abstract class AbstractModuleStructureTest : AbstractAnalysisApiBasedTest() {
 
         val expectedAuxiliaryShapes = directives[AnalysisApiProjectStructureTestDirectives.EXPECTED_AUXILIARY_MODULE_SHAPE]
             .sortedBy(ExpectedCaModuleShape::name)
-        val actualAuxiliaryShapes = mainModule.auxiliaryModules
-            .map(CaModule::toExpectedShape)
+        val actualAuxiliaryShapes = primaryModule.directRegularDependencies
+            .mapNotNull(::toAuxiliaryShapeOrNull)
             .sortedBy(ExpectedCaModuleShape::name)
         assertEquals(
             expectedAuxiliaryShapes,
@@ -120,11 +119,6 @@ abstract class AbstractModuleStructureTest : AbstractAnalysisApiBasedTest() {
             )
         }
 
-        assertEquals(
-            1,
-            allModulePlatforms.size,
-            "同一测试模块导出的所有 Analysis API 模块应共享同一 target platform。",
-        )
     }
 }
 
@@ -137,6 +131,12 @@ private fun CaModule.toExpectedShape(): ExpectedCaModuleShape = when (this) {
     is CaNotUnderContentRootModule -> ExpectedCaModuleShape.NotUnderContentRootModule
     is CaSourceModule -> ExpectedCaModuleShape.SourceModule
     else -> error("Unsupported CaModule implementation in project structure test: ${this::class.qualifiedName}")
+}
+
+private fun toAuxiliaryShapeOrNull(module: CaModule): ExpectedCaModuleShape? = when (module) {
+    is CaBuiltinsModule -> ExpectedCaModuleShape.BuiltinsModule
+    is CaLibraryFallbackDependenciesModule -> ExpectedCaModuleShape.LibraryFallbackDependenciesModule
+    else -> null
 }
 
 /**

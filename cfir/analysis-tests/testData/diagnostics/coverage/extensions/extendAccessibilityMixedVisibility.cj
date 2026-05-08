@@ -11,6 +11,7 @@ public interface Hashable {
 
 public interface Equatable {
     func equals(other: Unit): Bool {
+        let _ = other
         return false
     }
 }
@@ -25,8 +26,8 @@ package consumer
 
 import provider.*
 
-// Hashable 和 Equatable 的 extend 均可见（默认 public + 已导入）
+// 这里两个 extend 都可见
 func useMixedExtends(e: Entity): Unit {
-    e.hashCode()   // OK: extend 可访问
-    e.equals(())   // OK: extend 可访问
+    e.hashCode()
+    e.equals(())
 }

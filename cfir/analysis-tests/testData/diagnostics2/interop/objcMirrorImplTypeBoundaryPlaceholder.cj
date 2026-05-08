@@ -1,5 +1,4 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// IGNORE_ERRORS
 @ObjCMirror
 open class NativeMirror {
     @ForeignName("ok:")
@@ -13,6 +12,6 @@ class NativeImpl <: NativeMirror {
 }
 
 @ObjCImpl
-class MissingMirrorInheritance {
-    <!OBJC_IMPL_MUST_INHERIT_MIRROR!>/* suggested message: ObjC impl type must inherit from a compatible ObjC mirror type. source: external/cangjie_compiler/src/Sema/NativeFFI/ObjC/AfterTypeCheck/Interop/CheckImplTypes.cpp */public func ok(value: Int64): Unit {}<!>
+class <!OBJC_MIRROR_SUBTYPE_MUST_INHERIT_MIRROR, OBJC_IMPL_MUST_HAVE_OBJC_MIRROR_SUPER_CLASS!>MissingMirrorInheritance<!> {
+    public func ok(value: Int64): Unit {}
 }

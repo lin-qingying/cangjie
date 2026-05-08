@@ -9,9 +9,10 @@ package org.cangnova.cangjie.analysis.test.framework.test.configurators
 enum class TestModuleKind(val suffix: String) {
     Source("Source"),
     LibraryBinary("LibraryBinary"),
+    LibraryBinaryDecompiled("LibraryBinaryDecompiled"),
     LibrarySource("LibrarySource"),
+    ScriptSource("ScriptSource"),
     CodeFragment("CodeFragment"),
     NotUnderContentRoot("NotUnderContentRoot"),
-    Builtins("Builtins"),
-    LibraryFallbackDependencies("LibraryFallbackDependencies"),
+    NotUnderContentRootWithDependencies("NotUnderContentRootWithDependencies"),
 }

@@ -2,6 +2,7 @@
 // TARGET_EXPRESSION_TEXT: (mutableCounter)
 // EXPECTED_STABILITY: COMPUTED_VALUE
 // EXPECTED_IS_PURE_REFERENCE: true
+// EXPECTED_DATA_FLOW_EXPRESSION_TYPE: Int64
 package sample.dataflow
 
 func useMutableReference() {

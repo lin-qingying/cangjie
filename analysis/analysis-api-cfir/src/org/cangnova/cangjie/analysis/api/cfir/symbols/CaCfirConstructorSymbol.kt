@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
+import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -81,11 +82,7 @@ internal class CaCfirConstructorSymbol private constructor(
         get() = withValidityAssertion { false }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion {
-            val callablePsi = psi as? org.cangnova.cangjie.psi.CjCallableDeclaration ?: return@withValidityAssertion null
-            if (callablePsi.getStrictParentOfType<org.cangnova.cangjie.psi.CjExtend>() == null) return@withValidityAssertion null
-            (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
-        }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
 
     override val returnType: CaType
         get() = withValidityAssertion { cfirSymbol.returnType(builder) }

@@ -2,6 +2,6 @@
 open class ConcreteBase {}
 interface IMarker {}
 
-interface BadInterface <: <!INTERFACE_CANNOT_INHERIT_CLASS!>ConcreteBase<!> {}
+<!INTERFACE_CANNOT_INHERIT_CLASS!>interface BadInterface<!> <: ConcreteBase {}
 
-interface MixedInterface <: IMarker & <!INTERFACE_CANNOT_INHERIT_CLASS!>ConcreteBase<!> {}
+<!INTERFACE_CANNOT_INHERIT_CLASS!>interface MixedInterface<!> <: IMarker & ConcreteBase {}

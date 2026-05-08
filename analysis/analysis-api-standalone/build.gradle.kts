@@ -13,6 +13,9 @@ import org.gradle.api.tasks.TaskAction
 
 plugins {
     kotlin("jvm")
+    id("java-test-fixtures")
+    id("project-tests-convention")
+    id("generated-sources")
 }
 
 description = "Standalone entrypoints for consuming the Cangjie frontend analysis API."
@@ -26,6 +29,38 @@ dependencies {
     implementation(project(":analysis:analysis-internal-utils"))
     implementation(project(":common"))
     implementation(project(":psi"))
+
+    testImplementation(project(":analysis:analysis-api"))
+    testImplementation(project(":analysis:analysis-api-standalone"))
+    testImplementation(testFixtures(project(":analysis:analysis-api-cfir")))
+    testImplementation(testFixtures(project(":analysis:analysis-api-impl-base")))
+    testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+
+    testFixturesApi(project(":analysis:analysis-api"))
+    testFixturesApi(project(":analysis:analysis-api-standalone"))
+    testFixturesApi(testFixtures(project(":analysis:analysis-api-cfir")))
+    testFixturesApi(testFixtures(project(":analysis:analysis-api-impl-base")))
+    testFixturesApi(testFixtures(project(":analysis:analysis-test-framework")))
+    testFixturesApi(libs.junit.jupiter)
+    testFixturesRuntimeOnly(libs.junit.platform.launcher)
+}
+
+sourceSets {
+    "test" {
+        projectDefault()
+        generatedTestDir()
+    }
+    "testFixtures" { projectDefault() }
+}
+
+projectTests {
+    testTask(jUnitMode = JUnitMode.JUnit5) {
+        workingDir = rootDir
+    }
+
+    testGenerator("org.cangnova.cangjie.analysis.api.standalone.cfir.test.TestGeneratorKt")
 }
 
 /**

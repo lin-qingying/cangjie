@@ -15,7 +15,6 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.util.withCaModuleEntry
 import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.psi.CjCodeFragment
@@ -26,14 +25,14 @@ import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
  * 默认的 dangling file module 平台实现。
  *
  * 这里对位 Kotlin `KaDanglingFileModuleImpl`：模块自身只描述 dangling files 与上下文模块的绑定，
- * 依赖、平台和内容范围都直接继承自 [contextModule]。
+ * 依赖与内容范围直接继承自 [contextModule]。
  */
 @CaPlatformInterface
 class CaDanglingFileModuleImpl(
     files: List<CjFile>,
     override val contextModule: CaModule,
     override val resolutionMode: CaDanglingFileResolutionMode,
-) : CaDanglingFileModule {
+) : CaModuleBase(), CaDanglingFileModule {
     override val isCodeFragment: Boolean = files.any { it is CjCodeFragment }
 
     @Suppress("DEPRECATION")
@@ -73,9 +72,6 @@ class CaDanglingFileModuleImpl(
 
     override val project: Project
         get() = contextModule.project
-
-    override val targetPlatform: CaTargetPlatform
-        get() = contextModule.targetPlatform
 
     override val baseContentScope: GlobalSearchScope
         get() {

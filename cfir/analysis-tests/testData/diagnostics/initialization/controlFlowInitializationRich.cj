@@ -1,6 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
 func localReadAfterWhile(flag: Bool): Int64 {
-    let value: Int64
+    var value: Int64
     while (flag) {
         value = 1
         break
@@ -9,7 +9,7 @@ func localReadAfterWhile(flag: Bool): Int64 {
 }
 
 func localReadAfterDoWhile(flag: Bool): Int64 {
-    let value: Int64
+    var value: Int64
     do {
         value = 1
     } while (flag)
@@ -17,7 +17,7 @@ func localReadAfterDoWhile(flag: Bool): Int64 {
 }
 
 func localReadAfterTryCatch(flag: Bool): Int64 {
-    let value: Int64
+    var value: Int64
     try {
         if (flag) {
             value = 1
@@ -27,25 +27,25 @@ func localReadAfterTryCatch(flag: Bool): Int64 {
     } catch (e: Exception) {
         value = 3
     } finally {
-        let done = true
+        let _ = true
     }
     return value
 }
 
 func localReadAfterTryWithoutInitialization(): Int64 {
-    let value: Int64
+    var value: Int64
     try {
-        let copy = 1
+        let _ = 1
     } catch (e: Exception) {
-        let fallback = 2
+        let _ = 2
     } finally {
-        let done = true
+        let _ = true
     }
     return <!USED_BEFORE_INITIALIZATION!>value<!>
 }
 
 class CompleteByTryCatch {
-    let value: Int64
+    var value: Int64
 
     init(flag: Bool) {
         try {
@@ -57,7 +57,7 @@ class CompleteByTryCatch {
         } catch (e: Exception) {
             value = 3
         } finally {
-            let done = true
+            let _ = true
         }
     }
 }

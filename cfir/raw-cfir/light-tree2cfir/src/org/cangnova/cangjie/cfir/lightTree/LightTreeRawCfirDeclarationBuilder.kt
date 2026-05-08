@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.lightTree
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.declarations.*
@@ -11,12 +12,14 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
@@ -166,6 +169,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
+                    scopeProvider = baseScopeProvider
                     attributes = declarationAttributes(node)
                     status = modifiers.toDeclarationStatusForCurrentContext()
                     this.typeParameters.addAll(typeParams)
@@ -184,6 +188,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
+                    scopeProvider = baseScopeProvider
                     attributes = declarationAttributes(node)
                     status = modifiers.toDeclarationStatusForCurrentContext()
                     this.typeParameters.addAll(typeParams)
@@ -208,6 +213,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
+                    scopeProvider = baseScopeProvider
                     attributes = declarationAttributes(node)
                     status = modifiers.toDeclarationStatusForCurrentContext()
                     this.typeParameters.addAll(typeParams)
@@ -238,6 +244,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
+                    scopeProvider = baseScopeProvider
                     attributes = declarationAttributes(node)
                     status = modifiers.toDeclarationStatusForCurrentContext()
                     this.typeParameters.addAll(typeParams)
@@ -440,7 +447,7 @@ class LightTreeRawCfirDeclarationBuilder(
             convertPropertyAccessor(
                 node = accessorNode,
                 accessorName = Name.special("<get-${name.asString()}>"),
-                defaultReturnTypeRef = typeRef,
+                propertyTypeRef = typeRef,
                 propertySymbol = propertySymbol,
             )
         }
@@ -448,7 +455,7 @@ class LightTreeRawCfirDeclarationBuilder(
             convertPropertyAccessor(
                 node = accessorNode,
                 accessorName = Name.special("<set-${name.asString()}>"),
-                defaultReturnTypeRef = buildImplicitTypeRef(),
+                propertyTypeRef = typeRef,
                 propertySymbol = propertySymbol,
             )
         }
@@ -479,7 +486,7 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertPropertyAccessor(
         node: LighterASTNode,
         accessorName: Name,
-        defaultReturnTypeRef: CfirTypeRef,
+        propertyTypeRef: CfirTypeRef,
         propertySymbol: CfirPropertySymbol,
     ): CfirPropertyAccessor {
         val modifiers = LightTreeModifierList.from(tree, node)
@@ -488,11 +495,18 @@ class LightTreeRawCfirDeclarationBuilder(
         val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
         val accessorSymbol = CfirPropertyAccessorSymbol()
         val valueParameters = extractValueParameters(node, accessorSymbol)
+        val isGetter = isGetterAccessor(node)
+        if (!isGetter) {
+            valueParameters.firstOrNull()
+                ?.takeIf { it.returnTypeRef is CfirImplicitTypeRef }
+                ?.replaceReturnTypeRef(propertyTypeRef)
+        }
+        val source = node.toSource()
 
         return buildSourceDeclaration(accessorSymbol) { symbol ->
             buildPropertyAccessor {
                 resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = node.toSource()
+                this.source = source
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
@@ -500,9 +514,10 @@ class LightTreeRawCfirDeclarationBuilder(
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
                 status = modifiers.toDeclarationStatusForCurrentContext()
-                returnTypeRef = explicitReturnTypeRef ?: defaultReturnTypeRef
+                returnTypeRef = explicitReturnTypeRef
+                    ?: if (isGetter) propertyTypeRef else baseSession.builtinTypes.unitType.toCfirResolvedTypeRef(source)
                 this.propertySymbol = propertySymbol
-                this.isGetter = isGetterAccessor(node)
+                this.isGetter = isGetter
                 this.valueParameters.addAll(valueParameters)
                 this.body = body
             }
@@ -637,6 +652,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
+                scopeProvider = baseScopeProvider
                 attributes = CfirDeclarationAttributes.EMPTY
                 status = modifiers.toDeclarationStatusForCurrentContext()
                 this.typeParameters.addAll(typeParams)

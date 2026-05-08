@@ -63,5 +63,13 @@ open class CangJieEnumStubImpl(
 
     override fun getClassId(): ClassId? = classId
 
-//    override fun isTopLevel() = isTopLevel
+    override fun copyInto(newParent: StubElement<*>?): CangJieEnumStubImpl = CangJieEnumStubImpl(
+        type = stubType as CjEnumElementType,
+        parent = newParent,
+        qualifiedName = qualifiedName,
+        classId = classId,
+        name = name,
+        superNames = superNames,
+        isNonExhaustive = isNonExhaustive,
+    )
 }

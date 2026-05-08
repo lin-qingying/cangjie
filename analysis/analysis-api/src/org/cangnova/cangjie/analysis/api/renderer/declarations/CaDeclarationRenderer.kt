@@ -24,7 +24,9 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callabl
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaFunctionLikeKeywordRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaLocalVariableSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaNamedFunctionSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertyGetterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySetterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaValueParameterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaClassLikeSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaExtendSymbolRenderer
@@ -48,7 +50,9 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
@@ -88,6 +92,8 @@ class CaDeclarationRenderer private constructor(
     val namedFunctionRenderer: CaNamedFunctionSymbolRenderer,
     val constructorRenderer: CaConstructorSymbolRenderer,
     val propertyRenderer: CaPropertySymbolRenderer,
+    val getterRenderer: CaPropertyGetterSymbolRenderer,
+    val setterRenderer: CaPropertySetterSymbolRenderer,
     val fieldRenderer: CaFieldSymbolRenderer,
     val localVariableRenderer: CaLocalVariableSymbolRenderer,
     val enumConstructorRenderer: CaEnumConstructorSymbolRenderer,
@@ -123,6 +129,8 @@ class CaDeclarationRenderer private constructor(
             is CaAnonymousFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this, printer)
             is CaEnumConstructorSymbol -> enumConstructorRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaPropertySymbol -> propertyRenderer.renderSymbol(analysisSession, symbol, this, printer)
+            is CaPropertyGetterSymbol -> getterRenderer.renderSymbol(analysisSession, symbol, this, printer)
+            is CaPropertySetterSymbol -> setterRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaFieldSymbol -> fieldRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaValueParameterSymbol -> valueParameterRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaVariableSymbol -> localVariableRenderer.renderSymbol(analysisSession, symbol, this, printer)
@@ -172,6 +180,8 @@ class CaDeclarationRenderer private constructor(
             namedFunctionRenderer = current.namedFunctionRenderer
             constructorRenderer = current.constructorRenderer
             propertyRenderer = current.propertyRenderer
+            getterRenderer = current.getterRenderer
+            setterRenderer = current.setterRenderer
             fieldRenderer = current.fieldRenderer
             localVariableRenderer = current.localVariableRenderer
             enumConstructorRenderer = current.enumConstructorRenderer
@@ -214,6 +224,8 @@ class CaDeclarationRenderer private constructor(
         lateinit var namedFunctionRenderer: CaNamedFunctionSymbolRenderer
         lateinit var constructorRenderer: CaConstructorSymbolRenderer
         lateinit var propertyRenderer: CaPropertySymbolRenderer
+        lateinit var getterRenderer: CaPropertyGetterSymbolRenderer
+        lateinit var setterRenderer: CaPropertySetterSymbolRenderer
         lateinit var fieldRenderer: CaFieldSymbolRenderer
         lateinit var localVariableRenderer: CaLocalVariableSymbolRenderer
         lateinit var enumConstructorRenderer: CaEnumConstructorSymbolRenderer
@@ -253,6 +265,8 @@ class CaDeclarationRenderer private constructor(
             namedFunctionRenderer = namedFunctionRenderer,
             constructorRenderer = constructorRenderer,
             propertyRenderer = propertyRenderer,
+            getterRenderer = getterRenderer,
+            setterRenderer = setterRenderer,
             fieldRenderer = fieldRenderer,
             localVariableRenderer = localVariableRenderer,
             enumConstructorRenderer = enumConstructorRenderer,

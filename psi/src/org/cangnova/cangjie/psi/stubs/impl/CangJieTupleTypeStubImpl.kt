@@ -32,4 +32,8 @@ import com.intellij.psi.stubs.StubElement
 
 class CangJieTupleTypeStubImpl(
     parent: StubElement<out PsiElement>?,
-) : CangJieStubBaseImpl<CjTupleType>(parent, CjStubElementTypes.TUPLE_TYPE), CangJieTupleTypeStub
+) : CangJieStubBaseImpl<CjTupleType>(parent, CjStubElementTypes.TUPLE_TYPE), CangJieTupleTypeStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieTupleTypeStubImpl = CangJieTupleTypeStubImpl(
+        parent = newParent,
+    )
+}

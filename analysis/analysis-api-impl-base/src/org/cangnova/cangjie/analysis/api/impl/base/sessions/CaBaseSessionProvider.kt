@@ -12,7 +12,6 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.impl.base.lifetime.CaBaseLifetimeTracker
 import org.cangnova.cangjie.analysis.api.impl.base.permissions.CaBaseWriteActionStartedChecker

@@ -50,4 +50,10 @@ class CangJieCatchParameterStubImpl(
     override fun getFqName(): FqName? {
         return if (fqName != null) FqName(fqName.string) else null
     }
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieCatchParameterStubImpl = CangJieCatchParameterStubImpl(
+        fqName = fqName,
+        name = name,
+        parent = newParent,
+    )
 }

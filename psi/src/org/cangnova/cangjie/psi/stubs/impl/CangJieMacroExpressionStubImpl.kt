@@ -41,4 +41,10 @@ class CangJieMacroExpressionStubImpl(
     override fun getShortName() = shortName?.string
 
     override fun hasValueArguments() = hasValueArguments
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieMacroExpressionStubImpl = CangJieMacroExpressionStubImpl(
+        parent = newParent,
+        shortName = shortName,
+        hasValueArguments = hasValueArguments,
+    )
 }

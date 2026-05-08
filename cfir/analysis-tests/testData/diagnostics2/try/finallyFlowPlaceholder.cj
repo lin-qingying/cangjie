@@ -1,5 +1,4 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// IGNORE_ERRORS
 func tryFinallyTypeStable(flag: Bool): Int64 {
     try {
         if (flag) {
@@ -17,6 +16,6 @@ func finallyIllegalResultUse(): Int64 {
     } catch (e: Exception) {
         2
     } finally {
-        <!FINALLY_BLOCK_MUST_NOT_PRODUCE_RESULT!>/* suggested message: finally block should not participate in try expression result typing. source: external/cangjie_compiler/src/Sema/TypeCheckExpr/TryExpr.cpp */false<!>
+        <!UNUSED_EXPRESSION!>false<!>
     }
 }

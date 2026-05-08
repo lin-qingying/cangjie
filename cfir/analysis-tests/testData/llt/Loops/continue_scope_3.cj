@@ -7,12 +7,8 @@
 // EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 main() {
-    while (continue) {
+    while (<!INVALID_LOOP_CONTROL!>continue<!>) {
         println("outer")
     }
     0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-// ASSERT: scan 'break' or 'continue' must be used inside a loop

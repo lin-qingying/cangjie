@@ -5,6 +5,7 @@ interface MutCarrier {
             1
         }
         set(value) {
+            let _ = value
         }
     }
 }
@@ -20,5 +21,5 @@ enum Choice {
 }
 
 extend bb <:  MutParent  {}
-extend Record <:  MutParent  {}  //class和struct是不会报mut不能扩展的这个错误的
+extend Record <:  MutParent  {}
 extend Choice <: <!EXTEND_IMMUTABLE_MUT_INTERFACE!>MutCarrier<!> {}

@@ -11,6 +11,7 @@ import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjDeclarationContainer
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
@@ -38,7 +39,10 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
     }
 
     override fun getAllClassesByClassId(classId: ClassId): Collection<CjTypeStatement> {
-        return getClassLikeDeclarationsByClassId(classId).filterIsInstance<CjTypeStatement>().toList()
+        return getClassLikeDeclarationsByClassId(classId)
+            .filterIsInstance<CjTypeStatement>()
+            .filterNot(CjTypeStatement::isExtend)
+            .toList()
     }
 
     private fun getClassLikeDeclarationsByClassId(classId: ClassId): Sequence<CjClassLikeDeclaration> {
@@ -67,7 +71,7 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
                 }
 
                 if (chunks.size == 1) {
-                    yieldIfNotNull(element as? CjClassLikeDeclaration)
+                    yieldIfNotNull((element as? CjClassLikeDeclaration)?.takeUnless { it is CjExtend })
                     continue
                 }
 
@@ -86,7 +90,9 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
     }
 
     override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name> {
-        return getTopLevelDeclarationNames<CjClassLikeDeclaration>(packageFqName)
+        return getTopLevelDeclarationNames<CjClassLikeDeclaration>(packageFqName) { declaration ->
+            declaration !is CjExtend
+        }
     }
 
     override fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty> {
@@ -102,6 +108,14 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
             getTopLevelProperties(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelFunctions(callableId).mapTo(this) { it.containingCjFile }
         }
+    }
+
+    override fun getTopLevelExtends(): Collection<CjExtend> {
+        return topLevelDeclarations.filterIsInstance<CjExtend>().toList()
+    }
+
+    override fun getTopLevelExtendFiles(): Collection<CjFile> {
+        return if (getTopLevelExtends().isNotEmpty()) listOf(cangjieFile) else emptyList()
     }
 
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {
@@ -158,14 +172,17 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         }
     }
 
-    private inline fun <reified T : CjNamedDeclaration> getTopLevelDeclarationNames(packageFqName: FqName): Set<Name> {
+    private inline fun <reified T : CjNamedDeclaration> getTopLevelDeclarationNames(
+        packageFqName: FqName,
+        predicate: (T) -> Boolean = { true },
+    ): Set<Name> {
         if (cangjieFile.packageFqName != packageFqName) {
             return emptySet()
         }
 
         return buildSet {
             for (declaration in topLevelDeclarations) {
-                if (declaration is T) {
+                if (declaration is T && predicate(declaration)) {
                     addIfNotNull(declaration.nameAsName)
                 }
             }

@@ -1,5 +1,4 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// IGNORE_ERRORS
 class FirstEx <: Exception {}
 class SecondEx <: Exception {}
 
@@ -15,7 +14,7 @@ func mismatchAcrossMultipleCatches(flag: Int64): Int64 {
     } catch (e: FirstEx) {
         2
     } catch (e: SecondEx) {
-        <!TRY_BRANCH_TYPE_MISMATCH!>/* suggested message: each catch branch result type must join with the accumulated try/catch result type. source: external/cangjie_compiler/src/Sema/TypeCheckExpr/TryExpr.cpp */false<!>
+        <!TYPE_MISMATCH!>false<!>
     }
 }
 

@@ -1,6 +1,8 @@
 // RUN_PIPELINE_TILL: FRONTEND
 class Box {
-    init(value: Int64) {}
+    init(value: Int64) {
+        let _ = value
+    }
 }
 
 class AmbiguousBox {
@@ -9,24 +11,26 @@ class AmbiguousBox {
 }
 
 open class Base {
-    init(value: Int64) {}
+    init(value: Int64) {
+        let _ = value
+    }
 }
 
 class MissingSuper <: Base {
-    <!EXPLICIT_SUPER_CALL_REQUIRED!>init() {
-    }<!>
+    <!EXPLICIT_SUPER_CALL_REQUIRED!>init<!>() {
+    }
 }
 
 class IllegalSuper <: Base {
     init() {
-        let x = 1
+        let _ = 1
         <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>(1)
     }
 }
 
 class Recursive {
-    init() {
-        <!RECURSIVE_CONSTRUCTOR_CALL!>this<!>()
+    <!RECURSIVE_CONSTRUCTOR_CALL!>init<!>() {
+        this()
     }
 }
 

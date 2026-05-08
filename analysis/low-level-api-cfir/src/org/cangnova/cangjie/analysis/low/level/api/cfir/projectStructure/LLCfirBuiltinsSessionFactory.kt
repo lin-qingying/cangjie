@@ -13,6 +13,7 @@ import com.intellij.psi.util.CachedValuesManager
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.providers.LLCfirBuiltinsSessionProvider
@@ -33,6 +34,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
 class LLCfirBuiltinsSessionFactory(private val project: Project) {
     private val builtInTypes = CfirBuiltinTypes()
     private val builtinsModule: CaBuiltinsModule = CaBuiltinsModuleImpl(project)
+    private val projectStructureProvider: CangJieProjectStructureProvider = CangJieProjectStructureProvider.getInstance(project)
     @Volatile
     private var builtinsSession: CachedValue<LLCfirBuiltinsSession>? = null
 
@@ -81,7 +83,7 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
         val moduleData = LLCfirModuleData(session)
 
         return session.apply {
-            val languageVersionSettings = LanguageVersionSettings.DEFAULT
+            val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
             registerIdeComponents(project, languageVersionSettings, builtinsModule.contentScope)
             register(CfirLazyDeclarationResolver::class, CfirDummyCompilerLazyDeclarationResolver)
             registerCommonComponents(languageVersionSettings)

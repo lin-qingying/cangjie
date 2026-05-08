@@ -19,7 +19,7 @@ class TaggedUser <: Named & Tagged {
 
 func describe<T>(value: T): String where T <: Named & Tagged {
     let displayName = value.name()
-    let displayTag = value.tag()
+    value.tag()
     return displayName
 }
 

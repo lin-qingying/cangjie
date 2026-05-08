@@ -2,9 +2,13 @@ package org.cangnova.cangjie.analysis.test.framework.base
 
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
+import com.intellij.openapi.util.Disposer
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.registerApplicationServices
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.registerProjectExtensionPoints
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.registerProjectServices
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.test.framework.TestWithDisposable
 import org.cangnova.cangjie.analysis.test.framework.analysisApiMainFileName
@@ -18,25 +22,31 @@ import org.cangnova.cangjie.analysis.test.framework.services.ExpressionMarkerPro
 import org.cangnova.cangjie.analysis.test.framework.services.ExpressionMarkersSourceFilePreprocessor
 import org.cangnova.cangjie.analysis.test.framework.services.expressionMarkerProvider
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerApplicationServices
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerProjectExtensionPoints
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerProjectModelServices
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.registerProjectServices
 import org.cangnova.cangjie.analysis.test.services.CaAnalysisApiEnvironmentManager
 import org.cangnova.cangjie.analysis.test.services.CaAnalysisApiEnvironmentManagerImpl
 import org.cangnova.cangjie.analysis.test.services.environmentManager
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.CangJieTestInfo
+import org.cangnova.cangjie.test.NonGroupingPhaseTestConfiguration
+import org.cangnova.cangjie.test.builders.testConfiguration
+import org.cangnova.cangjie.test.model.DependencyKind
+import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
+import org.cangnova.cangjie.test.services.TemporaryDirectoryManager
 import org.cangnova.cangjie.test.services.AssertionsService
 import org.cangnova.cangjie.test.services.MetaInfosCleanupPreprocessor
-import org.cangnova.cangjie.test.services.SourceFileProvider
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.impl.JUnit5Assertions
+import org.cangnova.cangjie.test.services.impl.TemporaryDirectoryManagerImpl
+import org.cangnova.cangjie.test.toCangJieTestInfo
 import java.nio.file.Path
 import java.nio.file.Paths
 import kotlin.io.path.exists
 import kotlin.io.path.nameWithoutExtension
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.TestInfo
 
 /**
  * 所有 Analysis API 测试的统一基座。
@@ -87,9 +97,15 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         private set
 
     private var _testServices: TestServices? = null
+    private lateinit var currentTestInfo: CangJieTestInfo
 
     protected val testServices: TestServices
         get() = _testServices ?: error("`testServices` has not been initialized")
+
+    @BeforeEach
+    fun initTestInfo(testInfo: TestInfo) {
+        currentTestInfo = testInfo.toCangJieTestInfo()
+    }
 
     data class ModuleWithMainFile(
         val mainFile: CjFile?,
@@ -218,8 +234,10 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
      */
     protected fun runTest(path: String, block: (TestServices) -> Unit) {
         testDataPath = configurator.computeTestDataPath(Paths.get(path))
-        val testServices = TestServices()
+        val testConfiguration = createTestConfiguration()
+        val testServices = testConfiguration.testServices
         _testServices = testServices
+        Disposer.register(disposable, testConfiguration.rootDisposable)
 
         registerBaseTestServices(testServices)
 
@@ -246,7 +264,7 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
 
         environmentManager.initializeProjectStructure()
 
-        registrars.registerProjectModelServices(project, disposable, testServices)
+        registrars.registerProjectModelServices(project, testServices)
 
         moduleStructure.mainModules.forEach { module ->
             configurator.prepareFilesInModule(module, testServices)
@@ -255,21 +273,27 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         block(testServices)
     }
 
+    private fun createTestConfiguration(): NonGroupingPhaseTestConfiguration {
+        return testConfiguration(testDataPath.toString()) {
+            globalDefaults {
+                frontend = FrontendKinds.CFIR
+                dependencyKind = DependencyKind.Source
+            }
+            assertions = JUnit5Assertions
+            testInfo = currentTestInfo
+            useSourcePreprocessor(
+                ::ExpressionMarkersSourceFilePreprocessor,
+                ::MetaInfosCleanupPreprocessor,
+            )
+            useAdditionalService<TemporaryDirectoryManager>(::TemporaryDirectoryManagerImpl)
+        }
+    }
+
     /**
      * Analysis API 测试必须显式注册基础测试服务，
      * 才能复用 test-infrastructure 的文件预处理与断言体系。
      */
     private fun registerBaseTestServices(testServices: TestServices) {
-        testServices.register(AssertionsService::class, JUnit5Assertions)
-        testServices.register(
-            SourceFileProvider::class,
-            SourceFileProvider(
-                preprocessors = listOf(
-                    ExpressionMarkersSourceFilePreprocessor(testServices),
-                    MetaInfosCleanupPreprocessor(testServices),
-                ),
-            ),
-        )
         testServices.register(ExpressionMarkerProvider::class, ExpressionMarkerProvider())
         testServices.register(
             CjTestModuleStructureProvider::class,

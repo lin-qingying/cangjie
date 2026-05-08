@@ -5,8 +5,10 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.findCDoc
 import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
+import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjNonPublicApi
+import org.cangnova.cangjie.psi.psiUtil.getChildrenOfType
 
 /**
  * 从 light declaration 恢复文档文本。
@@ -24,7 +26,7 @@ import org.cangnova.cangjie.psi.CjNonPublicApi
 fun CaSession.documentation(lightDeclaration: CaLightDeclaration): String? {
     val declaration = lightDeclaration.origin.sourceElement as? CjDeclaration ?: return null
     return with(this) {
-        declaration.symbol.findCDoc()?.renderToDocumentationString()
+        declaration.findCDoc()?.renderToDocumentationString()
     }
 }
 
@@ -36,22 +38,36 @@ private fun CDocCommentDescriptor.renderToDocumentationString(): String? {
             append(primaryContent)
         }
 
-        additionalSections
-            .filterNot { section -> section == primaryTag }
-            .forEach { section ->
-                val renderedSection = section.renderSectionLine()
-                if (renderedSection.isNotEmpty()) {
-                    if (isNotEmpty()) appendLine()
-                    append(renderedSection)
-                }
+        collectRenderableTags().forEach { tag ->
+            val renderedTag = tag.renderTagLine()
+            if (renderedTag.isNotEmpty()) {
+                if (isNotEmpty()) appendLine()
+                append(renderedTag)
             }
+        }
     }
 
     return rendered.ifBlank { null }
 }
 
 @OptIn(CjNonPublicApi::class)
-private fun CDocSection.renderSectionLine(): String {
+private fun CDocCommentDescriptor.collectRenderableTags(): List<CDocTag> {
+    return buildList {
+        (primaryTag as? CDocSection)
+            ?.getChildrenOfType<CDocTag>()
+            ?.filterTo(this) { tag -> tag.name != null }
+
+        additionalSections
+            .filterNot { section -> section == primaryTag }
+            .forEach { section ->
+                section.getChildrenOfType<CDocTag>()
+                    .filterTo(this) { tag -> tag.name != null }
+            }
+    }
+}
+
+@OptIn(CjNonPublicApi::class)
+private fun CDocTag.renderTagLine(): String {
     val tagName = name ?: return ""
     val content = getContent().trim()
     val subjectName = getSubjectName()

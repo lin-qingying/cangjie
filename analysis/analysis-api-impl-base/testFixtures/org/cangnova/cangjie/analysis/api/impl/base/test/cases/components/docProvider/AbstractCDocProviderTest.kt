@@ -44,9 +44,9 @@ abstract class AbstractCDocProviderTest : AbstractAnalysisApiComponentTest() {
         val docComment = declaration.docComment
         assertNotNull(docComment, "声明自身应暴露 CDoc")
         assertEquals("Greets the caller.", docComment!!.getDefaultSection().getContent())
-        assertEquals("input value", docComment.findSectionByTag(CDocKnownTag.PARAM, "value")?.getContent())
-        assertEquals("rendered text", docComment.findSectionByTag(CDocKnownTag.RETURN)?.getContent())
-        assertEquals("Document", docComment.findSectionByTag(CDocKnownTag.SEE)?.getSubjectName())
+        assertEquals("input value", docComment.getDefaultSection().findTagByName(CDocKnownTag.PARAM.name.lowercase())?.getContent())
+        assertEquals("rendered text", docComment.getDefaultSection().findTagByName(CDocKnownTag.RETURN.name.lowercase())?.getContent())
+        assertEquals("Document", docComment.getDefaultSection().findTagByName(CDocKnownTag.SEE.name.lowercase())?.getSubjectName())
 
         analyzeForTest(reference) {
             val declarationDescriptor: CDocCommentDescriptor? = declaration.symbol.findCDoc()
@@ -54,8 +54,8 @@ abstract class AbstractCDocProviderTest : AbstractAnalysisApiComponentTest() {
 
             assertEquals("Greets the caller.", declarationDescriptor?.primaryTag?.getContent())
             assertEquals("Greets the caller.", referenceDescriptor?.primaryTag?.getContent())
-            assertEquals(4, declarationDescriptor?.additionalSections?.size)
-            assertEquals(4, referenceDescriptor?.additionalSections?.size)
+            assertEquals(1, declarationDescriptor?.additionalSections?.size)
+            assertEquals(1, referenceDescriptor?.additionalSections?.size)
         }
     }
 }

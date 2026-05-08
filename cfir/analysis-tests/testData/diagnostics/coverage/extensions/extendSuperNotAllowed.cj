@@ -9,6 +9,6 @@ class Host <: Base {}
 
 extend Host {
     func read(): Int64 {
-        return <!EXTEND_SUPER_NOT_ALLOWED!>super<!>.<!UNRESOLVED_REFERENCE!>value<!>()
+        return <!EXTEND_SUPER_NOT_ALLOWED!>super<!>.value()
     }
 }

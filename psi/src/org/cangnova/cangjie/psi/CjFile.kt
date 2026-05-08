@@ -32,7 +32,6 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjTokenSets
 import com.intellij.extapi.psi.PsiFileBase
 import com.intellij.openapi.fileTypes.FileType
-import com.intellij.openapi.vfs.VirtualFileWithId
 import com.intellij.psi.*
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.TokenSet
@@ -78,6 +77,16 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
      */
     @Volatile
     private var hasTopLevelCallables: Boolean? = null
+
+    /**
+     * 对齐 Kotlin `KtCommonFile.greenStub`：
+     * 文件级 stub 读取优先走 green stub，避免 compiled/decompiled 文件在 PSI stub 尚未附着时
+     * 直接回退到 AST 路径，触发整份反编译文本解析。
+     */
+    protected open val greenStub: CangJieFileStub?
+        get() =
+            @Suppress("DEPRECATION")
+            super.getGreenStub()?.let { it as CangJieFileStub }
 
     /**
      * 确定此文件是否包含任何顶级可调用声明。
@@ -286,7 +295,6 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
      * @throws IllegalStateException 如果存根类型不正确
      */
     override fun getStub(): CangJieFileStub? {
-        if (virtualFile !is VirtualFileWithId) return null
         val stub = super.getStub()
         if (stub is CangJieFileStub?) {
             return stub
@@ -304,7 +312,7 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
      */
     val packageDirective: CjPackageDirective?
         get() {
-            val stub = stub
+            val stub = greenStub
             if (stub != null) {
                 val packageDirectiveStub = stub.findChildStubByType(CjStubElementTypes.PACKAGE_DIRECTIVE)
                 return packageDirectiveStub?.psi
@@ -326,7 +334,7 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
      */
     override val declarations: List<CjDeclaration>
         get() {
-            val stub = stub
+            val stub = greenStub
             return stub?.getChildrenByType(FILE_DECLARATION_TYPES, CjDeclaration.ARRAY_FACTORY)?.toList()
                 ?: PsiTreeUtil.getChildrenOfTypeAsList(this, CjDeclaration::class.java).toMutableList().apply {
                     // 移除所有包指令
@@ -339,7 +347,7 @@ abstract class CjCommonFile(viewProvider: FileViewProvider, val isCompiled: Bool
      * 设置时，根据需要更新或创建包指令。
      */
     var packageFqName: FqName
-        get() = stub?.getPackageFqName() ?: packageFqNameByTree
+        get() = greenStub?.getPackageFqName() ?: packageFqNameByTree
         set(value) {
             val packageDirective = packageDirective
             if (packageDirective != null) {

@@ -17,18 +17,18 @@ class CompleteByConstructor {
 class MissingField {
     let value: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init() {
-    }<!>
+    <!CLASS_UNINITIALIZED_FIELD!>init<!>() {
+    }
 }
 
 class MissingAfterPartialBranch {
     let value: Int64
 
-    <!CLASS_UNINITIALIZED_FIELD!>init(flag: Bool) {
+    <!CLASS_UNINITIALIZED_FIELD!>init<!>(flag: Bool) {
         if (flag) {
             value = 1
         }
-    }<!>
+    }
 }
 
 class DelegatedCtor {

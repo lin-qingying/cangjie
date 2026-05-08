@@ -1,10 +1,10 @@
 // RUN_PIPELINE_TILL: FRONTEND
 open class Parent {
-    open func canOverride(): Unit {}
+    public open func canOverride(): Unit {}
 }
 
 interface MutCarrier {
-    <!MUT_ONLY_ON_FUNCTION!>mut func denied(): Unit<!>
+    mut func denied(): Unit
 }
 
 struct Counter {
@@ -12,13 +12,13 @@ struct Counter {
 }
 
 class StaticStatus {
-    <!STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE!><!INCOMPATIBLE_MODIFIERS!>static<!> <!INCOMPATIBLE_MODIFIERS!>open<!> func openFn(): Unit {}<!>
+    public <!INCOMPATIBLE_MODIFIERS!>static<!> <!INCOMPATIBLE_MODIFIERS!>open<!> func openFn(): Unit {}
 }
 
 class StaticOverride <: Parent {
-    <!STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE!><!INCOMPATIBLE_MODIFIERS!>static<!> <!INCOMPATIBLE_MODIFIERS, OVERRIDE_STATIC_ERROR!>override<!> func canOverride(): Unit {}<!>
+    public <!INCOMPATIBLE_MODIFIERS!>static<!> <!INCOMPATIBLE_MODIFIERS!>override<!> func canOverride(): Unit {}
 }
 
 abstract class AbstractStaticStatus {
-    <!STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE!>static <!WRONG_MODIFIER_TARGET!>abstract<!> func absFn(): Unit<!>
+    static <!WRONG_MODIFIER_TARGET!>abstract<!> func absFn(): Unit
 }

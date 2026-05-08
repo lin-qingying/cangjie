@@ -2,7 +2,9 @@
 type TwoNums = VArray<Int64, $2>
 type ThreeNums = VArray<Int64, $3>
 
-func acceptTwo(values: TwoNums) {}
+func acceptTwo(values: TwoNums) {
+    let _ = values
+}
 
 func keepTwo(values: TwoNums): TwoNums {
     return values
@@ -24,7 +26,5 @@ func returnMismatch(values: ThreeNums): TwoNums {
 
 func ok(values: TwoNums) {
     acceptTwo(values)
-    let copy: TwoNums = values
-    var target: TwoNums = keepTwo(values)
-    target = values
+    keepTwo(values)
 }

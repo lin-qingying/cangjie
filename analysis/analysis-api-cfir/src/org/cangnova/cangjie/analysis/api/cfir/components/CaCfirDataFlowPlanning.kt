@@ -10,11 +10,19 @@ import org.cangnova.cangjie.analysis.api.evaluation.CaCompileTimeValue
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithCandidates
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
@@ -22,9 +30,11 @@ import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjParenthesizedExpression
+import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.CjVariableDeclaration
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 
 /**
  * CFIR 数据流快照实现。
@@ -78,10 +88,11 @@ private fun CaCfirSession.computeDataFlowStability(
         }
     }
 
-    val psi = (resolvedSymbol as? org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol)?.psi
+    val psi = (resolvedSymbol as? CaDeclarationSymbol)?.psi
     return when (psi) {
         is CjVariableDeclaration -> if (psi.isVar) CaDataFlowStability.MUTABLE_VALUE else CaDataFlowStability.STABLE_VALUE
         is CjParameter -> if (psi.isMutable) CaDataFlowStability.MUTABLE_VALUE else CaDataFlowStability.STABLE_VALUE
+        is CjProperty -> if (psi.isVar) CaDataFlowStability.MUTABLE_VALUE else CaDataFlowStability.STABLE_VALUE
         is CjNamedFunction -> if (psi.isConst) CaDataFlowStability.STABLE_VALUE else CaDataFlowStability.COMPUTED_VALUE
         is CjTypeStatement -> CaDataFlowStability.STABLE_VALUE
         else -> when (resolvedSymbol) {
@@ -97,11 +108,39 @@ private fun CaCfirSession.computeDataFlowStability(
 
 private fun CaCfirSession.resolveStableReferenceTarget(expression: CjExpression): CaSymbol? {
     return when (expression) {
-        is CjReferenceExpression -> with(this) { expression.resolveToSymbol() }
         is CjParenthesizedExpression -> expression.expression?.let(::resolveStableReferenceTarget)
         is CjDotQualifiedExpression -> expression.selectorExpression?.let(::resolveStableReferenceTarget)
+        is CjReferenceExpression -> resolveStableReferenceTargetByCfir(expression)
         else -> null
     }
+}
+
+/**
+ * data-flow 只需要“当前引用最终绑定到哪个稳定声明”。
+ *
+ * 这里直接复用 CFIR 已完成的引用信息，而不是再绕一圈 public resolver。
+ * 这样可以和 qualified/property access 的 CFIR 语义保持一致。
+ */
+private fun CaCfirSession.resolveStableReferenceTargetByCfir(expression: CjExpression): CaSymbol? {
+    val cfir = expression.getOrBuildCfir(resolutionFacade)
+    return when (cfir) {
+        is CfirResolvable -> cfir.calleeReference.toStableTargetSymbol(this)
+        is CfirResolvedNamedReference -> cfir.toStableTargetSymbol(this)
+        else -> null
+    }
+}
+
+private fun CfirReference.toStableTargetSymbol(session: CaCfirSession): CaSymbol? {
+    val symbol = when (this) {
+        is CfirResolvedNamedReference -> resolvedSymbol
+        is CfirNamedReferenceWithCandidate -> candidateSymbol
+        is CfirThisReference -> boundSymbol
+        is CfirErrorNamedReference -> (diagnostic as? ConeDiagnosticWithCandidates)?.candidateSymbols?.firstOrNull()
+        is CfirSuperReference -> null
+        else -> null
+    } ?: return null
+
+    return session.cfirSymbolBuilder.buildSymbol(symbol)
 }
 
 private fun CjExpression.isPureReferenceExpression(): Boolean = when (this) {

@@ -4,7 +4,6 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedCallableName
-import org.cangnova.cangjie.analysis.api.impl.base.test.expectedExplicitReceiverType
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetCallText
 import org.cangnova.cangjie.analysis.api.resolution.calls
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
@@ -13,6 +12,7 @@ import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -29,6 +29,9 @@ abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
         val memberCall = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)
             .single { call -> matchesTargetCall(call, directives.targetCallText) }
         val expectedArgumentTypes = directives[AnalysisApiComponentTestDirectives.EXPECTED_ARGUMENT_TYPE]
+        val expectedExplicitReceiverType = directives.singleOrZeroValue(
+            AnalysisApiComponentTestDirectives.EXPECTED_EXPLICIT_RECEIVER_TYPE,
+        )
 
         analyzeForTest(memberCall) {
             val callInfo = memberCall.resolveToCall()
@@ -39,7 +42,7 @@ abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
             assertEquals(1, callInfo!!.calls.size, "当前成功调用主链应只暴露唯一调用。")
             assertEquals(directives.expectedCallableName, successfulCall!!.symbol.name?.asString())
             assertEquals(
-                directives.expectedExplicitReceiverType,
+                expectedExplicitReceiverType,
                 successfulCall.dispatchReceiver?.type?.render()?.let(::normalizeTypeRendering),
             )
             assertEquals(

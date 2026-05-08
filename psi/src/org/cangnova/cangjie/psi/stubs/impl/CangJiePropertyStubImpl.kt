@@ -44,4 +44,11 @@ class CangJiePropertyStubImpl(
     override fun hasReturnTypeRef() = hasReturnTypeRef
 
     override fun getName(): String? = StringRef.toString(name)
+
+    override fun copyInto(newParent: StubElement<*>?): CangJiePropertyStubImpl = CangJiePropertyStubImpl(
+        parent = newParent,
+        name = name,
+        fqName = fqName,
+        hasReturnTypeRef = hasReturnTypeRef,
+    )
 }

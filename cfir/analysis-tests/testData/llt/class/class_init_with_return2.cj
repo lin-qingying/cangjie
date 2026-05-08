@@ -5,13 +5,9 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%frontendCompiler %typecheck %f 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 
 class A {
     public init() {
-        return 0
+        return <!RETURN_TYPE_MISMATCH!>0<!>
     }
 }
-
-// ASSERT: scan cannot convert an integer literal to type 'Unit'

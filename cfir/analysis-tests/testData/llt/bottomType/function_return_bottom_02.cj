@@ -15,18 +15,7 @@ main(): Int64 {
 }
 
 func case01() {
-    while (break) {
+    while (<!INVALID_LOOP_CONTROL!>break<!>) {
         print("yes")
     }
 }
-
-/* SCAN
-error: 'break' or 'continue' must be used inside a loop
-  ==> function_return_bottom_02.cj:18:12:
-   | 
-18 |     while (break) {
-   |            ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

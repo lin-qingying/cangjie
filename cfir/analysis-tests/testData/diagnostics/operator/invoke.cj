@@ -40,7 +40,7 @@ class D {
 
 func testInvokeArgTypeMismatch(): Unit {
     let d = D()
-    d(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)  // 错误：Float64 不匹配 Int64
+    <!NO_MATCHING_OPERATOR_INVOKE!>d<!>(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)  // 错误：Float64 不匹配 Int64
 }
 
 // ---- 多个重载 ----
@@ -70,12 +70,12 @@ func testMultiInvokeOverloads(): Unit {
 
 func testInvokeReturnValue(): Unit {
     let d = D()
-    let result: Int64 = d(10)  // OK：返回 Int64
+    d(10)  // OK：返回 Int64
 }
 
 func testInvokeReturnTypeMismatch(): Unit {
     let d = D()
-    let result: Float64 <!PATTERN_INITIALIZER_TYPE_MISMATCH!>=<!> <!TYPE_MISMATCH!>d(10)<!>  // 错误：d(10) 返回 Int64，不匹配 Float64
+    let _: Float64 = <!NO_MATCHING_OPERATOR_INVOKE!>d<!>(10)  // 错误：期望返回 Float64 时没有匹配的 invoke
 }
 
 // ---- struct 上定义 invoke ----

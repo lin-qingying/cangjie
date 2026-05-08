@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
 
 import com.intellij.openapi.project.Project
@@ -15,8 +17,8 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 
@@ -26,13 +28,10 @@ import org.cangnova.cangjie.psi.CjFile
 sealed class CaStandaloneModule(
     final override val project: Project,
     private val scopeRoots: List<PsiFileSystemItem>,
-) : CaModule {
+) : CaModuleBase() {
     final override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
     final override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
     final override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
-
-    final override val targetPlatform: CaTargetPlatform
-        get() = CaTargetPlatform.STANDALONE
 
     override val baseContentScope: GlobalSearchScope =
         GlobalSearchScope.filesWithoutLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })

@@ -27,6 +27,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjPatternVariable
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 
 /**
  * 局部变量族叶子实现。
@@ -42,7 +43,7 @@ internal open class CaCfirLocalVariableSymbol(
 ) : org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol(),
     CaCfirSymbol<CfirCallableSymbol<*>> {
     override val psi: PsiElement?
-        get() = null
+        get() = withValidityAssertion { cfirSymbol.cfir.getAllowedPsi() ?: findPsi() }
 
     override val annotations: CaAnnotationList
         get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(cfirSymbol, builder) }
@@ -51,7 +52,7 @@ internal open class CaCfirLocalVariableSymbol(
         get() = null
 
     override val receiverType: CaType?
-        get() = (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)
@@ -123,7 +124,7 @@ internal class CaCfirPatternVariableSymbol private constructor(
         get() = null
 
     override val receiverType: CaType?
-        get() = (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)
@@ -199,7 +200,7 @@ internal class CaCfirPatternBindingSymbol private constructor(
         get() = null
 
     override val receiverType: CaType?
-        get() = (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)

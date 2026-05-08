@@ -16,8 +16,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
+import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
@@ -55,6 +59,28 @@ abstract class AbstractDiagnosticCollectorVisitor(
                 visitNestedElements(element)
             }
         }
+    }
+
+    override fun visitAnnotationContainer(annotationContainer: CfirAnnotationContainer, data: Nothing?) {
+        withAnnotationContainer(annotationContainer) {
+            checkElement(annotationContainer)
+            visitNestedElements(annotationContainer)
+        }
+    }
+
+    private fun visitJump(loopJump: CfirLoopJump) {
+        withAnnotationContainer(loopJump) {
+            checkElement(loopJump)
+            loopJump.target.labeledElement.accept(this, null)
+        }
+    }
+
+    override fun visitBreakExpression(breakExpression: CfirBreakExpression, data: Nothing?) {
+        visitJump(breakExpression)
+    }
+
+    override fun visitContinueExpression(continueExpression: CfirContinueExpression, data: Nothing?) {
+        visitJump(continueExpression)
     }
 
     override fun visitFile(file: CfirFile, data: Nothing?) {
@@ -131,19 +157,25 @@ abstract class AbstractDiagnosticCollectorVisitor(
         }
     }
 
-    // --- Call/Assignment 栈管理（对齐 K2 AbstractDiagnosticCollectorVisitor）---
-    // 将 function call / assignment 推入 callsOrAssignments 栈，
-    // 使 ErrorNodeDiagnosticCollectorComponent 能通过接收者错误检查抑制级联诊断。
-
     override fun visitFunctionCall(functionCall: CfirFunctionCall, data: Nothing?) {
-        withCallOrAssignment(functionCall) {
-            super.visitFunctionCall(functionCall, data)
-        }
+        visitWithCallOrAssignment(functionCall)
+    }
+
+    override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: Nothing?) {
+        visitWithCallOrAssignment(qualifiedAccessExpression)
+    }
+
+    override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: Nothing?) {
+        visitWithCallOrAssignment(namedAccessExpression)
     }
 
     override fun visitAssignment(assignment: CfirAssignment, data: Nothing?) {
-        withCallOrAssignment(assignment) {
-            super.visitAssignment(assignment, data)
+        visitWithCallOrAssignment(assignment)
+    }
+
+    private fun visitWithCallOrAssignment(callOrAssignment: CfirStatement) {
+        withCallOrAssignment(callOrAssignment) {
+            visitElement(callOrAssignment, null)
         }
     }
 
