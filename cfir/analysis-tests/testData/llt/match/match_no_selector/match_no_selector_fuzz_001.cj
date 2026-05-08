@@ -18,7 +18,7 @@ struct Record14 {
             case (var316 > { // block id: 333
 
                 =>
-                let var340: Record288 = Record288();
+                let var340: <!UNRESOLVED_REFERENCE!>Record288<!> = <!UNRESOLVED_REFERENCE!>Record288<!>();
 
                 var340;
 
@@ -38,21 +38,3 @@ struct Record14 {
 main(): Int64 {
     return 0;
 }
-
-/* SCAN
-error: undeclared type name 'Record288'
-  ==> match_no_selector_fuzz_001.cj:21:29:
-   | 
-21 |                 let var340: Record288 = Record288();
-   |                             ^ 
-   | 
-
-error: undeclared identifier 'Record288'
-  ==> match_no_selector_fuzz_001.cj:21:41:
-   | 
-21 |                 let var340: Record288 = Record288();
-   |                                         ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -1,10 +1,11 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// IGNORE_ERRORS
 @CallingConv[CDECL]
 foreign func cdeclOk(value: CType): CType
 
 @CallingConv[STDCALL]
 foreign func stdcallOk(value: CType): CType
 
-<!INVALID_CALLING_CONVENTION_TARGET!>/* suggested message: @CallingConv should only appear on valid interop declarations. source: analysis/analysis-api-cfir/src/org/cangnova/cangjie/analysis/api/cfir/components/CaCfirInteropProtocol.kt; psi/src/org/cangnova/cangjie/parsing/CangJieParsing.kt */@CallingConv[CDECL]<!>
+// Official CFFICheck.cpp currently accepts only CDECL and STDCALL here.
+
+<!ONLY_CFUNC_CAN_USE_ANNOTATION!>@CallingConv[CDECL]<!>
 func nonForeignBad(): Unit {}

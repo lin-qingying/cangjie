@@ -26,7 +26,6 @@ interface CaModule {
     val baseContentScope: GlobalSearchScope
 
     val contentScope: GlobalSearchScope
-        get() = baseContentScope
 
     val project: Project
 
@@ -35,9 +34,6 @@ interface CaModule {
 
     val stableModuleName: String?
         get() = null
-
-    val targetPlatform: CaTargetPlatform
-        get() = CaTargetPlatform.DEFAULT
 
     val isResolvable: Boolean
         get() = true

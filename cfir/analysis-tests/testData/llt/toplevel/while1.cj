@@ -5,9 +5,8 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: scan cannot convert an integer literal to type 'Bool'
 
 var i = 0
-var b: Int32 = while (5) {
+var b: Int32 = while (<!TYPE_MISMATCH!>5<!>) {
     i++
 }

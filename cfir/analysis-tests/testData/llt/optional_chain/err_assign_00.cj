@@ -14,17 +14,6 @@ struct S {
 
 main() {
     var s: ?S = S(x: 3)
-    s?[0] = 9
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>s?[0]<!> = 9
     return
 }
-
-/* SCAN
-error: cannot use mutable function on immutable value
-  ==> err_assign_00.cj:17:6:
-   | 
-17 |     s?[0] = 9
-   |      ^ is immutable
-   | 
-
-1 error generated, 1 error printed.
-*/

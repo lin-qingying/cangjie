@@ -5,7 +5,7 @@ func localReadBeforeAssign(): Int64 {
 }
 
 func localReadAfterBothBranches(flag: Bool): Int64 {
-    let value: Int64
+    var value: Int64
     if (flag) {
         value = 1
     } else {
@@ -15,7 +15,7 @@ func localReadAfterBothBranches(flag: Bool): Int64 {
 }
 
 func localReadAfterSingleBranch(flag: Bool): Int64 {
-    let value: Int64
+    var value: Int64
     if (flag) {
         value = 1
     }

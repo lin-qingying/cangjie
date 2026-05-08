@@ -30,11 +30,6 @@ object AnalysisApiTestDirectives : SimpleDirectivesContainer() {
         applicability = DirectiveApplicability.Any,
     )
 
-    val IGNORE_LSP_COMPATIBLE by directive(
-        description = "跳过 LSP-compatible Analysis API 运行模式。",
-        applicability = DirectiveApplicability.Any,
-    )
-
     /**
      * 当测试模块包含多个源文件时，显式声明主文件。
      */

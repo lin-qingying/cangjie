@@ -61,4 +61,15 @@ class CangJieFieldStubImpl(
     override fun hasInitializer(): Boolean = hasInitializer
     override fun hasReturnTypeRef(): Boolean = hasReturnTypeRef
     override fun getName(): String? = StringRef.toString(name)
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieFieldStubImpl = CangJieFieldStubImpl(
+        parent = newParent,
+        name = name,
+        fqName = fqName,
+        isVar = isVar,
+        isConst = isConst,
+        hasInitializer = hasInitializer,
+        hasReturnTypeRef = hasReturnTypeRef,
+        origin = origin,
+    )
 }

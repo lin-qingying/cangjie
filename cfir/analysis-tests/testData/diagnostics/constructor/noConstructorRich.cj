@@ -1,23 +1,29 @@
 // RUN_PIPELINE_TILL: FRONTEND
 class ThisOnly {
-    init(value: Int64, again: Int64) {}
+    init(value: Int64, again: Int64) {
+        let _ = value
+        let _ = again
+    }
 
     init() {
-        <!NO_CONSTRUCTOR!>this<!>(1)
+        this(<!TOO_MANY_ARGUMENTS!>1<!>)
     }
 }
 
 open class Base {
-    init(value: Int64, again: Int64) {}
+    init(value: Int64, again: Int64) {
+        let _ = value
+        let _ = again
+    }
 }
 
 class Child <: Base {
     init() {
-        <!NO_CONSTRUCTOR!>super<!>(1)
+        super<!NO_VALUE_FOR_PARAMETER!>(1)<!>
     }
 }
 
-interface Factory
+interface Factory {}
 
 func directConstruction(): Unit {
     let _ = <!NO_CONSTRUCTOR!>Factory<!>()

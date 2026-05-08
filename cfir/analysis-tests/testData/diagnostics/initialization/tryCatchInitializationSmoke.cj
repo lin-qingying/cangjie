@@ -1,6 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
 class ValueHolder {
-    let value: Int64
+    var value: Int64
 
     init(flag: Bool) {
         try {
@@ -12,13 +12,13 @@ class ValueHolder {
         } catch (e: Exception) {
             value = 3
         } finally {
-            let done = true
+            let _ = true
         }
     }
 }
 
 func localInitThroughTryCatch(flag: Bool): Int64 {
-    let value: Int64
+    var value: Int64
     try {
         if (flag) {
             value = 1
@@ -28,7 +28,7 @@ func localInitThroughTryCatch(flag: Bool): Int64 {
     } catch (e: Exception) {
         value = 3
     } finally {
-        let done = true
+        let _ = true
     }
     return value
 }

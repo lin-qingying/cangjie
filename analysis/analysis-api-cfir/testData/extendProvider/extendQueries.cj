@@ -1,4 +1,4 @@
-package sample.extend.provider
+package sample.extendid.provider
 
 interface Printable {
     func prettyPrint(): Int64

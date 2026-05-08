@@ -35,4 +35,10 @@ class CangJiePlaceHolderWithTextStubImpl<T : CjElementImplStub<out StubElement<*
     private val text: String,
 ) : CangJieStubBaseImpl<T>(parent, elementType), CangJiePlaceHolderWithTextStub<T> {
     override fun text(): String = text
+
+    override fun copyInto(newParent: StubElement<*>?): CangJiePlaceHolderWithTextStubImpl<T> = CangJiePlaceHolderWithTextStubImpl(
+        parent = requireNotNull(newParent),
+        elementType = stubType,
+        text = text,
+    )
 }

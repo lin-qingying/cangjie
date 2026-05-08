@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
+import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.cfir.location
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -75,7 +76,7 @@ internal class CaCfirFieldSymbol private constructor(
         get() = cfirSymbol.getCallableId()
 
     override val receiverType: CaType?
-        get() = (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)
@@ -161,7 +162,7 @@ internal class CaCfirEnumConstructorSymbol private constructor(
         get() = cfirSymbol.getCallableId()
 
     override val receiverType: CaType?
-        get() = (cfirSymbol.cfir as? CfirCallableDeclaration)?.dispatchReceiverType?.let(builder.typeBuilder::buildType)
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)

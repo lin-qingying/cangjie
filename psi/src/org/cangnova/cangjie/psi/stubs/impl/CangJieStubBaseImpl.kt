@@ -25,7 +25,11 @@
 package org.cangnova.cangjie.psi.stubs.impl
 
 import org.cangnova.cangjie.psi.CjElementImplStub
+import org.cangnova.cangjie.psi.stubs.CangJieCallableStubBase
 import org.cangnova.cangjie.psi.stubs.CangJieClassifierStub
+import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderWithTextStub
+import org.cangnova.cangjie.psi.stubs.CangJieStubElement
+import org.cangnova.cangjie.psi.stubs.CangJieStubWithFqName
 import org.cangnova.cangjie.psi.stubs.CangJieTypeStatementStub
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.psi.stubs.IStubElementType
@@ -36,19 +40,22 @@ import java.lang.reflect.Method
 
 const val STUB_TO_STRING_PREFIX = "CangJieStub$"
 
-open class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement<*>?, elementType: IStubElementType<*, *>) :
-    StubBase<T>(parent, elementType) {
+abstract class CangJieStubBaseImpl<T : CjElementImplStub<*>>(parent: StubElement<*>?, elementType: IStubElementType<*, *>) :
+    StubBase<T>(parent, elementType), CangJieStubElement<T> {
 
     companion object {
         private val LOGGER: Logger = Logger.getInstance(CangJieStubBaseImpl::class.java)
         private val BASE_STUB_INTERFACES = listOf(
-//                CangJieStubWithFqName::class.java,
+            CangJieStubWithFqName::class.java,
             CangJieClassifierStub::class.java,
             CangJieTypeStatementStub::class.java,
             NamedStub::class.java,
-//                CangJieCallableStubBase::class.java
+            CangJieCallableStubBase::class.java,
+            CangJiePlaceHolderWithTextStub::class.java,
         )
     }
+
+    abstract override fun copyInto(newParent: StubElement<*>?): CangJieStubBaseImpl<T>
 
     override fun getStubType(): IStubElementType<out StubElement<*>, *> =
         super.getStubType() as IStubElementType<out StubElement<*>, *>

@@ -4,6 +4,6 @@ func applyFunc(f: (Int64) -> Int64, x: Int64): Int64 {
     return f(x)
 }
 
-main() {
-    let result = applyFunc({ a => a + 1 }, 10)
+main(): Unit {
+    applyFunc({ a => a + 1 }, 10)
 }

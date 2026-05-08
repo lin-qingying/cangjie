@@ -2,6 +2,8 @@ package org.cangnova.cangjie.analysis.api.platform.projectStructure
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiFileSystemItem
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
@@ -12,6 +14,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  * 2. 按稳定身份查询模块；
  * 3. 让 session cache、失效传播和 low-level resolve 共用同一份结构快照。
  */
+@CaPlatformInterface
 interface CaModuleProvider {
     /**
      * 当前平台模块图的一致性快照。
@@ -26,6 +29,9 @@ interface CaModuleProvider {
 
     val sourceLikeModules: List<CaModule>
         get() = snapshot.allSourceLikeModules
+
+    val allSourceFiles: List<PsiFileSystemItem>
+        get() = snapshot.allSourceFiles
 
     /**
      * 按稳定模块名查询模块。

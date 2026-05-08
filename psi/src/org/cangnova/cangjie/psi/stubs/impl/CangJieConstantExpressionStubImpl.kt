@@ -40,4 +40,11 @@ class CangJieConstantExpressionStubImpl(
 ) : CangJieStubBaseImpl<CjConstantExpression>(parent, elementType), CangJieConstantExpressionStub {
     override fun kind(): ConstantValueKind = kind
     override fun value(): String = StringRef.toString(value)
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieConstantExpressionStubImpl = CangJieConstantExpressionStubImpl(
+        parent = newParent,
+        elementType = stubType as CjConstantExpressionElementType,
+        kind = kind,
+        value = value,
+    )
 }

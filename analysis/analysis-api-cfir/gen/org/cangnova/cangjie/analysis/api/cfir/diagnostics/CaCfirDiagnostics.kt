@@ -363,6 +363,37 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val actualType: CaType
     }
 
+    interface InvalidCfuncParameterType : CaCfirDiagnostic<CjTypeReference> {
+        override val diagnosticClass get() = InvalidCfuncParameterType::class
+        val actualType: CaType
+    }
+
+    interface OnlyCfuncCanUseAnnotation : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = OnlyCfuncCanUseAnnotation::class
+        val annotationName: String
+    }
+
+    interface IllegalScopeUseOfAnnotation : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = IllegalScopeUseOfAnnotation::class
+        val annotationName: String
+    }
+
+    interface ThrowExprWithWrongType : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = ThrowExprWithWrongType::class
+    }
+
+    interface CatchTypeMustExtendException : CaCfirDiagnostic<CjTypeReference> {
+        override val diagnosticClass get() = CatchTypeMustExtendException::class
+    }
+
+    interface UselessExceptionType : CaCfirDiagnostic<CjTypeReference> {
+        override val diagnosticClass get() = UselessExceptionType::class
+    }
+
+    interface RangeStepCannotBeZero : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = RangeStepCannotBeZero::class
+    }
+
     interface EffectsFeatureDisabled : CaCfirDiagnostic<CjElement> {
         override val diagnosticClass get() = EffectsFeatureDisabled::class
         val constructName: String
@@ -1772,6 +1803,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface UnusedImport : CaCfirDiagnostic<CjImportItem> {
         override val diagnosticClass get() = UnusedImport::class
         val importPath: FqName
+    }
+
+    interface UnusedExpression : CaCfirDiagnostic<CjExpression> {
+        override val diagnosticClass get() = UnusedExpression::class
     }
 
     interface MockDisabled : CaCfirDiagnostic<PsiElement> {

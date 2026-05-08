@@ -78,7 +78,7 @@ internal class CaCfirValueParameterSymbol private constructor(
         get() = null
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { cfirSymbol.cfir.dispatchReceiverType?.let(builder.typeBuilder::buildType) }
+        get() = withValidityAssertion { null }
 
     override val returnType: CaType
         get() = withValidityAssertion { cfirSymbol.returnType(builder) }

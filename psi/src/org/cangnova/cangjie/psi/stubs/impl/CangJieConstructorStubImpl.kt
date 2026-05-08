@@ -42,4 +42,13 @@ class CangJieConstructorStubImpl<T : CjConstructor<T>>(
     override fun getName() = StringRef.toString(containingClassName)
     override fun isTopLevel() = false
     override fun hasBody() = hasBody
+
+    @Suppress("UNCHECKED_CAST")
+    override fun copyInto(newParent: StubElement<*>?): CangJieConstructorStubImpl<T> = CangJieConstructorStubImpl(
+        parent = newParent,
+        elementType = stubType as CjConstructorElementType<T>,
+        containingClassName = containingClassName,
+        hasBody = hasBody,
+        isPrimary = isPrimary,
+    )
 }

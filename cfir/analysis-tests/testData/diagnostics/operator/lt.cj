@@ -20,5 +20,5 @@ func name(): Unit {
     let a = B()
     let b = B()
 
-    a <!INVALID_BINARY_OPERATOR, UNRESOLVED_REFERENCE!>><!> b
+    a <!INVALID_BINARY_OPERATOR!>><!> b
 }

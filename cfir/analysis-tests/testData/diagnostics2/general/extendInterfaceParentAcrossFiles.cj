@@ -10,9 +10,13 @@ package sample
 
 extend B <: A {}
 
+func acceptA(value: A): Unit {
+    let _ = value
+}
+
 // FILE: main.cj
 package sample
 
-main() {
-    let a: A = B()
+main(): Unit {
+    acceptA(B())
 }

@@ -8,7 +8,7 @@ public interface Cacheable {}
 public class View <: Renderable & Cacheable {}
 
 // FILE: main.cj
-package main
+package localmain
 
 import library.*
 
@@ -17,4 +17,6 @@ func useCrossPackagePublicType(): Unit {
     let v = View()
     let r: Renderable = v
     let c: Cacheable = v
+    let _ = r
+    let _ = c
 }

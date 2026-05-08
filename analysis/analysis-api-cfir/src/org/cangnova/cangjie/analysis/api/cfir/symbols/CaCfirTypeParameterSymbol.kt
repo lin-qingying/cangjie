@@ -19,7 +19,6 @@ import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -64,7 +63,7 @@ internal class CaCfirTypeParameterSymbol private constructor(
         get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
 
     override val upperBounds: List<CaType>
-        get() = withValidityAssertion { cfirSymbol.cfir.bounds.mapNotNull { bound -> bound.coneTypeOrNull?.let(builder.typeBuilder::buildType) } }
+        get() = withValidityAssertion { cfirSymbol.resolvedBounds.map(builder.typeBuilder::buildType) }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion { CaSymbolVisibility.LOCAL }

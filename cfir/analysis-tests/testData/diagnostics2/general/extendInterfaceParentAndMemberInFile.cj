@@ -6,12 +6,12 @@ class B {
 }
 
 extend B <: A {
-    func a(): Int {
+    public func a(): Int {
         return 1
     }
 }
 
-main() {
+main(): Unit {
     let interfaceValue: A = B()
     let classValue = B()
 

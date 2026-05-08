@@ -5,14 +5,13 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // ERRCHECK: %compiler %cmp_opt %f -o %output
-// ASSERT: regex type incompatible in this pattern
 
 class A <: Exception {}
 
 main() {
     try {
         throw A()
-    } catch (e: A | Error) {
+    } catch (e: <!CATCH_TYPE_MUST_EXTEND_EXCEPTION!>A | Error<!>) {
         println(e)
     }
 }

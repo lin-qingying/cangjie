@@ -31,7 +31,7 @@ dependencies {
     api(project(":analysis:analysis-api-platform-interface"))
     implementation(project(":analysis:analysis-api-impl-base"))
     implementation(project(":analysis:analysis-internal-utils"))
-    implementation(project(":analysis:decompiled"))
+    implementation(project(":analysis:decompiled:decompiler-to-stubs"))
     implementation(project(":analysis:decompiled:decompiler-to-file-stubs"))
     implementation(project(":analysis:decompiled:decompiler-to-psi"))
     implementation(project(":analysis:stubs"))

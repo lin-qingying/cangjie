@@ -8,6 +8,7 @@ import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
+import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
@@ -45,6 +46,14 @@ class CangJieCompositeDeclarationProvider private constructor(
 
     override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile> {
         return providers.flatMapTo(mutableListOf()) { it.getTopLevelCallableFiles(callableId) }
+    }
+
+    override fun getTopLevelExtends(): Collection<CjExtend> {
+        return providers.flatMapTo(mutableListOf()) { it.getTopLevelExtends() }
+    }
+
+    override fun getTopLevelExtendFiles(): Collection<CjFile> {
+        return providers.flatMapTo(mutableListOf()) { it.getTopLevelExtendFiles() }
     }
 
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {

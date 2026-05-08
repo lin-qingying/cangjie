@@ -17,7 +17,7 @@ func useKeepAnimal(): String {
     let animal: Animal = keepAnimal(Dog())
     let dog = keepAnimal(Dog())
 
-    let firstSound = animal.sound()
+    animal.sound()
     let secondSound = dog.sound()
     return secondSound
 }

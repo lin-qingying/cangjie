@@ -33,4 +33,8 @@ class CangJiePackageDirectiveStubImpl
 (parent: StubElement<*>) :
 
     CangJieStubBaseImpl<CjPackageDirective>(parent, CjStubElementTypes.PACKAGE_DIRECTIVE),
-    CangJiePackageDirectiveStub
+    CangJiePackageDirectiveStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJiePackageDirectiveStubImpl = CangJiePackageDirectiveStubImpl(
+        parent = requireNotNull(newParent),
+    )
+}

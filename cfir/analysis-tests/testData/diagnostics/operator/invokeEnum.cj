@@ -10,6 +10,6 @@ enum Color {
 
 func testEnumInvoke(): Unit {
     let c = Red
-    Red(0.5)
-    c(0.5)  // OK：enum 值上调用 invoke
+    let _ = Red(0.5)
+    let _ = c(0.5)
 }

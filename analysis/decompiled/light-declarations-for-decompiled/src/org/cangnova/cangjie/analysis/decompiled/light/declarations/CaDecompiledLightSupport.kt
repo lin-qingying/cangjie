@@ -1,9 +1,12 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.decompiled.light.declarations
 
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -45,11 +48,18 @@ class CaDecompiledLightSupport(
     fun findContainingModule(packageFqName: FqName, preferredModule: CaModule? = null): CaModule? {
         findInModule(preferredModule, packageFqName)?.let { return preferredModule }
 
-        val projectStructure = CangJieProjectStructureProvider.getInstance(project)
-        projectStructure.allModules.filterIsInstance<CaBuiltinsModule>().forEach { module ->
-            if (module === preferredModule) return@forEach
-            findInModule(module, packageFqName)?.let { return module }
+        psiProvider.findBuiltinsDecompiledFile(packageFqName)?.let { decompiledFile ->
+            val module = CangJieProjectStructureProvider.getModule(
+                project,
+                decompiledFile,
+                useSiteModule = null,
+            )
+            if (module !== preferredModule) {
+                return module
+            }
         }
+
+        val projectStructure = CaModuleProvider.getInstance(project)
         projectStructure.allModules.filterIsInstance<CaLibraryModule>().forEach { module ->
             if (module === preferredModule) return@forEach
             findInModule(module, packageFqName)?.let { return module }

@@ -8,4 +8,4 @@ class JavaBox {}
 interface Printable {}
 
 extend <!EXTEND_C_TYPE_NOT_ALLOWED!>NativeBox<!> <: Printable {}
-extend <!EXTEND_C_TYPE_NOT_ALLOWED!>JavaBox<!> <: Printable {}
+extend <!EXTEND_A_JAVA_TYPE!>JavaBox<!> <: Printable {}

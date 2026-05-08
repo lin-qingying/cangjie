@@ -26,7 +26,9 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callabl
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaFunctionLikeKeywordRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaLocalVariableSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaNamedFunctionSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertyGetterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySetterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaValueParameterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaClassLikeSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaExtendSymbolRenderer
@@ -65,7 +67,7 @@ object CaDeclarationRendererForSource {
         functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
         variableInitializerRenderer = CaVariableInitializerRenderer.NO_INITIALIZER
         parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.NO_DEFAULT_VALUE
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_DEFAULT
         accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
         returnTypeRenderer = CaCallableReturnTypeRenderer.WITH_OUT_APPROXIMATION
         callableReceiverRenderer = CaCallableReceiverRendererForSource.AS_TYPE_WITH_IN_APPROXIMATION
@@ -81,6 +83,8 @@ object CaDeclarationRendererForSource {
         namedFunctionRenderer = CaNamedFunctionSymbolRenderer.AS_SOURCE
         constructorRenderer = CaConstructorSymbolRenderer.AS_SOURCE
         propertyRenderer = CaPropertySymbolRenderer.AS_SOURCE
+        getterRenderer = CaPropertyGetterSymbolRenderer.AS_SOURCE
+        setterRenderer = CaPropertySetterSymbolRenderer.AS_SOURCE
         fieldRenderer = CaFieldSymbolRenderer.AS_SOURCE
         localVariableRenderer = CaLocalVariableSymbolRenderer.AS_SOURCE
         enumConstructorRenderer = CaEnumConstructorSymbolRenderer.AS_SOURCE
@@ -97,46 +101,48 @@ object CaDeclarationRendererForSource {
     }
 
     val WITH_QUALIFIED_NAMES_WITH_BODY: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.AS_SOURCE
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_DEFAULT
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.AS_SOURCE
     }
 
     val WITH_QUALIFIED_NAMES_WITH_MEMBERS_AND_BODY: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
         classifierBodyRenderer = CaClassifierBodyRenderer.BODY_WITH_MEMBERS
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.AS_SOURCE
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_DEFAULT
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.AS_SOURCE
     }
 
     val WITH_QUALIFIED_NAMES_WITH_PLACEHOLDER_BODIES: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.AS_PLACEHOLDER
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_DEFAULT
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.AS_PLACEHOLDER
+        setterRenderer = CaPropertySetterSymbolRenderer.WITH_PARAMETER_PLACEHOLDER
     }
 
     val WITH_QUALIFIED_NAMES_WITH_INITIALIZERS: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        variableInitializerRenderer = CaVariableInitializerRenderer.NO_INITIALIZER
+        variableInitializerRenderer = CaVariableInitializerRenderer.AS_SOURCE
     }
 
     val WITH_QUALIFIED_NAMES_WITH_DEFAULT_PARAMETER_VALUES: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.THREE_DOTS
+        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.AS_SOURCE
     }
 
     val WITH_QUALIFIED_NAMES_WITH_ALL_DETAILS: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        variableInitializerRenderer = CaVariableInitializerRenderer.NO_INITIALIZER
-        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.THREE_DOTS
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
+        variableInitializerRenderer = CaVariableInitializerRenderer.AS_SOURCE
+        parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.AS_SOURCE
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.AS_SOURCE
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_DEFAULT
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.AS_SOURCE
     }
 
     val WITH_QUALIFIED_NAMES_WITH_PLACEHOLDER_DETAILS: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {
-        variableInitializerRenderer = CaVariableInitializerRenderer.NO_INITIALIZER
+        variableInitializerRenderer = CaVariableInitializerRenderer.AS_PLACEHOLDER
         parameterDefaultValueRenderer = CaParameterDefaultValueRenderer.THREE_DOTS
-        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.NO_BODY
-        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_ACCESSORS
-        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.NO_BODY
+        functionLikeBodyRenderer = CaFunctionLikeBodyRenderer.AS_PLACEHOLDER
+        propertyAccessorsRenderer = CaPropertyAccessorsRenderer.NO_DEFAULT
+        accessorBodyRenderer = CaPropertyAccessorBodyRenderer.AS_PLACEHOLDER
+        setterRenderer = CaPropertySetterSymbolRenderer.WITH_PARAMETER_PLACEHOLDER
     }
 
     val WITH_QUALIFIED_NAMES_RAW_SIGNATURES: CaDeclarationRenderer = WITH_QUALIFIED_NAMES.with {

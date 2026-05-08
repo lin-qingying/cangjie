@@ -5,7 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // ERRORCHECK: %compiler %cmp_opt %f
-// ASSERT: scan-2 error: cannot use mutable function on immutable value
 
 interface IA {
     mut func f1(): Unit
@@ -22,11 +21,11 @@ struct A <: IA {
 }
 
 func goo(a: A): Unit {
-    a.f1()
+    a.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f1<!>()
     a.f2()
 }
 
 func foo<T>(t: T): Unit where T <: IA {
-    t.f1()
+    t.<!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>f1<!>()
     t.f2()
 }

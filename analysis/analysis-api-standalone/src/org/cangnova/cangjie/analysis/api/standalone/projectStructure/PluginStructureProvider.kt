@@ -213,6 +213,9 @@ object PluginStructureProvider {
         "com.intellij.filetype.decompiler",
         "com.intellij.referencesSearch",
         "com.intellij.lang.findUsagesProvider",
+        "com.intellij.targetElementEvaluator",
+        "com.intellij.targetElementUtilExtender",
+        "com.intellij.usageTargetProvider",
     )
 
     private val MockComponentManager.classLoader: ClassLoader

@@ -59,15 +59,28 @@ CaAnalysisPermissionOptions.Companion.public fun getInstance(): CaAnalysisPermis
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaContentScopeRefiner.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public interface CaContentScopeRefiner
-CaContentScopeRefiner.public fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope
+CaContentScopeRefiner.public fun getEnlargementScopes(module: CaModule): List<GlobalSearchScope>
+CaContentScopeRefiner.public fun getRestrictionScopes(module: CaModule): List<GlobalSearchScope>
 CaContentScopeRefiner.public companion object
-CaContentScopeRefiner.Companion.public fun getInstance(project: Project): CaContentScopeRefiner?
+CaContentScopeRefiner.Companion.public val EP_NAME: ExtensionPointName<CaContentScopeRefiner>
+CaContentScopeRefiner.Companion.public fun getRefiners(project: Project): List<CaContentScopeRefiner>
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaContentScopeProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CaContentScopeProvider
+CaContentScopeProvider.public fun getRefinedContentScope(module: CaModule): GlobalSearchScope
+CaContentScopeProvider.public companion object
+CaContentScopeProvider.Companion.public fun getInstance(project: Project): CaContentScopeProvider
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaGlobalSearchScopeMerger.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public interface CaGlobalSearchScopeMerger
 CaGlobalSearchScopeMerger.public fun union(scopes: Collection<GlobalSearchScope>): GlobalSearchScope
 CaGlobalSearchScopeMerger.public companion object
 CaGlobalSearchScopeMerger.Companion.public fun getInstance(project: Project): CaGlobalSearchScopeMerger
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaModuleBase.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public abstract class CaModuleBase : CaModule
+CaModuleBase.public constructor()
+CaModuleBase.public open val contentScope: GlobalSearchScope
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaModuleProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public interface CaModuleProvider

@@ -1,4 +1,5 @@
 
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.state
 

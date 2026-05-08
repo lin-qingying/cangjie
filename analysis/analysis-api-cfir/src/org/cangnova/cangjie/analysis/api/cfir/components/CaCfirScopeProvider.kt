@@ -45,6 +45,7 @@ internal class CaCfirScopeProvider(
     private fun getScopeSession(): ScopeSession {
         return analysisSession.getScopeSessionFor(analysisSession.cfirSession)
     }
+
     private fun CaDeclarationContainerSymbol.getCfirForScope(): CfirClassLikeDeclaration = when (this) {
         is CaCfirClassSymbol -> cfirSymbol.cfir
         else -> error(

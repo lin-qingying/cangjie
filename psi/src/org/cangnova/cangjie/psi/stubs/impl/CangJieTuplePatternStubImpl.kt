@@ -41,4 +41,8 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 class CangJieTuplePatternStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjTuplePattern>(parent, CjStubElementTypes.TUPLE_PATTERN),
-    CangJieTuplePatternStub
+    CangJieTuplePatternStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieTuplePatternStubImpl = CangJieTuplePatternStubImpl(
+        parent = newParent,
+    )
+}

@@ -41,4 +41,10 @@ class CangJieAnnotationStubImpl(
     override fun getShortName() = shortName?.string
 
     override fun hasValueArguments() = hasValueArguments
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieAnnotationStubImpl = CangJieAnnotationStubImpl(
+        parent = newParent,
+        shortName = shortName,
+        hasValueArguments = hasValueArguments,
+    )
 }

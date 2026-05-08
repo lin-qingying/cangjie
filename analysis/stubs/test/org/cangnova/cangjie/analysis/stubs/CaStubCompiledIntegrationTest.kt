@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.stubs
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.stubs.CaStubIndexFacade
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjTypeStatement
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -33,9 +34,10 @@ class CaStubCompiledIntegrationTest {
                     assertNotNull(binaryFile, "builtins binary index should resolve `std.objectpool`")
 
                     val psiProvider = environment.project.getService(CaDecompiledPsiProvider::class.java)
-                    val decompiledFile = psiProvider.findDecompiledFile(builtinsModule, packageFqName)
-                    assertNotNull(decompiledFile, "decompiled PSI provider should restore compiled file for `std.objectpool`")
-                    assertEquals(packageFqName, decompiledFile!!.packageFqName)
+                    val decompiledFile = requireNotNull(psiProvider.findDecompiledFile(builtinsModule, packageFqName)) {
+                        "decompiled PSI provider should restore compiled file for `std.objectpool`"
+                    }
+                    assertEquals(packageFqName, decompiledFile.packageFqName)
                     assertTrue(decompiledFile.isCompiled, "restored file should stay in compiled mode")
 
                     val summary = CaStubSummaryBuilder().build(decompiledFile)
@@ -44,6 +46,13 @@ class CaStubCompiledIntegrationTest {
                     assertTrue(
                         summary.topLevelClassifierNames.isNotEmpty() || summary.topLevelCallableNames.isNotEmpty(),
                         "compiled stub summary should expose at least one top-level declaration",
+                    )
+                    val topLevelTypeStatement = decompiledFile.declarations.filterIsInstance<CjTypeStatement>().single()
+                    val classBody = topLevelTypeStatement.body
+                    assertNotNull(classBody, "compiled type statement should restore a stub-backed body placeholder")
+                    assertTrue(
+                        requireNotNull(classBody).declarations.isNotEmpty(),
+                        "compiled class body should expose member declarations from stubs without parsing decompiled text",
                     )
 
                     val facade = CaStubIndexFacade.getInstance(environment.project)

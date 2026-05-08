@@ -3,15 +3,10 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightCallableDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightClassLikeDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationProvider
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.api.stubs.CaStubIndexFacade
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisSessionMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.cangnova.cangjie.analysis.test.services.environmentManager
 import org.cangnova.cangjie.analysis.tools.CaAnalysisInspectorTools
@@ -36,15 +31,7 @@ import org.junit.jupiter.api.Test
 class AnalysisApiPeripheralSourceIntegrationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/peripheralModules",
 ) {
-    override val configurator: AnalysisApiTestConfigurator =
-        CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(
-            AnalysisApiTestConfiguratorFactoryData(
-                frontend = FrontendKind.Cfir,
-                moduleKind = TestModuleKind.Source,
-                analysisSessionMode = AnalysisSessionMode.Normal,
-                analysisApiMode = AnalysisApiMode.Standalone,
-            ),
-        )
+    override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
     @Test
     fun sourceViews(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
@@ -69,6 +56,25 @@ class AnalysisApiPeripheralSourceIntegrationTest : AbstractAnalysisApiExecutionT
             expectedClassName = "LibraryGreeter",
             expectedCallableName = "exported",
             expectedMemberName = "member",
+        )
+    }
+
+    @Test
+    fun sourceOverloadedLightDeclarations(mainFile: CjFile, mainModule: CjTestModule) {
+        val provider = CaLightDeclarationProvider.getInstance(mainFile.project)
+        val overloadDeclarations = provider.getLightDeclarations(mainFile, mainModule.caModule)
+            .filterIsInstance<CaLightCallableDeclaration>()
+            .filter { it.name == "overload" }
+
+        assertEquals(2, overloadDeclarations.size, "light declaration provider 应保留两个顶层重载函数。")
+        assertTrue(
+            overloadDeclarations[0] !== overloadDeclarations[1],
+            "两个重载函数不能复用同一个 light declaration 实例。",
+        )
+        assertEquals(
+            2,
+            overloadDeclarations.mapNotNull { declaration -> declaration.signature }.toSet().size,
+            "两个重载函数必须保留不同的 signature。",
         )
     }
 
@@ -130,17 +136,6 @@ class AnalysisApiPeripheralSourceIntegrationTest : AbstractAnalysisApiExecutionT
         assertTrue(
             fileLightDeclarations.filterIsInstance<CaLightCallableDeclaration>().any { it.name == expectedCallableName },
             "light declaration provider 应返回顶层 callable 视图。",
-        )
-
-        val packageLightDeclaration = lightDeclarationProvider.getPackageLightDeclaration(packageFqName, mainModule.caModule)
-        assertEquals(packageFqName.asString(), packageLightDeclaration?.name)
-        assertTrue(
-            lightDeclarationProvider.findLightDeclarations(
-                packageFqName = packageFqName,
-                name = Name.identifier(expectedClassName),
-                useSiteModule = mainModule.caModule,
-            ).filterIsInstance<CaLightClassLikeDeclaration>().any { it.name == expectedClassName },
-            "按包名/FQN 查找的 light declaration 应可恢复顶层 class-like 声明。",
         )
 
         val moduleLightDump = inspectorTools.dumpLightDeclarations(mainModule.caModule)

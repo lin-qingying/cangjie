@@ -62,6 +62,7 @@ dependencies {
 
     testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
     testImplementation(testFixtures(project(":analysis:analysis-api-impl-base")))
+    testImplementation(testFixtures(project(":analysis:analysis-api-standalone")))
     testImplementation(project(":analysis:light-declarations"))
     testImplementation(project(":analysis:analysis-tools"))
     testImplementation(project(":analysis:cj-references"))

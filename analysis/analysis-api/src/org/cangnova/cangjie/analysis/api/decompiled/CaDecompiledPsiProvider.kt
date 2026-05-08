@@ -15,6 +15,14 @@ interface CaDecompiledPsiProvider {
 
     fun findDecompiledFile(module: CaBuiltinsModule, packageFqName: FqName): CjDecompiledFile?
 
+    /**
+     * 直接恢复 builtins package 的 decompiled PSI。
+     *
+     * 这样 builtins 消费方不需要再从 project structure 暴露层回捞 `CaBuiltinsModule`，
+     * 与 Kotlin 测试平台“builtins 不进入 allModules”的边界保持一致。
+     */
+    fun findBuiltinsDecompiledFile(packageFqName: FqName): CjDecompiledFile?
+
     companion object {
         fun getInstance(project: Project): CaDecompiledPsiProvider = project.service()
     }

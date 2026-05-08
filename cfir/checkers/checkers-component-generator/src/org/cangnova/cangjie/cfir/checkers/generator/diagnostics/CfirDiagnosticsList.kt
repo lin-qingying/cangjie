@@ -411,6 +411,39 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val INVALID_CFUNC_RETURN_TYPE by error<CjTypeReference> {
             parameter<ConeCangJieType>("actualType")
         }
+
+        val INVALID_CFUNC_PARAMETER_TYPE by error<CjTypeReference> {
+            parameter<ConeCangJieType>("actualType")
+        }
+
+        val ONLY_CFUNC_CAN_USE_ANNOTATION by error<PsiElement> {
+            parameter<String>("annotationName")
+        }
+
+        val ILLEGAL_SCOPE_USE_OF_ANNOTATION by error<PsiElement> {
+            parameter<String>("annotationName")
+        }
+    }
+
+    /**
+     * throw / try / catch 相关诊断。
+     *
+     * 当前这一组先提供 diagnostics2 期望面所需的诊断定义，
+     * 真实检测逻辑后续按对应 checker 接入。
+     */
+    val EXCEPTION by object : DiagnosticGroup("Exception") {
+        val THROW_EXPR_WITH_WRONG_TYPE by error<PsiElement>()
+
+        val CATCH_TYPE_MUST_EXTEND_EXCEPTION by error<CjTypeReference>()
+
+        val USELESS_EXCEPTION_TYPE by warning<CjTypeReference>()
+    }
+
+    /**
+     * range 表达式相关诊断。
+     */
+    val RANGE by object : DiagnosticGroup("Range") {
+        val RANGE_STEP_CANNOT_BE_ZERO by error<PsiElement>()
     }
 
     /**
@@ -1922,6 +1955,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val UNUSED_IMPORT by warning<CjImportItem> {
             parameter<FqName>("importPath")
         }
+
+        // 未使用的表达式
+        val UNUSED_EXPRESSION by warning<CjExpression>()
     }
 
     /**

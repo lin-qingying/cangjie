@@ -40,6 +40,17 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.cases.types.AbstractType
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 
 fun AnalysisApiTestGroup.generateAnalysisApiTests() {
+    group(
+        "projectStructure",
+        filter = testModuleKindIs(
+            TestModuleKind.LibraryBinary,
+            TestModuleKind.LibrarySource,
+            TestModuleKind.CodeFragment,
+        ),
+    ) {
+        test<AbstractModuleStructureTest> { model(it, "moduleKinds") }
+    }
+
     component("scopeProvider") {
         test<AbstractFileScopeTest> { model(it, "fileScope") }
         test<AbstractPackageScopeTest> { model(it, "packageScope") }
@@ -151,24 +162,4 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
         test<AbstractRestrictedAnalysisExceptionWrappingTest> { model(it, "exceptionWrapping") }
     }
 
-    group("projectStructure/moduleKinds") {
-        test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.CodeFragment)) {
-            model(it, "codeFragment")
-        }
-        test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.NotUnderContentRoot)) {
-            model(it, "notUnderContentRoot")
-        }
-        test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.LibrarySource)) {
-            model(it, "librarySource")
-        }
-        test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.LibraryBinary)) {
-            model(it, "libraryBinary")
-        }
-        test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.Builtins)) {
-            model(it, "builtins")
-        }
-        test<AbstractModuleStructureTest>(filter = testModuleKindIs(TestModuleKind.LibraryFallbackDependencies)) {
-            model(it, "libraryFallbackDependencies")
-        }
-    }
 }

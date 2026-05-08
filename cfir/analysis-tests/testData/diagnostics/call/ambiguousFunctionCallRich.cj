@@ -11,8 +11,8 @@ func choose(value: Int64, right!: Bool = false): Int64 {
 }
 
 func chooseWithNamedArguments(): Unit {
-    let left = choose(1, left: 2)
-    let right = choose(1, right: true)
+    choose(1, left: 2)
+    choose(1, right: true)
 }
 
 func chooseAmbiguously(): Unit {

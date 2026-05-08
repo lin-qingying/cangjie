@@ -29,81 +29,196 @@ sealed class CaLightDeclarationBase(
     final override val kind: CaLightDeclarationKind,
     final override val name: String?,
     final override val module: CaModule?,
-    final override val annotations: List<CaAnnotation>,
+    private val annotationsFactory: () -> List<CaAnnotation>,
     final override val origin: CaLightDeclarationOrigin,
     final override val token: CaLifetimeToken,
-) : CaLightDeclaration
-
-class CaLightPackageDeclarationImpl(
-    packageName: String,
-    module: CaModule?,
-    origin: CaLightDeclarationOrigin,
-    token: CaLifetimeToken,
-) : CaLightDeclarationBase(
-    kind = CaLightDeclarationKind.PACKAGE,
-    name = packageName,
-    module = module,
-    annotations = emptyList(),
-    origin = origin,
-    token = token,
-)
+) : CaLightDeclaration {
+    /**
+     * 注解列表按需恢复，避免在 light declaration 建立阶段触发完整符号解析。
+     */
+    final override val annotations: List<CaAnnotation> by lazy(LazyThreadSafetyMode.NONE) {
+        annotationsFactory()
+    }
+}
 
 class CaLightClassLikeDeclarationImpl(
     name: String?,
     module: CaModule?,
-    annotations: List<CaAnnotation>,
+    annotationsFactory: () -> List<CaAnnotation>,
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
-    override val classId: ClassId?,
-    override val typeParameters: List<Name>,
-    override val superTypes: List<CaType>,
-    override val members: List<CaLightDeclaration>,
+    private val classIdFactory: () -> ClassId?,
+    private val typeParametersFactory: () -> List<Name>,
+    private val superTypesFactory: () -> List<CaType>,
+    private val membersFactory: () -> List<CaLightDeclaration>,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.CLASS_LIKE,
     name = name,
     module = module,
-    annotations = annotations,
+    annotationsFactory = annotationsFactory,
     origin = origin,
     token = token,
-), CaLightClassLikeDeclaration
+), CaLightClassLikeDeclaration {
+    override val classId: ClassId? by lazy(LazyThreadSafetyMode.NONE) {
+        classIdFactory()
+    }
+
+    override val typeParameters: List<Name> by lazy(LazyThreadSafetyMode.NONE) {
+        typeParametersFactory()
+    }
+
+    override val superTypes: List<CaType> by lazy(LazyThreadSafetyMode.NONE) {
+        superTypesFactory()
+    }
+
+    /**
+     * 对齐 Kotlin decompiled light class 的惰性成员展开时机。
+     *
+     * 顶层 light declaration 先稳定建立，成员树仅在真正访问时才展开，
+     * 避免在 provider 构造阶段一次性递归物化整棵声明树。
+     */
+    override val members: List<CaLightDeclaration> by lazy(LazyThreadSafetyMode.NONE) {
+        membersFactory()
+    }
+
+    constructor(
+        name: String?,
+        module: CaModule?,
+        annotations: List<CaAnnotation>,
+        origin: CaLightDeclarationOrigin,
+        token: CaLifetimeToken,
+        classId: ClassId?,
+        typeParameters: List<Name>,
+        superTypes: List<CaType>,
+        members: List<CaLightDeclaration>,
+    ) : this(
+        name = name,
+        module = module,
+        annotationsFactory = { annotations },
+        origin = origin,
+        token = token,
+        classIdFactory = { classId },
+        typeParametersFactory = { typeParameters },
+        superTypesFactory = { superTypes },
+        membersFactory = { members },
+    )
+
+}
 
 class CaLightExtendDeclarationImpl(
     name: String?,
     module: CaModule?,
-    annotations: List<CaAnnotation>,
+    annotationsFactory: () -> List<CaAnnotation>,
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
     override val extendId: String,
-    override val targetClassId: ClassId?,
-    override val extendedType: CaType,
-    override val typeParameters: List<Name>,
-    override val superTypes: List<CaType>,
-    override val members: List<CaLightDeclaration>,
+    private val targetClassIdFactory: () -> ClassId?,
+    private val extendedTypeFactory: () -> CaType,
+    private val typeParametersFactory: () -> List<Name>,
+    private val superTypesFactory: () -> List<CaType>,
+    private val membersFactory: () -> List<CaLightDeclaration>,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.EXTEND,
     name = name,
     module = module,
-    annotations = annotations,
+    annotationsFactory = annotationsFactory,
     origin = origin,
     token = token,
-), CaLightExtendDeclaration
+), CaLightExtendDeclaration {
+    override val targetClassId: ClassId? by lazy(LazyThreadSafetyMode.NONE) {
+        targetClassIdFactory()
+    }
+
+    override val extendedType: CaType by lazy(LazyThreadSafetyMode.NONE) {
+        extendedTypeFactory()
+    }
+
+    override val typeParameters: List<Name> by lazy(LazyThreadSafetyMode.NONE) {
+        typeParametersFactory()
+    }
+
+    override val superTypes: List<CaType> by lazy(LazyThreadSafetyMode.NONE) {
+        superTypesFactory()
+    }
+
+    /**
+     * extend 成员与 class-like 一样按需展开，避免 decompiled 路径预先递归构造。
+     */
+    override val members: List<CaLightDeclaration> by lazy(LazyThreadSafetyMode.NONE) {
+        membersFactory()
+    }
+
+    constructor(
+        name: String?,
+        module: CaModule?,
+        annotations: List<CaAnnotation>,
+        origin: CaLightDeclarationOrigin,
+        token: CaLifetimeToken,
+        extendId: String,
+        targetClassId: ClassId?,
+        extendedType: CaType,
+        typeParameters: List<Name>,
+        superTypes: List<CaType>,
+        members: List<CaLightDeclaration>,
+    ) : this(
+        name = name,
+        module = module,
+        annotationsFactory = { annotations },
+        origin = origin,
+        token = token,
+        extendId = extendId,
+        targetClassIdFactory = { targetClassId },
+        extendedTypeFactory = { extendedType },
+        typeParametersFactory = { typeParameters },
+        superTypesFactory = { superTypes },
+        membersFactory = { members },
+    )
+
+}
 
 class CaLightCallableDeclarationImpl(
     name: String?,
     module: CaModule?,
-    annotations: List<CaAnnotation>,
+    annotationsFactory: () -> List<CaAnnotation>,
     origin: CaLightDeclarationOrigin,
     token: CaLifetimeToken,
-    override val callableId: CallableId?,
-    override val signature: CaCallableSignature<*>?,
+    private val callableIdFactory: () -> CallableId?,
+    private val signatureFactory: () -> CaCallableSignature<*>?,
 ) : CaLightDeclarationBase(
     kind = CaLightDeclarationKind.CALLABLE,
     name = name,
     module = module,
-    annotations = annotations,
+    annotationsFactory = annotationsFactory,
     origin = origin,
     token = token,
-), CaLightCallableDeclaration
+), CaLightCallableDeclaration {
+    override val callableId: CallableId? by lazy(LazyThreadSafetyMode.NONE) {
+        callableIdFactory()
+    }
+
+    override val signature: CaCallableSignature<*>? by lazy(LazyThreadSafetyMode.NONE) {
+        signatureFactory()
+    }
+
+    constructor(
+        name: String?,
+        module: CaModule?,
+        annotations: List<CaAnnotation>,
+        origin: CaLightDeclarationOrigin,
+        token: CaLifetimeToken,
+        callableId: CallableId?,
+        signature: CaCallableSignature<*>?,
+    ) : this(
+        name = name,
+        module = module,
+        annotationsFactory = { annotations },
+        origin = origin,
+        token = token,
+        callableIdFactory = { callableId },
+        signatureFactory = { signature },
+    )
+
+}
 
 data class CaLightDeclarationCacheKey(
     val stableKey: String,

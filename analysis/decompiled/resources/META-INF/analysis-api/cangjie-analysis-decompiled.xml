@@ -9,8 +9,6 @@
         serviceImplementation="org.cangnova.cangjie.analysis.decompiled.filestubs.CaBuiltinsVirtualFileProviderCliImpl"
     />
     <projectService serviceImplementation="org.cangnova.cangjie.analysis.decompiled.filestubs.CaDecompiledBinarySupport"/>
-    <projectService serviceImplementation="org.cangnova.cangjie.analysis.decompiled.stubs.CaDecompiledPackageViewService"/>
-    <projectService serviceImplementation="org.cangnova.cangjie.analysis.decompiled.psi.CaDecompiledPsiSupport"/>
     <projectService
         serviceInterface="org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex"
         serviceImplementation="org.cangnova.cangjie.analysis.decompiled.CaDecompiledBinaryIndexImpl"

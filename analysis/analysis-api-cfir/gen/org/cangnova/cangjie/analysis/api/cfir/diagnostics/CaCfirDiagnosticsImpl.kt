@@ -429,6 +429,44 @@ internal class InvalidCfuncReturnTypeImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidCfuncReturnType
 
+internal class InvalidCfuncParameterTypeImpl(
+    override val actualType: CaType,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidCfuncParameterType
+
+internal class OnlyCfuncCanUseAnnotationImpl(
+    override val annotationName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.OnlyCfuncCanUseAnnotation
+
+internal class IllegalScopeUseOfAnnotationImpl(
+    override val annotationName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalScopeUseOfAnnotation
+
+internal class ThrowExprWithWrongTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ThrowExprWithWrongType
+
+internal class CatchTypeMustExtendExceptionImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.CatchTypeMustExtendException
+
+internal class UselessExceptionTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.UselessExceptionType
+
+internal class RangeStepCannotBeZeroImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.RangeStepCannotBeZero
+
 internal class EffectsFeatureDisabledImpl(
     override val constructName: String,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -2121,6 +2159,11 @@ internal class UnusedImportImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjImportItem>(cfirDiagnostic, token), CaCfirDiagnostic.UnusedImport
+
+internal class UnusedExpressionImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjExpression>(cfirDiagnostic, token), CaCfirDiagnostic.UnusedExpression
 
 internal class MockDisabledImpl(
     override val option: String,

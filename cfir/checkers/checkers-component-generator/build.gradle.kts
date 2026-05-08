@@ -18,18 +18,6 @@ dependencies {
     implementation(libs.guava)
 }
 
-val targetCheckersGenDir = layout.projectDirectory.dir("../gen")
-
-val generateCfirDiagnostics by tasks.registering(JavaExec::class) {
-    group = "generation"
-    description = "Generate Cfir diagnostics artifacts into :cfir:checkers/gen."
-    dependsOn(tasks.named("classes"))
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("org.cangnova.cangjie.cfir.checkers.generator.MainKt")
-    workingDir = rootProject.projectDir
-    args("all", targetCheckersGenDir.asFile.absolutePath)
-}
-
 application {
     mainClass.set("org.cangnova.cangjie.cfir.checkers.generator.MainKt")
 }

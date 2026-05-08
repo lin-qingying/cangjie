@@ -8,26 +8,8 @@
 
 main(): Int64 {
     match (1) {
-        case (k, v) => 1
-        case _ => continue
+        case <!TUPLE_PATTERN_NOT_MATCH!>(k, v)<!> => 1
+        case _ => <!INVALID_LOOP_CONTROL!>continue<!>
     }
     0
 }
-
-/* SCAN
-error: 'break' or 'continue' must be used inside a loop
-  ==> tuple2.cj:12:19:
-   | 
-12 |         case _ => continue
-   |                   ^ 
-   | 
-
-error: mismatched types
-  ==> tuple2.cj:11:14:
-   | 
-11 |         case (k, v) => 1
-   |              ^^^^^^ expected 'Int64', found 'Tuple'
-   | 
-
-2 errors generated, 2 errors printed.
-*/

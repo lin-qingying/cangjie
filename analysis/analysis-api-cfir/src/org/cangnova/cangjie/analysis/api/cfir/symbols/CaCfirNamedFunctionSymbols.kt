@@ -7,6 +7,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.caSymbolModalityByModifiers
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.getCallableSymbolLocation
+import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 import org.cangnova.cangjie.analysis.api.cfir.isOpenFromInterface
 import org.cangnova.cangjie.analysis.api.cfir.location
 import org.cangnova.cangjie.analysis.api.cfir.psiBasedDefaultCaModality

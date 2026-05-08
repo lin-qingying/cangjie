@@ -10,6 +10,11 @@ class B{
 extend B <: A{
 
 }
-main() {
-    let a: A = B()
+
+func acceptA(value: A): Unit {
+    let _ = value
+}
+
+main(): Unit {
+    acceptA(B())
 }

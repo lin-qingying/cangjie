@@ -15,16 +15,20 @@ fun interface CaValueParameterSymbolRenderer {
 
     companion object {
         val AS_SOURCE: CaValueParameterSymbolRenderer = CaValueParameterSymbolRenderer { analysisSession, symbol, declarationRenderer, printer ->
-
-
             printer {
                 " = ".separated(
                     {
                         declarationRenderer.callableSignatureRenderer
-                            .renderCallableSignature(analysisSession, symbol, keyword = null, declarationRenderer, printer)
+                            .renderCallableSignature(analysisSession, symbol, keyword = null, declarationRenderer, this)
                     },
-                    { declarationRenderer.parameterDefaultValueRenderer.renderDefaultValue(analysisSession, symbol, printer) },
+                    { declarationRenderer.parameterDefaultValueRenderer.renderDefaultValue(analysisSession, symbol, this) },
                 )
+            }
+        }
+
+        val TYPE_ONLY: CaValueParameterSymbolRenderer = CaValueParameterSymbolRenderer { analysisSession, symbol, declarationRenderer, printer ->
+            printer {
+                declarationRenderer.typeRenderer.renderType(analysisSession, symbol.returnType, this)
             }
         }
     }

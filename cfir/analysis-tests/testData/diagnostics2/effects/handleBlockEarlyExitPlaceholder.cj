@@ -17,7 +17,7 @@ func breakFromHandle(): Int64 {
         return try {
             1
         } handle (cmd: IntCommand) {
-            <!INVALID_LOOP_CONTROL!>/* suggested message: loop control cannot escape directly from a handle block boundary. source: external/cangjie_compiler/src/Sema/TypeCheckExpr/TryExpr.cpp */break<!>
+            <!INVALID_LOOP_CONTROL!>break<!>
         }
     }
 }

@@ -9,10 +9,12 @@ import java.io.File
  * This enum represents the relation between the module and its dependency (assume that B depends on A)
  * - [RegularDependency] means that B depend on A as a regular library dependency (A is passed to classpath of B);
  * - [FriendDependency] is the same as [RegularDependency], but in addition B can access internal declarations of A (like test-main relation);
+ * - [DependsOnDependency] 表示同一层次模块结构中的 dependsOn 关系。
  */
 enum class DependencyRelation {
     RegularDependency,
     FriendDependency,
+    DependsOnDependency,
 }
 
 data class DependencyDescription(
@@ -75,6 +77,9 @@ data class TestModule(
 
     val friendDependencies: List<DependencyDescription>
         get() = allDependencies.filter { it.relation == DependencyRelation.FriendDependency }
+
+    val dependsOnDependencies: List<DependencyDescription>
+        get() = allDependencies.filter { it.relation == DependencyRelation.DependsOnDependency }
 
     override fun equals(other: Any?): Boolean =
         other is TestModule && name == other.name

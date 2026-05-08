@@ -1,12 +1,12 @@
 // RUN_PIPELINE_TILL: FRONTEND
 open class Base {
-    open func getValue(): Base {
+    public open func getValue(): Base {
         return Base()
     }
 }
 
 class Child <: Base {
-    func getValue(): Child {
+    public override func getValue(): Child {
         return Child()
     }
 }

@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.decompiled.filestubs
 
 import PackageFormat.Package as CjoPackage
@@ -7,9 +9,12 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
+import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsRootAware
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -56,13 +61,19 @@ class CaDecompiledBinarySupport(
         return builtinsIndex().packageFiles[packageFqName]
     }
 
+    fun findBuiltinsBinaryFile(packageFqName: FqName): VirtualFile? {
+        refreshIfNeeded()
+        return builtinsIndex().packageFiles[packageFqName]
+    }
+
     fun findOwningModule(binaryFile: VirtualFile): CaModule? {
         refreshIfNeeded()
-        val projectStructure = CangJieProjectStructureProvider.getInstance(project)
-        val builtinsModules = projectStructure.allModules.filterIsInstance<CaBuiltinsModule>()
-        if (builtinsModules.isNotEmpty() && builtinsIndex().files.any { it.url == binaryFile.url }) {
-            return builtinsModules.first()
+        if (builtinsIndex().files.any { it.url == binaryFile.url }) {
+            val decompiledFile = project.getService(CaDecompiledPsiProvider::class.java)?.getDecompiledFile(binaryFile) ?: return null
+            return CangJieProjectStructureProvider.getModule(project, decompiledFile, useSiteModule = null)
         }
+
+        val projectStructure = CaModuleProvider.getInstance(project)
 
         /**
          * library 侧也必须与 builtins 一样按“已建索引的精确 binary file”来反查 owning module。
@@ -84,8 +95,12 @@ class CaDecompiledBinarySupport(
 
     fun loadPackageData(binaryFile: VirtualFile): CaLoadedCjoPackage? {
         refreshIfNeeded()
-        val module = findOwningModule(binaryFile) ?: return null
         val packageFqName = readPackageFqName(binaryFile) ?: return null
+        if (builtinsIndex().files.any { it.url == binaryFile.url }) {
+            return loadBuiltinsPackageData(packageFqName, binaryFile)
+        }
+
+        val module = findOwningModule(binaryFile) ?: return null
         return when (module) {
             is CaLibraryModule -> loadPackageData(module, packageFqName)
             is CaBuiltinsModule -> loadPackageData(module, packageFqName)
@@ -103,8 +118,16 @@ class CaDecompiledBinarySupport(
     fun loadPackageData(module: CaBuiltinsModule, packageFqName: FqName): CaLoadedCjoPackage? {
         refreshIfNeeded()
         val binaryFile = findBinaryFile(module, packageFqName) ?: return null
+        return loadBuiltinsPackageData(packageFqName, binaryFile, module)
+    }
+
+    private fun loadBuiltinsPackageData(
+        packageFqName: FqName,
+        binaryFile: VirtualFile,
+        owningModule: CaModule? = null,
+    ): CaLoadedCjoPackage? {
         val roots = builtinsRootFiles().map(::toRootFile).map(::normalizeRoot).distinctBy(File::getAbsolutePath)
-        return repositoryFor("<builtins>", roots).loadPackageData(packageFqName, binaryFile, module, roots)
+        return repositoryFor("<builtins>", roots).loadPackageData(packageFqName, binaryFile, owningModule, roots)
     }
 
     private fun indexFor(module: CaLibraryModule): CaModuleBinaryIndex {
@@ -169,7 +192,10 @@ class CaDecompiledBinarySupport(
         val provider = CaBuiltinsVirtualFileProvider.getInstance()
         return when (provider) {
             is CaBuiltinsRootAware -> provider.getBuiltinRootVirtualFiles()
-            else -> provider.getBuiltinVirtualFiles().mapNotNull(VirtualFile::getParent).toCollection(linkedSetOf())
+            else -> error(
+                "Builtins decompiled support requires `${CaBuiltinsRootAware::class.simpleName}` to recover `.cjo` repository roots; " +
+                    "provider=${provider::class.qualifiedName}",
+            )
         }
     }
 
@@ -235,7 +261,7 @@ internal class CaDecompiledCjoRepository(
     fun loadPackageData(
         packageFqName: FqName,
         binaryFile: VirtualFile,
-        owningModule: CaModule,
+        owningModule: CaModule?,
         searchRoots: List<File>,
     ): CaLoadedCjoPackage? {
         val fullPkgName = packageFqName.asString()

@@ -8,33 +8,12 @@
 
 main() {
     var flag = false
-    spawn {
+    <!USE_FUNC_CAPTURE_VAR_ALONE!>spawn {
         =>
         var a = 1
         if (a + 1 == 2) {
             flag = true
         }
-    }
+    }<!>
     return
 }
-
-/* SCAN
-error: lambda capturing mutable variables needs to be called directly
-  ==> err_capture_var.cj:11:11:
-   | 
-11 |       spawn {
-   |  ___________^
-12 | |         =>
-   | | ...
-17 | |     }
-   | |_____^
-   | 
-note: 'flag' is mutable
-  ==> err_capture_var.cj:15:13:
-   | 
-15 |             flag = true
-   |             ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

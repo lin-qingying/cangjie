@@ -17,7 +17,7 @@ func continueFromHandle(): Int64 {
         return try {
             1
         } handle (cmd: IntCommand) {
-            <!INVALID_LOOP_CONTROL!>/* suggested message: continue cannot escape directly from a handle block boundary. source: external/cangjie_compiler/src/Sema/TypeCheckExpr/TryExpr.cpp */continue<!>
+            <!INVALID_LOOP_CONTROL!>continue<!>
         }
     }
 }

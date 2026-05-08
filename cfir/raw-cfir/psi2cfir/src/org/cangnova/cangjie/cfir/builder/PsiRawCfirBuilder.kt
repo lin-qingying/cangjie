@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.AstLoadingFilter
 import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.CfirElement
@@ -28,6 +29,7 @@ import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
@@ -398,7 +400,7 @@ class PsiRawCfirBuilder(
                 convertPropertyAccessor(
                     psi = accessor,
                     accessorName = Name.special("<get-${name.asString()}>"),
-                    defaultReturnTypeRef = typeRef,
+                    propertyTypeRef = typeRef,
                     propertySymbol = propertySymbol,
                 )
             }
@@ -406,7 +408,7 @@ class PsiRawCfirBuilder(
                 convertPropertyAccessor(
                     psi = accessor,
                     accessorName = Name.special("<set-${name.asString()}>"),
-                    defaultReturnTypeRef = buildImplicitTypeRef(),
+                    propertyTypeRef = typeRef,
                     propertySymbol = propertySymbol,
                 )
             }
@@ -439,18 +441,24 @@ class PsiRawCfirBuilder(
         private fun convertPropertyAccessor(
             psi: CjPropertyAccessor,
             accessorName: Name,
-            defaultReturnTypeRef: CfirTypeRef,
+            propertyTypeRef: CfirTypeRef,
             propertySymbol: CfirPropertySymbol,
         ): CfirPropertyAccessor {
             val accessorSymbol = CfirPropertyAccessorSymbol()
             val valueParams = psi.valueParameters.map { parameter -> convertValueParameter(parameter, accessorSymbol) }
+            if (!psi.isGetter) {
+                valueParams.firstOrNull()
+                    ?.takeIf { it.returnTypeRef is CfirImplicitTypeRef }
+                    ?.replaceReturnTypeRef(propertyTypeRef)
+            }
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
             val body = psi.buildCfirBody(functionTarget)
+            val source = psi.toCjPsiSourceElement()
 
             return buildSourceDeclaration(accessorSymbol) { symbol ->
                 buildPropertyAccessor {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = psi.toCjPsiSourceElement()
+                    this.source = source
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
@@ -459,7 +467,8 @@ class PsiRawCfirBuilder(
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
                     status = convertDeclarationStatus(psi)
-                    returnTypeRef = psi.returnTypeReference?.let(::convertTypeRef) ?: defaultReturnTypeRef
+                    returnTypeRef = psi.returnTypeReference?.let(::convertTypeRef)
+                        ?: if (psi.isGetter) propertyTypeRef else baseSession.builtinTypes.unitType.toCfirResolvedTypeRef(source)
                     this.propertySymbol = propertySymbol
                     this.isGetter = psi.isGetter
                     valueParameters.addAll(valueParams)

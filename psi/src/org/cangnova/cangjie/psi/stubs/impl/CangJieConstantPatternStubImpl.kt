@@ -38,4 +38,8 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 class CangJieConstantPatternStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjConstantPattern>(parent, CjStubElementTypes.CONSTANT_PATTERN),
-    CangJieConstantPatternStub
+    CangJieConstantPatternStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieConstantPatternStubImpl = CangJieConstantPatternStubImpl(
+        parent = newParent,
+    )
+}

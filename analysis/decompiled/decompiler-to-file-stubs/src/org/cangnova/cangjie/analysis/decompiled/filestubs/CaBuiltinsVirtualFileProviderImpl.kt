@@ -6,16 +6,10 @@ import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsRootAware
 import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import java.io.File
-
-/**
- * 暴露 builtins 根目录，供二进制仓库恢复 `CjoManager` 搜索路径。
- */
-interface CaBuiltinsRootAware {
-    fun getBuiltinRootVirtualFiles(): Set<VirtualFile>
-}
 
 /**
  * 按宿主环境约定解析 builtins `.cjo` 根路径。

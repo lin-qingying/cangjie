@@ -33,4 +33,8 @@ import com.intellij.psi.stubs.StubElement
 class CangJieForeignDirectiveStubImpl(
     parent: StubElement<out PsiElement>?,
 
-) : CangJieStubBaseImpl<CjForeignDirective>(parent, CjStubElementTypes.FOREIGN), CangJieForeignDirectiveStub
+) : CangJieStubBaseImpl<CjForeignDirective>(parent, CjStubElementTypes.FOREIGN), CangJieForeignDirectiveStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieForeignDirectiveStubImpl = CangJieForeignDirectiveStubImpl(
+        parent = newParent,
+    )
+}

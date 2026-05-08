@@ -3,6 +3,6 @@ func identity<T>(value: T): T {
     return value
 }
 
-main() {
-    let number: Int64 <!PATTERN_INITIALIZER_TYPE_MISMATCH!>=<!> <!TYPE_MISMATCH!>identity("hello")<!>
+main(): Unit {
+    let _: Int64 = <!NEW_INFERENCE_ERROR!>identity<!>("hello")
 }

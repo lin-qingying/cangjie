@@ -1,3 +1,3 @@
 func arg(a: Int64): Unit {
-    a
+    let _ = a
 }

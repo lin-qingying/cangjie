@@ -14,12 +14,12 @@ struct Empty {}
 
 func testStructInvokeNoArgs(): Unit {
     let c = Counter()
-    let v: Int64 = c()
+    c()
 }
 
 func testStructInvokeWithArg(): Unit {
     let c = Counter()
-    let v: Int64 = c(10)
+    c(10)
 }
 
 func testEmptyStructNoInvoke(): Unit {

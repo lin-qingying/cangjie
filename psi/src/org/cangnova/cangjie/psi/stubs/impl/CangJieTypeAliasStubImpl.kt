@@ -45,4 +45,11 @@ class CangJieTypeAliasStubImpl(
     override fun getFqName(): FqName? = StringRef.toString(qualifiedName)?.let(::FqName)
 
     override fun getName(): String? = StringRef.toString(name)
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieTypeAliasStubImpl = CangJieTypeAliasStubImpl(
+        parent = newParent,
+        name = name,
+        qualifiedName = qualifiedName,
+        classId = classId,
+    )
 }

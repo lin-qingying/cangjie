@@ -7,7 +7,7 @@ func takesInt1<T>(x: T): T {
     return x
 }
 
-main() {
+main(): Unit {
     takesInt1<Int>
     takesInt
     takesInt1<Float64>(<!ARGUMENT_TYPE_MISMATCH!>1<!>)

@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.providers
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.materializeTopLevelExtendFiles
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirResolvableModuleSession
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -7,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirExtendIndexStore
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -57,6 +59,7 @@ internal class LLCfirSessionExtendProvider(
     }
 
     private fun ensureIndexIsFresh() {
+        session.symbolProvider.materializeTopLevelExtendFiles()
         val files = session.moduleComponents.cache.getAllCachedCfirFilesForResolution().toList()
         if (files.isEmpty()) return
 

@@ -1,9 +1,16 @@
 ﻿package org.cangnova.cangjie
 
 import com.intellij.codeInsight.ContainerProvider
+import com.intellij.codeInsight.TargetElementUtil
+import com.intellij.codeInsight.TargetElementUtilExtender
+import com.intellij.codeInsight.lookup.LookupManager
+import com.intellij.codeInsight.lookup.impl.LookupManagerImpl
+import com.intellij.codeInsight.multiverse.EditorContextManager
 import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.lang.MetaLanguage
+import com.intellij.lang.LanguageExtensionPoint
 import com.intellij.mock.MockApplication
+import com.intellij.mock.MockProject
 import com.intellij.model.psi.ImplicitReferenceProvider
 import com.intellij.model.psi.PsiSymbolDeclarationProvider
 import com.intellij.model.psi.PsiSymbolReferenceProviderBean
@@ -80,6 +87,10 @@ internal object CangJieHeadlessPlatformBootstrap {
         if (project.getService(com.intellij.psi.search.PsiSearchHelper::class.java) == null) {
             project.registerService(com.intellij.psi.search.PsiSearchHelper::class.java, PsiSearchHelperImpl::class.java)
         }
+        if (project.getService(LookupManager::class.java) == null) {
+            project.registerService(LookupManager::class.java, LookupManagerImpl::class.java)
+        }
+        registerEditorContextManagerIfMissing(project)
     }
 
     private fun registerApplicationExtensionPoints(area: ExtensionsArea) {
@@ -97,6 +108,8 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerExtensionPoint(area, "com.intellij.psi.declarationProvider", PsiSymbolDeclarationProvider::class.java)
         registerExtensionPoint(area, UseScopeEnlarger.EP_NAME.name, UseScopeEnlarger::class.java)
         registerExtensionPoint(area, "com.intellij.referencesSearch", QueryExecutor::class.java)
+        registerExtensionPoint(area, "com.intellij.targetElementEvaluator", LanguageExtensionPoint::class.java)
+        registerExtensionPoint(area, "com.intellij.targetElementUtilExtender", TargetElementUtilExtender::class.java)
     }
 
     private fun registerCangJiePsiInfrastructure(
@@ -126,6 +139,9 @@ internal object CangJieHeadlessPlatformBootstrap {
             VirtualFileSetFactory::class.java,
             CangJieHeadlessVirtualFileSetFactory::class.java,
         )
+        if (application.getService(TargetElementUtil::class.java) == null) {
+            application.registerService(TargetElementUtil::class.java)
+        }
     }
 
     private fun registerProjectExtensionPoints(area: ExtensionsArea) {
@@ -141,6 +157,23 @@ internal object CangJieHeadlessPlatformBootstrap {
         if (application.getService(serviceInterface) == null) {
             application.registerService(serviceInterface, implementationClass)
         }
+    }
+
+    /**
+     * `EditorContextManagerImpl` 是 IntelliJ 平台 internal 类，
+     * headless 宿主仍需按平台构造签名 `(Project, CoroutineScope)` 物化该 project service。
+     */
+    private fun registerEditorContextManagerIfMissing(project: MockProject) {
+        if (project.getService(EditorContextManager::class.java) != null) return
+
+        val implementationClass = Class.forName("com.intellij.codeInsight.multiverse.EditorContextManagerImpl")
+        val coroutineScopeClass = Class.forName("kotlinx.coroutines.CoroutineScope")
+        val constructor = implementationClass.getDeclaredConstructor(Project::class.java, coroutineScopeClass)
+        constructor.isAccessible = true
+        val coroutineScope = project::class.java.getMethod("getCoroutineScope").invoke(project)
+        @Suppress("UNCHECKED_CAST")
+        val serviceInstance = constructor.newInstance(project, coroutineScope) as EditorContextManager
+        project.registerService(EditorContextManager::class.java, serviceInstance)
     }
 
     private fun <T : Any> registerExtensionPoint(

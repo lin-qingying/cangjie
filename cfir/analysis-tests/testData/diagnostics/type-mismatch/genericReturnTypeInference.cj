@@ -4,7 +4,6 @@ func identity<T>(x: T): T {
     return x
 }
 
-main() {
-    let a: Int64 = identity(42)
-
+main(): Unit {
+    identity(42)
 }

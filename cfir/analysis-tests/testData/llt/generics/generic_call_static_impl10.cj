@@ -9,7 +9,7 @@
 // Test for fuzzing CheckInstTypeCompleteness
 interface I0<T> {}
 
-interface I1 <: I0<Int64> & Option<I0> {
+interface <!INTERFACE_CANNOT_INHERIT_CLASS!>I1<!> <: I0<Int64> & Option<<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>I0<!>> {
     static func foo() {}
 }
 
@@ -21,21 +21,3 @@ main() {
     test<I1>()
     return 0
 }
-
-/* SCAN
-error: generic type should be used with type argument
-  ==> generic_call_static_impl10.cj:12:36:
-   | 
-12 | interface I1 <: I0<Int64> & Option<I0> {
-   |                                    ^ 
-   | 
-
-error: interface 'I1' can only inherit interface
-  ==> generic_call_static_impl10.cj:12:1:
-   | 
-12 | interface I1 <: I0<Int64> & Option<I0> {
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

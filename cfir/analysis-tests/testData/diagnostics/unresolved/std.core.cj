@@ -1,5 +1,3 @@
-
-
 func a():String{
-
+    return ""
 }

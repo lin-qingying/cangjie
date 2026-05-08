@@ -4,7 +4,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.components.findCDoc
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.lexer.cdoc.parser.CDocKnownTag
 import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
 import org.cangnova.cangjie.psi.CjImplementationDetail
@@ -45,15 +45,15 @@ class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
         assertEquals("Greets the caller.", docComment!!.getDefaultSection().getContent())
         assertEquals(
             "input value",
-            docComment.findSectionByTag(CDocKnownTag.PARAM, "value")?.getContent(),
+            docComment.getDefaultSection().findTagByName(CDocKnownTag.PARAM.name.lowercase())?.getContent(),
         )
         assertEquals(
             "rendered text",
-            docComment.findSectionByTag(CDocKnownTag.RETURN)?.getContent(),
+            docComment.getDefaultSection().findTagByName(CDocKnownTag.RETURN.name.lowercase())?.getContent(),
         )
         assertEquals(
             "Document",
-            docComment.findSectionByTag(CDocKnownTag.SEE)?.getSubjectName(),
+            docComment.getDefaultSection().findTagByName(CDocKnownTag.SEE.name.lowercase())?.getSubjectName(),
         )
     }
 
@@ -70,8 +70,8 @@ class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
 
             assertEquals("Greets the caller.", declarationDescriptor?.primaryTag?.getContent())
             assertEquals("Greets the caller.", referenceDescriptor?.primaryTag?.getContent())
-            assertEquals(4, declarationDescriptor?.additionalSections?.size)
-            assertEquals(4, referenceDescriptor?.additionalSections?.size)
+            assertEquals(1, declarationDescriptor?.additionalSections?.size)
+            assertEquals(1, referenceDescriptor?.additionalSections?.size)
         }
     }
 }

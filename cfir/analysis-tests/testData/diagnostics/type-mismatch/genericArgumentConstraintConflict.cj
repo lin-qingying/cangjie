@@ -3,7 +3,7 @@ func choose<T>(first: T, second: T): T {
     return first
 }
 
-main() {
+main(): Unit {
 
-    let value =  <!TYPE_MISMATCH!>choose(1, true)<!>
+    let _ = <!NEW_INFERENCE_ERROR!>choose<!>(1, true)
 }

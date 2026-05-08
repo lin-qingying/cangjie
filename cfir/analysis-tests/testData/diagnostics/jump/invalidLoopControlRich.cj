@@ -21,10 +21,10 @@ func validLoopControl(flag: Bool): Unit {
 
 func jumpAcrossLambdaBoundary(flag: Bool): Unit {
     while (flag) {
-        runBlock({ value =>
+        runBlock({ _ =>
             <!INVALID_LOOP_CONTROL!>break<!>
         })
-        runBlock({ value =>
+        runBlock({ _ =>
             <!INVALID_LOOP_CONTROL!>continue<!>
         })
         break

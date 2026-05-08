@@ -19,4 +19,9 @@ class CangJieVarOrEnumPatternStubImpl(
     CangJieVarOrEnumPatternStub {
 
     override fun getName(): String? = StringRef.toString(nameRef)
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieVarOrEnumPatternStubImpl = CangJieVarOrEnumPatternStubImpl(
+        parent = newParent,
+        nameRef = nameRef,
+    )
 }

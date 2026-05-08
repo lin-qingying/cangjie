@@ -43,4 +43,9 @@ class CangJieTypeParameterStubImpl(
 
     // type parameters don't have FqNames
     override fun getFqName() = null
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieTypeParameterStubImpl = CangJieTypeParameterStubImpl(
+        parent = newParent,
+        name = name,
+    )
 }

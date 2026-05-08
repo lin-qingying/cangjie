@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.tools
 
 import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -12,13 +13,15 @@ import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightClassLikeDecla
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationProvider
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightExtendDeclaration
+import org.cangnova.cangjie.analysis.api.platform.declarations.createDeclarationProvider
 import org.cangnova.cangjie.analysis.api.stubs.CaStubIndexFacade
 import org.cangnova.cangjie.analysis.light.declarations.CaLightDeclarationRenderer
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
-
+@OptIn(CaPlatformInterface::class)
 /**
  * Analysis 外围模块的统一 inspector 入口。
  *
@@ -89,7 +92,9 @@ class CaAnalysisInspectorTools(
     }
 
     fun dumpLightDeclarations(module: CaModule): String {
-        return CaLightDeclarationRenderer.renderTree(lightDeclarationProvider.getLightDeclarations(module))
+        val declarations = collectLightDeclarationFiles(module)
+            .flatMap { file -> lightDeclarationProvider.getLightDeclarations(file, module) }
+        return CaLightDeclarationRenderer.renderTree(declarations)
     }
 
     fun dumpLightDeclarations(file: CjFile, useSiteModule: CaModule? = null): String {
@@ -212,6 +217,46 @@ class CaAnalysisInspectorTools(
                     ),
                 )
             }
+        }
+    }
+
+    private fun collectLightDeclarationFiles(module: CaModule): List<CjFile> {
+        val declarationProvider = project.createDeclarationProvider(module.contentScope, module)
+        val sourceFiles = declarationProvider.computePackageNames()
+            .orEmpty()
+            .flatMap { packageName ->
+                val packageFqName = FqName(packageName)
+                collectPackageSourceFiles(declarationProvider, packageFqName)
+            }
+        val decompiledFiles = collectDecompiledFiles(module)
+        return (sourceFiles + decompiledFiles).distinctBy { file -> file.virtualFile ?: file }
+    }
+
+    private fun collectPackageSourceFiles(
+        declarationProvider: org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider,
+        packageFqName: FqName,
+    ): List<CjFile> {
+        val classifierNames = declarationProvider.getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName)
+        val callableNames = declarationProvider.getTopLevelCallableNamesInPackage(packageFqName)
+
+        return buildList {
+            addAll(declarationProvider.findFilesForFacadeByPackage(packageFqName))
+            classifierNames.forEach { name ->
+                val classId = ClassId(packageFqName, name)
+                declarationProvider.getAllClassesByClassId(classId).mapTo(this) { it.containingCjFile }
+                declarationProvider.getAllTypeAliasesByClassId(classId).mapTo(this) { it.containingCjFile }
+            }
+            callableNames.forEach { name ->
+                addAll(declarationProvider.getTopLevelCallableFiles(CallableId(packageFqName, name)))
+            }
+        }.distinctBy { file -> file.virtualFile ?: file }
+    }
+
+    private fun collectDecompiledFiles(module: CaModule): List<CjFile> {
+        return when (module) {
+            is CaLibraryModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(decompiledPsiProvider::getDecompiledFile)
+            is CaBuiltinsModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(decompiledPsiProvider::getDecompiledFile)
+            else -> emptyList()
         }
     }
 }

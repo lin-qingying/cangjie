@@ -14,13 +14,12 @@ public class Bag {}
 extend Bag <: Countable {}
 
 // FILE: main.cj
-package main
+package localmain
 
 import internal_lib.Countable
 // 注意：没有 import internal_lib.Bag — 目标类型未导入
 
-// 只导入了接口 Countable，没有导入目标类型 Bag
-// 无法直接构造或引用 Bag，extend 间接不可达
+// 没有导入目标类型 Bag，因此这里只能通过已导入的接口类型 Countable 使用对应成员
 func demonstrateTargetNotImported(c: Countable): Int64 {
     return c.count()
 }

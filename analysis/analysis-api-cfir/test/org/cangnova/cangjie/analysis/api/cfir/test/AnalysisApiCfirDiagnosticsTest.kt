@@ -2,7 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -40,6 +40,10 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
             mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
         }
 
-        assertTrue(allDiagnostics.isEmpty(), "合法 extend 文件收集 diagnostics 不应抛异常，也不应产生额外诊断")
+        assertTrue(
+            allDiagnostics.isEmpty(),
+            "合法 extend 文件收集 diagnostics 不应抛异常，也不应产生额外诊断: " +
+                allDiagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" },
+        )
     }
 }

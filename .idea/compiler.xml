@@ -30,6 +30,9 @@
       <module name="cfir.cfir-tree.main" target="17" />
       <module name="cfir.cfir-tree.test" target="17" />
       <module name="deveco" target="21" />
+      <module name="deveco-cangjie.product" target="21" />
+      <module name="deveco-cangjie.product.main" target="21" />
+      <module name="deveco-cangjie.product.test" target="21" />
       <module name="deveco.main" target="21" />
       <module name="deveco.test" target="21" />
     </bytecodeTargetLevel>
@@ -57,6 +60,7 @@
       <module name="cangjie.analysis.analysis-api-standalone" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-standalone.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api-standalone.test" options="-proc:none" />
+      <module name="cangjie.analysis.analysis-api-standalone.testFixtures" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api.main" options="-proc:none" />
       <module name="cangjie.analysis.analysis-api.test" options="-proc:none" />
       <module name="cangjie.analysis.analysis-internal-utils" options="-proc:none" />
