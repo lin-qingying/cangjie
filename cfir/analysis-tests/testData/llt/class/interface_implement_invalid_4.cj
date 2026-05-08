@@ -22,19 +22,8 @@ interface I3 <: I1 {
     }
 }
 
-class C1 <: I2 & I3 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C1<!> <: I2 & I3 {}
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: interface function 'foo' must be implemented in 'C1'
-  ==> interface_implement_invalid_4.cj:25:1:
-   | 
-25 | class C1 <: I2 & I3 {}
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

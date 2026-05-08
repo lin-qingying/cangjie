@@ -18,52 +18,10 @@ interface I1 {
     }
 }
 
-class A <: I0 & I1 {}
+class <!INHERIT_SUPER_MEMBER_KIND_INCONSISTENT!>A<!> <: I0 & I1 {}
 
 func test<T>(a: T): Unit where T <: I0 & I1 {
-    a.test
+    <!AMBIGUOUS_USE!>a.test<!>
 }
 
 main() {}
-
-/* SCAN
-error: ambiguous use of 'test'
-  ==> generic_upperbound_reference_06.cj:24:5:
-   | 
-24 |     a.test
-   |     ^^^^^^ 
-   | 
-note: found function member of 'Interface-I0'
-  ==> generic_upperbound_reference_06.cj:10:10:
-   | 
-10 |     func test() {}
-   |          ^^^^ 
-   | 
-note: found property member of 'Interface-I1'
-  ==> generic_upperbound_reference_06.cj:14:10:
-   | 
-14 |     prop test: Int64 {
-   |          ^^^^ 
-   | 
-
-error: inherited members 'test' have inconsistent decl types
-  ==> generic_upperbound_reference_06.cj:21:7:
-   | 
-21 | class A <: I0 & I1 {}
-   |       ^ 
-   | 
-note: function member
-  ==> generic_upperbound_reference_06.cj:10:10:
-   | 
-10 |     func test() {}
-   |          ^^^^ 
-   | 
-note: property member
-  ==> generic_upperbound_reference_06.cj:14:10:
-   | 
-14 |     prop test: Int64 {
-   |          ^^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -13,13 +13,9 @@ open class Base {}
 class Cl<U> where U <: Base {}
 
 class Sub<X> {
-    public var a: A<X>
+    <!CLASS_UNINITIALIZED_FIELD!>public var a: <!GENERIC_ARGUMENT_NO_MATCH!>A<X><!><!>
 }
 
 main() {
     return 0;
 }
-
-// ASSERT: scan-1 sema_class_uninitialized_field
-// ASSERT: scan-1 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan "Errors": 2

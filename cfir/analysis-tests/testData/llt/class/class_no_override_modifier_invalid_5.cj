@@ -22,19 +22,8 @@ interface B {
     }
 }
 
-class D <: A & B {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class D<!> <: A & B {}
 
 main() {
     return 1
 }
-
-/* SCAN
-error: interface function 'foo' must be implemented in 'D'
-  ==> class_no_override_modifier_invalid_5.cj:25:1:
-   | 
-25 | class D <: A & B {}
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

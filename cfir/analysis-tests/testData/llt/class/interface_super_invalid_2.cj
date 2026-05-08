@@ -12,7 +12,7 @@ interface I1 {
 
 interface I2 <: I1 {
     func b() {
-        var c = super.a
+        var c = <!INTERFACE_SUPER_NOT_ALLOWED!>super<!>.a
         c()
     }
 }
@@ -20,14 +20,3 @@ interface I2 <: I1 {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: 'super' cannot be used in interface
-  ==> interface_super_invalid_2.cj:15:17:
-   | 
-15 |         var c = super.a
-   |                 ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

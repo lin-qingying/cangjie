@@ -18,7 +18,7 @@ interface I2 {
     }
 }
 
-open class C1 <: I1 & I2 {}
+open <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C1<!> <: I1 & I2 {}
 
 open class C2 <: I1 & I2 {
     public func foo(): Int64 {
@@ -27,39 +27,9 @@ open class C2 <: I1 & I2 {
 }
 
 main(): Int64 {
-    var res = C1().foo()
+    var res = C1().<!AMBIGUOUS_FUNCTION_CALL!>foo<!>()
     if (res == 1) {
         return 0
     }
     return 1
 }
-
-/* SCAN
-error: ambiguous match for function call 'foo'
-  ==> interface_implement_4.cj:30:20:
-   | 
-30 |     var res = C1().foo()
-   |                    ^ 
-   | 
-note: found candidate
-  ==> interface_implement_4.cj:10:10:
-   | 
-10 |     func foo(): Int64 {
-   |          ^ 
-   | 
-note: found candidate
-  ==> interface_implement_4.cj:16:10:
-   | 
-16 |     func foo(): Int64 {
-   |          ^ 
-   | 
-
-error: interface function 'foo' must be implemented in 'C1'
-  ==> interface_implement_4.cj:21:1:
-   | 
-21 | open class C1 <: I1 & I2 {}
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

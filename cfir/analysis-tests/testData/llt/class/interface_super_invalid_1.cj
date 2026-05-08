@@ -12,21 +12,10 @@ interface I1 {
 
 interface I2 <: I1 {
     func b() {
-        super.a()
+        <!INTERFACE_SUPER_NOT_ALLOWED!>super<!>.a()
     }
 }
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: 'super' cannot be used in interface
-  ==> interface_super_invalid_1.cj:15:9:
-   | 
-15 |         super.a()
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

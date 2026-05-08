@@ -11,11 +11,11 @@ class C1 {}
 class C2 {}
 
 class A<X> {
-    public func foo<Y>(x: X) where Y <: X {
+    public func foo<Y>(x: X) where Y <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>X<!> {
         x
     }
     public func foo<Y>() {}
-    public static func goo<Y>(x: X) where Y <: X {
+    public static func goo<Y>(x: X) where Y <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>X<!> {
         x
     }
 }
@@ -29,23 +29,18 @@ class SSub <: Sub {}
 class Sub2 <: Base {}
 
 class B<X> where X <: Sub {
-    public func f<Y>(x: Y): X where Y <: X {
+    public func f<Y>(x: Y): X where Y <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>X<!> {
         x
     }
 }
 
 main(): Int64 {
     let a = A<C1>()
-    a.foo<C2>(C1())
-    let b = a.foo<C2>
-    let c = A<C1>.goo<C2>
+    <!GENERIC_ARGUMENT_NO_MATCH!>a.foo<C2>(C1())<!>
+    let b = a.<!AMBIGUOUS_USE!>foo<!><C2>
+    let c = A<C1>.<!GENERIC_ARGUMENT_NO_MATCH!>goo<C2><!>
 
-    B<Sub>().f<Sub2>(Sub2())
+    <!GENERIC_ARGUMENT_NO_MATCH!>B<Sub>().f<Sub2>(Sub2())<!>
     let x: Sub = B<Sub>().f<SSub>(SSub())
     0
 }
-
-// ASSERT: scan-1 sema_ambiguous_use
-// ASSERT: scan-3 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan-3 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 7

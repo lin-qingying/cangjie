@@ -14,7 +14,7 @@ class A {
     }
 }
 
-class B <: A {
+class B <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>A<!> {
     public init() {
         f()
         var a = {=> super.f}
@@ -28,11 +28,11 @@ class B <: A {
     }
 }
 
-class C <: B {
+class C <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>B<!> {
     public init() {
         super.f()
         var a = {=> f}
-        func f3(c!: Int32 = f) {
+        func f3(c!: Int32 = <!TYPE_MISMATCH!>f<!>) {
             this.f
         }
         a()
@@ -42,45 +42,3 @@ class C <: B {
 main(): Int64 {
     0
 }
-
-/* SCAN
-warning: the current member should not have 'open' modifier because it is in a non-inheritable class
-  ==> class_open_modifier3.cj:10:5:
-   | 
-10 |     public open func f(): Int32 {
-   |     ^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: the current member should not have 'open' modifier because it is in a non-inheritable class
-  ==> class_open_modifier3.cj:26:5:
-   | 
-26 |     public open override func f(): Int32 {
-   |     ^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-error: super class 'A' is not inheritable
-  ==> class_open_modifier3.cj:17:12:
-   | 
-17 | class B <: A {
-   |            ^ 
-   | 
-
-error: super class 'B' is not inheritable
-  ==> class_open_modifier3.cj:31:12:
-   | 
-31 | class C <: B {
-   |            ^ 
-   | 
-
-error: mismatched types
-  ==> class_open_modifier3.cj:35:29:
-   | 
-35 |         func f3(c!: Int32 = f) {
-   |                             ^ expected 'Int32', found '() -> Int32'
-   | 
-
-3 errors generated, 3 errors printed.
-2 warnings generated, 2 warnings printed.
-*/

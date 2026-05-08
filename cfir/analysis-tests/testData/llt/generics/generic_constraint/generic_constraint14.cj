@@ -8,14 +8,14 @@
 
 // Test for nested type error can be reported
 
-public interface fatherInterface<T> where T <: UInt32 {
+public interface fatherInterface<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: UInt32 {
     static func foo1(): UInt32
     static func foo2<K>(a: K): UInt32 {
         foo1()
     }
 }
 
-public interface MyInterface<T> <: fatherInterface<T> where T <: UInt32 {
+public interface MyInterface<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> <: fatherInterface<T> where T <: UInt32 {
     static func foo3(): UInt32 {
         foo1() + foo1()
     }
@@ -39,9 +39,5 @@ enum enum2<T> <: MyInterface<UInt32> {
 
 main() {
     var en1: enum1<MyInterface<UInt32>> = enum1<MyInterface<UInt32>>.A(
-        enum1<MyInterface<UInt32>>.foo2<UInt32>(enum1<MyInterface<UInt32>>.foo1() + enum1<MyInterface<UInt16>>.foo1()))
+        enum1<MyInterface<UInt32>>.foo2<UInt32>(enum1<MyInterface<UInt32>>.foo1() + enum1<<!GENERIC_ARGUMENT_NO_MATCH!>MyInterface<UInt16><!>>.foo1()))
 }
-
-// ASSERT: scan-1 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan-2 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 3

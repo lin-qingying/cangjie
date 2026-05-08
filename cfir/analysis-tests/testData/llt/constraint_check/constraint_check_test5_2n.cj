@@ -7,7 +7,7 @@
 // EXEC:%frontendCompiler %typecheck %diag_json %f 2>&1 | compare %f
 // UpperBound: Tuple Type
 
-func foo<T>() where T <: (Int32, Int32) {
+func foo<T>() where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>(Int32, Int32)<!> {
     return 0
 }
 
@@ -17,19 +17,15 @@ class Child <: Base {}
 
 class C {}
 
-func bar<T>() where T <: (Int32, Child) {
+func bar<T>() where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>(Int32, Child)<!> {
     return 0
 }
 
 main(): Int64 {
-    foo<(Int32, Int64)>()
-    bar<(Int32, Base)>()
+    <!GENERIC_ARGUMENT_NO_MATCH!>foo<(Int32, Int64)>()<!>
+    <!GENERIC_ARGUMENT_NO_MATCH!>bar<(Int32, Base)>()<!>
     bar<(Int32, Child)>() // OK
-    bar<(Int32, C)>()
-    bar<(Int64, Child)>()
-    bar<(C, Child)>()
+    <!GENERIC_ARGUMENT_NO_MATCH!>bar<(Int32, C)>()<!>
+    <!GENERIC_ARGUMENT_NO_MATCH!>bar<(Int64, Child)>()<!>
+    <!GENERIC_ARGUMENT_NO_MATCH!>bar<(C, Child)>()<!>
 }
-
-// ASSERT: scan-5 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan-2 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 7
