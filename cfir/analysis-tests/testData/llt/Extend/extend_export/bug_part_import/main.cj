@@ -10,30 +10,8 @@
 // EXEC-PIPE-1: %compiler %cmp_opt testb.%middle testa.%middle %f -o %output 2>&1 | compare %f
 
 import a.*
-import b.I1
+import <!UNUSED_IMPORT!>b.I1<!>
 
-public class B <: A & IChild {}
+public class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>B<!> <: A & IChild {}
 
 main() {}
-
-/* SCAN
-warning: unused import 'b.I1'
-  ==> main.cj:13:1:
-   | 
-13 | import b.I1
-   | ^^^^^^^^^^^ unused import
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-error: class 'B' missing abstract modifier, otherwise abstract function or property should be implemented
-  ==> main.cj:15:1:
-   | 
-15 | public class B <: A & IChild {}
-   | ^ 
-   | 
-note: unimplemented interface function 'some'
-  ==> (package a)testa.cj:10:5:
-
-1 error generated, 1 error printed.
-1 warning generated, 1 warning printed.
-*/

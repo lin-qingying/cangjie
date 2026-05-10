@@ -10,23 +10,14 @@ class C1 {}
 
 class A<T> where T <: C1 {}
 
-class B<X> where X <: A<X> {}
+class B<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>X<!>> where X <: A<X> {}
 
-class D<U, V> where U <: B<U>, V <: A<V> {}
+class D<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>U<!>, V> where U <: B<U>, V <: A<V> {}
 
 class E<T> where T <: E<T> {}
 
-class F<T> where T <: G<T> {}
+class F<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: G<T> {}
 
-class G<T> where T <: F<T> {}
+class G<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: F<T> {}
 
 class I<T, X> where T <: C1 {}
-
-// ASSERT: scan generic parameter 'X' cannot have two or more class upper bounds
-// ASSERT: scan ==> init_constraints1.cj:13:9:
-// ASSERT: scan generic parameter 'U' cannot have two or more class upper bounds
-// ASSERT: scan ==> init_constraints1.cj:15:9:
-// ASSERT: scan generic parameter 'T' cannot have two or more class upper bounds
-// ASSERT: scan ==> init_constraints1.cj:19:9:
-// ASSERT: scan generic parameter 'T' cannot have two or more class upper bounds
-// ASSERT: scan ==> init_constraints1.cj:21:9:

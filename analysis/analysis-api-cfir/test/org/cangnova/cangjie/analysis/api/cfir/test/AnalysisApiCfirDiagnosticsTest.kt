@@ -1,9 +1,11 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjNamedFunction
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -45,5 +47,14 @@ class AnalysisApiCfirDiagnosticsTest : AbstractAnalysisApiExecutionTest(
             "合法 extend 文件收集 diagnostics 不应抛异常，也不应产生额外诊断: " +
                 allDiagnostics.joinToString { diagnostic -> "${diagnostic.factoryName}@${diagnostic.psi.textRange}" },
         )
+    }
+
+    @Test
+    fun namedFunctionDiagnostics(mainFile: CjFile) {
+        val function = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java).single()
+        analyzeForTest(mainFile) {
+            function.diagnostics(CaDiagnosticCheckerFilter.ONLY_COMMON_CHECKERS)
+            mainFile.collectDiagnostics(CaDiagnosticCheckerFilter.EXTENDED_AND_COMMON_CHECKERS)
+        }
     }
 }

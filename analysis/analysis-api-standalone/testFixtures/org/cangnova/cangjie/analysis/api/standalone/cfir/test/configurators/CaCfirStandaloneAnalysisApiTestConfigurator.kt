@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators
 
 import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirConfiguredAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirConfiguredAnalysisApiTestConfigurator.CaCfirAnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiBaseTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneSessionServiceRegistrar
 
 /**
@@ -12,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneSessionS
  */
 object CaCfirStandaloneAnalysisApiTestConfigurator : CaCfirConfiguredAnalysisApiTestConfigurator(
     serviceRegistrars = listOf(
+        CaAnalysisApiBaseTestServiceRegistrar,
         CaCfirAnalysisApiServiceRegistrar(),
         CaStandaloneSessionServiceRegistrar,
         CaStandaloneModeTestServiceRegistrar,

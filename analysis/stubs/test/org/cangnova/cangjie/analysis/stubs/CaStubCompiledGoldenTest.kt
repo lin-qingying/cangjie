@@ -1,9 +1,15 @@
 package org.cangnova.cangjie.analysis.stubs
 
-import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
+import com.intellij.psi.PsiManager
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjFile
+import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
+import java.nio.file.Path
+import kotlin.io.path.exists
+import kotlin.io.path.readText
 
 /**
  * compiled stub 的 golden 基线。
@@ -14,30 +20,69 @@ import org.junit.jupiter.api.Test
 class CaStubCompiledGoldenTest {
     @Test
     fun builtinsObjectPoolSummary() {
-        CaStubTestSupport.withEnvironment("CaStubCompiledGoldenTest") { environment ->
-            CaStubTestSupport.withRegisteredStubAndDecompilerServices(environment) {
-                CaStubTestSupport.withSlimStdlibFixture(
+        CjoCompiledTestEnvironment.withEnvironment("CaStubCompiledGoldenTest") { environment ->
+            CjoCompiledTestEnvironment.withRegisteredStubAndDecompilerServices(environment) {
+                CjoCompiledTestEnvironment.withSlimStdlibFixture(
                     "std.cjo",
                     "std/std.core.cjo",
                     "std/std.objectpool.cjo",
                 ) { _ ->
-                    val builtinsModule = CaStubTestSupport.installBuiltinsProjectStructure(environment)
+                    val builtinsModule = CjoCompiledTestEnvironment.installBuiltinsProjectStructure(environment)
                     val packageFqName = FqName("std.objectpool")
-                    val psiProvider = environment.project.getService(CaDecompiledPsiProvider::class.java)
-                    val decompiledFile = psiProvider.findDecompiledFile(builtinsModule, packageFqName)
-                    assertNotNull(decompiledFile, "decompiled PSI provider should restore compiled file for `std.objectpool`")
+                    val binaryFile = requireNotNull(
+                        CjoCompiledTestEnvironment.findBuiltinsBinaryFile(environment, builtinsModule, packageFqName),
+                    ) {
+                        "builtins binary index should resolve `std.objectpool`"
+                    }
+                    val decompiledFile = PsiManager.getInstance(environment.project).findFile(binaryFile) as? CjFile
+                    assertNotNull(decompiledFile, "PsiManager should restore compiled file for `std.objectpool`")
 
                     val summary = CaStubSummaryBuilder().build(decompiledFile!!)
-                    val actual = CaStubTestSupport.renderSummary(summary)
-                    val expectedFile = CaStubTestSupport.locateRepositoryRoot()
+                    val actual = renderSummary(summary)
+                    val expectedFile = CjoCompiledTestEnvironment.locateRepositoryRoot()
                         .resolve("analysis")
                         .resolve("stubs")
                         .resolve("testData")
                         .resolve("compiled")
                         .resolve("std.objectpool.compiled.stubs.txt")
-                    CaStubTestSupport.assertMatchesGolden(actual, expectedFile)
+                    assertMatchesGolden(actual, expectedFile)
                 }
             }
         }
     }
+
+    private fun renderSummary(summary: CaStubFileSummary): String {
+        return buildString {
+            appendLine("fileKey=${summary.fileKey.substringAfterLast('/').substringAfterLast('\\')}")
+            appendLine("kind=${summary.stubKind ?: "<missing>"}")
+            appendLine("package=${summary.packageFqName?.asString() ?: "<missing>"}")
+            appendLine("topLevelClassifiers=${summary.topLevelClassifierNames.map { it.asString() }.sorted()}")
+            appendLine("topLevelCallables=${summary.topLevelCallableNames.map { it.asString() }.sorted()}")
+            appendLine("classMembers=")
+            if (summary.classMemberNames.isEmpty()) {
+                append("  <none>")
+            } else {
+                summary.classMemberNames.toSortedMap(compareBy { it.asString() }).forEach { (classId, names) ->
+                    appendLine("  ${classId.asFqNameString()}=${names.map { it.asString() }.sorted()}")
+                }
+            }
+        }.trimEnd()
+    }
+
+    private fun assertMatchesGolden(actual: String, expectedFile: Path) {
+        val normalizedActual = actual.normalizeLineSeparators().trimEnd()
+        if (System.getProperty("update.test.data")?.toBooleanStrictOrNull() == true) {
+            Files.createDirectories(expectedFile.parent)
+            Files.writeString(expectedFile, normalizedActual + "\n")
+            return
+        }
+
+        require(expectedFile.exists()) {
+            "Missing golden file: $expectedFile\nRun with -Dupdate.test.data=true to create it."
+        }
+        val expected = expectedFile.readText().normalizeLineSeparators().trimEnd()
+        assertEquals(expected, normalizedActual)
+    }
+
+    private fun String.normalizeLineSeparators(): String = replace("\r\n", "\n")
 }

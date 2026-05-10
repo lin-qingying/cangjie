@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -199,6 +200,7 @@ fun main(args: Array<String>) {
 
                 }
                 alias<CfirAnonymousFunction>("AnonymousFunctionChecker")
+                alias<CfirPropertyAccessor>("PropertyAccessorChecker")
 
                 alias<CfirConstructor>("ConstructorChecker")
                 alias<CfirFile>("FileChecker")

@@ -15,7 +15,7 @@ extend C1 {
 }
 
 class C2 <: C1 {
-    public func foo(): Int64 {
+    public func <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>foo<!>(): Int64 {
         0
     }
 }
@@ -23,20 +23,3 @@ class C2 <: C1 {
 main() {
     return -1
 }
-
-/* SCAN
-error: cannot override function 'foo' in extend of supertype
-  ==> extend_function_override_invalid_1.cj:18:17:
-   | 
-18 |     public func foo(): Int64 {
-   |                 ^^^ 
-   | 
-note: overridden definition of 'foo' is here
-  ==> extend_function_override_invalid_1.cj:12:17:
-   | 
-12 |     public func foo(): Int64 {
-   |                 ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -10,34 +10,10 @@ interface I {
     static func f2(a!: Int64, b!: Int64): Int64
 }
 
-class A <: I {}
+class <!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>A<!> <: I {}
 
 interface I2 <: I {}
 
 class B {
-    static func a(): Unit
+    static func <!STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE!>a<!>(): Unit
 }
-
-/* SCAN
-error: function 'a' can not be abstract
-  ==> abstract_function2.cj:18:5:
-   | 
-18 |     static func a(): Unit
-   |     ^ 
-   | 
-
-error: class 'A' missing abstract modifier, otherwise abstract function or property should be implemented
-  ==> abstract_function2.cj:13:1:
-   | 
-13 | class A <: I {}
-   | ^ 
-   | 
-note: unimplemented interface function 'f2'
-  ==> abstract_function2.cj:10:5:
-   | 
-10 |     static func f2(a!: Int64, b!: Int64): Int64
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

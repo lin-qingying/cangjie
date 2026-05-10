@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories
 
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.BuiltinsDeserializedContainerSourceProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization.NullDeserializedContainerSourceProvider
@@ -45,7 +45,7 @@ internal object LLStubOriginLibrarySymbolProviderFactory : LLLibrarySymbolProvid
             LLCangJieStubBasedLibrarySymbolProvider(
                 session,
                 BuiltinsDeserializedContainerSourceProvider,
-                CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(session.project),
+                BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(session.project),
             ),
         )
     }

@@ -13,7 +13,7 @@ interface B {
     func add(): Unit
 }
 
-class S {} // EXPECTED: regex class 'S' missing abstract modifier or abstract function 'add' should be implemented
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class S<!> {}
 
 extend S <: A {
     public func add(): Unit {}

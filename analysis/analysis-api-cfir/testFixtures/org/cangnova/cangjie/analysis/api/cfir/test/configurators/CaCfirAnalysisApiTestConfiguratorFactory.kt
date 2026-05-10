@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.test.configurators
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.project.Project
+import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiBaseTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiIdeModeTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
@@ -40,6 +41,7 @@ object CaCfirAnalysisApiTestConfiguratorFactory : AnalysisApiTestConfiguratorFac
         requireSupported(data)
         return CaCfirConfiguredAnalysisApiTestConfigurator(
             serviceRegistrars = listOf(
+                CaAnalysisApiBaseTestServiceRegistrar,
                 CaCfirConfiguredAnalysisApiTestConfigurator.CaCfirAnalysisApiServiceRegistrar(),
                 CaAnalysisApiIdeModeTestServiceRegistrar,
             ),

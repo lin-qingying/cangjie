@@ -26,6 +26,7 @@ dependencies {
     api(project(":analysis:analysis-api"))
     api(project(":analysis:analysis-api-platform-interface"))
     implementation(project(":analysis:analysis-api-impl-base"))
+    implementation(project(":analysis:decompiled:decompiler-to-psi"))
     implementation(project(":analysis:analysis-internal-utils"))
     implementation(project(":common"))
     implementation(project(":psi"))

@@ -7,14 +7,13 @@ func exhaustiveBool(b: Bool): Int64 {
 }
 
 func missingFalse(b: Bool): Int64 {
-    return <!NON_EXHAUSTIVE_MATCH!>match (b) {
+    return match (<!NON_EXHAUSTIVE_MATCH!>b<!>) {
         case true => 1
-    }<!>
+    }
 }
 
 func missingTrue(b: Bool): Int64 {
-    return <!NON_EXHAUSTIVE_MATCH!>match (b) {
+    return match (<!NON_EXHAUSTIVE_MATCH!>b<!>) {
         case false => 0
-    }<!>
+    }
 }
-

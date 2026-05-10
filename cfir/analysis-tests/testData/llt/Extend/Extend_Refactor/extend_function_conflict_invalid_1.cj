@@ -20,28 +20,10 @@ interface I2 {
 
 class C1 {}
 
-extend C1 <: I1 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I1 {}<!>
 
-extend C1 <: I2 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I2 {}<!>
 
 main() {
     return -1
 }
-
-/* SCAN
-error: interface function 'foo' must be implemented in 'extend C1'
-  ==> extend_function_conflict_invalid_1.cj:23:1:
-   | 
-23 | extend C1 <: I1 {}
-   | ^ 
-   | 
-
-error: interface function 'foo' must be implemented in 'extend C1'
-  ==> extend_function_conflict_invalid_1.cj:25:1:
-   | 
-25 | extend C1 <: I2 {}
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

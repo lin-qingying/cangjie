@@ -35,9 +35,7 @@ class CfirTypeSubstitutorByMap(
                 ConePointerType(pointeeType, type.attributes)
             }
             is ConeTypeAliasType -> substituteTypeAlias(type)
-            is ConeIntersectionType -> substituteTypes(type.intersectedTypes)?.let { intersectedTypes ->
-                ConeIntersectionType(intersectedTypes, type.attributes)
-            }
+            is ConeIntersectionType -> substituteIntersectionType(type)
             is ConeUnionType -> substituteTypes(type.unionTypes.toList())?.let { unionTypes ->
                 ConeUnionType(unionTypes.toSet(), type.attributes)
             }
@@ -87,6 +85,18 @@ class CfirTypeSubstitutorByMap(
         )
     }
 
+    private fun substituteIntersectionType(type: ConeIntersectionType): ConeIntersectionType? {
+        val intersectedTypes = substituteTypes(type.intersectedTypes)
+        val upperBoundForApproximation = type.upperBoundForApproximation?.let { substituteOrNull(it) ?: it }
+        if (intersectedTypes == null && upperBoundForApproximation == type.upperBoundForApproximation) return null
+
+        return ConeIntersectionType(
+            intersectedTypes = intersectedTypes ?: type.intersectedTypes,
+            upperBoundForApproximation = upperBoundForApproximation,
+            attributes = type.attributes,
+        )
+    }
+
     private fun substituteArguments(arguments: List<ConeTypeProjection>): List<ConeTypeProjection>? {
         var changed = false
         val substituted = arguments.mapIndexed { index, projection ->
@@ -95,7 +105,7 @@ class CfirTypeSubstitutorByMap(
         return substituted.takeIf { changed }
     }
 
-    private fun substituteTypes(types: List<ConeCangJieType>): List<ConeCangJieType>? {
+    private fun substituteTypes(types: Collection<ConeCangJieType>): List<ConeCangJieType>? {
         var changed = false
         val substituted = types.map { type ->
             substituteOrNull(type)?.also { changed = true } ?: type

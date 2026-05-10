@@ -28,11 +28,13 @@ dependencies {
 
     api(project(":analysis:analysis-api"))
     api(project(":analysis:analysis-api-platform-interface"))
+    implementation(project(":analysis:decompiled:decompiler-to-psi"))
     implementation(project(":common"))
     implementation(project(":psi"))
     compileOnly(intellijCore())
 
     testFixturesApi(project(":analysis:analysis-api"))
+    testFixturesApi(project(":analysis:analysis-api-standalone"))
     testFixturesApi(project(":psi"))
     testFixturesApi(testFixtures(project(":analysis:analysis-test-framework")))
     testFixturesImplementation(project(":analysis:cj-references"))

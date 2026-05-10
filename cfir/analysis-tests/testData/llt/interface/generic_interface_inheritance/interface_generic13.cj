@@ -15,26 +15,9 @@ interface I<T> {
 }
 
 interface II<T> <: I<C> & I<D> {
-    func foo(): C
+    func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): C
 }
 
 main() {
     return 0
 }
-
-/* SCAN
-error: return type of 'foo' is not identical or not a subtype of the overridden/redefined/implement function
-  ==> interface_generic13.cj:18:10:
-   | 
-18 |     func foo(): C
-   |          ^^^ 
-   | 
-note: 'Class-C' is not a subtype of 'Class-D'
-  ==> interface_generic13.cj:18:10:
-   | 
-18 |     func foo(): C
-   |          ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

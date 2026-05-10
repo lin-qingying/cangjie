@@ -1,8 +1,9 @@
 package org.cangnova.cangjie.analysis.stubs
 
-import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
+import com.intellij.psi.PsiManager
 import org.cangnova.cangjie.analysis.api.stubs.CaStubIndexFacade
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjTypeStatement
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -21,21 +22,23 @@ import org.junit.jupiter.api.Test
 class CaStubCompiledIntegrationTest {
     @Test
     fun builtinsCompiledFileParticipatesInStubIndex() {
-        CaStubTestSupport.withEnvironment("CaStubCompiledIntegrationTest") { environment ->
-            CaStubTestSupport.withRegisteredStubAndDecompilerServices(environment) {
-                CaStubTestSupport.withSlimStdlibFixture(
+        CjoCompiledTestEnvironment.withEnvironment("CaStubCompiledIntegrationTest") { environment ->
+            CjoCompiledTestEnvironment.withRegisteredStubAndDecompilerServices(environment) {
+                CjoCompiledTestEnvironment.withSlimStdlibFixture(
                     "std.cjo",
                     "std/std.core.cjo",
                     "std/std.objectpool.cjo",
                 ) { _ ->
-                    val builtinsModule = CaStubTestSupport.installBuiltinsProjectStructure(environment)
+                    val builtinsModule = CjoCompiledTestEnvironment.installBuiltinsProjectStructure(environment)
                     val packageFqName = FqName("std.objectpool")
-                    val binaryFile = CaStubTestSupport.findBuiltinsBinaryFile(environment, builtinsModule, packageFqName)
-                    assertNotNull(binaryFile, "builtins binary index should resolve `std.objectpool`")
+                    val binaryFile = requireNotNull(
+                        CjoCompiledTestEnvironment.findBuiltinsBinaryFile(environment, builtinsModule, packageFqName),
+                    ) {
+                        "builtins binary index should resolve `std.objectpool`"
+                    }
 
-                    val psiProvider = environment.project.getService(CaDecompiledPsiProvider::class.java)
-                    val decompiledFile = requireNotNull(psiProvider.findDecompiledFile(builtinsModule, packageFqName)) {
-                        "decompiled PSI provider should restore compiled file for `std.objectpool`"
+                    val decompiledFile = requireNotNull(PsiManager.getInstance(environment.project).findFile(binaryFile) as? CjFile) {
+                        "PsiManager should restore compiled file for `std.objectpool`"
                     }
                     assertEquals(packageFqName, decompiledFile.packageFqName)
                     assertTrue(decompiledFile.isCompiled, "restored file should stay in compiled mode")

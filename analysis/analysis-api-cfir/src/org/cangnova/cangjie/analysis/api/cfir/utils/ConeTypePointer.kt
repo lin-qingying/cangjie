@@ -92,8 +92,10 @@ internal fun <T : ConeCangJieType> T.createPointer(
         }
 
         is ConeIntersectionType -> ConeSimpleTypePointer { session ->
+            val upperBoundPointer = upperBoundForApproximation?.createPointer(builder)
             ConeIntersectionType(
                 intersectedTypes = intersectedTypes.map { intersectedType -> intersectedType.createPointer(builder).restore(session) ?: return@ConeSimpleTypePointer null },
+                upperBoundForApproximation = upperBoundPointer?.restore(session),
                 attributes = attributes,
             )
         }

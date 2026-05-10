@@ -13,9 +13,9 @@ main(): Int64 {
     return 0
 }
 
-class B<T> where T <: Base {
+class B<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: Base {
     public var b: String = ""
-    public var a = T.m2
+    public var a = <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>.m2
 }
 
 enum Base {
@@ -27,21 +27,3 @@ enum Base {
         }
     }
 }
-
-/* SCAN
-error: the upper bound 'Enum-Base' of generic parameter 'Generics-T' must be class or interface
-  ==> generic_constraints_enum_static_03.cj:16:9:
-   | 
-16 | class B<T> where T <: Base {
-   |         ^ 
-   | 
-
-error: 'm2' is not a static member of exposed generic parameter 'T'
-  ==> generic_constraints_enum_static_03.cj:18:20:
-   | 
-18 |     public var a = T.m2
-   |                    ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

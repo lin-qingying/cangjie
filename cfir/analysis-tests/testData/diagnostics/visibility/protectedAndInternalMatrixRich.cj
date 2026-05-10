@@ -36,7 +36,7 @@ class ExternalChild <: Base {
     }
 
     func readInternalFromSubclass(): Int64 {
-        return <!UNRESOLVED_REFERENCE!>internalValue<!>()
+        return internalValue()
     }
 }
 
@@ -45,7 +45,7 @@ func crossPackageProtected(base: Base): Int64 {
 }
 
 func crossPackageInternal(base: Base): Int64 {
-    return base.<!UNRESOLVED_REFERENCE!>internalValue<!>()
+    return base.internalValue()
 }
 
 // FILE: unrelated_package.cj

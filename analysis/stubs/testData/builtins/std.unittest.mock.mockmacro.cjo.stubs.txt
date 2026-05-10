@@ -1,0 +1,135 @@
+CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, facadeFqName=std.unittest.mock.mockmacro, facadePartSimpleNames=[generate, macros, parse_matcher, parse_stub, preprocess, syntax_errors, util]]]
+  CangJieStub$PACKAGE_DIRECTIVE
+    CangJieStub$DOT_QUALIFIED_EXPRESSION
+      CangJieStub$DOT_QUALIFIED_EXPRESSION
+        CangJieStub$DOT_QUALIFIED_EXPRESSION
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=mockmacro]
+  CangJieStub$IMPORT_LIST
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.ast, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.mock.mockmacro]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.mock.mockmacro]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.unittest.mock.mockmacro]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.ArrayList, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.mock.mockmacro]
+      CangJieStub$DOT_QUALIFIED_EXPRESSION
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=ArrayList]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.enumerate, isAllUnder=false, aliasName=null)], packageFqName=std.unittest.mock.mockmacro]
+      CangJieStub$DOT_QUALIFIED_EXPRESSION
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=enumerate]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=ast]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Tokens]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=UInt8]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=Unit]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$USER_TYPE
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$BASIC_TYPE[basicType=UInt8]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=UInt8]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=Unit]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$USER_TYPE
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+        CangJieStub$TYPE_ARGUMENT_LIST
+          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$BASIC_TYPE[basicType=UInt8]

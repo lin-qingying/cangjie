@@ -12,7 +12,7 @@ public interface Addable<T> where T <: Addable<T> {
 }
 
 public interface Number<T> <: Addable<T> where T <: Number<T> {
-    static prop zero: T
+    static prop zero: <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>
     operator func -(right: T): T
     operator func *(right: T): T
     operator func /(right: T): T
@@ -147,14 +147,3 @@ main() {
     }
     return 0
 }
-
-/* SCAN-IN
-error: static member cannot depend on generic parameter 'Generics-T'
- ==> extend_overload_builtin_op6.cj:8:23:
-  |
-8 |     static prop zero: T
-  |                       ^
-  |
-
-1 error generated, 1 error printed.
- */

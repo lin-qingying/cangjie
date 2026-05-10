@@ -46,15 +46,9 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
                 source = CfirMatchExhaustivenessStatus.Source.Checker,
             )
 
-            is ExhaustivenessResult.Error -> CfirMatchExhaustivenessStatus.Error(
-                reason = result.reason,
-                source = CfirMatchExhaustivenessStatus.Source.Checker,
-            )
-
-            ExhaustivenessResult.Skipped -> CfirMatchExhaustivenessStatus.Error(
-                reason = "shared match exhaustiveness analyzer returned Skipped during CHECKERS",
-                source = CfirMatchExhaustivenessStatus.Source.Checker,
-            )
+            is ExhaustivenessResult.Error,
+            ExhaustivenessResult.Skipped,
+            -> CfirMatchExhaustivenessStatus.Unknown
         }
         expression.replaceExhaustiveness(resolved)
         return resolved

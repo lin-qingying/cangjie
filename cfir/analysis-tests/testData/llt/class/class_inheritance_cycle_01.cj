@@ -6,30 +6,6 @@
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
-open class A <: AA {}
+open class <!RECURSIVE_CONSTRUCTOR_CALL!>A<!> <: <!SUPER_TYPES_SELF_REFERENCE!>AA<!> {}
 
 type AA = A
-
-/* SCAN
-error: inheritance cycle detected: 'A->A'
- ==> class_inheritance_cycle_01.cj:9:1:
-  | 
-9 | open class A <: AA {}
-  | ^ 
-  | 
-
-error: recursive constructor calling detected
- ==> class_inheritance_cycle_01.cj:9:12:
-  | 
-9 | open class A <: AA {}
-  |            ^ 
-  | 
-note: depends on
- ==> class_inheritance_cycle_01.cj:9:12:
-  | 
-9 | open class A <: AA {}
-  |            ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

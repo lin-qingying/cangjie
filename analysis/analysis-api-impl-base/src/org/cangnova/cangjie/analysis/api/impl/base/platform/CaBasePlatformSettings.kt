@@ -12,5 +12,5 @@ import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
  */
 internal class CaBasePlatformSettings : CaPlatformSettings {
     override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
-        get() = CaDeserializedDeclarationsOrigin.STUBS
+        get() = CaDeserializedDeclarationsOrigin.BINARIES
 }

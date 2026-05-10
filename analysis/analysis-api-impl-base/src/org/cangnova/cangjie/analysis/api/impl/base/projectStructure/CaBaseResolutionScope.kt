@@ -15,7 +15,7 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaGlobalSearchScopeMerger
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
@@ -68,7 +68,7 @@ class CaBaseResolutionScopeProvider : CaResolutionScopeProvider {
     }
 
     private fun createBuiltinsScope(project: Project): GlobalSearchScope {
-        return CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
+        return BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
     }
 
     private val resolutionScopeCache: Cache<CaModule, CaResolutionScope> =

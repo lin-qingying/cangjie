@@ -324,17 +324,6 @@ CaDataFlowInfo.public val stability: CaDataFlowStability
 ## org/cangnova/cangjie/analysis/api/dataFlow/CaDataFlowStability.kt
 package org.cangnova.cangjie.analysis.api.dataFlow
 public enum class CaDataFlowStability
-## org/cangnova/cangjie/analysis/api/decompiled/CaBuiltinsVirtualFileProvider.kt
-package org.cangnova.cangjie.analysis.api.decompiled
-public abstract class CaBuiltinsVirtualFileProvider
-CaBuiltinsVirtualFileProvider.public abstract fun getBuiltinVirtualFiles(): Set<VirtualFile>
-CaBuiltinsVirtualFileProvider.public abstract fun createBuiltinsScope(project: Project): GlobalSearchScope
-CaBuiltinsVirtualFileProvider.public companion object
-CaBuiltinsVirtualFileProvider.Companion.public fun getInstance(): CaBuiltinsVirtualFileProvider
-## org/cangnova/cangjie/analysis/api/decompiled/CaBuiltinsRootAware.kt
-package org.cangnova.cangjie.analysis.api.decompiled
-public abstract interface class CaBuiltinsRootAware
-CaBuiltinsRootAware.public abstract fun getBuiltinRootVirtualFiles(): Set<VirtualFile>
 ## org/cangnova/cangjie/analysis/api/decompiled/CaDecompiledBinaryIndex.kt
 package org.cangnova.cangjie.analysis.api.decompiled
 public interface CaDecompiledBinaryIndex
@@ -347,22 +336,6 @@ CaDecompiledBinaryIndex.public fun findBuiltinsBinaryFile(packageFqName: FqName)
 CaDecompiledBinaryIndex.public fun findOwningModule(binaryFile: VirtualFile): CaModule?
 CaDecompiledBinaryIndex.public companion object
 CaDecompiledBinaryIndex.Companion.public fun getInstance(project: Project): CaDecompiledBinaryIndex
-## org/cangnova/cangjie/analysis/api/decompiled/CaDecompiledPsiProvider.kt
-package org.cangnova.cangjie.analysis.api.decompiled
-public interface CaDecompiledPsiProvider
-CaDecompiledPsiProvider.public fun getDecompiledFile(binaryFile: VirtualFile): CjDecompiledFile?
-CaDecompiledPsiProvider.public fun findDecompiledFile(module: CaLibraryModule, packageFqName: FqName): CjDecompiledFile?
-CaDecompiledPsiProvider.public fun findDecompiledFile(module: CaBuiltinsModule, packageFqName: FqName): CjDecompiledFile?
-CaDecompiledPsiProvider.public fun findBuiltinsDecompiledFile(packageFqName: FqName): CjDecompiledFile?
-CaDecompiledPsiProvider.public companion object
-CaDecompiledPsiProvider.Companion.public fun getInstance(project: Project): CaDecompiledPsiProvider
-## org/cangnova/cangjie/analysis/api/decompiled/CaDecompiledTextRenderer.kt
-package org.cangnova.cangjie.analysis.api.decompiled
-public interface CaDecompiledTextRenderer
-CaDecompiledTextRenderer.public fun render(binaryFile: VirtualFile): String?
-CaDecompiledTextRenderer.public fun render(file: CjDecompiledFile): String
-CaDecompiledTextRenderer.public companion object
-CaDecompiledTextRenderer.Companion.public fun getInstance(project: Project): CaDecompiledTextRenderer
 ## org/cangnova/cangjie/analysis/api/diagnostics/CaDiagnostic.kt
 package org.cangnova.cangjie.analysis.api.diagnostics
 public interface CaDiagnostic : CaLifetimeOwner

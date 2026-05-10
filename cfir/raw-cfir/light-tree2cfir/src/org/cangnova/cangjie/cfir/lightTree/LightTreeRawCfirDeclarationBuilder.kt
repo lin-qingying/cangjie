@@ -332,7 +332,9 @@ class LightTreeRawCfirDeclarationBuilder(
         val modifiers = LightTreeModifierList.from(tree, node)
         val returnTypeRef = extractReturnTypeRef(node)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
+            withFunctionTarget(functionTarget) { extractBody(node) }
+        }
 
         return buildSourceDeclaration(functionSymbol) { symbol ->
             buildNamedFunction {
@@ -362,7 +364,9 @@ class LightTreeRawCfirDeclarationBuilder(
         val valueParams = extractValueParameters(node, functionSymbol)
         val returnTypeRef = extractReturnTypeRef(node)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
+            withFunctionTarget(functionTarget) { extractBody(node) }
+        }
 
         return buildSourceDeclaration(functionSymbol) { symbol ->
             buildMainFunction {
@@ -389,7 +393,9 @@ class LightTreeRawCfirDeclarationBuilder(
         val valueParams = extractValueParameters(node, functionSymbol)
         val returnTypeRef = extractReturnTypeRef(node)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
+            withFunctionTarget(functionTarget) { extractBody(node) }
+        }
 
         return buildSourceDeclaration(functionSymbol) { symbol ->
             buildMacroDeclaration {
@@ -415,7 +421,9 @@ class LightTreeRawCfirDeclarationBuilder(
         val functionSymbol = CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))
         val valueParams = extractValueParameters(node, functionSymbol)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
+            withFunctionTarget(functionTarget) { extractBody(node) }
+        }
 
         return buildSourceDeclaration(functionSymbol) { symbol ->
             buildFinalizer {
@@ -490,10 +498,12 @@ class LightTreeRawCfirDeclarationBuilder(
         propertySymbol: CfirPropertySymbol,
     ): CfirPropertyAccessor {
         val modifiers = LightTreeModifierList.from(tree, node)
-        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
-        val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
         val accessorSymbol = CfirPropertyAccessorSymbol()
+        val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(accessorSymbol) {
+            withFunctionTarget(functionTarget) { extractBody(node) }
+        }
+        val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
         val valueParameters = extractValueParameters(node, accessorSymbol)
         val isGetter = isGetterAccessor(node)
         if (!isGetter) {
@@ -592,7 +602,9 @@ class LightTreeRawCfirDeclarationBuilder(
         val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
         val valueParams = extractValueParameters(node, constructorSymbol)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
-        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withFunctionTarget(functionTarget) { extractBody(node) }
+        val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(constructorSymbol) {
+            withFunctionTarget(functionTarget) { extractBody(node) }
+        }
 
         return buildSourceDeclaration(constructorSymbol) { symbol ->
             if (isPrimary) {

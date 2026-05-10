@@ -8,7 +8,6 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt A.cj -o A.%middle
 // EXEC: %compiler %cmp_opt %compile_lib_opt B.cj -o B.%middle
 // EXEC: %compiler %cmp_opt %compile_lib_opt %f 2>&1 | compare %f
-// ASSERT: regex interface function 'f' must be implemented in 'extend Foo'
 
 package C
 
@@ -19,4 +18,4 @@ public interface I2 {
     func f(): Unit {}
 }
 
-extend Foo <: I2 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Foo <: I2 {}<!>

@@ -13,7 +13,7 @@ public interface I2 {
 }
 
 extend Foo <: I2 {
-    public func f(): Unit {
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>f<!>(): Unit {
         print("I2.f\n")
     }
 }

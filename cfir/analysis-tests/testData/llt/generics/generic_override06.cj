@@ -6,16 +6,16 @@
 
 // EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
-interface I<T, R> where T <: R {
+interface I<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, R> where T <: R {
     func foo(): R
 }
 
-class C<T, R> <: I<T, R> where T <: R {
+class C<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, R> <: I<T, R> where T <: R {
     var x: T
     init(_x: T) {
         x = _x
     }
-    public func foo(): T {
+    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): T {
         x
     }
 }
@@ -23,34 +23,3 @@ class C<T, R> <: I<T, R> where T <: R {
 main() {
     0
 }
-
-/* SCAN
-error: the upper bound 'Generics-R' of generic parameter 'Generics-T' must be class or interface
- ==> generic_override06.cj:9:13:
-  | 
-9 | interface I<T, R> where T <: R {
-  |             ^ 
-  | 
-
-error: the upper bound 'Generics-R' of generic parameter 'Generics-T' must be class or interface
-  ==> generic_override06.cj:13:9:
-   | 
-13 | class C<T, R> <: I<T, R> where T <: R {
-   |         ^ 
-   | 
-
-error: return type of 'foo' can only be class/interface type which implements or inherits the interface type 'Generics-R'
-  ==> generic_override06.cj:18:5:
-   | 
-18 |     public func foo(): T {
-   |     ^ 
-   | 
-note: cannot override/implement the following function
-  ==> generic_override06.cj:10:5:
-   | 
-10 |     func foo(): R
-   |     ^^^^^^^^^^^^^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

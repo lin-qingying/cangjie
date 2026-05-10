@@ -6,11 +6,6 @@
 
 // ERRCHECK: %compiler %cmp_opt --diagnostic-format json %f -o %output
 
-// ASSERT: scan sema_unable_to_infer_generic_func
-// ASSERT: scan mismatched types
-// ASSERT: scan of type 'Class-B<Int64>', impossible to match parameter type 'Class-A<Generics-T>'
-// ASSERT: scan of return type 'Class-A<Generics-T>', impossible to match expected type 'Class-B<Int64>'
-
 // test err msg for arg/param and ret/expected type mismatch
 func f<T>(a: A<T>) {}
 
@@ -23,6 +18,6 @@ class A<T> {}
 class B<T> {}
 
 main() {
-    f(B<Int>())
-    let s: B<Int> = g(A<Int>())
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f(<!TYPE_MISMATCH!>B<Int>()<!>)<!>
+    let s: B<Int> = <!TYPE_MISMATCH!>g(A<Int>())<!>
 }

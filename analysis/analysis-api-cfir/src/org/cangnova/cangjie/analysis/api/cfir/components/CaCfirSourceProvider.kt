@@ -1,25 +1,16 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
-import org.cangnova.cangjie.analysis.api.cfir.*
-
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirExtendSymbol
 import org.cangnova.cangjie.analysis.api.components.CaSourceProvider
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
-import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
-import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
-import org.cangnova.cangjie.psi.CjFile
 
 /**
- * 符号到源码文件的稳定导航入口。
+ * 对位 Kotlin `KaFirSourceProvider` 的 CFIR source provider。
  *
- * 优先使用当前 symbol 自身持有的 source / psi / backing file；
- * 若当前 symbol 只存在 decompiled 载体，则统一交给共享的 decompiled 查找协议。
+ * 当前仓颉没有 Kotlin klib `source file name` 的同构语义，因此这里只保留 Kotlin 对位类型，
+ * 不额外发明仓颉专属导航入口或 fallback 协议。
  */
 internal class CaCfirSourceProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSessionComponent<CaCfirSession>(), CaSourceProvider {
-
 }

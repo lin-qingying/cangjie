@@ -7,7 +7,6 @@ dependencies {
 
     implementation(project(":analysis:analysis-api"))
     implementation(project(":analysis:analysis-api-platform-interface"))
-    implementation(project(":analysis:decompiled:decompiler-to-file-stubs"))
     implementation(project(":common"))
     implementation(project(":psi"))
     implementation(project(":cfir:cfir-common"))

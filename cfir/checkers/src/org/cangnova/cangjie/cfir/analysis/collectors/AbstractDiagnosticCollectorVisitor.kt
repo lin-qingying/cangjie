@@ -71,7 +71,9 @@ abstract class AbstractDiagnosticCollectorVisitor(
     private fun visitJump(loopJump: CfirLoopJump) {
         withAnnotationContainer(loopJump) {
             checkElement(loopJump)
-            loopJump.target.labeledElement.accept(this, null)
+            // 对齐 Kotlin：loop jump 只在 target 是错误 loop 节点时才回访 target。
+            // 当前仓颉 raw CFIR 没有独立的 CfirErrorLoop，错误 jump 诊断直接挂在 jump 自身，
+            // 因此这里不能像普通节点那样重新进入 target loop，否则会把 loop body 递归回收一遍。
         }
     }
 
