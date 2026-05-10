@@ -17,7 +17,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
@@ -96,7 +96,7 @@ class CaBuiltinsModuleImpl(
         get() = false
 
     override val contentScope: GlobalSearchScope
-        get() = CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
+        get() = BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
 
     override fun toString(): String = builtinsName
 }

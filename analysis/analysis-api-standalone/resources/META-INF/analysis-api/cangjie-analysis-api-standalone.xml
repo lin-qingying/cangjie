@@ -41,5 +41,25 @@
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService"
         serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.platform.CaStandaloneSessionInvalidationService"
     />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderFactory"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderMerger"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderMerger"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderFactory"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderMerger"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderMerger"
+    />
+    <projectService
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolverFactory"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneAnnotationsResolverFactory"
+    />
   </extensions>
 </idea-plugin>

@@ -166,9 +166,19 @@ private fun ConeCangJieType.substituteTypeParameters(
             }
         }
 
-        is ConeIntersectionType -> intersectedTypes.substituteTypes(replacements)?.let { intersected ->
-            ConeIntersectionType(intersected, attributes)
-        } ?: this
+        is ConeIntersectionType -> {
+            val substitutedIntersectedTypes = intersectedTypes.substituteTypes(replacements)
+            val substitutedUpperBound = upperBoundForApproximation?.substituteTypeParameters(replacements)
+            if (substitutedIntersectedTypes == null && substitutedUpperBound === upperBoundForApproximation) {
+                this
+            } else {
+                ConeIntersectionType(
+                    intersectedTypes = substitutedIntersectedTypes ?: intersectedTypes,
+                    upperBoundForApproximation = substitutedUpperBound ?: upperBoundForApproximation,
+                    attributes = attributes,
+                )
+            }
+        }
 
         is ConeUnionType -> {
             val substitutedUnionTypes = unionTypes.toList().substituteTypes(replacements)
@@ -215,7 +225,7 @@ private fun ConeCangJieType.substituteArguments(
     return substitutedArguments.takeIf { changed }
 }
 
-private fun List<ConeCangJieType>.substituteTypes(
+private fun Collection<ConeCangJieType>.substituteTypes(
     replacements: Map<String, ConeCangJieType>,
 ): List<ConeCangJieType>? {
     var changed = false
@@ -241,7 +251,11 @@ private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeC
         is ConeTupleType -> ConeTupleType(elementTypes, newAttributes)
         is ConeVArrayType -> ConeVArrayType(elementType, size, newAttributes)
         is ConePointerType -> ConePointerType(pointeeType, newAttributes)
-        is ConeIntersectionType -> ConeIntersectionType(intersectedTypes, newAttributes)
+        is ConeIntersectionType -> ConeIntersectionType(
+            intersectedTypes = intersectedTypes,
+            upperBoundForApproximation = upperBoundForApproximation,
+            attributes = newAttributes,
+        )
         is ConeUnionType -> ConeUnionType(unionTypes, newAttributes)
         is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, typeArguments, newAttributes)
         is ConeErrorType -> ConeErrorType(

@@ -16,27 +16,6 @@ import C.I2
 
 main(): Int64 {
     let a = Foo()
-    a.f()
+    a.<!AMBIGUOUS_FUNCTION_CALL!>f<!>()
     return 1
 }
-
-/* SCAN
-error: ambiguous match for function call 'f'
-  ==> main.cj:19:7:
-   | 
-19 |     a.f()
-   |       ^ 
-   | 
-note: found extended function member of 'Class-Foo'
-  ==> (package B)B.cj:16:17:
-note: found extended function member of 'Class-Foo'
-  ==> (package C)C.cj:16:17:
-
-error: extend member 'f' is not allowed to shadow members of 'extend Foo'
-  ==> (package B)B.cj:16:17:
-
-error: extend member 'f' is not allowed to shadow members of 'extend Foo'
-  ==> (package C)C.cj:16:17:
-
-3 errors generated, 3 errors printed.
-*/

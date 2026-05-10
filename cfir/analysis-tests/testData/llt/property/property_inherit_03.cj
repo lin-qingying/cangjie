@@ -43,41 +43,16 @@ interface AA {
 }
 
 class BB <: AA {
-    public mut override prop a: Int64 {
+    <!PROPERTY_MUST_IMPLEMENT_BOTH!>public mut override prop a: Int64 {
         set(v) {}
-    }
-    public mut override prop b: Int64 {
+    }<!>
+    <!PROPERTY_MUST_IMPLEMENT_BOTH!>public mut override prop b: Int64 {
         get() {
             1
         }
-    }
+    }<!>
 }
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: property must implement both getter/setter of interface property 'a'
-  ==> property_inherit_03.cj:46:5:
-   | 
-46 |       public mut override prop a: Int64 {
-   |  _____^
-47 | |         set(v) {}
-48 | |     }
-   | |_____^
-   | 
-
-error: property must implement both getter/setter of interface property 'b'
-  ==> property_inherit_03.cj:49:5:
-   | 
-49 |       public mut override prop b: Int64 {
-   |  _____^
-50 | |         get() {
-   | | ...
-53 | |     }
-   | |_____^
-   | 
-
-2 errors generated, 2 errors printed.
-*/

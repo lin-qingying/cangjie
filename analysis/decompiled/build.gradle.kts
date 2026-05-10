@@ -12,6 +12,7 @@ dependencies {
     implementation(project(":analysis:decompiled:decompiler-to-stubs"))
     implementation(project(":analysis:decompiled:decompiler-to-psi"))
     implementation(project(":analysis:decompiled:light-declarations-for-decompiled"))
+    implementation(project(":analysis:low-level-api-cfir"))
     implementation(project(":psi"))
 
     testImplementation(intellijCore())

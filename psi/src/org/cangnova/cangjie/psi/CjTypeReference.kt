@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.psi
 
+import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.psiUtil.CjStubbedPsiUtil
 import org.cangnova.cangjie.psi.stubs.CangJiePlaceHolderStub
@@ -74,30 +75,28 @@ class CjTypeReference :
     }
 
     private fun getQualifiedName(userType: CjUserType): String? {
-        val qualifier = userType.qualifier ?: return userType.referencedName
-        return getQualifiedName(qualifier) + "." + userType.referencedName
+        val referencedName = userType.referencedName?.let(::renderIdentifier) ?: return null
+        val qualifier = userType.qualifier ?: return referencedName
+        return getQualifiedName(qualifier) + "." + referencedName
     }
 
     private fun getTypeText(typeElement: CjTypeElement?): String? {
         return when (typeElement) {
             is CjUserType -> buildString {
                 append(getQualifiedName(typeElement))
-//                val args = typeElement.typeArguments
-//                if (args.isNotEmpty()) {
-//                    append(args.joinToString(", ", "<", ">") {
-//                        val projection = when (it.projectionKind) {
-//                            CjProjectionKind.IN -> "in "
-//
-//                            CjProjectionKind.STAR -> "*"
-//                            CjProjectionKind.NONE -> ""
-//                        }
-//                        projection + (getTypeText(it.typeReference?.typeElement) ?: "")
-//                    })
-//                }
+                val args = typeElement.typeArguments
+                if (args.isNotEmpty()) {
+                    append(args.joinToString(", ", "<", ">") {
+                        val projection = when (it.projectionKind) {
+                            CjProjectionKind.NONE -> ""
+                        }
+                        projection + (it.typeReference?.getTypeText() ?: "")
+                    })
+                }
             }
 
             is CjBasicType -> buildString {
-                append(typeElement.text)
+                append(typeElement.name)
             }
 
             is CjFunctionType -> buildString {
@@ -113,8 +112,36 @@ class CjTypeReference :
                 }
             }
 
+            is CjTupleType -> typeElement.typeArgumentsAsTypes.joinToString(", ", "(", ")") { typeReference ->
+                typeReference.getTypeText()
+            }
+
+            is CjParenthesizedType -> typeElement.typeArgumentsAsTypes.singleOrNull()?.getTypeText()?.let { "($it)" }
+
+            is CjOptionType -> typeElement.getInnerType()?.let { "?${getTypeText(it)}" }
+
+            is CjVArrayType -> buildString {
+                append("VArray<")
+                append(typeElement.typeReference?.getTypeText().orEmpty())
+                typeElement.literal?.text?.takeIf(String::isNotBlank)?.let { literal ->
+                    append(", \$")
+                    append(literal)
+                }
+                append(">")
+            }
+
             null -> null
             else -> error("Unsupported type $typeElement")
+        }
+    }
+
+    private companion object {
+        private val KEYWORD_NAMES: Set<String> = CjTokens.KEYWORDALL.types
+            .filterIsInstance<CjKeywordToken>()
+            .mapTo(hashSetOf()) { keyword -> keyword.value }
+
+        private fun renderIdentifier(identifier: String): String {
+            return if (identifier in KEYWORD_NAMES) "`$identifier`" else identifier
         }
     }
 }

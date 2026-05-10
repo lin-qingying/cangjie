@@ -5,7 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // ERRCHECK: %compiler %cmp_opt %diag_json %f -o %output
-// ASSERT: scan-2 sema_interface_member_must_be_implemented
 
 interface I1 {
     func foo() {}
@@ -17,9 +16,9 @@ interface I2 {
 
 class A {}
 
-extend A <: I1 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend A <: I1 {}<!>
 
-extend A <: I2 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend A <: I2 {}<!>
 
 main(): Int64 {
     0

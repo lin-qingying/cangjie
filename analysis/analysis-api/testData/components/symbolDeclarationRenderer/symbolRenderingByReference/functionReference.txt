@@ -1,0 +1,1 @@
+internal final func greet(value: Int64): Int64

@@ -49,7 +49,6 @@ class CaStubTreeSummaryExtractorTest {
             parent = greeterStub,
             name = StringRef.fromString("stored"),
             fqName = FqName("${greeterClassId.asString()}.stored"),
-            hasReturnTypeRef = true,
         )
         CangJieClassStubImpl(
             type = CjStubElementTypes.CLASS,
@@ -81,7 +80,6 @@ class CaStubTreeSummaryExtractorTest {
             parent = fileStub,
             name = StringRef.fromString("count"),
             fqName = FqName("sample.manual.count"),
-            hasReturnTypeRef = true,
         )
 
         val topLevelVariable = CangJieVariableStubImpl(

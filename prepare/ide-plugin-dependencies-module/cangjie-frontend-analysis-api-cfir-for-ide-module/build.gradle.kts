@@ -14,6 +14,10 @@ dependencies {
     api(project(":analysis:analysis-api-cfir"))
     api(project(":analysis:low-level-api-cfir"))
     api(project(":analysis:decompiled"))
+    api(project(":analysis:decompiled:decompiler-to-file-stubs"))
+    api(project(":analysis:decompiled:decompiler-to-stubs"))
+    api(project(":analysis:decompiled:decompiler-to-psi"))
+    api(project(":analysis:decompiled:light-declarations-for-decompiled"))
     api(project(":analysis:stubs"))
     api(project(":analysis:symbol-light-declarations"))
 }

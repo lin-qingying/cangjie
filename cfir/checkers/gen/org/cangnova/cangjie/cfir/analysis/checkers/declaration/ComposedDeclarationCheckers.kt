@@ -28,6 +28,8 @@ class ComposedDeclarationCheckers : DeclarationCheckers() {
         get() = _classLikeCheckers
     override val anonymousFunctionCheckers: Set<CfirAnonymousFunctionChecker>
         get() = _anonymousFunctionCheckers
+    override val propertyAccessorCheckers: Set<CfirPropertyAccessorChecker>
+        get() = _propertyAccessorCheckers
     override val constructorCheckers: Set<CfirConstructorChecker>
         get() = _constructorCheckers
     override val fileCheckers: Set<CfirFileChecker>
@@ -58,6 +60,7 @@ class ComposedDeclarationCheckers : DeclarationCheckers() {
     private val _propertyCheckers: MutableSet<CfirPropertyChecker> = mutableSetOf()
     private val _classLikeCheckers: MutableSet<CfirClassLikeChecker> = mutableSetOf()
     private val _anonymousFunctionCheckers: MutableSet<CfirAnonymousFunctionChecker> = mutableSetOf()
+    private val _propertyAccessorCheckers: MutableSet<CfirPropertyAccessorChecker> = mutableSetOf()
     private val _constructorCheckers: MutableSet<CfirConstructorChecker> = mutableSetOf()
     private val _fileCheckers: MutableSet<CfirFileChecker> = mutableSetOf()
     private val _typeParameterCheckers: MutableSet<CfirTypeParameterChecker> = mutableSetOf()
@@ -80,6 +83,7 @@ class ComposedDeclarationCheckers : DeclarationCheckers() {
         _propertyCheckers.addAll(checkers.propertyCheckers)
         _classLikeCheckers.addAll(checkers.classLikeCheckers)
         _anonymousFunctionCheckers.addAll(checkers.anonymousFunctionCheckers)
+        _propertyAccessorCheckers.addAll(checkers.propertyAccessorCheckers)
         _constructorCheckers.addAll(checkers.constructorCheckers)
         _fileCheckers.addAll(checkers.fileCheckers)
         _typeParameterCheckers.addAll(checkers.typeParameterCheckers)

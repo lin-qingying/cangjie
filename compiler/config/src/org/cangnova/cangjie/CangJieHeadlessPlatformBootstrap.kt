@@ -19,13 +19,13 @@ import com.intellij.model.psi.PsiSymbolService
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.AsyncExecutionService
 import com.intellij.openapi.application.AppUIExecutor
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.NonBlockingReadAction
 import com.intellij.openapi.application.TransactionGuard
 import com.intellij.openapi.application.TransactionGuardImpl
 import com.intellij.openapi.extensions.ExtensionsArea
-import com.intellij.openapi.fileTypes.BinaryFileDecompiler
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
@@ -43,7 +43,9 @@ import com.intellij.psi.impl.smartPointers.SmartPointerAnchorProvider
 import com.intellij.psi.impl.source.resolve.reference.PsiReferenceContributorEP
 import com.intellij.psi.meta.MetaDataContributor
 import com.intellij.psi.search.UseScopeEnlarger
+import com.intellij.psi.stubs.StubInconsistencyReporter
 import com.intellij.util.QueryExecutor
+import com.intellij.util.concurrency.TransferredWriteActionService
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
@@ -94,7 +96,6 @@ internal object CangJieHeadlessPlatformBootstrap {
     }
 
     private fun registerApplicationExtensionPoints(area: ExtensionsArea) {
-        registerExtensionPoint(area, "com.intellij.filetype.decompiler", BinaryFileDecompiler::class.java)
         registerExtensionPoint(area, "com.intellij.fileContextProvider", FileContextProvider::class.java)
         registerExtensionPoint(area, "com.intellij.psi.metaDataContributor", MetaDataContributor::class.java)
         registerExtensionPoint(area, "com.intellij.containerProvider", ContainerProvider::class.java)
@@ -139,6 +140,18 @@ internal object CangJieHeadlessPlatformBootstrap {
             VirtualFileSetFactory::class.java,
             CangJieHeadlessVirtualFileSetFactory::class.java,
         )
+        if (application.getService(TransferredWriteActionService::class.java) == null) {
+            application.registerService(
+                TransferredWriteActionService::class.java,
+                CangJieTransferredWriteActionService(),
+            )
+        }
+        if (application.getService(StubInconsistencyReporter::class.java) == null) {
+            application.registerService(
+                StubInconsistencyReporter::class.java,
+                CangJieHeadlessStubInconsistencyReporter(),
+            )
+        }
         if (application.getService(TargetElementUtil::class.java) == null) {
             application.registerService(TargetElementUtil::class.java)
         }
@@ -242,9 +255,9 @@ private object CangJieWriteAccessSupport {
 internal class CangJieTestAsyncExecutionService : AsyncExecutionService() {
     override fun createExecutor(executor: Executor): ExpirableExecutor = CangJieImmediateExpirableExecutor(executor)
 
-    override fun createUIExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor()
+    override fun createUIExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor(runAsWriteAction = true)
 
-    override fun createWriteThreadExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor()
+    override fun createWriteThreadExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor(runAsWriteAction = true)
 
     override fun <T> buildNonBlockingReadAction(computation: Callable<out T>): NonBlockingReadAction<T> {
         return CangJieImmediateNonBlockingReadAction(computation)
@@ -288,7 +301,9 @@ private class CangJieImmediateExpirableExecutor(
     }
 }
 
-private class CangJieImmediateAppUiExecutor : AppUIExecutor {
+private class CangJieImmediateAppUiExecutor(
+    private val runAsWriteAction: Boolean,
+) : AppUIExecutor {
     override fun later(): AppUIExecutor = this
 
     override fun withDocumentsCommitted(project: Project): AppUIExecutor = this
@@ -298,13 +313,27 @@ private class CangJieImmediateAppUiExecutor : AppUIExecutor {
     override fun expireWith(parentDisposable: Disposable): AppUIExecutor = this
 
     override fun execute(command: Runnable) {
-        command.run()
+        if (runAsWriteAction) {
+            ApplicationManager.getApplication().runWriteAction(command)
+        } else {
+            command.run()
+        }
     }
 
     override fun <T> submit(task: Callable<T>): CancellablePromise<T> {
         val promise = AsyncPromise<T>()
         try {
-            promise.setResult(task.call())
+            if (runAsWriteAction) {
+                promise.setResult(
+                    ApplicationManager.getApplication().runWriteAction(
+                        Computable {
+                            task.call()
+                        },
+                    ),
+                )
+            } else {
+                promise.setResult(task.call())
+            }
         } catch (t: Throwable) {
             promise.setError(t)
         }
@@ -318,6 +347,41 @@ private class CangJieImmediateAppUiExecutor : AppUIExecutor {
                 null
             },
         )
+    }
+}
+
+private class CangJieTransferredWriteActionService : TransferredWriteActionService {
+    override fun runOnEdtWithTransferredWriteActionAndWait(action: Runnable) {
+        action.run()
+    }
+}
+
+private class CangJieHeadlessStubInconsistencyReporter : StubInconsistencyReporter {
+    override fun reportStubInconsistencyBetweenPsiAndText(
+        project: Project,
+        sourceOfCheck: StubInconsistencyReporter.SourceOfCheck?,
+        inconsistencyType: StubInconsistencyReporter.InconsistencyType,
+    ) {
+    }
+
+    override fun reportStubInconsistencyBetweenPsiAndText(
+        project: Project,
+        sourceOfCheck: StubInconsistencyReporter.SourceOfCheck,
+        inconsistencyType: StubInconsistencyReporter.InconsistencyType,
+        enforcedInconsistencyType: StubInconsistencyReporter.EnforcedInconsistencyType?,
+    ) {
+    }
+
+    override fun reportKotlinDescriptorNotFound(project: Project?) {
+    }
+
+    override fun reportKotlinMissingClassName(project: Project, hasClassName: Boolean, hasFacadeClassName: Boolean) {
+    }
+
+    override fun reportStubTreeAndIndexDoNotMatch(
+        project: Project,
+        source: StubInconsistencyReporter.StubTreeAndIndexDoNotMatchSource,
+    ) {
     }
 }
 

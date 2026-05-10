@@ -10,7 +10,7 @@ interface I<T> {
     func foo(a: T): T
 }
 
-class C<T> <: I<T> & I<T> & I<Float64> {
+class C<T> <: I<T> & <!SUPER_TYPES_DUPLICATE!>I<T><!> & I<Float64> {
     public func foo(a: T): T {
         return a
     }
@@ -22,14 +22,3 @@ class C<T> <: I<T> & I<T> & I<Float64> {
 main() {
     return 0
 }
-
-/* SCAN
-error: class 'C' inherits or implements duplicate interface 'I'
-  ==> interface_generic6.cj:13:1:
-   | 
-13 | class C<T> <: I<T> & I<T> & I<Float64> {
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

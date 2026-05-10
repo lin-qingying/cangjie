@@ -24,47 +24,10 @@ interface I4 {
 
 class C {}
 
-extend C <: I2 & I4 {}
+extend C <: I2 & <!EXTEND_DEFAULT_IMPLEMENTATION_CONFLICT!>I4<!> {}
 
-extend C <: I1 & I3 {}
+extend C <: I1 & <!EXTEND_DEFAULT_IMPLEMENTATION_CONFLICT!>I3<!> {}
 
 main() {
-    C().foo()
+    C().<!AMBIGUOUS_FUNCTION_CALL!>foo<!>()
 }
-
-/* SCAN
-error: ambiguous match for function call 'foo'
-  ==> multi_default_impl_05.cj:32:9:
-   | 
-32 |     C().foo()
-   |         ^ 
-   | 
-note: found candidate
-  ==> multi_default_impl_05.cj:14:10:
-   | 
-14 |     func foo() {
-   |          ^ 
-   | 
-note: found candidate
-  ==> multi_default_impl_05.cj:20:10:
-   | 
-20 |     func foo() {
-   |          ^ 
-   | 
-
-error: interface function 'foo' must be implemented in 'extend C'
-  ==> multi_default_impl_05.cj:27:1:
-   | 
-27 | extend C <: I2 & I4 {}
-   | ^ 
-   | 
-
-error: interface function 'foo' must be implemented in 'extend C'
-  ==> multi_default_impl_05.cj:29:1:
-   | 
-29 | extend C <: I1 & I3 {}
-   | ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

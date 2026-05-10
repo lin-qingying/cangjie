@@ -8,7 +8,7 @@ import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.CangjieCoreApplicationEnvironment
 import org.cangnova.cangjie.CangjieCoreProjectEnvironment
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
@@ -53,8 +53,8 @@ class CaAnalysisApiEnvironmentManagerImpl(
         ensureStdlibPropertyForAnalysisTests()
         sharedCoreEnvironment
         (getApplication() as MockApplication).apply {
-            if (getServiceIfCreated(CaBuiltinsVirtualFileProvider::class.java) == null) {
-                registerService(CaBuiltinsVirtualFileProvider::class.java, CaBuiltinsVirtualFileProviderTestImpl())
+            if (getServiceIfCreated(BuiltinsVirtualFileProvider::class.java) == null) {
+                registerService(BuiltinsVirtualFileProvider::class.java, BuiltinsVirtualFileProviderTestImpl())
             }
         }
 
@@ -89,9 +89,10 @@ class CaAnalysisApiEnvironmentManagerImpl(
     }
 
     private fun resolveStdlibRoot(): File? {
+        val repositoryRoot = locateRepositoryRoot(File("").absoluteFile.normalize())
         val fallbackCandidates = listOf(
-            File("cfir/cfir-serialization/testResources/cjo-sdk/windows_x86_64_cjnative"),
-            File("cfir/cfir-serialization/build/resources/test/cjo-sdk/windows_x86_64_cjnative"),
+            repositoryRoot.resolve("cfir/cfir-serialization/testResources/cjo-sdk/windows_x86_64_cjnative"),
+            repositoryRoot.resolve("cfir/cfir-serialization/build/resources/test/cjo-sdk/windows_x86_64_cjnative"),
         )
 
         return fallbackCandidates
@@ -106,6 +107,12 @@ class CaAnalysisApiEnvironmentManagerImpl(
         if (normalized.resolve("std/std.core.cjo").isFile) return normalized
         if (normalized.resolve("std.core.cjo").isFile) return normalized.parentFile ?: normalized
         return normalized
+    }
+
+    private fun locateRepositoryRoot(start: File): File {
+        return generateSequence(start) { file -> file.parentFile }
+            .firstOrNull { file -> file.resolve("settings.gradle.kts").isFile }
+            ?: start
     }
 }
 

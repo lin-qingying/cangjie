@@ -238,8 +238,6 @@ interface CangJieConstantPatternStub : CangJiePatternStub<CjConstantPattern>
 interface CangJieMatchConditionStub : CangJiePatternStub<CjMatchConditionWithExpression>
 
 interface CangJiePropertyStub : CangJieCallableStubBase<CjProperty> {
-    fun hasReturnTypeRef(): Boolean
-
     override fun isTopLevel(): Boolean = false
 }
 

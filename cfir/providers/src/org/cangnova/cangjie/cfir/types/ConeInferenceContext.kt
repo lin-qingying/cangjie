@@ -134,6 +134,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                     ?.getDirectSupertypes(this)
                     .orEmpty()
             }
+            is ConeIntersectionType -> intersectedTypes.toList()
             else -> listOf()
         }
     }
@@ -410,6 +411,15 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                     attributes = constructor.attributes,
                 )
             }
+            is ConeIntersectionType -> if (coneAttributes === constructor.attributes) {
+                constructor
+            } else {
+                ConeIntersectionType(
+                    intersectedTypes = constructor.intersectedTypes,
+                    upperBoundForApproximation = constructor.upperBoundForApproximation,
+                    attributes = coneAttributes,
+                )
+            }
             is ConeTupleType -> constructor
             is ConeAnyType -> ConeAnyType
             is ConeTypeVariableTypeConstructor -> ConeTypeVariableType(constructor)
@@ -447,9 +457,14 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         firstCandidate: CangJieTypeMarker,
         secondCandidate: CangJieTypeMarker
     ): CangJieTypeMarker {
-        return ConeIntersectionType(
-            listOf(firstCandidate as ConeCangJieType, secondCandidate as ConeCangJieType)
-        )
+        val intersectionType = firstCandidate as? ConeIntersectionType ?: error {
+            "Expected intersection type for approximation result, found $firstCandidate"
+        }
+        return intersectionType.withUpperBound(secondCandidate as ConeCangJieType)
+    }
+
+    override fun RigidTypeMarker.getUpperBoundForApproximationOfIntersectionType(): CangJieTypeMarker? {
+        return (this as? ConeIntersectionType)?.upperBoundForApproximation
     }
 
     override fun intersectTypes(types: Collection<CangJieTypeMarker>): CangJieTypeMarker {
@@ -503,7 +518,11 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                 if (coneArgs.isEmpty()) return this
                 ConePointerType(coneArgs.first().type, attributes)
             }
-            is ConeIntersectionType -> ConeIntersectionType(coneArgs.map { it.type }, attributes)
+            is ConeIntersectionType -> ConeIntersectionType(
+                intersectedTypes = coneArgs.map { it.type },
+                upperBoundForApproximation = upperBoundForApproximation,
+                attributes = attributes,
+            )
             is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, coneArgs, attributes)
             is ConeErrorType -> ConeErrorType(diagnostic, isUninferredParameter, delegatedType, coneArgs, attributes)
             else -> this

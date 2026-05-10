@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
@@ -82,6 +83,8 @@ class ControlFlowGraphBuilder private constructor(
     private val tryExitNodes: Stack<TryExpressionExitNode>,
     private val catchNodes: Stack<List<CatchClauseEnterNode>>,
     private val catchBlocksInProgress: Stack<CatchClauseEnterNode>,
+    private val handleNodes: Stack<List<HandleClauseEnterNode>>,
+    private val handleBlocksInProgress: Stack<HandleClauseEnterNode>,
     private val finallyEnterNodes: Stack<FinallyBlockEnterNode>,
     private val finallyBlocksInProgress: Stack<FinallyBlockEnterNode>,
     private val finallyBlocksInProgressSet: MutableSet<CfirElement>,
@@ -117,6 +120,8 @@ class ControlFlowGraphBuilder private constructor(
         tryExitNodes = stackOf(),
         catchNodes = stackOf(),
         catchBlocksInProgress = stackOf(),
+        handleNodes = stackOf(),
+        handleBlocksInProgress = stackOf(),
         finallyEnterNodes = stackOf(),
         finallyBlocksInProgress = stackOf(),
         finallyBlocksInProgressSet = mutableSetOf(),
@@ -184,6 +189,8 @@ class ControlFlowGraphBuilder private constructor(
             tryExitNodes = tryExitNodes.createSnapshot(copier::get),
             catchNodes = catchNodes.createSnapshot { it.map(copier::get) },
             catchBlocksInProgress = catchBlocksInProgress.createSnapshot(copier::get),
+            handleNodes = handleNodes.createSnapshot { it.map(copier::get) },
+            handleBlocksInProgress = handleBlocksInProgress.createSnapshot(copier::get),
             finallyEnterNodes = finallyEnterNodes.createSnapshot(copier::get),
             finallyBlocksInProgress = finallyBlocksInProgress.createSnapshot(copier::get),
             finallyBlocksInProgressSet = finallyBlocksInProgressSet.toMutableSet(),
@@ -209,6 +216,8 @@ class ControlFlowGraphBuilder private constructor(
         tryExitNodes.reset()
         catchNodes.reset()
         catchBlocksInProgress.reset()
+        handleNodes.reset()
+        handleBlocksInProgress.reset()
         finallyEnterNodes.reset()
         finallyBlocksInProgress.reset()
         finallyBlocksInProgressSet.clear()
@@ -701,12 +710,16 @@ class ControlFlowGraphBuilder private constructor(
 
         val tryMainEnter = createTryMainBlockEnterNode(tryExpression).also { addNewSimpleNode(it) }
         catchNodes.push(tryExpression.catches.map(::createCatchClauseEnterNode))
+        handleNodes.push(tryExpression.handlers.map(::createHandleClauseEnterNode))
         if (tryExpression.finallyBlock != null) {
             finallyEnterNodes.push(createFinallyBlockEnterNode(tryExpression))
         }
 
         for (catchEnter in catchNodes.top()) {
             addEdge(tryEnter, catchEnter, propagateDeadness = false)
+        }
+        for (handleEnter in handleNodes.top()) {
+            addEdge(tryEnter, handleEnter, propagateDeadness = false)
         }
         finallyEnterNodes.topOrNull()?.takeIf { it.fir === tryExpression }?.let {
             addEdge(tryEnter, it, propagateDeadness = false, label = UncaughtExceptionPath)
@@ -726,6 +739,10 @@ class ControlFlowGraphBuilder private constructor(
         for (catchEnter in catchNodes.pop().asReversed()) {
             catchBlocksInProgress.push(catchEnter)
             addEdge(node, catchEnter, propagateDeadness = false)
+        }
+        for (handleEnter in handleNodes.pop().asReversed()) {
+            handleBlocksInProgress.push(handleEnter)
+            addEdge(node, handleEnter, propagateDeadness = false)
         }
         return node
     }
@@ -747,6 +764,25 @@ class ControlFlowGraphBuilder private constructor(
         val nextNode = finallyEnterNodes.topOrNull()?.takeIf { it.fir === tryExitNode.fir } ?: tryExitNode
         addEdge(catchExit, nextNode, propagateDeadness = false)
         return catchExit
+    }
+
+    fun enterHandleClause(handleClause: CfirHandleClause): HandleClauseEnterNode {
+        val handleEnter = handleBlocksInProgress.pop()
+        require(handleEnter.fir === handleClause) { "Handle stack out of sync" }
+        finallyEnterNodes.topOrNull()?.takeIf { it.fir === tryExitNodes.top().fir }?.let {
+            addEdge(handleEnter, it, propagateDeadness = false, label = UncaughtExceptionPath)
+        }
+        lastNodes.push(handleEnter)
+        return handleEnter
+    }
+
+    fun exitHandleClause(handleClause: CfirHandleClause): HandleClauseExitNode {
+        val tryExitNode = tryExitNodes.top()
+        val handleExit = createHandleClauseExitNode(handleClause)
+        popAndAddEdge(handleExit)
+        val nextNode = finallyEnterNodes.topOrNull()?.takeIf { it.fir === tryExitNode.fir } ?: tryExitNode
+        addEdge(handleExit, nextNode, propagateDeadness = false)
+        return handleExit
     }
 
     fun enterFinallyBlock(): FinallyBlockEnterNode {

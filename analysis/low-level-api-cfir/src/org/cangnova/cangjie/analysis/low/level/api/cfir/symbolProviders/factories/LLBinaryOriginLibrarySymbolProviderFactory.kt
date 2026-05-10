@@ -6,8 +6,9 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories
 
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsRootAware
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import com.intellij.openapi.vfs.VirtualFile
+import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoBinaryFileReader
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.moduleData
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirBuiltinSymbolProvider
@@ -57,19 +58,11 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
      *
      * Kotlin 的 binary-origin builtins session 只保留 builtins provider 即可，
      * 但仓颉的 `String` 不属于 primitive builtins，因此这里必须额外接入
-     * builtins roots 对应的反序列化 provider。
+     * builtins `.cjo` 搜索根对应的反序列化 provider。
      */
     private fun createBuiltinsDeserializedSymbolProvider(session: LLCfirSession): CfirSymbolProvider {
-        val provider = CaBuiltinsVirtualFileProvider.getInstance()
-        val builtinsRootProvider = provider as? CaBuiltinsRootAware
-            ?: error(
-                "Binary-origin builtins session requires `${CaBuiltinsRootAware::class.simpleName}` " +
-                    "to recover stdlib `.cjo` roots; provider=${provider::class.qualifiedName}",
-            )
-
-        val rootPathString = builtinsRootProvider.getBuiltinRootVirtualFiles()
-            .map { virtualFile -> File(virtualFile.path) }
-            .map { file -> if (file.isDirectory) file else file.parentFile ?: file }
+        val rootPathString = BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles()
+            .map(::toBuiltinsSearchRoot)
             .distinctBy(File::getAbsolutePath)
             .joinToString(File.pathSeparator) { root -> root.absolutePath }
 
@@ -86,5 +79,16 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
             cangjieScopeProvider = session.cangjieScopeProvider,
             libraryModuleData = session.moduleData,
         )
+    }
+
+    private fun toBuiltinsSearchRoot(virtualFile: VirtualFile): File {
+        val file = File(virtualFile.path)
+        val parent = file.parentFile ?: return file
+        val firstPackageSegment = CjoBinaryFileReader.readPackageFqName(virtualFile)?.pathSegments()?.firstOrNull()
+        return if (firstPackageSegment != null && parent.name == firstPackageSegment.asString()) {
+            parent.parentFile ?: parent
+        } else {
+            parent
+        }
     }
 }

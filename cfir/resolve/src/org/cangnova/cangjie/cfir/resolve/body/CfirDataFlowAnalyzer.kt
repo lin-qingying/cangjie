@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirCall
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
@@ -265,20 +266,16 @@ class CfirDataFlowAnalyzer(
     /**
      * 从 tree 正式承载字段读取 CFG synthetic else 决策。
      *
-     * 不允许回退到语法兜底；若 body-resolve 尚未写出可信穷尽性状态，直接失败。
+     * `Unknown / Error` 在这里不再视为框架硬错误，而是视为“shared analyzer 当前无法稳定证明穷尽”，
+     * CFG 必须保守地补 synthetic else，继续后续分析链。
      */
     fun matchSyntheticElseDecision(matchExpression: CfirMatchExpression): MatchSyntheticElseDecision {
         return when (val exhaustiveness = matchExpression.exhaustiveness) {
             is CfirMatchExhaustivenessStatus.Exhaustive -> MatchSyntheticElseDecision.NotRequired
             is CfirMatchExhaustivenessStatus.NonExhaustive -> MatchSyntheticElseDecision.Required
-            CfirMatchExhaustivenessStatus.Unknown -> error(
-                "Missing match exhaustiveness status for ${matchExpression::class.qualifiedName}. " +
-                    "Body-resolve must write CfirMatchExpression.exhaustiveness before CFG exit."
-            )
-
-            is CfirMatchExhaustivenessStatus.Error -> error(
-                "Invalid match exhaustiveness status for ${matchExpression::class.qualifiedName}: ${exhaustiveness.reason}"
-            )
+            CfirMatchExhaustivenessStatus.Unknown,
+            is CfirMatchExhaustivenessStatus.Error,
+            -> MatchSyntheticElseDecision.Required
         }
     }
 
@@ -313,6 +310,18 @@ class CfirDataFlowAnalyzer(
     fun exitCatchClause(catch: CfirCatch) {
         if (hasActiveGraph) {
             graphBuilder.exitCatchClause(catch)
+        }
+    }
+
+    fun enterHandleClause(handleClause: CfirHandleClause) {
+        if (hasActiveGraph) {
+            graphBuilder.enterHandleClause(handleClause)
+        }
+    }
+
+    fun exitHandleClause(handleClause: CfirHandleClause) {
+        if (hasActiveGraph) {
+            graphBuilder.exitHandleClause(handleClause)
         }
     }
 

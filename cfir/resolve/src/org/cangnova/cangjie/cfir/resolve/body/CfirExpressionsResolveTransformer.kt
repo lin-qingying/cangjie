@@ -610,7 +610,8 @@ open class CfirExpressionsResolveTransformer(
     /**
      * BODY_RESOLVE 阶段将 shared semantics 的穷尽性结论正式回写到 tree。
      *
-     * CFG 之后只读取 `CfirMatchExpression.exhaustiveness`，不再复算，也不允许语法兜底。
+     * 若 shared analyzer 暂时无法给出稳定结论，则保持 `Unknown`，
+     * 让 CFG 走“保守地补 synthetic else”而不是把内部分析失败固化成 tree-level Error。
      */
     private fun resolveMatchExhaustiveness(matchExpression: CfirMatchExpression): CfirMatchExhaustivenessStatus {
         return when (val result = ExhaustivenessAnalyzer.checkMatch(matchExpression, session)) {
@@ -623,15 +624,9 @@ open class CfirExpressionsResolveTransformer(
                 source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
             )
 
-            is ExhaustivenessResult.Error -> CfirMatchExhaustivenessStatus.Error(
-                reason = result.reason,
-                source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
-            )
-
-            ExhaustivenessResult.Skipped -> CfirMatchExhaustivenessStatus.Error(
-                reason = "shared match exhaustiveness analyzer returned Skipped during BODY_RESOLVE",
-                source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
-            )
+            is ExhaustivenessResult.Error,
+            ExhaustivenessResult.Skipped,
+            -> CfirMatchExhaustivenessStatus.Unknown
         }
     }
 
@@ -1246,7 +1241,9 @@ open class CfirExpressionsResolveTransformer(
             components.dataFlowAnalyzer.exitCatchClause(catchClause)
         }
         for (handleClause in tryExpression.handlers) {
+            components.dataFlowAnalyzer.enterHandleClause(handleClause)
             handleClause.transform<CfirElement, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.exitHandleClause(handleClause)
         }
         if (tryExpression.finallyBlock != null) {
             components.dataFlowAnalyzer.enterFinallyBlock()

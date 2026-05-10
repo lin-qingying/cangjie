@@ -22,31 +22,8 @@ interface I2 {
     func test(): Int64
 }
 
-interface A <: I0 & I1 & I2 {}
+interface <!INHERIT_SUPER_MEMBER_KIND_INCONSISTENT!>A<!> <: I0 & I1 & I2 {}
 
 main() {
     return 0
 }
-
-/* SCAN
-error: inherited members 'test' have inconsistent decl types
-  ==> interface_conflict_inheritance_04.cj:25:11:
-   | 
-25 | interface A <: I0 & I1 & I2 {}
-   |           ^ 
-   | 
-note: function member
-  ==> interface_conflict_inheritance_04.cj:10:10:
-   | 
-10 |     func test() {}
-   |          ^^^^ 
-   | 
-note: property member
-  ==> interface_conflict_inheritance_04.cj:14:10:
-   | 
-14 |     prop test: Int64 {
-   |          ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

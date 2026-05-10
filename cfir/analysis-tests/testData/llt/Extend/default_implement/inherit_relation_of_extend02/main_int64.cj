@@ -21,28 +21,10 @@ public interface I2<V> {
     }
 }
 
-extend Int64 <: I1<Int64> {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Int64 <: I1<Int64> {}<!>
 
-extend Int64 <: I2<Int64> {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Int64 <: I2<Int64> {}<!>
 
 main() {
     0
 }
-
-/* SCAN
-error: interface function 'containsValue' must be implemented in 'extend Int64'
-  ==> main_int64.cj:24:1:
-   | 
-24 | extend Int64 <: I1<Int64> {}
-   | ^ 
-   | 
-
-error: interface function 'containsValue' must be implemented in 'extend Int64'
-  ==> main_int64.cj:26:1:
-   | 
-26 | extend Int64 <: I2<Int64> {}
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -57,6 +57,10 @@ class DeclarationCheckersDiagnosticComponent(
         checkers.allAnonymousFunctionCheckers.check(anonymousFunction, data)
     }
 
+    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: CheckerContext) {
+        checkers.allPropertyAccessorCheckers.check(propertyAccessor, data)
+    }
+
     override fun visitConstructor(constructor: CfirConstructor, data: CheckerContext) {
         checkers.allConstructorCheckers.check(constructor, data)
     }

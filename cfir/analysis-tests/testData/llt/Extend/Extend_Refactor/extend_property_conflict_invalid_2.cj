@@ -24,45 +24,14 @@ interface I2 {
 
 class C1 {}
 
-extend C1 <: I1 {
-    func foo(): Int64 {
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I1 {
+    func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo<!>(): Int64 {
         3
     }
-}
+}<!>
 
-extend C1 <: I2 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I2 {}<!>
 
 main() {
     return -1
 }
-
-/* SCAN
-error: function member 'foo' cannot have the same name with property member in extended type
-  ==> extend_property_conflict_invalid_2.cj:28:10:
-   | 
-28 |     func foo(): Int64 {
-   |          ^^^ 
-   | 
-note: found conflict here
-  ==> extend_property_conflict_invalid_2.cj:18:10:
-   | 
-18 |     prop foo: Int64 {
-   |          ^^^ 
-   | 
-
-error: interface property 'foo' must be implemented in 'extend C1'
-  ==> extend_property_conflict_invalid_2.cj:27:1:
-   | 
-27 | extend C1 <: I1 {
-   | ^ 
-   | 
-
-error: interface property 'foo' must be implemented in 'extend C1'
-  ==> extend_property_conflict_invalid_2.cj:33:1:
-   | 
-33 | extend C1 <: I2 {}
-   | ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

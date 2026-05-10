@@ -17,7 +17,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
@@ -69,7 +69,7 @@ class CaStandaloneBuiltinsModule(
     override val builtinsName: String = "<builtins>",
 ) : CaStandaloneModule(project, scopeRoots), CaBuiltinsModule {
     override val contentScope: GlobalSearchScope
-        get() = CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
+        get() = BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
 }
 
 class CaStandaloneDanglingFileModule(

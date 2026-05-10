@@ -1,13 +1,12 @@
 package org.cangnova.cangjie.analysis.tools
 
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiManager
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
-import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
-import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledTextRenderer
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightCallableDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightClassLikeDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclaration
@@ -34,14 +33,10 @@ import org.cangnova.cangjie.psi.CjFile
 class CaAnalysisInspectorTools(
     private val project: Project,
 ) {
+    private val psiManager: PsiManager = PsiManager.getInstance(project)
+
     private val decompiledBinaryIndex: CaDecompiledBinaryIndex
         get() = CaDecompiledBinaryIndex.getInstance(project)
-
-    private val decompiledTextRenderer: CaDecompiledTextRenderer
-        get() = CaDecompiledTextRenderer.getInstance(project)
-
-    private val decompiledPsiProvider: CaDecompiledPsiProvider
-        get() = CaDecompiledPsiProvider.getInstance(project)
 
     private val stubIndexFacade: CaStubIndexFacade
         get() = CaStubIndexFacade.getInstance(project)
@@ -52,14 +47,14 @@ class CaAnalysisInspectorTools(
     fun dumpDecompiledText(module: CaLibraryModule, packageFqName: FqName): String {
         val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName)
             ?: return "<missing decompiled text for ${packageFqName.asString()}>"
-        return decompiledTextRenderer.render(binaryFile)
+        return (psiManager.findFile(binaryFile) as? CjFile)?.text
             ?: "<missing decompiled text for ${packageFqName.asString()}>"
     }
 
     fun dumpDecompiledText(module: CaBuiltinsModule, packageFqName: FqName): String {
         val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName)
             ?: return "<missing decompiled text for ${packageFqName.asString()}>"
-        return decompiledTextRenderer.render(binaryFile)
+        return (psiManager.findFile(binaryFile) as? CjFile)?.text
             ?: "<missing decompiled text for ${packageFqName.asString()}>"
     }
 
@@ -102,23 +97,23 @@ class CaAnalysisInspectorTools(
     }
 
     fun dumpDecompiledLightDeclarations(module: CaLibraryModule, packageFqName: FqName): String {
-        val file = decompiledPsiProvider.findDecompiledFile(module, packageFqName)
+        val file = findDecompiledFile(module, packageFqName)
             ?: return "<missing decompiled file for ${packageFqName.asString()}>"
         return dumpLightDeclarations(file, module)
     }
 
     fun dumpDecompiledLightDeclarations(module: CaBuiltinsModule, packageFqName: FqName): String {
-        val file = decompiledPsiProvider.findDecompiledFile(module, packageFqName)
+        val file = findDecompiledFile(module, packageFqName)
             ?: return "<missing decompiled file for ${packageFqName.asString()}>"
         return dumpLightDeclarations(file, module)
     }
 
     fun checkViewConsistency(module: CaLibraryModule, packageFqName: FqName): List<CaAnalysisViewConsistencyIssue> {
-        return checkViewConsistencyInternal(module, decompiledPsiProvider.findDecompiledFile(module, packageFqName), packageFqName)
+        return checkViewConsistencyInternal(module, findDecompiledFile(module, packageFqName), packageFqName)
     }
 
     fun checkViewConsistency(module: CaBuiltinsModule, packageFqName: FqName): List<CaAnalysisViewConsistencyIssue> {
-        return checkViewConsistencyInternal(module, decompiledPsiProvider.findDecompiledFile(module, packageFqName), packageFqName)
+        return checkViewConsistencyInternal(module, findDecompiledFile(module, packageFqName), packageFqName)
     }
 
     /**
@@ -254,10 +249,20 @@ class CaAnalysisInspectorTools(
 
     private fun collectDecompiledFiles(module: CaModule): List<CjFile> {
         return when (module) {
-            is CaLibraryModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(decompiledPsiProvider::getDecompiledFile)
-            is CaBuiltinsModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(decompiledPsiProvider::getDecompiledFile)
+            is CaLibraryModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(psiManager::findFile).filterIsInstance<CjFile>()
+            is CaBuiltinsModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(psiManager::findFile).filterIsInstance<CjFile>()
             else -> emptyList()
         }
+    }
+
+    private fun findDecompiledFile(module: CaLibraryModule, packageFqName: FqName): CjFile? {
+        val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName) ?: return null
+        return psiManager.findFile(binaryFile) as? CjFile
+    }
+
+    private fun findDecompiledFile(module: CaBuiltinsModule, packageFqName: FqName): CjFile? {
+        val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName) ?: return null
+        return psiManager.findFile(binaryFile) as? CjFile
     }
 }
 

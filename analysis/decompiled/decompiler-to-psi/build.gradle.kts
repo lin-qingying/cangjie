@@ -11,6 +11,7 @@ dependencies {
     implementation(project(":analysis:decompiled:decompiler-to-file-stubs"))
     implementation(project(":analysis:decompiled:decompiler-to-stubs"))
     implementation(project(":common"))
+    implementation(project(":util"))
     implementation(project(":psi"))
     implementation(project(":cfir:cfir-common"))
     implementation(project(":cfir:cfir-tree"))

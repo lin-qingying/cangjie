@@ -12,11 +12,11 @@ class Y {}
 
 class A<T, K> where K <: ToString {}
 
-extend<T> A<Int64, T> <: ToString {
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend<T> A<Int64, T> <: ToString {
     func test() {
         println("A int64")
     }
-}
+}<!>
 
 extend A<Int64, Int64> {
     public func toString() { // invisible for extend ToString
@@ -32,16 +32,3 @@ main() {
     }
     return 0
 }
-
-/* SCAN
-error: implementation of function or property is needed in 'extend A'
-  ==> extend_instantiated_type_03_err.cj:15:1:
-   | 
-15 | extend<T> A<Int64, T> <: ToString {
-   | ^ 
-   | 
-note: unimplemented interface function 'toString'
-  ==> (package std.core)to_string.cj:18:5:
-
-1 error generated, 1 error printed.
-*/

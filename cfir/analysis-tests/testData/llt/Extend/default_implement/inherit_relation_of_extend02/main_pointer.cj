@@ -21,28 +21,10 @@ public interface I2<V> {
     }
 }
 
-extend<V> CPointer<V> <: I1<V> {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend<V> CPointer<V> <: I1<V> {}<!>
 
-extend<V> CPointer<V> <: I2<V> {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend<V> CPointer<V> <: I2<V> {}<!>
 
 main() {
     0
 }
-
-/* SCAN
-error: interface function 'containsValue' must be implemented in 'extend CPointer<Generics-V>'
-  ==> main_pointer.cj:24:1:
-   | 
-24 | extend<V> CPointer<V> <: I1<V> {}
-   | ^ 
-   | 
-
-error: interface function 'containsValue' must be implemented in 'extend CPointer<Generics-V>'
-  ==> main_pointer.cj:26:1:
-   | 
-26 | extend<V> CPointer<V> <: I2<V> {}
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

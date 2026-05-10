@@ -1324,19 +1324,20 @@ class LightTreeRawCfirExpressionBuilder(
             val paramTypeRef = buildImplicitTypeRef()
 
             val catchParamName = if (paramName != null) Name.identifier(paramName) else Name.special("<error>")
-                val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(catchParamName))) { symbol ->
-                    buildValueParameter {
-                        resolvePhase = CfirResolvePhase.RAW_CFIR
-                        source = (catchParamNode ?: catchNode).toSource()
-                        this.symbol = symbol
-                        origin = CfirDeclarationOrigin.Source
-                        moduleData = baseModuleData
+            val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(catchParamName))) { symbol ->
+                buildValueParameter {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = (catchParamNode ?: catchNode).toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
                     isLocal = false
                     isNamed = false
                     status = CfirDeclarationStatusImpl.DEFAULT
                     returnTypeRef = paramTypeRef
                     name = catchParamName
+                    containingDeclarationSymbol = containerSymbol
                 }
             }
             val body = catchBodyNode?.let { convertBlock(it) } ?: buildBlock { source = catchNode.toSource() }
@@ -1385,8 +1386,10 @@ class LightTreeRawCfirExpressionBuilder(
         }
 
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = true)
-        val body = withFunctionTarget(functionTarget) {
-            bodyNode?.let { convertBlock(it) }
+        val body = withContainerSymbol(functionSymbol) {
+            withFunctionTarget(functionTarget) {
+                bodyNode?.let { convertBlock(it) }
+            }
         }
         val hasExplicitParameterList = valueParams.isNotEmpty()
 

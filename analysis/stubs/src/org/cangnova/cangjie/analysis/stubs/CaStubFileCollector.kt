@@ -9,7 +9,6 @@ import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
-import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
@@ -46,20 +45,21 @@ internal class CaStubFileCollector(
 
     private fun collectCompiledFiles(destination: MutableSet<CjFile>) {
         val decompiledBinaryIndex = project.getService(CaDecompiledBinaryIndex::class.java) ?: return
-        val decompiledPsiProvider = project.getService(CaDecompiledPsiProvider::class.java) ?: return
         val projectStructureProvider = CaModuleProvider.getInstance(project)
 
         projectStructureProvider.allModules.forEach { module ->
             when (module) {
                 is CaLibraryModule -> {
                     decompiledBinaryIndex.getBinaryFiles(module)
-                        .mapNotNull(decompiledPsiProvider::getDecompiledFile)
+                        .mapNotNull(psiManager::findFile)
+                        .filterIsInstance<CjFile>()
                         .forEach(destination::add)
                 }
 
                 is CaBuiltinsModule -> {
                     decompiledBinaryIndex.getBinaryFiles(module)
-                        .mapNotNull(decompiledPsiProvider::getDecompiledFile)
+                        .mapNotNull(psiManager::findFile)
+                        .filterIsInstance<CjFile>()
                         .forEach(destination::add)
                 }
             }

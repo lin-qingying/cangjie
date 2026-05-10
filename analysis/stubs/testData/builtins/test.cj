@@ -1,0 +1,3 @@
+package builtins.test
+
+main() {}

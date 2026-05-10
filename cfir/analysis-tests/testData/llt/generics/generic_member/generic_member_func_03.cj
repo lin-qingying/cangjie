@@ -13,7 +13,7 @@ class Cls<X> {
     public func test<T>(v: T) {
         return v
     }
-    public func test<T>(v: X) {
+    public func <!CONFLICTING_OVERLOADS!>test<!><T>(v: X) {
     }
 }
 
@@ -21,20 +21,3 @@ main(): Int64 {
     let cls = Cls<Int64>()
     return 0
 }
-
-/* SCAN
-error: function 'test' has overload conflicts
-  ==> generic_member_func_03.cj:16:17:
-   | 
-16 |     public func test<T>(v: X) {
-   |                 ^^^^ 
-   | 
-note: conflict with the declaration
-  ==> generic_member_func_03.cj:10:17:
-   | 
-10 |     public func test(b: X) {
-   |                 ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

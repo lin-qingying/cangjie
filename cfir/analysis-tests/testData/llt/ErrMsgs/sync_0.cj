@@ -7,13 +7,9 @@
 // ERRCHECK: %compiler %cmp_opt %diag_json %f -o %output
 
 main() {
-    let b = synchronized(()) {}
-    let c: Bool = synchronized(false) {
-        1
+    let b = synchronized(<!TYPE_MISMATCH!>()<!>) {}
+    let c: Bool = synchronized(<!TYPE_MISMATCH!>false<!>) {
+        <!TYPE_MISMATCH!>1<!>
     }
     0
 }
-
-// ASSERT: scan sema_use_expr_without_import
-// ASSERT: scan sema_cannot_convert_literal
-// ASSERT: regex-not no position error occurred

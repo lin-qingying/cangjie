@@ -24,37 +24,12 @@ interface I2 {
     func foo(): E
 }
 
-interface II <: I0 & I1 & I2 {}
+interface <!INHERIT_MEMBER_TYPE_INCONSISTENT!>II<!> <: I0 & I1 & I2 {}
 
 interface III <: I1 & I2 {
-    func foo(): E
+    func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): E
 }
 
 main() {
     return 0
 }
-
-/* SCAN
-error: return type of the inherited function members 'foo' are not identical and not in subtype relation
-  ==> interface_conflict_inheritance_01.cj:27:11:
-   | 
-27 | interface II <: I0 & I1 & I2 {}
-   |           ^^ 
-   | 
-   # note: conflict types are 'Class-C', 'Class-D', 'Class-E'
-
-error: return type of 'foo' is not identical or not a subtype of the overridden/redefined/implement function
-  ==> interface_conflict_inheritance_01.cj:30:10:
-   | 
-30 |     func foo(): E
-   |          ^^^ 
-   | 
-note: 'Class-E' is not a subtype of 'Class-D'
-  ==> interface_conflict_inheritance_01.cj:30:10:
-   | 
-30 |     func foo(): E
-   |          ^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

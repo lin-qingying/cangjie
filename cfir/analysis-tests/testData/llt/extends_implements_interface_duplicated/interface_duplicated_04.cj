@@ -10,7 +10,7 @@ interface I0<T> {}
 
 interface I1<K> <: I0<K> & I0<Rune> {}
 
-class A<Q> <: I1<Q> {
+<!SUPER_TYPES_DUPLICATE!>class A<Q><!> <: I1<Q> {
     public func doit(): Int64 {
         return 5
     }
@@ -20,14 +20,3 @@ main() {
     var j = A<Rune>()
     return 0
 }
-
-/* SCAN
-error: class 'A' inherits or implements duplicate interface 'I0'
-  ==> interface_duplicated_04.cj:20:13:
-   | 
-20 |     var j = A<Rune>()
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

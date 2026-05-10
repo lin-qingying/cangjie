@@ -24,19 +24,8 @@ interface I2 {
 
 class C1 {}
 
-extend C1 <: I1 & I2 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend C1 <: I1 & I2 {}<!>
 
 main() {
     return -1
 }
-
-/* SCAN
-error: interface property 'foo' must be implemented in 'extend C1'
-  ==> extend_property_conflict_invalid_4.cj:27:1:
-   | 
-27 | extend C1 <: I1 & I2 {}
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

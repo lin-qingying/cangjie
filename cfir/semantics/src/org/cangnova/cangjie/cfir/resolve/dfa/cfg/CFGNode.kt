@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
@@ -422,6 +423,14 @@ class CatchClauseEnterNode(owner: ControlFlowGraph, override val fir: CfirCatch,
 
 class CatchClauseExitNode(owner: ControlFlowGraph, override val fir: CfirCatch, level: Int) : CFGNode<CfirCatch>(owner, level), ExitNodeMarker {
     override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitCatchClauseExitNode(this, data)
+}
+
+class HandleClauseEnterNode(owner: ControlFlowGraph, override val fir: CfirHandleClause, level: Int) : CFGNode<CfirHandleClause>(owner, level), EnterNodeMarker {
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitHandleClauseEnterNode(this, data)
+}
+
+class HandleClauseExitNode(owner: ControlFlowGraph, override val fir: CfirHandleClause, level: Int) : CFGNode<CfirHandleClause>(owner, level), ExitNodeMarker {
+    override fun <R, D> accept(visitor: ControlFlowGraphVisitor<R, D>, data: D): R = visitor.visitHandleClauseExitNode(this, data)
 }
 
 class FinallyBlockEnterNode(owner: ControlFlowGraph, override val fir: CfirTryExpression, level: Int) : CFGNode<CfirTryExpression>(owner, level), EnterNodeMarker {

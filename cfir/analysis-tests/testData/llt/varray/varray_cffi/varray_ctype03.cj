@@ -5,15 +5,14 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// ASSERT: scan arguments type of CFunc must be instantiated with CType
 
 struct A {}
 
-foreign func c_f1(a: VArray<A, $3>): Unit // error
+foreign func c_f1(a: <!INVALID_CFUNC_PARAMETER_TYPE!>VArray<A, $3><!>): Unit // error
 
 @C
-func c_f2(a: VArray<A, $3>): Unit {} // error
+func c_f2(a: <!INVALID_CFUNC_PARAMETER_TYPE!>VArray<A, $3><!>): Unit {} // error
 
-var c_f3: CFunc<(VArray<A, $3>) -> Unit> = {a => ()} //error
+var c_f3: CFunc<((<!INVALID_CFUNC_PARAMETER_TYPE!>VArray<A, $3><!>) -> Unit)> = {a => ()} //error
 
 main() {}

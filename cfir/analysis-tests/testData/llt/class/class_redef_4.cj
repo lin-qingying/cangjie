@@ -13,7 +13,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    public static func foo(): Int64 {
+    public static func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>(): Int64 {
         return 3
     }
 }
@@ -21,27 +21,3 @@ class C2 <: C1 {
 main(): Int64 {
     return 1
 }
-
-/* SCAN
-error: static member 'foo' cannot have the same name with non-static member in parent class or interfaces
-  ==> class_redef_4.cj:16:5:
-   | 
-16 |     public static func foo(): Int64 {
-   |     ^ 
-   | 
-
-error: cannot override function 'foo'
-  ==> class_redef_4.cj:16:24:
-   | 
-16 |     public static func foo(): Int64 {
-   |                        ^^^ 
-   | 
-note: the parent function is not modified by 'open'
-  ==> class_redef_4.cj:10:17:
-   | 
-10 |     public func foo(): Int64 {
-   |                 ^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/
