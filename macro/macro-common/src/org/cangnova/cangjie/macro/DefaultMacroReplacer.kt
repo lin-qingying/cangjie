@@ -2,6 +2,22 @@ package org.cangnova.cangjie.macro
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 
+/**
+ * 旧 text-patch + 全文件重建路径（baseline 第 2 节硬性边界 #8 列出的禁止形态）。
+ *
+ * 仅作为 Batch 10 过渡期的兼容实现保留：
+ * - 不进入 baseline `MacroConstructionService` 主流程；
+ * - 任何新引用都视为对硬性边界的违反；
+ * - 真实 splice 将在 Batch 8 fragment parser 接通后由
+ *   `org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer`
+ *   实现替代。
+ */
+@Deprecated(
+    message = "Use MacroConstructionService + MacroStableSplicer instead. " +
+        "Text-patch + full-file rebuild is forbidden as a semantic path " +
+        "by macro construction baseline §2 / §9.",
+    level = DeprecationLevel.WARNING,
+)
 class DefaultMacroReplacer(
     private val fileRebuilder: MacroFileRebuilder,
 ) : MacroReplacer {

@@ -38,7 +38,7 @@ fun recordExpandedRawFilesOnce(
     provider: CfirProviderImpl,
     files: RecordableRawCfirFiles,
     @Suppress("UNUSED_PARAMETER") registry: MacroExpansionRegistry,
-    enforceLegacyMacroExpressionAbsent: Boolean = false,
+    enforceLegacyMacroExpressionAbsent: Boolean = true,
 ) {
     val residualMacroExpressions = countLegacyMacroExpressions(files.files)
     if (residualMacroExpressions > 0) {
