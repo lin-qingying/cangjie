@@ -81,23 +81,54 @@ class RecordableRawCfirFiles internal constructor(
 }
 
 /**
- * 宏构造期诊断条目（Batch 1 阶段最小集；Batch 9 扩展）。
+ * 单条 macro 构造诊断（baseline 第 1 节 + 第 9 节）。
  */
 data class MacroConstructionDiagnostic(
     val severity: Severity,
     val message: String,
+    /**
+     * 关联 surface id；可为 null（例如 alias 冲突诊断 binding 整条 import）。
+     * Batch 9 的 diagnostic renderer 通过该 id 反查 [MacroExpansionRegistry.originSurfaceById]。
+     */
+    val originSurfaceId: Long? = null,
+    /** Baseline 第 9 节 typed factory：未展开 / 展开失败 / 同包 / 无 executor / 等。 */
+    val kind: Kind = Kind.GENERIC,
 ) {
     enum class Severity { INFO, WARNING, ERROR }
+
+    enum class Kind {
+        GENERIC,
+        MACRO_NOT_EXPANDED,
+        MACRO_EXPANSION_FAILED,
+        MACRO_SAME_PACKAGE_DEF_CALL,
+        MACRO_ALIAS_CONFLICT,
+        MACRO_EXECUTOR_UNAVAILABLE,
+        MACRO_CANNOT_OPEN_LIB,
+        MACRO_REEVALUATION_FAILED,
+        MACRO_UNRESOLVED,
+        MACRO_CYCLE,
+    }
 }
 
 /**
  * Macro 展开过程信息载体：session/analysis 级长生命周期对象，
  * 记录 surface tree、call forest、construction 诊断、原始位点映射等。
  *
- * Batch 1 阶段仅承载构造期诊断；Batch 7-9 扩展为完整 registry。
+ * Batch 9 扩展（baseline 第 10 节）：
+ * - `originSurfaceById` 维护 `surfaceId -> MacroSurface` 的反查表，
+ *   ordinary checker 上报的诊断可通过 `originSurfaceId` 字段映射回原 macro site；
+ * - `placeholderOriginById` 维护 degraded mode 下生成的 typed error
+ *   placeholder 与原 surface 的关系，便于 LSP / IDE 渲染。
+ *
+ * `MacroExpansionRegistry` 作为 [org.cangnova.cangjie.cfir.session.CfirSessionComponent]
+ * 候选，可通过 [org.cangnova.cangjie.cfir.session.CfirSession.register] 挂到 session 上；
+ * 多模块 build 时每个 source session 各持一份。
  */
 class MacroExpansionRegistry {
     private val _diagnostics: MutableList<MacroConstructionDiagnostic> = mutableListOf()
+    private val _originSurfaceById: MutableMap<Long, MacroSurface> = mutableMapOf()
+    private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
+    private val _generatedDisplayText: MutableMap<Long, String> = mutableMapOf()
 
     val diagnostics: List<MacroConstructionDiagnostic>
         get() = _diagnostics.toList()
@@ -105,12 +136,53 @@ class MacroExpansionRegistry {
     val hasErrors: Boolean
         get() = _diagnostics.any { it.severity == MacroConstructionDiagnostic.Severity.ERROR }
 
+    /**
+     * `surfaceId -> MacroSurface` 反查。
+     *
+     * 由 [registerOriginSurface] 累积；ordinary checker / IDE 通过
+     * `MacroConstructionDiagnostic.originSurfaceId` 解析回 macro 位点。
+     */
+    val originSurfaceById: Map<Long, MacroSurface>
+        get() = _originSurfaceById.toMap()
+
+    /**
+     * `placeholderId -> originSurfaceId` 反查。
+     *
+     * Degraded mode 下生成的 `CfirErrorExpression` / `CfirInvalidDeclaration`
+     * 等 typed error placeholder 通过 `macroOriginId` metadata 写入；
+     * IDE / LSP 用此映射在 placeholder 之上回显原 macro 调用。
+     */
+    val placeholderOriginById: Map<Long, Long>
+        get() = _placeholderOriginById.toMap()
+
+    /** 可选：surface 展开后用于 IDE 展示的文本（不参与 semantic）。 */
+    val generatedDisplayText: Map<Long, String>
+        get() = _generatedDisplayText.toMap()
+
     fun addDiagnostic(diagnostic: MacroConstructionDiagnostic) {
         _diagnostics += diagnostic
     }
 
     fun addAll(diagnostics: Iterable<MacroConstructionDiagnostic>) {
         _diagnostics += diagnostics
+    }
+
+    fun registerOriginSurface(surface: MacroSurface) {
+        _originSurfaceById[surface.surfaceId] = surface
+    }
+
+    fun registerPlaceholder(placeholderId: Long, originSurfaceId: Long) {
+        _placeholderOriginById[placeholderId] = originSurfaceId
+    }
+
+    fun registerGeneratedDisplayText(surfaceId: Long, text: String) {
+        _generatedDisplayText[surfaceId] = text
+    }
+
+    /** LSP / debug pass: 已知 placeholder id 反查原 surface。 */
+    fun originSurfaceForPlaceholder(placeholderId: Long): MacroSurface? {
+        val originId = _placeholderOriginById[placeholderId] ?: return null
+        return _originSurfaceById[originId]
     }
 
     companion object {

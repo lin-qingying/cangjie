@@ -80,6 +80,12 @@ class FrontendMacroConstructionService(
         val registry = MacroExpansionRegistry()
         val rawFiles = pre.files.map { it.cfirFile }
 
+        // Baseline 第 9 节："session/analysis 长生命周期 registry"。
+        // 把所有 surface 注册到 registry，供 diagnostic / LSP 反查原 macro 位点。
+        for (surface in pre.allSurfaces) {
+            registry.registerOriginSurface(surface)
+        }
+
         // baseline 第 4 节："官方同包 macro def/call 禁止"。
         // 即便 expander 把展开做了出来，同包 def/call 也应当被诊断为非法。
         reportSamePackageMacroDefinitions(pre, context, registry)
@@ -137,7 +143,11 @@ class FrontendMacroConstructionService(
             }
             configuration.messageCollector.report(CompilerMessageSeverity.ERROR, message)
             registry.addDiagnostic(
-                MacroConstructionDiagnostic(MacroConstructionDiagnostic.Severity.ERROR, message)
+                MacroConstructionDiagnostic(
+                    severity = MacroConstructionDiagnostic.Severity.ERROR,
+                    message = message,
+                    kind = MacroConstructionDiagnostic.Kind.MACRO_SAME_PACKAGE_DEF_CALL,
+                )
             )
         }
     }
@@ -158,7 +168,11 @@ class FrontendMacroConstructionService(
             }
             configuration.messageCollector.report(CompilerMessageSeverity.ERROR, message)
             registry.addDiagnostic(
-                MacroConstructionDiagnostic(MacroConstructionDiagnostic.Severity.ERROR, message)
+                MacroConstructionDiagnostic(
+                    severity = MacroConstructionDiagnostic.Severity.ERROR,
+                    message = message,
+                    kind = MacroConstructionDiagnostic.Kind.MACRO_ALIAS_CONFLICT,
+                )
             )
         }
     }
