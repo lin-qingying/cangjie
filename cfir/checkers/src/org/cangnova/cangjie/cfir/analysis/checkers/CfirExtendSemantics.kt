@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassKind
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
@@ -12,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -71,6 +73,25 @@ internal object CfirExtendSemantics {
 
     fun isProtectedInterface(classId: ClassId?): Boolean =
         classId == anyClassId || classId == cTypeClassId
+
+    /** 判断给定 [classId] 是否对应 `std.core.CType`（仓颉 FFI 类型）。 */
+    fun isCType(classId: ClassId?): Boolean =
+        classId == cTypeClassId
+
+    /**
+     * 判断 [declaration] 是否携带与 [annotationName] 同名的注解。
+     *
+     * 当前注解系统尚未完整 lower 到 CFIR，只能通过 PSI 上的注解 entry 判断；
+     * 与 `CfirBuiltInAnnotationSemanticsChecker` 内私有实现保持一致。
+     */
+    fun hasAnnotation(declaration: CfirDeclaration, annotationName: Name): Boolean {
+        val owner = declaration.psi as? org.cangnova.cangjie.psi.CjModifierListOwner ?: return false
+        val entries = owner.annotationEntries
+        return entries.any { entry ->
+            val text = entry.text.removePrefix("@").trim()
+            Name.identifier(text.substringBefore('(').trim()) == annotationName
+        }
+    }
 
     fun isSuperReference(reference: CfirReference): Boolean {
         if (reference is CfirSuperReference) return true
