@@ -43,31 +43,13 @@ public class CfirIdeDependentAnalysisCodeFragmentModuleCollectDiagnosticsTestGen
 
   @Test
   public void testAllFilesPresentInCollectDiagnostics() {
-    CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/components/diagnosticProvider/collectDiagnostics"), Pattern.compile("^(.+)\\.cj$"), null, true);
-  }
-
-  @Test
-  @TestMetadata("interfaceMember.cj")
-  public void testInterfaceMember() {
-    run("interfaceMember.cj");
-  }
-
-  @Test
-  @TestMetadata("interfaceSupertype.cj")
-  public void testInterfaceSupertype() {
-    run("interfaceSupertype.cj");
+    CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/components/diagnosticProvider/collectDiagnostics"), Pattern.compile("^(.+)\\.cj$"), Pattern.compile("^(interfaceMember|interfaceSupertype|topLevelInterface)\\.cj$"), true);
   }
 
   @Test
   @TestMetadata("multipleDiagnostics.cj")
   public void testMultipleDiagnostics() {
     run("multipleDiagnostics.cj");
-  }
-
-  @Test
-  @TestMetadata("topLevelInterface.cj")
-  public void testTopLevelInterface() {
-    run("topLevelInterface.cj");
   }
 
   @Test

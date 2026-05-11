@@ -1,7 +1,24 @@
 // RUN_PIPELINE_TILL: FRONTEND
-import <!IMPORT_ALIAS_CONFLICT, IMPORT_CONFLICT!><!UNRESOLVED_IMPORT!>alpha<!>.one.Left as Clash<!>
-import <!UNRESOLVED_IMPORT!>beta<!>.two.Right as Clash
-import <!UNRESOLVED_IMPORT!>gamma<!>.three.Third as Another
+// FILE: alpha.cj
+package alpha.one
+
+public class Left {}
+
+// FILE: beta.cj
+package beta.two
+
+public class Right {}
+
+// FILE: gamma.cj
+package gamma.three
+
+public class Third {}
+
+// FILE: main.cj
+import alpha.one.Left as Clash
+import beta.two.Right as <!IMPORT_ALIAS_CONFLICT!>Clash<!>
+import gamma.three.Third as Another
 
 func importAliasConflictSuite(): Unit {
+    let _ = Another()
 }

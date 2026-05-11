@@ -75,7 +75,7 @@ func testInvokeReturnValue(): Unit {
 
 func testInvokeReturnTypeMismatch(): Unit {
     let d = D()
-    let _: Float64 = <!NO_MATCHING_OPERATOR_INVOKE!>d<!>(10)  // 错误：期望返回 Float64 时没有匹配的 invoke
+    let _: Float64 = <!TYPE_MISMATCH!>d(10)<!>  // 错误：invoke 返回值与期望类型不匹配
 }
 
 // ---- struct 上定义 invoke ----

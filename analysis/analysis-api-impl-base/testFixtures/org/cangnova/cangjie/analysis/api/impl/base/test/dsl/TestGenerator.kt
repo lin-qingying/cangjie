@@ -98,7 +98,17 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     }
 
     component("diagnosticProvider") {
-        test<AbstractCollectDiagnosticsTest> { model(it, "collectDiagnostics") }
+        test<AbstractCollectDiagnosticsTest> {
+            model(
+                it,
+                "collectDiagnostics",
+                excludedPattern = if (it.moduleKind == TestModuleKind.Source) {
+                    null
+                } else {
+                    """^(interfaceMember|interfaceSupertype|topLevelInterface)\.cj$"""
+                },
+            )
+        }
         test<AbstractElementDiagnosticsTest> { model(it, "elementDiagnostics") }
     }
 

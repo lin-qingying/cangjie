@@ -37,7 +37,7 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiReference
 
-val Null: Any? = null
+
 
 /**
  * 基础CangJie语言PSI元素接口

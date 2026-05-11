@@ -496,7 +496,7 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkImmutablePropertySetter(property: CfirProperty) {
-        if (  property.setter != null) {
+        if (!property.status.isMut && property.setter != null) {
             reporter.reportOn(
                 source = property.source,
                 factory = CfirErrors.IMMUTABLE_PROPERTY_WITH_SETTER,

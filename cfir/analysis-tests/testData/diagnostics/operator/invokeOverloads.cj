@@ -31,5 +31,5 @@ func testInvokeReturnInContext(): Unit {
     let h = Handler()
     h(1)                    // OK：返回 Int64
     h(true)                 // OK：返回 Bool
-    let _: Int64 = <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(true)  // 错误：期望返回 Int64 时没有匹配的 invoke
+    let _: Int64 = <!TYPE_MISMATCH!>h(true)<!>  // 错误：invoke 返回值与期望类型不匹配
 }

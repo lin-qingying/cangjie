@@ -35,20 +35,45 @@
 
 ## 4) 重要模块
 
-- 基础设施：`common`、`util`、`dependencies:intellij-core`
+模块清单以 `settings.gradle.kts` 为准。常被改动的一方模块：
+
+- 基础设施：`common`、`common:diagnostics`、`util`、`generators`、`flatbuffers-gen`、`dependencies:intellij-core`
+- 编译器驱动：`compiler:config`、`compiler:phaser`、`compiler:arguments`、`compiler:frontend`（前端入口）、`compiler:plugin`
+- 类型推断公共层：`resolution.common`
 - PSI：`psi`
-- CFIR：
+- CFIR 数据：
   - `cfir:cfir-common`
   - `cfir:cfir-cones`
-  - `cfir:cfir-tree`
-  - `cfir:raw-cfir:*`
+  - `cfir:cfir-tree`（生成式 IR 树，`tree-generator` 子模块负责生成）
+  - `cfir:semantics`
+  - `cfir:diagnostic-renderers`、`cfir:providers`
+- CFIR 处理链：
+  - `cfir:raw-cfir:raw-cfir-common`
+  - `cfir:raw-cfir:psi2cfir`
+  - `cfir:raw-cfir:light-tree2cfir`
+  - `cfir:resolve`
+  - `cfir:checkers`（含 `checkers-component-generator`）
+  - `cfir:cfir-serialization`
+  - `cfir:entrypoint`
+  - `cfir:analysis-tests`
+- 宏展开：`macro:macro-common`、`macro:macro-process`、`macro:macro-stub`
+- LSP：`lsp`
 - Analysis：
-  - `analysis:analysis-api`
-  - `analysis:analysis-api-impl-base`
-  - `analysis:analysis-api-cfir`
+  - `analysis:analysis-api`、`analysis:analysis-api-platform-interface`
+  - `analysis:analysis-api-impl-base`、`analysis:analysis-api-standalone`
+  - `analysis:analysis-api-cfir`、`analysis:low-level-api-cfir`
+  - `analysis:analysis-internal-utils`、`analysis:cj-references`
+  - `analysis:stubs`、`analysis:decompiled`（及其 4 个子模块）
+  - `analysis:light-declarations`、`analysis:symbol-light-declarations`
+  - `analysis:analysis-tools`
   - `analysis:analysis-test-framework`
-- CLI：`compiler:cli`
+- 可选后端：`compiler:chir`、`compiler:codegen`、`llvm-interop:llvm-interop-api`、`llvm-interop:llvm-interop-jni`
 - 测试支撑：`tests:test-infrastructure`
+- 发布工件：`prepare:frontend`、`prepare:frontend-embeddable`、`prepare:test-infrastructure`、`prepare:analysis-test-framework`、`prepare:ide-plugin-dependencies:*`、`prepare:ide-plugin-dependencies-module:*`
+
+子项目（独立构建，不在主 `settings.gradle.kts` 内）：
+- `intellij-ide/` — IntelliJ 平台插件（IntelliJ Platform Gradle Plugin 2.x）
+- `deveco/` — DevEco Studio 增强插件
 
 ## 5) 构建命令
 

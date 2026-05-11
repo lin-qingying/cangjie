@@ -3,6 +3,8 @@
 > 三方交叉对比：当前项目 × Kotlin K2 FIR × 仓颉 C++ 编译器
 >
 > 日期：2026-03-13
+>
+> **现状提示（2026-05-11）**：本文是 2026-03-13 时点的 gap 快照，后续更深入的评估见 [`cfir-semantic-analysis-maturity-vs-official-2026-04-08.md`](cfir-semantic-analysis-maturity-vs-official-2026-04-08.md)。文中 `cfir:symbols` 当前已不存在，对应实装模块为 `:cfir:semantics` + `:cfir:providers`；`cfir:diagnostics` 实际对应 `:common:diagnostics` + `:cfir:diagnostic-renderers`。
 
 ---
 

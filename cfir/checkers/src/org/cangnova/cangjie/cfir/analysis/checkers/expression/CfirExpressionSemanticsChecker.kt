@@ -197,23 +197,12 @@ object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
  * subscript 表达式检查器
  *
  * 对齐 C++ TypeCheckExpr/SubscriptExpr.cpp:
- * - CANNOT_ASSIGN_TO_SUBSCRIPT: subscript 不可赋值（无 operator set）
+ * - resolve 阶段产生的 subscript operator 错误由 Cone 诊断统一映射；
+ * - 这里只检查不依赖 operator resolve 的 subscript 语义。
  */
 object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSubscriptExpression) {
-        val exprType = expression.coneTypeOrNull
-        if (exprType is ConeErrorType) {
-            val receiverType = expression.receiver.coneTypeOrNull ?: return
-            if (receiverType is ConeErrorType) return
-            reporter.reportOn(
-                source = expression.source,
-                factory = CfirErrors.INVALID_SUBSCRIPT_EXPR,
-                a = receiverType,
-                b = "subscript",
-            )
-        }
-
         // VArray subscript 下标数量检查
         val receiverType = expression.receiver.coneTypeOrNull
         if (receiverType is org.cangnova.cangjie.cfir.types.ConeVArrayType) {
