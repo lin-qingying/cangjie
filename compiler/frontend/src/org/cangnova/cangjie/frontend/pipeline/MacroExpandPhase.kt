@@ -237,6 +237,7 @@ object MacroExpandPhase {
         }
 
         executor.use {
+            @Suppress("DEPRECATION") // Batch 10 过渡：text-patch path 仍作为 construction step 的兼容实现
             val expander = DefaultMacroExpander(
                 collector = collector,
                 executor = it,
