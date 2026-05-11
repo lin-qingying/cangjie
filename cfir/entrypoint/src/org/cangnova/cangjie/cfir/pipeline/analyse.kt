@@ -46,7 +46,15 @@ fun CfirSession.buildPreMacroRawCfirFromCjFiles(cjFiles: Collection<CjFile>): Pr
     val firProvider = cfirProvider as CfirProviderImpl
     val builder = PsiRawCfirBuilder(this, firProvider.cangjieScopeProvider)
     val rawFiles = cjFiles.map(builder::buildCfirFile)
-    return buildPreMacroRawFiles(this, rawFiles)
+    val perFileSurfaces = rawFiles.map { _ ->
+        // PSI builder accumulates into one shared list; consume once and assign all to last file.
+        emptyList<org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface>()
+    }.toMutableList()
+    val collected = builder.consumeCollectedMacroSurfaces()
+    if (collected.isNotEmpty() && perFileSurfaces.isNotEmpty()) {
+        perFileSurfaces[perFileSurfaces.lastIndex] = collected
+    }
+    return buildPreMacroRawFiles(this, rawFiles, perFileSurfaces)
 }
 
 /**
@@ -64,15 +72,19 @@ fun CfirSession.buildPreMacroRawCfirViaLightTree(
         scopeProvider = firProvider.cangjieScopeProvider,
         diagnosticsReporter = diagnosticReporterForLightTree,
     )
-    val rawFiles = lightTreeFiles.map { sourceFile ->
+    val rawFilesWithSurfaces = lightTreeFiles.map { sourceFile ->
         val (code, linesMapping) = sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use {
             it.readSourceFileWithMapping()
         }
-        val cfirFile = builder.buildCfirFile(code, sourceFile, linesMapping)
+        val (cfirFile, surfaces) = builder.buildCfirFileWithSurfaces(code, sourceFile, linesMapping)
         reportFilesAndLines?.invoke(sourceFile.path ?: sourceFile.name, linesMapping.linesCount)
-        cfirFile
+        cfirFile to surfaces
     }
-    return buildPreMacroRawFiles(this, rawFiles)
+    return buildPreMacroRawFiles(
+        session = this,
+        rawCfirFiles = rawFilesWithSurfaces.map { it.first },
+        fileSurfaces = rawFilesWithSurfaces.map { it.second },
+    )
 }
 
 /**

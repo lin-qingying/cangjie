@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
@@ -45,6 +46,22 @@ class LightTreeRawCfirDeclarationBuilder(
     context: Context<LighterASTNode> = Context(),
     val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) : AbstractLightTreeRawCfirBuilder(session, tree, source, context) {
+
+    /**
+     * Macro construction-only surface 累加器（baseline Batch 4b）。
+     *
+     * 由 [LightTreeRawCfirExpressionBuilder.convertMacroExpression] push；
+     * 上层 raw-build 入口经 [consumeCollectedMacroSurfaces] 取出并交给
+     * `org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles`。
+     */
+    internal val collectedMacroSurfaces: MutableList<MacroSurface> = mutableListOf()
+
+    /** 提取并清空当前累加的 macro surface 列表。 */
+    fun consumeCollectedMacroSurfaces(): List<MacroSurface> {
+        val snapshot = collectedMacroSurfaces.toList()
+        collectedMacroSurfaces.clear()
+        return snapshot
+    }
 
     private fun LightTreeModifierList.toDeclarationStatusForCurrentContext(
         defaultVisibility: Visibility? = null,

@@ -22,6 +22,14 @@ import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceIdGenerator
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.lexer.CjTokens
@@ -1558,9 +1566,51 @@ class LightTreeRawCfirExpressionBuilder(
         val nameNode = tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
         val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT)
         val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
+
+        val text = node.asText()
+        val isForced = text.startsWith("@!")
+        val nameStr = nameNode?.asText()
+        val name = nameStr?.let { Name.identifier(it) }
+        val surfaceId = MacroSurfaceIdGenerator.next()
+        val qualifiedName = name?.let {
+            if (context.packageFqName.isRoot) {
+                org.cangnova.cangjie.name.FqName.topLevel(it)
+            } else {
+                context.packageFqName.child(it)
+            }
+        }
+        declarationBuilder.collectedMacroSurfaces += MacroSurfaceExpr(
+            surfaceId = surfaceId,
+            qualifiedName = qualifiedName,
+            kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+            hasParenthesis = inputNode != null,
+            attrTokens = attrNode?.asText()?.let { listOf(MacroSurfaceToken(it, 0, it.length)) }.orEmpty(),
+            inputTokens = inputNode?.asText()?.let { listOf(MacroSurfaceToken(it, 0, it.length)) }.orEmpty(),
+            sourceRange = MacroSurfaceSourceRange(
+                source = null,
+                startOffset = node.startOffset,
+                endOffset = node.endOffset,
+            ),
+            scopeContext = MacroSurfaceScopeContext(
+                packageFqName = context.packageFqName,
+                enclosingClassFqName = null,
+                enclosingFunctionName = null,
+            ),
+            modifiers = emptyList(),
+            carriedAnnotations = emptyList(),
+            capturedRawSyntax = text,
+            containerContext = MacroSurfaceContainerContext(
+                outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.NONE,
+                isInsidePrimaryConstructor = false,
+                isInsideEnumBody = false,
+                isInsideBlock = false,
+            ),
+            replaceHandle = CfirReplaceHandle(handleId = surfaceId),
+        )
+
         return buildMacroExpression {
             source = node.toSource()
-            name = nameNode?.asText()?.let { Name.identifier(it) }
+            this.name = name
             inputText = inputNode?.asText()
             attrText = attrNode?.asText()
         }

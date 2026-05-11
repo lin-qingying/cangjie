@@ -27,6 +27,14 @@ import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceIdGenerator
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
@@ -68,6 +76,27 @@ class PsiRawCfirBuilder(
         baseScopeProvider = session.cangjieScopeProvider,
         bodyBuildingMode = bodyBuildingMode,
     )
+
+    /**
+     * Macro construction-only surface 累加器（baseline Batch 4b）。
+     *
+     * 由 [Converter.convertMacroExpression] 在转换每个 `@Foo(...)` 调用时 push 一条
+     * [MacroSurfaceExpr]；上层 raw-build 入口经
+     * [consumeCollectedMacroSurfaces] 取出列表，并交给
+     * `org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles`。
+     *
+     * 该 accumulator 与 `CfirMacroExpression` 节点同时生成，二者并存仅为兼容现有
+     * `DefaultMacroExpander` 路径；Batch 10 移除 expander 后将切换为
+     * "surface-only"。
+     */
+    private val collectedMacroSurfaces: MutableList<MacroSurface> = mutableListOf()
+
+    /** 提取并清空当前累加的 macro surface 列表。 */
+    fun consumeCollectedMacroSurfaces(): List<MacroSurface> {
+        val snapshot = collectedMacroSurfaces.toList()
+        collectedMacroSurfaces.clear()
+        return snapshot
+    }
 
     // ===== AbstractRawCfirBuilder 抽象方法实现 =====
 
@@ -1735,6 +1764,41 @@ class PsiRawCfirBuilder(
         }
 
         private fun convertMacroExpression(psi: CjMacroExpression): CfirExpression {
+            val surfaceId = MacroSurfaceIdGenerator.next()
+            val text = psi.text.orEmpty()
+            val isForced = text.startsWith("@!")
+            val currentPackage = this@PsiRawCfirBuilder.context.packageFqName
+            val qualifiedName = psi.shortName?.let {
+                if (currentPackage.isRoot) FqName.topLevel(it) else currentPackage.child(it)
+            }
+            collectedMacroSurfaces += MacroSurfaceExpr(
+                surfaceId = surfaceId,
+                qualifiedName = qualifiedName,
+                kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+                hasParenthesis = psi.input != null,
+                attrTokens = psi.attr?.text?.let { listOf(MacroSurfaceToken(it, 0, it.length)) }.orEmpty(),
+                inputTokens = psi.input?.text?.let { listOf(MacroSurfaceToken(it, 0, it.length)) }.orEmpty(),
+                sourceRange = MacroSurfaceSourceRange(
+                    source = psi.toCjPsiSourceElement(),
+                    startOffset = psi.textRange.startOffset,
+                    endOffset = psi.textRange.endOffset,
+                ),
+                scopeContext = MacroSurfaceScopeContext(
+                    packageFqName = currentPackage,
+                    enclosingClassFqName = null,
+                    enclosingFunctionName = null,
+                ),
+                modifiers = emptyList(),
+                carriedAnnotations = emptyList(),
+                capturedRawSyntax = text,
+                containerContext = MacroSurfaceContainerContext(
+                    outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.NONE,
+                    isInsidePrimaryConstructor = false,
+                    isInsideEnumBody = false,
+                    isInsideBlock = false,
+                ),
+                replaceHandle = CfirReplaceHandle(handleId = surfaceId),
+            )
             return buildMacroExpression {
                 source = psi.toCjPsiSourceElement()
                 name = psi.shortName
