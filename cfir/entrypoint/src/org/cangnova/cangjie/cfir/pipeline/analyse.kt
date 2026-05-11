@@ -17,7 +17,10 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.RecordableRawCfirFiles
+import org.cangnova.cangjie.cfir.resolve.providers.macro.bindMacroImports
+import org.cangnova.cangjie.cfir.resolve.providers.macro.buildMacroSymbolIndex
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
+import org.cangnova.cangjie.cfir.resolve.providers.macro.expandWithDefaultContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -101,7 +104,10 @@ fun CfirSession.buildCfirViaLightTree(
 
 private fun CfirSession.finalizeIdentity(pre: PreMacroRawBuildResult): List<CfirFile> {
     val provider = cfirProvider as CfirProviderImpl
-    val result = MacroConstructionService.Identity.expand(pre, MacroConstructionService.Mode.STRICT)
+    val result = MacroConstructionService.Identity.expandWithDefaultContext(
+        pre = pre,
+        mode = MacroConstructionService.Mode.STRICT,
+    )
     val success = result as? MacroConstructionResult.Success
         ?: error("Identity macro construction must return Success, got ${result::class.simpleName}")
     recordExpandedRawFilesOnce(provider, success.recordableFiles, success.registry)
@@ -202,7 +208,10 @@ fun resolveAndCheckCfirAfterConstruction(
     constructionMode: MacroConstructionService.Mode,
     diagnosticsCollector: BaseDiagnosticsCollector,
 ): Pair<MacroConstructionResult, SingleModuleFrontendOutput?> {
-    val result = constructionService.expand(pre, constructionMode)
+    // baseline 第 1 节"主流程"：先 symbol index，再 bindMacroImports，再 expand。
+    val symbolIndex = buildMacroSymbolIndex(pre)
+    val context = bindMacroImports(pre, symbolIndex)
+    val result = constructionService.expand(pre, context, constructionMode)
     val recordable: RecordableRawCfirFiles = when (result) {
         is MacroConstructionResult.Success -> result.recordableFiles
         is MacroConstructionResult.Degraded -> result.recordableFiles

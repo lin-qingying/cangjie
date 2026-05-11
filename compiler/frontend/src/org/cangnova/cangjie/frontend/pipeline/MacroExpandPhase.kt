@@ -7,7 +7,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolutionContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -71,11 +73,16 @@ class FrontendMacroConstructionService(
 ) : MacroConstructionService {
     override fun expand(
         pre: PreMacroRawBuildResult,
+        context: MacroResolutionContext,
         mode: MacroConstructionService.Mode,
     ): MacroConstructionResult {
         val session = pre.session
         val registry = MacroExpansionRegistry()
         val rawFiles = pre.files.map { it.cfirFile }
+
+        // baseline 第 4 节："官方同包 macro def/call 禁止"。
+        // 即便 expander 把展开做了出来，同包 def/call 也应当被诊断为非法。
+        reportSamePackageMacroDefinitions(pre, context, registry)
 
         val output = MacroExpandPhase.expandAndCollect(session, rawFiles, configuration, registry)
 
@@ -88,6 +95,47 @@ class FrontendMacroConstructionService(
             MacroConstructionService.degradedOf(pre, output, registry)
         } else {
             MacroConstructionService.successOf(pre, output, registry)
+        }
+    }
+
+    /**
+     * 报告"同包 macro def + call"非法形态。
+     *
+     * 这是 [MacroSymbolIndex][org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSymbolIndex]
+     * 的产出之一：source 包内 `macro func Foo` 同时出现 `@Foo` 调用是非法的，
+     * 必须以独立 macro package 提供方为目标。
+     */
+    private fun reportSamePackageMacroDefinitions(
+        pre: PreMacroRawBuildResult,
+        context: MacroResolutionContext,
+        registry: MacroExpansionRegistry,
+    ) {
+        val sourceMacros: List<MacroDefinitionEntry> = context.symbolIndex.sources
+        if (sourceMacros.isEmpty()) return
+
+        val collector = DefaultMacroCollector()
+        val callSites = collector.collect(pre.files.map { it.cfirFile })
+
+        for (callSite in callSites) {
+            val callPackageString = callSite.callInfo.packageName
+            val callPackage = if (callPackageString.isBlank()) {
+                org.cangnova.cangjie.name.FqName.ROOT
+            } else {
+                org.cangnova.cangjie.name.FqName.fromString(callPackageString)
+            }
+            val callName = org.cangnova.cangjie.name.Name.identifier(callSite.callInfo.idName)
+            val sameDef = context.symbolIndex.samePackageMacroDef(callPackage, callName) ?: continue
+            val message = buildString {
+                append("Macro call `@")
+                append(sameDef.name.asString())
+                append("` cannot resolve to a macro definition declared in the same package `")
+                append(if (callPackage.isRoot) "<root>" else callPackage.asString())
+                append("`; macros must be provided by a separate macro package, artifact, or builtin.")
+            }
+            configuration.messageCollector.report(CompilerMessageSeverity.ERROR, message)
+            registry.addDiagnostic(
+                MacroConstructionDiagnostic(MacroConstructionDiagnostic.Severity.ERROR, message)
+            )
         }
     }
 }
