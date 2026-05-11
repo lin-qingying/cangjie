@@ -28,11 +28,15 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=blockSize]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=algorithm]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -43,6 +47,8 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -84,6 +90,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -98,6 +105,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.crypto.digest, facadeFqName=std.cry
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC

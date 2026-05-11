@@ -718,6 +718,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -764,6 +765,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddress]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -774,9 +777,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=readTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -793,9 +798,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=writeTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -812,6 +822,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
   CangJieStub$INTERFACE[classId=std/net/ServerSocket, fqName=std.net.ServerSocket, name=ServerSocket, superNames=[Resource, ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -843,9 +858,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -880,6 +898,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -943,6 +962,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=family]
@@ -950,9 +970,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -963,6 +986,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -989,17 +1013,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=m]
@@ -1127,7 +1154,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
               CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1137,7 +1165,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1152,7 +1180,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1214,7 +1242,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1247,7 +1275,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=directValue]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1260,14 +1288,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1340,6 +1374,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=family]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -1350,9 +1386,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AddressFamily]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1473,34 +1512,42 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketState]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -1865,6 +1912,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -1936,11 +1984,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1960,6 +2010,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2094,11 +2145,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2136,7 +2188,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
     CangJieStub$CLASS_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=Max]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2144,9 +2196,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=UInt128]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=Min]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2154,6 +2208,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=UInt128]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_hi]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -2287,6 +2343,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2297,6 +2354,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2310,7 +2368,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                   CangJieStub$BASIC_TYPE[basicType=UInt16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2334,7 +2392,50 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=UInt128]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$BASIC_TYPE[basicType=UInt8]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=UInt128]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$BASIC_TYPE[basicType=UInt8]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2379,48 +2480,21 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=UInt128]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$BASIC_TYPE[basicType=UInt8]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2435,20 +2509,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$BASIC_TYPE[basicType=UInt8]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2489,6 +2550,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2617,6 +2679,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=hostName]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -2636,9 +2700,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2658,7 +2724,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=IPAddress]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2687,7 +2753,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=IPAddress]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2725,7 +2791,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=IPAddress]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2755,6 +2821,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2769,41 +2836,49 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -2842,7 +2917,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2897,6 +2972,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=IPAddress]
@@ -2988,14 +3064,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=IPAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=prefixLength]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3015,7 +3095,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=IPPrefix]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3090,6 +3170,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3100,6 +3181,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3110,6 +3192,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3120,6 +3203,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3130,6 +3214,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3170,6 +3255,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3240,22 +3326,26 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3266,6 +3356,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3408,6 +3499,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
@@ -3431,7 +3523,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3456,41 +3548,49 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3501,6 +3601,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3571,6 +3672,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3891,9 +3993,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3904,6 +4009,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3933,6 +4039,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3952,6 +4059,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4013,7 +4121,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4038,41 +4146,49 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -4123,6 +4239,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4436,7 +4553,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=AddrInfo]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4489,7 +4606,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4509,7 +4626,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4647,11 +4764,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=IPAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=prefixLength]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -4700,21 +4821,25 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4725,6 +4850,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4735,6 +4861,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4745,6 +4872,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4755,6 +4883,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4765,6 +4894,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4805,6 +4935,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4900,11 +5031,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=IPAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=prefixLength]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -4953,11 +5088,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4968,6 +5105,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4978,6 +5116,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4988,6 +5127,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4998,6 +5138,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5008,6 +5149,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5018,6 +5160,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5028,6 +5171,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5068,6 +5212,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5180,6 +5325,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=family]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -5190,9 +5337,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AddressFamily]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5212,7 +5361,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=IPSocketAddress]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5249,14 +5398,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=IPAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=port]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5271,11 +5425,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -5311,11 +5467,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5396,7 +5554,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5432,6 +5590,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5702,7 +5861,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketMode]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5719,9 +5878,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5755,7 +5919,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5772,9 +5936,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5808,7 +5977,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=bindToDevice]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5825,34 +5994,46 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isBound]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isConnected]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=readTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5869,9 +6050,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=writeTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5888,9 +6074,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=keepAlive]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5907,6 +6098,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketKeepAliveConfig]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6045,6 +6241,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -6234,17 +6431,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6292,17 +6492,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=m]
@@ -6362,6 +6565,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6400,6 +6604,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddress]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6419,9 +6625,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6438,9 +6646,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6457,6 +6670,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6563,7 +6781,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$VALUE_PARAMETER_LIST
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -6591,7 +6809,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketBuffer]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -6627,93 +6845,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
-    CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$USER_TYPE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketBuffer]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=UIntNative]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int32]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$USER_TYPE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=SockAddr]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$TYPE_REFERENCE
-      CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$FUNC
-    CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
-    CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$USER_TYPE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketBuffer]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=UIntNative]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int32]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$TYPE_REFERENCE
-      CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$FUNC
-    CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -6763,7 +6895,93 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketBuffer]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UIntNative]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketBuffer]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UIntNative]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=SockAddr]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -6800,7 +7018,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -6837,7 +7055,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -6895,6 +7113,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6959,7 +7178,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.net.SocketMode, name=SequentialMode, typeCount=0]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7004,7 +7223,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7014,32 +7234,38 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Nothing]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Nothing]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Nothing]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Nothing]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Nothing]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Nothing]
   CangJieStub$CLASS[classId=std/net/SocketTimeoutException, fqName=std.net.SocketTimeoutException, name=SocketTimeoutException, superNames=[Exception]]
@@ -7074,7 +7300,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7156,12 +7383,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
               CangJieStub$BASIC_TYPE[basicType=UInt32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7185,7 +7413,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7216,7 +7444,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7252,7 +7480,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7263,7 +7491,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$REFERENCE_EXPRESSION[referencedName=CString]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7281,7 +7509,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7303,7 +7531,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7332,7 +7560,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=SockAddr]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7352,7 +7580,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=UIntNative]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7447,17 +7675,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
@@ -7608,7 +7839,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7631,7 +7862,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7659,7 +7890,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7683,7 +7914,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7711,7 +7942,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7749,7 +7980,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7791,7 +8022,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7805,7 +8036,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7815,7 +8046,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7825,92 +8056,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
-    CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$BASIC_TYPE[basicType=UInt8]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=UInt32]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$TYPE_REFERENCE
-      CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$FUNC
-    CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
-    CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$BASIC_TYPE[basicType=UInt8]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=UInt32]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int32]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=UInt64]
-    CangJieStub$TYPE_REFERENCE
-      CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$FUNC
-    CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
-    CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$BASIC_TYPE[basicType=UInt8]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int32]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int32]
-    CangJieStub$TYPE_REFERENCE
-      CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$FUNC
-    CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7937,7 +8083,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7968,7 +8114,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -7995,7 +8141,92 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=UInt8]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UInt32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=UInt8]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UInt32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UInt64]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=UInt8]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -8040,7 +8271,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -8050,31 +8281,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
-    CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=UInt64]
-    CangJieStub$TYPE_REFERENCE
-      CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$FUNC
-    CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
-    CangJieStub$VALUE_PARAMETER_LIST
-      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-        CangJieStub$ANNOTATIONS
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-    CangJieStub$TYPE_REFERENCE
-      CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$FUNC
-    CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -8088,7 +8295,31 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UInt64]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -8102,7 +8333,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -8143,7 +8374,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -8184,7 +8415,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -8208,7 +8439,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -8252,7 +8483,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.net.ErrnoLabel, name=Listen, typeCount=0]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8263,6 +8495,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC
@@ -8354,7 +8587,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketBuffer]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8391,7 +8624,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8437,7 +8670,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                   CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8475,7 +8708,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=DopraOtherSocketImpl]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8530,7 +8763,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                       CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8576,17 +8809,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[redef static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8624,7 +8859,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DopraOtherSocketImpl]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8694,12 +8929,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=handle]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8760,12 +9000,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8830,12 +9071,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketNet]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8854,7 +9097,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8873,7 +9117,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8905,7 +9149,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8932,7 +9176,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8946,7 +9190,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8964,7 +9208,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8988,7 +9232,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[redef static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9022,7 +9266,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Self]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9055,7 +9299,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9115,7 +9359,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9152,7 +9396,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9198,7 +9442,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                   CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9236,7 +9480,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=DopraTcpSocketImpl]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9282,7 +9526,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9337,12 +9581,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                       CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9352,7 +9597,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[redef static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9464,6 +9709,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=RawAddress]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -9527,7 +9774,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.net.HolderState, name=SocketDisposed, typeCount=0]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9542,7 +9789,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -9591,17 +9838,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketState]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=useCounter]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=disposedOrShuttingDown]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=nativeState]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9609,59 +9863,95 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=HolderState]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=connected]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=bound]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=hasReaders]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=hasWriters]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=failed]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
@@ -9841,6 +10131,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddr]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -9851,6 +10143,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=RawAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddress]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -9861,6 +10155,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=RawAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddr]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -9871,6 +10167,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=RawAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddress]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -9881,9 +10179,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=RawAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=readTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9900,9 +10200,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=writeTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9919,6 +10224,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=RawSocket]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -10040,6 +10350,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -10261,6 +10572,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -10444,6 +10756,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$STRUCT[classId=std/net/SocketDomain, fqName=std.net.SocketDomain, name=SocketDomain, superNames=[Equatable, ToString, Hashable]]
@@ -10560,6 +10873,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -10570,6 +10884,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$STRUCT[classId=std/net/SocketType, fqName=std.net.SocketType, name=SocketType, superNames=[Equatable, ToString, Hashable]]
@@ -10696,6 +11011,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -10706,6 +11022,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$STRUCT[classId=std/net/ProtocolType, fqName=std.net.ProtocolType, name=ProtocolType, superNames=[Equatable, ToString, Hashable]]
@@ -10862,6 +11179,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -10872,6 +11190,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
@@ -11341,7 +11660,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11349,9 +11668,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11359,9 +11680,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=readTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11378,9 +11701,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=writeTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11397,9 +11725,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=bindToDevice]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11416,9 +11749,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=keepAlive]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11435,19 +11773,34 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketKeepAliveConfig]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=noDelay]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=quickAcknowledge]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=linger]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11464,19 +11817,34 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11495,7 +11863,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11662,16 +12030,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11686,7 +12056,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[override operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11701,12 +12071,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11802,7 +12174,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11810,6 +12182,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=TcpServerSocket]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -11833,27 +12207,47 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=reuseAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=reusePort]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=bindToDevice]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11870,19 +12264,30 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=backlogSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11911,7 +12316,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TcpSocket]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -11921,12 +12327,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TcpSocket]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -12054,7 +12462,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12125,7 +12534,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12142,9 +12551,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12152,9 +12563,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12171,9 +12584,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12190,19 +12608,27 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -12223,11 +12649,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -12255,7 +12682,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -12321,24 +12748,44 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=reusePort]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=reuseAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -12464,7 +12911,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12627,7 +13075,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=DopraOtherSocketImpl]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12635,9 +13083,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12645,9 +13095,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=readTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12664,9 +13116,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=writeTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12683,19 +13140,34 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -12714,7 +13186,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -12881,16 +13353,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12945,7 +13420,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -12953,6 +13428,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=UnixServerSocket]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -12981,27 +13458,43 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=backlogSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -13030,7 +13523,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=UnixSocket]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -13040,12 +13534,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
             CangJieStub$REFERENCE_EXPRESSION[referencedName=UnixSocket]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -13173,7 +13669,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -13249,7 +13746,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remoteAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -13266,9 +13763,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=localAddress]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -13276,9 +13775,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SocketAddress]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -13295,9 +13796,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendTimeout]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -13314,19 +13820,27 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -13362,11 +13876,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -13394,7 +13909,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -13460,14 +13975,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=sendBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=receiveBufferSize]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -13593,7 +14118,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -13700,6 +14226,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=family]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -13710,6 +14238,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=net]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=AddressFamily]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[operator]
@@ -13743,6 +14273,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -13757,11 +14288,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.net, facadeFqName=std.net, 
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE

@@ -11,29 +11,32 @@ import std.unicode.*
 import std.sync.AtomicInt64
 
 interface Logger {
-    func warning(at: std.ast.Tokens, message: std.core.String): Unit
+    func warning(at: std.ast.Tokens, message: std.core.String): Unit { /* compiled code */ }
 
-    func warning(at: std.ast.Token, message: std.core.String): Unit
+    func warning(at: std.ast.Token, message: std.core.String): Unit { /* compiled code */ }
 
-    func error(at: std.ast.Tokens, message: std.core.String): Unit
+    func error(at: std.ast.Tokens, message: std.core.String): Unit { /* compiled code */ }
 
-    func error(at: std.ast.Token, message: std.core.String): Unit
+    func error(at: std.ast.Token, message: std.core.String): Unit { /* compiled code */ }
 
-    func log(at: std.ast.Tokens, message: std.core.String, error: Bool): Unit
+    func log(at: std.ast.Tokens, message: std.core.String, error: Bool): Unit { /* compiled code */ }
 }
 
 interface DeclExt {
-    prop modifiers: std.collection.ArrayList<std.ast.Modifier>
+    mut prop modifiers: std.collection.ArrayList<std.ast.Modifier> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func hasModifier(kind: std.ast.TokenKind): Bool
+    func hasModifier(kind: std.ast.TokenKind): Bool { /* compiled code */ }
 
-    func hasModifier(predicate: (std.ast.TokenKind) -> Bool): Bool
+    func hasModifier(predicate: (std.ast.TokenKind) -> Bool): Bool { /* compiled code */ }
 
-    func isStatic: Bool
+    func isStatic(): Bool { /* compiled code */ }
 
-    func isPrivate: Bool
+    func isPrivate(): Bool { /* compiled code */ }
 
-    func unwrap: std.ast.Decl
+    func unwrap(): std.ast.Decl { /* compiled code */ }
 }
 
 struct QualifiedName <: std.core.ToString & std.core.Equatable<std.deriving.api.QualifiedName> & std.core.Hashable {
@@ -45,29 +48,33 @@ struct QualifiedName <: std.core.ToString & std.core.Equatable<std.deriving.api.
 
     init(simpleName: std.deriving.api.Identifier) { /* compiled code */ }
 
-    func createUnchecked(tokens: std.core.Array<std.ast.Token>): std.deriving.api.QualifiedName
+    static func createUnchecked(tokens: std.core.Array<std.ast.Token>): std.deriving.api.QualifiedName { /* compiled code */ }
 
-    prop simpleName: std.ast.Token
+    prop simpleName: std.ast.Token {
+        get() { /* compiled code */ }
+    }
 
-    func toSimpleNameQN: std.deriving.api.QualifiedName
+    func toSimpleNameQN(): std.deriving.api.QualifiedName { /* compiled code */ }
 
-    prop components: std.core.Array<std.core.String>
+    prop components: std.core.Array<std.core.String> {
+        get() { /* compiled code */ }
+    }
 
-    operator func +(other: std.deriving.api.QualifiedName): std.deriving.api.QualifiedName
+    operator func +(other: std.deriving.api.QualifiedName): std.deriving.api.QualifiedName { /* compiled code */ }
 
-    operator func +(other: std.core.String): std.deriving.api.QualifiedName
+    operator func +(other: std.core.String): std.deriving.api.QualifiedName { /* compiled code */ }
 
-    operator func +(other: std.ast.Token): std.deriving.api.QualifiedName
+    operator func +(other: std.ast.Token): std.deriving.api.QualifiedName { /* compiled code */ }
 
-    operator func +(other: std.deriving.api.Identifier): std.deriving.api.QualifiedName
+    operator func +(other: std.deriving.api.Identifier): std.deriving.api.QualifiedName { /* compiled code */ }
 
-    func toString: std.core.String
+    override func toString(): std.core.String { /* compiled code */ }
 
-    operator func ==(other: std.deriving.api.QualifiedName): Bool
+    override operator func ==(other: std.deriving.api.QualifiedName): Bool { /* compiled code */ }
 
-    operator func !=(other: std.deriving.api.QualifiedName): Bool
+    override operator func !=(other: std.deriving.api.QualifiedName): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    override func hashCode(): Int64 { /* compiled code */ }
 
     let name: std.core.String
 
@@ -77,13 +84,13 @@ struct QualifiedName <: std.core.ToString & std.core.Equatable<std.deriving.api.
 struct GenericDecl <: std.core.Equatable<std.deriving.api.GenericDecl> & std.core.Hashable & std.core.ToString {
     init(identifier: std.ast.Token) { /* compiled code */ }
 
-    operator func ==(other: std.deriving.api.GenericDecl): Bool
+    override operator func ==(other: std.deriving.api.GenericDecl): Bool { /* compiled code */ }
 
-    operator func !=(other: std.deriving.api.GenericDecl): Bool
+    override operator func !=(other: std.deriving.api.GenericDecl): Bool { /* compiled code */ }
 
-    func toString: std.core.String
+    override func toString(): std.core.String { /* compiled code */ }
 
-    func hashCode: Int64
+    override func hashCode(): Int64 { /* compiled code */ }
 
     let identifier: std.deriving.api.Identifier
 
@@ -91,11 +98,15 @@ struct GenericDecl <: std.core.Equatable<std.deriving.api.GenericDecl> & std.cor
 }
 
 struct DerivingTarget {
-    prop interfaces: std.core.Array<std.deriving.api.DerivingInterfaceSettings>
+    prop interfaces: std.core.Array<std.deriving.api.DerivingInterfaceSettings> {
+        get() { /* compiled code */ }
+    }
 
-    prop interfaceNames: std.core.Array<std.deriving.api.QualifiedName>
+    prop interfaceNames: std.core.Array<std.deriving.api.QualifiedName> {
+        get() { /* compiled code */ }
+    }
 
-    func findIntefaceSettings(name: std.deriving.api.QualifiedName): std.core.Option<std.deriving.api.DerivingInterfaceSettings>
+    func findIntefaceSettings(name: std.deriving.api.QualifiedName): std.core.Option<std.deriving.api.DerivingInterfaceSettings> { /* compiled code */ }
 
     let declaration: std.ast.Decl
 
@@ -109,29 +120,31 @@ struct DerivingTarget {
 }
 
 interface GenericsInjector {
-    func injectGenerics(iface: std.deriving.api.QualifiedName, constrainedType: std.ast.TypeNode, target: std.deriving.api.DerivingTarget): std.ast.TypeNode
+    func injectGenerics(iface: std.deriving.api.QualifiedName, constrainedType: std.ast.TypeNode, target: std.deriving.api.DerivingTarget): std.ast.TypeNode { /* compiled code */ }
 
-    func constraintsFor(iface: std.deriving.api.QualifiedName, generic: std.deriving.api.GenericDecl, target: std.deriving.api.DerivingTarget): std.core.Array<std.ast.GenericConstraint>
+    func constraintsFor(iface: std.deriving.api.QualifiedName, generic: std.deriving.api.GenericDecl, target: std.deriving.api.DerivingTarget): std.core.Array<std.ast.GenericConstraint> { /* compiled code */ }
 
-    func noGenerics: std.deriving.api.GenericsInjector
+    static func noGenerics(): std.deriving.api.GenericsInjector { /* compiled code */ }
 
-    func singleRecursive: std.deriving.api.GenericsInjector
+    static func singleRecursive(): std.deriving.api.GenericsInjector { /* compiled code */ }
 }
 
 struct DefaultGenreicInjector <: std.deriving.api.GenericsInjector {
-    func injectGenerics(input: std.deriving.api.QualifiedName, _: std.ast.TypeNode, _: std.deriving.api.DerivingTarget): std.ast.TypeNode
+    func injectGenerics(input: std.deriving.api.QualifiedName, _: std.ast.TypeNode, _: std.deriving.api.DerivingTarget): std.ast.TypeNode { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
 struct RecursiveGenericInjector <: std.deriving.api.GenericsInjector {
-    func injectGenerics(iface: std.deriving.api.QualifiedName, constrainedType: std.ast.TypeNode, _: std.deriving.api.DerivingTarget): std.ast.TypeNode
+    func injectGenerics(iface: std.deriving.api.QualifiedName, constrainedType: std.ast.TypeNode, _: std.deriving.api.DerivingTarget): std.ast.TypeNode { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
 struct DerivingSettings {
-    prop interfaceNames: std.core.Array<std.deriving.api.QualifiedName>
+    prop interfaceNames: std.core.Array<std.deriving.api.QualifiedName> {
+        get() { /* compiled code */ }
+    }
 
     let interfaces: std.core.Array<std.deriving.api.DerivingInterfaceSettings>
 
@@ -175,17 +188,19 @@ struct TargetEnumCase {
 struct Identifier <: std.core.ToString & std.core.Equatable<std.deriving.api.Identifier> & std.core.Hashable & std.ast.ToTokens {
     init(str: std.core.String) { /* compiled code */ }
 
-    prop value: std.core.String
+    prop value: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    operator func ==(other: std.deriving.api.Identifier): Bool
+    operator func ==(other: std.deriving.api.Identifier): Bool { /* compiled code */ }
 
-    operator func !=(other: std.deriving.api.Identifier): Bool
+    operator func !=(other: std.deriving.api.Identifier): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
     let token: std.ast.Token
 
@@ -201,13 +216,15 @@ struct TargetEnumField {
 }
 
 struct DerivingGenericSettings <: std.core.ToString & std.ast.ToTokens {
-    prop hasUpperBounds: Bool
+    prop hasUpperBounds: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func toNode: std.ast.GenericConstraint
+    func toNode(): std.ast.GenericConstraint { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
     let generic: std.deriving.api.GenericDecl
 
@@ -217,21 +234,27 @@ struct DerivingGenericSettings <: std.core.ToString & std.ast.ToTokens {
 }
 
 interface DerivingNode <: std.deriving.api.AstExt {
-    func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit
+    func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit { /* compiled code */ }
 
-    func appendAllConstraintsTo(deriving: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit
+    func appendAllConstraintsTo(deriving: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit { /* compiled code */ }
 }
 
 interface Deriving {
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop description: std.core.String
+    prop description: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName>
+    prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
+        get() { /* compiled code */ }
+    }
 
-    func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo
+    func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
 
-    func derive(input: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens
+    func derive(input: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
 }
 
 struct DerivingInterfaceInfo {
@@ -245,177 +268,203 @@ struct DerivingInterfaceInfo {
 }
 
 interface AstExt {
-    func appendSuperTypes(types: std.core.Iterable<std.ast.TypeNode>): Unit
+    func appendSuperTypes(types: std.core.Iterable<std.ast.TypeNode>): Unit { /* compiled code */ }
 
-    func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit
+    func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit { /* compiled code */ }
 
-    func appendFunction(f: std.ast.FuncDecl): Unit
+    func appendFunction(f: std.ast.FuncDecl): Unit { /* compiled code */ }
 
-    func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl
+    func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl { /* compiled code */ }
 }
 
 extend DerivingTarget {
-    func createExtendSkeleton: std.ast.ExtendDecl
+    func createExtendSkeleton(): std.ast.ExtendDecl { /* compiled code */ }
 
-    func appendAllConstraintsTo(ext: std.ast.ExtendDecl, deriving: std.deriving.api.Deriving, iface: std.deriving.api.QualifiedName): Unit
+    func appendAllConstraintsTo(ext: std.ast.ExtendDecl, deriving: std.deriving.api.Deriving, iface: std.deriving.api.QualifiedName): Unit { /* compiled code */ }
 
-    func appendAllConstraintsTo(ext: std.ast.ExtendDecl, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit
+    func appendAllConstraintsTo(ext: std.ast.ExtendDecl, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit { /* compiled code */ }
 
-    func upperBoundForExtend(iface: std.deriving.api.DerivingInterfaceInfo): std.ast.TypeNode
+    func upperBoundForExtend(iface: std.deriving.api.DerivingInterfaceInfo): std.ast.TypeNode { /* compiled code */ }
 
-    func genericConstraints(ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): std.core.Iterable<std.ast.GenericConstraint>
+    func genericConstraints(ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): std.core.Iterable<std.ast.GenericConstraint> { /* compiled code */ }
 }
 
 extend ExtendDecl <: DerivingNode {
-    func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit
+    func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit { /* compiled code */ }
 
-    func appendAllConstraintsTo(target: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit
+    func appendAllConstraintsTo(target: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit { /* compiled code */ }
 }
 
 extend DerivingTarget {
-    prop isNonFinal: Bool
+    prop isNonFinal: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop isFinal: Bool
+    prop isFinal: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop isSealedClass: Bool
+    prop isSealedClass: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop isAbstractClass: Bool
+    prop isAbstractClass: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop allGenerics: std.core.Array<std.deriving.api.GenericDecl>
+    prop allGenerics: std.core.Array<std.deriving.api.GenericDecl> {
+        get() { /* compiled code */ }
+    }
 
-    prop hasAnyGenerics: Bool
+    prop hasAnyGenerics: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop superTypes: std.core.Array<std.ast.TypeNode>
+    prop superTypes: std.core.Array<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+    }
 
-    prop superTypeNames: std.core.Array<std.deriving.api.QualifiedName>
+    prop superTypeNames: std.core.Array<std.deriving.api.QualifiedName> {
+        get() { /* compiled code */ }
+    }
 
-    func toType: std.ast.TypeNode
+    func toType(): std.ast.TypeNode { /* compiled code */ }
 
-    func ifClass(predicate: (std.ast.ClassDecl) -> Bool): Bool
+    func ifClass(predicate: (std.ast.ClassDecl) -> Bool): Bool { /* compiled code */ }
 
-    func generics: std.core.Option<std.ast.GenericParam>
+    func generics(): std.core.Option<std.ast.GenericParam> { /* compiled code */ }
 }
 
 extend TargetNamedAttribute {
-    prop decl: std.ast.Decl
+    prop decl: std.ast.Decl {
+        get() { /* compiled code */ }
+    }
 
-    prop identifier: std.deriving.api.Identifier
+    prop identifier: std.deriving.api.Identifier {
+        get() { /* compiled code */ }
+    }
 
-    prop typeNode: std.core.Option<std.ast.TypeNode>
+    prop typeNode: std.core.Option<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+    }
 }
 
 extend TargetNamedAttribute <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend TargetEnumCase {
-    prop totalArgumentsCount: Int64
+    prop totalArgumentsCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop components: std.core.Array<std.core.Option<std.deriving.api.TargetEnumField>>
+    prop components: std.core.Array<std.core.Option<std.deriving.api.TargetEnumField>> {
+        get() { /* compiled code */ }
+    }
 }
 
 extend GenericDecl {
-    func toType: std.ast.RefType
+    func toType(): std.ast.RefType { /* compiled code */ }
 }
 
 extend Identifier {
-    func toType: std.ast.RefType
+    func toType(): std.ast.RefType { /* compiled code */ }
 }
 
 class CollectingLogger <: std.core.Object & std.deriving.api.Logger {
     let elements: std.collection.ArrayList<std.core.String>
 
-    func log(at: std.ast.Tokens, message: std.core.String, error: Bool): Unit
+    override func log(at: std.ast.Tokens, message: std.core.String, error: Bool): Unit { /* compiled code */ }
 
-    func collect: std.core.Array<std.core.String>
+    func collect(): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func clear: Unit
+    func clear(): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
 interface AppendGenerics {
-    func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit
+    func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit { /* compiled code */ }
 }
 
 extend RefType <: AppendGenerics {
-    func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit
+    func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit { /* compiled code */ }
 }
 
 extend QualifiedType <: AppendGenerics {
-    func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit
+    func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit { /* compiled code */ }
 }
 
 interface BodyExt {
-    func declsUnwrapped: std.core.Iterator<std.ast.Decl>
+    func declsUnwrapped(): std.core.Iterator<std.ast.Decl> { /* compiled code */ }
 }
 
 interface FuncParamExt {
-    func unwrapParam: std.ast.FuncParam
+    func unwrapParam(): std.ast.FuncParam { /* compiled code */ }
 }
 
 interface FunctionExt {
-    func funcParamsUnwrapped: std.core.Iterator<std.ast.FuncParam>
+    func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam> { /* compiled code */ }
 }
 
 extend Decl <: DeclExt {
-    func unwrap: std.ast.Decl
+    func unwrap(): std.ast.Decl { /* compiled code */ }
 }
 
 extend Body <: BodyExt {
-    func declsUnwrapped: std.core.Iterator<std.ast.Decl>
+    func declsUnwrapped(): std.core.Iterator<std.ast.Decl> { /* compiled code */ }
 }
 
 extend FuncParam <: FuncParamExt {
-    func unwrapParam: std.ast.FuncParam
+    func unwrapParam(): std.ast.FuncParam { /* compiled code */ }
 }
 
 extend FuncDecl <: FunctionExt {
-    func funcParamsUnwrapped: std.core.Iterator<std.ast.FuncParam>
+    func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam> { /* compiled code */ }
 }
 
 extend PrimaryCtorDecl <: FunctionExt {
-    func funcParamsUnwrapped: std.core.Iterator<std.ast.FuncParam>
+    func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam> { /* compiled code */ }
 }
 
 extend ExtendDecl <: AstExt {
-    func appendFunction(f: std.ast.FuncDecl): Unit
+    func appendFunction(f: std.ast.FuncDecl): Unit { /* compiled code */ }
 
-    func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl
+    func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl { /* compiled code */ }
 
-    func appendSuperTypes(types: std.core.Iterable<std.ast.TypeNode>): Unit
+    func appendSuperTypes(types: std.core.Iterable<std.ast.TypeNode>): Unit { /* compiled code */ }
 
-    func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit
+    func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit { /* compiled code */ }
 }
 
-func joinTokens(prefix: std.ast.ToTokens, postfix: std.ast.ToTokens, delimiter: std.ast.ToTokens, ifEmpty: std.ast.ToTokens): (std.core.Iterable<std.ast.Tokens>) -> std.ast.Tokens
+func joinTokens(prefix: std.ast.ToTokens, postfix: std.ast.ToTokens, delimiter: std.ast.ToTokens, ifEmpty: std.ast.ToTokens): (std.core.Iterable<std.ast.Tokens>) -> std.ast.Tokens { /* compiled code */ }
 
 extend QualifiedName {
-    func toType(genericArgs: std.core.Array<std.ast.TypeNode>): std.ast.TypeNode
+    func toType(genericArgs: std.core.Array<std.ast.TypeNode>): std.ast.TypeNode { /* compiled code */ }
 }
 
-func registerDeriving(implementation: std.deriving.api.Deriving): Unit
+func registerDeriving(implementation: std.deriving.api.Deriving): Unit { /* compiled code */ }
 
-func findDeriving(name: std.deriving.api.QualifiedName): std.core.Option<std.deriving.api.Deriving>
+func findDeriving(name: std.deriving.api.QualifiedName): std.core.Option<std.deriving.api.Deriving> { /* compiled code */ }
 
-func findDerivings(names: std.core.Iterable<std.deriving.api.QualifiedName>): (std.core.Array<(std.deriving.api.Deriving, std.core.Array<std.deriving.api.QualifiedName>)>, std.core.Array<std.deriving.api.QualifiedName>)
+func findDerivings(names: std.core.Iterable<std.deriving.api.QualifiedName>): (std.core.Array<(std.deriving.api.Deriving, std.core.Array<std.deriving.api.QualifiedName>)>, std.core.Array<std.deriving.api.QualifiedName>) { /* compiled code */ }
 
-func interfacesBySimpleName(simpleName: std.core.String): std.core.Array<std.deriving.api.QualifiedName>
+func interfacesBySimpleName(simpleName: std.core.String): std.core.Array<std.deriving.api.QualifiedName> { /* compiled code */ }
 
 struct Registration <: std.core.Equatable<std.deriving.api.Registration> & std.core.Hashable {
     let id: Int64
 
-    func register(name: std.deriving.api.QualifiedName, candidate: std.deriving.api.Registration): Unit
+    static func register(name: std.deriving.api.QualifiedName, candidate: std.deriving.api.Registration): Unit { /* compiled code */ }
 
-    func find(name: std.deriving.api.QualifiedName): std.core.Option<std.deriving.api.Registration>
+    static func find(name: std.deriving.api.QualifiedName): std.core.Option<std.deriving.api.Registration> { /* compiled code */ }
 
-    func find(simpleName: std.core.String): std.core.Array<std.deriving.api.Registration>
+    static func find(simpleName: std.core.String): std.core.Array<std.deriving.api.Registration> { /* compiled code */ }
 
-    operator func ==(other: std.deriving.api.Registration): Bool
+    override operator func ==(other: std.deriving.api.Registration): Bool { /* compiled code */ }
 
-    operator func !=(other: std.deriving.api.Registration): Bool
+    override operator func !=(other: std.deriving.api.Registration): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    override func hashCode(): Int64 { /* compiled code */ }
 
     let deriving: std.deriving.api.Deriving
 

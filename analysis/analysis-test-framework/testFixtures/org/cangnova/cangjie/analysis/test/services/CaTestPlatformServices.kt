@@ -90,9 +90,10 @@ class CaTestPlatformState(
         private val binaryModules = moduleStructure.binaryModules
 
         private val cachedSnapshot: CaProjectStructureSnapshot by lazy(LazyThreadSafetyMode.NONE) {
+            val allModules = listOf(builtinsModule) + moduleStructure.allCaModules
             CaProjectStructureSnapshot(
-                allModules = moduleStructure.allCaModules,
-                allResolvableModules = moduleStructure.allCaModules.filter(CaModule::isResolvable),
+                allModules = allModules,
+                allResolvableModules = allModules.filter(CaModule::isResolvable),
                 allSourceLikeModules = moduleStructure.allCaModules.filterIsInstance<org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule>(),
                 allSourceFiles = moduleStructure.allCjFiles,
             )

@@ -30,21 +30,21 @@ struct Position {
 }
 
 struct MatchData {
-    func matchString: std.core.String
+    func matchString(): std.core.String { /* compiled code */ }
 
-    func matchString(group: Int64): std.core.String
+    func matchString(group: Int64): std.core.String { /* compiled code */ }
 
-    func matchString(group: std.core.String): std.core.String
+    func matchString(group: std.core.String): std.core.String { /* compiled code */ }
 
-    func matchPosition: std.regex.Position
+    func matchPosition(): std.regex.Position { /* compiled code */ }
 
-    func matchPosition(group: Int64): std.regex.Position
+    func matchPosition(group: Int64): std.regex.Position { /* compiled code */ }
 
-    func matchPosition(group: std.core.String): std.regex.Position
+    func matchPosition(group: std.core.String): std.regex.Position { /* compiled code */ }
 
-    func groupNumber: Int64
+    func groupNumber(): Int64 { /* compiled code */ }
 
-    func groupCount: Int64
+    func groupCount(): Int64 { /* compiled code */ }
 
     let input: std.core.String
 
@@ -78,39 +78,39 @@ class Matcher {
 
     init(regex: std.regex.Regex, input: std.core.String) { /* compiled code */ }
 
-    func fullMatch: std.core.Option<std.regex.MatchData>
+    func fullMatch(): std.core.Option<std.regex.MatchData> { /* compiled code */ }
 
-    func matchStart: std.core.Option<std.regex.MatchData>
+    func matchStart(): std.core.Option<std.regex.MatchData> { /* compiled code */ }
 
-    func find: std.core.Option<std.regex.MatchData>
+    func find(): std.core.Option<std.regex.MatchData> { /* compiled code */ }
 
-    func find(index: Int64): std.core.Option<std.regex.MatchData>
+    func find(index: Int64): std.core.Option<std.regex.MatchData> { /* compiled code */ }
 
-    func findAll: std.core.Option<std.core.Array<std.regex.MatchData>>
+    func findAll(): std.core.Option<std.core.Array<std.regex.MatchData>> { /* compiled code */ }
 
-    func allCount: Int64
+    func allCount(): Int64 { /* compiled code */ }
 
-    func replace(replacement: std.core.String): std.core.String
+    func replace(replacement: std.core.String): std.core.String { /* compiled code */ }
 
-    func replace(replacement: std.core.String, index: Int64): std.core.String
+    func replace(replacement: std.core.String, index: Int64): std.core.String { /* compiled code */ }
 
-    func replaceAll(replacement: std.core.String): std.core.String
+    func replaceAll(replacement: std.core.String): std.core.String { /* compiled code */ }
 
-    func replaceAll(replacement: std.core.String, limit: Int64): std.core.String
+    func replaceAll(replacement: std.core.String, limit: Int64): std.core.String { /* compiled code */ }
 
-    func split: std.core.Array<std.core.String>
+    func split(): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func split(limit: Int64): std.core.Array<std.core.String>
+    func split(limit: Int64): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func setRegion(beginIndex: Int64, endIndex: Int64): std.regex.Matcher
+    func setRegion(beginIndex: Int64, endIndex: Int64): std.regex.Matcher { /* compiled code */ }
 
-    func region: std.regex.Position
+    func region(): std.regex.Position { /* compiled code */ }
 
-    func resetRegion: std.regex.Matcher
+    func resetRegion(): std.regex.Matcher { /* compiled code */ }
 
-    func resetString(input: std.core.String): std.regex.Matcher
+    func resetString(input: std.core.String): std.regex.Matcher { /* compiled code */ }
 
-    func getString: std.core.String
+    func getString(): std.core.String { /* compiled code */ }
 }
 
 class Regex {
@@ -126,37 +126,37 @@ class Regex {
 
     init(pattern: std.core.String, option: std.regex.RegexOption) { /* compiled code */ }
 
-    ~init()
+    ~init() { /* compiled code */ }
 
-    func matcher(input: std.core.String): std.regex.Matcher
+    func matcher(input: std.core.String): std.regex.Matcher { /* compiled code */ }
 
-    func matches(input: std.core.String): Bool
+    func matches(input: std.core.String): Bool { /* compiled code */ }
 
-    func getNamedGroups: std.collection.Map<std.core.String, Int64>
+    func getNamedGroups(): std.collection.Map<std.core.String, Int64> { /* compiled code */ }
 
-    func find(input: std.core.String, group: Bool): std.core.Option<std.regex.MatchData>
+    func find(input: std.core.String, group: Bool): std.core.Option<std.regex.MatchData> { /* compiled code */ }
 
-    func find(input: std.core.String, inputCString: CString, pcre2md: CPointer<Unit>, offset: Int64, group: Bool): std.core.Option<std.regex.MatchData>
+    func find(input: std.core.String, inputCString: CString, pcre2md: CPointer<Unit>, offset: Int64, group: Bool): std.core.Option<std.regex.MatchData> { /* compiled code */ }
 
-    func allCount(input: std.core.String, begin: Int64, end: Int64): Int64
+    func allCount(input: std.core.String, begin: Int64, end: Int64): Int64 { /* compiled code */ }
 
-    func findAll(input: std.core.String, group: Bool): std.core.Array<std.regex.MatchData>
+    func findAll(input: std.core.String, group: Bool): std.core.Array<std.regex.MatchData> { /* compiled code */ }
 
-    func lazyFindAll(input: std.core.String, group: Bool): std.core.Iterator<std.regex.MatchData>
+    func lazyFindAll(input: std.core.String, group: Bool): std.core.Iterator<std.regex.MatchData> { /* compiled code */ }
 
-    func replace(input: std.core.String, replacement: std.core.String): std.core.String
+    func replace(input: std.core.String, replacement: std.core.String): std.core.String { /* compiled code */ }
 
-    func replace(input: std.core.String, replacement: std.core.String, index: Int64): std.core.String
+    func replace(input: std.core.String, replacement: std.core.String, index: Int64): std.core.String { /* compiled code */ }
 
-    func replaceAll(input: std.core.String, replacement: std.core.String): std.core.String
+    func replaceAll(input: std.core.String, replacement: std.core.String): std.core.String { /* compiled code */ }
 
-    func replaceAll(input: std.core.String, replacement: std.core.String, limit: Int64): std.core.String
+    func replaceAll(input: std.core.String, replacement: std.core.String, limit: Int64): std.core.String { /* compiled code */ }
 
-    func split(input: std.core.String): std.core.Array<std.core.String>
+    func split(input: std.core.String): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func split(input: std.core.String, limit: Int64): std.core.Array<std.core.String>
+    func split(input: std.core.String, limit: Int64): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func string: std.core.String
+    func string(): std.core.String { /* compiled code */ }
 }
 
 class FindIterator <: std.core.Iterator<std.regex.MatchData> {
@@ -174,9 +174,9 @@ class FindIterator <: std.core.Iterator<std.regex.MatchData> {
 
     init(regex: std.regex.Regex, input: std.core.String, group: Bool) { /* compiled code */ }
 
-    ~init()
+    ~init() { /* compiled code */ }
 
-    func next: std.core.Option<std.regex.MatchData>
+    func next(): std.core.Option<std.regex.MatchData> { /* compiled code */ }
 }
 
 type Pcre2CodePtr = CPointer<Unit>
@@ -205,27 +205,27 @@ struct NameTableInfo {
     init(nameCount: UInt32, nameEntrySize: UInt32, nameTable: CPointer<UInt8>) { /* compiled code */ }
 }
 
-func CJ_REGEX_Compile(pattern: CString, options: UInt32): CPointer<std.regex.CompileResult>
+foreign func CJ_REGEX_Compile(pattern: CString, options: UInt32): CPointer<std.regex.CompileResult>
 
-func CJ_REGEX_CreateMatchData(re: CPointer<Unit>): CPointer<Unit>
+foreign func CJ_REGEX_CreateMatchData(re: CPointer<Unit>): CPointer<Unit>
 
-func CJ_REGEX_Match(re: CPointer<Unit>, cinput: CString, length: UIntNative, offset: UIntNative, matchData: CPointer<Unit>): Int32
+foreign func CJ_REGEX_Match(re: CPointer<Unit>, cinput: CString, length: UIntNative, offset: UIntNative, matchData: CPointer<Unit>): Int32
 
-func CJ_REGEX_GetOvector(matchData: CPointer<Unit>): CPointer<UIntNative>
+foreign func CJ_REGEX_GetOvector(matchData: CPointer<Unit>): CPointer<UIntNative>
 
-func CJ_REGEX_GetErrorMsg(errorCode: Int32): CString
+foreign func CJ_REGEX_GetErrorMsg(errorCode: Int32): CString
 
-func CJ_REGEX_GetNameTableInfo(re: CPointer<Unit>): CPointer<std.regex.NameTableInfo>
+foreign func CJ_REGEX_GetNameTableInfo(re: CPointer<Unit>): CPointer<std.regex.NameTableInfo>
 
-func CJ_REGEX_FreeCode(re: CPointer<Unit>): Unit
+foreign func CJ_REGEX_FreeCode(re: CPointer<Unit>): Unit
 
-func CJ_REGEX_FreeMatchData(md: CPointer<Unit>): Unit
+foreign func CJ_REGEX_FreeMatchData(md: CPointer<Unit>): Unit
 
-func CJ_REGEX_Count(re: CPointer<Unit>, cinput: CString, length: UIntNative, offset: UIntNative, end: UIntNative, matchData: CPointer<Unit>): Int64
+foreign func CJ_REGEX_Count(re: CPointer<Unit>, cinput: CString, length: UIntNative, offset: UIntNative, end: UIntNative, matchData: CPointer<Unit>): Int64
 
-func release(cString: CString): Unit
+func release(cString: CString): Unit { /* compiled code */ }
 
-func release(pcre2md: CPointer<Unit>): Unit
+func release(pcre2md: CPointer<Unit>): Unit { /* compiled code */ }
 
 enum RegexFlag {
     | IgnoreCase
@@ -234,9 +234,9 @@ enum RegexFlag {
 
     | Unicode
 
-    func value: UInt32
+    func value(): UInt32 { /* compiled code */ }
 
-    func getValue(flags: std.core.Array<std.regex.RegexFlag>): UInt32
+    static func getValue(flags: std.core.Array<std.regex.RegexFlag>): UInt32 { /* compiled code */ }
 }
 
 class RegexOption <: std.core.Object & std.core.ToString {
@@ -244,25 +244,25 @@ class RegexOption <: std.core.Object & std.core.ToString {
 
     init() { /* compiled code */ }
 
-    func ignoreCase: std.regex.RegexOption
+    func ignoreCase(): std.regex.RegexOption { /* compiled code */ }
 
-    func multiLine: std.regex.RegexOption
+    func multiLine(): std.regex.RegexOption { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func toFlags: std.core.Array<std.regex.RegexFlag>
+    func toFlags(): std.core.Array<std.regex.RegexFlag> { /* compiled code */ }
 }
 
 let _phantom: std.core.Object
 
 let _rf: std.sync.AtomicReference<std.core.Object>
 
-func keepAlive(o: std.core.Object): Unit
+func keepAlive(o: std.core.Object): Unit { /* compiled code */ }
 
 class RegexException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }

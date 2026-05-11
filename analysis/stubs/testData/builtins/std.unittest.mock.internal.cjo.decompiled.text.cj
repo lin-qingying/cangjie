@@ -7,21 +7,21 @@ import std.collection.ArrayList
 import std.core.*
 import std.collection.*
 
-func createMock(handler: std.unittest.mock.`internal`.CallHandler): T
+func createMock(handler: std.unittest.mock.`internal`.CallHandler): T { /* compiled code */ }
 
 interface CallHandler {
-    func onCall(call: std.unittest.mock.`internal`.Call): std.unittest.mock.`internal`.OnCall
+    func onCall(call: std.unittest.mock.`internal`.Call): std.unittest.mock.`internal`.OnCall { /* compiled code */ }
 
-    func requireMockObject(obj: T): T
+    func requireMockObject(obj: T): T { /* compiled code */ }
 
-    func recordStatic(callHandler: std.unittest.mock.`internal`.CallHandler): Unit
+    static func recordStatic(callHandler: std.unittest.mock.`internal`.CallHandler): Unit { /* compiled code */ }
 
-    func clearStatic: std.unittest.mock.`internal`.CallHandler
+    static func clearStatic(): std.unittest.mock.`internal`.CallHandler { /* compiled code */ }
 
-    func currentStatic: std.unittest.mock.`internal`.CallHandler
+    static func currentStatic(): std.unittest.mock.`internal`.CallHandler { /* compiled code */ }
 }
 
-func createSpy(handler: std.unittest.mock.`internal`.CallHandler, objectToSpyOn: T): T
+func createSpy(handler: std.unittest.mock.`internal`.CallHandler, objectToSpyOn: T): T { /* compiled code */ }
 
 var staticCallHandlers: std.collection.ArrayList<std.unittest.mock.`internal`.CallHandler>
 
@@ -53,7 +53,7 @@ enum OnCall {
     | ReturnDefault
 }
 
-func requireMockObject(obj: T): T
+func requireMockObject(obj: T): T { /* compiled code */ }
 
 struct FuncInfo {
     let id: std.unittest.mock.`internal`.DeclId
@@ -80,11 +80,11 @@ struct FuncInfo {
 }
 
 struct DeclId <: std.core.Equatable<std.unittest.mock.`internal`.DeclId> & std.core.Hashable {
-    operator func ==(that: std.unittest.mock.`internal`.DeclId): Bool
+    operator func ==(that: std.unittest.mock.`internal`.DeclId): Bool { /* compiled code */ }
 
-    operator func !=(that: std.unittest.mock.`internal`.DeclId): Bool
+    operator func !=(that: std.unittest.mock.`internal`.DeclId): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
     let mangledName: std.core.String
 
@@ -134,67 +134,67 @@ enum DeclKind {
 }
 
 interface HasDefaultValueForStub {
-    func defaultValueForStub: T
+    static func defaultValueForStub(): T { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Unit
+    static func defaultValueForStub(): Unit { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Int8
+    static func defaultValueForStub(): Int8 { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Int16
+    static func defaultValueForStub(): Int16 { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Int32
+    static func defaultValueForStub(): Int32 { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Int64
+    static func defaultValueForStub(): Int64 { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Float16
+    static func defaultValueForStub(): Float16 { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Float32
+    static func defaultValueForStub(): Float32 { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Float64
+    static func defaultValueForStub(): Float64 { /* compiled code */ }
 }
 
 extend Extend <: HasDefaultValueForStub {
-    func defaultValueForStub: Bool
+    static func defaultValueForStub(): Bool { /* compiled code */ }
 }
 
 extend String <: HasDefaultValueForStub {
-    func defaultValueForStub: std.core.String
+    static func defaultValueForStub(): std.core.String { /* compiled code */ }
 }
 
 extend Option <: HasDefaultValueForStub {
-    func defaultValueForStub: std.core.Option<T>
+    static func defaultValueForStub(): std.core.Option<T> { /* compiled code */ }
 }
 
 extend Array <: HasDefaultValueForStub {
-    func defaultValueForStub: std.core.Array<T>
+    static func defaultValueForStub(): std.core.Array<T> { /* compiled code */ }
 }
 
 extend ArrayList <: HasDefaultValueForStub {
-    func defaultValueForStub: std.collection.ArrayList<T>
+    static func defaultValueForStub(): std.collection.ArrayList<T> { /* compiled code */ }
 }
 
 extend HashSet <: HasDefaultValueForStub {
-    func defaultValueForStub: std.collection.HashSet<T>
+    static func defaultValueForStub(): std.collection.HashSet<T> { /* compiled code */ }
 }
 
 extend HashMap <: HasDefaultValueForStub {
-    func defaultValueForStub: std.collection.HashMap<K, V>
+    static func defaultValueForStub(): std.collection.HashMap<K, V> { /* compiled code */ }
 }
 
 class IllegalMockCallException <: std.core.Exception {
@@ -210,7 +210,7 @@ class MockReturnValueTypeMismatchException <: std.core.Exception {
 }
 
 interface Mocked {
-    func getHandler: std.unittest.mock.`internal`.CallHandler
+    func getHandler(): std.unittest.mock.`internal`.CallHandler { /* compiled code */ }
 }
 
 struct MockZeroValue {

@@ -18,107 +18,107 @@ class AtomicInt8 {
 
     init(val: Int8) { /* compiled code */ }
 
-    func load: Int8
+    func load(): Int8 { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): Int8
+    func load(memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
-    func store(val: Int8): Unit
+    func store(val: Int8): Unit { /* compiled code */ }
 
-    func store(val: Int8, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: Int8, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: Int8): Int8
+    func swap(val: Int8): Int8 { /* compiled code */ }
 
-    func swap(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8
+    func swap(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
-    func compareAndSwap(old: Int8, new: Int8): Bool
+    func compareAndSwap(old: Int8, new: Int8): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: Int8, new: Int8, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: Int8, new: Int8, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func fetchAdd(val: Int8): Int8
+    func fetchAdd(val: Int8): Int8 { /* compiled code */ }
 
-    func fetchAdd(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8
+    func fetchAdd(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
-    func fetchSub(val: Int8): Int8
+    func fetchSub(val: Int8): Int8 { /* compiled code */ }
 
-    func fetchSub(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8
+    func fetchSub(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
-    func fetchAnd(val: Int8): Int8
+    func fetchAnd(val: Int8): Int8 { /* compiled code */ }
 
-    func fetchAnd(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8
+    func fetchAnd(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
-    func fetchOr(val: Int8): Int8
+    func fetchOr(val: Int8): Int8 { /* compiled code */ }
 
-    func fetchOr(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8
+    func fetchOr(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 
-    func fetchXor(val: Int8): Int8
+    func fetchXor(val: Int8): Int8 { /* compiled code */ }
 
-    func fetchXor(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8
+    func fetchXor(val: Int8, memoryOrder: std.sync.MemoryOrder): Int8 { /* compiled code */ }
 }
 
 enum MemoryOrder {
     | SeqCst
 }
 
-func load(atomicType: ATOMIC_TYPE, memoryOrder: std.sync.MemoryOrder): TYPE
+func load(atomicType: ATOMIC_TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
 let DefaultMemoryOrder: std.sync.MemoryOrder
 
-func store(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): Unit
+func store(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-func swap(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE
+func swap(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func compareAndSwap(atomicType: ATOMIC_TYPE, oldValue: TYPE, newValue: TYPE, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+func compareAndSwap(atomicType: ATOMIC_TYPE, oldValue: TYPE, newValue: TYPE, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-func fetchAdd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE
+func fetchAdd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func fetchSub(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE
+func fetchSub(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func fetchAnd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE
+func fetchAnd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func fetchOr(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE
+func fetchOr(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
-func fetchXor(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE
+func fetchXor(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.sync.MemoryOrder): TYPE { /* compiled code */ }
 
 class AtomicInt16 {
     var value: Int16
 
     init(val: Int16) { /* compiled code */ }
 
-    func load: Int16
+    func load(): Int16 { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): Int16
+    func load(memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
-    func store(val: Int16): Unit
+    func store(val: Int16): Unit { /* compiled code */ }
 
-    func store(val: Int16, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: Int16, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: Int16): Int16
+    func swap(val: Int16): Int16 { /* compiled code */ }
 
-    func swap(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16
+    func swap(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
-    func compareAndSwap(old: Int16, new: Int16): Bool
+    func compareAndSwap(old: Int16, new: Int16): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: Int16, new: Int16, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: Int16, new: Int16, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func fetchAdd(val: Int16): Int16
+    func fetchAdd(val: Int16): Int16 { /* compiled code */ }
 
-    func fetchAdd(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16
+    func fetchAdd(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
-    func fetchSub(val: Int16): Int16
+    func fetchSub(val: Int16): Int16 { /* compiled code */ }
 
-    func fetchSub(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16
+    func fetchSub(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
-    func fetchAnd(val: Int16): Int16
+    func fetchAnd(val: Int16): Int16 { /* compiled code */ }
 
-    func fetchAnd(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16
+    func fetchAnd(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
-    func fetchOr(val: Int16): Int16
+    func fetchOr(val: Int16): Int16 { /* compiled code */ }
 
-    func fetchOr(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16
+    func fetchOr(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 
-    func fetchXor(val: Int16): Int16
+    func fetchXor(val: Int16): Int16 { /* compiled code */ }
 
-    func fetchXor(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16
+    func fetchXor(val: Int16, memoryOrder: std.sync.MemoryOrder): Int16 { /* compiled code */ }
 }
 
 class AtomicInt32 {
@@ -126,41 +126,41 @@ class AtomicInt32 {
 
     init(val: Int32) { /* compiled code */ }
 
-    func load: Int32
+    func load(): Int32 { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): Int32
+    func load(memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
-    func store(val: Int32): Unit
+    func store(val: Int32): Unit { /* compiled code */ }
 
-    func store(val: Int32, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: Int32, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: Int32): Int32
+    func swap(val: Int32): Int32 { /* compiled code */ }
 
-    func swap(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32
+    func swap(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
-    func compareAndSwap(old: Int32, new: Int32): Bool
+    func compareAndSwap(old: Int32, new: Int32): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: Int32, new: Int32, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: Int32, new: Int32, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func fetchAdd(val: Int32): Int32
+    func fetchAdd(val: Int32): Int32 { /* compiled code */ }
 
-    func fetchAdd(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32
+    func fetchAdd(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
-    func fetchSub(val: Int32): Int32
+    func fetchSub(val: Int32): Int32 { /* compiled code */ }
 
-    func fetchSub(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32
+    func fetchSub(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
-    func fetchAnd(val: Int32): Int32
+    func fetchAnd(val: Int32): Int32 { /* compiled code */ }
 
-    func fetchAnd(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32
+    func fetchAnd(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
-    func fetchOr(val: Int32): Int32
+    func fetchOr(val: Int32): Int32 { /* compiled code */ }
 
-    func fetchOr(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32
+    func fetchOr(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 
-    func fetchXor(val: Int32): Int32
+    func fetchXor(val: Int32): Int32 { /* compiled code */ }
 
-    func fetchXor(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32
+    func fetchXor(val: Int32, memoryOrder: std.sync.MemoryOrder): Int32 { /* compiled code */ }
 }
 
 class AtomicInt64 {
@@ -168,41 +168,41 @@ class AtomicInt64 {
 
     init(val: Int64) { /* compiled code */ }
 
-    func load: Int64
+    func load(): Int64 { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): Int64
+    func load(memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
-    func store(val: Int64): Unit
+    func store(val: Int64): Unit { /* compiled code */ }
 
-    func store(val: Int64, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: Int64, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: Int64): Int64
+    func swap(val: Int64): Int64 { /* compiled code */ }
 
-    func swap(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64
+    func swap(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
-    func compareAndSwap(old: Int64, new: Int64): Bool
+    func compareAndSwap(old: Int64, new: Int64): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: Int64, new: Int64, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: Int64, new: Int64, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func fetchAdd(val: Int64): Int64
+    func fetchAdd(val: Int64): Int64 { /* compiled code */ }
 
-    func fetchAdd(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64
+    func fetchAdd(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
-    func fetchSub(val: Int64): Int64
+    func fetchSub(val: Int64): Int64 { /* compiled code */ }
 
-    func fetchSub(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64
+    func fetchSub(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
-    func fetchAnd(val: Int64): Int64
+    func fetchAnd(val: Int64): Int64 { /* compiled code */ }
 
-    func fetchAnd(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64
+    func fetchAnd(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
-    func fetchOr(val: Int64): Int64
+    func fetchOr(val: Int64): Int64 { /* compiled code */ }
 
-    func fetchOr(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64
+    func fetchOr(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 
-    func fetchXor(val: Int64): Int64
+    func fetchXor(val: Int64): Int64 { /* compiled code */ }
 
-    func fetchXor(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64
+    func fetchXor(val: Int64, memoryOrder: std.sync.MemoryOrder): Int64 { /* compiled code */ }
 }
 
 class AtomicUInt8 {
@@ -210,41 +210,41 @@ class AtomicUInt8 {
 
     init(val: UInt8) { /* compiled code */ }
 
-    func load: UInt8
+    func load(): UInt8 { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): UInt8
+    func load(memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
-    func store(val: UInt8): Unit
+    func store(val: UInt8): Unit { /* compiled code */ }
 
-    func store(val: UInt8, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: UInt8, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: UInt8): UInt8
+    func swap(val: UInt8): UInt8 { /* compiled code */ }
 
-    func swap(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8
+    func swap(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
-    func compareAndSwap(old: UInt8, new: UInt8): Bool
+    func compareAndSwap(old: UInt8, new: UInt8): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: UInt8, new: UInt8, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: UInt8, new: UInt8, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func fetchAdd(val: UInt8): UInt8
+    func fetchAdd(val: UInt8): UInt8 { /* compiled code */ }
 
-    func fetchAdd(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8
+    func fetchAdd(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
-    func fetchSub(val: UInt8): UInt8
+    func fetchSub(val: UInt8): UInt8 { /* compiled code */ }
 
-    func fetchSub(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8
+    func fetchSub(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
-    func fetchAnd(val: UInt8): UInt8
+    func fetchAnd(val: UInt8): UInt8 { /* compiled code */ }
 
-    func fetchAnd(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8
+    func fetchAnd(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
-    func fetchOr(val: UInt8): UInt8
+    func fetchOr(val: UInt8): UInt8 { /* compiled code */ }
 
-    func fetchOr(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8
+    func fetchOr(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 
-    func fetchXor(val: UInt8): UInt8
+    func fetchXor(val: UInt8): UInt8 { /* compiled code */ }
 
-    func fetchXor(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8
+    func fetchXor(val: UInt8, memoryOrder: std.sync.MemoryOrder): UInt8 { /* compiled code */ }
 }
 
 class AtomicUInt16 {
@@ -252,41 +252,41 @@ class AtomicUInt16 {
 
     init(val: UInt16) { /* compiled code */ }
 
-    func load: UInt16
+    func load(): UInt16 { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): UInt16
+    func load(memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
-    func store(val: UInt16): Unit
+    func store(val: UInt16): Unit { /* compiled code */ }
 
-    func store(val: UInt16, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: UInt16, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: UInt16): UInt16
+    func swap(val: UInt16): UInt16 { /* compiled code */ }
 
-    func swap(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16
+    func swap(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
-    func compareAndSwap(old: UInt16, new: UInt16): Bool
+    func compareAndSwap(old: UInt16, new: UInt16): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: UInt16, new: UInt16, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: UInt16, new: UInt16, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func fetchAdd(val: UInt16): UInt16
+    func fetchAdd(val: UInt16): UInt16 { /* compiled code */ }
 
-    func fetchAdd(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16
+    func fetchAdd(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
-    func fetchSub(val: UInt16): UInt16
+    func fetchSub(val: UInt16): UInt16 { /* compiled code */ }
 
-    func fetchSub(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16
+    func fetchSub(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
-    func fetchAnd(val: UInt16): UInt16
+    func fetchAnd(val: UInt16): UInt16 { /* compiled code */ }
 
-    func fetchAnd(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16
+    func fetchAnd(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
-    func fetchOr(val: UInt16): UInt16
+    func fetchOr(val: UInt16): UInt16 { /* compiled code */ }
 
-    func fetchOr(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16
+    func fetchOr(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 
-    func fetchXor(val: UInt16): UInt16
+    func fetchXor(val: UInt16): UInt16 { /* compiled code */ }
 
-    func fetchXor(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16
+    func fetchXor(val: UInt16, memoryOrder: std.sync.MemoryOrder): UInt16 { /* compiled code */ }
 }
 
 class AtomicUInt32 {
@@ -294,41 +294,41 @@ class AtomicUInt32 {
 
     init(val: UInt32) { /* compiled code */ }
 
-    func load: UInt32
+    func load(): UInt32 { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): UInt32
+    func load(memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
-    func store(val: UInt32): Unit
+    func store(val: UInt32): Unit { /* compiled code */ }
 
-    func store(val: UInt32, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: UInt32, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: UInt32): UInt32
+    func swap(val: UInt32): UInt32 { /* compiled code */ }
 
-    func swap(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32
+    func swap(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
-    func compareAndSwap(old: UInt32, new: UInt32): Bool
+    func compareAndSwap(old: UInt32, new: UInt32): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: UInt32, new: UInt32, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: UInt32, new: UInt32, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func fetchAdd(val: UInt32): UInt32
+    func fetchAdd(val: UInt32): UInt32 { /* compiled code */ }
 
-    func fetchAdd(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32
+    func fetchAdd(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
-    func fetchSub(val: UInt32): UInt32
+    func fetchSub(val: UInt32): UInt32 { /* compiled code */ }
 
-    func fetchSub(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32
+    func fetchSub(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
-    func fetchAnd(val: UInt32): UInt32
+    func fetchAnd(val: UInt32): UInt32 { /* compiled code */ }
 
-    func fetchAnd(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32
+    func fetchAnd(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
-    func fetchOr(val: UInt32): UInt32
+    func fetchOr(val: UInt32): UInt32 { /* compiled code */ }
 
-    func fetchOr(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32
+    func fetchOr(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 
-    func fetchXor(val: UInt32): UInt32
+    func fetchXor(val: UInt32): UInt32 { /* compiled code */ }
 
-    func fetchXor(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32
+    func fetchXor(val: UInt32, memoryOrder: std.sync.MemoryOrder): UInt32 { /* compiled code */ }
 }
 
 class AtomicUInt64 {
@@ -336,41 +336,41 @@ class AtomicUInt64 {
 
     init(val: UInt64) { /* compiled code */ }
 
-    func load: UInt64
+    func load(): UInt64 { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): UInt64
+    func load(memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
-    func store(val: UInt64): Unit
+    func store(val: UInt64): Unit { /* compiled code */ }
 
-    func store(val: UInt64, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: UInt64, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: UInt64): UInt64
+    func swap(val: UInt64): UInt64 { /* compiled code */ }
 
-    func swap(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64
+    func swap(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
-    func compareAndSwap(old: UInt64, new: UInt64): Bool
+    func compareAndSwap(old: UInt64, new: UInt64): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: UInt64, new: UInt64, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: UInt64, new: UInt64, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func fetchAdd(val: UInt64): UInt64
+    func fetchAdd(val: UInt64): UInt64 { /* compiled code */ }
 
-    func fetchAdd(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64
+    func fetchAdd(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
-    func fetchSub(val: UInt64): UInt64
+    func fetchSub(val: UInt64): UInt64 { /* compiled code */ }
 
-    func fetchSub(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64
+    func fetchSub(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
-    func fetchAnd(val: UInt64): UInt64
+    func fetchAnd(val: UInt64): UInt64 { /* compiled code */ }
 
-    func fetchAnd(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64
+    func fetchAnd(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
-    func fetchOr(val: UInt64): UInt64
+    func fetchOr(val: UInt64): UInt64 { /* compiled code */ }
 
-    func fetchOr(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64
+    func fetchOr(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 
-    func fetchXor(val: UInt64): UInt64
+    func fetchXor(val: UInt64): UInt64 { /* compiled code */ }
 
-    func fetchXor(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64
+    func fetchXor(val: UInt64, memoryOrder: std.sync.MemoryOrder): UInt64 { /* compiled code */ }
 }
 
 class AtomicBool {
@@ -378,25 +378,25 @@ class AtomicBool {
 
     init(val: Bool) { /* compiled code */ }
 
-    func load: Bool
+    func load(): Bool { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): Bool
+    func load(memoryOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func store(val: Bool): Unit
+    func store(val: Bool): Unit { /* compiled code */ }
 
-    func store(val: Bool, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: Bool, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: Bool): Bool
+    func swap(val: Bool): Bool { /* compiled code */ }
 
-    func swap(val: Bool, memoryOrder: std.sync.MemoryOrder): Bool
+    func swap(val: Bool, memoryOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: Bool, new: Bool): Bool
+    func compareAndSwap(old: Bool, new: Bool): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: Bool, new: Bool, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: Bool, new: Bool, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 
-    func transBoolToInt8(v: Bool): Int8
+    func transBoolToInt8(v: Bool): Int8 { /* compiled code */ }
 
-    func transInt8ToBool(v: Int8): Bool
+    func transInt8ToBool(v: Int8): Bool { /* compiled code */ }
 }
 
 class AtomicReference {
@@ -404,21 +404,21 @@ class AtomicReference {
 
     init(val: T) { /* compiled code */ }
 
-    func load: T
+    func load(): T { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): T
+    func load(memoryOrder: std.sync.MemoryOrder): T { /* compiled code */ }
 
-    func store(val: T): Unit
+    func store(val: T): Unit { /* compiled code */ }
 
-    func store(val: T, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: T, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: T): T
+    func swap(val: T): T { /* compiled code */ }
 
-    func swap(val: T, memoryOrder: std.sync.MemoryOrder): T
+    func swap(val: T, memoryOrder: std.sync.MemoryOrder): T { /* compiled code */ }
 
-    func compareAndSwap(old: T, new: T): Bool
+    func compareAndSwap(old: T, new: T): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: T, new: T, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: T, new: T, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 }
 
 class AtomicOptionReference {
@@ -428,21 +428,21 @@ class AtomicOptionReference {
 
     init(val: std.core.Option<T>) { /* compiled code */ }
 
-    func load: std.core.Option<T>
+    func load(): std.core.Option<T> { /* compiled code */ }
 
-    func load(memoryOrder: std.sync.MemoryOrder): std.core.Option<T>
+    func load(memoryOrder: std.sync.MemoryOrder): std.core.Option<T> { /* compiled code */ }
 
-    func store(val: std.core.Option<T>): Unit
+    func store(val: std.core.Option<T>): Unit { /* compiled code */ }
 
-    func store(val: std.core.Option<T>, memoryOrder: std.sync.MemoryOrder): Unit
+    func store(val: std.core.Option<T>, memoryOrder: std.sync.MemoryOrder): Unit { /* compiled code */ }
 
-    func swap(val: std.core.Option<T>): std.core.Option<T>
+    func swap(val: std.core.Option<T>): std.core.Option<T> { /* compiled code */ }
 
-    func swap(val: std.core.Option<T>, memoryOrder: std.sync.MemoryOrder): std.core.Option<T>
+    func swap(val: std.core.Option<T>, memoryOrder: std.sync.MemoryOrder): std.core.Option<T> { /* compiled code */ }
 
-    func compareAndSwap(old: std.core.Option<T>, new: std.core.Option<T>): Bool
+    func compareAndSwap(old: std.core.Option<T>, new: std.core.Option<T>): Bool { /* compiled code */ }
 
-    func compareAndSwap(old: std.core.Option<T>, new: std.core.Option<T>, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool
+    func compareAndSwap(old: std.core.Option<T>, new: std.core.Option<T>, successOrder: std.sync.MemoryOrder, failureOrder: std.sync.MemoryOrder): Bool { /* compiled code */ }
 }
 
 class Barrier {
@@ -450,7 +450,7 @@ class Barrier {
 
     init(count: Int64) { /* compiled code */ }
 
-    func wait(timeout: std.core.Duration): Unit
+    func wait(timeout: std.core.Duration): Unit { /* compiled code */ }
 }
 
 class SyncCounter {
@@ -460,19 +460,21 @@ class SyncCounter {
 
     init(count: Int64) { /* compiled code */ }
 
-    prop count: Int64
+    prop count: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func dec: Unit
+    func dec(): Unit { /* compiled code */ }
 
-    func waitUntilZero(timeout: std.core.Duration): Unit
+    func waitUntilZero(timeout: std.core.Duration): Unit { /* compiled code */ }
 }
 
 interface IReentrantMutex {
-    func lock: Unit
+    func lock(): Unit { /* compiled code */ }
 
-    func tryLock: Bool
+    func tryLock(): Bool { /* compiled code */ }
 
-    func unlock: Unit
+    func unlock(): Unit { /* compiled code */ }
 }
 
 class IllegalSynchronizationStateException <: std.core.Exception {
@@ -480,33 +482,33 @@ class IllegalSynchronizationStateException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 interface Lock {
-    func lock: Unit
+    func lock(): Unit { /* compiled code */ }
 
-    func tryLock: Bool
+    func tryLock(): Bool { /* compiled code */ }
 
-    func unlock: Unit
+    func unlock(): Unit { /* compiled code */ }
 }
 
 interface UniqueLock <: std.sync.Lock {
-    func condition: std.sync.Condition
+    func condition(): std.sync.Condition { /* compiled code */ }
 }
 
 interface Condition {
-    func wait: Unit
+    func wait(): Unit { /* compiled code */ }
 
-    func wait(timeout: std.core.Duration): Bool
+    func wait(timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func waitUntil(predicate: () -> Bool): Unit
+    func waitUntil(predicate: () -> Bool): Unit { /* compiled code */ }
 
-    func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool
+    func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func notify: Unit
+    func notify(): Unit { /* compiled code */ }
 
-    func notifyAll: Unit
+    func notifyAll(): Unit { /* compiled code */ }
 }
 
 class Monitor <: std.sync.ReentrantMutex {
@@ -514,25 +516,25 @@ class Monitor <: std.sync.ReentrantMutex {
 
     init(mutex: std.sync.Mutex) { /* compiled code */ }
 
-    func wait(timeout: std.core.Duration): Bool
+    func wait(timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func notify: Unit
+    func notify(): Unit { /* compiled code */ }
 
-    func notifyAll: Unit
+    func notifyAll(): Unit { /* compiled code */ }
 }
 
 class Mutex <: std.core.Object & std.sync.UniqueLock {
     init() { /* compiled code */ }
 
-    func lock: Unit
+    func lock(): Unit { /* compiled code */ }
 
-    func tryLock: Bool
+    func tryLock(): Bool { /* compiled code */ }
 
-    func unlock: Unit
+    func unlock(): Unit { /* compiled code */ }
 
-    func condition: std.sync.Condition
+    func condition(): std.sync.Condition { /* compiled code */ }
 
-    func checkMutexStatus: Unit
+    func checkMutexStatus(): Unit { /* compiled code */ }
 }
 
 class ReentrantMutex <: std.core.Object & std.sync.Lock {
@@ -542,13 +544,13 @@ class ReentrantMutex <: std.core.Object & std.sync.Lock {
 
     init(mutex: std.sync.Mutex) { /* compiled code */ }
 
-    func lock: Unit
+    func lock(): Unit { /* compiled code */ }
 
-    func tryLock: Bool
+    func tryLock(): Bool { /* compiled code */ }
 
-    func unlock: Unit
+    func unlock(): Unit { /* compiled code */ }
 
-    func checkMutexStatus: Unit
+    func checkMutexStatus(): Unit { /* compiled code */ }
 }
 
 struct ConditionID {
@@ -562,13 +564,13 @@ struct ConditionID {
 class MultiConditionMonitor <: std.sync.ReentrantMutex {
     init() { /* compiled code */ }
 
-    func newCondition: std.sync.ConditionID
+    func newCondition(): std.sync.ConditionID { /* compiled code */ }
 
-    func wait(condID: std.sync.ConditionID, timeout: std.core.Duration): Bool
+    func wait(condID: std.sync.ConditionID, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func notify(condID: std.sync.ConditionID): Unit
+    func notify(condID: std.sync.ConditionID): Unit { /* compiled code */ }
 
-    func notifyAll(condID: std.sync.ConditionID): Unit
+    func notifyAll(condID: std.sync.ConditionID): Unit { /* compiled code */ }
 }
 
 class WaitQueue {
@@ -580,46 +582,46 @@ class MutexCondition <: std.core.Object & std.sync.Condition {
 
     init(mutex: std.sync.Mutex) { /* compiled code */ }
 
-    func wait: Unit
+    func wait(): Unit { /* compiled code */ }
 
-    func wait(timeout: std.core.Duration): Bool
+    func wait(timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func waitUntil(predicate: () -> Bool): Unit
+    func waitUntil(predicate: () -> Bool): Unit { /* compiled code */ }
 
-    func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool
+    func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func notify: Unit
+    func notify(): Unit { /* compiled code */ }
 
-    func notifyAll: Unit
+    func notifyAll(): Unit { /* compiled code */ }
 
-    func getTimeoutNanos(timeout: std.core.Duration): Int64
+    func getTimeoutNanos(timeout: std.core.Duration): Int64 { /* compiled code */ }
 }
 
-func mutexInit(mutex: std.sync.Mutex): Bool
+func mutexInit(mutex: std.sync.Mutex): Bool { /* compiled code */ }
 
-func mutexLock(mutex: std.sync.Mutex): Unit
+func mutexLock(mutex: std.sync.Mutex): Unit { /* compiled code */ }
 
-func mutexTryLock(mutex: std.sync.Mutex): Bool
+func mutexTryLock(mutex: std.sync.Mutex): Bool { /* compiled code */ }
 
-func mutexCheckStatus(mutex: std.sync.Mutex): Bool
+func mutexCheckStatus(mutex: std.sync.Mutex): Bool { /* compiled code */ }
 
-func mutexUnlock(mutex: std.sync.Mutex): Unit
+func mutexUnlock(mutex: std.sync.Mutex): Unit { /* compiled code */ }
 
-func monitorWait(monitor: std.sync.Monitor, timeout: Int64): Bool
+func monitorWait(monitor: std.sync.Monitor, timeout: Int64): Bool { /* compiled code */ }
 
-func monitorNotify(monitor: std.sync.Monitor): Unit
+func monitorNotify(monitor: std.sync.Monitor): Unit { /* compiled code */ }
 
-func monitorNotifyAll(monitor: std.sync.Monitor): Unit
+func monitorNotifyAll(monitor: std.sync.Monitor): Unit { /* compiled code */ }
 
-func multiConditionMonitorWait(multiConditionMonitor: std.sync.MultiConditionMonitor, obj: std.core.Object, timeout: Int64): Bool
+func multiConditionMonitorWait(multiConditionMonitor: std.sync.MultiConditionMonitor, obj: std.core.Object, timeout: Int64): Bool { /* compiled code */ }
 
-func multiConditionMonitorNotify(multiConditionMonitor: std.sync.MultiConditionMonitor, obj: std.core.Object): Unit
+func multiConditionMonitorNotify(multiConditionMonitor: std.sync.MultiConditionMonitor, obj: std.core.Object): Unit { /* compiled code */ }
 
-func multiConditionMonitorNotifyAll(multiConditionMonitor: std.sync.MultiConditionMonitor, obj: std.core.Object): Unit
+func multiConditionMonitorNotifyAll(multiConditionMonitor: std.sync.MultiConditionMonitor, obj: std.core.Object): Unit { /* compiled code */ }
 
-func waitQueueInit(obj: std.sync.WaitQueue): Bool
+func waitQueueInit(obj: std.sync.WaitQueue): Bool { /* compiled code */ }
 
-func monitorInit(obj: std.sync.Monitor): Bool
+func monitorInit(obj: std.sync.Monitor): Bool { /* compiled code */ }
 
 class ReadWriteLock {
     let _fair: Bool
@@ -628,21 +630,25 @@ class ReadWriteLock {
 
     let _writeLock: std.sync.UniqueLock
 
-    prop readLock: std.sync.Lock
+    prop readLock: std.sync.Lock {
+        get() { /* compiled code */ }
+    }
 
-    prop writeLock: std.sync.UniqueLock
+    prop writeLock: std.sync.UniqueLock {
+        get() { /* compiled code */ }
+    }
 
     init(fair: Bool) { /* compiled code */ }
 
-    func isFair: Bool
+    func isFair(): Bool { /* compiled code */ }
 }
 
 class ReadLock <: std.core.Object & std.sync.Lock {
-    func lock: Unit
+    func lock(): Unit { /* compiled code */ }
 
-    func tryLock: Bool
+    func tryLock(): Bool { /* compiled code */ }
 
-    func unlock: Unit
+    func unlock(): Unit { /* compiled code */ }
 
     let _readWriteLockImpl: std.sync.ReadWriteLockImpl
 
@@ -656,7 +662,7 @@ class ReadWriteLockImpl {
 
     init(isFair: Bool) { /* compiled code */ }
 
-    func getWriteCount: Int64
+    func getWriteCount(): Int64 { /* compiled code */ }
 
     let writeOwner: std.sync.AtomicInt64
 
@@ -668,31 +674,31 @@ class ReadWriteLockImpl {
 
     let writerSyncList: std.sync.SyncList
 
-    func readLock: Unit
+    func readLock(): Unit { /* compiled code */ }
 
-    func tryReadLock: Bool
+    func tryReadLock(): Bool { /* compiled code */ }
 
-    func readUnlock: Unit
+    func readUnlock(): Unit { /* compiled code */ }
 
-    func writeLock(writeCount: Int64): Unit
+    func writeLock(writeCount: Int64): Unit { /* compiled code */ }
 
-    func tryWriteLock: Bool
+    func tryWriteLock(): Bool { /* compiled code */ }
 
-    func checkWriteLockStatus: Unit
+    func checkWriteLockStatus(): Unit { /* compiled code */ }
 
-    func writeUnlock: Unit
+    func writeUnlock(): Unit { /* compiled code */ }
 
-    func writeUnlock(writeCount: Int64): Unit
+    func writeUnlock(writeCount: Int64): Unit { /* compiled code */ }
 }
 
 class WriteLock <: std.core.Object & std.sync.UniqueLock {
-    func lock: Unit
+    func lock(): Unit { /* compiled code */ }
 
-    func tryLock: Bool
+    func tryLock(): Bool { /* compiled code */ }
 
-    func unlock: Unit
+    func unlock(): Unit { /* compiled code */ }
 
-    func condition: std.sync.Condition
+    func condition(): std.sync.Condition { /* compiled code */ }
 
     let _readWriteLockImpl: std.sync.ReadWriteLockImpl
 
@@ -702,17 +708,17 @@ class WriteLock <: std.core.Object & std.sync.UniqueLock {
 class ReadWriteLockCondition <: std.core.Object & std.sync.Condition {
     let waitQueue: std.sync.SyncList
 
-    func wait: Unit
+    func wait(): Unit { /* compiled code */ }
 
-    func wait(timeout: std.core.Duration): Bool
+    func wait(timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func waitUntil(predicate: () -> Bool): Unit
+    func waitUntil(predicate: () -> Bool): Unit { /* compiled code */ }
 
-    func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool
+    func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func notify: Unit
+    func notify(): Unit { /* compiled code */ }
 
-    func notifyAll: Unit
+    func notifyAll(): Unit { /* compiled code */ }
 
     let lock: std.sync.ReadWriteLockImpl
 
@@ -724,13 +730,13 @@ class SyncList {
 
     let m: std.sync.Monitor
 
-    func waitIf(pred: () -> Bool, timeout: std.core.Duration): Unit
+    func waitIf(pred: () -> Bool, timeout: std.core.Duration): Unit { /* compiled code */ }
 
-    func waitInLock(unlock: () -> Unit, timeout: std.core.Duration): Bool
+    func waitInLock(unlock: () -> Unit, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func notifyOne: Bool
+    func notifyOne(): Bool { /* compiled code */ }
 
-    func notifyAll: Bool
+    func notifyAll(): Bool { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -748,9 +754,13 @@ class ReentrantReadWriteMutex {
 
     init(mode: std.sync.ReadWriteMutexMode) { /* compiled code */ }
 
-    prop readMutex: std.sync.ReentrantReadMutex
+    prop readMutex: std.sync.ReentrantReadMutex {
+        get() { /* compiled code */ }
+    }
 
-    prop writeMutex: std.sync.ReentrantWriteMutex
+    prop writeMutex: std.sync.ReentrantWriteMutex {
+        get() { /* compiled code */ }
+    }
 }
 
 class ReentrantReadMutex <: std.sync.ReentrantMutex {
@@ -758,11 +768,11 @@ class ReentrantReadMutex <: std.sync.ReentrantMutex {
 
     init(rwMutex: std.sync.ReadWriteLockImpl) { /* compiled code */ }
 
-    func lock: Unit
+    func lock(): Unit { /* compiled code */ }
 
-    func tryLock: Bool
+    func tryLock(): Bool { /* compiled code */ }
 
-    func unlock: Unit
+    func unlock(): Unit { /* compiled code */ }
 }
 
 class ReentrantWriteMutex <: std.sync.ReentrantMutex {
@@ -770,11 +780,11 @@ class ReentrantWriteMutex <: std.sync.ReentrantMutex {
 
     init(rwMutex: std.sync.ReadWriteLockImpl) { /* compiled code */ }
 
-    func lock: Unit
+    func lock(): Unit { /* compiled code */ }
 
-    func tryLock: Bool
+    func tryLock(): Bool { /* compiled code */ }
 
-    func unlock: Unit
+    func unlock(): Unit { /* compiled code */ }
 }
 
 class Semaphore {
@@ -786,13 +796,15 @@ class Semaphore {
 
     init(count: Int64) { /* compiled code */ }
 
-    prop count: Int64
+    prop count: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func acquire(amount: Int64): Unit
+    func acquire(amount: Int64): Unit { /* compiled code */ }
 
-    func tryAcquire(amount: Int64): Bool
+    func tryAcquire(amount: Int64): Bool { /* compiled code */ }
 
-    func release(amount: Int64): Unit
+    func release(amount: Int64): Unit { /* compiled code */ }
 }
 
 let MAX_TIMEOUT_DURATION: std.core.Duration
@@ -802,9 +814,9 @@ class NotifyOnce {
 
     var notified: Bool
 
-    func notify: Unit
+    func notify(): Unit { /* compiled code */ }
 
-    func wait(timeout: std.core.Duration): Bool
+    func wait(timeout: std.core.Duration): Bool { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -830,29 +842,29 @@ class Timer <: std.core.Object & std.core.Equatable<std.sync.Timer> & std.core.H
 
     init(delay: std.core.Duration, task: () -> std.core.Option<std.core.Duration>) { /* compiled code */ }
 
-    func after(delay: std.core.Duration, task: () -> std.core.Option<std.core.Duration>): std.sync.Timer
+    static func after(delay: std.core.Duration, task: () -> std.core.Option<std.core.Duration>): std.sync.Timer { /* compiled code */ }
 
-    func once(delay: std.core.Duration, task: () -> Unit): std.sync.Timer
+    static func once(delay: std.core.Duration, task: () -> Unit): std.sync.Timer { /* compiled code */ }
 
-    func repeat(delay: std.core.Duration, interval: std.core.Duration, task: () -> Unit, style: std.sync.CatchupStyle): std.sync.Timer
+    static func repeat(delay: std.core.Duration, interval: std.core.Duration, task: () -> Unit, style: std.sync.CatchupStyle): std.sync.Timer { /* compiled code */ }
 
-    func repeatDuring(period: std.core.Duration, delay: std.core.Duration, interval: std.core.Duration, task: () -> Unit, style: std.sync.CatchupStyle): std.sync.Timer
+    static func repeatDuring(period: std.core.Duration, delay: std.core.Duration, interval: std.core.Duration, task: () -> Unit, style: std.sync.CatchupStyle): std.sync.Timer { /* compiled code */ }
 
-    func repeatTimes(count: Int64, delay: std.core.Duration, interval: std.core.Duration, task: () -> Unit, style: std.sync.CatchupStyle): std.sync.Timer
+    static func repeatTimes(count: Int64, delay: std.core.Duration, interval: std.core.Duration, task: () -> Unit, style: std.sync.CatchupStyle): std.sync.Timer { /* compiled code */ }
 
-    func cancel: Unit
+    func cancel(): Unit { /* compiled code */ }
 
-    operator func ==(rhs: std.sync.Timer): Bool
+    operator func ==(rhs: std.sync.Timer): Bool { /* compiled code */ }
 
-    operator func !=(rhs: std.sync.Timer): Bool
+    operator func !=(rhs: std.sync.Timer): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    func reload(duration: std.core.Duration): Unit
+    func reload(duration: std.core.Duration): Unit { /* compiled code */ }
 }
 
 class TimerScheduler {
-    func getScheduler(id: Int64): std.sync.TimerScheduler
+    static func getScheduler(id: Int64): std.sync.TimerScheduler { /* compiled code */ }
 
     let queue: std.sync.TimerQueue
 
@@ -864,9 +876,9 @@ class TimerScheduler {
 
     let cancelCount: std.sync.AtomicInt64
 
-    func add(timer: std.sync.Timer): std.core.Any
+    func add(timer: std.sync.Timer): std.core.Any { /* compiled code */ }
 
-    func addCancelCount: Int64
+    func addCancelCount(): Int64 { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -879,15 +891,15 @@ enum CatchupStyle {
     | Skip
 }
 
-func delayStyleTick(interval: std.core.Duration): () -> std.core.Option<std.core.Duration>
+func delayStyleTick(interval: std.core.Duration): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func burstStyleTick(delay: std.core.Duration, interval: std.core.Duration): () -> std.core.Option<std.core.Duration>
+func burstStyleTick(delay: std.core.Duration, interval: std.core.Duration): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func skipStyleTick(delay: std.core.Duration, interval: std.core.Duration): () -> std.core.Option<std.core.Duration>
+func skipStyleTick(delay: std.core.Duration, interval: std.core.Duration): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func tickDuring(delay: std.core.Duration, period: std.core.Duration, nextTick: () -> std.core.Option<std.core.Duration>): () -> std.core.Option<std.core.Duration>
+func tickDuring(delay: std.core.Duration, period: std.core.Duration, nextTick: () -> std.core.Option<std.core.Duration>): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func tickTimes(count: Int64, nextTick: () -> std.core.Option<std.core.Duration>): () -> std.core.Option<std.core.Duration>
+func tickTimes(count: Int64, nextTick: () -> std.core.Option<std.core.Duration>): () -> std.core.Option<std.core.Duration> { /* compiled code */ }
 
 class TimerQueue {
     let front: std.sync.AtomicReference<std.sync.TimerBlock>
@@ -896,27 +908,31 @@ class TimerQueue {
 
     init() { /* compiled code */ }
 
-    func add(element: std.sync.Timer): Unit
+    func add(element: std.sync.Timer): Unit { /* compiled code */ }
 
-    func remove: std.core.Option<std.sync.Timer>
+    func remove(): std.core.Option<std.sync.Timer> { /* compiled code */ }
 
-    func peek: std.core.Option<std.sync.Timer>
+    func peek(): std.core.Option<std.sync.Timer> { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 }
 
 class TimerHeap {
     let data: std.sync.TimerList
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop isEmpty: Bool
+    prop isEmpty: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func add(e: std.sync.Timer): Unit
+    func add(e: std.sync.Timer): Unit { /* compiled code */ }
 
-    func top: std.sync.Timer
+    func top(): std.sync.Timer { /* compiled code */ }
 
-    func poll: std.sync.Timer
+    func poll(): std.sync.Timer { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -928,17 +944,19 @@ class TimerList {
 
     init() { /* compiled code */ }
 
-    func add(element: std.sync.Timer): Unit
+    func add(element: std.sync.Timer): Unit { /* compiled code */ }
 
-    func remove(at: Int64): std.sync.Timer
+    func remove(at: Int64): std.sync.Timer { /* compiled code */ }
 
-    operator func [](index: Int64): std.sync.Timer
+    operator func [](index: Int64): std.sync.Timer { /* compiled code */ }
 
-    operator func [](index: Int64, value: std.sync.Timer): Unit
+    operator func [](index: Int64, value: std.sync.Timer): Unit { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 }
 
 enum PushResult {
@@ -970,17 +988,17 @@ class TimerBlock {
 
     let buffer: std.core.Array<std.sync.Timer>
 
-    func push(element: std.sync.Timer): Bool
+    func push(element: std.sync.Timer): Bool { /* compiled code */ }
 
-    func pop: std.sync.PopResult
+    func pop(): std.sync.PopResult { /* compiled code */ }
 
-    func front: std.sync.PopResult
+    func front(): std.sync.PopResult { /* compiled code */ }
 
     let version: UInt64
 
     init(version: UInt64) { /* compiled code */ }
 }
 
-func newBlock(tailBlock: std.sync.TimerBlock, tail: std.sync.AtomicReference<std.sync.TimerBlock>): Unit
+func newBlock(tailBlock: std.sync.TimerBlock, tail: std.sync.AtomicReference<std.sync.TimerBlock>): Unit { /* compiled code */ }
 
-func nextBlock(headBlock: std.sync.TimerBlock, head: std.sync.AtomicReference<std.sync.TimerBlock>, tail: std.sync.AtomicReference<std.sync.TimerBlock>): Bool
+func nextBlock(headBlock: std.sync.TimerBlock, head: std.sync.AtomicReference<std.sync.TimerBlock>, tail: std.sync.AtomicReference<std.sync.TimerBlock>): Bool { /* compiled code */ }

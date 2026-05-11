@@ -143,48 +143,48 @@ let X_OK: Int32
 
 let F_OK: Int32
 
-func `open`(path: std.core.String, oflag: Int32, flag: UInt32): Int32
+func `open`(path: std.core.String, oflag: Int32, flag: UInt32): Int32 { /* compiled code */ }
 
-func `open`(path: std.core.String, oflag: Int32): Int32
+func `open`(path: std.core.String, oflag: Int32): Int32 { /* compiled code */ }
 
-func creat(path: std.core.String, flag: UInt32): Int32
+func creat(path: std.core.String, flag: UInt32): Int32 { /* compiled code */ }
 
-func close(fd: Int32): Int32
+func close(fd: Int32): Int32 { /* compiled code */ }
 
-func lseek(fd: Int32, offset: Int64, whence: Int32): Int64
+func lseek(fd: Int32, offset: Int64, whence: Int32): Int64 { /* compiled code */ }
 
-func dup(fd: Int32): Int32
+func dup(fd: Int32): Int32 { /* compiled code */ }
 
-func dup2(fd: Int32, fd2: Int32): Int32
+func dup2(fd: Int32, fd2: Int32): Int32 { /* compiled code */ }
 
-func read(fd: Int32, buffer: CPointer<UInt8>, nbyte: UIntNative): IntNative
+func read(fd: Int32, buffer: CPointer<UInt8>, nbyte: UIntNative): IntNative { /* compiled code */ }
 
-func write(fd: Int32, buffer: CPointer<UInt8>, nbyte: UIntNative): IntNative
+func write(fd: Int32, buffer: CPointer<UInt8>, nbyte: UIntNative): IntNative { /* compiled code */ }
 
-func isReg(path: std.core.String): Bool
+func isReg(path: std.core.String): Bool { /* compiled code */ }
 
-func isDir(path: std.core.String): Bool
+func isDir(path: std.core.String): Bool { /* compiled code */ }
 
-func isChr(path: std.core.String): Bool
+func isChr(path: std.core.String): Bool { /* compiled code */ }
 
-func isBlk(path: std.core.String): Bool
+func isBlk(path: std.core.String): Bool { /* compiled code */ }
 
-func isFIFO(path: std.core.String): Bool
+func isFIFO(path: std.core.String): Bool { /* compiled code */ }
 
-func chdir(path: std.core.String): Int32
+func chdir(path: std.core.String): Int32 { /* compiled code */ }
 
-func getcwd: std.core.String
+func getcwd(): std.core.String { /* compiled code */ }
 
-func remove(path: std.core.String): Int32
+func remove(path: std.core.String): Int32 { /* compiled code */ }
 
-func rename(oldName: std.core.String, newName: std.core.String): Int32
+func rename(oldName: std.core.String, newName: std.core.String): Int32 { /* compiled code */ }
 
-func getpid: Int32
+func getpid(): Int32 { /* compiled code */ }
 
-func access(path: std.core.String, mode: Int32): Int32
+func access(path: std.core.String, mode: Int32): Int32 { /* compiled code */ }
 
-func umask(cmask: UInt32): UInt32
+func umask(cmask: UInt32): UInt32 { /* compiled code */ }
 
-func chmod(path: std.core.String, mode: UInt32): Int32
+func chmod(path: std.core.String, mode: UInt32): Int32 { /* compiled code */ }
 
-func isatty(fd: Int32): Bool
+func isatty(fd: Int32): Bool { /* compiled code */ }

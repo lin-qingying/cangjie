@@ -567,6 +567,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=TimeZone]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -608,7 +610,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -628,7 +630,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TimeZone]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -666,7 +668,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TimeZone]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -700,6 +702,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -763,6 +766,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
@@ -869,7 +873,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TimeZone]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=UnixEpoch]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -877,11 +881,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=year]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=month]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -892,16 +900,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Month]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=monthValue]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=dayOfMonth]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=dayOfWeek]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -912,31 +926,43 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DayOfWeek]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=dayOfYear]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=hour]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=minute]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=second]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=nanosecond]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isoWeek]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -946,6 +972,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
               CangJieStub$BASIC_TYPE[basicType=Int64]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=zone]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -956,6 +984,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=TimeZone]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=zoneId]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -966,6 +996,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=zoneOffset]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -976,6 +1008,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=date]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -992,6 +1026,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Month]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=time]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -1003,6 +1039,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
               CangJieStub$BASIC_TYPE[basicType=Int64]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=DateTime]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -1026,7 +1064,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=TimeZone]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1046,7 +1084,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1056,7 +1095,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1076,7 +1115,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1095,7 +1134,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1143,7 +1182,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1196,7 +1235,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1235,7 +1274,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1279,7 +1318,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1299,7 +1338,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1328,7 +1367,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1357,7 +1396,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=DateTime]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1387,6 +1426,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1397,6 +1437,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1427,6 +1468,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1437,6 +1479,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1487,6 +1530,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
@@ -1978,6 +2022,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$TUPLE_TYPE
         CangJieStub$TYPE_REFERENCE
@@ -2086,7 +2131,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.time.Month, name=December, typeCount=0]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2102,16 +2147,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2218,7 +2266,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.time.DayOfWeek, name=Saturday, typeCount=0]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2234,16 +2282,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2399,7 +2450,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2427,6 +2478,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -2676,7 +2729,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2971,21 +3025,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3005,7 +3062,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Rune]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3019,7 +3076,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3033,7 +3090,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3047,7 +3104,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3071,7 +3128,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3085,7 +3142,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3099,7 +3156,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3109,21 +3166,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$BASIC_TYPE[basicType=Int64]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3137,7 +3180,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3151,7 +3194,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3165,7 +3208,21 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$BASIC_TYPE[basicType=Int64]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3187,7 +3244,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
               CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3201,7 +3258,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3215,7 +3272,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3225,7 +3282,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3235,7 +3292,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3259,7 +3316,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3269,7 +3327,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3279,7 +3338,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3293,7 +3352,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3304,16 +3363,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3323,7 +3384,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3333,7 +3394,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3431,6 +3492,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -3679,7 +3741,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3860,6 +3923,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
@@ -3885,7 +3949,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4258,7 +4322,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4268,12 +4333,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -4284,6 +4351,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -4293,7 +4361,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
         CangJieStub$REFERENCE_EXPRESSION[referencedName=TimeZone]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=NativeClock]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[foreign]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -4304,16 +4384,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
-    CangJieStub$TYPE_REFERENCE
-      CangJieStub$USER_TYPE
-        CangJieStub$USER_TYPE
-          CangJieStub$USER_TYPE
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-          CangJieStub$REFERENCE_EXPRESSION[referencedName=time]
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=NativeClock]
-  CangJieStub$FUNC
-    CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$TUPLE_TYPE
         CangJieStub$TYPE_REFERENCE
@@ -4322,7 +4393,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
           CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4341,7 +4412,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
-    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$MODIFIER_LIST[foreign]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4615,6 +4686,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.time, facadeFqName=std.time
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE

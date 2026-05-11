@@ -312,6 +312,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ArrayList]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -381,7 +383,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -412,6 +414,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -427,6 +430,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -474,6 +478,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=last]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -489,6 +495,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -609,6 +617,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -680,6 +689,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -790,6 +800,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -831,6 +842,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -846,6 +858,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=size]
@@ -853,6 +866,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -890,6 +905,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$FUNC
@@ -1196,6 +1212,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -1221,6 +1238,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1248,9 +1266,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1268,14 +1289,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1806,6 +1831,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -1823,6 +1849,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -1857,6 +1885,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1876,6 +1905,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1891,6 +1921,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1960,9 +1991,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1982,11 +2016,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
@@ -2006,6 +2042,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2035,7 +2072,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2156,6 +2193,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2241,6 +2279,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=first]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -2256,6 +2296,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=last]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -2271,14 +2313,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=capacity]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -2306,6 +2353,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2321,6 +2369,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2336,6 +2385,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2351,6 +2401,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -2366,6 +2417,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2410,7 +2462,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2482,6 +2535,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2638,6 +2692,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2716,6 +2771,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2731,6 +2787,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2759,14 +2816,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=size]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -2782,11 +2844,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2802,6 +2866,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2938,9 +3003,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -2977,6 +3045,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -2992,6 +3061,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3086,6 +3156,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3106,6 +3177,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3195,14 +3267,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3218,6 +3294,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3350,9 +3427,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3365,15 +3444,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3407,9 +3493,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3422,6 +3510,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
   CangJieStub$INTERFACE[classId=std/collection/EquatableCollection, fqName=std.collection.EquatableCollection, name=EquatableCollection, superNames=[Collection]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -3640,6 +3733,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -3824,10 +3918,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=next]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -3852,6 +3951,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=prev]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -3876,6 +3977,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -3921,17 +4024,20 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$CLASS[classId=std/collection/LinkedList, fqName=std.collection.LinkedList, name=LinkedList, superNames=[Object, Collection]]
@@ -4082,6 +4188,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=first]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -4097,6 +4205,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=last]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -4112,6 +4222,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=firstNode]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -4136,6 +4248,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=lastNode]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -4160,11 +4274,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=version]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -4210,6 +4328,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4333,21 +4452,25 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4363,6 +4486,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4378,6 +4502,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4635,6 +4760,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4785,6 +4911,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -5020,9 +5147,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5035,9 +5164,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5057,6 +5192,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5076,6 +5212,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$CLASS[classId=std/collection/TreeMap, fqName=std.collection.TreeMap, name=TreeMap, superNames=[Object, OrderedMap]]
@@ -5379,11 +5516,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5431,6 +5570,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5446,6 +5586,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5463,14 +5604,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5508,9 +5653,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                     CangJieStub$TYPE_REFERENCE
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5548,9 +5696,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                     CangJieStub$TYPE_REFERENCE
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5674,11 +5825,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5698,6 +5851,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6144,6 +6298,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=replaceNode]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6172,6 +6328,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
   CangJieStub$CLASS[classId=std/collection/TreeMapIterator, fqName=std.collection.TreeMapIterator, name=TreeMapIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -6239,6 +6397,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6329,6 +6488,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=first]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6344,6 +6505,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=last]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6359,6 +6522,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=TreeSet]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6402,7 +6567,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -6543,11 +6708,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6563,11 +6730,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6583,6 +6752,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6598,6 +6768,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6683,6 +6854,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6838,6 +7010,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=last]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6853,6 +7027,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -6878,6 +7054,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6893,6 +7070,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6920,6 +7098,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7065,6 +7244,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -7165,6 +7345,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -7180,6 +7361,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$EXTEND[classId=std/collection/ArrayList, extendId=std.collection:ArrayList<:ToString, fqName=std.collection.ArrayList, name=ArrayList, receiverTypeName=ArrayList, superNames=[ToString]]
@@ -7197,6 +7379,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7323,6 +7506,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7349,6 +7533,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7366,24 +7551,31 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=capacity]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7399,6 +7591,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7453,6 +7646,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7468,6 +7662,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7495,6 +7690,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7523,6 +7719,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7538,6 +7735,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7576,6 +7774,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7997,6 +8196,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8131,6 +8331,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8153,6 +8354,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8245,6 +8447,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=last]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -8260,6 +8464,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -8369,6 +8575,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8384,6 +8591,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8450,6 +8658,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                     CangJieStub$TYPE_REFERENCE
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=last]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -8470,9 +8680,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                     CangJieStub$TYPE_REFERENCE
                       CangJieStub$USER_TYPE
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -8493,6 +8706,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9020,6 +9234,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9153,6 +9368,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9198,6 +9414,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=last]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -9213,9 +9431,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$USER_TYPE
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9231,6 +9452,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9419,7 +9641,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9479,6 +9702,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=entrySize]
@@ -9486,11 +9710,15 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=childrenSize]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -9518,6 +9746,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -9757,12 +9986,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=K]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=value]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=V]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=false]
+            CangJieStub$VALUE_PARAMETER_LIST
+              CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -9794,6 +10030,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -9948,6 +10185,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -10052,6 +10290,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -10141,9 +10380,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -10180,6 +10422,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -10264,14 +10507,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -10346,6 +10593,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -10425,6 +10673,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.collection, facadeFqName=st
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE

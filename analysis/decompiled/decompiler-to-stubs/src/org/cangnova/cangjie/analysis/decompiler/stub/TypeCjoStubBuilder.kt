@@ -47,18 +47,26 @@ internal class TypeCjoStubBuilder {
         if (valueParameters.isEmpty() && !createEmptyList) return
         val parameterListStub = CangJiePlaceHolderStubImpl<CjParameterList>(parent, CjStubElementTypes.VALUE_PARAMETER_LIST)
         valueParameters.forEach { valueParameter ->
-            val parameterStub = CangJieParameterStubImpl(
+            val parameterStub = createParameterStub(
                 parent = parameterListStub,
-                fqName = null,
-                name = StringRef.fromString(valueParameter.name.asString()),
-                isMutable = false,
-                hasLetOrVar = false,
-                hasDefaultValue = false,
-                isNamed = false,
-                functionTypeParameterName = null,
+                name = valueParameter.name.asString(),
             )
-            CangJiePlaceHolderStubImpl<CjAnnotations>(parameterStub, CjStubElementTypes.ANNOTATIONS)
             createDeclaredTypeReferenceStub(parameterStub, valueParameter.returnTypeRef)
+        }
+    }
+
+    fun createEmptyParameterListStub(parent: StubElement<*>) {
+        CangJiePlaceHolderStubImpl<CjParameterList>(parent, CjStubElementTypes.VALUE_PARAMETER_LIST)
+    }
+
+    fun createSimpleParameterListStub(
+        parent: StubElement<*>,
+        parameterNames: List<String>,
+        includeAnnotations: Boolean = true,
+    ) {
+        val parameterListStub = CangJiePlaceHolderStubImpl<CjParameterList>(parent, CjStubElementTypes.VALUE_PARAMETER_LIST)
+        parameterNames.forEach { parameterName ->
+            createParameterStub(parent = parameterListStub, name = parameterName, includeAnnotations = includeAnnotations)
         }
     }
 
@@ -272,6 +280,27 @@ internal class TypeCjoStubBuilder {
             createTypeReferenceStub(parameterStub, parameterType)
         }
         createTypeReferenceStub(functionTypeStub, returnType)
+    }
+
+    private fun createParameterStub(
+        parent: StubElement<*>,
+        name: String?,
+        includeAnnotations: Boolean = true,
+    ): CangJieParameterStubImpl {
+        val parameterStub = CangJieParameterStubImpl(
+            parent = parent,
+            fqName = null,
+            name = StringRef.fromString(name),
+            isMutable = false,
+            hasLetOrVar = false,
+            hasDefaultValue = false,
+            isNamed = false,
+            functionTypeParameterName = null,
+        )
+        if (includeAnnotations) {
+            CangJiePlaceHolderStubImpl<CjAnnotations>(parameterStub, CjStubElementTypes.ANNOTATIONS)
+        }
+        return parameterStub
     }
 
     private fun createFunctionTypeReferenceStub(

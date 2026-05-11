@@ -131,6 +131,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -263,9 +264,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -276,11 +280,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -314,6 +320,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -421,7 +428,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -469,16 +477,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=remainLength]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=length]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
   CangJieStub$EXTEND[classId=std/io/BufferedInputStream, extendId=std.io:BufferedInputStream<:Resource, fqName=std.io.BufferedInputStream, name=BufferedInputStream, receiverTypeName=BufferedInputStream, superNames=[Resource]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -494,11 +508,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$EXTEND[classId=std/io/BufferedInputStream, extendId=std.io:BufferedInputStream<:Seekable, fqName=std.io.BufferedInputStream, name=BufferedInputStream, receiverTypeName=BufferedInputStream, superNames=[Seekable]]
@@ -533,16 +549,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=std.io.remainLength, isTopLevel=false, isTopLevel=false, name=remainLength]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=std.io.length, isTopLevel=false, isTopLevel=false, name=length]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
   CangJieStub$CLASS[classId=std/io/BufferedOutputStream, fqName=std.io.BufferedOutputStream, name=BufferedOutputStream, superNames=[Object, OutputStream]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -665,6 +687,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -704,6 +727,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$EXTEND[classId=std/io/BufferedOutputStream, extendId=std.io:BufferedOutputStream<:Resource, fqName=std.io.BufferedOutputStream, name=BufferedOutputStream, receiverTypeName=BufferedOutputStream, superNames=[Resource]]
@@ -721,11 +745,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$EXTEND[classId=std/io/BufferedOutputStream, extendId=std.io:BufferedOutputStream<:Seekable, fqName=std.io.BufferedOutputStream, name=BufferedOutputStream, receiverTypeName=BufferedOutputStream, superNames=[Seekable]]
@@ -760,16 +786,22 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=std.io.remainLength, isTopLevel=false, isTopLevel=false, name=remainLength]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=std.io.length, isTopLevel=false, isTopLevel=false, name=length]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
   CangJieStub$INTERFACE[classId=std/io/IOStream, fqName=std.io.IOStream, name=IOStream, superNames=[InputStream, OutputStream]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -901,7 +933,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1061,6 +1094,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
   CangJieStub$CLASS[classId=std/io/StringReader, fqName=std.io.StringReader, name=StringReader, superNames=[]]
@@ -1094,6 +1128,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1108,6 +1143,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1145,6 +1181,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1164,6 +1201,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1183,6 +1221,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -1247,6 +1286,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
@@ -1262,6 +1302,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$TUPLE_TYPE
             CangJieStub$TYPE_REFERENCE
@@ -1283,11 +1324,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$EXTEND[classId=std/io/StringReader, extendId=std.io:StringReader<:Seekable, fqName=std.io.StringReader, name=StringReader, receiverTypeName=StringReader, superNames=[Seekable]]
@@ -1322,6 +1365,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
   CangJieStub$CLASS[classId=std/io/StringWriter, fqName=std.io.StringWriter, name=StringWriter, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -1353,6 +1398,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -1514,6 +1560,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
@@ -1687,11 +1734,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.io, facadeFqName=std.io, fa
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$EXTEND[classId=std/io/StringWriter, extendId=std.io:StringWriter<:Seekable, fqName=std.io.StringWriter, name=StringWriter, receiverTypeName=StringWriter, superNames=[Seekable]]

@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.name.FqName
@@ -87,7 +88,7 @@ fun CfirClassLikeDeclaration.unsubstitutedScope(
     val scope = when (this) {
         is CfirClass -> scopeProvider.getUseSiteMemberScope(this, useSiteSession, scopeSession)
         else -> {
-            val symbol = symbol as? CfirClassSymbol ?: return CfirTypeScope.Empty
+            val symbol = symbol as? CfirClassLikeSymbol<*> ?: return CfirTypeScope.Empty
             CfirClassUseSiteMemberScope(
                 session = useSiteSession,
                 classSymbol = symbol,

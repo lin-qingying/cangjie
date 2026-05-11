@@ -181,6 +181,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -200,6 +201,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -361,6 +363,7 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -617,6 +620,8 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=nonOptions]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -636,6 +641,8 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
   CangJieStub$CLASS[classId=std/argopt/ArgumentParseException, fqName=std.argopt.ArgumentParseException, name=ArgumentParseException, superNames=[Exception]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
@@ -668,7 +675,8 @@ CangJieFileStubImpl[Facade[packageFqName=std.argopt, facadeFqName=std.argopt]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE

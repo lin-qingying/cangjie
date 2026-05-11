@@ -5,26 +5,28 @@ package std.core
 
 import std.core
 
-func arrayInitByCollection(array: std.core.Array<T>, elements: std.core.Collection<T>): std.core.Array<T>
+func arrayInitByCollection(array: std.core.Array<T>, elements: std.core.Collection<T>): std.core.Array<T> { /* compiled code */ }
 
 interface Collection <: std.core.Iterable<T> {
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func toArray: std.core.Array<T>
+    func toArray(): std.core.Array<T> { /* compiled code */ }
 }
 
 class Iterator <: std.core.Object & std.core.Iterable<T> {
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 
     init() { /* compiled code */ }
 
-    func iterator: std.core.Iterator<T>
+    func iterator(): std.core.Iterator<T> { /* compiled code */ }
 }
 
 interface Iterable {
-    func iterator: std.core.Iterator<E>
+    func iterator(): std.core.Iterator<E> { /* compiled code */ }
 }
 
 enum Option {
@@ -32,30 +34,30 @@ enum Option {
 
     | None
 
-    func getOrThrow: T
+    func getOrThrow(): T { /* compiled code */ }
 
-    func getOrThrow(exception: () -> std.core.Exception): T
+    func getOrThrow(exception: () -> std.core.Exception): T { /* compiled code */ }
 
-    func getOrDefault(other: () -> T): T
+    func getOrDefault(other: () -> T): T { /* compiled code */ }
 
-    func isNone: Bool
+    func isNone(): Bool { /* compiled code */ }
 
-    func isSome: Bool
+    func isSome(): Bool { /* compiled code */ }
 
-    func map(transform: (T) -> R): std.core.Option<R>
+    func map(transform: (T) -> R): std.core.Option<R> { /* compiled code */ }
 
-    func filter(predicate: (T) -> Bool): std.core.Option<T>
+    func filter(predicate: (T) -> Bool): std.core.Option<T> { /* compiled code */ }
 
-    func flatMap(transform: (T) -> std.core.Option<R>): std.core.Option<R>
+    func flatMap(transform: (T) -> std.core.Option<R>): std.core.Option<R> { /* compiled code */ }
 }
 
-func arraySet(rawArr: std.core.Array<T>, index: Int64, element: T): Unit
+func arraySet(rawArr: std.core.Array<T>, index: Int64, element: T): Unit { /* compiled code */ }
 
-func arrayInitByFunction(array: std.core.Array<T>, initElement: (Int64) -> T): std.core.Array<T>
+func arrayInitByFunction(array: std.core.Array<T>, initElement: (Int64) -> T): std.core.Array<T> { /* compiled code */ }
 
-func arraySize(rawArr: std.core.Array<T>): Int64
+func arraySize(rawArr: std.core.Array<T>): Int64 { /* compiled code */ }
 
-func toArray(raw: std.core.Array<T>): std.core.Array<T>
+func toArray(raw: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
 struct Array {
     let rawptr: std.core.Array<T>
@@ -64,7 +66,7 @@ struct Array {
 
     let len: Int64
 
-    func toRawArray: std.core.Array<T>
+    func toRawArray(): std.core.Array<T> { /* compiled code */ }
 
     init() { /* compiled code */ }
 
@@ -76,56 +78,60 @@ struct Array {
 
     init(data: std.core.Array<T>, start: Int64, len: Int64) { /* compiled code */ }
 
-    prop first: std.core.Option<T>
+    prop first: std.core.Option<T> {
+        get() { /* compiled code */ }
+    }
 
-    prop last: std.core.Option<T>
+    prop last: std.core.Option<T> {
+        get() { /* compiled code */ }
+    }
 
-    func slice(start: Int64, len: Int64): std.core.Array<T>
+    func slice(start: Int64, len: Int64): std.core.Array<T> { /* compiled code */ }
 
-    func `get`(index: Int64): std.core.Option<T>
+    func `get`(index: Int64): std.core.Option<T> { /* compiled code */ }
 
-    operator func [](index: Int64): T
+    operator func [](index: Int64): T { /* compiled code */ }
 
-    operator func [](index: Int64, value: T): Unit
+    operator func [](index: Int64, value: T): Unit { /* compiled code */ }
 
-    operator func [](range: std.core.Range<Int64>): std.core.Array<T>
+    operator func [](range: std.core.Range<Int64>): std.core.Array<T> { /* compiled code */ }
 
-    func fill(value: T): Unit
+    func fill(value: T): Unit { /* compiled code */ }
 
-    operator func [](range: std.core.Range<Int64>, value: std.core.Array<T>): Unit
+    operator func [](range: std.core.Range<Int64>, value: std.core.Array<T>): Unit { /* compiled code */ }
 
-    func reverse: Unit
+    func reverse(): Unit { /* compiled code */ }
 
-    func rangeSlice(range: std.core.Range<Int64>, _: Int64): std.core.Array<T>
+    func rangeSlice(range: std.core.Range<Int64>, _: Int64): std.core.Array<T> { /* compiled code */ }
 
-    func isLegal(start_: Int64, end_: Int64): Bool
+    func isLegal(start_: Int64, end_: Int64): Bool { /* compiled code */ }
 
-    func normalize(range: std.core.Range<Int64>): (Int64, Int64)
+    func normalize(range: std.core.Range<Int64>): (Int64, Int64) { /* compiled code */ }
 
-    func clone: std.core.Array<T>
+    func clone(): std.core.Array<T> { /* compiled code */ }
 
-    func clone(range: std.core.Range<Int64>): std.core.Array<T>
+    func clone(range: std.core.Range<Int64>): std.core.Array<T> { /* compiled code */ }
 
-    func copyTo(dst: std.core.Array<T>, srcStart: Int64, dstStart: Int64, copyLen: Int64): Unit
+    func copyTo(dst: std.core.Array<T>, srcStart: Int64, dstStart: Int64, copyLen: Int64): Unit { /* compiled code */ }
 
-    func copyTo(dst: std.core.Array<T>): Unit
+    func copyTo(dst: std.core.Array<T>): Unit { /* compiled code */ }
 
-    func concat(other: std.core.Array<T>): std.core.Array<T>
+    func concat(other: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
-    func getUnchecked(index: Int64): T
+    func getUnchecked(index: Int64): T { /* compiled code */ }
 
-    func setUnchecked(index: Int64, element: T): Unit
+    func setUnchecked(index: Int64, element: T): Unit { /* compiled code */ }
 
-    func swap(index1: Int64, index2: Int64): Unit
+    func swap(index1: Int64, index2: Int64): Unit { /* compiled code */ }
 
-    func splitAt(mid: Int64): (std.core.Array<T>, std.core.Array<T>)
+    func splitAt(mid: Int64): (std.core.Array<T>, std.core.Array<T>) { /* compiled code */ }
 
-    func repeat(n: Int64): std.core.Array<T>
+    func repeat(n: Int64): std.core.Array<T> { /* compiled code */ }
 
-    func map(transform: (T) -> R): std.core.Array<R>
+    func map(transform: (T) -> R): std.core.Array<R> { /* compiled code */ }
 }
 
-func acquireArrayRawData(arr: std.core.Array<T>): std.core.CPointerHandle<T>
+func acquireArrayRawData(arr: std.core.Array<T>): std.core.CPointerHandle<T> { /* compiled code */ }
 
 interface CType {
 }
@@ -140,31 +146,31 @@ struct CPointerHandle {
     init(ptr: CPointer<T>, arr: std.core.Array<T>) { /* compiled code */ }
 }
 
-func acquireRawData(rawArr: std.core.Array<T>): CPointer<T>
+func acquireRawData(rawArr: std.core.Array<T>): CPointer<T> { /* compiled code */ }
 
-func releaseArrayRawData(`handle`: std.core.CPointerHandle<T>): Unit
+func releaseArrayRawData(`handle`: std.core.CPointerHandle<T>): Unit { /* compiled code */ }
 
-func releaseRawData(rawArr: std.core.Array<T>, ptr: CPointer<T>): Unit
+func releaseRawData(rawArr: std.core.Array<T>, ptr: CPointer<T>): Unit { /* compiled code */ }
 
 let ASCII_UPPER_TO_LOWER_DIFF: UInt8
 
-func max(a: T, b: T, others: std.core.Array<T>): T
+func max(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
 
 interface Comparable <: std.core.Equatable<T> & std.core.Less<T> & std.core.Greater<T> & std.core.LessOrEqual<T> & std.core.GreaterOrEqual<T> {
-    func compare(that: T): std.core.Ordering
+    func compare(that: T): std.core.Ordering { /* compiled code */ }
 
-    operator func ==(rhs: T): Bool
+    operator func ==(rhs: T): Bool { /* compiled code */ }
 
-    operator func <(rhs: T): Bool
+    operator func <(rhs: T): Bool { /* compiled code */ }
 
-    operator func >(rhs: T): Bool
+    operator func >(rhs: T): Bool { /* compiled code */ }
 
-    operator func <=(rhs: T): Bool
+    operator func <=(rhs: T): Bool { /* compiled code */ }
 
-    operator func >=(rhs: T): Bool
+    operator func >=(rhs: T): Bool { /* compiled code */ }
 }
 
-func min(a: T, b: T, others: std.core.Array<T>): T
+func min(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
 
 let NS_PER_US: Int64
 
@@ -204,7 +210,7 @@ let SECRET2: UInt64
 
 let SECRET3: UInt64
 
-func print(str: std.core.String, flush: Bool): Unit
+func print(str: std.core.String, flush: Bool): Unit { /* compiled code */ }
 
 struct String <: std.core.Collection<UInt8> & std.core.Comparable<std.core.String> & std.core.Hashable & std.core.ToString {
     let myData: std.core.Array<UInt8>
@@ -229,262 +235,264 @@ struct String <: std.core.Collection<UInt8> & std.core.Comparable<std.core.Strin
 
     init(value: std.core.Array<UInt8>) { /* compiled code */ }
 
-    func `get`(index: Int64): std.core.Option<UInt8>
+    func `get`(index: Int64): std.core.Option<UInt8> { /* compiled code */ }
 
-    func acquireRaw: CPointer<UInt8>
+    func acquireRaw(): CPointer<UInt8> { /* compiled code */ }
 
-    func releaseRaw(ptr: CPointer<UInt8>): Unit
+    func releaseRaw(ptr: CPointer<UInt8>): Unit { /* compiled code */ }
 
-    func toRuneArray: std.core.Array<Rune>
+    func toRuneArray(): std.core.Array<Rune> { /* compiled code */ }
 
-    func toArray: std.core.Array<UInt8>
+    func toArray(): std.core.Array<UInt8> { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func iterator: std.core.Iterator<UInt8>
+    func iterator(): std.core.Iterator<UInt8> { /* compiled code */ }
 
-    func runes: std.core.Iterator<Rune>
+    func runes(): std.core.Iterator<Rune> { /* compiled code */ }
 
-    func lines: std.core.Iterator<std.core.String>
+    func lines(): std.core.Iterator<std.core.String> { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func isAscii: Bool
+    func isAscii(): Bool { /* compiled code */ }
 
-    func isAsciiBlank: Bool
+    func isAsciiBlank(): Bool { /* compiled code */ }
 
-    func clone: std.core.String
+    func clone(): std.core.String { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    func fromUtf8(utf8Data: std.core.Array<UInt8>): std.core.String
+    static func fromUtf8(utf8Data: std.core.Array<UInt8>): std.core.String { /* compiled code */ }
 
-    func rawData: std.core.Array<UInt8>
+    func rawData(): std.core.Array<UInt8> { /* compiled code */ }
 
-    func fromUtf8Unchecked(utf8Data: std.core.Array<UInt8>): std.core.String
+    static func fromUtf8Unchecked(utf8Data: std.core.Array<UInt8>): std.core.String { /* compiled code */ }
 
-    func indexOf(b: UInt8): std.core.Option<Int64>
+    func indexOf(b: UInt8): std.core.Option<Int64> { /* compiled code */ }
 
-    func indexOf(b: UInt8, fromIndex: Int64): std.core.Option<Int64>
+    func indexOf(b: UInt8, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func indexOfImpl(b: UInt8, fromIndex: Int64): Int64
+    func indexOfImpl(b: UInt8, fromIndex: Int64): Int64 { /* compiled code */ }
 
-    func indexOfCommon(b: UInt8, fromIndex: Int64): Int64
+    func indexOfCommon(b: UInt8, fromIndex: Int64): Int64 { /* compiled code */ }
 
-    func indexOfFast(b: UInt8, fromIndex: Int64): Int64
+    func indexOfFast(b: UInt8, fromIndex: Int64): Int64 { /* compiled code */ }
 
-    func indexOf(str: std.core.String): std.core.Option<Int64>
+    func indexOf(str: std.core.String): std.core.Option<Int64> { /* compiled code */ }
 
-    func indexOf(str: std.core.String, fromIndex: Int64): std.core.Option<Int64>
+    func indexOf(str: std.core.String, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func lastIndexOf(b: UInt8): std.core.Option<Int64>
+    func lastIndexOf(b: UInt8): std.core.Option<Int64> { /* compiled code */ }
 
-    func lastIndexOf(b: UInt8, fromIndex: Int64): std.core.Option<Int64>
+    func lastIndexOf(b: UInt8, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func lastIndexOf(str: std.core.String): std.core.Option<Int64>
+    func lastIndexOf(str: std.core.String): std.core.Option<Int64> { /* compiled code */ }
 
-    func lastIndexOf(str: std.core.String, fromIndex: Int64): std.core.Option<Int64>
+    func lastIndexOf(str: std.core.String, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func count(str: std.core.String): Int64
+    func count(str: std.core.String): Int64 { /* compiled code */ }
 
-    func split(str: std.core.String, removeEmpty: Bool): std.core.Array<std.core.String>
+    func split(str: std.core.String, removeEmpty: Bool): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func split(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String>
+    func split(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func lazySplit(str: std.core.String, removeEmpty: Bool): std.core.Iterator<std.core.String>
+    func lazySplit(str: std.core.String, removeEmpty: Bool): std.core.Iterator<std.core.String> { /* compiled code */ }
 
-    func lazySplit(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Iterator<std.core.String>
+    func lazySplit(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Iterator<std.core.String> { /* compiled code */ }
 
-    func replace(old: std.core.String, new: std.core.String): std.core.String
+    func replace(old: std.core.String, new: std.core.String): std.core.String { /* compiled code */ }
 
-    func insertString(new: std.core.String): std.core.String
+    func insertString(new: std.core.String): std.core.String { /* compiled code */ }
 
-    func replaceString(old: std.core.String, new: std.core.String): std.core.String
+    func replaceString(old: std.core.String, new: std.core.String): std.core.String { /* compiled code */ }
 
-    func toAsciiLower: std.core.String
+    func toAsciiLower(): std.core.String { /* compiled code */ }
 
-    func toAsciiUpper: std.core.String
+    func toAsciiUpper(): std.core.String { /* compiled code */ }
 
-    func toAsciiTitle: std.core.String
+    func toAsciiTitle(): std.core.String { /* compiled code */ }
 
-    func trimAscii: std.core.String
+    func trimAscii(): std.core.String { /* compiled code */ }
 
-    func trimAsciiStart: std.core.String
+    func trimAsciiStart(): std.core.String { /* compiled code */ }
 
-    func trimAsciiEnd: std.core.String
+    func trimAsciiEnd(): std.core.String { /* compiled code */ }
 
-    func trimStart(`set`: std.core.Array<Rune>): std.core.String
+    func trimStart(`set`: std.core.Array<Rune>): std.core.String { /* compiled code */ }
 
-    func trimEnd(`set`: std.core.Array<Rune>): std.core.String
+    func trimEnd(`set`: std.core.Array<Rune>): std.core.String { /* compiled code */ }
 
-    func trimStart(`set`: std.core.String): std.core.String
+    func trimStart(`set`: std.core.String): std.core.String { /* compiled code */ }
 
-    func trimEnd(`set`: std.core.String): std.core.String
+    func trimEnd(`set`: std.core.String): std.core.String { /* compiled code */ }
 
-    func trimStart(predicate: (Rune) -> Bool): std.core.String
+    func trimStart(predicate: (Rune) -> Bool): std.core.String { /* compiled code */ }
 
-    func trimEnd(predicate: (Rune) -> Bool): std.core.String
+    func trimEnd(predicate: (Rune) -> Bool): std.core.String { /* compiled code */ }
 
-    func removePrefix(prefix: std.core.String): std.core.String
+    func removePrefix(prefix: std.core.String): std.core.String { /* compiled code */ }
 
-    func removeSuffix(suffix: std.core.String): std.core.String
+    func removeSuffix(suffix: std.core.String): std.core.String { /* compiled code */ }
 
-    func contains(str: std.core.String): Bool
+    func contains(str: std.core.String): Bool { /* compiled code */ }
 
-    func startsWith(prefix: std.core.String): Bool
+    func startsWith(prefix: std.core.String): Bool { /* compiled code */ }
 
-    func endsWith(suffix: std.core.String): Bool
+    func endsWith(suffix: std.core.String): Bool { /* compiled code */ }
 
-    func padStart(totalWidth: Int64, padding: std.core.String): std.core.String
+    func padStart(totalWidth: Int64, padding: std.core.String): std.core.String { /* compiled code */ }
 
-    func padEnd(totalWidth: Int64, padding: std.core.String): std.core.String
+    func padEnd(totalWidth: Int64, padding: std.core.String): std.core.String { /* compiled code */ }
 
-    func equalsIgnoreAsciiCase(that: std.core.String): Bool
+    func equalsIgnoreAsciiCase(that: std.core.String): Bool { /* compiled code */ }
 
-    func byteEqualsIgnoreAsciiCase(b1: UInt8, b2: UInt8): Bool
+    func byteEqualsIgnoreAsciiCase(b1: UInt8, b2: UInt8): Bool { /* compiled code */ }
 
-    func compareBytes(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64
+    static func compareBytes(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64 { /* compiled code */ }
 
-    func compareBytesCommon(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64
+    static func compareBytesCommon(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64 { /* compiled code */ }
 
-    func compareBytesFast(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64
+    static func compareBytesFast(ptr1: std.core.Array<UInt8>, start1: Int64, ptr2: std.core.Array<UInt8>, start2: Int64, num: Int64): Int64 { /* compiled code */ }
 
-    func compare(str: std.core.String): std.core.Ordering
+    func compare(str: std.core.String): std.core.Ordering { /* compiled code */ }
 
-    operator func +(right: std.core.String): std.core.String
+    operator func +(right: std.core.String): std.core.String { /* compiled code */ }
 
-    operator func *(count: Int64): std.core.String
+    operator func *(count: Int64): std.core.String { /* compiled code */ }
 
-    operator func <(right: std.core.String): Bool
+    operator func <(right: std.core.String): Bool { /* compiled code */ }
 
-    operator func <=(right: std.core.String): Bool
+    operator func <=(right: std.core.String): Bool { /* compiled code */ }
 
-    operator func >(right: std.core.String): Bool
+    operator func >(right: std.core.String): Bool { /* compiled code */ }
 
-    operator func >=(right: std.core.String): Bool
+    operator func >=(right: std.core.String): Bool { /* compiled code */ }
 
-    operator func ==(right: std.core.String): Bool
+    operator func ==(right: std.core.String): Bool { /* compiled code */ }
 
-    operator func !=(right: std.core.String): Bool
+    operator func !=(right: std.core.String): Bool { /* compiled code */ }
 
-    operator func [](index: Int64): UInt8
+    operator func [](index: Int64): UInt8 { /* compiled code */ }
 
-    func sliceUnchecked(startIndex: Int64, len: Int64): std.core.String
+    func sliceUnchecked(startIndex: Int64, len: Int64): std.core.String { /* compiled code */ }
 
-    operator func [](range: std.core.Range<Int64>): std.core.String
+    operator func [](range: std.core.Range<Int64>): std.core.String { /* compiled code */ }
 
-    func join(strArray: std.core.Array<std.core.String>, delimiter: std.core.String): std.core.String
+    static func join(strArray: std.core.Array<std.core.String>, delimiter: std.core.String): std.core.String { /* compiled code */ }
 
-    func indexOfString(str: std.core.String, startIndex: Int64, fromLast: Bool): Int64
+    func indexOfString(str: std.core.String, startIndex: Int64, fromLast: Bool): Int64 { /* compiled code */ }
 
-    func splitOfString(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String>
+    func splitOfString(str: std.core.String, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func splitOfStringForOneRune(maxSplits: Int64): std.core.Array<std.core.String>
+    func splitOfStringForOneRune(maxSplits: Int64): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func getRealSplitLenWithRemoveEmpty(indexes: CPointer<Int64>, total: Int64, separatorLen: Int64): Int64
+    func getRealSplitLenWithRemoveEmpty(indexes: CPointer<Int64>, total: Int64, separatorLen: Int64): Int64 { /* compiled code */ }
 
-    func splitAsStringArray(indexes: CPointer<Int64>, total: Int64, separatorLen: Int64, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String>
+    func splitAsStringArray(indexes: CPointer<Int64>, total: Int64, separatorLen: Int64, maxSplits: Int64, removeEmpty: Bool): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func withRawData(rawData: std.core.Array<UInt8>): std.core.String
+    static func withRawData(rawData: std.core.Array<UInt8>): std.core.String { /* compiled code */ }
 
-    func checkUtf8Encoding(data: std.core.Array<UInt8>): Bool
+    static func checkUtf8Encoding(data: std.core.Array<UInt8>): Bool { /* compiled code */ }
 }
 
-func CJ_CORE_PrintUTF8(c: CPointer<UInt8>, len: Int64, newLine: Bool, flush: Bool): Int64
+foreign func CJ_CORE_PrintUTF8(c: CPointer<UInt8>, len: Int64, newLine: Bool, flush: Bool): Int64
 
 class OutOfMemoryError <: std.core.Error {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-func println: Unit
+func println(): Unit { /* compiled code */ }
 
-func CJ_CORE_PrintChar(c: UInt32, newLine: Bool, flush: Bool): Unit
+foreign func CJ_CORE_PrintChar(c: UInt32, newLine: Bool, flush: Bool): Unit
 
-func println(str: std.core.String): Unit
+func println(str: std.core.String): Unit { /* compiled code */ }
 
-func eprint(str: std.core.String, flush: Bool): Unit
+func eprint(str: std.core.String, flush: Bool): Unit { /* compiled code */ }
 
-func CJ_CORE_ErrorPrintUTF8(c: CPointer<UInt8>, len: Int64, newLine: Bool, flush: Bool): Int64
+foreign func CJ_CORE_ErrorPrintUTF8(c: CPointer<UInt8>, len: Int64, newLine: Bool, flush: Bool): Int64
 
-func eprintln(str: std.core.String): Unit
+func eprintln(str: std.core.String): Unit { /* compiled code */ }
 
-func eprint(arg: T, flush: Bool): Unit
+func eprint(arg: T, flush: Bool): Unit { /* compiled code */ }
 
 interface ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
-func eprintln(arg: T): Unit
+func eprintln(arg: T): Unit { /* compiled code */ }
 
-func print(arg: T, flush: Bool): Unit
+func print(arg: T, flush: Bool): Unit { /* compiled code */ }
 
-func println(arg: T): Unit
+func println(arg: T): Unit { /* compiled code */ }
 
-func print(b: Bool, flush: Bool): Unit
+func print(b: Bool, flush: Bool): Unit { /* compiled code */ }
 
-func CJ_CORE_PrintBool(b: Bool, newLine: Bool, flush: Bool): Unit
+foreign func CJ_CORE_PrintBool(b: Bool, newLine: Bool, flush: Bool): Unit
 
-func println(b: Bool): Unit
+func println(b: Bool): Unit { /* compiled code */ }
 
-func print(c: Rune, flush: Bool): Unit
+func print(c: Rune, flush: Bool): Unit { /* compiled code */ }
 
-func println(c: Rune): Unit
+func println(c: Rune): Unit { /* compiled code */ }
 
-func print(f: Float16, flush: Bool): Unit
+func print(f: Float16, flush: Bool): Unit { /* compiled code */ }
 
-func CJ_CORE_PrintFloat(f: Float64, newLine: Bool, flush: Bool): Unit
+foreign func CJ_CORE_PrintFloat(f: Float64, newLine: Bool, flush: Bool): Unit
 
-func println(f: Float16): Unit
+func println(f: Float16): Unit { /* compiled code */ }
 
-func print(f: Float32, flush: Bool): Unit
+func print(f: Float32, flush: Bool): Unit { /* compiled code */ }
 
-func println(f: Float32): Unit
+func println(f: Float32): Unit { /* compiled code */ }
 
-func print(f: Float64, flush: Bool): Unit
+func print(f: Float64, flush: Bool): Unit { /* compiled code */ }
 
-func println(f: Float64): Unit
+func println(f: Float64): Unit { /* compiled code */ }
 
-func print(i: Int8, flush: Bool): Unit
+func print(i: Int8, flush: Bool): Unit { /* compiled code */ }
 
-func CJ_CORE_PrintSigned(i: Int64, newLine: Bool, flush: Bool): Unit
+foreign func CJ_CORE_PrintSigned(i: Int64, newLine: Bool, flush: Bool): Unit
 
-func print(i: Int16, flush: Bool): Unit
+func print(i: Int16, flush: Bool): Unit { /* compiled code */ }
 
-func print(i: Int32, flush: Bool): Unit
+func print(i: Int32, flush: Bool): Unit { /* compiled code */ }
 
-func print(i: Int64, flush: Bool): Unit
+func print(i: Int64, flush: Bool): Unit { /* compiled code */ }
 
-func print(i: UInt8, flush: Bool): Unit
+func print(i: UInt8, flush: Bool): Unit { /* compiled code */ }
 
-func CJ_CORE_PrintUnsigned(i: UInt64, newLine: Bool, flush: Bool): Unit
+foreign func CJ_CORE_PrintUnsigned(i: UInt64, newLine: Bool, flush: Bool): Unit
 
-func print(i: UInt16, flush: Bool): Unit
+func print(i: UInt16, flush: Bool): Unit { /* compiled code */ }
 
-func print(i: UInt32, flush: Bool): Unit
+func print(i: UInt32, flush: Bool): Unit { /* compiled code */ }
 
-func print(i: UInt64, flush: Bool): Unit
+func print(i: UInt64, flush: Bool): Unit { /* compiled code */ }
 
-func println(i: Int8): Unit
+func println(i: Int8): Unit { /* compiled code */ }
 
-func println(i: Int16): Unit
+func println(i: Int16): Unit { /* compiled code */ }
 
-func println(i: Int32): Unit
+func println(i: Int32): Unit { /* compiled code */ }
 
-func println(i: Int64): Unit
+func println(i: Int64): Unit { /* compiled code */ }
 
-func println(i: UInt8): Unit
+func println(i: UInt8): Unit { /* compiled code */ }
 
-func println(i: UInt16): Unit
+func println(i: UInt16): Unit { /* compiled code */ }
 
-func println(i: UInt32): Unit
+func println(i: UInt32): Unit { /* compiled code */ }
 
-func println(i: UInt64): Unit
+func println(i: UInt64): Unit { /* compiled code */ }
 
 let MAX_TIMEOUT_NS: Int64
 
@@ -492,7 +500,7 @@ let UNICODE_TO_UTF8_MAX_LEN: Int64
 
 let IS_SIMD_SUPPORTED: Bool
 
-func CJ_CORE_CanUseSIMD: Bool
+foreign func CJ_CORE_CanUseSIMD(): Bool
 
 let VECTOR_OFFSET_32: Int64
 
@@ -570,16 +578,16 @@ let STRING_C_THRESHOLD: Int64
 
 let INVALID_ID: Int64
 
-func zeroValue: T
+func zeroValue(): T { /* compiled code */ }
 
-func intrinsicBuiltInCopyTo(src: std.core.Array<T>, dst: std.core.Array<T>, srcStart: Int64, dstStart: Int64, copyLen: Int64): Unit
+func intrinsicBuiltInCopyTo(src: std.core.Array<T>, dst: std.core.Array<T>, srcStart: Int64, dstStart: Int64, copyLen: Int64): Unit { /* compiled code */ }
 
 class IndexOutOfBoundsException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class StringBuilder <: std.core.Object & std.core.ToString {
@@ -599,66 +607,70 @@ class StringBuilder <: std.core.Object & std.core.ToString {
 
     init(capacity: Int64) { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop capacity: Int64
+    prop capacity: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func reset(capacity: std.core.Option<Int64>): Unit
+    func reset(capacity: std.core.Option<Int64>): Unit { /* compiled code */ }
 
-    func append(r: Rune): Unit
+    func append(r: Rune): Unit { /* compiled code */ }
 
-    func append(str: std.core.String): Unit
+    func append(str: std.core.String): Unit { /* compiled code */ }
 
-    func append(sb: std.core.StringBuilder): Unit
+    func append(sb: std.core.StringBuilder): Unit { /* compiled code */ }
 
-    func appendFromUtf8(arr: std.core.Array<UInt8>): Unit
+    func appendFromUtf8(arr: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
-    func appendFromUtf8Unchecked(arr: std.core.Array<UInt8>): Unit
+    func appendFromUtf8Unchecked(arr: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
-    func append(runeArr: std.core.Array<Rune>): Unit
+    func append(runeArr: std.core.Array<Rune>): Unit { /* compiled code */ }
 
-    func append(cstr: CString): Unit
+    func append(cstr: CString): Unit { /* compiled code */ }
 
-    func append(v: T): Unit
+    func append(v: T): Unit { /* compiled code */ }
 
-    func append(val: std.core.Array<T>): Unit
+    func append(val: std.core.Array<T>): Unit { /* compiled code */ }
 
-    func append(b: Bool): Unit
+    func append(b: Bool): Unit { /* compiled code */ }
 
-    func append(n: Int64): Unit
+    func append(n: Int64): Unit { /* compiled code */ }
 
-    func append(n: Int32): Unit
+    func append(n: Int32): Unit { /* compiled code */ }
 
-    func append(n: Int16): Unit
+    func append(n: Int16): Unit { /* compiled code */ }
 
-    func append(n: Int8): Unit
+    func append(n: Int8): Unit { /* compiled code */ }
 
-    func append(n: UInt64): Unit
+    func append(n: UInt64): Unit { /* compiled code */ }
 
-    func append(n: UInt32): Unit
+    func append(n: UInt32): Unit { /* compiled code */ }
 
-    func append(n: UInt16): Unit
+    func append(n: UInt16): Unit { /* compiled code */ }
 
-    func append(n: UInt8): Unit
+    func append(n: UInt8): Unit { /* compiled code */ }
 
-    func append(n: Float64): Unit
+    func append(n: Float64): Unit { /* compiled code */ }
 
-    func append(n: Float32): Unit
+    func append(n: Float32): Unit { /* compiled code */ }
 
-    func append(n: Float16): Unit
+    func append(n: Float16): Unit { /* compiled code */ }
 
-    func reserve(additional: Int64): Unit
+    func reserve(additional: Int64): Unit { /* compiled code */ }
 
-    func grow(minCapacity: Int64): Unit
+    func grow(minCapacity: Int64): Unit { /* compiled code */ }
 
-    func append(cp: CPointer<UInt8>): Unit
+    func append(cp: CPointer<UInt8>): Unit { /* compiled code */ }
 }
 
-func arrayGetUnchecked(rawArr: std.core.Array<T>, index: Int64): T
+func arrayGetUnchecked(rawArr: std.core.Array<T>, index: Int64): T { /* compiled code */ }
 
-func arraySetUnchecked(rawArr: std.core.Array<T>, index: Int64, element: T): Unit
+func arraySetUnchecked(rawArr: std.core.Array<T>, index: Int64, element: T): Unit { /* compiled code */ }
 
 struct Range <: std.core.Iterable<T> {
     let start: T
@@ -675,11 +687,11 @@ struct Range <: std.core.Iterable<T> {
 
     init(start: T, end: T, step: Int64, hasStart: Bool, hasEnd: Bool, isClosed: Bool) { /* compiled code */ }
 
-    func iterator: std.core.Iterator<T>
+    func iterator(): std.core.Iterator<T> { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func last: T
+    func last(): T { /* compiled code */ }
 }
 
 class IllegalArgumentException <: std.core.Exception {
@@ -687,10 +699,10 @@ class IllegalArgumentException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-func arrayGet(rawArr: std.core.Array<T>, index: Int64): T
+func arrayGet(rawArr: std.core.Array<T>, index: Int64): T { /* compiled code */ }
 
 class ArrayIterator <: std.core.Iterator<T> {
     var myData: std.core.Array<T>
@@ -701,20 +713,20 @@ class ArrayIterator <: std.core.Iterator<T> {
 
     init(data: std.core.Array<T>) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 interface Equatable <: std.core.Equal<T> & std.core.NotEqual<T> {
-    operator func !=(rhs: T): Bool
+    operator func !=(rhs: T): Bool { /* compiled code */ }
 }
 
 interface Equal {
-    operator func ==(rhs: T): Bool
+    operator func ==(rhs: T): Bool { /* compiled code */ }
 }
 
-func readPointer(c: CPointer<T>, idx: Int64): T
+func readPointer(c: CPointer<T>, idx: Int64): T { /* compiled code */ }
 
-func writePointer(c: CPointer<T>, idx: Int64, value: T): Unit
+func writePointer(c: CPointer<T>, idx: Int64, value: T): Unit { /* compiled code */ }
 
 class Box {
     var value: T
@@ -737,7 +749,7 @@ struct Duration <: std.core.ToString & std.core.Hashable & std.core.Comparable<s
 
     init(sec: Int64, ns: UInt32) { /* compiled code */ }
 
-    func of(sec: Int64, ns: Int64): std.core.Duration
+    static func of(sec: Int64, ns: Int64): std.core.Duration { /* compiled code */ }
 
     let nanosecond: std.core.Duration
 
@@ -759,57 +771,57 @@ struct Duration <: std.core.ToString & std.core.Hashable & std.core.Comparable<s
 
     let Min: std.core.Duration
 
-    func toNanoseconds: Int64
+    func toNanoseconds(): Int64 { /* compiled code */ }
 
-    func toMicroseconds: Int64
+    func toMicroseconds(): Int64 { /* compiled code */ }
 
-    func toMilliseconds: Int64
+    func toMilliseconds(): Int64 { /* compiled code */ }
 
-    func toSeconds: Int64
+    func toSeconds(): Int64 { /* compiled code */ }
 
-    func toMinutes: Int64
+    func toMinutes(): Int64 { /* compiled code */ }
 
-    func toHours: Int64
+    func toHours(): Int64 { /* compiled code */ }
 
-    func toDays: Int64
+    func toDays(): Int64 { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    func abs: std.core.Duration
+    func abs(): std.core.Duration { /* compiled code */ }
 
-    operator func +(r: std.core.Duration): std.core.Duration
+    operator func +(r: std.core.Duration): std.core.Duration { /* compiled code */ }
 
-    operator func -(r: std.core.Duration): std.core.Duration
+    operator func -(r: std.core.Duration): std.core.Duration { /* compiled code */ }
 
-    operator func *(r: Int64): std.core.Duration
+    operator func *(r: Int64): std.core.Duration { /* compiled code */ }
 
-    operator func *(r: Float64): std.core.Duration
+    operator func *(r: Float64): std.core.Duration { /* compiled code */ }
 
-    func toFloat64Nanoseconds: Float64
+    func toFloat64Nanoseconds(): Float64 { /* compiled code */ }
 
-    operator func /(r: Int64): std.core.Duration
+    operator func /(r: Int64): std.core.Duration { /* compiled code */ }
 
-    operator func /(r: Float64): std.core.Duration
+    operator func /(r: Float64): std.core.Duration { /* compiled code */ }
 
-    operator func /(r: std.core.Duration): Float64
+    operator func /(r: std.core.Duration): Float64 { /* compiled code */ }
 
-    operator func ==(r: std.core.Duration): Bool
+    operator func ==(r: std.core.Duration): Bool { /* compiled code */ }
 
-    operator func !=(r: std.core.Duration): Bool
+    operator func !=(r: std.core.Duration): Bool { /* compiled code */ }
 
-    operator func >=(r: std.core.Duration): Bool
+    operator func >=(r: std.core.Duration): Bool { /* compiled code */ }
 
-    operator func >(r: std.core.Duration): Bool
+    operator func >(r: std.core.Duration): Bool { /* compiled code */ }
 
-    operator func <=(r: std.core.Duration): Bool
+    operator func <=(r: std.core.Duration): Bool { /* compiled code */ }
 
-    operator func <(r: std.core.Duration): Bool
+    operator func <(r: std.core.Duration): Bool { /* compiled code */ }
 
-    func compare(rhs: std.core.Duration): std.core.Ordering
+    func compare(rhs: std.core.Duration): std.core.Ordering { /* compiled code */ }
 
-    func toUnsignedNum(r: Int64): (UInt64, UInt32, UInt64, Bool)
+    func toUnsignedNum(r: Int64): (UInt64, UInt32, UInt64, Bool) { /* compiled code */ }
 }
 
 class Thread {
@@ -829,23 +841,32 @@ class Thread {
 
     init() { /* compiled code */ }
 
-    func setRuntimeCJThreadHandle(`handle`: CPointer<Unit>): Unit
+    func setRuntimeCJThreadHandle(`handle`: CPointer<Unit>): Unit { /* compiled code */ }
 
-    func waitForCJThreadHandle: Unit
+    func waitForCJThreadHandle(): Unit { /* compiled code */ }
 
-    func clearRuntimeCJThreadHandle: Unit
+    func clearRuntimeCJThreadHandle(): Unit { /* compiled code */ }
 
-    prop currentThread: std.core.Thread
+    static prop currentThread: std.core.Thread {
+        get() { /* compiled code */ }
+    }
 
-    prop id: Int64
+    prop id: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    mut prop name: std.core.String {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop hasPendingCancellation: Bool
+    prop hasPendingCancellation: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func setCancellationRequest: Unit
+    func setCancellationRequest(): Unit { /* compiled code */ }
 
-    func handleUncaughtExceptionBy(exHandler: (std.core.Thread, std.core.Exception) -> Unit): Unit
+    static func handleUncaughtExceptionBy(exHandler: (std.core.Thread, std.core.Exception) -> Unit): Unit { /* compiled code */ }
 }
 
 class FutureResult {
@@ -867,7 +888,7 @@ class MapIterator <: std.core.Iterator<R> {
 
     init(it: std.core.Iterator<T>, transform: (T) -> R) { /* compiled code */ }
 
-    func next: std.core.Option<R>
+    func next(): std.core.Option<R> { /* compiled code */ }
 }
 
 class ZipIterator <: std.core.Iterator<(T, R)> {
@@ -877,7 +898,7 @@ class ZipIterator <: std.core.Iterator<(T, R)> {
 
     init(itt: std.core.Iterator<T>, itr: std.core.Iterator<R>) { /* compiled code */ }
 
-    func next: std.core.Option<(T, R)>
+    func next(): std.core.Option<(T, R)> { /* compiled code */ }
 }
 
 class EnumerateIterator <: std.core.Iterator<(Int64, T)> {
@@ -887,7 +908,7 @@ class EnumerateIterator <: std.core.Iterator<(Int64, T)> {
 
     init(it: std.core.Iterator<T>) { /* compiled code */ }
 
-    func next: std.core.Option<(Int64, T)>
+    func next(): std.core.Option<(Int64, T)> { /* compiled code */ }
 }
 
 class FilterIterator <: std.core.Iterator<T> {
@@ -897,7 +918,7 @@ class FilterIterator <: std.core.Iterator<T> {
 
     init(it: std.core.Iterator<T>, predicate: (T) -> Bool) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 class FilterMapIterator <: std.core.Iterator<R> {
@@ -907,7 +928,7 @@ class FilterMapIterator <: std.core.Iterator<R> {
 
     init(it: std.core.Iterator<T>, transform: (T) -> std.core.Option<R>) { /* compiled code */ }
 
-    func next: std.core.Option<R>
+    func next(): std.core.Option<R> { /* compiled code */ }
 }
 
 class StepIterator <: std.core.Iterator<T> {
@@ -919,7 +940,7 @@ class StepIterator <: std.core.Iterator<T> {
 
     init(it: std.core.Iterator<T>, count: Int64) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 class SkipIterator <: std.core.Iterator<T> {
@@ -929,7 +950,7 @@ class SkipIterator <: std.core.Iterator<T> {
 
     init(it: std.core.Iterator<T>, count: Int64) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 class TakeIterator <: std.core.Iterator<T> {
@@ -939,7 +960,7 @@ class TakeIterator <: std.core.Iterator<T> {
 
     init(it: std.core.Iterator<T>, count: Int64) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 class ConcatIterator <: std.core.Iterator<T> {
@@ -951,7 +972,7 @@ class ConcatIterator <: std.core.Iterator<T> {
 
     init(it: std.core.Iterator<T>, other: std.core.Iterator<T>) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 class InspectIterator <: std.core.Iterator<T> {
@@ -961,7 +982,7 @@ class InspectIterator <: std.core.Iterator<T> {
 
     init(it: std.core.Iterator<T>, action: (T) -> Unit) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 class FlatMapIterator <: std.core.Iterator<R> {
@@ -973,7 +994,7 @@ class FlatMapIterator <: std.core.Iterator<R> {
 
     init(it: std.core.Iterable<T>, transform: (T) -> std.core.Iterable<R>) { /* compiled code */ }
 
-    func next: std.core.Option<R>
+    func next(): std.core.Option<R> { /* compiled code */ }
 }
 
 class IntersperseIterator <: std.core.Iterator<T> {
@@ -987,7 +1008,7 @@ class IntersperseIterator <: std.core.Iterator<T> {
 
     init(it: std.core.Iterator<T>, separator: T) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 class NoneValueException <: std.core.Exception {
@@ -995,7 +1016,7 @@ class NoneValueException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class Exception <: std.core.Object & std.core.ToString {
@@ -1009,21 +1030,23 @@ class Exception <: std.core.Object & std.core.ToString {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    func getClassName(): std.core.String { /* compiled code */ }
 
-    prop message: std.core.String
+    prop message: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func printStackTrace: Unit
+    func printStackTrace(): Unit { /* compiled code */ }
 
-    func getStackTrace: std.core.Array<std.core.StackTraceElement>
+    func getStackTrace(): std.core.Array<std.core.StackTraceElement> { /* compiled code */ }
 }
 
 interface Countable {
-    func next(right: Int64): T
+    func next(right: Int64): T { /* compiled code */ }
 
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 }
 
 class RangeIterator <: std.core.Iterator<T> {
@@ -1037,25 +1060,25 @@ class RangeIterator <: std.core.Iterator<T> {
 
     init(first: T, last: T, step: Int64, isEmpty: Bool) { /* compiled code */ }
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 }
 
 struct RunesToUtf8Bytes {
-    func getBytes(runes: std.core.Array<Rune>): std.core.Array<UInt8>
+    static func getBytes(runes: std.core.Array<Rune>): std.core.Array<UInt8> { /* compiled code */ }
 
-    func getBytes(elements: std.core.Collection<Rune>): std.core.Array<UInt8>
+    static func getBytes(elements: std.core.Collection<Rune>): std.core.Array<UInt8> { /* compiled code */ }
 
-    func getSize(runes: std.core.Array<Rune>): Int64
+    static func getSize(runes: std.core.Array<Rune>): Int64 { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func memcpy_s(dest: CPointer<UInt8>, destMax: UIntNative, src: CPointer<UInt8>, count: UIntNative): Int32
+foreign func memcpy_s(dest: CPointer<UInt8>, destMax: UIntNative, src: CPointer<UInt8>, count: UIntNative): Int32
 
-func utf8RuneSize(arr: std.core.Array<UInt8>, start: Int64, length: Int64): Int64
+func utf8RuneSize(arr: std.core.Array<UInt8>, start: Int64, length: Int64): Int64 { /* compiled code */ }
 
 class StringByteIterator <: std.core.Iterator<UInt8> {
-    func next: std.core.Option<UInt8>
+    func next(): std.core.Option<UInt8> { /* compiled code */ }
 
     let iteratorData: std.core.StringIteratorData
 
@@ -1075,7 +1098,7 @@ class StringIteratorData {
 }
 
 class StringRuneIterator <: std.core.Iterator<Rune> {
-    func next: std.core.Option<Rune>
+    func next(): std.core.Option<Rune> { /* compiled code */ }
 
     let iteratorData: std.core.StringIteratorData
 
@@ -1083,20 +1106,20 @@ class StringRuneIterator <: std.core.Iterator<Rune> {
 }
 
 class StringLineIterator <: std.core.Iterator<std.core.String> {
-    func next: std.core.Option<std.core.String>
+    func next(): std.core.Option<std.core.String> { /* compiled code */ }
 
     let iteratorData: std.core.StringIteratorData
 
     init(iteratorData: std.core.StringIteratorData) { /* compiled code */ }
 }
 
-func wyhash(arr: std.core.Array<UInt8>, start: Int64, size: Int64, see: UInt64): UInt64
+func wyhash(arr: std.core.Array<UInt8>, start: Int64, size: Int64, see: UInt64): UInt64 { /* compiled code */ }
 
-func checkInvalid(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Unit
+func checkInvalid(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Unit { /* compiled code */ }
 
-func vectorIndexByte32(arr: std.core.Array<UInt8>, offset: Int64, target: UInt8): Int64
+func vectorIndexByte32(arr: std.core.Array<UInt8>, offset: Int64, target: UInt8): Int64 { /* compiled code */ }
 
-func CJ_CORE_CountString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64): Int64
+foreign func CJ_CORE_CountString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64): Int64
 
 let EMPTY_STRING_ARRAY: std.core.Array<std.core.String>
 
@@ -1123,59 +1146,59 @@ class StringLazySplitIterator <: std.core.Iterator<std.core.String> {
 
     init(orgStrData: std.core.Array<UInt8>, orgStrSize: Int64, str: std.core.String, maxSplits: Int64, removeEmpty: Bool) { /* compiled code */ }
 
-    func next: std.core.Option<std.core.String>
+    func next(): std.core.Option<std.core.String> { /* compiled code */ }
 }
 
-func CJ_CORE_CountAndIndexString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64): CPointer<Int64>
+foreign func CJ_CORE_CountAndIndexString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64): CPointer<Int64>
 
 struct LibC {
-    func malloc(count: Int64): CPointer<T>
+    static func malloc(count: Int64): CPointer<T> { /* compiled code */ }
 
-    func free(p: CPointer<T>): Unit
+    static func free(p: CPointer<T>): Unit { /* compiled code */ }
 
-    func mallocCString(str: std.core.String): CString
+    static func mallocCString(str: std.core.String): CString { /* compiled code */ }
 
-    func free(cstr: CString): Unit
+    static func free(cstr: CString): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func CJ_CORE_StringMemcmp(str1: CPointer<UInt8>, str2: CPointer<UInt8>, n: UIntNative): Int64
+foreign func CJ_CORE_StringMemcmp(str1: CPointer<UInt8>, str2: CPointer<UInt8>, n: UIntNative): Int64
 
-func vectorCompare32(arr1: std.core.Array<UInt8>, offset1: Int64, arr2: std.core.Array<UInt8>, offset2: Int64): Int64
+func vectorCompare32(arr1: std.core.Array<UInt8>, offset1: Int64, arr2: std.core.Array<UInt8>, offset2: Int64): Int64 { /* compiled code */ }
 
-func intrinsicRefEqRawArray(a: std.core.Array<T>, b: std.core.Array<T>): Bool
+func intrinsicRefEqRawArray(a: std.core.Array<T>, b: std.core.Array<T>): Bool { /* compiled code */ }
 
-func CJ_CORE_LastIndexOfString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64, start: Int64): Int64
+foreign func CJ_CORE_LastIndexOfString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64, start: Int64): Int64
 
-func CJ_CORE_IndexOfString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64, start: Int64): Int64
+foreign func CJ_CORE_IndexOfString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64, start: Int64): Int64
 
-func checkUtf8Of2BytesWithoutException(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Bool
+func checkUtf8Of2BytesWithoutException(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Bool { /* compiled code */ }
 
-func checkUtf8Of3BytesWithoutException(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Bool
+func checkUtf8Of3BytesWithoutException(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Bool { /* compiled code */ }
 
-func checkUtf8Of4BytesWithoutException(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Bool
+func checkUtf8Of4BytesWithoutException(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Bool { /* compiled code */ }
 
-func calcNumLen(num: UInt64): Int64
+func calcNumLen(num: UInt64): Int64 { /* compiled code */ }
 
-func numberToString(number: UInt64, endIndex: Int64, buffer: std.core.Array<UInt8>): Unit
+func numberToString(number: UInt64, endIndex: Int64, buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
-func CJ_CORE_Float64ToCPointer(num: Float64): CPointer<UInt8>
+foreign func CJ_CORE_Float64ToCPointer(num: Float64): CPointer<UInt8>
 
-func strlen(str: CPointer<UInt8>): UIntNative
+foreign func strlen(str: CPointer<UInt8>): UIntNative
 
 class ThreadLocalKey <: std.core.Object & std.core.Hashable {
     let ALPHA: Int64
 
     let CURR: std.core.AtomicInt64
 
-    func nextHash: Int64
+    static func nextHash(): Int64 { /* compiled code */ }
 
     let code: Int64
 
-    func equals(another: std.core.ThreadLocalKey): Bool
+    func equals(another: std.core.ThreadLocalKey): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -1207,68 +1230,70 @@ class ArithmeticException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 extend Array {
-    func flatten: std.core.Array<T>
+    func flatten(): std.core.Array<T> { /* compiled code */ }
 }
 
 extend Array <: Collection {
-    func iterator: std.core.Iterator<T>
+    func iterator(): std.core.Iterator<T> { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func toArray: std.core.Array<T>
+    func toArray(): std.core.Array<T> { /* compiled code */ }
 }
 
 extend Array <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Array <: Equatable {
-    operator func ==(that: std.core.Array<T>): Bool
+    operator func ==(that: std.core.Array<T>): Bool { /* compiled code */ }
 
-    operator func !=(that: std.core.Array<T>): Bool
+    operator func !=(that: std.core.Array<T>): Bool { /* compiled code */ }
 
-    func contains(element: T): Bool
+    func contains(element: T): Bool { /* compiled code */ }
 
-    func indexOf(element: T): std.core.Option<Int64>
+    func indexOf(element: T): std.core.Option<Int64> { /* compiled code */ }
 
-    func indexOf(element: T, fromIndex: Int64): std.core.Option<Int64>
+    func indexOf(element: T, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func indexOf(elements: std.core.Array<T>): std.core.Option<Int64>
+    func indexOf(elements: std.core.Array<T>): std.core.Option<Int64> { /* compiled code */ }
 
-    func indexOf(elements: std.core.Array<T>, fromIndex: Int64): std.core.Option<Int64>
+    func indexOf(elements: std.core.Array<T>, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func lastIndexOf(element: T): std.core.Option<Int64>
+    func lastIndexOf(element: T): std.core.Option<Int64> { /* compiled code */ }
 
-    func lastIndexOf(element: T, fromIndex: Int64): std.core.Option<Int64>
+    func lastIndexOf(element: T, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func lastIndexOf(elements: std.core.Array<T>): std.core.Option<Int64>
+    func lastIndexOf(elements: std.core.Array<T>): std.core.Option<Int64> { /* compiled code */ }
 
-    func lastIndexOf(elements: std.core.Array<T>, fromIndex: Int64): std.core.Option<Int64>
+    func lastIndexOf(elements: std.core.Array<T>, fromIndex: Int64): std.core.Option<Int64> { /* compiled code */ }
 
-    func trimStart(`set`: std.core.Array<T>): std.core.Array<T>
+    func trimStart(`set`: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
-    func trimEnd(`set`: std.core.Array<T>): std.core.Array<T>
+    func trimEnd(`set`: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
-    func trimStart(predicate: (T) -> Bool): std.core.Array<T>
+    func trimStart(predicate: (T) -> Bool): std.core.Array<T> { /* compiled code */ }
 
-    func trimEnd(predicate: (T) -> Bool): std.core.Array<T>
+    func trimEnd(predicate: (T) -> Bool): std.core.Array<T> { /* compiled code */ }
 
-    func removePrefix(prefix: std.core.Array<T>): std.core.Array<T>
+    func removePrefix(prefix: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
-    func removeSuffix(suffix: std.core.Array<T>): std.core.Array<T>
+    func removeSuffix(suffix: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 }
 
-func arrayClone(rawArr: std.core.Array<T>): std.core.Array<T>
+func arrayClone(rawArr: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
-func CJ_CORE_AtExitCallbackListLock: Unit
+foreign func CJ_CORE_AtExitCallbackListLock(): Unit
 
-func CJ_CORE_AtExitCallbackListUnlook: Unit
+foreign func CJ_CORE_AtExitCallbackListUnlook(): Unit
 
 class AtexitCallbackNode {
     var atexitCallback: () -> Unit
@@ -1282,30 +1307,30 @@ var atexitCallbackHead: std.core.Option<std.core.AtexitCallbackNode>
 
 var callbacksRunningFlag: Bool
 
-func CJ_CORE_AddAtexitCallback(callback: () -> Unit): Unit
+func CJ_CORE_AddAtexitCallback(callback: () -> Unit): Unit { /* compiled code */ }
 
-func CJ_CORE_ExecAtexitCallbacks: Unit
+func CJ_CORE_ExecAtexitCallbacks(): Unit { /* compiled code */ }
 
 enum MemoryOrder {
     | SeqCst
 }
 
-func load(atomicType: ATOMIC_TYPE, memoryOrder: std.core.MemoryOrder): TYPE
+func load(atomicType: ATOMIC_TYPE, memoryOrder: std.core.MemoryOrder): TYPE { /* compiled code */ }
 
-func store(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.core.MemoryOrder): Unit
+func store(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.core.MemoryOrder): Unit { /* compiled code */ }
 
-func fetchAdd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.core.MemoryOrder): TYPE
+func fetchAdd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.core.MemoryOrder): TYPE { /* compiled code */ }
 
-func compareAndSwap(atomicType: ATOMIC_TYPE, oldValue: TYPE, newValue: TYPE, successOrder: std.core.MemoryOrder, failureOrder: std.core.MemoryOrder): Bool
+func compareAndSwap(atomicType: ATOMIC_TYPE, oldValue: TYPE, newValue: TYPE, successOrder: std.core.MemoryOrder, failureOrder: std.core.MemoryOrder): Bool { /* compiled code */ }
 
 class AtomicBool {
     var value: Int8
 
     init(val: Bool) { /* compiled code */ }
 
-    func load: Bool
+    func load(): Bool { /* compiled code */ }
 
-    func store(val: Bool): Unit
+    func store(val: Bool): Unit { /* compiled code */ }
 }
 
 class AtomicInt64 {
@@ -1313,13 +1338,13 @@ class AtomicInt64 {
 
     init(val: Int64) { /* compiled code */ }
 
-    func fetchAdd(val: Int64): Int64
+    func fetchAdd(val: Int64): Int64 { /* compiled code */ }
 
-    func load: Int64
+    func load(): Int64 { /* compiled code */ }
 
-    func store(val: Int64): Unit
+    func store(val: Int64): Unit { /* compiled code */ }
 
-    func compareAndSwap(old: Int64, new: Int64): Bool
+    func compareAndSwap(old: Int64, new: Int64): Bool { /* compiled code */ }
 }
 
 class AtomicReference {
@@ -1327,9 +1352,9 @@ class AtomicReference {
 
     init(val: T) { /* compiled code */ }
 
-    func load: T
+    func load(): T { /* compiled code */ }
 
-    func store(val: T): Unit
+    func store(val: T): Unit { /* compiled code */ }
 }
 
 class AtomicBox {
@@ -1337,93 +1362,93 @@ class AtomicBox {
 
     init(val: T) { /* compiled code */ }
 
-    func load: T
+    func load(): T { /* compiled code */ }
 
-    func store(val: T): Unit
+    func store(val: T): Unit { /* compiled code */ }
 }
 
 extend Box <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 interface Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 extend Box <: Comparable {
-    operator func ==(that: std.core.Box<T>): Bool
+    operator func ==(that: std.core.Box<T>): Bool { /* compiled code */ }
 
-    operator func !=(that: std.core.Box<T>): Bool
+    operator func !=(that: std.core.Box<T>): Bool { /* compiled code */ }
 
-    operator func >(that: std.core.Box<T>): Bool
+    operator func >(that: std.core.Box<T>): Bool { /* compiled code */ }
 
-    operator func <(that: std.core.Box<T>): Bool
+    operator func <(that: std.core.Box<T>): Bool { /* compiled code */ }
 
-    operator func >=(that: std.core.Box<T>): Bool
+    operator func >=(that: std.core.Box<T>): Bool { /* compiled code */ }
 
-    operator func <=(that: std.core.Box<T>): Bool
+    operator func <=(that: std.core.Box<T>): Bool { /* compiled code */ }
 
-    func compare(that: std.core.Box<T>): std.core.Ordering
+    func compare(that: std.core.Box<T>): std.core.Ordering { /* compiled code */ }
 }
 
 extend Box <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend {
-    func isAsciiLetter: Bool
+    func isAsciiLetter(): Bool { /* compiled code */ }
 
-    func isAsciiNumber: Bool
+    func isAsciiNumber(): Bool { /* compiled code */ }
 
-    func isAsciiHex: Bool
+    func isAsciiHex(): Bool { /* compiled code */ }
 
-    func isAsciiOct: Bool
+    func isAsciiOct(): Bool { /* compiled code */ }
 
-    func isAsciiPunctuation: Bool
+    func isAsciiPunctuation(): Bool { /* compiled code */ }
 
-    func isAsciiGraphic: Bool
+    func isAsciiGraphic(): Bool { /* compiled code */ }
 
-    func isAsciiControl: Bool
+    func isAsciiControl(): Bool { /* compiled code */ }
 
-    func isAsciiNumberOrLetter: Bool
+    func isAsciiNumberOrLetter(): Bool { /* compiled code */ }
 
-    func isAsciiLowerCase: Bool
+    func isAsciiLowerCase(): Bool { /* compiled code */ }
 
-    func isAsciiUpperCase: Bool
+    func isAsciiUpperCase(): Bool { /* compiled code */ }
 
-    func isAscii: Bool
+    func isAscii(): Bool { /* compiled code */ }
 
-    func isAsciiWhiteSpace: Bool
+    func isAsciiWhiteSpace(): Bool { /* compiled code */ }
 
-    func toAsciiUpperCase: UInt8
+    func toAsciiUpperCase(): UInt8 { /* compiled code */ }
 
-    func toAsciiLowerCase: UInt8
+    func toAsciiLowerCase(): UInt8 { /* compiled code */ }
 }
 
-func getPointerAddress(c: CPointer<T>): UIntNative
+func getPointerAddress(c: CPointer<T>): UIntNative { /* compiled code */ }
 
-func addPointer(c: CPointer<T>, offset: Int64): CPointer<T>
+func addPointer(c: CPointer<T>, offset: Int64): CPointer<T> { /* compiled code */ }
 
 extend Extend {
-    func isNull: Bool
+    func isNull(): Bool { /* compiled code */ }
 
-    func isNotNull: Bool
+    func isNotNull(): Bool { /* compiled code */ }
 
-    func toUIntNative: UIntNative
+    func toUIntNative(): UIntNative { /* compiled code */ }
 
-    func read: T
+    func read(): T { /* compiled code */ }
 
-    func write(value: T): Unit
+    func write(value: T): Unit { /* compiled code */ }
 
-    func read(idx: Int64): T
+    func read(idx: Int64): T { /* compiled code */ }
 
-    func write(idx: Int64, value: T): Unit
+    func write(idx: Int64, value: T): Unit { /* compiled code */ }
 
-    operator func +(offset: Int64): CPointer<T>
+    operator func +(offset: Int64): CPointer<T> { /* compiled code */ }
 
-    operator func -(offset: Int64): CPointer<T>
+    operator func -(offset: Int64): CPointer<T> { /* compiled code */ }
 
-    func asResource: std.core.CPointerResource<T>
+    func asResource(): std.core.CPointerResource<T> { /* compiled code */ }
 }
 
 struct CPointerResource <: std.core.Resource {
@@ -1433,55 +1458,55 @@ struct CPointerResource <: std.core.Resource {
 
     init(p: CPointer<T>) { /* compiled code */ }
 
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 }
 
 interface Resource {
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 }
 
-func strcmp(source: CPointer<UInt8>, target: CPointer<UInt8>): Int32
+foreign func strcmp(source: CPointer<UInt8>, target: CPointer<UInt8>): Int32
 
-func strncmp(source: CPointer<UInt8>, target: CPointer<UInt8>, cmpSize: UIntNative): Int32
+foreign func strncmp(source: CPointer<UInt8>, target: CPointer<UInt8>, cmpSize: UIntNative): Int32
 
-func strcasecmp(source: CPointer<UInt8>, target: CPointer<UInt8>): Int32
+foreign func strcasecmp(source: CPointer<UInt8>, target: CPointer<UInt8>): Int32
 
-func convertCStr2Ptr(cs: CString): CPointer<UInt8>
+func convertCStr2Ptr(cs: CString): CPointer<UInt8> { /* compiled code */ }
 
-func createStrFromCPointer(cp: CPointer<UInt8>): std.core.String
+func createStrFromCPointer(cp: CPointer<UInt8>): std.core.String { /* compiled code */ }
 
 extend Extend <: ToString {
-    func getChars: CPointer<UInt8>
+    func getChars(): CPointer<UInt8> { /* compiled code */ }
 
-    func isNull: Bool
+    func isNull(): Bool { /* compiled code */ }
 
-    func size: Int64
+    func size(): Int64 { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func isNotEmpty: Bool
+    func isNotEmpty(): Bool { /* compiled code */ }
 
-    func startsWith(prefix: CString): Bool
+    func startsWith(prefix: CString): Bool { /* compiled code */ }
 
-    func endsWith(suffix: CString): Bool
+    func endsWith(suffix: CString): Bool { /* compiled code */ }
 
-    func equals(rhs: CString): Bool
+    func equals(rhs: CString): Bool { /* compiled code */ }
 
-    func equalsLower(rhs: CString): Bool
+    func equalsLower(rhs: CString): Bool { /* compiled code */ }
 
-    func subCString(beginIndex: UIntNative): CString
+    func subCString(beginIndex: UIntNative): CString { /* compiled code */ }
 
-    func subCString(beginIndex: UIntNative, subLen: UIntNative): CString
+    func subCString(beginIndex: UIntNative, subLen: UIntNative): CString { /* compiled code */ }
 
-    func compare(str: CString): Int32
+    func compare(str: CString): Int32 { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func asResource: std.core.CStringResource
+    func asResource(): std.core.CStringResource { /* compiled code */ }
 }
 
 struct CStringResource <: std.core.Resource {
@@ -1491,549 +1516,551 @@ struct CStringResource <: std.core.Resource {
 
     init(p: CString) { /* compiled code */ }
 
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 }
 
 extend Extend {
-    func isAsciiLetter: Bool
+    func isAsciiLetter(): Bool { /* compiled code */ }
 
-    func isAsciiNumber: Bool
+    func isAsciiNumber(): Bool { /* compiled code */ }
 
-    func isAsciiHex: Bool
+    func isAsciiHex(): Bool { /* compiled code */ }
 
-    func isAsciiOct: Bool
+    func isAsciiOct(): Bool { /* compiled code */ }
 
-    func isAsciiPunctuation: Bool
+    func isAsciiPunctuation(): Bool { /* compiled code */ }
 
-    func isAsciiGraphic: Bool
+    func isAsciiGraphic(): Bool { /* compiled code */ }
 
-    func isAsciiControl: Bool
+    func isAsciiControl(): Bool { /* compiled code */ }
 
-    func isAsciiNumberOrLetter: Bool
+    func isAsciiNumberOrLetter(): Bool { /* compiled code */ }
 
-    func isAsciiLowerCase: Bool
+    func isAsciiLowerCase(): Bool { /* compiled code */ }
 
-    func isAsciiUpperCase: Bool
+    func isAsciiUpperCase(): Bool { /* compiled code */ }
 
-    func isAscii: Bool
+    func isAscii(): Bool { /* compiled code */ }
 
-    func isAsciiWhiteSpace: Bool
+    func isAsciiWhiteSpace(): Bool { /* compiled code */ }
 
-    func toAsciiUpperCase: Rune
+    func toAsciiUpperCase(): Rune { /* compiled code */ }
 
-    func toAsciiLowerCase: Rune
+    func toAsciiLowerCase(): Rune { /* compiled code */ }
 
-    func utf8Size(arr: std.core.Array<UInt8>, index: Int64): Int64
+    static func utf8Size(arr: std.core.Array<UInt8>, index: Int64): Int64 { /* compiled code */ }
 
-    func utf8SizeUnchecked(byte: UInt8): Int64
+    static func utf8SizeUnchecked(byte: UInt8): Int64 { /* compiled code */ }
 
-    func utf8Size(c: Rune): Int64
+    static func utf8Size(c: Rune): Int64 { /* compiled code */ }
 
-    func fromUtf8(arr: std.core.Array<UInt8>, index: Int64): (Rune, Int64)
+    static func fromUtf8(arr: std.core.Array<UInt8>, index: Int64): (Rune, Int64) { /* compiled code */ }
 
-    func fromUtf8(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): (Rune, Int64)
+    static func fromUtf8(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): (Rune, Int64) { /* compiled code */ }
 
-    func getPreviousFromUtf8(arr: std.core.Array<UInt8>, index: Int64): (Rune, Int64)
+    static func getPreviousFromUtf8(arr: std.core.Array<UInt8>, index: Int64): (Rune, Int64) { /* compiled code */ }
 
-    func intoUtf8Array(c: Rune, arr: std.core.Array<UInt8>, index: Int64): Int64
+    static func intoUtf8Array(c: Rune, arr: std.core.Array<UInt8>, index: Int64): Int64 { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: Rune): std.core.Ordering
+    func compare(rhs: Rune): std.core.Ordering { /* compiled code */ }
 }
 
-func Int64Less(a: Int64, b: Int64): Bool
+func Int64Less(a: Int64, b: Int64): Bool { /* compiled code */ }
 
-func Int64Greater(a: Int64, b: Int64): Bool
+func Int64Greater(a: Int64, b: Int64): Bool { /* compiled code */ }
 
-func Int64LessOrEqual(a: Int64, b: Int64): Bool
+func Int64LessOrEqual(a: Int64, b: Int64): Bool { /* compiled code */ }
 
-func Int64GreaterOrEqual(a: Int64, b: Int64): Bool
+func Int64GreaterOrEqual(a: Int64, b: Int64): Bool { /* compiled code */ }
 
-func Int64Equal(a: Int64, b: Int64): Bool
+func Int64Equal(a: Int64, b: Int64): Bool { /* compiled code */ }
 
-func Int64NotEqual(a: Int64, b: Int64): Bool
+func Int64NotEqual(a: Int64, b: Int64): Bool { /* compiled code */ }
 
-func Int32Less(a: Int32, b: Int32): Bool
+func Int32Less(a: Int32, b: Int32): Bool { /* compiled code */ }
 
-func Int32Greater(a: Int32, b: Int32): Bool
+func Int32Greater(a: Int32, b: Int32): Bool { /* compiled code */ }
 
-func Int32LessOrEqual(a: Int32, b: Int32): Bool
+func Int32LessOrEqual(a: Int32, b: Int32): Bool { /* compiled code */ }
 
-func Int32GreaterOrEqual(a: Int32, b: Int32): Bool
+func Int32GreaterOrEqual(a: Int32, b: Int32): Bool { /* compiled code */ }
 
-func Int32Equal(a: Int32, b: Int32): Bool
+func Int32Equal(a: Int32, b: Int32): Bool { /* compiled code */ }
 
-func Int32NotEqual(a: Int32, b: Int32): Bool
+func Int32NotEqual(a: Int32, b: Int32): Bool { /* compiled code */ }
 
-func Int16Less(a: Int16, b: Int16): Bool
+func Int16Less(a: Int16, b: Int16): Bool { /* compiled code */ }
 
-func Int16Greater(a: Int16, b: Int16): Bool
+func Int16Greater(a: Int16, b: Int16): Bool { /* compiled code */ }
 
-func Int16LessOrEqual(a: Int16, b: Int16): Bool
+func Int16LessOrEqual(a: Int16, b: Int16): Bool { /* compiled code */ }
 
-func Int16GreaterOrEqual(a: Int16, b: Int16): Bool
+func Int16GreaterOrEqual(a: Int16, b: Int16): Bool { /* compiled code */ }
 
-func Int16Equal(a: Int16, b: Int16): Bool
+func Int16Equal(a: Int16, b: Int16): Bool { /* compiled code */ }
 
-func Int16NotEqual(a: Int16, b: Int16): Bool
+func Int16NotEqual(a: Int16, b: Int16): Bool { /* compiled code */ }
 
-func Int8Less(a: Int8, b: Int8): Bool
+func Int8Less(a: Int8, b: Int8): Bool { /* compiled code */ }
 
-func Int8Greater(a: Int8, b: Int8): Bool
+func Int8Greater(a: Int8, b: Int8): Bool { /* compiled code */ }
 
-func Int8LessOrEqual(a: Int8, b: Int8): Bool
+func Int8LessOrEqual(a: Int8, b: Int8): Bool { /* compiled code */ }
 
-func Int8GreaterOrEqual(a: Int8, b: Int8): Bool
+func Int8GreaterOrEqual(a: Int8, b: Int8): Bool { /* compiled code */ }
 
-func Int8Equal(a: Int8, b: Int8): Bool
+func Int8Equal(a: Int8, b: Int8): Bool { /* compiled code */ }
 
-func Int8NotEqual(a: Int8, b: Int8): Bool
+func Int8NotEqual(a: Int8, b: Int8): Bool { /* compiled code */ }
 
-func UInt64Less(a: UInt64, b: UInt64): Bool
+func UInt64Less(a: UInt64, b: UInt64): Bool { /* compiled code */ }
 
-func UInt64Greater(a: UInt64, b: UInt64): Bool
+func UInt64Greater(a: UInt64, b: UInt64): Bool { /* compiled code */ }
 
-func UInt64LessOrEqual(a: UInt64, b: UInt64): Bool
+func UInt64LessOrEqual(a: UInt64, b: UInt64): Bool { /* compiled code */ }
 
-func UInt64GreaterOrEqual(a: UInt64, b: UInt64): Bool
+func UInt64GreaterOrEqual(a: UInt64, b: UInt64): Bool { /* compiled code */ }
 
-func UInt64Equal(a: UInt64, b: UInt64): Bool
+func UInt64Equal(a: UInt64, b: UInt64): Bool { /* compiled code */ }
 
-func UInt64NotEqual(a: UInt64, b: UInt64): Bool
+func UInt64NotEqual(a: UInt64, b: UInt64): Bool { /* compiled code */ }
 
-func UInt32Less(a: UInt32, b: UInt32): Bool
+func UInt32Less(a: UInt32, b: UInt32): Bool { /* compiled code */ }
 
-func UInt32Greater(a: UInt32, b: UInt32): Bool
+func UInt32Greater(a: UInt32, b: UInt32): Bool { /* compiled code */ }
 
-func UInt32LessOrEqual(a: UInt32, b: UInt32): Bool
+func UInt32LessOrEqual(a: UInt32, b: UInt32): Bool { /* compiled code */ }
 
-func UInt32GreaterOrEqual(a: UInt32, b: UInt32): Bool
+func UInt32GreaterOrEqual(a: UInt32, b: UInt32): Bool { /* compiled code */ }
 
-func UInt32Equal(a: UInt32, b: UInt32): Bool
+func UInt32Equal(a: UInt32, b: UInt32): Bool { /* compiled code */ }
 
-func UInt32NotEqual(a: UInt32, b: UInt32): Bool
+func UInt32NotEqual(a: UInt32, b: UInt32): Bool { /* compiled code */ }
 
-func UInt16Less(a: UInt16, b: UInt16): Bool
+func UInt16Less(a: UInt16, b: UInt16): Bool { /* compiled code */ }
 
-func UInt16Greater(a: UInt16, b: UInt16): Bool
+func UInt16Greater(a: UInt16, b: UInt16): Bool { /* compiled code */ }
 
-func UInt16LessOrEqual(a: UInt16, b: UInt16): Bool
+func UInt16LessOrEqual(a: UInt16, b: UInt16): Bool { /* compiled code */ }
 
-func UInt16GreaterOrEqual(a: UInt16, b: UInt16): Bool
+func UInt16GreaterOrEqual(a: UInt16, b: UInt16): Bool { /* compiled code */ }
 
-func UInt16Equal(a: UInt16, b: UInt16): Bool
+func UInt16Equal(a: UInt16, b: UInt16): Bool { /* compiled code */ }
 
-func UInt16NotEqual(a: UInt16, b: UInt16): Bool
+func UInt16NotEqual(a: UInt16, b: UInt16): Bool { /* compiled code */ }
 
-func UInt8Less(a: UInt8, b: UInt8): Bool
+func UInt8Less(a: UInt8, b: UInt8): Bool { /* compiled code */ }
 
-func UInt8Greater(a: UInt8, b: UInt8): Bool
+func UInt8Greater(a: UInt8, b: UInt8): Bool { /* compiled code */ }
 
-func UInt8LessOrEqual(a: UInt8, b: UInt8): Bool
+func UInt8LessOrEqual(a: UInt8, b: UInt8): Bool { /* compiled code */ }
 
-func UInt8GreaterOrEqual(a: UInt8, b: UInt8): Bool
+func UInt8GreaterOrEqual(a: UInt8, b: UInt8): Bool { /* compiled code */ }
 
-func UInt8Equal(a: UInt8, b: UInt8): Bool
+func UInt8Equal(a: UInt8, b: UInt8): Bool { /* compiled code */ }
 
-func UInt8NotEqual(a: UInt8, b: UInt8): Bool
+func UInt8NotEqual(a: UInt8, b: UInt8): Bool { /* compiled code */ }
 
-func Float16Less(a: Float16, b: Float16): Bool
+func Float16Less(a: Float16, b: Float16): Bool { /* compiled code */ }
 
-func Float16Greater(a: Float16, b: Float16): Bool
+func Float16Greater(a: Float16, b: Float16): Bool { /* compiled code */ }
 
-func Float16LessOrEqual(a: Float16, b: Float16): Bool
+func Float16LessOrEqual(a: Float16, b: Float16): Bool { /* compiled code */ }
 
-func Float16GreaterOrEqual(a: Float16, b: Float16): Bool
+func Float16GreaterOrEqual(a: Float16, b: Float16): Bool { /* compiled code */ }
 
-func Float16Equal(a: Float16, b: Float16): Bool
+func Float16Equal(a: Float16, b: Float16): Bool { /* compiled code */ }
 
-func Float16NotEqual(a: Float16, b: Float16): Bool
+func Float16NotEqual(a: Float16, b: Float16): Bool { /* compiled code */ }
 
-func Float32Less(a: Float32, b: Float32): Bool
+func Float32Less(a: Float32, b: Float32): Bool { /* compiled code */ }
 
-func Float32Greater(a: Float32, b: Float32): Bool
+func Float32Greater(a: Float32, b: Float32): Bool { /* compiled code */ }
 
-func Float32LessOrEqual(a: Float32, b: Float32): Bool
+func Float32LessOrEqual(a: Float32, b: Float32): Bool { /* compiled code */ }
 
-func Float32GreaterOrEqual(a: Float32, b: Float32): Bool
+func Float32GreaterOrEqual(a: Float32, b: Float32): Bool { /* compiled code */ }
 
-func Float32Equal(a: Float32, b: Float32): Bool
+func Float32Equal(a: Float32, b: Float32): Bool { /* compiled code */ }
 
-func Float32NotEqual(a: Float32, b: Float32): Bool
+func Float32NotEqual(a: Float32, b: Float32): Bool { /* compiled code */ }
 
-func Float64Less(a: Float64, b: Float64): Bool
+func Float64Less(a: Float64, b: Float64): Bool { /* compiled code */ }
 
-func Float64Greater(a: Float64, b: Float64): Bool
+func Float64Greater(a: Float64, b: Float64): Bool { /* compiled code */ }
 
-func Float64LessOrEqual(a: Float64, b: Float64): Bool
+func Float64LessOrEqual(a: Float64, b: Float64): Bool { /* compiled code */ }
 
-func Float64GreaterOrEqual(a: Float64, b: Float64): Bool
+func Float64GreaterOrEqual(a: Float64, b: Float64): Bool { /* compiled code */ }
 
-func Float64Equal(a: Float64, b: Float64): Bool
+func Float64Equal(a: Float64, b: Float64): Bool { /* compiled code */ }
 
-func Float64NotEqual(a: Float64, b: Float64): Bool
+func Float64NotEqual(a: Float64, b: Float64): Bool { /* compiled code */ }
 
 interface Less {
-    operator func <(rhs: T): Bool
+    operator func <(rhs: T): Bool { /* compiled code */ }
 }
 
 interface Greater {
-    operator func >(rhs: T): Bool
+    operator func >(rhs: T): Bool { /* compiled code */ }
 }
 
 interface LessOrEqual {
-    operator func <=(rhs: T): Bool
+    operator func <=(rhs: T): Bool { /* compiled code */ }
 }
 
 interface GreaterOrEqual {
-    operator func >=(rhs: T): Bool
+    operator func >=(rhs: T): Bool { /* compiled code */ }
 }
 
 extend Ordering <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Ordering <: Comparable {
-    func compare(that: std.core.Ordering): std.core.Ordering
+    func compare(that: std.core.Ordering): std.core.Ordering { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: IntNative): std.core.Ordering
+    func compare(rhs: IntNative): std.core.Ordering { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: Int64): std.core.Ordering
+    func compare(rhs: Int64): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: Int64): Bool
+    operator func <(rhs: Int64): Bool { /* compiled code */ }
 
-    operator func >(rhs: Int64): Bool
+    operator func >(rhs: Int64): Bool { /* compiled code */ }
 
-    operator func <=(rhs: Int64): Bool
+    operator func <=(rhs: Int64): Bool { /* compiled code */ }
 
-    operator func >=(rhs: Int64): Bool
+    operator func >=(rhs: Int64): Bool { /* compiled code */ }
 
-    operator func ==(rhs: Int64): Bool
+    operator func ==(rhs: Int64): Bool { /* compiled code */ }
 
-    operator func !=(rhs: Int64): Bool
+    operator func !=(rhs: Int64): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: Int32): std.core.Ordering
+    func compare(rhs: Int32): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: Int32): Bool
+    operator func <(rhs: Int32): Bool { /* compiled code */ }
 
-    operator func >(rhs: Int32): Bool
+    operator func >(rhs: Int32): Bool { /* compiled code */ }
 
-    operator func <=(rhs: Int32): Bool
+    operator func <=(rhs: Int32): Bool { /* compiled code */ }
 
-    operator func >=(rhs: Int32): Bool
+    operator func >=(rhs: Int32): Bool { /* compiled code */ }
 
-    operator func ==(rhs: Int32): Bool
+    operator func ==(rhs: Int32): Bool { /* compiled code */ }
 
-    operator func !=(rhs: Int32): Bool
+    operator func !=(rhs: Int32): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: Int16): std.core.Ordering
+    func compare(rhs: Int16): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: Int16): Bool
+    operator func <(rhs: Int16): Bool { /* compiled code */ }
 
-    operator func >(rhs: Int16): Bool
+    operator func >(rhs: Int16): Bool { /* compiled code */ }
 
-    operator func <=(rhs: Int16): Bool
+    operator func <=(rhs: Int16): Bool { /* compiled code */ }
 
-    operator func >=(rhs: Int16): Bool
+    operator func >=(rhs: Int16): Bool { /* compiled code */ }
 
-    operator func ==(rhs: Int16): Bool
+    operator func ==(rhs: Int16): Bool { /* compiled code */ }
 
-    operator func !=(rhs: Int16): Bool
+    operator func !=(rhs: Int16): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: Int8): std.core.Ordering
+    func compare(rhs: Int8): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: Int8): Bool
+    operator func <(rhs: Int8): Bool { /* compiled code */ }
 
-    operator func >(rhs: Int8): Bool
+    operator func >(rhs: Int8): Bool { /* compiled code */ }
 
-    operator func <=(rhs: Int8): Bool
+    operator func <=(rhs: Int8): Bool { /* compiled code */ }
 
-    operator func >=(rhs: Int8): Bool
+    operator func >=(rhs: Int8): Bool { /* compiled code */ }
 
-    operator func ==(rhs: Int8): Bool
+    operator func ==(rhs: Int8): Bool { /* compiled code */ }
 
-    operator func !=(rhs: Int8): Bool
+    operator func !=(rhs: Int8): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: UIntNative): std.core.Ordering
+    func compare(rhs: UIntNative): std.core.Ordering { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: UInt64): std.core.Ordering
+    func compare(rhs: UInt64): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: UInt64): Bool
+    operator func <(rhs: UInt64): Bool { /* compiled code */ }
 
-    operator func >(rhs: UInt64): Bool
+    operator func >(rhs: UInt64): Bool { /* compiled code */ }
 
-    operator func <=(rhs: UInt64): Bool
+    operator func <=(rhs: UInt64): Bool { /* compiled code */ }
 
-    operator func >=(rhs: UInt64): Bool
+    operator func >=(rhs: UInt64): Bool { /* compiled code */ }
 
-    operator func ==(rhs: UInt64): Bool
+    operator func ==(rhs: UInt64): Bool { /* compiled code */ }
 
-    operator func !=(rhs: UInt64): Bool
+    operator func !=(rhs: UInt64): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: UInt32): std.core.Ordering
+    func compare(rhs: UInt32): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: UInt32): Bool
+    operator func <(rhs: UInt32): Bool { /* compiled code */ }
 
-    operator func >(rhs: UInt32): Bool
+    operator func >(rhs: UInt32): Bool { /* compiled code */ }
 
-    operator func <=(rhs: UInt32): Bool
+    operator func <=(rhs: UInt32): Bool { /* compiled code */ }
 
-    operator func >=(rhs: UInt32): Bool
+    operator func >=(rhs: UInt32): Bool { /* compiled code */ }
 
-    operator func ==(rhs: UInt32): Bool
+    operator func ==(rhs: UInt32): Bool { /* compiled code */ }
 
-    operator func !=(rhs: UInt32): Bool
+    operator func !=(rhs: UInt32): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: UInt16): std.core.Ordering
+    func compare(rhs: UInt16): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: UInt16): Bool
+    operator func <(rhs: UInt16): Bool { /* compiled code */ }
 
-    operator func >(rhs: UInt16): Bool
+    operator func >(rhs: UInt16): Bool { /* compiled code */ }
 
-    operator func <=(rhs: UInt16): Bool
+    operator func <=(rhs: UInt16): Bool { /* compiled code */ }
 
-    operator func >=(rhs: UInt16): Bool
+    operator func >=(rhs: UInt16): Bool { /* compiled code */ }
 
-    operator func ==(rhs: UInt16): Bool
+    operator func ==(rhs: UInt16): Bool { /* compiled code */ }
 
-    operator func !=(rhs: UInt16): Bool
+    operator func !=(rhs: UInt16): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: UInt8): std.core.Ordering
+    func compare(rhs: UInt8): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: UInt8): Bool
+    operator func <(rhs: UInt8): Bool { /* compiled code */ }
 
-    operator func >(rhs: UInt8): Bool
+    operator func >(rhs: UInt8): Bool { /* compiled code */ }
 
-    operator func <=(rhs: UInt8): Bool
+    operator func <=(rhs: UInt8): Bool { /* compiled code */ }
 
-    operator func >=(rhs: UInt8): Bool
+    operator func >=(rhs: UInt8): Bool { /* compiled code */ }
 
-    operator func ==(rhs: UInt8): Bool
+    operator func ==(rhs: UInt8): Bool { /* compiled code */ }
 
-    operator func !=(rhs: UInt8): Bool
+    operator func !=(rhs: UInt8): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: Float16): std.core.Ordering
+    func compare(rhs: Float16): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: Float16): Bool
+    operator func <(rhs: Float16): Bool { /* compiled code */ }
 
-    operator func >(rhs: Float16): Bool
+    operator func >(rhs: Float16): Bool { /* compiled code */ }
 
-    operator func <=(rhs: Float16): Bool
+    operator func <=(rhs: Float16): Bool { /* compiled code */ }
 
-    operator func >=(rhs: Float16): Bool
+    operator func >=(rhs: Float16): Bool { /* compiled code */ }
 
-    operator func ==(rhs: Float16): Bool
+    operator func ==(rhs: Float16): Bool { /* compiled code */ }
 
-    operator func !=(rhs: Float16): Bool
+    operator func !=(rhs: Float16): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: Float32): std.core.Ordering
+    func compare(rhs: Float32): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: Float32): Bool
+    operator func <(rhs: Float32): Bool { /* compiled code */ }
 
-    operator func >(rhs: Float32): Bool
+    operator func >(rhs: Float32): Bool { /* compiled code */ }
 
-    operator func <=(rhs: Float32): Bool
+    operator func <=(rhs: Float32): Bool { /* compiled code */ }
 
-    operator func >=(rhs: Float32): Bool
+    operator func >=(rhs: Float32): Bool { /* compiled code */ }
 
-    operator func ==(rhs: Float32): Bool
+    operator func ==(rhs: Float32): Bool { /* compiled code */ }
 
-    operator func !=(rhs: Float32): Bool
+    operator func !=(rhs: Float32): Bool { /* compiled code */ }
 }
 
 extend Extend <: Comparable {
-    func compare(rhs: Float64): std.core.Ordering
+    func compare(rhs: Float64): std.core.Ordering { /* compiled code */ }
 
-    operator func <(rhs: Float64): Bool
+    operator func <(rhs: Float64): Bool { /* compiled code */ }
 
-    operator func >(rhs: Float64): Bool
+    operator func >(rhs: Float64): Bool { /* compiled code */ }
 
-    operator func <=(rhs: Float64): Bool
+    operator func <=(rhs: Float64): Bool { /* compiled code */ }
 
-    operator func >=(rhs: Float64): Bool
+    operator func >=(rhs: Float64): Bool { /* compiled code */ }
 
-    operator func ==(rhs: Float64): Bool
+    operator func ==(rhs: Float64): Bool { /* compiled code */ }
 
-    operator func !=(rhs: Float64): Bool
+    operator func !=(rhs: Float64): Bool { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): IntNative
+    func next(right: Int64): IntNative { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): Int64
+    func next(right: Int64): Int64 { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): Int32
+    func next(right: Int64): Int32 { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): Int16
+    func next(right: Int64): Int16 { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): Int8
+    func next(right: Int64): Int8 { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): UIntNative
+    func next(right: Int64): UIntNative { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): UInt64
+    func next(right: Int64): UInt64 { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): UInt32
+    func next(right: Int64): UInt32 { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): UInt16
+    func next(right: Int64): UInt16 { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): UInt8
+    func next(right: Int64): UInt8 { /* compiled code */ }
 }
 
 extend Extend <: Countable {
-    func position: Int64
+    func position(): Int64 { /* compiled code */ }
 
-    func next(right: Int64): Rune
+    func next(right: Int64): Rune { /* compiled code */ }
 }
 
 let MAX_NS_FLOAT64: Float64
 
 let MIN_NS_FLOAT64: Float64
 
-func durMul(secs: UInt64, nanos: UInt32, multiplier: UInt64, sign: Bool): std.core.Option<std.core.Duration>
+func durMul(secs: UInt64, nanos: UInt32, multiplier: UInt64, sign: Bool): std.core.Option<std.core.Duration> { /* compiled code */ }
 
-func u32MulU64(thisInt: UInt32, thatInt: UInt64): (UInt64, UInt32)
+func u32MulU64(thisInt: UInt32, thatInt: UInt64): (UInt64, UInt32) { /* compiled code */ }
 
-func tryU64Mul(left: UInt64, right: UInt64): std.core.Option<UInt64>
+func tryU64Mul(left: UInt64, right: UInt64): std.core.Option<UInt64> { /* compiled code */ }
 
-func tryU64Add(left: UInt64, right: UInt64): std.core.Option<UInt64>
+func tryU64Add(left: UInt64, right: UInt64): std.core.Option<UInt64> { /* compiled code */ }
 
-func checkSub(left: Int64, right: Int64): Bool
+func checkSub(left: Int64, right: Int64): Bool { /* compiled code */ }
 
-func toSecNsBase(num: UInt64): (UInt32, UInt32, UInt32)
+func toSecNsBase(num: UInt64): (UInt32, UInt32, UInt32) { /* compiled code */ }
 
-func durDiv(secs: UInt64, nanos: UInt32, divisor: UInt64): (Int64, Int64)
+func durDiv(secs: UInt64, nanos: UInt32, divisor: UInt64): (Int64, Int64) { /* compiled code */ }
 
-func getDifference(num3: Int64, num2: Int64, num1: Int64, num0: Int64): (Int64, Int64, Int64, Int64)
+func getDifference(num3: Int64, num2: Int64, num1: Int64, num0: Int64): (Int64, Int64, Int64, Int64) { /* compiled code */ }
 
-func getDifference(num2: Int64, num1: Int64, num0: Int64): (UInt32, UInt32, UInt32)
+func getDifference(num2: Int64, num1: Int64, num0: Int64): (UInt32, UInt32, UInt32) { /* compiled code */ }
 
-func u32TwoMul(num1: UInt32, num0: UInt32, multiplier: UInt32): (UInt32, UInt32, UInt32)
+func u32TwoMul(num1: UInt32, num0: UInt32, multiplier: UInt32): (UInt32, UInt32, UInt32) { /* compiled code */ }
 
-func u32ThreeMul(num2: UInt32, num1: UInt32, num0: UInt32, multiplier: UInt32): (UInt32, UInt32, UInt32, UInt32)
+func u32ThreeMul(num2: UInt32, num1: UInt32, num0: UInt32, multiplier: UInt32): (UInt32, UInt32, UInt32, UInt32) { /* compiled code */ }
 
-func u32DividendMul(num3: UInt32, num2: UInt32, num1: UInt32, num0: UInt32, times: UInt32): (UInt32, UInt32, UInt32, UInt32, UInt32)
+func u32DividendMul(num3: UInt32, num2: UInt32, num1: UInt32, num0: UInt32, times: UInt32): (UInt32, UInt32, UInt32, UInt32, UInt32) { /* compiled code */ }
 
-func divAndMod(dividend: UInt64, dividend2: UInt32, divisor2: UInt32, divisor1: UInt32): UInt32
+func divAndMod(dividend: UInt64, dividend2: UInt32, divisor2: UInt32, divisor1: UInt32): UInt32 { /* compiled code */ }
 
 extend Extend {
-    operator func *(r: std.core.Duration): std.core.Duration
+    operator func *(r: std.core.Duration): std.core.Duration { /* compiled code */ }
 }
 
 extend Extend {
-    operator func -(r: UInt32): Int64
+    operator func -(r: UInt32): Int64 { /* compiled code */ }
 }
 
 extend Extend {
-    operator func *(r: UInt32): UInt64
+    operator func *(r: UInt32): UInt64 { /* compiled code */ }
 
-    operator func /(r: UInt32): UInt64
+    operator func /(r: UInt32): UInt64 { /* compiled code */ }
 
-    operator func %(r: UInt32): UInt32
+    operator func %(r: UInt32): UInt32 { /* compiled code */ }
 }
 
 extend Extend {
-    operator func *(r: UInt64): UInt64
+    operator func *(r: UInt64): UInt64 { /* compiled code */ }
 }
 
 extend Extend {
-    operator func *(r: std.core.Duration): std.core.Duration
+    operator func *(r: std.core.Duration): std.core.Duration { /* compiled code */ }
 }
 
 extend StringBuilder {
-    func append(num: Int64, unit: std.core.String): std.core.StringBuilder
+    func append(num: Int64, unit: std.core.String): std.core.StringBuilder { /* compiled code */ }
 }
 
-func isSumOverflow(left: Int64, right: Int64): Bool
+func isSumOverflow(left: Int64, right: Int64): Bool { /* compiled code */ }
 
 enum Endian {
     | Big
 
     | Little
 
-    prop Platform: std.core.Endian
+    static prop Platform: std.core.Endian {
+        get() { /* compiled code */ }
+    }
 }
 
-func CJ_PlatformEndian: UInt8
+foreign func CJ_PlatformEndian(): UInt8
 
 interface NotEqual {
-    operator func !=(rhs: T): Bool
+    operator func !=(rhs: T): Bool { /* compiled code */ }
 }
 
 extend Extend <: Equatable {
-    operator func ==(right: Bool): Bool
+    operator func ==(right: Bool): Bool { /* compiled code */ }
 }
 
 extend Extend <: Equatable {
-    operator func ==(right: Unit): Bool
+    operator func ==(right: Unit): Bool { /* compiled code */ }
 }
 
 extend Range <: Equatable {
-    operator func ==(that: std.core.Range<T>): Bool
+    operator func ==(that: std.core.Range<T>): Bool { /* compiled code */ }
 }
 
 class Error <: std.core.Object & std.core.ToString {
@@ -2047,17 +2074,19 @@ class Error <: std.core.Object & std.core.ToString {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    func getClassName(): std.core.String { /* compiled code */ }
 
-    prop message: std.core.String
+    prop message: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func printStackTrace: Unit
+    func printStackTrace(): Unit { /* compiled code */ }
 
-    func getStackTraceMessage: std.core.String
+    func getStackTraceMessage(): std.core.String { /* compiled code */ }
 
-    func getStackTrace: std.core.Array<std.core.StackTraceElement>
+    func getStackTrace(): std.core.Array<std.core.StackTraceElement> { /* compiled code */ }
 }
 
 class StackTraceElement {
@@ -2072,9 +2101,9 @@ class StackTraceElement {
     init(declaringClass: std.core.String, methodName: std.core.String, fileName: std.core.String, lineNumber: Int64) { /* compiled code */ }
 }
 
-func fillInStackTrace(pc: std.core.Array<UInt64>, message: std.core.Array<UInt8>): std.core.Array<UInt64>
+func fillInStackTrace(pc: std.core.Array<UInt64>, message: std.core.Array<UInt8>): std.core.Array<UInt64> { /* compiled code */ }
 
-func decodeStackTrace(pc: UInt64, funcStart: UInt64, funcDesc: UInt64): std.core.StackTraceData
+func decodeStackTrace(pc: UInt64, funcStart: UInt64, funcDesc: UInt64): std.core.StackTraceData { /* compiled code */ }
 
 struct StackTraceData {
     let className: std.core.Array<UInt8>
@@ -2088,29 +2117,29 @@ struct StackTraceData {
     init() { /* compiled code */ }
 }
 
-func getStackTraceImpl(pcArray: std.core.Array<UInt64>): std.core.Array<std.core.StackTraceElement>
+func getStackTraceImpl(pcArray: std.core.Array<UInt64>): std.core.Array<std.core.StackTraceElement> { /* compiled code */ }
 
-func bitCast(val: From): To
+func bitCast(val: From): To { /* compiled code */ }
 
 interface BitCastRange {
 }
 
 extend Extend {
-    func fromBits(bits: UInt64): Float64
+    static func fromBits(bits: UInt64): Float64 { /* compiled code */ }
 
-    func toBits: UInt64
+    func toBits(): UInt64 { /* compiled code */ }
 }
 
 extend Extend {
-    func fromBits(bits: UInt32): Float32
+    static func fromBits(bits: UInt32): Float32 { /* compiled code */ }
 
-    func toBits: UInt32
+    func toBits(): UInt32 { /* compiled code */ }
 }
 
 extend Extend {
-    func fromBits(bits: UInt16): Float16
+    static func fromBits(bits: UInt16): Float16 { /* compiled code */ }
 
-    func toBits: UInt16
+    func toBits(): UInt16 { /* compiled code */ }
 }
 
 extend Extend <: BitCastRange {
@@ -2131,9 +2160,9 @@ extend Extend <: BitCastRange {
 extend Extend <: BitCastRange {
 }
 
-func composition(f: (T1) -> T2, g: (T2) -> T3): (T1) -> T3
+func composition(f: (T1) -> T2, g: (T2) -> T3): (T1) -> T3 { /* compiled code */ }
 
-func futureInit(future: std.core.Future<T>): Unit
+func futureInit(future: std.core.Future<T>): Unit { /* compiled code */ }
 
 class Future {
     let _thread: std.core.Thread
@@ -2144,28 +2173,30 @@ class Future {
 
     init(fn: () -> T) { /* compiled code */ }
 
-    prop thread: std.core.Thread
+    prop thread: std.core.Thread {
+        get() { /* compiled code */ }
+    }
 
-    func `get`: T
+    func `get`(): T { /* compiled code */ }
 
-    func tryGet: std.core.Option<T>
+    func tryGet(): std.core.Option<T> { /* compiled code */ }
 
-    func `get`(timeout: std.core.Duration): T
+    func `get`(timeout: std.core.Duration): T { /* compiled code */ }
 
-    func cancel: Unit
+    func cancel(): Unit { /* compiled code */ }
 
-    func execute: Unit
+    func execute(): Unit { /* compiled code */ }
 
-    func executeClosure(fn: () -> T): Unit
+    static func executeClosure(fn: () -> T): Unit { /* compiled code */ }
 }
 
-func futureIsComplete(future: std.core.Future<T>): Bool
+func futureIsComplete(future: std.core.Future<T>): Bool { /* compiled code */ }
 
-func futureWait(future: std.core.Future<T>, timeout: Int64): Unit
+func futureWait(future: std.core.Future<T>, timeout: Int64): Unit { /* compiled code */ }
 
-func futureNotifyAll(future: std.core.Future<T>): Unit
+func futureNotifyAll(future: std.core.Future<T>): Unit { /* compiled code */ }
 
-func CJ_CORE_PrintOomHint: Unit
+foreign func CJ_CORE_PrintOomHint(): Unit
 
 let INT64_MAX: Int64
 
@@ -2190,283 +2221,359 @@ class FutureExcept <: std.core.FutureResult {
 }
 
 interface ThreadContext {
-    func end: Unit
+    func end(): Unit { /* compiled code */ }
 
-    func hasEnded: Bool
+    func hasEnded(): Bool { /* compiled code */ }
 }
 
 extend Ordering <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
-func i32tof32(num: Int32): Float32
+func i32tof32(num: Int32): Float32 { /* compiled code */ }
 
-func f32toi32(num: Float32): Int32
+func f32toi32(num: Float32): Int32 { /* compiled code */ }
 
-func i64tof64(num: Int64): Float64
+func i64tof64(num: Int64): Float64 { /* compiled code */ }
 
-func f642i64(num: Float64): Int64
-
-extend Extend <: Hashable {
-    func hashCode: Int64
-
-    prop Max: IntNative
-
-    prop Min: IntNative
-}
+func f642i64(num: Float64): Int64 { /* compiled code */ }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: Int64
+    static prop Max: IntNative {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: Int64
+    static prop Min: IntNative {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: Int32
+    static prop Max: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: Int32
+    static prop Min: Int64 {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: Int16
+    static prop Max: Int32 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: Int16
+    static prop Min: Int32 {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: Int8
+    static prop Max: Int16 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: Int8
+    static prop Min: Int16 {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: UIntNative
+    static prop Max: Int8 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: UIntNative
+    static prop Min: Int8 {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: UInt64
+    static prop Max: UIntNative {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: UInt64
+    static prop Min: UIntNative {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: UInt32
+    static prop Max: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: UInt32
+    static prop Min: UInt64 {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: UInt16
+    static prop Max: UInt32 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: UInt16
+    static prop Min: UInt32 {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop Max: UInt8
+    static prop Max: UInt16 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: UInt8
+    static prop Min: UInt16 {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop NaN: Float64
+    static prop Max: UInt8 {
+        get() { /* compiled code */ }
+    }
 
-    prop Inf: Float64
-
-    prop Max: Float64
-
-    prop Min: Float64
-
-    prop MinDenormal: Float64
-
-    prop MinNormal: Float64
-
-    func isInf: Bool
-
-    func isNaN: Bool
-
-    func isNormal: Bool
-
-    func max(a: Float64, b: Float64, others: std.core.Array<Float64>): Float64
-
-    func min(a: Float64, b: Float64, others: std.core.Array<Float64>): Float64
+    static prop Min: UInt8 {
+        get() { /* compiled code */ }
+    }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop NaN: Float32
+    static prop NaN: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop Inf: Float32
+    static prop Inf: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop Max: Float32
+    static prop Max: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: Float32
+    static prop Min: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop MinDenormal: Float32
+    static prop MinDenormal: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop MinNormal: Float32
+    static prop MinNormal: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    func isInf: Bool
+    func isInf(): Bool { /* compiled code */ }
 
-    func isNaN: Bool
+    func isNaN(): Bool { /* compiled code */ }
 
-    func isNormal: Bool
+    func isNormal(): Bool { /* compiled code */ }
 
-    func max(a: Float32, b: Float32, others: std.core.Array<Float32>): Float32
+    static func max(a: Float64, b: Float64, others: std.core.Array<Float64>): Float64 { /* compiled code */ }
 
-    func min(a: Float32, b: Float32, others: std.core.Array<Float32>): Float32
+    static func min(a: Float64, b: Float64, others: std.core.Array<Float64>): Float64 { /* compiled code */ }
 }
 
 extend Extend <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop NaN: Float16
+    static prop NaN: Float32 {
+        get() { /* compiled code */ }
+    }
 
-    prop Inf: Float16
+    static prop Inf: Float32 {
+        get() { /* compiled code */ }
+    }
 
-    prop Max: Float16
+    static prop Max: Float32 {
+        get() { /* compiled code */ }
+    }
 
-    prop Min: Float16
+    static prop Min: Float32 {
+        get() { /* compiled code */ }
+    }
 
-    prop MinDenormal: Float16
+    static prop MinDenormal: Float32 {
+        get() { /* compiled code */ }
+    }
 
-    prop MinNormal: Float16
+    static prop MinNormal: Float32 {
+        get() { /* compiled code */ }
+    }
 
-    func isInf: Bool
+    func isInf(): Bool { /* compiled code */ }
 
-    func isNaN: Bool
+    func isNaN(): Bool { /* compiled code */ }
 
-    func isNormal: Bool
+    func isNormal(): Bool { /* compiled code */ }
 
-    func max(a: Float16, b: Float16, others: std.core.Array<Float16>): Float16
+    static func max(a: Float32, b: Float32, others: std.core.Array<Float32>): Float32 { /* compiled code */ }
 
-    func min(a: Float16, b: Float16, others: std.core.Array<Float16>): Float16
+    static func min(a: Float32, b: Float32, others: std.core.Array<Float32>): Float32 { /* compiled code */ }
+}
+
+extend Extend <: Hashable {
+    func hashCode(): Int64 { /* compiled code */ }
+
+    static prop NaN: Float16 {
+        get() { /* compiled code */ }
+    }
+
+    static prop Inf: Float16 {
+        get() { /* compiled code */ }
+    }
+
+    static prop Max: Float16 {
+        get() { /* compiled code */ }
+    }
+
+    static prop Min: Float16 {
+        get() { /* compiled code */ }
+    }
+
+    static prop MinDenormal: Float16 {
+        get() { /* compiled code */ }
+    }
+
+    static prop MinNormal: Float16 {
+        get() { /* compiled code */ }
+    }
+
+    func isInf(): Bool { /* compiled code */ }
+
+    func isNaN(): Bool { /* compiled code */ }
+
+    func isNormal(): Bool { /* compiled code */ }
+
+    static func max(a: Float16, b: Float16, others: std.core.Array<Float16>): Float16 { /* compiled code */ }
+
+    static func min(a: Float16, b: Float16, others: std.core.Array<Float16>): Float16 { /* compiled code */ }
 }
 
 extend Range <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 interface Hasher {
-    func finish: Int64
+    func finish(): Int64 { /* compiled code */ }
 
-    func reset: Unit
+    mut func reset(): Unit { /* compiled code */ }
 
-    func write(value: Bool): Unit
+    mut func write(value: Bool): Unit { /* compiled code */ }
 
-    func write(value: Rune): Unit
+    mut func write(value: Rune): Unit { /* compiled code */ }
 
-    func write(value: Int8): Unit
+    mut func write(value: Int8): Unit { /* compiled code */ }
 
-    func write(value: Int16): Unit
+    mut func write(value: Int16): Unit { /* compiled code */ }
 
-    func write(value: Int32): Unit
+    mut func write(value: Int32): Unit { /* compiled code */ }
 
-    func write(value: Int64): Unit
+    mut func write(value: Int64): Unit { /* compiled code */ }
 
-    func write(value: UInt8): Unit
+    mut func write(value: UInt8): Unit { /* compiled code */ }
 
-    func write(value: UInt16): Unit
+    mut func write(value: UInt16): Unit { /* compiled code */ }
 
-    func write(value: UInt32): Unit
+    mut func write(value: UInt32): Unit { /* compiled code */ }
 
-    func write(value: UInt64): Unit
+    mut func write(value: UInt64): Unit { /* compiled code */ }
 
-    func write(value: Float16): Unit
+    mut func write(value: Float16): Unit { /* compiled code */ }
 
-    func write(value: Float32): Unit
+    mut func write(value: Float32): Unit { /* compiled code */ }
 
-    func write(value: Float64): Unit
+    mut func write(value: Float64): Unit { /* compiled code */ }
 
-    func write(value: std.core.String): Unit
+    mut func write(value: std.core.String): Unit { /* compiled code */ }
 }
 
 struct DefaultHasher <: std.core.Hasher {
     var res: Int64
 
-    func finish: Int64
+    func finish(): Int64 { /* compiled code */ }
 
-    func reset: Unit
+    mut func reset(): Unit { /* compiled code */ }
 
-    func write(value: Bool): Unit
+    mut func write(value: Bool): Unit { /* compiled code */ }
 
-    func write(value: Rune): Unit
+    mut func write(value: Rune): Unit { /* compiled code */ }
 
-    func write(value: Int8): Unit
+    mut func write(value: Int8): Unit { /* compiled code */ }
 
-    func write(value: Int16): Unit
+    mut func write(value: Int16): Unit { /* compiled code */ }
 
-    func write(value: Int32): Unit
+    mut func write(value: Int32): Unit { /* compiled code */ }
 
-    func write(value: Int64): Unit
+    mut func write(value: Int64): Unit { /* compiled code */ }
 
-    func write(value: UInt8): Unit
+    mut func write(value: UInt8): Unit { /* compiled code */ }
 
-    func write(value: UInt16): Unit
+    mut func write(value: UInt16): Unit { /* compiled code */ }
 
-    func write(value: UInt32): Unit
+    mut func write(value: UInt32): Unit { /* compiled code */ }
 
-    func write(value: UInt64): Unit
+    mut func write(value: UInt64): Unit { /* compiled code */ }
 
-    func write(value: Float16): Unit
+    mut func write(value: Float16): Unit { /* compiled code */ }
 
-    func write(value: Float32): Unit
+    mut func write(value: Float32): Unit { /* compiled code */ }
 
-    func write(value: Float64): Unit
+    mut func write(value: Float64): Unit { /* compiled code */ }
 
-    func write(value: std.core.String): Unit
+    mut func write(value: std.core.String): Unit { /* compiled code */ }
 
     init(res: Int64) { /* compiled code */ }
 }
 
-func wyrand(seed: Int64): Int64
+func wyrand(seed: Int64): Int64 { /* compiled code */ }
 
-func mix(A: UInt64, B: UInt64): UInt64
+func mix(A: UInt64, B: UInt64): UInt64 { /* compiled code */ }
 
-func r4(arr: std.core.Array<UInt8>, pos: Int64): UInt64
+func r4(arr: std.core.Array<UInt8>, pos: Int64): UInt64 { /* compiled code */ }
 
-func r8(arr: std.core.Array<UInt8>, pos: Int64): UInt64
+func r8(arr: std.core.Array<UInt8>, pos: Int64): UInt64 { /* compiled code */ }
 
 class IllegalFormatException <: std.core.IllegalArgumentException {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class IllegalMemoryException <: std.core.Exception {
@@ -2474,7 +2581,7 @@ class IllegalMemoryException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class IllegalStateException <: std.core.Exception {
@@ -2482,7 +2589,7 @@ class IllegalStateException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class IncompatiblePackageException <: std.core.Exception {
@@ -2490,90 +2597,90 @@ class IncompatiblePackageException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 extend Iterator {
-    func contains(element: T): Bool
+    func contains(element: T): Bool { /* compiled code */ }
 }
 
 extend Iterator {
-    func max: std.core.Option<T>
+    func max(): std.core.Option<T> { /* compiled code */ }
 
-    func min: std.core.Option<T>
+    func min(): std.core.Option<T> { /* compiled code */ }
 }
 
 extend Iterator {
-    func zip(it: std.core.Iterator<R>): std.core.Iterator<(T, R)>
+    func zip(it: std.core.Iterator<R>): std.core.Iterator<(T, R)> { /* compiled code */ }
 
-    func enumerate: std.core.Iterator<(Int64, T)>
+    func enumerate(): std.core.Iterator<(Int64, T)> { /* compiled code */ }
 
-    func filter(predicate: (T) -> Bool): std.core.Iterator<T>
+    func filter(predicate: (T) -> Bool): std.core.Iterator<T> { /* compiled code */ }
 
-    func filterMap(transform: (T) -> std.core.Option<R>): std.core.Iterator<R>
+    func filterMap(transform: (T) -> std.core.Option<R>): std.core.Iterator<R> { /* compiled code */ }
 
-    func map(transform: (T) -> R): std.core.Iterator<R>
+    func map(transform: (T) -> R): std.core.Iterator<R> { /* compiled code */ }
 
-    func step(count: Int64): std.core.Iterator<T>
+    func step(count: Int64): std.core.Iterator<T> { /* compiled code */ }
 
-    func skip(count: Int64): std.core.Iterator<T>
+    func skip(count: Int64): std.core.Iterator<T> { /* compiled code */ }
 
-    func take(count: Int64): std.core.Iterator<T>
+    func take(count: Int64): std.core.Iterator<T> { /* compiled code */ }
 
-    func concat(other: std.core.Iterator<T>): std.core.Iterator<T>
+    func concat(other: std.core.Iterator<T>): std.core.Iterator<T> { /* compiled code */ }
 
-    func inspect(action: (T) -> Unit): std.core.Iterator<T>
+    func inspect(action: (T) -> Unit): std.core.Iterator<T> { /* compiled code */ }
 
-    func flatMap(transform: (T) -> std.core.Iterator<R>): std.core.Iterator<R>
+    func flatMap(transform: (T) -> std.core.Iterator<R>): std.core.Iterator<R> { /* compiled code */ }
 
-    func intersperse(separator: T): std.core.Iterator<T>
+    func intersperse(separator: T): std.core.Iterator<T> { /* compiled code */ }
 
-    func all(predicate: (T) -> Bool): Bool
+    func all(predicate: (T) -> Bool): Bool { /* compiled code */ }
 
-    func any(predicate: (T) -> Bool): Bool
+    func any(predicate: (T) -> Bool): Bool { /* compiled code */ }
 
-    func none(predicate: (T) -> Bool): Bool
+    func none(predicate: (T) -> Bool): Bool { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func count: Int64
+    func count(): Int64 { /* compiled code */ }
 
-    func forEach(action: (T) -> Unit): Unit
+    func forEach(action: (T) -> Unit): Unit { /* compiled code */ }
 
-    func first: std.core.Option<T>
+    func first(): std.core.Option<T> { /* compiled code */ }
 
-    func last: std.core.Option<T>
+    func last(): std.core.Option<T> { /* compiled code */ }
 
-    func at(n: Int64): std.core.Option<T>
+    func at(n: Int64): std.core.Option<T> { /* compiled code */ }
 
-    func reduce(operation: (T, T) -> T): std.core.Option<T>
+    func reduce(operation: (T, T) -> T): std.core.Option<T> { /* compiled code */ }
 
-    func fold(initial: R, operation: (R, T) -> R): R
+    func fold(initial: R, operation: (R, T) -> R): R { /* compiled code */ }
 }
 
-func sizeOfType: UIntNative
+func sizeOfType(): UIntNative { /* compiled code */ }
 
-func alignOfType: UIntNative
+func alignOfType(): UIntNative { /* compiled code */ }
 
-func malloc(size: UIntNative): CPointer<Unit>
+foreign func malloc(size: UIntNative): CPointer<Unit>
 
-func free(p: CPointer<Unit>): Unit
+foreign func free(p: CPointer<Unit>): Unit
 
 let SECUREC_MEM_MAX_LEN: Int64
 
-func sizeOf: UIntNative
+func sizeOf(): UIntNative { /* compiled code */ }
 
-func alignOf: UIntNative
+func alignOf(): UIntNative { /* compiled code */ }
 
-func getCommandLineArgsFromRuntime: CPointer<CPointer<UInt8>>
+func getCommandLineArgsFromRuntime(): CPointer<CPointer<UInt8>> { /* compiled code */ }
 
-func getCommandLineArgs: std.core.Array<std.core.String>
+func getCommandLineArgs(): std.core.Array<std.core.String> { /* compiled code */ }
 
-func CJ_CORE_Float64ToHash(x: Float64): Int64
+foreign func CJ_CORE_Float64ToHash(x: Float64): Int64
 
-func CJ_CORE_Float32ToHash(x: Float32): Int64
+foreign func CJ_CORE_Float32ToHash(x: Float32): Int64
 
-func CJ_CONSOLE_Readline: CPointer<std.core.StructureString>
+foreign func CJ_CONSOLE_Readline(): CPointer<std.core.StructureString>
 
 struct StructureString {
     let buffer: CPointer<UInt8>
@@ -2583,53 +2690,53 @@ struct StructureString {
     init() { /* compiled code */ }
 }
 
-func CJ_CONSOLE_ClearstdInerr: Unit
+foreign func CJ_CONSOLE_ClearstdInerr(): Unit
 
-func CJ_CORE_StringSize(str: CPointer<UInt8>, len: Int64): Int64
+foreign func CJ_CORE_StringSize(str: CPointer<UInt8>, len: Int64): Int64
 
-func CJ_CORE_IndexOfChar(orgStr: CPointer<UInt8>, patC: UInt32, orgSize: Int64, start: Int64): Int64
+foreign func CJ_CORE_IndexOfChar(orgStr: CPointer<UInt8>, patC: UInt32, orgSize: Int64, start: Int64): Int64
 
-func CJ_CORE_LastIndexOfChar(orgStr: CPointer<UInt8>, patC: UInt32, orgSize: Int64, start: Int64): Int64
+foreign func CJ_CORE_LastIndexOfChar(orgStr: CPointer<UInt8>, patC: UInt32, orgSize: Int64, start: Int64): Int64
 
-func CJ_CORE_CountChar(orgStr: CPointer<UInt8>, patC: UInt32, orgSize: Int64): Int64
+foreign func CJ_CORE_CountChar(orgStr: CPointer<UInt8>, patC: UInt32, orgSize: Int64): Int64
 
-func CJ_MRT_GetCommandLineArgs: CPointer<CPointer<UInt8>>
+foreign func CJ_MRT_GetCommandLineArgs(): CPointer<CPointer<UInt8>>
 
 class NegativeArraySizeException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 interface Any {
 }
 
-func refEq(a: std.core.Object, b: std.core.Object): Bool
+func refEq(a: std.core.Object, b: std.core.Object): Bool { /* compiled code */ }
 
-func intrinsicRefEq(a: std.core.Object, b: std.core.Object): Bool
+func intrinsicRefEq(a: std.core.Object, b: std.core.Object): Bool { /* compiled code */ }
 
-func ifSome(o: std.core.Option<T>, action: (T) -> Unit): Unit
+func ifSome(o: std.core.Option<T>, action: (T) -> Unit): Unit { /* compiled code */ }
 
-func ifNone(o: std.core.Option<T>, action: () -> Unit): Unit
+func ifNone(o: std.core.Option<T>, action: () -> Unit): Unit { /* compiled code */ }
 
 extend Option <: Equatable {
-    operator func ==(that: std.core.Option<T>): Bool
+    operator func ==(that: std.core.Option<T>): Bool { /* compiled code */ }
 
-    operator func !=(that: std.core.Option<T>): Bool
+    operator func !=(that: std.core.Option<T>): Bool { /* compiled code */ }
 }
 
 extend Option <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Option <: Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 extend Option {
-    func flatten: std.core.Option<T>
+    func flatten(): std.core.Option<T> { /* compiled code */ }
 }
 
 let MAX_INT_NATIVE: IntNative
@@ -2643,51 +2750,51 @@ class OverflowException <: std.core.ArithmeticException {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-func readln: std.core.String
+func readln(): std.core.String { /* compiled code */ }
 
 var globalOutOfMemoryError: std.core.OutOfMemoryError
 
-func throwImplicitException(id: Int64, args: CPointer<Unit>): Unit
+func throwImplicitException(id: Int64, args: CPointer<Unit>): Unit { /* compiled code */ }
 
-func throwArithmeticException: Unit
+func throwArithmeticException(): Unit { /* compiled code */ }
 
-func createArithmeticExceptionMsg(msg: std.core.String): std.core.ArithmeticException
+func createArithmeticExceptionMsg(msg: std.core.String): std.core.ArithmeticException { /* compiled code */ }
 
-func throwArithmeticExceptionMsg(msg: std.core.String): Nothing
+func throwArithmeticExceptionMsg(msg: std.core.String): Nothing { /* compiled code */ }
 
-func createOverflowExceptionMsg(msg: std.core.String): std.core.OverflowException
+func createOverflowExceptionMsg(msg: std.core.String): std.core.OverflowException { /* compiled code */ }
 
-func throwOverflowException: Unit
+func throwOverflowException(): Unit { /* compiled code */ }
 
-func throwIndexOutOfBoundsException: Unit
+func throwIndexOutOfBoundsException(): Unit { /* compiled code */ }
 
-func throwNegativeArraySizeException: Unit
+func throwNegativeArraySizeException(): Unit { /* compiled code */ }
 
-func callToString(e: std.core.ToString): std.core.String
+func callToString(e: std.core.ToString): std.core.String { /* compiled code */ }
 
-func checkIsError(e: std.core.Object): Bool
+func checkIsError(e: std.core.Object): Bool { /* compiled code */ }
 
-func throwError(msg: std.core.String): Unit
+func throwError(msg: std.core.String): Unit { /* compiled code */ }
 
-func callPrintStackTrace(e: std.core.Exception): Unit
+func callPrintStackTrace(e: std.core.Exception): Unit { /* compiled code */ }
 
-func callPrintStackTraceError(e: std.core.Error): Unit
+func callPrintStackTraceError(e: std.core.Error): Unit { /* compiled code */ }
 
 let MAX_TIMEOUT_DURATION: std.core.Duration
 
-func intrinsicSleep(ns: Int64): Unit
+func intrinsicSleep(ns: Int64): Unit { /* compiled code */ }
 
-func sleep(dur: std.core.Duration): Unit
+func sleep(dur: std.core.Duration): Unit { /* compiled code */ }
 
 class SpawnException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class StackOverflowError <: std.core.Error {
@@ -2703,30 +2810,30 @@ class StackOverflowError <: std.core.Error {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 
-    func printStackTrace: Unit
+    override func printStackTrace(): Unit { /* compiled code */ }
 }
 
 let digits100: std.core.Array<UInt8>
 
 let EMPTY_INT64_ARRAY: std.core.Array<Int64>
 
-func checkUtf8Of2Bytes(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Rune
+func checkUtf8Of2Bytes(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Rune { /* compiled code */ }
 
-func checkUtf8Of3Bytes(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Rune
+func checkUtf8Of3Bytes(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Rune { /* compiled code */ }
 
-func checkUtf8Of4Bytes(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Rune
+func checkUtf8Of4Bytes(arr: std.core.Array<UInt8>, startIndex: Int64, endIndex: Int64): Rune { /* compiled code */ }
 
-func isThreadObjectInited: Bool
+func isThreadObjectInited(): Bool { /* compiled code */ }
 
-func getThreadObject: std.core.Thread
+func getThreadObject(): std.core.Thread { /* compiled code */ }
 
-func CJ_MRT_SetCJThreadName(`handle`: CPointer<Unit>, name: CPointer<UInt8>, len: Int64): Unit
+foreign func CJ_MRT_SetCJThreadName(`handle`: CPointer<Unit>, name: CPointer<UInt8>, len: Int64): Unit
 
-func CJ_MRT_GetCJThreadId(`handle`: CPointer<Unit>): Int64
+foreign func CJ_MRT_GetCJThreadId(`handle`: CPointer<Unit>): Int64
 
-func CJ_MRT_GetCurrentCJThread: CPointer<Unit>
+foreign func CJ_MRT_GetCurrentCJThread(): CPointer<Unit>
 
 class ThreadLocalMap {
     var entries: std.core.Array<std.core.Entry>
@@ -2735,18 +2842,18 @@ class ThreadLocalMap {
 
     init() { /* compiled code */ }
 
-    func `get`(tlKey: std.core.ThreadLocalKey): std.core.Option<T>
+    func `get`(tlKey: std.core.ThreadLocalKey): std.core.Option<T> { /* compiled code */ }
 
-    func `set`(tlKey: std.core.ThreadLocalKey, value: T): Unit
+    func `set`(tlKey: std.core.ThreadLocalKey, value: T): Unit { /* compiled code */ }
 
-    func remove(tlKey: std.core.ThreadLocalKey): Unit
+    func remove(tlKey: std.core.ThreadLocalKey): Unit { /* compiled code */ }
 }
 
-func setThreadObject(thread: std.core.Thread): Unit
+func setThreadObject(thread: std.core.Thread): Unit { /* compiled code */ }
 
-func handleException(ex: std.core.Exception): Unit
+func handleException(ex: std.core.Exception): Unit { /* compiled code */ }
 
-func handleError(er: std.core.Error): Unit
+func handleError(er: std.core.Error): Unit { /* compiled code */ }
 
 let EMPTY_KEY: std.core.ThreadLocalKey
 
@@ -2755,14 +2862,14 @@ let DELETED_KEY: std.core.ThreadLocalKey
 class ThreadLocal {
     let key: std.core.ThreadLocalKey
 
-    func `get`: std.core.Option<T>
+    func `get`(): std.core.Option<T> { /* compiled code */ }
 
-    func `set`(value: std.core.Option<T>): Unit
+    func `set`(value: std.core.Option<T>): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func getThreadLocalMap: std.core.ThreadLocalMap
+func getThreadLocalMap(): std.core.ThreadLocalMap { /* compiled code */ }
 
 struct Entry {
     let tlKey: std.core.ThreadLocalKey
@@ -2771,7 +2878,7 @@ struct Entry {
 
     init(k: std.core.ThreadLocalKey, v: std.core.Object) { /* compiled code */ }
 
-    func isValid: Bool
+    func isValid(): Bool { /* compiled code */ }
 }
 
 let EMPTY_ENTRY: std.core.Entry
@@ -2783,71 +2890,71 @@ class TimeoutException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Extend <: ToString {
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 type Byte = UInt8
@@ -2861,5 +2968,5 @@ class UnsupportedException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }

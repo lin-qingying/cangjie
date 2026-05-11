@@ -10,13 +10,13 @@ import std.core.*
 import std.deriving.api.Identifier
 import std.convert.Parsable
 
-func resolveFields(decl: std.ast.ClassDecl): std.core.Array<(std.ast.VarDecl, std.core.Option<std.ast.TypeNode>)>
+func resolveFields(decl: std.ast.ClassDecl): std.core.Array<(std.ast.VarDecl, std.core.Option<std.ast.TypeNode>)> { /* compiled code */ }
 
-func resolveFields(decl: std.ast.StructDecl): std.core.Array<(std.ast.VarDecl, std.core.Option<std.ast.TypeNode>)>
+func resolveFields(decl: std.ast.StructDecl): std.core.Array<(std.ast.VarDecl, std.core.Option<std.ast.TypeNode>)> { /* compiled code */ }
 
-func resolveFields(body: std.ast.Body): std.core.Array<(std.ast.VarDecl, std.core.Option<std.ast.TypeNode>)>
+func resolveFields(body: std.ast.Body): std.core.Array<(std.ast.VarDecl, std.core.Option<std.ast.TypeNode>)> { /* compiled code */ }
 
-func blockType(block: std.ast.Block, scope: std.deriving.resolve.Scope): std.ast.TypeNode
+func blockType(block: std.ast.Block, scope: std.deriving.resolve.Scope): std.ast.TypeNode { /* compiled code */ }
 
 class Scope <: std.core.Object & std.core.Equatable<std.deriving.resolve.Scope> & std.core.ToString {
     let memebers: std.collection.HashMap<std.deriving.api.Identifier, std.ast.TypeNode>
@@ -27,39 +27,51 @@ class Scope <: std.core.Object & std.core.Equatable<std.deriving.resolve.Scope> 
 
     let id: Int64
 
-    func lookup(name: std.deriving.api.Identifier): std.deriving.resolve.ScopeResolveResult
+    func lookup(name: std.deriving.api.Identifier): std.deriving.resolve.ScopeResolveResult { /* compiled code */ }
 
-    func lookup(name: std.ast.Token): std.deriving.resolve.ScopeResolveResult
+    func lookup(name: std.ast.Token): std.deriving.resolve.ScopeResolveResult { /* compiled code */ }
 
-    func lookup(name: std.core.String): std.deriving.resolve.ScopeResolveResult
+    func lookup(name: std.core.String): std.deriving.resolve.ScopeResolveResult { /* compiled code */ }
 
-    func append(name: std.deriving.api.Identifier): Unit
+    func append(name: std.deriving.api.Identifier): Unit { /* compiled code */ }
 
-    func append(name: std.deriving.api.Identifier, t: std.ast.TypeNode): Unit
+    func append(name: std.deriving.api.Identifier, t: std.ast.TypeNode): Unit { /* compiled code */ }
 
-    func appendScopeType(t: std.ast.TypeNode): Unit
+    func appendScopeType(t: std.ast.TypeNode): Unit { /* compiled code */ }
 
-    prop root: std.core.Option<std.deriving.resolve.Scope>
+    prop root: std.core.Option<std.deriving.resolve.Scope> {
+        get() { /* compiled code */ }
+    }
 
-    prop funcScope: std.core.Option<std.deriving.resolve.Scope>
+    prop funcScope: std.core.Option<std.deriving.resolve.Scope> {
+        get() { /* compiled code */ }
+    }
 
-    prop isRoot: Bool
+    prop isRoot: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop allInvalids: std.core.Array<std.deriving.api.Identifier>
+    prop allInvalids: std.core.Array<std.deriving.api.Identifier> {
+        get() { /* compiled code */ }
+    }
 
-    prop isFuncScope: Bool
+    prop isFuncScope: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop scopeType: std.ast.TypeNode
+    prop scopeType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+    }
 
-    operator func ==(other: std.deriving.resolve.Scope): Bool
+    override operator func ==(other: std.deriving.resolve.Scope): Bool { /* compiled code */ }
 
-    operator func !=(other: std.deriving.resolve.Scope): Bool
+    override operator func !=(other: std.deriving.resolve.Scope): Bool { /* compiled code */ }
 
-    func toString: std.core.String
+    override func toString(): std.core.String { /* compiled code */ }
 
-    func parents: std.core.Iterable<std.deriving.resolve.Scope>
+    func parents(): std.core.Iterable<std.deriving.resolve.Scope> { /* compiled code */ }
 
-    func allItems: std.core.Iterable<(std.deriving.api.Identifier, std.ast.TypeNode)>
+    func allItems(): std.core.Iterable<(std.deriving.api.Identifier, std.ast.TypeNode)> { /* compiled code */ }
 
     let parent: std.core.Option<std.deriving.resolve.Scope>
 
@@ -68,57 +80,57 @@ class Scope <: std.core.Object & std.core.Equatable<std.deriving.resolve.Scope> 
     init(parent: std.core.Option<std.deriving.resolve.Scope>, kind: std.deriving.resolve.ScopeKind) { /* compiled code */ }
 }
 
-func callType(call: std.ast.CallExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode>
+func callType(call: std.ast.CallExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func spawnType(s: std.ast.SpawnExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode>
+func spawnType(s: std.ast.SpawnExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func flow(nodes: std.core.Iterable<std.ast.Node>, blockScope: std.deriving.resolve.Scope): Unit
+func flow(nodes: std.core.Iterable<std.ast.Node>, blockScope: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-func bodyDecl(body: std.ast.Body, classScope: std.deriving.resolve.Scope): Unit
+func bodyDecl(body: std.ast.Body, classScope: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-func constructorDecl(c: std.ast.PrimaryCtorDecl, parent: std.deriving.resolve.Scope): Unit
+func constructorDecl(c: std.ast.PrimaryCtorDecl, parent: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-func funcDecl(f: std.ast.FuncDecl, parent: std.deriving.resolve.Scope): Unit
+func funcDecl(f: std.ast.FuncDecl, parent: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
 extend Scope {
-    func appendParams(funcParams: std.core.Iterable<std.ast.FuncParam>): Unit
+    func appendParams(funcParams: std.core.Iterable<std.ast.FuncParam>): Unit { /* compiled code */ }
 }
 
-func varDecl(a: std.ast.VarDecl, scope: std.deriving.resolve.Scope): Unit
+func varDecl(a: std.ast.VarDecl, scope: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-func propDecl(p: std.ast.PropDecl, scope: std.deriving.resolve.Scope): Unit
+func propDecl(p: std.ast.PropDecl, scope: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-func propSetter(p: std.ast.PropDecl, setter: std.ast.FuncDecl, scope: std.deriving.resolve.Scope): Unit
+func propSetter(p: std.ast.PropDecl, setter: std.ast.FuncDecl, scope: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-func assign(assign: std.ast.AssignExpr, scope: std.deriving.resolve.Scope): Unit
+func assign(assign: std.ast.AssignExpr, scope: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-func memberAccess(member: std.ast.MemberAccess, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode>
+func memberAccess(member: std.ast.MemberAccess, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func memberAccess(ref: std.ast.RefExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode>
+func memberAccess(ref: std.ast.RefExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func extractOptionType(member: std.ast.MemberAccess): std.core.Option<std.ast.TypeNode>
+func extractOptionType(member: std.ast.MemberAccess): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func funcReturning(t: std.ast.TypeNode): std.ast.FuncType
+func funcReturning(t: std.ast.TypeNode): std.ast.FuncType { /* compiled code */ }
 
-func isSome(ref: std.ast.RefExpr): Bool
+func isSome(ref: std.ast.RefExpr): Bool { /* compiled code */ }
 
-func isSome(t: std.ast.Token): Bool
+func isSome(t: std.ast.Token): Bool { /* compiled code */ }
 
-func isNone(t: std.ast.Token): Bool
+func isNone(t: std.ast.Token): Bool { /* compiled code */ }
 
-func isOption(ref: std.ast.RefExpr): Bool
+func isOption(ref: std.ast.RefExpr): Bool { /* compiled code */ }
 
-func expressionType(expression: std.ast.Expr): std.core.Option<std.ast.TypeNode>
+func expressionType(expression: std.ast.Expr): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func constExprTypeOpt(expr: std.core.Option<std.ast.Expr>, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode>
+func constExprTypeOpt(expr: std.core.Option<std.ast.Expr>, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func constExprType(expr: std.ast.Expr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode>
+func constExprType(expr: std.ast.Expr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func lambdaType(expr: std.ast.LambdaExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode>
+func lambdaType(expr: std.ast.LambdaExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func patternExpr(p: std.ast.Pattern, t: std.ast.TypeNode, scope: std.deriving.resolve.Scope): Unit
+func patternExpr(p: std.ast.Pattern, t: std.ast.TypeNode, scope: std.deriving.resolve.Scope): Unit { /* compiled code */ }
 
-func optionType(t: std.ast.TypeNode): std.ast.TypeNode
+func optionType(t: std.ast.TypeNode): std.ast.TypeNode { /* compiled code */ }
 
 enum ScopeResolveResult {
     | Unresolved(std.deriving.api.Identifier)
@@ -127,11 +139,17 @@ enum ScopeResolveResult {
 
     | ResolvedType(std.deriving.api.Identifier, std.ast.TypeNode, std.deriving.resolve.Scope)
 
-    prop resolvedType: std.core.Option<std.ast.TypeNode>
+    prop resolvedType: std.core.Option<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+    }
 
-    prop scope: std.core.Option<std.deriving.resolve.Scope>
+    prop scope: std.core.Option<std.deriving.resolve.Scope> {
+        get() { /* compiled code */ }
+    }
 
-    prop id: std.deriving.api.Identifier
+    prop id: std.deriving.api.Identifier {
+        get() { /* compiled code */ }
+    }
 }
 
 enum ScopeKind {
@@ -167,29 +185,29 @@ struct Types {
 
     let CharType: std.ast.TypeNode
 
-    func isSame(a: std.ast.TypeNode, b: std.ast.TypeNode): Bool
+    static func isSame(a: std.ast.TypeNode, b: std.ast.TypeNode): Bool { /* compiled code */ }
 
-    func isUnit(typeNode: std.ast.TypeNode): Bool
+    static func isUnit(typeNode: std.ast.TypeNode): Bool { /* compiled code */ }
 
-    func isNothing(typeNode: std.ast.TypeNode): Bool
+    static func isNothing(typeNode: std.ast.TypeNode): Bool { /* compiled code */ }
 
-    func isArray(node: std.ast.TypeNode): std.core.Option<std.ast.TypeNode>
+    static func isArray(node: std.ast.TypeNode): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-    func isIntType(typeNode: std.ast.TypeNode): Bool
+    static func isIntType(typeNode: std.ast.TypeNode): Bool { /* compiled code */ }
 
-    func isFloatType(typeNode: std.ast.TypeNode): Bool
+    static func isFloatType(typeNode: std.ast.TypeNode): Bool { /* compiled code */ }
 
-    func isString(typeNode: std.ast.TypeNode): Bool
+    static func isString(typeNode: std.ast.TypeNode): Bool { /* compiled code */ }
 }
 
-func unionApprox(a: std.ast.TypeNode, b: std.ast.TypeNode): std.ast.TypeNode
+func unionApprox(a: std.ast.TypeNode, b: std.ast.TypeNode): std.ast.TypeNode { /* compiled code */ }
 
-func unionApprox(a: std.core.Option<std.ast.TypeNode>, b: std.core.Option<std.ast.TypeNode>): std.core.Option<std.ast.TypeNode>
+func unionApprox(a: std.core.Option<std.ast.TypeNode>, b: std.core.Option<std.ast.TypeNode>): std.core.Option<std.ast.TypeNode> { /* compiled code */ }
 
-func typeByKeyword(keyword: std.ast.Token): std.ast.TypeNode
+func typeByKeyword(keyword: std.ast.Token): std.ast.TypeNode { /* compiled code */ }
 
-func myReduce(combine: (T, T) -> T): (std.core.Iterable<T>) -> std.core.Option<T>
+func myReduce(combine: (T, T) -> T): (std.core.Iterable<T>) -> std.core.Option<T> { /* compiled code */ }
 
-func unopt(opt: std.core.Option<std.core.Option<T>>): std.core.Option<T>
+func unopt(opt: std.core.Option<std.core.Option<T>>): std.core.Option<T> { /* compiled code */ }
 
-func myParseType(tokens: std.ast.Tokens): std.ast.TypeNode
+func myParseType(tokens: std.ast.Tokens): std.ast.TypeNode { /* compiled code */ }

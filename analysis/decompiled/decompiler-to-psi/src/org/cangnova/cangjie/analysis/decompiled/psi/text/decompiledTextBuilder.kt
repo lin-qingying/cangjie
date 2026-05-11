@@ -12,6 +12,7 @@ import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjFinalizer
 import org.cangnova.cangjie.psi.CjMainFunction
+import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjModifierList
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
@@ -207,7 +208,18 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append("func ")
             withSuffix(" ") { function.typeParameterList?.accept(this) }
             append(function.name?.let(::renderIdentifier).orEmpty())
-            function.valueParameterList?.accept(this)
+            function.valueParameterList?.accept(this) ?: append("()")
+            withPrefix(": ") { function.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
+            withPrefix(" ") { function.typeConstraintList?.accept(this) }
+            printBody(function.hasBody())
+        }
+
+        override fun visitMacroDeclaration(function: CjMacroDeclaration) {
+            withSuffix(" ") { function.modifierList?.accept(this) }
+            append("macro ")
+            withSuffix(" ") { function.typeParameterList?.accept(this) }
+            append(function.name?.let(::renderIdentifier).orEmpty())
+            function.valueParameterList?.accept(this) ?: append("()")
             withPrefix(": ") { function.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             withPrefix(" ") { function.typeConstraintList?.accept(this) }
             printBody(function.hasBody())
@@ -216,7 +228,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitMainFunction(mainFunction: CjMainFunction) {
             withSuffix(" ") { mainFunction.modifierList?.accept(this) }
             append("main")
-            mainFunction.valueParameterList?.accept(this)
+            mainFunction.valueParameterList?.accept(this) ?: append("()")
             withPrefix(": ") { mainFunction.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             withPrefix(" ") { mainFunction.typeConstraintList?.accept(this) }
             printBody(mainFunction.hasBody())
@@ -237,15 +249,43 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitProperty(property: CjProperty) {
-            withSuffix(" ") { property.modifierList?.accept(this) }
+            property.modifierList
+                ?.let { modifierList -> renderedModifiers(modifierList, excludedModifiers = setOf(CjTokens.MUT_KEYWORD)) }
+                ?.takeIf(String::isNotBlank)
+                ?.let { modifiers ->
+                    append(modifiers)
+                    append(" ")
+                }
             append(if (property.isVar) "mut prop " else "prop ")
             append(property.name?.let(::renderIdentifier).orEmpty())
             withPrefix(": ") { property.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
-            printCollectionIfNotEmpty(property.accessors, prefix = " {\n", separator = "\n", postfix = "\n}") {
+            val accessors = property.accessors
+            if (accessors.isNotEmpty()) {
+                appendLine(" {")
                 withIndent {
-                    it.accept(explicitThis)
+                    printCollection(accessors, separator = "\n") {
+                        it.accept(explicitThis)
+                    }
+                }
+                appendLine()
+                append("}")
+                return
+            }
+
+            if (!shouldRenderCompiledPropertyBody(property)) {
+                return
+            }
+
+            appendLine(" {")
+            withIndent {
+                renderCompiledPropertyAccessor(isGetter = true)
+                if (property.isVar) {
+                    appendLine()
+                    renderCompiledPropertyAccessor(isGetter = false)
                 }
             }
+            appendLine()
+            append("}")
         }
 
         override fun visitFieldVariable(field: CjFieldVariable) {
@@ -279,8 +319,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitPropertyAccessor(accessor: CjPropertyAccessor) {
             withSuffix(" ") { accessor.modifierList?.accept(this) }
             append(if (accessor.isGetter) "get" else "set")
-            accessor.parameterList?.accept(this)
-            withPrefix(": ") { accessor.returnTypeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
+            printPropertyAccessorParameterList(accessor)
             printBody(accessor.hasBody())
         }
 
@@ -323,10 +362,7 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         }
 
         override fun visitModifierList(list: CjModifierList) {
-            val modifiers = CjTokens.MODIFIER_KEYWORDS_ARRAY
-                .filter { modifier -> list.hasModifier(modifier) }
-                .joinToString(" ") { modifier -> modifier.value }
-            append(modifiers)
+            append(renderedModifiers(list))
         }
 
         override fun visitElement(element: PsiElement) {
@@ -341,6 +377,45 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append(" { ")
             append(DECOMPILED_CODE_COMMENT)
             append(" }")
+        }
+
+        private fun shouldRenderCompiledPropertyBody(property: CjProperty): Boolean {
+            return !property.hasModifier(CjTokens.ABSTRACT_KEYWORD) &&
+                !property.hasModifier(CjTokens.FOREIGN_KEYWORD)
+        }
+
+        private fun renderCompiledPropertyAccessor(isGetter: Boolean) {
+            append(if (isGetter) "get()" else "set(value)")
+            printBody(hasBody = true)
+        }
+
+        private fun printPropertyAccessorParameterList(accessor: CjPropertyAccessor) {
+            if (accessor.isGetter) {
+                append("()")
+                return
+            }
+
+            val setterParameterName = accessor.parameter?.name
+                ?.takeIf(String::isNotBlank)
+                ?.let(::renderIdentifier)
+                ?: "value"
+            append("(")
+            append(setterParameterName)
+            append(")")
+        }
+
+        private fun renderedModifiers(
+            list: CjModifierList,
+            excludedModifiers: Set<CjKeywordToken> = emptySet(),
+        ): String {
+            val modifiers = CjTokens.MODIFIER_KEYWORDS_ARRAY
+                .filter { modifier -> modifier !in excludedModifiers && list.hasModifier(modifier) }
+                .map { modifier -> modifier.value }
+                .toMutableList()
+            if (CjTokens.FOREIGN_KEYWORD !in excludedModifiers && list.hasModifier(CjTokens.FOREIGN_KEYWORD)) {
+                modifiers += CjTokens.FOREIGN_KEYWORD.value
+            }
+            return modifiers.joinToString(" ")
         }
     }
 

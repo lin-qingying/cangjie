@@ -46,6 +46,7 @@ dependencies {
     testFixturesApi(project(":analysis:analysis-api"))
     testFixturesApi(project(":analysis:analysis-api-platform-interface"))
     testFixturesApi(project(":analysis:analysis-api-cfir"))
+    testFixturesApi(testFixtures(project(":analysis:analysis-api-cfir")))
     testFixturesApi(testFixtures(project(":analysis:analysis-api-impl-base")))
     testFixturesApi(testFixtures(project(":analysis:analysis-test-framework")))
     testFixturesApi(testFixtures(project(":cfir:analysis-tests")))
@@ -89,6 +90,8 @@ projectTests {
             systemProperty("update.test.data", updateTestData)
         }
     }
+
+    testGenerator("org.cangnova.cangjie.analysis.low.level.api.cfir.TestGeneratorKt")
 }
 
 tasks.withType<KotlinJvmCompile>().configureEach {

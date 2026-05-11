@@ -6,106 +6,120 @@ package std.runtime
 import std.core.*
 import std.fs.*
 
-func blackBox(input: T): T
+func blackBox(input: T): T { /* compiled code */ }
 
-func invokeGC(heavy: Bool): Unit
+func invokeGC(heavy: Bool): Unit { /* compiled code */ }
 
-func getCjGCCount: Int64
+func getCjGCCount(): Int64 { /* compiled code */ }
 
-func getCjGCTime: Int64
+func getCjGCTime(): Int64 { /* compiled code */ }
 
-func getCjGCFreedSize: Int64
+func getCjGCFreedSize(): Int64 { /* compiled code */ }
 
-func setCjGCThreshold(value: UInt64): Unit
+func setCjGCThreshold(value: UInt64): Unit { /* compiled code */ }
 
-func GC(heavy: Bool): Unit
+func GC(heavy: Bool): Unit { /* compiled code */ }
 
-func SetGCThreshold(value: UInt64): Unit
+func SetGCThreshold(value: UInt64): Unit { /* compiled code */ }
 
-func gc(heavy: Bool): Unit
+func gc(heavy: Bool): Unit { /* compiled code */ }
 
-func setGCThreshold(value: UInt64): Unit
+func setGCThreshold(value: UInt64): Unit { /* compiled code */ }
 
-func getGCCount: Int64
+func getGCCount(): Int64 { /* compiled code */ }
 
-func getGCTime: Int64
+func getGCTime(): Int64 { /* compiled code */ }
 
-func getGCFreedSize: Int64
+func getGCFreedSize(): Int64 { /* compiled code */ }
 
-func getMaxCjHeapSize: Int64
+func getMaxCjHeapSize(): Int64 { /* compiled code */ }
 
-func getAllocatedCjHeapSize: Int64
+func getAllocatedCjHeapSize(): Int64 { /* compiled code */ }
 
-func getRealHeapSize: Int64
+func getRealHeapSize(): Int64 { /* compiled code */ }
 
-func dumpCjHeapData(fd: Int32): Bool
+func dumpCjHeapData(fd: Int32): Bool { /* compiled code */ }
 
 class MemoryInfoException <: std.core.Exception {
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    func getClassName(): std.core.String { /* compiled code */ }
 }
 
 struct MemoryInfo {
-    prop maxHeapSize: Int64
+    static prop maxHeapSize: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop allocatedHeapSize: Int64
+    static prop allocatedHeapSize: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop heapPhysicalMemory: Int64
+    static prop heapPhysicalMemory: Int64 {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
-func getMaxHeapSize: Int64
+func getMaxHeapSize(): Int64 { /* compiled code */ }
 
-func getAllocatedHeapSize: Int64
+func getAllocatedHeapSize(): Int64 { /* compiled code */ }
 
-func getUsedHeapSize: Int64
+func getUsedHeapSize(): Int64 { /* compiled code */ }
 
-func dumpHeapData(path: std.fs.Path): Unit
+func dumpHeapData(path: std.fs.Path): Unit { /* compiled code */ }
 
-func startCjCPUProfiling: Bool
+func startCjCPUProfiling(): Bool { /* compiled code */ }
 
-func stopCjCPUProfiling(fd: Int32): Bool
+func stopCjCPUProfiling(fd: Int32): Bool { /* compiled code */ }
 
-func CJ_OS_ProcessorCount: Int64
+foreign func CJ_OS_ProcessorCount(): Int64
 
 class ProfilingInfoException <: std.core.Exception {
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    func getClassName(): std.core.String { /* compiled code */ }
 }
 
 struct ProcessorInfo {
-    prop processorCount: Int64
+    static prop processorCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
-func getProcessorCount: Int64
+func getProcessorCount(): Int64 { /* compiled code */ }
 
-func startCPUProfiling: Unit
+func startCPUProfiling(): Unit { /* compiled code */ }
 
-func stopCPUProfiling(path: std.fs.Path): Unit
+func stopCPUProfiling(path: std.fs.Path): Unit { /* compiled code */ }
 
-func getThreadNumber: Int64
+func getThreadNumber(): Int64 { /* compiled code */ }
 
-func getBlockingThreadNumber: Int64
+func getBlockingThreadNumber(): Int64 { /* compiled code */ }
 
-func getNativeThreadNumber: Int64
+func getNativeThreadNumber(): Int64 { /* compiled code */ }
 
 struct ThreadInfo {
-    prop threadCount: Int64
+    static prop threadCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop blockingThreadCount: Int64
+    static prop blockingThreadCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop nativeThreadCount: Int64
+    static prop nativeThreadCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
-func getThreadCount: Int64
+func getThreadCount(): Int64 { /* compiled code */ }
 
-func getBlockingThreadCount: Int64
+func getBlockingThreadCount(): Int64 { /* compiled code */ }
 
-func getNativeThreadCount: Int64
+func getNativeThreadCount(): Int64 { /* compiled code */ }

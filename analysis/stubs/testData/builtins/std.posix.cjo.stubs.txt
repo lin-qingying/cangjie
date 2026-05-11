@@ -742,6 +742,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.posix, facadeFqName=std.pos
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -791,6 +792,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.posix, facadeFqName=std.pos
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int32]
   CangJieStub$FUNC

@@ -18,9 +18,9 @@ class KVList {
 
     var mySize: Int64
 
-    func find(hash: Int64, key: K): std.core.Option<V>
+    func find(hash: Int64, key: K): std.core.Option<V> { /* compiled code */ }
 
-    operator func [](index: Int64): (Int64, K, V)
+    operator func [](index: Int64): (Int64, K, V) { /* compiled code */ }
 }
 
 enum FindKey {
@@ -34,11 +34,11 @@ enum FindKey {
 struct Bucket {
     let atomic_ref_entries: std.sync.AtomicOptionReference<std.collection.concurrent.KVList<K, V>>
 
-    func find(hash: Int64, key: K): std.collection.concurrent.FindKey<V>
+    func find(hash: Int64, key: K): std.collection.concurrent.FindKey<V> { /* compiled code */ }
 
-    func copyAddIfAbsent(hash: Int64, key: K, value: V): std.core.Option<V>
+    func copyAddIfAbsent(hash: Int64, key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func refList: std.core.Option<std.collection.concurrent.KVList<K, V>>
+    func refList(): std.core.Option<std.collection.concurrent.KVList<K, V>> { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -58,9 +58,9 @@ class HNode {
 
     let pre: std.sync.AtomicOptionReference<std.collection.concurrent.HNode<K, V>>
 
-    func getValue(hash: Int64, key: K): std.core.Option<V>
+    func getValue(hash: Int64, key: K): std.core.Option<V> { /* compiled code */ }
 
-    func tryGetBucket(index: Int64): Bool
+    func tryGetBucket(index: Int64): Bool { /* compiled code */ }
 }
 
 class MutexLockGroup {
@@ -68,7 +68,7 @@ class MutexLockGroup {
 
     let mod: Int64
 
-    func unlock(index: Int64): Unit
+    func unlock(index: Int64): Unit { /* compiled code */ }
 }
 
 class ConcurrentHashMapIterator <: std.core.Iterator<(K, V)> {
@@ -82,9 +82,9 @@ class ConcurrentHashMapIterator <: std.core.Iterator<(K, V)> {
 
     init(cmap: std.collection.concurrent.ConcurrentHashMap<K, V>) { /* compiled code */ }
 
-    func next: std.core.Option<(K, V)>
+    func next(): std.core.Option<(K, V)> { /* compiled code */ }
 
-    func nextElement: Unit
+    func nextElement(): Unit { /* compiled code */ }
 }
 
 class ConcurrentHashMap <: std.core.Object & std.collection.concurrent.ConcurrentMap<K, V> & std.core.Collection<(K, V)> {
@@ -108,47 +108,49 @@ class ConcurrentHashMap <: std.core.Object & std.collection.concurrent.Concurren
 
     init(size: Int64, initElement: (Int64) -> (K, V), concurrencyLevel: Int64) { /* compiled code */ }
 
-    func `get`(key: K): std.core.Option<V>
+    func `get`(key: K): std.core.Option<V> { /* compiled code */ }
 
-    func contains(key: K): Bool
+    func contains(key: K): Bool { /* compiled code */ }
 
-    func put(key: K, value: V): std.core.Option<V>
+    func put(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func add(key: K, value: V): std.core.Option<V>
+    func add(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func putIfAbsent(key: K, value: V): std.core.Option<V>
+    func putIfAbsent(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func addIfAbsent(key: K, value: V): std.core.Option<V>
+    func addIfAbsent(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func remove(key: K): std.core.Option<V>
+    func remove(key: K): std.core.Option<V> { /* compiled code */ }
 
-    func remove(key: K, predicate: (V) -> Bool): std.core.Option<V>
+    func remove(key: K, predicate: (V) -> Bool): std.core.Option<V> { /* compiled code */ }
 
-    func replace(key: K, value: V): std.core.Option<V>
+    func replace(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func replace(key: K, eval: (V) -> V): std.core.Option<V>
+    func replace(key: K, eval: (V) -> V): std.core.Option<V> { /* compiled code */ }
 
-    func replace(key: K, predicate: (V) -> Bool, eval: (V) -> V): std.core.Option<V>
+    func replace(key: K, predicate: (V) -> Bool, eval: (V) -> V): std.core.Option<V> { /* compiled code */ }
 
-    func entryView(key: K, fn: (std.collection.MapEntryView<K, V>) -> Unit): std.core.Option<V>
+    func entryView(key: K, fn: (std.collection.MapEntryView<K, V>) -> Unit): std.core.Option<V> { /* compiled code */ }
 
-    operator func [](key: K): V
+    operator func [](key: K): V { /* compiled code */ }
 
-    operator func [](key: K, value: V): Unit
+    operator func [](key: K, value: V): Unit { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func iterator: std.collection.concurrent.ConcurrentHashMapIterator<K, V>
+    func iterator(): std.collection.concurrent.ConcurrentHashMapIterator<K, V> { /* compiled code */ }
 
-    func addInternal(key: K, value: V): std.core.Option<V>
+    func addInternal(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func replaceInternel(key: K, predicate: (V) -> Bool, eval: (V) -> V): std.core.Option<V>
+    func replaceInternel(key: K, predicate: (V) -> Bool, eval: (V) -> V): std.core.Option<V> { /* compiled code */ }
 
-    func tryResize(hash: Int64): Unit
+    func tryResize(hash: Int64): Unit { /* compiled code */ }
 
-    func countInc(ret: std.core.Option<V>, hash: Int64): Unit
+    func countInc(ret: std.core.Option<V>, hash: Int64): Unit { /* compiled code */ }
 }
 
 class Block {
@@ -166,9 +168,9 @@ class Block {
 
     let buffer: std.core.Array<E>
 
-    func getAllocated: (UInt64, Int64)
+    func getAllocated(): (UInt64, Int64) { /* compiled code */ }
 
-    func getReserved: (UInt64, Int64)
+    func getReserved(): (UInt64, Int64) { /* compiled code */ }
 }
 
 class ConcurrentLinkedQueueIterator <: std.core.Iterator<E> {
@@ -182,9 +184,9 @@ class ConcurrentLinkedQueueIterator <: std.core.Iterator<E> {
 
     init(queue: std.collection.concurrent.ConcurrentLinkedQueue<E>, front: std.collection.concurrent.Block<E>) { /* compiled code */ }
 
-    func next: std.core.Option<E>
+    func next(): std.core.Option<E> { /* compiled code */ }
 
-    func getNextBlock: Bool
+    func getNextBlock(): Bool { /* compiled code */ }
 }
 
 class ConcurrentLinkedQueue <: std.core.Object & std.core.Collection<E> {
@@ -196,25 +198,27 @@ class ConcurrentLinkedQueue <: std.core.Object & std.core.Collection<E> {
 
     init(elements: std.core.Collection<E>) { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func enqueue(element: E): Bool
+    func enqueue(element: E): Bool { /* compiled code */ }
 
-    func add(element: E): Bool
+    func add(element: E): Bool { /* compiled code */ }
 
-    func dequeue: std.core.Option<E>
+    func dequeue(): std.core.Option<E> { /* compiled code */ }
 
-    func remove: std.core.Option<E>
+    func remove(): std.core.Option<E> { /* compiled code */ }
 
-    func head: std.core.Option<E>
+    func head(): std.core.Option<E> { /* compiled code */ }
 
-    func peek: std.core.Option<E>
+    func peek(): std.core.Option<E> { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func toArray: std.core.Array<E>
+    func toArray(): std.core.Array<E> { /* compiled code */ }
 
-    func iterator: std.core.Iterator<E>
+    func iterator(): std.core.Iterator<E> { /* compiled code */ }
 }
 
 class ArrayBlockingQueue {
@@ -242,37 +246,39 @@ class ArrayBlockingQueue {
 
     init(capacity: Int64, elements: std.core.Collection<E>) { /* compiled code */ }
 
-    ~init()
+    ~init() { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func enqueue(element: E): Unit
+    func enqueue(element: E): Unit { /* compiled code */ }
 
-    func add(element: E): Unit
+    func add(element: E): Unit { /* compiled code */ }
 
-    func enqueue(element: E, timeout: std.core.Duration): Bool
+    func enqueue(element: E, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func add(element: E, timeout: std.core.Duration): Bool
+    func add(element: E, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func dequeue: E
+    func dequeue(): E { /* compiled code */ }
 
-    func remove: E
+    func remove(): E { /* compiled code */ }
 
-    func dequeue(timeout: std.core.Duration): std.core.Option<E>
+    func dequeue(timeout: std.core.Duration): std.core.Option<E> { /* compiled code */ }
 
-    func remove(timeout: std.core.Duration): std.core.Option<E>
+    func remove(timeout: std.core.Duration): std.core.Option<E> { /* compiled code */ }
 
-    func head: std.core.Option<E>
+    func head(): std.core.Option<E> { /* compiled code */ }
 
-    func peek: std.core.Option<E>
+    func peek(): std.core.Option<E> { /* compiled code */ }
 
-    func tryEnqueue(element: E): Bool
+    func tryEnqueue(element: E): Bool { /* compiled code */ }
 
-    func tryAdd(element: E): Bool
+    func tryAdd(element: E): Bool { /* compiled code */ }
 
-    func tryDequeue: std.core.Option<E>
+    func tryDequeue(): std.core.Option<E> { /* compiled code */ }
 
-    func tryRemove: std.core.Option<E>
+    func tryRemove(): std.core.Option<E> { /* compiled code */ }
 }
 
 type BlockingQueue = std.collection.concurrent.LinkedBlockingQueue<E>
@@ -300,67 +306,69 @@ class LinkedBlockingQueue {
 
     init(capacity: Int64, elements: std.core.Collection<E>) { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func enqueue(element: E): Unit
+    func enqueue(element: E): Unit { /* compiled code */ }
 
-    func add(element: E): Unit
+    func add(element: E): Unit { /* compiled code */ }
 
-    func enqueue(element: E, timeout: std.core.Duration): Bool
+    func enqueue(element: E, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func add(element: E, timeout: std.core.Duration): Bool
+    func add(element: E, timeout: std.core.Duration): Bool { /* compiled code */ }
 
-    func dequeue: E
+    func dequeue(): E { /* compiled code */ }
 
-    func remove: E
+    func remove(): E { /* compiled code */ }
 
-    func dequeue(timeout: std.core.Duration): std.core.Option<E>
+    func dequeue(timeout: std.core.Duration): std.core.Option<E> { /* compiled code */ }
 
-    func remove(timeout: std.core.Duration): std.core.Option<E>
+    func remove(timeout: std.core.Duration): std.core.Option<E> { /* compiled code */ }
 
-    func head: std.core.Option<E>
+    func head(): std.core.Option<E> { /* compiled code */ }
 
-    func peek: std.core.Option<E>
+    func peek(): std.core.Option<E> { /* compiled code */ }
 
-    func tryEnqueue(element: E): Bool
+    func tryEnqueue(element: E): Bool { /* compiled code */ }
 
-    func tryAdd(element: E): Bool
+    func tryAdd(element: E): Bool { /* compiled code */ }
 
-    func tryDequeue: std.core.Option<E>
+    func tryDequeue(): std.core.Option<E> { /* compiled code */ }
 
-    func tryRemove: std.core.Option<E>
+    func tryRemove(): std.core.Option<E> { /* compiled code */ }
 }
 
 type KeyValue = (Int64, K, V)
 
 interface ConcurrentMap {
-    func `get`(key: K): std.core.Option<V>
+    func `get`(key: K): std.core.Option<V> { /* compiled code */ }
 
-    func contains(key: K): Bool
+    func contains(key: K): Bool { /* compiled code */ }
 
-    func put(key: K, value: V): std.core.Option<V>
+    func put(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func add(key: K, value: V): std.core.Option<V>
+    func add(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func putIfAbsent(key: K, value: V): std.core.Option<V>
+    func putIfAbsent(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func addIfAbsent(key: K, value: V): std.core.Option<V>
+    func addIfAbsent(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func remove(key: K): std.core.Option<V>
+    func remove(key: K): std.core.Option<V> { /* compiled code */ }
 
-    func remove(key: K, predicate: (V) -> Bool): std.core.Option<V>
+    func remove(key: K, predicate: (V) -> Bool): std.core.Option<V> { /* compiled code */ }
 
-    func replace(key: K, value: V): std.core.Option<V>
+    func replace(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
-    func replace(key: K, eval: (V) -> V): std.core.Option<V>
+    func replace(key: K, eval: (V) -> V): std.core.Option<V> { /* compiled code */ }
 
-    func replace(key: K, predicate: (V) -> Bool, eval: (V) -> V): std.core.Option<V>
+    func replace(key: K, predicate: (V) -> Bool, eval: (V) -> V): std.core.Option<V> { /* compiled code */ }
 
-    func entryView(key: K, fn: (std.collection.MapEntryView<K, V>) -> Unit): std.core.Option<V>
+    func entryView(key: K, fn: (std.collection.MapEntryView<K, V>) -> Unit): std.core.Option<V> { /* compiled code */ }
 
-    operator func [](key: K): V
+    operator func [](key: K): V { /* compiled code */ }
 
-    operator func [](key: K, value: V): Unit
+    operator func [](key: K, value: V): Unit { /* compiled code */ }
 }
 
 type NonBlockingQueue = std.collection.concurrent.ConcurrentLinkedQueue<E>

@@ -19,11 +19,11 @@ class ArgOpt {
 
     init(args: std.core.Array<std.core.String>, shortArgFormat: std.core.String, longArgList: std.core.Array<std.core.String>) { /* compiled code */ }
 
-    func getArg(arg: std.core.String): std.core.Option<std.core.String>
+    func getArg(arg: std.core.String): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func getUnparseArgs: std.core.Array<std.core.String>
+    func getUnparseArgs(): std.core.Array<std.core.String> { /* compiled code */ }
 
-    func getArgumentsMap: std.collection.HashMap<std.core.String, std.core.String>
+    func getArgumentsMap(): std.collection.HashMap<std.core.String, std.core.String> { /* compiled code */ }
 }
 
 class ParserHelper {
@@ -49,9 +49,9 @@ enum ArgumentMode <: std.core.ToString & std.core.Equatable<std.argopt.ArgumentM
 
     | OptionalValue
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    operator func ==(that: std.argopt.ArgumentMode): Bool
+    operator func ==(that: std.argopt.ArgumentMode): Bool { /* compiled code */ }
 }
 
 enum ArgumentSpec {
@@ -75,9 +75,13 @@ struct ParsedArguments {
 
     var _nonOptions: std.core.Array<std.core.String>
 
-    prop options: std.collection.ReadOnlyMap<std.core.String, std.core.String>
+    prop options: std.collection.ReadOnlyMap<std.core.String, std.core.String> {
+        get() { /* compiled code */ }
+    }
 
-    prop nonOptions: std.core.Array<std.core.String>
+    prop nonOptions: std.core.Array<std.core.String> {
+        get() { /* compiled code */ }
+    }
 }
 
 class ArgumentParseException <: std.core.Exception {
@@ -85,7 +89,7 @@ class ArgumentParseException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-func parseArguments(args: std.core.Array<std.core.String>, specs: std.core.Array<std.argopt.ArgumentSpec>): std.argopt.ParsedArguments
+func parseArguments(args: std.core.Array<std.core.String>, specs: std.core.Array<std.argopt.ArgumentSpec>): std.argopt.ParsedArguments { /* compiled code */ }

@@ -4,11 +4,8 @@ package org.cangnova.cangjie.analysis.stubs
 
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.util.Disposer
 import com.intellij.psi.search.GlobalSearchScope
-import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiDecompiledTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
@@ -17,7 +14,9 @@ import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatfor
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneProjectStructure
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.test.services.TestServices
 import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
@@ -25,47 +24,6 @@ import java.nio.file.StandardCopyOption
 import kotlin.io.path.isRegularFile
 
 internal object CjoCompiledTestEnvironment {
-    fun withEnvironment(
-        testName: String,
-        action: (environment: CangJieCoreEnvironment) -> Unit,
-    ) {
-        val disposable = Disposer.newDisposable(testName)
-        try {
-            val environment = CangJieCoreEnvironment.createForTests(disposable)
-            action(environment)
-        } finally {
-            val application = ApplicationManager.getApplication()
-            if (application != null) {
-                application.runWriteAction {
-                    Disposer.dispose(disposable)
-                }
-            } else {
-                Disposer.dispose(disposable)
-            }
-        }
-    }
-
-    fun withRegisteredStubAndDecompilerServices(
-        environment: CangJieCoreEnvironment,
-        action: () -> Unit,
-    ) {
-        val application = environment.applicationEnvironment.application as MockApplication
-        val project = environment.project as MockProject
-        PluginStructureProvider.registerApplicationServices(application, "META-INF/analysis-api/cangjie-analysis-api-standalone.xml")
-        PluginStructureProvider.registerProjectServices(project, "META-INF/analysis-api/cangjie-analysis-api-standalone.xml")
-        PluginStructureProvider.registerApplicationServices(application, "META-INF/analysis-api/cangjie-low-level-api-cfir.xml")
-        PluginStructureProvider.registerProjectServices(project, "META-INF/analysis-api/cangjie-low-level-api-cfir.xml")
-        CaAnalysisApiDecompiledTestServiceRegistrar.registerApplicationServices(application)
-        CaAnalysisApiDecompiledTestServiceRegistrar.registerProjectServices(project)
-        PluginStructureProvider.registerApplicationServices(application, "META-INF/analysis-api/cangjie-analysis-stubs.xml")
-        PluginStructureProvider.registerProjectServices(project, "META-INF/analysis-api/cangjie-analysis-stubs.xml")
-        action()
-    }
-
-    fun installBuiltinsProjectStructure(environment: CangJieCoreEnvironment): CaBuiltinsModule {
-        return installBuiltinsProjectStructure(environment.project)
-    }
-
     fun installBuiltinsProjectStructure(project: Project): CaBuiltinsModule {
         val builtinsModule = object : CaModuleBase(), CaBuiltinsModule {
             override val project = project
@@ -81,10 +39,10 @@ internal object CjoCompiledTestEnvironment {
     }
 
     fun findBuiltinsBinaryFile(
-        environment: CangJieCoreEnvironment,
+        project: Project,
         builtinsModule: CaBuiltinsModule,
         packageFqName: FqName,
-    ) = environment.project.getService(CaDecompiledBinaryIndex::class.java)
+    ) = project.getService(CaDecompiledBinaryIndex::class.java)
         .findBinaryFile(builtinsModule, packageFqName)
 
     fun <T> withSlimStdlibFixture(
@@ -139,5 +97,27 @@ internal object CjoCompiledTestEnvironment {
                 System.setProperty("cangjie.stdlib.module", oldValue)
             }
         }
+    }
+}
+
+internal object CjoCompiledStubsTestServiceRegistrar : AnalysisApiTestServiceRegistrar() {
+    private val pluginXmls = listOf(
+        "META-INF/analysis-api/cangjie-low-level-api-cfir.xml",
+        "META-INF/analysis-api/cangjie-analysis-stubs.xml",
+    )
+
+    override fun registerApplicationServices(application: MockApplication, testServices: TestServices) {
+        pluginXmls.forEach { pluginXmlPath ->
+            PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
+        }
+        CaAnalysisApiDecompiledTestServiceRegistrar.registerApplicationServices(application)
+    }
+
+    override fun registerProjectServices(project: MockProject, testServices: TestServices) {
+        project.registerService(CaStandalonePlatformState::class.java, CaStandalonePlatformState::class.java)
+        pluginXmls.forEach { pluginXmlPath ->
+            PluginStructureProvider.registerProjectServices(project, pluginXmlPath)
+        }
+        CaAnalysisApiDecompiledTestServiceRegistrar.registerProjectServices(project)
     }
 }

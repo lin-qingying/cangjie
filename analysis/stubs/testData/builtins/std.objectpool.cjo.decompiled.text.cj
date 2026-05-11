@@ -15,7 +15,7 @@ class ObjectPool {
 
     init(newFunc: () -> T, resetFunc: std.core.Option<(T) -> T>) { /* compiled code */ }
 
-    func `get`: T
+    func `get`(): T { /* compiled code */ }
 
-    func put(item: T): Unit
+    func put(item: T): Unit { /* compiled code */ }
 }

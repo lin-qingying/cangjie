@@ -21,7 +21,7 @@ import org.cangnova.cangjie.name.Name
  * 对齐 C++ InheritanceChecker/ 目录：
  * - CANNOT_INHERIT_SEALED: sealed 类只能在同包中被继承
  * - INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC: 抽象类 static 成员未实现
- * - INVALID_MEMBER_VISIBILITY_IN_CLASS: 成员可见性不能比所在类更宽松
+ * - INVALID_MEMBER_VISIBILITY_IN_CLASS: abstract/open 成员必须是 public 或 protected
  *
  * 注册为 classLikeCheckers
  */
@@ -214,31 +214,60 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     }
 
     /**
-     * 成员可见性不能比所在类更宽松。
+     * abstract/open 成员必须是 public 或 protected。
      *
-     * 对齐 C++ DiagKind::sema_invalid_member_visibility_in_class:
-     * 例如 private class 的成员不能是 public。
+     * 对齐 C++ DeclAttributeChecker.cpp:
+     * - 抽象类中的 abstract 成员不能是 private/internal；
+     * - 可继承类中的 open 成员不能是 private/internal。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkMemberVisibilityNotWiderThanClass(classDecl: CfirClass) {
-        val classVisibility = classDecl.status.visibility
-        if (classVisibility == Visibilities.Public) return // public class 无此限制
-
+        val classIsAbstract = classDecl.status.isAbstract
+        val classIsInheritable = classDecl.status.isOpen || classDecl.status.isAbstract
         for (member in classDecl.declarations) {
-            val memberVisibility = when (member) {
-                is CfirNamedFunction -> member.status.visibility
-                is CfirProperty -> member.status.visibility
+            val (memberVisibility, modifier, memberKind) = when (member) {
+                is CfirNamedFunction -> Triple(
+                    member.status.visibility,
+                    member.invalidVisibilityModifier(classIsAbstract, classIsInheritable),
+                    "function",
+                )
+                is CfirProperty -> Triple(
+                    member.status.visibility,
+                    member.invalidVisibilityModifier(classIsAbstract, classIsInheritable),
+                    "property",
+                )
                 else -> continue
             }
-            if (memberVisibility == Visibilities.Public && classVisibility != Visibilities.Public) {
+            if (modifier != null &&
+                memberVisibility != Visibilities.Public &&
+                memberVisibility != Visibilities.Protected
+            ) {
                 reporter.reportOn(
                     source = member.source ?: classDecl.source,
                     factory = CfirErrors.INVALID_MEMBER_VISIBILITY_IN_CLASS,
-                    a = memberVisibility.externalDisplayName,
-                    b = classVisibility.externalDisplayName,
+                    a = modifier,
+                    b = memberKind,
                 )
             }
         }
+    }
+
+    private fun CfirNamedFunction.invalidVisibilityModifier(
+        classIsAbstract: Boolean,
+        classIsInheritable: Boolean,
+    ): String? {
+        if (status.isAbstract && classIsAbstract) return "abstract"
+        if (status.isOpen && classIsInheritable) return "open"
+        return null
+    }
+
+    private fun CfirProperty.invalidVisibilityModifier(
+        classIsAbstract: Boolean,
+        classIsInheritable: Boolean,
+    ): String? {
+        if (status.isAbstract && classIsAbstract) return "abstract"
+        if (status.isOpen && classIsInheritable) return "open"
+        return null
     }
 
     /**

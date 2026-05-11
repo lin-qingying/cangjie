@@ -26,6 +26,7 @@ package org.cangnova.cangjie.psi.stubs.impl
 
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjModifierKeywordToken
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.lexer.CjTokens.MODIFIER_KEYWORDS_ARRAY
 import org.cangnova.cangjie.psi.CjModifierList
 
@@ -55,13 +56,19 @@ import org.cangnova.cangjie.psi.CjModifierList
  * - 减少内存占用（特别是大型项目中有数万个声明时）
  */
 object ModifierMaskUtils {
+    private val ADDITIONAL_KEYWORDS = arrayOf(
+        CjTokens.FOREIGN_KEYWORD,
+    )
+
     /**
      * 初始化检查：确保修饰符数量不超过 64 个
      *
      * 如果修饰符超过 64 个，位掩码无法表示，需要改用其他实现
      */
     init {
-        assert(MODIFIER_KEYWORDS_ARRAY.size <= 64) { "Current implementation depends on the ability to represent modifier list as bit mask" }
+        assert(MODIFIER_KEYWORDS_ARRAY.size + ADDITIONAL_KEYWORDS.size <= 64) {
+            "Current implementation depends on the ability to represent modifier list as bit mask"
+        }
     }
 
     /**
@@ -79,7 +86,10 @@ object ModifierMaskUtils {
      * @return 64 位掩码，每个位代表对应位置的修饰符是否存在
      */
     @JvmStatic
-    fun computeMaskFromModifierList(modifierList: CjModifierList): Long = computeMask { modifierList.hasModifier(it) }
+    fun computeMaskFromModifierList(modifierList: CjModifierList): Long = computeMask(
+        hasModifier = { modifierList.hasModifier(it) },
+        hasAdditionalModifier = { modifierList.hasModifier(it) },
+    )
 
     /**
      * 从修饰符检查函数计算位掩码
@@ -97,11 +107,19 @@ object ModifierMaskUtils {
      * @return 计算出的位掩码
      */
     @JvmStatic
-    fun computeMask(hasModifier: (CjModifierKeywordToken) -> Boolean): Long {
+    fun computeMask(
+        hasModifier: (CjModifierKeywordToken) -> Boolean,
+        hasAdditionalModifier: (CjKeywordToken) -> Boolean = { false },
+    ): Long {
         var mask = 0L
         for ((index, modifierKeywordToken) in MODIFIER_KEYWORDS_ARRAY.withIndex()) {
             if (hasModifier(modifierKeywordToken)) {
                 mask = mask or (1L shl index)
+            }
+        }
+        for ((index, keywordToken) in ADDITIONAL_KEYWORDS.withIndex()) {
+            if (hasAdditionalModifier(keywordToken)) {
+                mask = mask or (1L shl (MODIFIER_KEYWORDS_ARRAY.size + index))
             }
         }
         return mask
@@ -134,13 +152,18 @@ object ModifierMaskUtils {
     @JvmStatic
     fun maskHasModifier(mask: Long, modifierToken: CjKeywordToken): Boolean {
         val index = MODIFIER_KEYWORDS_ARRAY.indexOf(modifierToken)
-        if (index < 0) {
-            // unsafe、const、foreign 等关键字因兼具块语法角色（如 unsafe { }）而未提升为
-            // CjModifierKeywordToken，不在 MODIFIER_KEYWORDS_ARRAY 中。
-            // computeMask 不会编码这些 token，所以掩码中不可能包含它们，返回 false。
+        if (index >= 0) {
+            return (mask and (1L shl index)) != 0L
+        }
+
+        val additionalIndex = ADDITIONAL_KEYWORDS.indexOf(modifierToken)
+        if (additionalIndex < 0) {
+            // unsafe、const 等关键字因兼具块语法角色（如 unsafe { }）而未编码进当前掩码。
             return false
         }
-        return (mask and (1L shl index)) != 0L
+
+        val bitIndex = MODIFIER_KEYWORDS_ARRAY.size + additionalIndex
+        return (mask and (1L shl bitIndex)) != 0L
     }
 
     /**
@@ -168,6 +191,15 @@ object ModifierMaskUtils {
                     sb.append(" ")
                 }
                 sb.append(modifierKeyword.value)
+                first = false
+            }
+        }
+        for (keywordToken in ADDITIONAL_KEYWORDS) {
+            if (maskHasModifier(mask, keywordToken)) {
+                if (!first) {
+                    sb.append(" ")
+                }
+                sb.append(keywordToken.value)
                 first = false
             }
         }

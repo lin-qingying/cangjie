@@ -17,31 +17,43 @@ class CurrentProcess <: std.process.Process {
 
     let _stdErr: std.io.OutputStream
 
-    ~init()
+    ~init() { /* compiled code */ }
 
-    prop stdErr: std.io.OutputStream
+    prop stdErr: std.io.OutputStream {
+        get() { /* compiled code */ }
+    }
 
-    prop stdOut: std.io.OutputStream
+    prop stdOut: std.io.OutputStream {
+        get() { /* compiled code */ }
+    }
 
-    prop stdIn: std.io.InputStream
+    prop stdIn: std.io.InputStream {
+        get() { /* compiled code */ }
+    }
 
-    prop arguments: std.core.Array<std.core.String>
+    prop arguments: std.core.Array<std.core.String> {
+        get() { /* compiled code */ }
+    }
 
-    prop homeDirectory: std.fs.Path
+    prop homeDirectory: std.fs.Path {
+        get() { /* compiled code */ }
+    }
 
-    prop tempDirectory: std.fs.Path
+    prop tempDirectory: std.fs.Path {
+        get() { /* compiled code */ }
+    }
 
-    func getEnv(key: std.core.String): std.core.Option<std.core.String>
+    func getEnv(key: std.core.String): std.core.Option<std.core.String> { /* compiled code */ }
 
-    func setEnv(k: std.core.String, v: std.core.String): Unit
+    func setEnv(k: std.core.String, v: std.core.String): Unit { /* compiled code */ }
 
-    func removeEnv(k: std.core.String): Unit
+    func removeEnv(k: std.core.String): Unit { /* compiled code */ }
 
-    func atExit(callback: () -> Unit): Unit
+    func atExit(callback: () -> Unit): Unit { /* compiled code */ }
 
-    func exit(code: Int64): Nothing
+    func exit(code: Int64): Nothing { /* compiled code */ }
 
-    func terminateAliveProcess(pid: Int32, force: Bool): Unit
+    func terminateAliveProcess(pid: Int32, force: Bool): Unit { /* compiled code */ }
 }
 
 class Process {
@@ -65,47 +77,69 @@ class Process {
 
     var _startTime: Int64
 
-    prop current: std.process.CurrentProcess
+    static prop current: std.process.CurrentProcess {
+        get() { /* compiled code */ }
+    }
 
-    prop pid: Int64
+    prop pid: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop command: std.core.String
+    prop command: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop startTime: std.time.DateTime
+    prop startTime: std.time.DateTime {
+        get() { /* compiled code */ }
+    }
 
-    prop systemTime: std.core.Duration
+    prop systemTime: std.core.Duration {
+        get() { /* compiled code */ }
+    }
 
-    prop userTime: std.core.Duration
+    prop userTime: std.core.Duration {
+        get() { /* compiled code */ }
+    }
 
-    prop arguments: std.core.Array<std.core.String>
+    prop arguments: std.core.Array<std.core.String> {
+        get() { /* compiled code */ }
+    }
 
-    prop commandLine: std.core.Array<std.core.String>
+    prop commandLine: std.core.Array<std.core.String> {
+        get() { /* compiled code */ }
+    }
 
-    prop workingDirectory: std.fs.Path
+    prop workingDirectory: std.fs.Path {
+        get() { /* compiled code */ }
+    }
 
-    prop environment: std.collection.Map<std.core.String, std.core.String>
+    prop environment: std.collection.Map<std.core.String, std.core.String> {
+        get() { /* compiled code */ }
+    }
 
-    func of(pid: Int64): std.process.Process
+    static func of(pid: Int64): std.process.Process { /* compiled code */ }
 
-    func start(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): std.process.SubProcess
+    static func start(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): std.process.SubProcess { /* compiled code */ }
 
-    func run(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect, timeout: std.core.Option<std.core.Duration>): Int64
+    static func run(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect, timeout: std.core.Option<std.core.Duration>): Int64 { /* compiled code */ }
 
-    func runOutput(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): (Int64, std.core.Array<UInt8>, std.core.Array<UInt8>)
+    static func runOutput(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): (Int64, std.core.Array<UInt8>, std.core.Array<UInt8>) { /* compiled code */ }
 
-    func buildCurrentProcess: std.process.CurrentProcess
+    static func buildCurrentProcess(): std.process.CurrentProcess { /* compiled code */ }
 
-    func buildProcess(pid: Int32): std.process.Process
+    static func buildProcess(pid: Int32): std.process.Process { /* compiled code */ }
 
-    func isAlive: Bool
+    func isAlive(): Bool { /* compiled code */ }
 
-    func terminate(force: Bool): Unit
+    func terminate(force: Bool): Unit { /* compiled code */ }
 
-    func terminateAliveProcess(pid: Int32, force: Bool): Unit
+    func terminateAliveProcess(pid: Int32, force: Bool): Unit { /* compiled code */ }
 
-    func hasDiscardMode(std_redirects: std.core.Array<std.process.ProcessRedirect>): Bool
+    static func hasDiscardMode(std_redirects: std.core.Array<std.process.ProcessRedirect>): Bool { /* compiled code */ }
 }
 
 struct ProcessInfo {
@@ -181,35 +215,47 @@ class SubProcess <: std.process.Process {
 
     var _stdErr: std.io.InputStream
 
-    ~init()
+    ~init() { /* compiled code */ }
 
-    prop stdInPipe: std.io.OutputStream
+    prop stdInPipe: std.io.OutputStream {
+        get() { /* compiled code */ }
+    }
 
-    prop stdOutPipe: std.io.InputStream
+    prop stdOutPipe: std.io.InputStream {
+        get() { /* compiled code */ }
+    }
 
-    prop stdErrPipe: std.io.InputStream
+    prop stdErrPipe: std.io.InputStream {
+        get() { /* compiled code */ }
+    }
 
-    prop stdErr: std.io.InputStream
+    prop stdErr: std.io.InputStream {
+        get() { /* compiled code */ }
+    }
 
-    prop stdOut: std.io.InputStream
+    prop stdOut: std.io.InputStream {
+        get() { /* compiled code */ }
+    }
 
-    prop stdIn: std.io.OutputStream
+    prop stdIn: std.io.OutputStream {
+        get() { /* compiled code */ }
+    }
 
-    func wait(timeout: std.core.Option<std.core.Duration>): Int64
+    func wait(timeout: std.core.Option<std.core.Duration>): Int64 { /* compiled code */ }
 
-    func waitOutput: (Int64, std.core.Array<UInt8>, std.core.Array<UInt8>)
+    func waitOutput(): (Int64, std.core.Array<UInt8>, std.core.Array<UInt8>) { /* compiled code */ }
 }
 
-func findProcess(pid: Int64): std.process.Process
+func findProcess(pid: Int64): std.process.Process { /* compiled code */ }
 
-func launch(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): std.process.SubProcess
+func launch(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): std.process.SubProcess { /* compiled code */ }
 
-func execute(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect, timeout: std.core.Option<std.core.Duration>): Int64
+func execute(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect, timeout: std.core.Option<std.core.Duration>): Int64 { /* compiled code */ }
 
-func executeWithOutput(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): (Int64, std.core.Array<UInt8>, std.core.Array<UInt8>)
+func executeWithOutput(command: std.core.String, arguments: std.core.Array<std.core.String>, workingDirectory: std.core.Option<std.fs.Path>, environment: std.core.Option<std.collection.Map<std.core.String, std.core.String>>, stdIn: std.process.ProcessRedirect, stdOut: std.process.ProcessRedirect, stdErr: std.process.ProcessRedirect): (Int64, std.core.Array<UInt8>, std.core.Array<UInt8>) { /* compiled code */ }
 
 class ProcessException <: std.io.IOException {
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
