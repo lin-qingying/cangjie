@@ -108,6 +108,19 @@ data class CfirReplaceHandle(
 )
 
 /**
+ * Macro surface id 单调生成器。
+ *
+ * surface id 全局唯一即可（不要求跨 session 稳定），用以建立
+ * [MacroSurface.surfaceId] -> [MacroSurface] 的反查；
+ * 同 id 复用为 [CfirReplaceHandle.handleId]。
+ */
+object MacroSurfaceIdGenerator {
+    private val counter = java.util.concurrent.atomic.AtomicLong(0)
+
+    fun next(): Long = counter.incrementAndGet()
+}
+
+/**
  * Macro surface declaration 形态：`@MyAnnot class Foo {}` / `@MyMacro func bar() {}` 等。
  */
 data class MacroSurfaceDecl(

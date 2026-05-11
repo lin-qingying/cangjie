@@ -10,6 +10,7 @@ import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.lexer.CangJieLexer
@@ -42,22 +43,42 @@ class LightTree2Cfir(
         lightTree: FlyweightCapableTreeStructure<LighterASTNode>,
         sourceFile: CjSourceFile,
         linesMapping: CjSourceFileLinesMapping,
-    ): CfirFile {
+    ): CfirFile = buildCfirFileWithSurfaces(lightTree, sourceFile, linesMapping).first
+
+    /**
+     * 与 [buildCfirFile] 同行为，但同时返回构造期间收集的 macro surface 列表
+     * （baseline Batch 4b："PSI 与 LightTree builder 都产 surface"）。
+     */
+    fun buildCfirFileWithSurfaces(
+        lightTree: FlyweightCapableTreeStructure<LighterASTNode>,
+        sourceFile: CjSourceFile,
+        linesMapping: CjSourceFileLinesMapping,
+    ): Pair<CfirFile, List<MacroSurface>> {
+        @Suppress("UNUSED_VARIABLE")
         val code = sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use { it.readText() }
-        return LightTreeRawCfirDeclarationBuilder(
+        val declarationBuilder = LightTreeRawCfirDeclarationBuilder(
             session = session,
             baseScopeProvider = scopeProvider,
             tree = lightTree,
             source = code,
             bodyBuildingMode = bodyBuildingMode,
-        ).buildCfirFile(lightTree.root, sourceFile, linesMapping)
+        )
+        val file = declarationBuilder.buildCfirFile(lightTree.root, sourceFile, linesMapping)
+        val surfaces = declarationBuilder.consumeCollectedMacroSurfaces()
+        return file to surfaces
     }
 
     fun buildCfirFile(
         code: CharSequence,
         sourceFile: CjSourceFile,
         linesMapping: CjSourceFileLinesMapping,
-    ): CfirFile {
+    ): CfirFile = buildCfirFileWithSurfaces(code, sourceFile, linesMapping).first
+
+    fun buildCfirFileWithSurfaces(
+        code: CharSequence,
+        sourceFile: CjSourceFile,
+        linesMapping: CjSourceFileLinesMapping,
+    ): Pair<CfirFile, List<MacroSurface>> {
         val parserDefinition = CangJieParserDefinition()
         val builder = PsiBuilderFactory.getInstance().createBuilder(
             parserDefinition,
@@ -65,6 +86,6 @@ class LightTree2Cfir(
             code,
         )
         val lightTree = CangJieLightParser.parse(builder)
-        return buildCfirFile(lightTree, sourceFile, linesMapping)
+        return buildCfirFileWithSurfaces(lightTree, sourceFile, linesMapping)
     }
 }
