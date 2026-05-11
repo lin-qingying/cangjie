@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
@@ -1584,8 +1585,14 @@ class LightTreeRawCfirExpressionBuilder(
             qualifiedName = qualifiedName,
             kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
             hasParenthesis = inputNode != null,
-            attrTokens = attrNode?.asText()?.let { listOf(MacroSurfaceToken(it, 0, it.length)) }.orEmpty(),
-            inputTokens = inputNode?.asText()?.let { listOf(MacroSurfaceToken(it, 0, it.length)) }.orEmpty(),
+            attrTokens = MacroPayloadTokenizer.tokenize(
+                attrNode?.asText(),
+                attrNode?.startOffset ?: 0,
+            ),
+            inputTokens = MacroPayloadTokenizer.tokenize(
+                inputNode?.asText(),
+                inputNode?.startOffset ?: 0,
+            ),
             sourceRange = MacroSurfaceSourceRange(
                 source = null,
                 startOffset = node.startOffset,

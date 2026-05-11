@@ -56,13 +56,21 @@ data class MacroSurfaceSourceRange(
 /**
  * Macro surface 携带的单个 token 信息。
  *
- * Batch 6 真实 token capture 完成前是简化结构；
- * 后续会替换为 `TokenInfo`（含 kind / value / position / delimiter）。
+ * Batch 6 起承载真实 lexer 输出：
+ * - [text] —— token 原始文本
+ * - [startOffset]/[endOffset] —— 相对于宿主文本（attr / input payload）的偏移
+ * - [kindName] —— lexer token type 的字符串名（兼容 IntelliJ `IElementType.toString()`）
+ *                Batch 6 阶段是 ID-only 字符串，Batch 8 fragment parser 会替换
+ *                为 token kind 枚举 + delimiter / origin 信息。
+ *
+ * `useParentPos` 等 builtin macro 嵌套语义在 Batch 7 forest evaluator 内处理，
+ * 不在 surface token 层维护。
  */
 data class MacroSurfaceToken(
     val text: String,
     val startOffset: Int,
     val endOffset: Int,
+    val kindName: String? = null,
 )
 
 /**
