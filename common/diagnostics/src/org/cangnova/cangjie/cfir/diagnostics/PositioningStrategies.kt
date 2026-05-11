@@ -77,6 +77,16 @@ object PositioningStrategies {
             return super.mark(element)
         }
     }
+    val IMPORT_ALIAS: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            if (element is CjImportItem) {
+                val aliasIdentifier = element.alias?.nameIdentifier
+                if (aliasIdentifier != null) return markElement(aliasIdentifier)
+                return IMPORT_LAST_NAME.mark(element)
+            }
+            return super.mark(element)
+        }
+    }
     val INITIALIZER_EQ: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
         override fun mark(element: PsiElement): List<TextRange> {
             val eqElement = when (element) {

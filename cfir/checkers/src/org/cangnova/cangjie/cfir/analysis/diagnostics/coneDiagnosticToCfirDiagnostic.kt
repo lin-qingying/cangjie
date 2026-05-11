@@ -102,6 +102,7 @@ import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjBinaryExpression
@@ -253,6 +254,10 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
     val errors = candidate.errors
+    if (hasGenericInferenceConstraintMismatch()) {
+        return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
+    }
+
     val hasNotEnoughInformationError = errors.any { it is NotEnoughInformationForTypeParameter<*> }
     val mismatchTarget = (qualifiedAccessSource ?: source).typeMismatchTarget()
     return errors.mapNotNull { error ->
@@ -323,6 +328,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
+    val noMatchingInvokeDiagnostic = mapNoMatchingInvokeOperatorDiagnostic(session, source, qualifiedAccessSource)
     val genericDiagnostic = (qualifiedAccessSource ?: source)?.let { diagnosticSource ->
         when (candidateSymbol.cfir) {
             is org.cangnova.cangjie.cfir.declarations.CfirConstructor,
@@ -398,10 +404,29 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
         }
     }
 
-    if (diagnostics.isNotEmpty()) return diagnostics
+    if (diagnostics.isNotEmpty()) return listOfNotNull(noMatchingInvokeDiagnostic) + diagnostics
+
+    noMatchingInvokeDiagnostic?.let { return listOf(it) }
 
     val diagnosticSource = qualifiedAccessSource ?: source ?: return emptyList()
     return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session))
+}
+
+private fun ConeInapplicableCandidateError.mapNoMatchingInvokeOperatorDiagnostic(
+    session: CfirSession,
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+): CjDiagnostic? {
+    if (candidateSymbol.memberDeclarationNameOrNull() != OperatorNameConventions.INVOKE) return null
+    val receiverType = candidate.callInfo.explicitReceiver?.coneTypeOrNull ?: return null
+    if (receiverType is ConeErrorType) return null
+    val diagnosticSource = source ?: qualifiedAccessSource ?: return null
+    return CfirErrors.NO_MATCHING_OPERATOR_INVOKE.on(
+        diagnosticSource,
+        diagnosticSource.text?.toString().orEmpty(),
+        receiverType,
+        session,
+    )
 }
 
 private fun argumentTypeMismatch(
@@ -421,19 +446,9 @@ private fun argumentTypeMismatch(
     )?.let { return it }
 
     if (anonymousFunction != null) {
-        if (session.languageVersionSettings.supportsFeature(LanguageFeature.LambdaReturnTypeMismatchAsArgumentTypeMismatch)) {
-            val lambdaSource = anonymousFunction.source ?: source
-            return CfirErrors.ARGUMENT_TYPE_MISMATCH.on(
-                lambdaSource,
-                expectedType,
-                actualType,
-                isMismatchDueToNullability,
-                session,
-            )
-        }
-
-        return CfirErrors.RETURN_TYPE_MISMATCH.on(
-            source,
+        val lambdaSource = anonymousFunction.source ?: source
+        return CfirErrors.TYPE_MISMATCH.on(
+            lambdaSource,
             expectedType,
             actualType,
             isMismatchDueToNullability,
@@ -486,6 +501,24 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
                 .first()
                 .filter { it.diagnosticIdentityKey() in sharedDiagnosticKeys }
             if (sharedDiagnostics.isNotEmpty()) {
+                val isInvokeOperatorAmbiguity = candidateSymbols.any { symbol ->
+                    symbol.memberDeclarationNameOrNull() == OperatorNameConventions.INVOKE
+                }
+                if (isInvokeOperatorAmbiguity) {
+                    val sharedAnchorKeys = diagnosticsByKey
+                        .map { diagnostics -> diagnostics.map { it.diagnosticAnchorKey() }.toSet() }
+                        .reduce { acc, keys -> acc.intersect(keys) }
+                    val sharedByAnchorDiagnostics = diagnosticsByKey
+                        .first()
+                        .filter { diagnostic ->
+                            diagnostic.diagnosticAnchorKey() in sharedAnchorKeys &&
+                                diagnostic.diagnosticIdentityKey() !in sharedDiagnosticKeys
+                        }
+
+                    return (sharedDiagnostics + sharedByAnchorDiagnostics)
+                        .distinctBy { it.diagnosticAnchorKey() }
+                }
+
                 return sharedDiagnostics
             }
 
@@ -532,10 +565,23 @@ private data class DiagnosticIdentityKey(
     val endOffset: Int,
 )
 
+private data class DiagnosticAnchorKey(
+    val factoryName: String,
+    val startOffset: Int,
+    val endOffset: Int,
+)
+
 private fun CjDiagnostic.diagnosticIdentityKey(): DiagnosticIdentityKey =
     DiagnosticIdentityKey(
         factoryName = factoryName,
         message = renderMessage(),
+        startOffset = firstRange.startOffset,
+        endOffset = firstRange.endOffset,
+    )
+
+private fun CjDiagnostic.diagnosticAnchorKey(): DiagnosticAnchorKey =
+    DiagnosticAnchorKey(
+        factoryName = factoryName,
         startOffset = firstRange.startOffset,
         endOffset = firstRange.endOffset,
     )
@@ -566,6 +612,10 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
     }
 
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
+    buildInvalidBinaryOperatorDiagnostic(diagnosticSource, session)?.let { diagnostic ->
+        return listOf(diagnostic)
+    }
+
     return listOfNotNull(
         CfirErrors.UNRESOLVED_REFERENCE.on(
             diagnosticSource,
@@ -573,7 +623,6 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
             operator,
             session,
         ),
-        buildInvalidBinaryOperatorDiagnostic(diagnosticSource, session),
     )
 }
 
@@ -590,7 +639,10 @@ private fun ConeUnresolvedNameError.mapSubscriptOperatorDiagnostic(
     val diagnosticSource = source ?: callOrAssignmentSource ?: return null
     val receiver = receiverType ?: ConeErrorType(ConeSimpleDiagnostic("unknown subscript receiver type"))
 
-    return if (diagnosticSource.isAssignmentLeftHandSide() || callOrAssignmentSource.isAssignmentExpression()) {
+    return if (name == OperatorNameConventions.SET ||
+        diagnosticSource.isAssignmentLeftHandSide() ||
+        callOrAssignmentSource.isAssignmentExpression()
+    ) {
         CfirErrors.CANNOT_ASSIGN_TO_SUBSCRIPT.on(diagnosticSource, session)
     } else {
         CfirErrors.INVALID_SUBSCRIPT_EXPR.on(
@@ -1052,6 +1104,45 @@ private fun ConeCangJieType.substituteTypeVariableTypes(
     return substitutor.substituteOrSelf(this)
 }
 
+private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMismatch(): Boolean {
+    val candidateSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return false
+    if (candidateSymbol.cfir.typeParameters.isEmpty()) return false
+
+    return candidate.errors.any { error ->
+        error is ConstraintMismatch && when (error.position.from) {
+            is ConeArgumentConstraintPosition,
+            is ConeLambdaArgumentConstraintPosition,
+            is ConeReceiverConstraintPosition -> false
+
+            else -> true
+        }
+    }
+}
+
+private fun ConeConstraintSystemHasContradiction.genericInferenceErrorDiagnostic(
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val candidateSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return null
+    val declaredTypeParameters = candidateSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
+    val candidateTypeVariable = candidate.system.asReadOnlyStorage().allTypeVariables.values.firstOrNull { variable ->
+        (variable as? ConeTypeParameterBasedTypeVariable)?.typeParameterSymbol in declaredTypeParameters
+    }
+
+    val diagnosticSource = candidateTypeVariable
+        ?.let { candidate.sourceOfCallToSymbolWith(it) }
+        ?: source
+        ?: qualifiedAccessSource
+        ?: return null
+
+    return CfirErrors.NEW_INFERENCE_ERROR.on(
+        diagnosticSource,
+        "Inference error: ConstraintMismatch",
+        session,
+    )
+}
+
 private fun ConeCangJieType.renderInvalidBinaryOperatorType(session: CfirSession): String {
     val classId = classIdOrPrimitiveClassId ?: return toString()
     val declaration = runCatching { session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir }.getOrNull()
@@ -1216,7 +1307,13 @@ private fun CjSourceElement?.isAssignmentExpression(): Boolean {
 
 private fun CjSourceElement?.isAssignmentLeftHandSide(): Boolean {
     val psiExpression = this?.psi as? CjExpression ?: return false
-    return psiExpression.getAssignmentByLHS() != null
+    if (psiExpression.getAssignmentByLHS() != null) return true
+
+    val sourceRange = psiExpression.textRange ?: return false
+    val assignment = PsiTreeUtil.getParentOfType(psiExpression, CjBinaryExpression::class.java, true) ?: return false
+    if (!CjPsiUtil.isAssignment(assignment)) return false
+    val lhsRange = assignment.left?.textRange ?: return false
+    return lhsRange.startOffset <= sourceRange.startOffset && sourceRange.endOffset <= lhsRange.endOffset
 }
 
 private sealed interface TypeMismatchTarget {

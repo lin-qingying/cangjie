@@ -126,12 +126,7 @@ private val defaultVisibilityTargets: Set<CangJieTarget> = EnumSet.of(
     CangJieTarget.TYPEALIAS,
 )
 
-internal val deprecatedParentTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
-    // interface 内部的 private / internal 先按“保留兼容路径”处理，
-    // 由 deprecated 诊断承接，避免和后续状态/可见性语义分裂。
-    PRIVATE_KEYWORD to EnumSet.of(CangJieTarget.INTERFACE),
-    INTERNAL_KEYWORD to EnumSet.of(CangJieTarget.INTERFACE),
-)
+internal val deprecatedParentTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
 
 internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     STATIC_KEYWORD to EnumSet.of(
@@ -213,13 +208,11 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     ),
 )
 
-internal val deprecatedTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
-    // open interface 当前仍允许，但第一批开始改为 deprecated 语义，
-    // 后续若需要继续收紧，只需要收敛这一张 target truth table。
+internal val deprecatedTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
+
+internal val redundantTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     OPEN_KEYWORD to EnumSet.of(CangJieTarget.INTERFACE),
 )
-
-internal val redundantTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
 
 internal interface TargetAllowedPredicate {
     fun isAllowed(target: CangJieTarget, languageVersionSettings: LanguageVersionSettings): Boolean
@@ -256,7 +249,6 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowed
     PRIVATE_KEYWORD to always(
         CangJieTarget.CLASS_ONLY,
         CangJieTarget.STRUCT,
-        CangJieTarget.INTERFACE,
         CangJieTarget.ENUM,
         CangJieTarget.ENUM_ENTRY,
         CangJieTarget.FILE,

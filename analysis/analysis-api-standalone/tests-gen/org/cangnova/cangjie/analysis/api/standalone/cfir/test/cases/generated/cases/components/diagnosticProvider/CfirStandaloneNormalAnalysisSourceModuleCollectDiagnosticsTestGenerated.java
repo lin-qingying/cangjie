@@ -47,9 +47,27 @@ public class CfirStandaloneNormalAnalysisSourceModuleCollectDiagnosticsTestGener
   }
 
   @Test
+  @TestMetadata("interfaceMember.cj")
+  public void testInterfaceMember() {
+    run("interfaceMember.cj");
+  }
+
+  @Test
+  @TestMetadata("interfaceSupertype.cj")
+  public void testInterfaceSupertype() {
+    run("interfaceSupertype.cj");
+  }
+
+  @Test
   @TestMetadata("multipleDiagnostics.cj")
   public void testMultipleDiagnostics() {
     run("multipleDiagnostics.cj");
+  }
+
+  @Test
+  @TestMetadata("topLevelInterface.cj")
+  public void testTopLevelInterface() {
+    run("topLevelInterface.cj");
   }
 
   @Test

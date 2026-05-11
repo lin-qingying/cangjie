@@ -28,9 +28,14 @@
 | `:common:diagnostics` | 诊断框架核心（DiagnosticFactory、Reporter、Severity、Collector、PositioningStrategy） | ✅ 已实现 |
 | `:util` | 工具库（打印机、异常处理、集合扩展） | ✅ 已实现 |
 | `:generators` | 代码生成框架（树生成器、访问者生成器） | ✅ 已实现 |
+| `:flatbuffers-gen` | FlatBuffers schema 与生成产物（宏协议序列化） | ✅ 已实现 |
+| `:dependencies:intellij-core` | 上游 IntelliJ 平台依赖打包 | ✅ 已实现 |
 | `:compiler:config` | 编译器配置（CompilerConfiguration、ContentRoots、环境设置） | ✅ 已实现 |
 | `:compiler:phaser` | 编译阶段管理框架（CompilerPhase、PhaseSet、PhaserState） | ✅ 已实现 |
 | `:compiler:arguments` | 编译器命令行参数定义 | ✅ 已实现 |
+| `:compiler:frontend-arguments-generator` | 参数描述生成器 | ✅ 已实现 |
+| `:compiler:plugin` | 插件加载占位（阶段 1） | 📋 占位 |
+| `:resolution.common` | 类型推断/约束公共层（对齐 Kotlin `resolution.common`） | ✅ 已实现 |
 | `:lsp` | 基于 `lsp4j` 的 Language Server 框架模块（能力协商 / 文档同步 / 工作区状态 / 分析桥接接缝） | ✅ 已实现 |
 
 ### 前端解析
@@ -46,9 +51,12 @@
 | `:cfir:cfir-common` | CFIR 基础设施（CfirSession、CfirModuleData、CfirElement） | ✅ 已实现 |
 | `:cfir:cfir-cones` | 类型系统核心（ConeCangJieType、ConeClassLikeType、ConePrimitiveType） | ✅ 已实现 |
 | `:cfir:cfir-tree` | IR 树定义（声明、表达式、类型引用、访问者）— 生成式 | ✅ 已实现 |
-| `:cfir:symbols` | 符号提供者接口与实现、Scope 管理、内置符号 | ✅ 已实现 |
+| `:cfir:cfir-tree:tree-generator` | CFIR 树定义与生成器（对齐 Kotlin FIR tree-generator） | ✅ 已实现 |
+| `:cfir:semantics` | CFIR 语义工具 | ✅ 已实现 |
 | `:cfir:checkers` | 诊断检查器框架（Declaration/Expression/Type checkers） | ✅ 已实现 |
+| `:cfir:checkers:checkers-component-generator` | Checkers 组件生成器 | ✅ 已实现 |
 | `:cfir:diagnostic-renderers` | 诊断渲染器 | ✅ 已实现 |
+| `:cfir:providers` | 符号 / 扩展点 providers | ✅ 已实现 |
 
 - `:cfir:checkers` 已完成一轮针对 Kotlin/K2 API 漂移的主代码收敛：移除了已失配的 `CfirOverrideChecker` 与本地冗余的 `CfirTypeCheckUtils`，统一改为复用项目现有 `AbstractTypeChecker`/`typeContext` 入口，修复了 extend checker 的声明分派层级，并清理了 match/diagnostics 适配层中的过期调用；当前可通过定向编译（`./gradlew.bat :cfir:checkers:compileKotlin`）。
 - `:cfir:cfir-tree` 的声明节点现已对齐 Kotlin FIR 的"renderer 统一出字符串"思路：`CfirDeclaration` 由 tree-generator 统一生成 `toString()`，内部委托给 `CfirRenderer.withReadability().renderElementAsString(this)`，避免各声明叶子类重复拼接文本；新增 `cfir/cfir-tree/test/.../CfirDeclarationToStringTest.kt` 覆盖 class / named function / file 三类代表性声明，并通过 `./gradlew.bat :cfir:cfir-tree:generateTree` 与 `./gradlew.bat :cfir:cfir-tree:test --tests "org.cangnova.cangjie.cfir.declarations.CfirDeclarationToStringTest"` 验证行为与 renderer 保持一致。
@@ -93,7 +101,7 @@
 
 | 模块 | 职责 | 状态 |
 |------|------|------|
-| `:cfir:cfir-serialization` | .cjo 文件反序列化、跨模块符号加载 | ✅ 已实现 |
+| `:cfir:cfir-serialization` | `.cjo` 文件反序列化、跨模块符号加载（序列化写入仍在补齐） | 🔄 进行中 |
 
 ### 前端协调
 
@@ -105,9 +113,20 @@
 
 | 模块 | 职责 | 状态 |
 |------|------|------|
-| `:analysis:analysis-api` | 分析 API 平台接口（Session、Lifetime、Permissions） | ✅ 已实现 |
+| `:analysis:analysis-api` | 分析 API 接口层（Session、Lifetime、Permissions） | ✅ 已实现 |
+| `:analysis:analysis-api-platform-interface` | 平台接口抽象 | ✅ 已实现 |
 | `:analysis:analysis-api-impl-base` | 分析 API 基础实现 | ✅ 已实现 |
+| `:analysis:analysis-api-standalone` | Standalone 模式分析 API | ✅ 已实现 |
 | `:analysis:analysis-api-cfir` | 分析 API 的 CFIR 实现（对齐 Kotlin analysis-api-fir） | ✅ 已实现 |
+| `:analysis:analysis-api-cfir:analysis-api-cfir-generator` | CFIR 分析 API 生成器 | ✅ 已实现 |
+| `:analysis:low-level-api-cfir` | 低层分析 API 的 CFIR 实现 | ✅ 已实现 |
+| `:analysis:analysis-internal-utils` | 分析模块内部工具 | ✅ 已实现 |
+| `:analysis:cj-references` | 跨语言引用支持 | ✅ 已实现 |
+| `:analysis:stubs` | Stub 索引与 stub 数据模型 | ✅ 已实现 |
+| `:analysis:decompiled` | 反编译聚合（含 4 个子模块：`decompiler-to-file-stubs` / `decompiler-to-stubs` / `decompiler-to-psi` / `light-declarations-for-decompiled`） | ✅ 已实现 |
+| `:analysis:light-declarations` | Light declarations 模型 | ✅ 已实现 |
+| `:analysis:symbol-light-declarations` | Symbol-based light declarations | ✅ 已实现 |
+| `:analysis:analysis-tools` | 分析工具集 | ✅ 已实现 |
 | `:analysis:analysis-test-framework` | 分析 API 测试框架 | ✅ 已实现 |
 
 ### 测试框架
@@ -117,20 +136,38 @@
 | `:tests:test-infrastructure` | Kotlin 风格测试基础设施（Directive/TestServices/配置 DSL） | ✅ 已实现 |
 | `:cfir:analysis-tests` | CFIR 分析测试套件 | ✅ 已实现 |
 
+### 可选后端（CHIR / CodeGen / LLVM 互操作）
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:compiler:chir` | CHIR 数据模型、context、builder、validator、pass pipeline、analyses、rewrites、serializer、printer/inspector | 🔄 数据模型完整，CFIR→CHIR 转换器待补 |
+| `:compiler:codegen` | CHIR → LLVM IR 后端，含 ChirCodegenInput/Output、parity 测试 | 🔄 框架完整 |
+| `:llvm-interop:llvm-interop-api` | LLVM 句柄、上下文、模块、Builder 纯 Kotlin API | ✅ 已实现 |
+| `:llvm-interop:llvm-interop-jni` | JNI 绑定与原生库加载 | ✅ 已实现 |
+
+### Prepare / 发布工件
+
+| 模块 | 职责 | 状态 |
+|------|------|------|
+| `:prepare:frontend` / `:prepare:frontend-embeddable` | 前端发布工件 | ✅ 已实现 |
+| `:prepare:test-infrastructure` / `:prepare:analysis-test-framework` | 测试基建发布工件 | ✅ 已实现 |
+| `:prepare:ide-plugin-dependencies:*` | 按功能分组的 fat jar（common / psi / cfir / analysis-api / analysis-api-cfir / analysis-api-standalone） | ✅ 已实现 |
+| `:prepare:ide-plugin-dependencies-module:*` | 与上述对应的 module 形态产物 | ✅ 已实现 |
+
 ## 前端管线实现进度
 
 | 阶段 | 标识 | 状态 | 模块 |
 |------|------|------|------|
-| 1 | LOAD_PLUGINS | 📋 计划中 | `:compiler:plugin` |
+| 1 | LOAD_PLUGINS | 📋 占位 | `:compiler:plugin` |
 | 2 | PARSE | ✅ 已实现 | `:psi` |
 | 3 | CONDITION_COMPILE | 📋 计划中 | — |
-| 4 | IMPORT_PACKAGE | 📋 计划中 | — |
-| 5 | MACRO_EXPAND | 🔄 进行中 | `:macro:macro-common` |
-| 6 | CFIR_BUILD | 🔄 进行中 | `:cfir:raw-cfir:psi2cfir` |
-| 7 | CFIR_RESOLVE | 🔄 进行中 | `:cfir:resolve` |
+| 4 | IMPORT_PACKAGE | 🔄 进行中 | `:cfir:cfir-serialization`（仅反序列化路径完整） |
+| 5 | MACRO_EXPAND | 🔄 进行中 | `:macro:macro-common` / `:macro:macro-process` / `:macro:macro-stub` |
+| 6 | CFIR_BUILD | 🔄 进行中 | `:cfir:raw-cfir:psi2cfir` / `:cfir:raw-cfir:light-tree2cfir` |
+| 7 | CFIR_RESOLVE | 🔄 进行中 | `:cfir:resolve` + `:cfir:checkers`（多 Phase 渐进） |
 | 8 | FINALIZE | 📋 计划中 | — |
 | 9 | MANGLING | 📋 计划中 | — |
-| 10 | SAVE_CJO | ✅ 已实现 | `:cfir:cfir-serialization` |
+| 10 | SAVE_CJO | 🔄 进行中 | `:cfir:cfir-serialization`（写入侧待补） |
 
 ## 构建
 
@@ -200,19 +237,35 @@
 cangjie/
 ├── analysis/                  # 分析 API 模块
 │   ├── analysis-api/
+│   ├── analysis-api-platform-interface/
 │   ├── analysis-api-impl-base/
+│   ├── analysis-api-standalone/
 │   ├── analysis-api-cfir/
+│   ├── low-level-api-cfir/
+│   ├── analysis-internal-utils/
+│   ├── cj-references/
+│   ├── stubs/
+│   ├── decompiled/
+│   │   ├── decompiler-to-file-stubs/
+│   │   ├── decompiler-to-stubs/
+│   │   ├── decompiler-to-psi/
+│   │   └── light-declarations-for-decompiled/
+│   ├── light-declarations/
+│   ├── symbol-light-declarations/
+│   ├── analysis-tools/
 │   └── analysis-test-framework/
 ├── cfir/                      # CFIR 核心模块
 │   ├── cfir-common/
 │   ├── cfir-cones/
-│   ├── cfir-tree/
-│   ├── symbols/
-│   ├── checkers/
+│   ├── cfir-tree/             # 含 tree-generator/
+│   ├── semantics/
+│   ├── checkers/              # 含 checkers-component-generator/
 │   ├── resolve/
 │   ├── entrypoint/
 │   ├── cfir-serialization/
 │   ├── diagnostic-renderers/
+│   ├── providers/
+│   ├── analysis-tests/
 │   └── raw-cfir/
 │       ├── raw-cfir-common/
 │       ├── psi2cfir/
@@ -221,31 +274,46 @@ cangjie/
 │   ├── config/
 │   ├── phaser/
 │   ├── arguments/
-│   └── frontend/
+│   ├── frontend-arguments-generator/
+│   ├── frontend/
+│   ├── plugin/
+│   ├── chir/                  # 可选后端：CHIR 数据模型与 pass
+│   └── codegen/               # 可选后端：CHIR → LLVM IR
+├── llvm-interop/              # LLVM 互操作
+│   ├── llvm-interop-api/
+│   └── llvm-interop-jni/
+├── lsp/                       # 基于 lsp4j 的 Language Server 框架
+├── macro/                     # 宏展开模块
+│   ├── macro-common/
+│   ├── macro-process/
+│   └── macro-stub/
+├── psi/                       # 前端解析（PSI 树）
+├── common/                    # 基础设施
+│   ├── src/
+│   └── diagnostics/
+├── util/                      # 工具库
+├── generators/                # 代码生成框架
+├── flatbuffers-gen/           # FlatBuffers schema 与生成产物
+├── resolution.common/         # 类型推断/约束公共层
 ├── prepare/                   # 发布门面工件
 │   ├── frontend/
 │   ├── frontend-embeddable/
 │   ├── test-infrastructure/
-│   └── analysis-test-framework/
-├── macro/                     # 宏展开模块
-│   ├── macro-common/          # 接口、数据模型、协议编解码
-│   ├── macro-process/         # 外部进程执行器
-│   └── macro-stub/            # 测试桩实现
-├── common/                    # 基础设施
-│   ├── src/
-│   └── diagnostics/
-├── psi/                       # 前端解析（PSI 树）
-├── util/                      # 工具库
-├── lsp/                       # 基于 lsp4j 的 Language Server 框架模块
-├── generators/                # 代码生成框架
+│   ├── analysis-test-framework/
+│   ├── ide-plugin-dependencies/
+│   └── ide-plugin-dependencies-module/
 ├── tests/                     # 测试框架
 │   └── test-infrastructure/
-├── flatbuffers-gen/           # FlatBuffers 生成（宏协议序列化）
+├── dependencies/              # 上游依赖打包
+│   └── intellij-core/
+├── docs/                      # 文档（设计、对照、归档等）
 ├── openspec/                  # 变更提案
 │   └── changes/
+├── intellij-ide/              # IntelliJ 平台插件（独立子项目）
+├── deveco/                    # DevEco Studio 增强插件（独立子项目）
 ├── external/                  # 外部参考源码（不参与构建）
 │   ├── cangjie_compiler/      # 仓颉语言编译器源码（C++ 参考实现）
-│   ├── intellij-cangjie/      # IntelliJ 仓颉插件（Kotlin K1）
+│   ├── intellij-cangjie/      # IntelliJ 仓颉插件（Kotlin K1，旧）
 │   └── kotlin/                # Kotlin 编译器源代码（K2 架构参考）
 ├── cjfir-compiler-stages.md   # 编译器阶段设计文档
 ├── DEVELOPMENT_CONVENTIONS.md # 开发规范

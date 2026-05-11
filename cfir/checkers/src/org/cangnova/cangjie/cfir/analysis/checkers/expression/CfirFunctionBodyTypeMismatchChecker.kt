@@ -22,9 +22,9 @@ import org.cangnova.cangjie.cfir.types.typeContext
 /**
  * 函数体尾表达式返回类型检查器。
  *
- * 仓颉函数允许“block 最后一条表达式即返回值”，
- * 因此当函数显式声明了返回类型时，需要把最外层 body block 的尾表达式
- * 也按返回值参与 `RETURN_TYPE_MISMATCH` 检查。
+ * 对齐官方 `TypeChecker::CheckFuncBody`：显式非 Unit 返回类型才将最外层
+ * body block 按返回值检查；显式 Unit 返回类型只综合分析函数体，后续插入
+ * `return ()`，不把普通尾表达式强制当作 Unit 返回值。
  */
 object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -45,6 +45,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
             else -> (containingFunction.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         }
         if (expectedType is ConeErrorType) return
+        if (expectedType.isUnit) return
 
         specificTypeMismatchDiagnostic(
             source = tailExpression.source ?: return,

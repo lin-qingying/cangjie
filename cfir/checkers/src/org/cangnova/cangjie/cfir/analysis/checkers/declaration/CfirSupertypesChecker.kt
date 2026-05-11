@@ -29,7 +29,6 @@ import org.cangnova.cangjie.name.Name
 object CfirSupertypesChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        checkSelfReferenceSupertypes(declaration)
         checkDuplicateSupertypes(declaration)
         when (declaration) {
             is CfirInterface -> checkInterfaceSupertypes(declaration)
@@ -38,21 +37,6 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
                 checkMultipleConcreteSupertypes(declaration)
             }
             else -> Unit
-        }
-    }
-
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkSelfReferenceSupertypes(declaration: CfirClassLikeDeclaration) {
-        val ownerKey = declaration.classLikeIdentityKey() ?: return
-        val ownerName = declaration.classLikeName()
-        for (superTypeRef in declaration.superTypeRefs) {
-            val superDeclaration = superTypeRef.toResolvedSuperDeclaration(context) ?: continue
-            if (superDeclaration.classLikeIdentityKey() != ownerKey) continue
-            reporter.reportOn(
-                source = superTypeRef.source,
-                factory = CfirErrors.SUPER_TYPES_SELF_REFERENCE,
-                a = ownerName,
-            )
         }
     }
 
@@ -68,7 +52,7 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
             if (first == null || !reportedKeys.add(key)) continue
 
             reporter.reportOn(
-                source = first.typeRef.source,
+                source = declaration.source,
                 factory = CfirErrors.SUPER_TYPES_DUPLICATE,
                 a = first.name,
             )
@@ -83,7 +67,7 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
             if (superDeclaration.classKindOrNull() == CfirClassKind.INTERFACE) continue
 
             reporter.reportOn(
-                source = superTypeRef.source,
+                source = declaration.source,
                 factory = CfirErrors.INTERFACE_CANNOT_INHERIT_CLASS,
                 a = ownerName,
                 b = superDeclaration.classLikeName(),
@@ -101,12 +85,14 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
 
         if (concreteSupers.size <= 1) return
 
-        reporter.reportOn(
-            source = concreteSupers.first().typeRef.source,
-            factory = CfirErrors.MULTIPLE_CLASS_SUPER_TYPES,
-            a = declaration.classLikeName(),
-            b = concreteSupers.map { it.name },
-        )
+        concreteSupers.drop(1).forEach { concreteSuper ->
+            reporter.reportOn(
+                source = concreteSuper.typeRef.source,
+                factory = CfirErrors.MULTIPLE_CLASS_SUPER_TYPES,
+                a = declaration.classLikeName(),
+                b = concreteSupers.map { it.name },
+            )
+        }
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)

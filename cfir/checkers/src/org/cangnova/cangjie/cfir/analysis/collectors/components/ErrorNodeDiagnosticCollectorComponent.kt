@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
@@ -124,8 +125,20 @@ class ErrorNodeDiagnosticCollectorComponent(
 //        if (errorTypeRef.isLambdaReturnTypeRefThatDoesntNeedReporting(data)) return
 //        if (errorTypeRef.hasExpandedTypeAliasDeclarationSiteError()) return
 
+        val source = errorTypeRef.source
+        if (source != null) {
+            val key = ReportedConeDiagnosticKey(
+                reason = errorTypeRef.diagnostic.reason,
+                sourceStart = source.startOffset,
+                sourceEnd = source.endOffset,
+                callStart = null,
+                callEnd = null,
+            )
+            if (!reportedConeDiagnostics.add(key)) return
+        }
+
         reportCfirDiagnostic(
-            errorTypeRef.diagnostic, errorTypeRef.source, data,
+            errorTypeRef.diagnostic, source, data,
             // We provide a value parameter in case errorTypeRef is a type of this parameter
             valueParameter = data.containingElements.getOrNull(data.containingElements.lastIndex - 1) as? CfirValueParameter
         )
@@ -183,6 +196,9 @@ class ErrorNodeDiagnosticCollectorComponent(
         // If the receiver cannot be resolved, we skip reporting any further problems for this call.
         // If the receiver cannot be resolved, we skip reporting any further problems for this call.
         if (callOrAssignment is CfirQualifiedAccessExpression) {
+            if (callOrAssignment.explicitReceiver is CfirSuperReceiverExpression &&
+                context.findClosestDeclaration<CfirExtend>() != null
+            ) return
             if (callOrAssignment.dispatchReceiver.cannotBeResolved() ||
 //                callOrAssignment.extensionReceiver.cannotBeResolved() ||
                 callOrAssignment.explicitReceiver.cannotBeResolved()

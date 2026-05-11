@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemanticsSupport
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -556,7 +556,7 @@ private fun isJTypeCompatible(type: org.cangnova.cangjie.cfir.types.ConeCangJieT
     // String 类型兼容
     if (classId.shortClassName.asString() == "String") return true
     // 检查目标类型声明是否有 @Java 注解
-    val targetDecl = CfirExtendSemanticsSupport.resolveDeclaration(context, classId) ?: return false
+    val targetDecl = CfirExtendSemantics.resolveDeclaration(context, classId) ?: return false
     return targetDecl.hasAnnotation(JAVA) || targetDecl.hasAnnotation(JAVA_MIRROR) || targetDecl.hasAnnotation(JAVA_IMPL)
 }
 
@@ -725,7 +725,7 @@ private fun isObjCTypeCompatible(type: org.cangnova.cangjie.cfir.types.ConeCangJ
     if (type is org.cangnova.cangjie.cfir.types.ConeErrorType) return true
     val classId = type.classIdOrPrimitiveClassId ?: return false
     if (classId.shortClassName.asString() == "String") return true
-    val targetDecl = CfirExtendSemanticsSupport.resolveDeclaration(context, classId) ?: return false
+    val targetDecl = CfirExtendSemantics.resolveDeclaration(context, classId) ?: return false
     return targetDecl.hasAnnotation(OBJC_MIRROR) || targetDecl.hasAnnotation(OBJC_IMPL)
 }
 
@@ -743,8 +743,8 @@ private fun CfirClassLikeDeclaration.superDeclarations(): List<CfirClassLikeDecl
     val superEntries = typeStatement?.superTypeListEntries.orEmpty()
     val resolved = mutableListOf<CfirClassLikeDeclaration>()
     for (superTypeRef in superTypeRefs) {
-        val classId = CfirExtendSemanticsSupport.run { superTypeRef.toClassIdOrNull() } ?: continue
-        val target = CfirExtendSemanticsSupport.resolveDeclaration(context, classId) ?: continue
+        val classId = CfirExtendSemantics.run { superTypeRef.toClassIdOrNull() } ?: continue
+        val target = CfirExtendSemantics.resolveDeclaration(context, classId) ?: continue
         resolved += target
     }
     // superTypeRefs 更可信；只有在 CFIR 还未绑定齐时才退回 PSI 数量。
@@ -759,7 +759,7 @@ private fun CfirTypeRef.isInteropMirrorCompatible(
     val resolvedType = this as? CfirResolvedTypeRef ?: return true
     if (resolvedType.coneType is ConePrimitiveType) return true
     val classId = resolvedType.coneType.classIdOrPrimitiveClassId ?: return true
-    val declaration = CfirExtendSemanticsSupport.resolveDeclaration(context, classId) ?: return true
+    val declaration = CfirExtendSemantics.resolveDeclaration(context, classId) ?: return true
     return declaration.hasAnyAnnotation(*requiredAnnotations)
 }
 

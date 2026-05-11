@@ -76,12 +76,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 导入名称冲突：导入的符号与本地已有符号重名
-        val IMPORT_CONFLICT by error<CjImportItem> {
+        val IMPORT_CONFLICT by error<CjImportItem>(PositioningStrategy.IMPORT_LAST_NAME) {
             parameter<Name>("name")  // 发生冲突的名称
         }
 
         // 导入别名冲突：使用as关键字定义的别名与已有符号重名
-        val IMPORT_ALIAS_CONFLICT by error<CjImportItem> {
+        val IMPORT_ALIAS_CONFLICT by error<CjImportItem>(PositioningStrategy.IMPORT_ALIAS) {
             parameter<Name>("alias")  // 发生冲突的别名
         }
     }
@@ -97,12 +97,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 超类型重复：同一类型在继承列表中出现多次
-        val SUPER_TYPES_DUPLICATE by error<CjTypeReference> {
+        val SUPER_TYPES_DUPLICATE by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("typeName")  // 重复出现的类型名
         }
 
         // 接口不能继承类：接口试图继承一个具体的类（违反接口规范）
-        val INTERFACE_CANNOT_INHERIT_CLASS by error<CjTypeReference> {
+        val INTERFACE_CANNOT_INHERIT_CLASS by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("interfaceName")  // 试图继承的接口名
             parameter<Name>("superTypeName")  // 被继承的类型名
         }
@@ -619,7 +619,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // override 返回类型不协变
-        val OVERRIDING_RETURN_TYPE_MISMATCH by error<PsiElement> {
+        val OVERRIDING_RETURN_TYPE_MISMATCH by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<ConeCangJieType>("actualType")
             parameter<ConeCangJieType>("expectedType")
             parameter<Name>("overriddenName")

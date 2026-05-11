@@ -37,6 +37,10 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.IMPORT_LAST_NAME,
         PositioningStrategies.IMPORT_LAST_NAME
     )
+    val IMPORT_ALIAS = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.IMPORT_ALIAS,
+        PositioningStrategies.IMPORT_ALIAS
+    )
     val OPERATOR = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.OPERATOR,
         PositioningStrategies.OPERATOR

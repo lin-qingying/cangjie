@@ -32,30 +32,34 @@ object CfirImportsChecker : CfirFileChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         val resolvedImports = context.session.importBindingStoreOrNull?.getBindings(declaration)?.imports.orEmpty()
-        val conflictingNames = resolvedImports
+        val conflictingNameImports = resolvedImports
+            .filter { it.targets.isNotEmpty() && it.importDirective.aliasName == null }
             .groupBy { it.effectiveName }
-            .filterValues { sameNameBindings ->
-                sameNameBindings.size >= 2 &&
-                        sameNameBindings.map { it.stableTargetSignature() }.toSet().size > 1
-            }
-        val conflictingAliases = resolvedImports
-            .filter { it.importDirective.aliasName != null }
+            .collectCurrentConflictingImports()
+        val conflictingAliasImports = resolvedImports
+            .filter { it.targets.isNotEmpty() && it.importDirective.aliasName != null }
             .groupBy { it.importDirective.aliasName!! }
-            .filterValues { sameAliasBindings ->
-                sameAliasBindings.size >= 2 &&
-                        sameAliasBindings.map { it.stableTargetSignature() }.toSet().size > 1
-            }
+            .collectCurrentConflictingImports()
 
         declaration.imports.forEach { import ->
             if (import.source?.kind?.shouldSkipErrorTypeReporting == true) return@forEach
             reportImportResolutionDiagnostic(import)
 
-            if (import.isConflictImport(conflictingNames, conflictingAliases)) {
-                reportImportConflict(import)
+            if (import in conflictingNameImports) {
+                val effectiveName = import.importedFqName?.shortName()
+                if (effectiveName != null) {
+                    reporter.reportOn(import.source, CfirErrors.IMPORT_CONFLICT, effectiveName)
+                }
+            }
+            if (import in conflictingAliasImports) {
+                val aliasName = import.aliasName
+                if (aliasName != null) {
+                    reporter.reportOn(import.source, CfirErrors.IMPORT_ALIAS_CONFLICT, aliasName)
+                }
             }
         }
         val duplicateImports = declaration.imports.filterTo(linkedSetOf()) { import ->
-            import.isConflictImport(conflictingNames, conflictingAliases)
+            import in conflictingNameImports || import in conflictingAliasImports
         }
         reportUnusedImports(declaration, duplicateImports)
     }
@@ -77,15 +81,6 @@ object CfirImportsChecker : CfirFileChecker() {
         if (!import.isAllUnder && !canResolveTerminalImportTarget(importedFqName)) {
             reporter.reportOn(import.source, CfirErrors.UNRESOLVED_IMPORT, importedFqName.shortName().asString())
             return
-        }
-    }
-
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun reportImportConflict(import: CfirImport) {
-        val effectiveName = import.aliasName ?: import.importedFqName?.shortName() ?: return
-        reporter.reportOn(import.source, CfirErrors.IMPORT_CONFLICT, effectiveName)
-        import.aliasName?.let { aliasName ->
-            reporter.reportOn(import.source, CfirErrors.IMPORT_ALIAS_CONFLICT, aliasName)
         }
     }
 
@@ -260,21 +255,19 @@ object CfirImportsChecker : CfirFileChecker() {
         CjNodeTypes.REFERENCE_EXPRESSION,
     )
 
-    private fun CfirImport.isConflictImport(
-        conflictingNames: Map<Name, List<CfirResolvedImportBinding>>,
-        conflictingAliases: Map<Name, List<CfirResolvedImportBinding>>,
-    ): Boolean {
-        val sameImport = { binding: CfirResolvedImportBinding ->
-            binding.importDirective === this ||
-                    binding.importDirective.importedFqName == importedFqName &&
-                    binding.importDirective.aliasName == aliasName &&
-                    binding.importDirective.isAllUnder == isAllUnder
+    private fun Map<Name, List<CfirResolvedImportBinding>>.collectCurrentConflictingImports(): Set<CfirImport> {
+        val result = linkedSetOf<CfirImport>()
+        for (bindings in values) {
+            val seenTargetSignatures = linkedSetOf<String>()
+            for (binding in bindings) {
+                val signature = binding.stableTargetSignature()
+                if (seenTargetSignatures.isNotEmpty() && signature !in seenTargetSignatures) {
+                    result += binding.importDirective
+                }
+                seenTargetSignatures += signature
+            }
         }
-
-        val effectiveName = aliasName ?: importedFqName?.shortName()
-        val hasNameConflict = effectiveName != null && conflictingNames[effectiveName]?.any(sameImport) == true
-        val hasAliasConflict = aliasName != null && conflictingAliases[aliasName]?.any(sameImport) == true
-        return hasNameConflict || hasAliasConflict
+        return result
     }
 
     private fun CfirResolvedImportBinding.stableTargetSignature(): String {

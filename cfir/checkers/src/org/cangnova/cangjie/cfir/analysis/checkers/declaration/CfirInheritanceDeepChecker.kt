@@ -256,6 +256,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         classIsAbstract: Boolean,
         classIsInheritable: Boolean,
     ): String? {
+        if (status.isStatic) return null
         if (status.isAbstract && classIsAbstract) return "abstract"
         if (status.isOpen && classIsInheritable) return "open"
         return null
@@ -265,6 +266,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         classIsAbstract: Boolean,
         classIsInheritable: Boolean,
     ): String? {
+        if (status.isStatic) return null
         if (status.isAbstract && classIsAbstract) return "abstract"
         if (status.isOpen && classIsInheritable) return "open"
         return null

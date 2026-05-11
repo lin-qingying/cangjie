@@ -25,7 +25,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionIniti
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirImportsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInvalidDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirModifierChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMutModifierApplicabilityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirNotImplementedOverrideChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirOperatorDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirOverrideChecker
@@ -34,7 +33,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirClassLikeInit
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPatternVariableInitializerTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertyChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirSimpleFunctionChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirStaticModifierCompatibilityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirSupertypesChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeConstraintsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeParameterChecker
@@ -141,8 +139,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
 
     override val memberDeclarationCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMemberDeclarationChecker>
         get() = setOf(
-            CfirStaticModifierCompatibilityChecker,
-            CfirMutModifierApplicabilityChecker,
         )
 
     override val classLikeCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirClassLikeChecker>
