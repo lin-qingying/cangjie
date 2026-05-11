@@ -137,7 +137,7 @@ sealed class MacroConstructionResult {
  * Macro 构造步骤抽象。
  *
  * 实现职责：
- * - 消费 [PreMacroRawBuildResult]
+ * - 消费 [PreMacroRawBuildResult] + [MacroResolutionContext]
  * - 与 macro symbol index / executor / fragment parser 协作完成展开
  * - 输出 [MacroConstructionResult]
  *
@@ -146,10 +146,23 @@ sealed class MacroConstructionResult {
  * 由上层调用 [recordExpandedRawFilesOnce]。
  */
 interface MacroConstructionService {
-    fun expand(pre: PreMacroRawBuildResult, mode: Mode): MacroConstructionResult
+    /**
+     * 完整 construction 入口（baseline 第 1 节主流程）：
+     *
+     * ```
+     * symbolIndex = buildMacroSymbolIndex(pre, libraries, macroArtifacts)
+     * context     = bindMacroImports(pre, symbolIndex, ...)
+     * result      = service.expand(pre, context, mode)
+     * ```
+     */
+    fun expand(
+        pre: PreMacroRawBuildResult,
+        context: MacroResolutionContext,
+        mode: Mode,
+    ): MacroConstructionResult
 
     enum class Mode {
-        /** CLI：任何 [Degraded] / [ExecutorUnavailable] 都被视为失败。 */
+        /** CLI：任何 [MacroConstructionResult.Degraded] / [MacroConstructionResult.ExecutorUnavailable] 都被视为失败。 */
         STRICT,
 
         /** IDE / analysis：允许 degraded placeholder。 */
@@ -160,6 +173,9 @@ interface MacroConstructionService {
         /**
          * 无宏 identity 实现：把 raw 文件原样打包为可注册输入，
          * 不调用 executor、不做任何展开。
+         *
+         * 即便 identity，也会基于 [MacroResolutionContext] 报告 same-package def/call 诊断
+         * （baseline 第 4 节规则）。
          */
         val Identity: MacroConstructionService = IdentityMacroConstructionService
 
@@ -189,9 +205,45 @@ interface MacroConstructionService {
     }
 }
 
+/**
+ * 便利入口：自动构造默认的 [MacroSymbolIndex] + [MacroResolutionContext]，
+ * 再委托给 [MacroConstructionService.expand]。
+ *
+ * 调用方仅传入 [pre] 与 [mode] 即可；library / artifact / shared / builtin 入口
+ * 通过命名参数注入以保持向后兼容。
+ *
+ * 主流程（baseline 第 1 节）建议显式分三步：
+ *   1. [buildMacroSymbolIndex]
+ *   2. [bindMacroImports]
+ *   3. [MacroConstructionService.expand]
+ * 仅当不需要 inspect index / context 时使用本便利入口。
+ */
+fun MacroConstructionService.expandWithDefaultContext(
+    pre: PreMacroRawBuildResult,
+    mode: MacroConstructionService.Mode,
+    libraryDefinitions: List<MacroDefinitionEntry> = emptyList(),
+    sharedBuiltinDefinitions: List<MacroDefinitionEntry> = emptyList(),
+    macroArtifactDefinitions: List<MacroDefinitionEntry> = emptyList(),
+    defaultMacroImports: List<org.cangnova.cangjie.name.FqName> = emptyList(),
+): MacroConstructionResult {
+    val symbolIndex = buildMacroSymbolIndex(
+        pre = pre,
+        libraryDefinitions = libraryDefinitions,
+        sharedBuiltinDefinitions = sharedBuiltinDefinitions,
+        macroArtifactDefinitions = macroArtifactDefinitions,
+    )
+    val context = bindMacroImports(
+        pre = pre,
+        symbolIndex = symbolIndex,
+        defaultMacroImports = defaultMacroImports,
+    )
+    return expand(pre, context, mode)
+}
+
 private object IdentityMacroConstructionService : MacroConstructionService {
     override fun expand(
         pre: PreMacroRawBuildResult,
+        context: MacroResolutionContext,
         mode: MacroConstructionService.Mode,
     ): MacroConstructionResult {
         val files = pre.files.map(PreMacroCfirFile::cfirFile)
