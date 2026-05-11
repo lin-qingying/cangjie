@@ -75,11 +75,11 @@ let MAX_BATCH_SIZE: Int64
 let MIN_COLUMN_WIDTH: Int64
 
 struct ImmutableInputProvider <: std.unittest.BenchInputProvider<T> {
-    func `get`(_: Int64): T
+    mut func `get`(_: Int64): T { /* compiled code */ }
 
-    func createOrExisting(arg: T, x: Int64): std.unittest.ImmutableInputProvider<T>
+    static func createOrExisting(arg: T, x: Int64): std.unittest.ImmutableInputProvider<T> { /* compiled code */ }
 
-    func createOrExisting(arg: U): U
+    static func createOrExisting(arg: U): U { /* compiled code */ }
 
     let data: T
 
@@ -87,17 +87,17 @@ struct ImmutableInputProvider <: std.unittest.BenchInputProvider<T> {
 }
 
 interface BenchInputProvider <: std.unittest.BenchmarkInputMarker {
-    func reset(max: Int64): Unit
+    mut func reset(max: Int64): Unit { /* compiled code */ }
 
-    func `get`(idx: Int64): T
+    mut func `get`(idx: Int64): T { /* compiled code */ }
 }
 
 struct BatchInputProvider <: std.unittest.BenchInputProvider<T> {
     var data: std.core.Array<T>
 
-    func reset(max: Int64): Unit
+    mut func reset(max: Int64): Unit { /* compiled code */ }
 
-    func `get`(idx: Int64): T
+    mut func `get`(idx: Int64): T { /* compiled code */ }
 
     let builder: () -> T
 
@@ -107,9 +107,9 @@ struct BatchInputProvider <: std.unittest.BenchInputProvider<T> {
 struct BatchSizeOneInputProvider <: std.unittest.BenchInputProvider<T> {
     var data: T
 
-    func reset(max: Int64): Unit
+    mut func reset(max: Int64): Unit { /* compiled code */ }
 
-    func `get`(_: Int64): T
+    mut func `get`(_: Int64): T { /* compiled code */ }
 
     let builder: () -> T
 
@@ -117,9 +117,9 @@ struct BatchSizeOneInputProvider <: std.unittest.BenchInputProvider<T> {
 }
 
 struct GenerateEachInputProvider <: std.unittest.BenchInputProvider<T> {
-    func reset(_: Int64): Unit
+    mut func reset(_: Int64): Unit { /* compiled code */ }
 
-    func `get`(_: Int64): T
+    mut func `get`(_: Int64): T { /* compiled code */ }
 
     let builder: () -> T
 
@@ -127,9 +127,9 @@ struct GenerateEachInputProvider <: std.unittest.BenchInputProvider<T> {
 }
 
 class TestSuiteResult <: std.unittest.ResultContainer<std.unittest.TestCaseResult> {
-    func merge(other: std.unittest.TestSuiteResult): Unit
+    func merge(other: std.unittest.TestSuiteResult): Unit { /* compiled code */ }
 
-    func mergeAll(suiteResults: std.core.Iterable<std.unittest.TestSuiteResult>): std.core.Collection<std.unittest.TestSuiteResult>
+    static func mergeAll(suiteResults: std.core.Iterable<std.unittest.TestSuiteResult>): std.core.Collection<std.unittest.TestSuiteResult> { /* compiled code */ }
 
     let suiteId: std.unittest.TestSuiteId
 
@@ -139,33 +139,37 @@ class TestSuiteResult <: std.unittest.ResultContainer<std.unittest.TestCaseResul
 }
 
 interface BenchTable {
-    func build(suiteResult: std.unittest.TestSuiteResult, baselineReport: std.collection.HashMap<std.core.String, Float64>): std.core.Option<std.unittest.BenchTable>
+    static func build(suiteResult: std.unittest.TestSuiteResult, baselineReport: std.collection.HashMap<std.core.String, Float64>): std.core.Option<std.unittest.BenchTable> { /* compiled code */ }
 
-    func doBuild: std.unittest.PrettyTable
+    func doBuild(): std.unittest.PrettyTable { /* compiled code */ }
 
-    prop hasBaselineHeader: Bool
+    prop hasBaselineHeader: Bool {
+        get() { /* compiled code */ }
+    }
 }
 
 class BenchTableImpl <: std.core.Object & std.unittest.BenchTable {
     let subgroups: std.collection.ArrayList<std.unittest.BenchTableImpl>
 
-    prop hasBaselineHeader: Bool
+    prop hasBaselineHeader: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func putResultToBaselineReport(key: std.core.String, value: Float64): Unit
+    func putResultToBaselineReport(key: std.core.String, value: Float64): Unit { /* compiled code */ }
 
-    func getResultFromBaselineReport(key: std.core.String): std.core.Option<Float64>
+    func getResultFromBaselineReport(key: std.core.String): std.core.Option<Float64> { /* compiled code */ }
 
-    func build(suiteResult: std.unittest.TestSuiteResult, baselineReport: std.collection.HashMap<std.core.String, Float64>): std.core.Option<std.unittest.BenchTable>
+    static func build(suiteResult: std.unittest.TestSuiteResult, baselineReport: std.collection.HashMap<std.core.String, Float64>): std.core.Option<std.unittest.BenchTable> { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    func initTableStructure: Unit
+    func initTableStructure(): Unit { /* compiled code */ }
 
-    func doBuild: std.unittest.PrettyTable
+    func doBuild(): std.unittest.PrettyTable { /* compiled code */ }
 
-    func doTableBuild: Unit
+    func doTableBuild(): Unit { /* compiled code */ }
 
-    func addSubgroup(subgroup: std.unittest.BenchTableImpl): Unit
+    func addSubgroup(subgroup: std.unittest.BenchTableImpl): Unit { /* compiled code */ }
 
     let props: std.unittest.BenchTableProperties
 
@@ -174,18 +178,18 @@ class BenchTableImpl <: std.core.Object & std.unittest.BenchTable {
     init(props: std.unittest.BenchTableProperties, table: std.unittest.PrettyTable) { /* compiled code */ }
 }
 
-func GetRdtscp: UInt64
+foreign func GetRdtscp(): UInt64
 
 interface TestFilter {
-    func shouldSkipTestClass(suiteFilterKey: std.unittest.SuiteFilterKey): Bool
+    func shouldSkipTestClass(suiteFilterKey: std.unittest.SuiteFilterKey): Bool { /* compiled code */ }
 
-    func shouldSkipTestCase(caseFilterKey: std.unittest.CaseFilterKey): Bool
+    func shouldSkipTestCase(caseFilterKey: std.unittest.CaseFilterKey): Bool { /* compiled code */ }
 }
 
 class CompositeTestFilter <: std.core.Object & std.unittest.TestFilter {
-    func shouldSkipTestClass(filterKey: std.unittest.SuiteFilterKey): Bool
+    override func shouldSkipTestClass(filterKey: std.unittest.SuiteFilterKey): Bool { /* compiled code */ }
 
-    func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool
+    override func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool { /* compiled code */ }
 
     let filters: std.core.Array<std.unittest.TestFilter>
 
@@ -199,13 +203,13 @@ class TagsTestFilter <: std.core.Object & std.unittest.UserTestFilter {
 
     init(includeArgs: std.core.Array<std.core.String>, excludeArgs: std.core.Array<std.core.String>) { /* compiled code */ }
 
-    func fromConfiguration(config: std.unittest.common.Configuration): std.unittest.TagsTestFilter
+    redef static func fromConfiguration(config: std.unittest.common.Configuration): std.unittest.TagsTestFilter { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.unittest.TagsTestFilter
+    redef static func fromDefaultConfiguration(): std.unittest.TagsTestFilter { /* compiled code */ }
 
-    func shouldSkipTestClass(filterKey: std.unittest.SuiteFilterKey): Bool
+    override func shouldSkipTestClass(filterKey: std.unittest.SuiteFilterKey): Bool { /* compiled code */ }
 
-    func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool
+    override func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool { /* compiled code */ }
 }
 
 class FilterOptionTestFilter <: std.core.Object & std.unittest.UserTestFilter {
@@ -217,25 +221,25 @@ class FilterOptionTestFilter <: std.core.Object & std.unittest.UserTestFilter {
 
     init(filterArgs: std.core.Array<std.core.String>) { /* compiled code */ }
 
-    func fromConfiguration(config: std.unittest.common.Configuration): std.unittest.FilterOptionTestFilter
+    redef static func fromConfiguration(config: std.unittest.common.Configuration): std.unittest.FilterOptionTestFilter { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.unittest.FilterOptionTestFilter
+    redef static func fromDefaultConfiguration(): std.unittest.FilterOptionTestFilter { /* compiled code */ }
 
-    func shouldSkipTestClass(filterKey: std.unittest.SuiteFilterKey): Bool
+    override func shouldSkipTestClass(filterKey: std.unittest.SuiteFilterKey): Bool { /* compiled code */ }
 
-    func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool
+    override func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool { /* compiled code */ }
 }
 
 interface UserTestFilter <: std.unittest.TestFilter {
-    func fromConfiguration(config: std.unittest.common.Configuration): std.unittest.TestFilter
+    static func fromConfiguration(config: std.unittest.common.Configuration): std.unittest.TestFilter { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.unittest.TestFilter
+    static func fromDefaultConfiguration(): std.unittest.TestFilter { /* compiled code */ }
 }
 
-func defaultConfiguration: std.unittest.common.Configuration
+func defaultConfiguration(): std.unittest.common.Configuration { /* compiled code */ }
 
 struct SuiteFilterKey {
-    func fromTestSuite(groupName: std.core.String, suite: std.unittest.TestSuite): std.unittest.SuiteFilterKey
+    static func fromTestSuite(groupName: std.core.String, suite: std.unittest.TestSuite): std.unittest.SuiteFilterKey { /* compiled code */ }
 
     let suiteId: std.unittest.TestSuiteId
 
@@ -247,23 +251,25 @@ struct SuiteFilterKey {
 }
 
 class TestSuite {
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    func runTests: std.unittest.TestReport
+    func runTests(): std.unittest.TestReport { /* compiled code */ }
 
-    func runTests(configuration: std.unittest.common.Configuration): std.unittest.TestReport
+    func runTests(configuration: std.unittest.common.Configuration): std.unittest.TestReport { /* compiled code */ }
 
-    func runBenchmarks: std.unittest.BenchReport
+    func runBenchmarks(): std.unittest.BenchReport { /* compiled code */ }
 
-    func runBenchmarks(configuration: std.unittest.common.Configuration): std.unittest.BenchReport
+    func runBenchmarks(configuration: std.unittest.common.Configuration): std.unittest.BenchReport { /* compiled code */ }
 
-    func run(configuration: std.unittest.common.Configuration, mode: std.unittest.ExecutionMode): std.unittest.TestGroupResult
+    func run(configuration: std.unittest.common.Configuration, mode: std.unittest.ExecutionMode): std.unittest.TestGroupResult { /* compiled code */ }
 
-    func execute(groupName: std.core.String, runConfiguration: std.unittest.common.Configuration, filterService: std.unittest.FilterService): std.unittest.TestSuiteResult
+    func execute(groupName: std.core.String, runConfiguration: std.unittest.common.Configuration, filterService: std.unittest.FilterService): std.unittest.TestSuiteResult { /* compiled code */ }
 
-    func builder(name: std.core.String): std.unittest.TestSuiteBuilder
+    static func builder(name: std.core.String): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func builder(suite: std.unittest.TestSuite): std.unittest.TestSuiteBuilder
+    static func builder(suite: std.unittest.TestSuite): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
     let _name: std.core.String
 
@@ -285,15 +291,17 @@ class TestSuite {
 }
 
 interface ReportFormat {
-    prop isBench: Bool
+    static prop isBench: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func fromString(format: std.core.String, path: std.fs.Path): std.unittest.ReportFormat
+    static func fromString(format: std.core.String, path: std.fs.Path): std.unittest.ReportFormat { /* compiled code */ }
 
-    func default(path: std.fs.Path): std.unittest.ReportFormat
+    static func default(path: std.fs.Path): std.unittest.ReportFormat { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.core.Option<std.unittest.ReportFormat>
+    static func fromDefaultConfiguration(): std.core.Option<std.unittest.ReportFormat> { /* compiled code */ }
 
-    func report(testInfo: std.unittest.TestGroupResult): Unit
+    func report(testInfo: std.unittest.TestGroupResult): Unit { /* compiled code */ }
 }
 
 enum BenchReportFormat <: std.unittest.ReportFormat {
@@ -303,41 +311,53 @@ enum BenchReportFormat <: std.unittest.ReportFormat {
 
     | Html(std.fs.Path)
 
-    prop isBench: Bool
+    redef static prop isBench: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func default(path: std.fs.Path): std.unittest.ReportFormat
+    redef static func default(path: std.fs.Path): std.unittest.ReportFormat { /* compiled code */ }
 
-    func fromString(format: std.core.String, path: std.fs.Path): std.unittest.ReportFormat
+    redef static func fromString(format: std.core.String, path: std.fs.Path): std.unittest.ReportFormat { /* compiled code */ }
 
-    func report(result: std.unittest.TestGroupResult): Unit
+    func report(result: std.unittest.TestGroupResult): Unit { /* compiled code */ }
 }
 
 enum UTestReportFormat <: std.unittest.ReportFormat {
     | XML(std.fs.Path)
 
-    func default(path: std.fs.Path): std.unittest.ReportFormat
+    redef static func default(path: std.fs.Path): std.unittest.ReportFormat { /* compiled code */ }
 
-    prop isBench: Bool
+    redef static prop isBench: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func fromString(format: std.core.String, path: std.fs.Path): std.unittest.ReportFormat
+    redef static func fromString(format: std.core.String, path: std.fs.Path): std.unittest.ReportFormat { /* compiled code */ }
 
-    func report(result: std.unittest.TestGroupResult): Unit
+    func report(result: std.unittest.TestGroupResult): Unit { /* compiled code */ }
 }
 
 struct KeyReportPath <: std.unittest.common.KeyFor<std.core.String> {
-    prop reportPath: std.unittest.KeyReportPath
+    static prop reportPath: std.unittest.KeyReportPath {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
-func getReportDirectory(key: Key): std.core.Option<std.fs.Path>
+func getReportDirectory(key: Key): std.core.Option<std.fs.Path> { /* compiled code */ }
 
 struct KeyReportFormat <: std.unittest.common.KeyFor<std.core.String> {
-    prop reportFormat: std.unittest.KeyReportFormat
+    static prop reportFormat: std.unittest.KeyReportFormat {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
@@ -347,31 +367,37 @@ class UnittestCliOptionsFormatException <: std.unittest.UnittestException {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 interface Result <: std.unittest.common.Serializable<std.unittest.Result> {
-    func visitChildren(_: (std.unittest.Result) -> Unit): Unit
+    func visitChildren(_: (std.unittest.Result) -> Unit): Unit { /* compiled code */ }
 
-    func walk(visitor: (std.unittest.Result) -> Unit): Unit
+    func walk(visitor: (std.unittest.Result) -> Unit): Unit { /* compiled code */ }
 
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.Result
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.Result { /* compiled code */ }
 
-    prop details: std.unittest.Details
+    prop details: std.unittest.Details {
+        get() { /* compiled code */ }
+    }
 }
 
 class RunStepResult <: std.core.Object & std.unittest.Result {
-    prop details: std.unittest.Details
+    prop details: std.unittest.Details {
+        get() { /* compiled code */ }
+    }
 
-    func simpleError(step: std.unittest.StepKind, check: std.unittest.CheckResult): std.unittest.RunStepResult
+    static func simpleError(step: std.unittest.StepKind, check: std.unittest.CheckResult): std.unittest.RunStepResult { /* compiled code */ }
 
-    func hasFailures: Bool
+    func hasFailures(): Bool { /* compiled code */ }
 
-    prop checkResults: std.core.Array<std.unittest.CheckResult>
+    prop checkResults: std.core.Array<std.unittest.CheckResult> {
+        get() { /* compiled code */ }
+    }
 
-    func statusCode: std.unittest.TestCode
+    func statusCode(): std.unittest.TestCode { /* compiled code */ }
 
     let checksPassed: Int64
 
@@ -387,17 +413,19 @@ class RunStepResult <: std.core.Object & std.unittest.Result {
 }
 
 class TestCaseResult <: std.unittest.ResultContainer<std.unittest.RunStepResult> {
-    func fromSingleStep(id: std.unittest.TestCaseId, info: std.unittest.TestCaseReportInfo, step: std.unittest.RunStepResult): std.unittest.TestCaseResult
+    static func fromSingleStep(id: std.unittest.TestCaseId, info: std.unittest.TestCaseReportInfo, step: std.unittest.RunStepResult): std.unittest.TestCaseResult { /* compiled code */ }
 
     var _output: std.unittest.CapturedOutput
 
-    prop output: std.unittest.CapturedOutput
+    prop output: std.unittest.CapturedOutput {
+        get() { /* compiled code */ }
+    }
 
-    func addOutput(output: std.unittest.CapturedOutput): Unit
+    func addOutput(output: std.unittest.CapturedOutput): Unit { /* compiled code */ }
 
-    func addSuccessfullStep(next: std.unittest.RunStepResult): Unit
+    func addSuccessfullStep(next: std.unittest.RunStepResult): Unit { /* compiled code */ }
 
-    func hasFailures: Bool
+    func hasFailures(): Bool { /* compiled code */ }
 
     let caseId: std.unittest.TestCaseId
 
@@ -409,11 +437,13 @@ class TestCaseResult <: std.unittest.ResultContainer<std.unittest.RunStepResult>
 }
 
 class TestGroupResult <: std.unittest.ResultContainer<std.unittest.GroupResultPart> {
-    func fromPackageSuites(packageName: std.core.String, suiteResults: std.core.Collection<std.unittest.TestSuiteResult>, processErrors: std.core.Array<std.unittest.TestProcessError>, nonTestOutputs: std.core.Array<std.unittest.NonTestOutputs>): std.unittest.TestGroupResult
+    static func fromPackageSuites(packageName: std.core.String, suiteResults: std.core.Collection<std.unittest.TestSuiteResult>, processErrors: std.core.Array<std.unittest.TestProcessError>, nonTestOutputs: std.core.Array<std.unittest.NonTestOutputs>): std.unittest.TestGroupResult { /* compiled code */ }
 
-    prop hasProcessError: Bool
+    prop hasProcessError: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func add(testSuite: std.unittest.Result): Unit
+    func add(testSuite: std.unittest.Result): Unit { /* compiled code */ }
 
     let groupName: std.core.String
 
@@ -441,11 +471,15 @@ class Details {
 
     init() { /* compiled code */ }
 
-    func add(other: std.unittest.Details): Unit
+    func add(other: std.unittest.Details): Unit { /* compiled code */ }
 
-    prop totalCount: Int64
+    prop totalCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop isSuccess: Bool
+    prop isSuccess: Bool {
+        get() { /* compiled code */ }
+    }
 
     var testcode: std.unittest.TestCode
 
@@ -459,7 +493,7 @@ class RememberingDataProvider <: std.core.Object & std.unittest.common.DataProvi
 
     var current: std.core.Option<T>
 
-    func provide: std.core.Iterable<T>
+    func provide(): std.core.Iterable<T> { /* compiled code */ }
 
     let delegate: std.unittest.common.DataProvider<T>
 
@@ -477,13 +511,13 @@ struct MeasurementInfo {
 }
 
 class TestReport <: std.unittest.Report {
-    func reportTo(reporter: std.unittest.Reporter<std.unittest.TestReport, T>): T
+    func reportTo(reporter: std.unittest.Reporter<std.unittest.TestReport, T>): T { /* compiled code */ }
 
     init(groupResult: std.unittest.TestGroupResult, runConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
 }
 
 class BenchReport <: std.unittest.Report {
-    func reportTo(reporter: std.unittest.Reporter<std.unittest.BenchReport, T>): T
+    func reportTo(reporter: std.unittest.Reporter<std.unittest.BenchReport, T>): T { /* compiled code */ }
 
     init(groupResult: std.unittest.TestGroupResult, runConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
 }
@@ -493,13 +527,13 @@ enum ExecutionMode {
 
     | OnlyBenchmarks
 
-    func asFilter: std.unittest.FrameworkTestFilter
+    func asFilter(): std.unittest.FrameworkTestFilter { /* compiled code */ }
 }
 
 struct FilterService {
-    func register(filterKey: std.unittest.SuiteFilterKey, suite: std.unittest.TestSuite): Unit
+    func register(filterKey: std.unittest.SuiteFilterKey, suite: std.unittest.TestSuite): Unit { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.unittest.FilterService
+    static func fromDefaultConfiguration(): std.unittest.FilterService { /* compiled code */ }
 
     let userFilter: std.unittest.TestFilter
 
@@ -523,29 +557,29 @@ class TestSuiteBuilder {
 
     var template_: std.core.Option<std.unittest.TestSuite>
 
-    func setName(name: std.core.String): std.unittest.TestSuiteBuilder
+    func setName(name: std.core.String): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func configure(configuration: std.unittest.common.Configuration): std.unittest.TestSuiteBuilder
+    func configure(configuration: std.unittest.common.Configuration): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func beforeEach(body: (std.core.String) -> Unit): std.unittest.TestSuiteBuilder
+    func beforeEach(body: (std.core.String) -> Unit): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func afterEach(body: (std.core.String) -> Unit): std.unittest.TestSuiteBuilder
+    func afterEach(body: (std.core.String) -> Unit): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func beforeEach(body: () -> Unit): std.unittest.TestSuiteBuilder
+    func beforeEach(body: () -> Unit): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func afterEach(body: () -> Unit): std.unittest.TestSuiteBuilder
+    func afterEach(body: () -> Unit): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func beforeAll(body: () -> Unit): std.unittest.TestSuiteBuilder
+    func beforeAll(body: () -> Unit): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func afterAll(body: () -> Unit): std.unittest.TestSuiteBuilder
+    func afterAll(body: () -> Unit): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func add(test: std.unittest.UnitTestCase): std.unittest.TestSuiteBuilder
+    func add(test: std.unittest.UnitTestCase): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func add(benchmark: std.unittest.Benchmark): std.unittest.TestSuiteBuilder
+    func add(benchmark: std.unittest.Benchmark): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func template(template: std.unittest.TestSuite): std.unittest.TestSuiteBuilder
+    func template(template: std.unittest.TestSuite): std.unittest.TestSuiteBuilder { /* compiled code */ }
 
-    func build: std.unittest.TestSuite
+    func build(): std.unittest.TestSuite { /* compiled code */ }
 
     var name: std.core.String
 
@@ -557,31 +591,41 @@ enum CaseOrBench {
 
     | Bench(std.unittest.Benchmark)
 
-    prop caseConfiguration: std.unittest.common.Configuration
+    prop caseConfiguration: std.unittest.common.Configuration {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop isBench: Bool
+    prop isBench: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop executor: std.unittest.Executor
+    prop executor: std.unittest.Executor {
+        get() { /* compiled code */ }
+    }
 }
 
 class TestGroup {
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    func runTests: std.unittest.TestReport
+    func runTests(): std.unittest.TestReport { /* compiled code */ }
 
-    func runTests(configuration: std.unittest.common.Configuration): std.unittest.TestReport
+    func runTests(configuration: std.unittest.common.Configuration): std.unittest.TestReport { /* compiled code */ }
 
-    func runBenchmarks: std.unittest.BenchReport
+    func runBenchmarks(): std.unittest.BenchReport { /* compiled code */ }
 
-    func runBenchmarks(configuration: std.unittest.common.Configuration): std.unittest.BenchReport
+    func runBenchmarks(configuration: std.unittest.common.Configuration): std.unittest.BenchReport { /* compiled code */ }
 
-    func run(configuration: std.unittest.common.Configuration, mode: std.unittest.ExecutionMode): std.unittest.TestGroupResult
+    func run(configuration: std.unittest.common.Configuration, mode: std.unittest.ExecutionMode): std.unittest.TestGroupResult { /* compiled code */ }
 
-    func builder(name: std.core.String): std.unittest.TestGroupBuilder
+    static func builder(name: std.core.String): std.unittest.TestGroupBuilder { /* compiled code */ }
 
-    func builder(group: std.unittest.TestGroup): std.unittest.TestGroupBuilder
+    static func builder(group: std.unittest.TestGroup): std.unittest.TestGroupBuilder { /* compiled code */ }
 
     let _name: std.core.String
 
@@ -597,17 +641,17 @@ class TestGroupBuilder {
 
     var configuration: std.unittest.common.Configuration
 
-    func setName(name: std.core.String): std.unittest.TestGroupBuilder
+    func setName(name: std.core.String): std.unittest.TestGroupBuilder { /* compiled code */ }
 
-    func configure(configuration: std.unittest.common.Configuration): std.unittest.TestGroupBuilder
+    func configure(configuration: std.unittest.common.Configuration): std.unittest.TestGroupBuilder { /* compiled code */ }
 
-    func add(test: std.unittest.UnitTestCase): std.unittest.TestGroupBuilder
+    func add(test: std.unittest.UnitTestCase): std.unittest.TestGroupBuilder { /* compiled code */ }
 
-    func add(benchmark: std.unittest.Benchmark): std.unittest.TestGroupBuilder
+    func add(benchmark: std.unittest.Benchmark): std.unittest.TestGroupBuilder { /* compiled code */ }
 
-    func add(suite: std.unittest.TestSuite): std.unittest.TestGroupBuilder
+    func add(suite: std.unittest.TestSuite): std.unittest.TestGroupBuilder { /* compiled code */ }
 
-    func build: std.unittest.TestGroup
+    func build(): std.unittest.TestGroup { /* compiled code */ }
 
     var name: std.core.String
 
@@ -615,15 +659,17 @@ class TestGroupBuilder {
 }
 
 class UnitTestCase {
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    func run: std.unittest.TestReport
+    func run(): std.unittest.TestReport { /* compiled code */ }
 
-    func createParameterized(name: std.core.String, strategy: std.unittest.common.DataStrategy<T>, configuration: std.unittest.common.Configuration, body: (T) -> Unit): std.unittest.UnitTestCase
+    static func createParameterized(name: std.core.String, strategy: std.unittest.common.DataStrategy<T>, configuration: std.unittest.common.Configuration, body: (T) -> Unit): std.unittest.UnitTestCase { /* compiled code */ }
 
-    func createParameterized(name: std.core.String, strategy: std.unittest.DataStrategyProcessor<T>, configuration: std.unittest.common.Configuration, body: (T) -> Unit): std.unittest.UnitTestCase
+    static func createParameterized(name: std.core.String, strategy: std.unittest.DataStrategyProcessor<T>, configuration: std.unittest.common.Configuration, body: (T) -> Unit): std.unittest.UnitTestCase { /* compiled code */ }
 
-    func create(name: std.core.String, configuration: std.unittest.common.Configuration, body: () -> Unit): std.unittest.UnitTestCase
+    static func create(name: std.core.String, configuration: std.unittest.common.Configuration, body: () -> Unit): std.unittest.UnitTestCase { /* compiled code */ }
 
     let _name: std.core.String
 
@@ -635,17 +681,19 @@ class UnitTestCase {
 }
 
 class Benchmark {
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    func run: std.unittest.BenchReport
+    func run(): std.unittest.BenchReport { /* compiled code */ }
 
-    func createWithExplicitLoop(name: std.core.String, strategy: std.unittest.DataStrategyProcessor<T>, configuration: std.unittest.common.Configuration, optLambda: (T, Int64, Int64) -> Float64): std.unittest.Benchmark
+    static func createWithExplicitLoop(name: std.core.String, strategy: std.unittest.DataStrategyProcessor<T>, configuration: std.unittest.common.Configuration, optLambda: (T, Int64, Int64) -> Float64): std.unittest.Benchmark { /* compiled code */ }
 
-    func createParameterized(name: std.core.String, strategy: std.unittest.common.DataStrategy<T>, configuration: std.unittest.common.Configuration, measurement: std.unittest.Measurement, body: (T) -> Unit): std.unittest.Benchmark
+    static func createParameterized(name: std.core.String, strategy: std.unittest.common.DataStrategy<T>, configuration: std.unittest.common.Configuration, measurement: std.unittest.Measurement, body: (T) -> Unit): std.unittest.Benchmark { /* compiled code */ }
 
-    func createParameterized(name: std.core.String, strategy: std.unittest.DataStrategyProcessor<T>, configuration: std.unittest.common.Configuration, measurement: std.unittest.Measurement, body: (T) -> Unit): std.unittest.Benchmark
+    static func createParameterized(name: std.core.String, strategy: std.unittest.DataStrategyProcessor<T>, configuration: std.unittest.common.Configuration, measurement: std.unittest.Measurement, body: (T) -> Unit): std.unittest.Benchmark { /* compiled code */ }
 
-    func create(name: std.core.String, configuration: std.unittest.common.Configuration, measurement: std.unittest.Measurement, body: () -> Unit): std.unittest.Benchmark
+    static func create(name: std.core.String, configuration: std.unittest.common.Configuration, measurement: std.unittest.Measurement, body: () -> Unit): std.unittest.Benchmark { /* compiled code */ }
 
     let _name: std.core.String
 
@@ -661,55 +709,65 @@ class DataStrategyProcessor {
 
     var currentReduction: Int64
 
-    prop isInfinite: Bool
+    prop isInfinite: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<T>
+    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<T> { /* compiled code */ }
 
-    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<T>
+    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<T> { /* compiled code */ }
 
-    func lastItemInfo: std.core.Array<std.unittest.InputParameter>
+    func lastItemInfo(): std.core.Array<std.unittest.InputParameter> { /* compiled code */ }
 
-    func lastItem(configuration: std.unittest.common.Configuration): T
+    func lastItem(configuration: std.unittest.common.Configuration): T { /* compiled code */ }
 
-    func nextIteration(configuration: std.unittest.common.Configuration): Unit
+    func nextIteration(configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
-    func processNextWith(_: std.unittest.common.Configuration, runSingle: (T, std.core.Array<std.unittest.InputParameter>) -> std.unittest.RunStepResult): std.unittest.ProcessorResult
+    func processNextWith(_: std.unittest.common.Configuration, runSingle: (T, std.core.Array<std.unittest.InputParameter>) -> std.unittest.RunStepResult): std.unittest.ProcessorResult { /* compiled code */ }
 
-    func shrink(configuration: std.unittest.common.Configuration, runSingle: (T, std.core.Array<std.unittest.InputParameter>) -> std.unittest.RunStepResult): std.core.Option<std.unittest.ProcessorResult>
+    func shrink(configuration: std.unittest.common.Configuration, runSingle: (T, std.core.Array<std.unittest.InputParameter>) -> std.unittest.RunStepResult): std.core.Option<std.unittest.ProcessorResult> { /* compiled code */ }
 
-    func intoBenchmark(caseName: std.core.String, configuration: std.unittest.common.Configuration, doRun: (T, Int64, Int64) -> Float64): std.unittest.Benchmark
+    func intoBenchmark(caseName: std.core.String, configuration: std.unittest.common.Configuration, doRun: (T, Int64, Int64) -> Float64): std.unittest.Benchmark { /* compiled code */ }
 
-    func intoUnitTestCase(caseName: std.core.String, configuration: std.unittest.common.Configuration, doRun: (T) -> Unit): std.unittest.UnitTestCase
+    func intoUnitTestCase(caseName: std.core.String, configuration: std.unittest.common.Configuration, doRun: (T) -> Unit): std.unittest.UnitTestCase { /* compiled code */ }
 
-    func start(s: std.unittest.common.DataStrategy<T>, name: std.core.String): std.unittest.SimpleProcessor<T>
+    static func start(s: std.unittest.common.DataStrategy<T>, name: std.core.String): std.unittest.SimpleProcessor<T> { /* compiled code */ }
 
-    func start(f: () -> std.unittest.common.DataStrategy<U>, name: std.core.String): std.unittest.DataStrategyProcessor<U>
+    static func start(f: () -> std.unittest.common.DataStrategy<U>, name: std.core.String): std.unittest.DataStrategyProcessor<U> { /* compiled code */ }
 
-    func start(f: () -> std.unittest.common.DataStrategy<T>, name: std.core.String, x: Int64): std.unittest.SimpleProcessor<T>
+    static func start(f: () -> std.unittest.common.DataStrategy<T>, name: std.core.String, x: Int64): std.unittest.SimpleProcessor<T> { /* compiled code */ }
 
-    func start(f: () -> std.unittest.DataStrategyProcessor<T>, _: std.core.String): std.unittest.DataStrategyProcessor<T>
+    static func start(f: () -> std.unittest.DataStrategyProcessor<T>, _: std.core.String): std.unittest.DataStrategyProcessor<T> { /* compiled code */ }
 
-    func start(f: () -> std.unittest.DataStrategyProcessor<U>, _: std.core.String, x: Int64): std.unittest.DataStrategyProcessor<U>
+    static func start(f: () -> std.unittest.DataStrategyProcessor<U>, _: std.core.String, x: Int64): std.unittest.DataStrategyProcessor<U> { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
 interface Executor {
-    func execute(suiteInfo: std.unittest.TestSuiteReportInfo, caseResult: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit
+    func execute(suiteInfo: std.unittest.TestSuiteReportInfo, caseResult: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
 }
 
 interface Measurement {
-    func setup: Unit
+    func setup(): Unit { /* compiled code */ }
 
-    func measure: Float64
+    func measure(): Float64 { /* compiled code */ }
 
-    prop conversionTable: std.core.Array<(Float64, std.core.String)>
+    prop conversionTable: std.core.Array<(Float64, std.core.String)> {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop textDescription: std.core.String
+    prop textDescription: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop info: std.unittest.MeasurementInfo
+    prop info: std.unittest.MeasurementInfo {
+        get() { /* compiled code */ }
+    }
 }
 
 struct TestCaseInfo {
@@ -725,15 +783,25 @@ struct TestCaseInfo {
 class Report {
     let details: std.unittest.Details
 
-    prop errorCount: Int64
+    prop errorCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop caseCount: Int64
+    prop caseCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop passedCount: Int64
+    prop passedCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop failedCount: Int64
+    prop failedCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop skippedCount: Int64
+    prop skippedCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
     let groupResult: std.unittest.TestGroupResult
 
@@ -746,19 +814,19 @@ interface Reporter {
 }
 
 interface TestClass {
-    func asTestSuite: std.unittest.TestSuite
+    func asTestSuite(): std.unittest.TestSuite { /* compiled code */ }
 }
 
 class TestPackage {
     let builder: std.unittest.TestGroupBuilder
 
-    func registerCase(testCase: () -> std.unittest.UnitTestCase): Unit
+    func registerCase(testCase: () -> std.unittest.UnitTestCase): Unit { /* compiled code */ }
 
-    func registerSuite(suite: () -> std.unittest.TestSuite): Unit
+    func registerSuite(suite: () -> std.unittest.TestSuite): Unit { /* compiled code */ }
 
-    func registerBench(bench: () -> std.unittest.Benchmark): Unit
+    func registerBench(bench: () -> std.unittest.Benchmark): Unit { /* compiled code */ }
 
-    func build: std.unittest.TestGroup
+    func build(): std.unittest.TestGroup { /* compiled code */ }
 
     let name: std.core.String
 
@@ -766,16 +834,16 @@ class TestPackage {
 }
 
 interface FrameworkTestFilter <: std.unittest.TestFilter {
-    func register(_: std.unittest.SuiteFilterKey, _: std.unittest.TestSuite): Unit
+    func register(_: std.unittest.SuiteFilterKey, _: std.unittest.TestSuite): Unit { /* compiled code */ }
 }
 
 extend TestGroupResult {
-    func asBenchReport(runConfiguration: std.unittest.common.Configuration): std.unittest.BenchReport
+    func asBenchReport(runConfiguration: std.unittest.common.Configuration): std.unittest.BenchReport { /* compiled code */ }
 
-    func asTestReport(runConfiguration: std.unittest.common.Configuration): std.unittest.TestReport
+    func asTestReport(runConfiguration: std.unittest.common.Configuration): std.unittest.TestReport { /* compiled code */ }
 }
 
-func assertEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit
+func assertEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit { /* compiled code */ }
 
 class AssertionCtx {
     let _stringArgs: std.core.String
@@ -784,23 +852,29 @@ class AssertionCtx {
 
     let _errors: std.collection.ArrayList<std.unittest.PrettyTreeStruct>
 
-    prop caller: std.core.String
+    prop caller: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop hasErrors: Bool
+    prop hasErrors: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func arg(key: std.core.String): std.core.String
+    func arg(key: std.core.String): std.core.String { /* compiled code */ }
 
-    prop args: std.core.String
+    prop args: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    func setArgsAliases(aliases: std.core.Array<std.core.String>): Unit
+    func setArgsAliases(aliases: std.core.Array<std.core.String>): Unit { /* compiled code */ }
 
-    func fail(message: std.core.String): Nothing
+    func fail(message: std.core.String): Nothing { /* compiled code */ }
 
-    func fail(pt: PP): Nothing
+    func fail(pt: PP): Nothing { /* compiled code */ }
 
-    func failExpect(message: std.core.String): Unit
+    func failExpect(message: std.core.String): Unit { /* compiled code */ }
 
-    func failExpect(pt: PP): Unit
+    func failExpect(pt: PP): Unit { /* compiled code */ }
 
     let _passedArgs: std.core.Array<std.core.String>
 
@@ -809,22 +883,22 @@ class AssertionCtx {
     init(_passedArgs: std.core.Array<std.core.String>, _caller: std.core.String) { /* compiled code */ }
 }
 
-func assertEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, isDelta: Bool, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit
+func assertEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, isDelta: Bool, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit { /* compiled code */ }
 
-func expectEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit
+func expectEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit { /* compiled code */ }
 
-func expectEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, isDelta: Bool, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit
+func expectEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, isDelta: Bool, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit { /* compiled code */ }
 
-func buildCheckResult(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, checkResultKind: std.unittest.CheckResultKind, isDelta: Bool): std.unittest.AssertExpectCheckResult
+func buildCheckResult(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, checkResultKind: std.unittest.CheckResultKind, isDelta: Bool): std.unittest.AssertExpectCheckResult { /* compiled code */ }
 
 enum CheckResultKind <: std.unittest.common.Serializable<std.unittest.CheckResultKind> {
     | Assert
 
     | Expect
 
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.CheckResultKind
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.CheckResultKind { /* compiled code */ }
 }
 
 class AssertExpectCheckResult <: std.unittest.CheckResult {
@@ -842,11 +916,11 @@ class AssertException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class CheckResult <: std.core.Object & std.unittest.common.Serializable<std.unittest.CheckResult> {
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.CheckResult
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.CheckResult { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -860,9 +934,9 @@ class AssertIntermediateException <: std.core.Exception {
 
     init(exception: std.core.Exception, expression: std.core.String, message: std.core.String, diagram: std.unittest.PowerAssertDiagram) { /* compiled code */ }
 
-    func getOriginalStackTrace: std.core.String
+    func getOriginalStackTrace(): std.core.String { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class PowerAssertDiagram <: std.core.Object & std.core.ToString & std.unittest.common.Serializable<std.unittest.PowerAssertDiagram> & std.unittest.common.PrettyPrintable {
@@ -872,28 +946,28 @@ class PowerAssertDiagram <: std.core.Object & std.core.ToString & std.unittest.c
 
     init() { /* compiled code */ }
 
-    func setOffset(offset: Int64): Unit
+    func setOffset(offset: Int64): Unit { /* compiled code */ }
 
-    func addValue(newValue: std.unittest.PowerAssertValue): Unit
+    func addValue(newValue: std.unittest.PowerAssertValue): Unit { /* compiled code */ }
 
-    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.PowerAssertDiagram
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.PowerAssertDiagram { /* compiled code */ }
 
-    func pprintExpression(expr: std.core.String, pp: std.unittest.common.PrettyPrinter): std.core.Any
+    func pprintExpression(expr: std.core.String, pp: std.unittest.common.PrettyPrinter): std.core.Any { /* compiled code */ }
 }
 
 interface BenchmarkInputMarker {
 }
 
 struct SimpleBenchWrapper <: std.unittest.BenchmarkWrapper {
-    func measureLoopOnce(times: Int64, max: Int64): Float64
+    func measureLoopOnce(times: Int64, max: Int64): Float64 { /* compiled code */ }
 
-    func timeLoopOnce(times: Int64, max: Int64): Float64
+    func timeLoopOnce(times: Int64, max: Int64): Float64 { /* compiled code */ }
 
     let input: T
 
@@ -903,25 +977,25 @@ struct SimpleBenchWrapper <: std.unittest.BenchmarkWrapper {
 }
 
 interface BenchmarkWrapper {
-    func measureLoopOnce(times: Int64, max: Int64): Float64
+    func measureLoopOnce(times: Int64, max: Int64): Float64 { /* compiled code */ }
 
-    func timeLoopOnce(times: Int64, max: Int64): Float64
+    func timeLoopOnce(times: Int64, max: Int64): Float64 { /* compiled code */ }
 }
 
 interface BenchmarkConfig {
-    func batchSize(b: Int64): Unit
+    func batchSize(b: Int64): Unit { /* compiled code */ }
 
-    func batchSize(x: std.core.Range<Int64>): Unit
+    func batchSize(x: std.core.Range<Int64>): Unit { /* compiled code */ }
 
-    func warmup(x: Int64): Unit
+    func warmup(x: Int64): Unit { /* compiled code */ }
 
-    func warmup(x: std.core.Duration): Unit
+    func warmup(x: std.core.Duration): Unit { /* compiled code */ }
 
-    func minDuration(x: std.core.Duration): Unit
+    func minDuration(x: std.core.Duration): Unit { /* compiled code */ }
 
-    func explicitGC(x: std.unittest.ExplicitGcType): Unit
+    func explicitGC(x: std.unittest.ExplicitGcType): Unit { /* compiled code */ }
 
-    func minBatches(x: Int64): Unit
+    func minBatches(x: Int64): Unit { /* compiled code */ }
 }
 
 enum ExplicitGcType <: std.core.ToString {
@@ -931,25 +1005,25 @@ enum ExplicitGcType <: std.core.ToString {
 
     | Heavy
 
-    func invoke: Unit
+    func invoke(): Unit { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 extend Configuration <: BenchmarkConfig {
-    func batchSize(b: Int64): Unit
+    func batchSize(b: Int64): Unit { /* compiled code */ }
 
-    func batchSize(x: std.core.Range<Int64>): Unit
+    func batchSize(x: std.core.Range<Int64>): Unit { /* compiled code */ }
 
-    func warmup(x: Int64): Unit
+    func warmup(x: Int64): Unit { /* compiled code */ }
 
-    func warmup(x: std.core.Duration): Unit
+    func warmup(x: std.core.Duration): Unit { /* compiled code */ }
 
-    func minDuration(x: std.core.Duration): Unit
+    func minDuration(x: std.core.Duration): Unit { /* compiled code */ }
 
-    func explicitGC(x: std.unittest.ExplicitGcType): Unit
+    func explicitGC(x: std.unittest.ExplicitGcType): Unit { /* compiled code */ }
 
-    func minBatches(x: Int64): Unit
+    func minBatches(x: Int64): Unit { /* compiled code */ }
 }
 
 type BenchRawMeasurement = (Float64, Float64)
@@ -957,9 +1031,9 @@ type BenchRawMeasurement = (Float64, Float64)
 class BenchExecutor <: std.core.Object & std.unittest.Executor {
     var step: Int64
 
-    func execute(suiteInfo: std.unittest.TestSuiteReportInfo, tcase: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit
+    func execute(suiteInfo: std.unittest.TestSuiteReportInfo, tcase: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
-    func runSingle(value: T, inputs: std.core.Array<std.unittest.InputParameter>, suiteInfo: std.unittest.TestSuiteReportInfo, caseId: std.unittest.TestCaseId, caseInfo: std.unittest.TestCaseReportInfo, benchRunner: std.unittest.BenchRunner, progress: std.unittest.ProgressOutput, configuration: std.unittest.common.Configuration, step: Int64): std.unittest.RunStepResult
+    func runSingle(value: T, inputs: std.core.Array<std.unittest.InputParameter>, suiteInfo: std.unittest.TestSuiteReportInfo, caseId: std.unittest.TestCaseId, caseInfo: std.unittest.TestCaseReportInfo, benchRunner: std.unittest.BenchRunner, progress: std.unittest.ProgressOutput, configuration: std.unittest.common.Configuration, step: Int64): std.unittest.RunStepResult { /* compiled code */ }
 
     let strategy: std.unittest.DataStrategyProcessor<T>
 
@@ -969,7 +1043,9 @@ class BenchExecutor <: std.core.Object & std.unittest.Executor {
 }
 
 struct TestSuiteReportInfo {
-    prop isEmpty: Bool
+    prop isEmpty: Bool {
+        get() { /* compiled code */ }
+    }
 
     let tags: std.core.Array<std.core.String>
 
@@ -981,7 +1057,7 @@ class InputParameter {
 
     var repr: std.core.String
 
-    func update(param: T): Unit
+    func update(param: T): Unit { /* compiled code */ }
 
     let name: std.core.String
 
@@ -989,19 +1065,19 @@ class InputParameter {
 }
 
 struct TestCaseId <: std.unittest.common.Serializable<std.unittest.TestCaseId> & std.core.Hashable & std.core.Equatable<std.unittest.TestCaseId> & std.core.ToString {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestCaseId
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestCaseId { /* compiled code */ }
 
-    operator func ==(other: std.unittest.TestCaseId): Bool
+    operator func ==(other: std.unittest.TestCaseId): Bool { /* compiled code */ }
 
-    operator func !=(other: std.unittest.TestCaseId): Bool
+    operator func !=(other: std.unittest.TestCaseId): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    func fqName: std.core.String
+    func fqName(): std.core.String { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
     let suiteId: std.unittest.TestSuiteId
 
@@ -1013,11 +1089,13 @@ struct TestCaseId <: std.unittest.common.Serializable<std.unittest.TestCaseId> &
 }
 
 struct TestCaseReportInfo {
-    func empty: std.unittest.TestCaseReportInfo
+    static func empty(): std.unittest.TestCaseReportInfo { /* compiled code */ }
 
-    prop isEmpty: Bool
+    prop isEmpty: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func merge(suiteInfo: std.unittest.TestSuiteReportInfo): std.unittest.TestCaseReportInfo
+    func merge(suiteInfo: std.unittest.TestSuiteReportInfo): std.unittest.TestCaseReportInfo { /* compiled code */ }
 
     let tags: std.core.Array<std.core.String>
 
@@ -1051,11 +1129,11 @@ class BenchRunner {
 
     var ema1: std.unittest.Ema
 
-    func runBench: Unit
+    func runBench(): Unit { /* compiled code */ }
 
-    func runBenchInner: Unit
+    func runBenchInner(): Unit { /* compiled code */ }
 
-    func calcBatchSize(estimation: Float64): (std.core.Range<Int64>, Int64)
+    func calcBatchSize(estimation: Float64): (std.core.Range<Int64>, Int64) { /* compiled code */ }
 
     let configuration: std.unittest.common.Configuration
 
@@ -1067,11 +1145,11 @@ class BenchRunner {
 class ProgressOutput {
     let isVerbose: Bool
 
-    func println(message: () -> std.core.String): Unit
+    func println(message: () -> std.core.String): Unit { /* compiled code */ }
 
-    func verboseLine(message: std.core.String): Unit
+    func verboseLine(message: std.core.String): Unit { /* compiled code */ }
 
-    func verbose(message: std.core.String): Unit
+    func verbose(message: std.core.String): Unit { /* compiled code */ }
 
     init(configuration: std.unittest.common.Configuration) { /* compiled code */ }
 }
@@ -1081,23 +1159,35 @@ struct StatisticsSample {
 
     init() { /* compiled code */ }
 
-    func append(data: Float64): Unit
+    func append(data: Float64): Unit { /* compiled code */ }
 
-    func finish: Unit
+    func finish(): Unit { /* compiled code */ }
 
-    prop mean: Float64
+    prop mean: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop median: Float64
+    prop median: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop lowerBound: Float64
+    prop lowerBound: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop upperBound: Float64
+    prop upperBound: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop kde: std.collection.ArrayList<(Float64, Float64)>
+    prop kde: std.collection.ArrayList<(Float64, Float64)> {
+        get() { /* compiled code */ }
+    }
 
-    prop mode: Float64
+    prop mode: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    func mode2: Float64
+    func mode2(): Float64 { /* compiled code */ }
 
     let sample: std.unittest.Sample
 
@@ -1105,15 +1195,17 @@ struct StatisticsSample {
 }
 
 class Sample {
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func mean: Float64
+    func mean(): Float64 { /* compiled code */ }
 
-    func percentile(ratio: Float64): Float64
+    func percentile(ratio: Float64): Float64 { /* compiled code */ }
 
-    func create(data: std.collection.ArrayList<Float64>): std.unittest.Sample
+    static func create(data: std.collection.ArrayList<Float64>): std.unittest.Sample { /* compiled code */ }
 
-    func kde(kdeThroughput: Float64): std.collection.ArrayList<(Float64, Float64)>
+    func kde(kdeThroughput: Float64): std.collection.ArrayList<(Float64, Float64)> { /* compiled code */ }
 
     let data: std.collection.ArrayList<Float64>
 
@@ -1127,29 +1219,49 @@ class BenchmarkResult {
 
     var bootstrapped: std.unittest.BootstrapResult
 
-    prop median: Float64
+    prop median: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop medianCI99: Float64
+    prop medianCI99: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop medianOverhead: Float64
+    prop medianOverhead: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop mean: Float64
+    prop mean: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop meanCI99: Float64
+    prop meanCI99: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop meanLower: Float64
+    prop meanLower: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop meanUpper: Float64
+    prop meanUpper: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop meanOverhead: Float64
+    prop meanOverhead: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop mainResult: Float64
+    prop mainResult: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    prop errorEst: Float64
+    prop errorEst: Float64 {
+        get() { /* compiled code */ }
+    }
 
-    func calculate: Unit
+    func calculate(): Unit { /* compiled code */ }
 
-    func valuesSample: std.unittest.StatisticsSample
+    func valuesSample(): std.unittest.StatisticsSample { /* compiled code */ }
 
     var data: std.collection.ArrayList<(Float64, Float64)>
 
@@ -1169,16 +1281,16 @@ struct BootstrapResult {
 
     let buffer: std.collection.ArrayList<Float64>
 
-    func join(other: std.unittest.BootstrapResult): std.unittest.BootstrapResult
+    func join(other: std.unittest.BootstrapResult): std.unittest.BootstrapResult { /* compiled code */ }
 
-    func finish: Unit
+    func finish(): Unit { /* compiled code */ }
 
-    func appendStatisticsFromSample(subsample: std.collection.ArrayList<(Float64, Float64)>): Unit
+    func appendStatisticsFromSample(subsample: std.collection.ArrayList<(Float64, Float64)>): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func percentToColor(p: Float64): std.unittest.common.Color
+func percentToColor(p: Float64): std.unittest.common.Color { /* compiled code */ }
 
 let PLUS_MINUS: std.core.String
 
@@ -1223,23 +1335,23 @@ class PrettyTable <: std.core.Object & std.unittest.common.PrettyPrintable {
 
     init() { /* compiled code */ }
 
-    func addColumns(names: T): Unit
+    func addColumns(names: T): Unit { /* compiled code */ }
 
-    func addColumn(name: std.core.String): Unit
+    func addColumn(name: std.core.String): Unit { /* compiled code */ }
 
-    func removeLastColumn: (std.core.String, std.unittest.common.Color)
+    func removeLastColumn(): (std.core.String, std.unittest.common.Color) { /* compiled code */ }
 
-    func alignColumnLeft(idx: Int64): Bool
+    func alignColumnLeft(idx: Int64): Bool { /* compiled code */ }
 
-    func addEmptyRow: Unit
+    func addEmptyRow(): Unit { /* compiled code */ }
 
-    func nextRow: Unit
+    func nextRow(): Unit { /* compiled code */ }
 
-    func removeCurrentRow: std.collection.ArrayList<(std.core.String, std.unittest.common.Color)>
+    func removeCurrentRow(): std.collection.ArrayList<(std.core.String, std.unittest.common.Color)> { /* compiled code */ }
 
-    func addCell(value: std.core.String, color: std.unittest.common.Color): Unit
+    func addCell(value: std.core.String, color: std.unittest.common.Color): Unit { /* compiled code */ }
 
-    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
     let names: std.collection.ArrayList<std.core.String>
 
@@ -1253,13 +1365,19 @@ struct TimeNow <: std.unittest.Measurement {
 
     init() { /* compiled code */ }
 
-    func measure: Float64
+    func measure(): Float64 { /* compiled code */ }
 
-    prop conversionTable: std.core.Array<(Float64, std.core.String)>
+    prop conversionTable: std.core.Array<(Float64, std.core.String)> {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop textDescription: std.core.String
+    prop textDescription: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 struct Ema {
@@ -1267,11 +1385,11 @@ struct Ema {
 
     var currentLength: Float64
 
-    func reset: Unit
+    mut func reset(): Unit { /* compiled code */ }
 
-    func reachedMax: Bool
+    func reachedMax(): Bool { /* compiled code */ }
 
-    func append(next: Float64): Unit
+    mut func append(next: Float64): Unit { /* compiled code */ }
 
     let maxLength: Int64
 
@@ -1282,7 +1400,7 @@ type MeasurementUnitTable = std.core.Array<(Float64, std.core.String)>
 
 let RADIX_UNIT_TABLE: std.core.Array<(Float64, std.core.String)>
 
-func printDuration(dur: std.core.Duration): std.core.String
+func printDuration(dur: std.core.Duration): std.core.String { /* compiled code */ }
 
 enum TimeUnit <: std.core.ToString {
     | Nanos
@@ -1293,33 +1411,39 @@ enum TimeUnit <: std.core.ToString {
 
     | Seconds
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func inNanos: Float64
+    func inNanos(): Float64 { /* compiled code */ }
 
-    func conversionRow: (Float64, std.core.String)
+    func conversionRow(): (Float64, std.core.String) { /* compiled code */ }
 }
 
-func GetRdtsc: UInt64
+foreign func GetRdtsc(): UInt64
 
 struct CpuCycles <: std.unittest.Measurement {
-    func measure: Float64
+    func measure(): Float64 { /* compiled code */ }
 
-    func setup: Unit
+    func setup(): Unit { /* compiled code */ }
 
-    prop conversionTable: std.core.Array<(Float64, std.core.String)>
+    prop conversionTable: std.core.Array<(Float64, std.core.String)> {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop textDescription: std.core.String
+    prop textDescription: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 class UnattachedCheckResult <: std.unittest.CheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.UnattachedCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.UnattachedCheckResult> { /* compiled code */ }
 
     let inner: std.unittest.CheckResult
 
@@ -1331,9 +1455,9 @@ class ErrorCheckResult <: std.unittest.CheckResult {
 }
 
 class PlainCompareCheckResult <: std.unittest.AssertExpectCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.PlainCompareCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.PlainCompareCheckResult> { /* compiled code */ }
 
     let leftExpr: std.core.String
 
@@ -1347,9 +1471,9 @@ class PlainCompareCheckResult <: std.unittest.AssertExpectCheckResult {
 }
 
 class PlainDeltaCompareCheckResult <: std.unittest.AssertExpectCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.PlainDeltaCompareCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.PlainDeltaCompareCheckResult> { /* compiled code */ }
 
     let expr: std.core.String
 
@@ -1357,9 +1481,9 @@ class PlainDeltaCompareCheckResult <: std.unittest.AssertExpectCheckResult {
 }
 
 class FailCheckResult <: std.unittest.AssertExpectCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.FailCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.FailCheckResult> { /* compiled code */ }
 
     let failMessage: std.core.String
 
@@ -1367,9 +1491,9 @@ class FailCheckResult <: std.unittest.AssertExpectCheckResult {
 }
 
 class AssertThrowsCheckResult <: std.unittest.AssertExpectCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.AssertThrowsCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.AssertThrowsCheckResult> { /* compiled code */ }
 
     let message: std.core.String
 
@@ -1381,9 +1505,9 @@ class AssertThrowsCheckResult <: std.unittest.AssertExpectCheckResult {
 }
 
 class PowerAssertCheckResult <: std.unittest.AssertExpectCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.PowerAssertCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.PowerAssertCheckResult> { /* compiled code */ }
 
     let expr: std.core.String
 
@@ -1393,9 +1517,9 @@ class PowerAssertCheckResult <: std.unittest.AssertExpectCheckResult {
 }
 
 class PowerAssertExceptionCheckResult <: std.unittest.AssertExpectCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.PowerAssertExceptionCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.PowerAssertExceptionCheckResult> { /* compiled code */ }
 
     let expression: std.core.String
 
@@ -1407,9 +1531,9 @@ class PowerAssertExceptionCheckResult <: std.unittest.AssertExpectCheckResult {
 }
 
 class DiffCheckResult <: std.unittest.AssertExpectCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.DiffCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.DiffCheckResult> { /* compiled code */ }
 
     let diffMessage: std.unittest.common.PrettyText
 
@@ -1417,9 +1541,9 @@ class DiffCheckResult <: std.unittest.AssertExpectCheckResult {
 }
 
 class CustomCheckResult <: std.unittest.AssertExpectCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.DiffCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.DiffCheckResult> { /* compiled code */ }
 
     let custom: std.unittest.common.PrettyText
 
@@ -1427,9 +1551,9 @@ class CustomCheckResult <: std.unittest.AssertExpectCheckResult {
 }
 
 class ExceptionThrownCheckResult <: std.unittest.ErrorCheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.ExceptionThrownCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.ExceptionThrownCheckResult> { /* compiled code */ }
 
     let errorMessage: std.unittest.common.PrettyText
 
@@ -1439,9 +1563,9 @@ class ExceptionThrownCheckResult <: std.unittest.ErrorCheckResult {
 }
 
 class MockFrameworkCheckResult <: std.unittest.CheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.MockFrameworkCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.MockFrameworkCheckResult> { /* compiled code */ }
 
     let mockFrameworkMessage: std.unittest.common.PrettyText
 
@@ -1449,17 +1573,17 @@ class MockFrameworkCheckResult <: std.unittest.CheckResult {
 }
 
 class NoParametersProvidedResult <: std.unittest.CheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.NoParametersProvidedResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.NoParametersProvidedResult> { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
 class CrashedCheckResult <: std.unittest.CheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.CrashedCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.CrashedCheckResult> { /* compiled code */ }
 
     let exitCode: Int64
 
@@ -1467,9 +1591,9 @@ class CrashedCheckResult <: std.unittest.CheckResult {
 }
 
 class TimeoutCheckResult <: std.unittest.CheckResult {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.TimeoutCheckResult>
+    static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.TimeoutCheckResult> { /* compiled code */ }
 
     let msg: std.unittest.common.PrettyText
 
@@ -1481,33 +1605,33 @@ enum PrettyTreeStruct <: std.unittest.common.PrettyPrintable {
 
     | Node(std.core.String, std.collection.ArrayList<std.unittest.PrettyTreeStruct>)
 
-    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
-func invokeCustomAssert(passedArgs: std.core.Array<std.core.String>, caller: std.core.String, assert: (std.unittest.AssertionCtx) -> T, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): T
+func invokeCustomAssert(passedArgs: std.core.Array<std.core.String>, caller: std.core.String, assert: (std.unittest.AssertionCtx) -> T, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): T { /* compiled code */ }
 
-func invokeCustomExpect(passedArgs: std.core.Array<std.core.String>, caller: std.core.String, expect: (std.unittest.AssertionCtx) -> std.core.Any, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit
+func invokeCustomExpect(passedArgs: std.core.Array<std.core.String>, caller: std.core.String, expect: (std.unittest.AssertionCtx) -> std.core.Any, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit { /* compiled code */ }
 
-func fillAbsentValues(config: std.unittest.common.Configuration): Unit
+func fillAbsentValues(config: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
-func kebabCaseToCamelCase(str: std.core.String): std.core.String
+func kebabCaseToCamelCase(str: std.core.String): std.core.String { /* compiled code */ }
 
-func camelCaseToKebabCase(str: std.core.String): std.core.String
+func camelCaseToKebabCase(str: std.core.String): std.core.String { /* compiled code */ }
 
-func setValueWithGuessedType(configuration: std.unittest.common.Configuration, key: std.core.String, value: std.core.String): Unit
+func setValueWithGuessedType(configuration: std.unittest.common.Configuration, key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
 
-func buildDefaultConfiguration: std.unittest.common.Configuration
+func buildDefaultConfiguration(): std.unittest.common.Configuration { /* compiled code */ }
 
 var defaultConfigurationCached: std.sync.AtomicOptionReference<std.unittest.common.Configuration>
 
-func setValuesFromJsonConfiguration(configuration: std.unittest.common.Configuration, rawJson: std.core.String): Unit
+func setValuesFromJsonConfiguration(configuration: std.unittest.common.Configuration, rawJson: std.core.String): Unit { /* compiled code */ }
 
-func typeValidator(name: std.core.String): (std.core.Any) -> std.unittest.common.OptionValidity
+func typeValidator(name: std.core.String): (std.core.Any) -> std.unittest.common.OptionValidity { /* compiled code */ }
 
-func registerUnittestOption(key: std.unittest.common.KeyFor<T>, description: std.core.Option<std.core.String>, typeDescription: std.core.Option<(std.core.String, std.core.String)>): Unit
+func registerUnittestOption(key: std.unittest.common.KeyFor<T>, description: std.core.Option<std.core.String>, typeDescription: std.core.Option<(std.core.String, std.core.String)>): Unit { /* compiled code */ }
 
 interface NearEquatable {
-    func isNear(obj: CT, delta: D): Bool
+    func isNear(obj: CT, delta: D): Bool { /* compiled code */ }
 }
 
 struct RelativeDelta {
@@ -1518,31 +1642,31 @@ struct RelativeDelta {
     init(absolute: T, relative: T) { /* compiled code */ }
 }
 
-func isNearExpansion(l: CT, r: CT, delta: D, cmpType: std.core.String): Bool
+func isNearExpansion(l: CT, r: CT, delta: D, cmpType: std.core.String): Bool { /* compiled code */ }
 
-func isNearExpansion(l: CT, r: CT, delta: D, cmpType: std.core.String, overloadHack: Bool): Bool
+func isNearExpansion(l: CT, r: CT, delta: D, cmpType: std.core.String, overloadHack: Bool): Bool { /* compiled code */ }
 
 extend Extend <: NearEquatable & NearEquatable {
-    func isNear(obj: Float16, delta: Float16): Bool
+    func isNear(obj: Float16, delta: Float16): Bool { /* compiled code */ }
 
-    func isNear(obj: Float16, delta: std.unittest.RelativeDelta<Float16>): Bool
+    func isNear(obj: Float16, delta: std.unittest.RelativeDelta<Float16>): Bool { /* compiled code */ }
 }
 
 extend Extend <: NearEquatable & NearEquatable {
-    func isNear(obj: Float32, delta: Float32): Bool
+    func isNear(obj: Float32, delta: Float32): Bool { /* compiled code */ }
 
-    func isNear(obj: Float32, delta: std.unittest.RelativeDelta<Float32>): Bool
+    func isNear(obj: Float32, delta: std.unittest.RelativeDelta<Float32>): Bool { /* compiled code */ }
 }
 
 extend Extend <: NearEquatable & NearEquatable {
-    func isNear(obj: Float64, delta: Float64): Bool
+    func isNear(obj: Float64, delta: Float64): Bool { /* compiled code */ }
 
-    func isNear(obj: Float64, delta: std.unittest.RelativeDelta<Float64>): Bool
+    func isNear(obj: Float64, delta: std.unittest.RelativeDelta<Float64>): Bool { /* compiled code */ }
 }
 
-func entryMain(testPackage: std.unittest.TestPackage): Int64
+func entryMain(testPackage: std.unittest.TestPackage): Int64 { /* compiled code */ }
 
-func testRunnerEntryMain: Int64
+func testRunnerEntryMain(): Int64 { /* compiled code */ }
 
 class ModuleExecutionResult <: std.unittest.ResultContainer<std.unittest.TestGroupResult> {
     let moduleName: std.core.String
@@ -1553,9 +1677,9 @@ class ModuleExecutionResult <: std.unittest.ResultContainer<std.unittest.TestGro
 class ResultContainer <: std.core.Object & std.unittest.Result {
     let subResults: std.collection.ArrayList<T>
 
-    func visitChildren(visitor: (std.unittest.Result) -> Unit): Unit
+    func visitChildren(visitor: (std.unittest.Result) -> Unit): Unit { /* compiled code */ }
 
-    func add(child: T): Unit
+    func add(child: T): Unit { /* compiled code */ }
 
     var _details: std.unittest.Details
 
@@ -1563,21 +1687,25 @@ class ResultContainer <: std.core.Object & std.unittest.Result {
 
     var finished: Bool
 
-    prop isFinished: Bool
+    prop isFinished: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop details: std.unittest.Details
+    prop details: std.unittest.Details {
+        get() { /* compiled code */ }
+    }
 
-    func finish: Unit
+    func finish(): Unit { /* compiled code */ }
 
-    func visitAll(visitor: (V) -> Unit): Unit
+    func visitAll(visitor: (V) -> Unit): Unit { /* compiled code */ }
 
-    func visitPassedTests(visitor: (std.unittest.TestCaseResult) -> Unit): Unit
+    func visitPassedTests(visitor: (std.unittest.TestCaseResult) -> Unit): Unit { /* compiled code */ }
 
-    func visitPassedBenches(visitor: (std.unittest.BenchStepEntry) -> Unit): Unit
+    func visitPassedBenches(visitor: (std.unittest.BenchStepEntry) -> Unit): Unit { /* compiled code */ }
 
-    func visitFailedSteps(visitor: (std.unittest.RunStepResult, std.unittest.TestCaseResult) -> Unit): Unit
+    func visitFailedSteps(visitor: (std.unittest.RunStepResult, std.unittest.TestCaseResult) -> Unit): Unit { /* compiled code */ }
 
-    func serializeSubResults: std.unittest.common.DataModelStruct
+    func serializeSubResults(): std.unittest.common.DataModelStruct { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -1593,19 +1721,19 @@ class PackageExecutionResult {
 }
 
 struct TestPackageExecuteCommand <: std.unittest.common.Serializable<std.unittest.TestPackageExecuteCommand> {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestPackageExecuteCommand
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestPackageExecuteCommand { /* compiled code */ }
 
-    func overridingCurrentEnv: std.unittest.TestPackageExecuteCommand
+    func overridingCurrentEnv(): std.unittest.TestPackageExecuteCommand { /* compiled code */ }
 
-    func withJsonConfiguration: std.unittest.TestPackageExecuteCommand
+    func withJsonConfiguration(): std.unittest.TestPackageExecuteCommand { /* compiled code */ }
 
-    func withRunnerOption: std.unittest.TestPackageExecuteCommand
+    func withRunnerOption(): std.unittest.TestPackageExecuteCommand { /* compiled code */ }
 
-    func withArgs(newArgs: std.core.Array<std.core.String>): std.unittest.TestPackageExecuteCommand
+    func withArgs(newArgs: std.core.Array<std.core.String>): std.unittest.TestPackageExecuteCommand { /* compiled code */ }
 
-    func fromCurrentProcess: std.unittest.TestPackageExecuteCommand
+    static func fromCurrentProcess(): std.unittest.TestPackageExecuteCommand { /* compiled code */ }
 
     let command: std.core.String
 
@@ -1633,9 +1761,9 @@ struct ReportCtx {
 }
 
 class PerPackageReporter {
-    func printIntermediateResult(executionResult: std.unittest.PackageExecutionResult): Unit
+    func printIntermediateResult(executionResult: std.unittest.PackageExecutionResult): Unit { /* compiled code */ }
 
-    func dumpPackageReport(executionResult: std.unittest.PackageExecutionResult): std.core.Option<Unit>
+    func dumpPackageReport(executionResult: std.unittest.PackageExecutionResult): std.core.Option<Unit> { /* compiled code */ }
 
     let format: std.core.Option<std.unittest.ReportFormat>
 
@@ -1645,11 +1773,11 @@ class PerPackageReporter {
 }
 
 class TestOutputReporter {
-    func report(pp: std.unittest.common.PrettyPrinter, prefix: std.unittest.common.PrettyText, output: std.unittest.CapturedOutput, success: Bool): std.unittest.common.PrettyPrinter
+    func report(pp: std.unittest.common.PrettyPrinter, prefix: std.unittest.common.PrettyText, output: std.unittest.CapturedOutput, success: Bool): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func fromConfiguration(conf: std.unittest.common.Configuration): std.unittest.TestOutputReporter
+    static func fromConfiguration(conf: std.unittest.common.Configuration): std.unittest.TestOutputReporter { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.unittest.TestOutputReporter
+    static func fromDefaultConfiguration(): std.unittest.TestOutputReporter { /* compiled code */ }
 
     let capture: Bool
 
@@ -1661,7 +1789,7 @@ class TestOutputReporter {
 let EXIT_CODE_ON_TIMEOUT: Int64
 
 struct MainExecutionCtx {
-    func withCommand(command: std.unittest.TestPackageExecuteCommand): std.unittest.MainExecutionCtx
+    func withCommand(command: std.unittest.TestPackageExecuteCommand): std.unittest.MainExecutionCtx { /* compiled code */ }
 
     let nWorkers: Int64
 
@@ -1674,20 +1802,20 @@ struct MainExecutionCtx {
     init(nWorkers: Int64, workersQuota: std.sync.Semaphore, outputReporter: std.unittest.TestOutputReporter, executeCommand: std.unittest.TestPackageExecuteCommand) { /* compiled code */ }
 }
 
-func executeSmart(packageName: std.core.String, tests: std.core.Array<std.unittest.TestSuite>, filterService: std.unittest.FilterService, outputReporter: std.unittest.TestOutputReporter, needStartWorker: Bool): std.unittest.TestGroupResult
+func executeSmart(packageName: std.core.String, tests: std.core.Array<std.unittest.TestSuite>, filterService: std.unittest.FilterService, outputReporter: std.unittest.TestOutputReporter, needStartWorker: Bool): std.unittest.TestGroupResult { /* compiled code */ }
 
-func initWorkersMain(ctx: std.unittest.MainExecutionCtx): std.core.Array<std.unittest.WorkerProcess>
+func initWorkersMain(ctx: std.unittest.MainExecutionCtx): std.core.Array<std.unittest.WorkerProcess> { /* compiled code */ }
 
 class WorkerProcess {
-    func waitCasesRegistration: std.core.Option<Bool>
+    func waitCasesRegistration(): std.core.Option<Bool> { /* compiled code */ }
 
-    func commitCasesRegistrationFailure: std.core.Option<Bool>
+    func commitCasesRegistrationFailure(): std.core.Option<Bool> { /* compiled code */ }
 
-    func create(ctx: std.unittest.MainExecutionCtx, workerId: Int64, progressQueue: std.core.Option<std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress>>, connect: () -> std.unittest.TransportChannel): std.unittest.WorkerProcess
+    static func create(ctx: std.unittest.MainExecutionCtx, workerId: Int64, progressQueue: std.core.Option<std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress>>, connect: () -> std.unittest.TransportChannel): std.unittest.WorkerProcess { /* compiled code */ }
 
-    func createAndRegister(workerId: Int64, ctx: std.unittest.MainExecutionCtx): std.unittest.WorkerProcess
+    static func createAndRegister(workerId: Int64, ctx: std.unittest.MainExecutionCtx): std.unittest.WorkerProcess { /* compiled code */ }
 
-    func executeRestarting(initialWorker: std.unittest.WorkerProcess, ctx: std.unittest.MainExecutionCtx): std.unittest.ExecuteRestartingResult
+    static func executeRestarting(initialWorker: std.unittest.WorkerProcess, ctx: std.unittest.MainExecutionCtx): std.unittest.ExecuteRestartingResult { /* compiled code */ }
 
     let process: std.unittest.WrappedProcess
 
@@ -1700,30 +1828,32 @@ class WorkerProcess {
     let workerId: Int64
 }
 
-func executeMain(workers: std.core.Array<std.unittest.WorkerProcess>, packageName: std.core.String, ctx: std.unittest.MainExecutionCtx): std.unittest.TestGroupResult
+func executeMain(workers: std.core.Array<std.unittest.WorkerProcess>, packageName: std.core.String, ctx: std.unittest.MainExecutionCtx): std.unittest.TestGroupResult { /* compiled code */ }
 
-func uniqueValues(collection: std.core.Collection<T>): std.core.Array<T>
+func uniqueValues(collection: std.core.Collection<T>): std.core.Array<T> { /* compiled code */ }
 
-func executeWorker(packageName: std.core.String, suites: std.core.Array<std.unittest.TestSuite>, filterService: std.unittest.FilterService): std.unittest.TestGroupResult
+func executeWorker(packageName: std.core.String, suites: std.core.Array<std.unittest.TestSuite>, filterService: std.unittest.FilterService): std.unittest.TestGroupResult { /* compiled code */ }
 
 enum TestProcessKind {
     | Main
 
     | Worker(Int64, Int64, Int64, UInt16)
 
-    func fromDefaultConfiguration: std.unittest.TestProcessKind
+    static func fromDefaultConfiguration(): std.unittest.TestProcessKind { /* compiled code */ }
 
-    prop isWorker: Bool
+    prop isWorker: Bool {
+        get() { /* compiled code */ }
+    }
 }
 
 struct NonTestOutputs <: std.core.Hashable {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
     init() { /* compiled code */ }
 
     init(pair: (std.unittest.CapturedOutput, std.unittest.CapturedOutput)) { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
     let outputBeforeTests: std.unittest.CapturedOutput
 
@@ -1737,7 +1867,7 @@ struct CapturedOutput {
 
     init(stdout: std.core.Array<UInt8>, stderr: std.core.Array<UInt8>) { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
     let stdout: std.core.String
 
@@ -1755,9 +1885,11 @@ enum ExecuteRestartingResult {
 class TestProcessError <: std.core.Object & std.unittest.Result & std.core.Hashable {
     let _details: std.unittest.Details
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    prop details: std.unittest.Details
+    prop details: std.unittest.Details {
+        get() { /* compiled code */ }
+    }
 
     let code: Int64
 
@@ -1768,17 +1900,19 @@ interface UTProgress {
 }
 
 class TransportChannel <: std.core.Object & std.core.Resource {
-    prop port: UInt16
+    prop port: UInt16 {
+        get() { /* compiled code */ }
+    }
 
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 
-    func send(part: std.unittest.ExecutionResultPart): Unit
+    func send(part: std.unittest.ExecutionResultPart): Unit { /* compiled code */ }
 
-    func receive(limit: std.core.Option<UInt64>): std.core.Iterator<std.unittest.ExecutionResultPart>
+    func receive(limit: std.core.Option<UInt64>): std.core.Iterator<std.unittest.ExecutionResultPart> { /* compiled code */ }
 
-    func delimitOutput: Unit
+    func delimitOutput(): Unit { /* compiled code */ }
 
     let socket: std.net.TcpSocket
 
@@ -1792,13 +1926,13 @@ class TransportChannel <: std.core.Object & std.core.Resource {
 struct WrappedProcess {
     let status: std.sync.AtomicOptionReference<std.unittest.CapturedProcessResult>
 
-    func wait: Int64
+    func wait(): Int64 { /* compiled code */ }
 
-    func terminate: Unit
+    func terminate(): Unit { /* compiled code */ }
 
-    func stdout: std.core.Array<UInt8>
+    func stdout(): std.core.Array<UInt8> { /* compiled code */ }
 
-    func stderr: std.core.Array<UInt8>
+    func stderr(): std.core.Array<UInt8> { /* compiled code */ }
 
     let process: std.process.SubProcess
 
@@ -1810,39 +1944,47 @@ struct WrappedProcess {
 }
 
 class ExecutionResultPart <: std.core.Object & std.unittest.common.Serializable<std.unittest.ExecutionResultPart> {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.ExecutionResultPart
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.ExecutionResultPart { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
 class ExecutionResultHeader <: std.unittest.ExecutionResultPart {
-    prop suiteId: std.unittest.TestSuiteId
+    prop suiteId: std.unittest.TestSuiteId {
+        get() { /* compiled code */ }
+    }
 
-    prop suiteInfo: std.unittest.TestSuiteReportInfo
+    prop suiteInfo: std.unittest.TestSuiteReportInfo {
+        get() { /* compiled code */ }
+    }
 
-    prop startTime: std.time.DateTime
+    prop startTime: std.time.DateTime {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct TestSuiteId <: std.unittest.common.Serializable<std.unittest.TestSuiteId> & std.core.Hashable & std.core.Equatable<std.unittest.TestSuiteId> & std.core.ToString {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestSuiteId
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestSuiteId { /* compiled code */ }
 
-    operator func ==(other: std.unittest.TestSuiteId): Bool
+    operator func ==(other: std.unittest.TestSuiteId): Bool { /* compiled code */ }
 
-    operator func !=(other: std.unittest.TestSuiteId): Bool
+    operator func !=(other: std.unittest.TestSuiteId): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func fromTestSuite(groupName: std.core.String, testSuite: std.unittest.TestSuite): std.unittest.TestSuiteId
+    static func fromTestSuite(groupName: std.core.String, testSuite: std.unittest.TestSuite): std.unittest.TestSuiteId { /* compiled code */ }
 
-    prop isFromTopLevelFunc: Bool
+    prop isFromTopLevelFunc: Bool {
+        get() { /* compiled code */ }
+    }
 
     let groupName: std.core.String
 
@@ -1852,11 +1994,17 @@ struct TestSuiteId <: std.unittest.common.Serializable<std.unittest.TestSuiteId>
 }
 
 class TestCaseExecutionResultHeader <: std.unittest.ExecutionResultHeader {
-    prop suiteId: std.unittest.TestSuiteId
+    override prop suiteId: std.unittest.TestSuiteId {
+        get() { /* compiled code */ }
+    }
 
-    prop suiteInfo: std.unittest.TestSuiteReportInfo
+    override prop suiteInfo: std.unittest.TestSuiteReportInfo {
+        get() { /* compiled code */ }
+    }
 
-    prop startTime: std.time.DateTime
+    override prop startTime: std.time.DateTime {
+        get() { /* compiled code */ }
+    }
 
     let caseId: std.unittest.TestCaseId
 
@@ -1870,11 +2018,17 @@ class TestCaseExecutionResultHeader <: std.unittest.ExecutionResultHeader {
 }
 
 class LifecycleExecutionResultHeader <: std.unittest.ExecutionResultHeader {
-    prop suiteId: std.unittest.TestSuiteId
+    override prop suiteId: std.unittest.TestSuiteId {
+        get() { /* compiled code */ }
+    }
 
-    prop suiteInfo: std.unittest.TestSuiteReportInfo
+    override prop suiteInfo: std.unittest.TestSuiteReportInfo {
+        get() { /* compiled code */ }
+    }
 
-    prop startTime: std.time.DateTime
+    override prop startTime: std.time.DateTime {
+        get() { /* compiled code */ }
+    }
 
     let suiteId_: std.unittest.TestSuiteId
 
@@ -1896,9 +2050,9 @@ enum LStep <: std.core.ToString {
 
     | AfterEach
 
-    operator func ==(other: std.unittest.LStep): Bool
+    operator func ==(other: std.unittest.LStep): Bool { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 class ExecutionResultBody <: std.unittest.ExecutionResultPart {
@@ -1925,13 +2079,13 @@ class ExecutionPermitPart <: std.unittest.ExecutionResultPart {
     init() { /* compiled code */ }
 }
 
-func failExpect(message: std.core.String): Unit
+func failExpect(message: std.core.String): Unit { /* compiled code */ }
 
-func fail(message: std.core.String): Nothing
+func fail(message: std.core.String): Nothing { /* compiled code */ }
 
-func assertCaughtUnexpectedE(message: std.core.String, expectedExceptions: std.core.String, caughtException: std.core.String, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Nothing
+func assertCaughtUnexpectedE(message: std.core.String, expectedExceptions: std.core.String, caughtException: std.core.String, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Nothing { /* compiled code */ }
 
-func expectCaughtUnexpectedE(message: std.core.String, expectedExceptions: std.core.String, caughtException: std.core.String, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit
+func expectCaughtUnexpectedE(message: std.core.String, expectedExceptions: std.core.String, caughtException: std.core.String, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit { /* compiled code */ }
 
 let SYM_DOT: std.core.String
 
@@ -1956,7 +2110,7 @@ let OP_EXCLUDE_TAGS_KEY: std.core.String
 let OP_BENCH: std.core.String
 
 struct CaseFilterKey {
-    func fromTestCase(suiteId: std.unittest.TestSuiteId, cob: std.unittest.CaseOrBench, config: std.core.Option<std.unittest.common.Configuration>): std.unittest.CaseFilterKey
+    static func fromTestCase(suiteId: std.unittest.TestSuiteId, cob: std.unittest.CaseOrBench, config: std.core.Option<std.unittest.common.Configuration>): std.unittest.CaseFilterKey { /* compiled code */ }
 
     let caseId: std.unittest.TestCaseId
 
@@ -1968,11 +2122,11 @@ struct CaseFilterKey {
 }
 
 class BenchTestFilter <: std.core.Object & std.unittest.FrameworkTestFilter {
-    func shouldSkipTestClass(_: std.unittest.SuiteFilterKey): Bool
+    override func shouldSkipTestClass(_: std.unittest.SuiteFilterKey): Bool { /* compiled code */ }
 
-    func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool
+    override func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.unittest.BenchTestFilter
+    static func fromDefaultConfiguration(): std.unittest.BenchTestFilter { /* compiled code */ }
 
     let benchEnabled: Bool
 
@@ -1982,11 +2136,15 @@ class BenchTestFilter <: std.core.Object & std.unittest.FrameworkTestFilter {
 struct FilterOption {
     let ACCEPTING: std.unittest.FilterOption
 
-    func fromString(str: std.core.String): std.unittest.FilterOption
+    static func fromString(str: std.core.String): std.unittest.FilterOption { /* compiled code */ }
 
-    prop classFilter: std.core.String
+    prop classFilter: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop funcFilter: std.core.String
+    prop funcFilter: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     let _classRegex: std.core.String
 
@@ -2000,7 +2158,7 @@ struct FilterOption {
 }
 
 class TagsFilterOption {
-    func fromString(input: std.core.String): std.unittest.TagsFilterOption
+    static func fromString(input: std.core.String): std.unittest.TagsFilterOption { /* compiled code */ }
 
     let tags: std.collection.HashSet<std.core.String>
 
@@ -2016,11 +2174,11 @@ class WorkerTestFilter <: std.core.Object & std.unittest.FrameworkTestFilter {
 
     var testCaseIdx: Int64
 
-    func register(filterKey: std.unittest.SuiteFilterKey, suite: std.unittest.TestSuite): Unit
+    override func register(filterKey: std.unittest.SuiteFilterKey, suite: std.unittest.TestSuite): Unit { /* compiled code */ }
 
-    func shouldSkipTestClass(filterKey: std.unittest.SuiteFilterKey): Bool
+    override func shouldSkipTestClass(filterKey: std.unittest.SuiteFilterKey): Bool { /* compiled code */ }
 
-    func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool
+    override func shouldSkipTestCase(filterKey: std.unittest.CaseFilterKey): Bool { /* compiled code */ }
 
     let defaultFilter: std.unittest.FrameworkTestFilter
 
@@ -2044,7 +2202,7 @@ enum LaunchSource {
 
     | TestRunner
 
-    func fromDefaultConfiguration: std.unittest.LaunchSource
+    static func fromDefaultConfiguration(): std.unittest.LaunchSource { /* compiled code */ }
 }
 
 class Framework {
@@ -2056,29 +2214,29 @@ class Framework {
 
     var currentlyRunning: std.unittest.RunContext
 
-    func launch(api: std.unittest.LaunchApi, hasWorkersInSetup: Bool, progressQueue: std.core.Option<std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress>>, body: () -> T): T
+    static func launch(api: std.unittest.LaunchApi, hasWorkersInSetup: Bool, progressQueue: std.core.Option<std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress>>, body: () -> T): T { /* compiled code */ }
 
-    func isExecuting: Bool
+    static func isExecuting(): Bool { /* compiled code */ }
 
-    func runStepBody(stepKind: std.unittest.StepKind, info: std.unittest.StepInfo, body: () -> Unit): std.unittest.RunStepResult
+    static func runStepBody(stepKind: std.unittest.StepKind, info: std.unittest.StepInfo, body: () -> Unit): std.unittest.RunStepResult { /* compiled code */ }
 
-    func runCatching(f: () -> Unit): Unit
+    static func runCatching(f: () -> Unit): Unit { /* compiled code */ }
 
-    func withCurrentContext(f: (std.unittest.RunContext) -> T): T
+    static func withCurrentContext(f: (std.unittest.RunContext) -> T): T { /* compiled code */ }
 
-    func abortCurrentStep: std.core.Option<std.unittest.RunStepResult>
+    static func abortCurrentStep(): std.core.Option<std.unittest.RunStepResult> { /* compiled code */ }
 
-    func collectUnattachedFailures: std.collection.ArrayList<std.unittest.CheckResult>
+    static func collectUnattachedFailures(): std.collection.ArrayList<std.unittest.CheckResult> { /* compiled code */ }
 
-    func onTestCasesRegistered(packageName: std.core.String, casesCount: UInt64): Unit
+    static func onTestCasesRegistered(packageName: std.core.String, casesCount: UInt64): Unit { /* compiled code */ }
 
-    func onLifecycleStart(suiteId: std.unittest.TestSuiteId, suiteInfo: std.unittest.TestSuiteReportInfo, step: std.unittest.LStep): Unit
+    static func onLifecycleStart(suiteId: std.unittest.TestSuiteId, suiteInfo: std.unittest.TestSuiteReportInfo, step: std.unittest.LStep): Unit { /* compiled code */ }
 
-    func onTestCaseStarted(caseId: std.unittest.TestCaseId, caseInfo: std.unittest.TestCaseReportInfo, suiteInfo: std.unittest.TestSuiteReportInfo): Unit
+    static func onTestCaseStarted(caseId: std.unittest.TestCaseId, caseInfo: std.unittest.TestCaseReportInfo, suiteInfo: std.unittest.TestSuiteReportInfo): Unit { /* compiled code */ }
 
-    func onFinished(result: std.unittest.TestCaseResult): Unit
+    static func onFinished(result: std.unittest.TestCaseResult): Unit { /* compiled code */ }
 
-    func initWorker(ctx: std.unittest.MainExecutionCtx, workerId: Int64): std.unittest.WorkerProcess
+    static func initWorker(ctx: std.unittest.MainExecutionCtx, workerId: Int64): std.unittest.WorkerProcess { /* compiled code */ }
 }
 
 enum Transport <: std.core.Resource {
@@ -2086,15 +2244,19 @@ enum Transport <: std.core.Resource {
 
     | TMain(std.unittest.TransportMain)
 
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    prop channel: std.core.Option<std.unittest.TransportChannel>
+    prop channel: std.core.Option<std.unittest.TransportChannel> {
+        get() { /* compiled code */ }
+    }
 
-    prop manager: std.core.Option<std.unittest.TransportMain>
+    prop manager: std.core.Option<std.unittest.TransportMain> {
+        get() { /* compiled code */ }
+    }
 
-    func fromDefaultConfiguration: std.unittest.Transport
+    static func fromDefaultConfiguration(): std.unittest.Transport { /* compiled code */ }
 }
 
 class RunContext {
@@ -2104,17 +2266,17 @@ class RunContext {
 
     var passedChecks: Int64
 
-    func checkFailed(c: std.unittest.CheckResult): Unit
+    func checkFailed(c: std.unittest.CheckResult): Unit { /* compiled code */ }
 
-    func onException(e: std.core.Exception): Unit
+    func onException(e: std.core.Exception): Unit { /* compiled code */ }
 
-    func storeCheckResult(check: std.unittest.CheckResult): Unit
+    func storeCheckResult(check: std.unittest.CheckResult): Unit { /* compiled code */ }
 
-    func checkPassed: Unit
+    func checkPassed(): Unit { /* compiled code */ }
 
-    func suppressIfHasFailures: Unit
+    func suppressIfHasFailures(): Unit { /* compiled code */ }
 
-    func hasFailures: Bool
+    func hasFailures(): Bool { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -2130,7 +2292,7 @@ enum StepKind {
 
     | UserCode
 
-    func isClassLifecycle: Bool
+    func isClassLifecycle(): Bool { /* compiled code */ }
 }
 
 enum StepInfo {
@@ -2142,7 +2304,7 @@ enum StepInfo {
 }
 
 class OutsideOfFrameworkContext <: std.unittest.RunContext {
-    func storeCheckResult(_: std.unittest.CheckResult): Unit
+    func storeCheckResult(_: std.unittest.CheckResult): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -2154,9 +2316,9 @@ class FrameworkInternalsContext <: std.unittest.RunContext {
 class RunStepContext <: std.unittest.RunContext {
     var startTime: std.time.DateTime
 
-    func checkFailed(c: std.unittest.CheckResult): Unit
+    func checkFailed(c: std.unittest.CheckResult): Unit { /* compiled code */ }
 
-    func finishStep: std.unittest.RunStepResult
+    func finishStep(): std.unittest.RunStepResult { /* compiled code */ }
 
     var stepKind: std.unittest.StepKind
 
@@ -2217,174 +2379,174 @@ struct Float64Entry {
     init(left: Float64, right: Float64) { /* compiled code */ }
 }
 
-func CJ_MICROFUZZ_FLIP_BIT_FLOAT(value: Float32, bit: UInt8): Float32
+foreign func CJ_MICROFUZZ_FLIP_BIT_FLOAT(value: Float32, bit: UInt8): Float32
 
-func CJ_MICROFUZZ_FLIP_BIT_DOUBLE(value: Float64, bit: UInt8): Float64
+foreign func CJ_MICROFUZZ_FLIP_BIT_DOUBLE(value: Float64, bit: UInt8): Float64
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_UINT8(result: CPointer<std.unittest.UInt8Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_UINT8(result: CPointer<std.unittest.UInt8Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_UINT16(result: CPointer<std.unittest.UInt16Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_UINT16(result: CPointer<std.unittest.UInt16Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_UINT32(result: CPointer<std.unittest.UInt32Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_UINT32(result: CPointer<std.unittest.UInt32Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_UINT64(result: CPointer<std.unittest.UInt64Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_UINT64(result: CPointer<std.unittest.UInt64Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FLOAT(result: CPointer<std.unittest.Float32Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FLOAT(result: CPointer<std.unittest.Float32Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_DOUBLE(result: CPointer<std.unittest.Float64Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_DOUBLE(result: CPointer<std.unittest.Float64Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_UINT8(key: UInt8, result: CPointer<std.unittest.UInt8Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_UINT8(key: UInt8, result: CPointer<std.unittest.UInt8Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_UINT16(key: UInt16, result: CPointer<std.unittest.UInt16Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_UINT16(key: UInt16, result: CPointer<std.unittest.UInt16Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_UINT32(key: UInt32, result: CPointer<std.unittest.UInt32Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_UINT32(key: UInt32, result: CPointer<std.unittest.UInt32Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_UINT64(key: UInt64, result: CPointer<std.unittest.UInt64Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_UINT64(key: UInt64, result: CPointer<std.unittest.UInt64Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_FLOAT(key: Float32, result: CPointer<std.unittest.Float32Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_FLOAT(key: Float32, result: CPointer<std.unittest.Float32Entry>): Unit
 
-func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_DOUBLE(key: Float64, result: CPointer<std.unittest.Float64Entry>): Unit
+foreign func CJ_MICROFUZZ_RANDOM_RECENT_CMP_VALUE_FOR_KEY_DOUBLE(key: Float64, result: CPointer<std.unittest.Float64Entry>): Unit
 
-func CJ_MICROFUZZ_ENABLE_TRACE: Unit
+foreign func CJ_MICROFUZZ_ENABLE_TRACE(): Unit
 
-func CJ_MICROFUZZ_DISABLE_TRACE: Unit
+foreign func CJ_MICROFUZZ_DISABLE_TRACE(): Unit
 
-func CJ_MICROFUZZ_RESET_LOCAL_COVERAGE_INFO: Unit
+foreign func CJ_MICROFUZZ_RESET_LOCAL_COVERAGE_INFO(): Unit
 
-func CJ_MICROFUZZ_RESET_ALL_COVERAGE_INFO: Unit
+foreign func CJ_MICROFUZZ_RESET_ALL_COVERAGE_INFO(): Unit
 
-func CJ_MICROFUZZ_HAS_NEW_COVERAGE: Bool
+foreign func CJ_MICROFUZZ_HAS_NEW_COVERAGE(): Bool
 
-func CJ_MICROFUZZ_IS_INITIALIZED: Bool
+foreign func CJ_MICROFUZZ_IS_INITIALIZED(): Bool
 
-func CJ_MICROFUZZ_GLOBAL_EDGE_COVERAGE_EST: Float64
+foreign func CJ_MICROFUZZ_GLOBAL_EDGE_COVERAGE_EST(): Float64
 
-func CJ_MICROFUZZ_SET_DBG_CALLBACK(callback: (CString, CString, UInt64, UInt64) -> Unit): Unit
+foreign func CJ_MICROFUZZ_SET_DBG_CALLBACK(callback: (CString, CString, UInt64, UInt64) -> Unit): Unit
 
-func printMessage(mes: CString, t: CString, v1: UInt64, v2: UInt64): Unit
+func printMessage(mes: CString, t: CString, v1: UInt64, v2: UInt64): Unit { /* compiled code */ }
 
-func currentCoverageEst: Float64
+func currentCoverageEst(): Float64 { /* compiled code */ }
 
 interface Torcable {
-    func randomRecentEntry: std.core.Option<(T, T)>
+    static func randomRecentEntry(): std.core.Option<(T, T)> { /* compiled code */ }
 
-    func randomRecentValueComparedTo(value: T): std.core.Option<T>
+    static func randomRecentValueComparedTo(value: T): std.core.Option<T> { /* compiled code */ }
 
-    func nextFrom(random: std.random.Random): T
+    static func nextFrom(random: std.random.Random): T { /* compiled code */ }
 
-    func suggestedFrom(random: std.random.Random): T
+    static func suggestedFrom(random: std.random.Random): T { /* compiled code */ }
 
-    func isZero: Bool
+    func isZero(): Bool { /* compiled code */ }
 
-    func bitFlip(at: UInt8): T
+    func bitFlip(at: UInt8): T { /* compiled code */ }
 
-    operator func +(_: UInt8): T
+    operator func +(_: UInt8): T { /* compiled code */ }
 
-    operator func -(_: UInt8): T
+    operator func -(_: UInt8): T { /* compiled code */ }
 }
 
 extend Extend <: Torcable {
-    func randomRecentEntry: std.core.Option<(UInt8, UInt8)>
+    static func randomRecentEntry(): std.core.Option<(UInt8, UInt8)> { /* compiled code */ }
 
-    func randomRecentValueComparedTo(value: UInt8): std.core.Option<UInt8>
+    static func randomRecentValueComparedTo(value: UInt8): std.core.Option<UInt8> { /* compiled code */ }
 
-    func nextFrom(random: std.random.Random): UInt8
+    static func nextFrom(random: std.random.Random): UInt8 { /* compiled code */ }
 
-    func suggestedFrom(random: std.random.Random): UInt8
+    static func suggestedFrom(random: std.random.Random): UInt8 { /* compiled code */ }
 
-    func isZero: Bool
+    func isZero(): Bool { /* compiled code */ }
 
-    func bitFlip(at: UInt8): UInt8
+    func bitFlip(at: UInt8): UInt8 { /* compiled code */ }
 }
 
 extend Extend <: Torcable {
-    func randomRecentEntry: std.core.Option<(UInt16, UInt16)>
+    static func randomRecentEntry(): std.core.Option<(UInt16, UInt16)> { /* compiled code */ }
 
-    func randomRecentValueComparedTo(value: UInt16): std.core.Option<UInt16>
+    static func randomRecentValueComparedTo(value: UInt16): std.core.Option<UInt16> { /* compiled code */ }
 
-    func nextFrom(random: std.random.Random): UInt16
+    static func nextFrom(random: std.random.Random): UInt16 { /* compiled code */ }
 
-    func suggestedFrom(random: std.random.Random): UInt16
+    static func suggestedFrom(random: std.random.Random): UInt16 { /* compiled code */ }
 
-    func isZero: Bool
+    func isZero(): Bool { /* compiled code */ }
 
-    func bitFlip(at: UInt8): UInt16
+    func bitFlip(at: UInt8): UInt16 { /* compiled code */ }
 
-    operator func +(arg: UInt8): UInt16
+    operator func +(arg: UInt8): UInt16 { /* compiled code */ }
 
-    operator func -(arg: UInt8): UInt16
+    operator func -(arg: UInt8): UInt16 { /* compiled code */ }
 }
 
 extend Extend <: Torcable {
-    func randomRecentEntry: std.core.Option<(UInt32, UInt32)>
+    static func randomRecentEntry(): std.core.Option<(UInt32, UInt32)> { /* compiled code */ }
 
-    func randomRecentValueComparedTo(value: UInt32): std.core.Option<UInt32>
+    static func randomRecentValueComparedTo(value: UInt32): std.core.Option<UInt32> { /* compiled code */ }
 
-    func nextFrom(random: std.random.Random): UInt32
+    static func nextFrom(random: std.random.Random): UInt32 { /* compiled code */ }
 
-    func suggestedFrom(random: std.random.Random): UInt32
+    static func suggestedFrom(random: std.random.Random): UInt32 { /* compiled code */ }
 
-    func isZero: Bool
+    func isZero(): Bool { /* compiled code */ }
 
-    func bitFlip(at: UInt8): UInt32
+    func bitFlip(at: UInt8): UInt32 { /* compiled code */ }
 
-    operator func +(arg: UInt8): UInt32
+    operator func +(arg: UInt8): UInt32 { /* compiled code */ }
 
-    operator func -(arg: UInt8): UInt32
+    operator func -(arg: UInt8): UInt32 { /* compiled code */ }
 }
 
 extend Extend <: Torcable {
-    func randomRecentEntry: std.core.Option<(UInt64, UInt64)>
+    static func randomRecentEntry(): std.core.Option<(UInt64, UInt64)> { /* compiled code */ }
 
-    func randomRecentValueComparedTo(value: UInt64): std.core.Option<UInt64>
+    static func randomRecentValueComparedTo(value: UInt64): std.core.Option<UInt64> { /* compiled code */ }
 
-    func nextFrom(random: std.random.Random): UInt64
+    static func nextFrom(random: std.random.Random): UInt64 { /* compiled code */ }
 
-    func suggestedFrom(random: std.random.Random): UInt64
+    static func suggestedFrom(random: std.random.Random): UInt64 { /* compiled code */ }
 
-    func isZero: Bool
+    func isZero(): Bool { /* compiled code */ }
 
-    func bitFlip(at: UInt8): UInt64
+    func bitFlip(at: UInt8): UInt64 { /* compiled code */ }
 
-    operator func +(arg: UInt8): UInt64
+    operator func +(arg: UInt8): UInt64 { /* compiled code */ }
 
-    operator func -(arg: UInt8): UInt64
+    operator func -(arg: UInt8): UInt64 { /* compiled code */ }
 }
 
 extend Extend <: Torcable {
-    func randomRecentEntry: std.core.Option<(Float32, Float32)>
+    static func randomRecentEntry(): std.core.Option<(Float32, Float32)> { /* compiled code */ }
 
-    func randomRecentValueComparedTo(value: Float32): std.core.Option<Float32>
+    static func randomRecentValueComparedTo(value: Float32): std.core.Option<Float32> { /* compiled code */ }
 
-    func nextFrom(random: std.random.Random): Float32
+    static func nextFrom(random: std.random.Random): Float32 { /* compiled code */ }
 
-    func suggestedFrom(random: std.random.Random): Float32
+    static func suggestedFrom(random: std.random.Random): Float32 { /* compiled code */ }
 
-    func isZero: Bool
+    func isZero(): Bool { /* compiled code */ }
 
-    func bitFlip(at: UInt8): Float32
+    func bitFlip(at: UInt8): Float32 { /* compiled code */ }
 
-    operator func +(arg: UInt8): Float32
+    operator func +(arg: UInt8): Float32 { /* compiled code */ }
 
-    operator func -(arg: UInt8): Float32
+    operator func -(arg: UInt8): Float32 { /* compiled code */ }
 }
 
 extend Extend <: Torcable {
-    func randomRecentEntry: std.core.Option<(Float64, Float64)>
+    static func randomRecentEntry(): std.core.Option<(Float64, Float64)> { /* compiled code */ }
 
-    func randomRecentValueComparedTo(value: Float64): std.core.Option<Float64>
+    static func randomRecentValueComparedTo(value: Float64): std.core.Option<Float64> { /* compiled code */ }
 
-    func nextFrom(random: std.random.Random): Float64
+    static func nextFrom(random: std.random.Random): Float64 { /* compiled code */ }
 
-    func suggestedFrom(random: std.random.Random): Float64
+    static func suggestedFrom(random: std.random.Random): Float64 { /* compiled code */ }
 
-    func isZero: Bool
+    func isZero(): Bool { /* compiled code */ }
 
-    func bitFlip(at: UInt8): Float64
+    func bitFlip(at: UInt8): Float64 { /* compiled code */ }
 
-    operator func +(arg: UInt8): Float64
+    operator func +(arg: UInt8): Float64 { /* compiled code */ }
 
-    operator func -(arg: UInt8): Float64
+    operator func -(arg: UInt8): Float64 { /* compiled code */ }
 }
 
 enum Mutation {
@@ -2400,15 +2562,15 @@ enum Mutation {
 
     | Sub(UInt8)
 
-    func apply(at: Int64, values: std.collection.ArrayList<T>): Unit
+    func apply(at: Int64, values: std.collection.ArrayList<T>): Unit { /* compiled code */ }
 }
 
 class Mutator {
-    func randomRecentValue: std.core.Option<T>
+    func randomRecentValue(): std.core.Option<T> { /* compiled code */ }
 
-    func randomRecentCmp(value: T): std.core.Option<T>
+    func randomRecentCmp(value: T): std.core.Option<T> { /* compiled code */ }
 
-    func randomMutation(temperature: UInt8, value: T): std.core.Option<std.unittest.Mutation<T>>
+    func randomMutation(temperature: UInt8, value: T): std.core.Option<std.unittest.Mutation<T>> { /* compiled code */ }
 
     let random: std.random.Random
 
@@ -2418,13 +2580,13 @@ class Mutator {
 class MutatingRandomValueStream {
     var currentIndex: Int64
 
-    func nextUniform(random: std.random.Random): T
+    func nextUniform(random: std.random.Random): T { /* compiled code */ }
 
-    func next(random: std.random.Random, temperature: UInt8, mutator: std.unittest.Mutator): T
+    func next(random: std.random.Random, temperature: UInt8, mutator: std.unittest.Mutator): T { /* compiled code */ }
 
-    func reset: std.unittest.MutatingRandomValueStream<T>
+    func reset(): std.unittest.MutatingRandomValueStream<T> { /* compiled code */ }
 
-    func freeze: std.unittest.MutatingRandomValueStream<T>
+    func freeze(): std.unittest.MutatingRandomValueStream<T> { /* compiled code */ }
 
     let values: std.collection.ArrayList<T>
 
@@ -2436,51 +2598,51 @@ class CovRandomSource <: std.core.Object & std.unittest.prop_test.RandomSource {
 
     init(seed: UInt64, temperature: UInt8, mutator: std.unittest.Mutator) { /* compiled code */ }
 
-    func copy(seed: UInt64, temperature: UInt8): std.unittest.CovRandomSource
+    func copy(seed: UInt64, temperature: UInt8): std.unittest.CovRandomSource { /* compiled code */ }
 
-    func freeze: std.unittest.CovRandomSource
+    func freeze(): std.unittest.CovRandomSource { /* compiled code */ }
 
-    func suggestBool: Bool
+    override func suggestBool(): Bool { /* compiled code */ }
 
-    func suggestUInt8: UInt8
+    override func suggestUInt8(): UInt8 { /* compiled code */ }
 
-    func suggestUInt16: UInt16
+    override func suggestUInt16(): UInt16 { /* compiled code */ }
 
-    func suggestUInt32: UInt32
+    override func suggestUInt32(): UInt32 { /* compiled code */ }
 
-    func suggestUInt64: UInt64
+    override func suggestUInt64(): UInt64 { /* compiled code */ }
 
-    func suggestInt8: Int8
+    override func suggestInt8(): Int8 { /* compiled code */ }
 
-    func suggestInt16: Int16
+    override func suggestInt16(): Int16 { /* compiled code */ }
 
-    func suggestInt32: Int32
+    override func suggestInt32(): Int32 { /* compiled code */ }
 
-    func suggestInt64: Int64
+    override func suggestInt64(): Int64 { /* compiled code */ }
 
-    func nextFloat16: Float16
+    override func nextFloat16(): Float16 { /* compiled code */ }
 
-    func nextFloat32: Float32
+    override func nextFloat32(): Float32 { /* compiled code */ }
 
-    func nextFloat64: Float64
+    override func nextFloat64(): Float64 { /* compiled code */ }
 
-    func suggestFloat16: Float16
+    override func suggestFloat16(): Float16 { /* compiled code */ }
 
-    func suggestFloat32: Float32
+    override func suggestFloat32(): Float32 { /* compiled code */ }
 
-    func suggestFloat64: Float64
+    override func suggestFloat64(): Float64 { /* compiled code */ }
 
     var gaussian: std.unittest.GaussianGenerator
 
-    func nextGaussianFloat64(mean: Float64, sigma: Float64): Float64
+    override func nextGaussianFloat64(mean: Float64, sigma: Float64): Float64 { /* compiled code */ }
 
-    func nextUInt8: UInt8
+    override func nextUInt8(): UInt8 { /* compiled code */ }
 
-    func nextUInt16: UInt16
+    override func nextUInt16(): UInt16 { /* compiled code */ }
 
-    func nextUInt32: UInt32
+    override func nextUInt32(): UInt32 { /* compiled code */ }
 
-    func nextUInt64: UInt64
+    override func nextUInt64(): UInt64 { /* compiled code */ }
 
     let seed: UInt64
 
@@ -2504,7 +2666,7 @@ class CovRandomSource <: std.core.Object & std.unittest.prop_test.RandomSource {
 class GaussianGenerator {
     var cached: std.core.Option<Float64>
 
-    func next(random: std.unittest.prop_test.RandomSource): Float64
+    func next(random: std.unittest.prop_test.RandomSource): Float64 { /* compiled code */ }
 
     let mean: Float64
 
@@ -2514,369 +2676,549 @@ class GaussianGenerator {
 }
 
 class CoverageInfo {
-    func newCoverageDiscovered: Bool
+    static func newCoverageDiscovered(): Bool { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func printUnittestHelpPageIfRequested: Bool
+func printUnittestHelpPageIfRequested(): Bool { /* compiled code */ }
 
 struct KeyHelp <: std.unittest.common.KeyFor<Bool> {
-    prop help: std.unittest.KeyHelp
+    static prop help: std.unittest.KeyHelp {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyNoColor <: std.unittest.common.KeyFor<Bool> {
-    prop noColor: std.unittest.KeyNoColor
+    static prop noColor: std.unittest.KeyNoColor {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyFromTopLevel <: std.unittest.common.KeyFor<Bool> {
-    prop fromTopLevel: std.unittest.KeyFromTopLevel
+    static prop fromTopLevel: std.unittest.KeyFromTopLevel {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyRandomSeed <: std.unittest.common.KeyFor<Int64> {
-    prop randomSeed: std.unittest.KeyRandomSeed
+    static prop randomSeed: std.unittest.KeyRandomSeed {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyWarmup <: std.unittest.common.KeyFor<Int64> & std.unittest.common.KeyFor<std.core.Duration> {
-    prop warmup: std.unittest.KeyWarmup
+    static prop warmup: std.unittest.KeyWarmup {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyMinDuration <: std.unittest.common.KeyFor<std.core.Duration> {
-    prop minDuration: std.unittest.KeyMinDuration
+    static prop minDuration: std.unittest.KeyMinDuration {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyExplicitGC <: std.unittest.common.KeyFor<std.unittest.ExplicitGcType> {
-    prop explicitGC: std.unittest.KeyExplicitGC
+    static prop explicitGC: std.unittest.KeyExplicitGC {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyMinBatches <: std.unittest.common.KeyFor<Int64> {
-    prop minBatches: std.unittest.KeyMinBatches
+    static prop minBatches: std.unittest.KeyMinBatches {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyBatchSize <: std.unittest.common.KeyFor<Int64> & std.unittest.common.KeyFor<std.core.Range<Int64>> {
-    prop batchSize: std.unittest.KeyBatchSize
+    static prop batchSize: std.unittest.KeyBatchSize {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyParallel <: std.unittest.common.KeyFor<Bool> & std.unittest.common.KeyFor<std.core.String> & std.unittest.common.KeyFor<Int64> {
-    prop parallel: std.unittest.KeyParallel
+    static prop parallel: std.unittest.KeyParallel {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyGenerationSteps <: std.unittest.common.KeyFor<Int64> {
-    prop generationSteps: std.unittest.KeyGenerationSteps
+    static prop generationSteps: std.unittest.KeyGenerationSteps {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyReductionSteps <: std.unittest.common.KeyFor<Int64> {
-    prop reductionSteps: std.unittest.KeyReductionSteps
+    static prop reductionSteps: std.unittest.KeyReductionSteps {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeySkip <: std.unittest.common.KeyFor<Bool> {
-    prop skip: std.unittest.KeySkip
+    static prop skip: std.unittest.KeySkip {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyCoverageGuided <: std.unittest.common.KeyFor<Bool> {
-    prop coverageGuided: std.unittest.KeyCoverageGuided
+    static prop coverageGuided: std.unittest.KeyCoverageGuided {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyCoverageGuidedInitialSeeds <: std.unittest.common.KeyFor<Int64> {
-    prop coverageGuidedInitialSeeds: std.unittest.KeyCoverageGuidedInitialSeeds
+    static prop coverageGuidedInitialSeeds: std.unittest.KeyCoverageGuidedInitialSeeds {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyCoverageGuidedMaxCandidates <: std.unittest.common.KeyFor<Int64> {
-    prop coverageGuidedMaxCandidates: std.unittest.KeyCoverageGuidedMaxCandidates
+    static prop coverageGuidedMaxCandidates: std.unittest.KeyCoverageGuidedMaxCandidates {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyCoverageGuidedBaselineScore <: std.unittest.common.KeyFor<Int64> {
-    prop coverageGuidedBaselineScore: std.unittest.KeyCoverageGuidedBaselineScore
+    static prop coverageGuidedBaselineScore: std.unittest.KeyCoverageGuidedBaselineScore {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyCoverageGuidedNewCoverageScore <: std.unittest.common.KeyFor<Int64> {
-    prop coverageGuidedNewCoverageScore: std.unittest.KeyCoverageGuidedNewCoverageScore
+    static prop coverageGuidedNewCoverageScore: std.unittest.KeyCoverageGuidedNewCoverageScore {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyCoverageGuidedNewCoverageBonus <: std.unittest.common.KeyFor<Int64> {
-    prop coverageGuidedNewCoverageBonus: std.unittest.KeyCoverageGuidedNewCoverageBonus
+    static prop coverageGuidedNewCoverageBonus: std.unittest.KeyCoverageGuidedNewCoverageBonus {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyBench <: std.unittest.common.KeyFor<Bool> {
-    prop bench: std.unittest.KeyBench
+    static prop bench: std.unittest.KeyBench {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyTimeout <: std.unittest.common.KeyFor<std.core.Duration> {
-    prop timeout: std.unittest.KeyTimeout
+    static prop timeout: std.unittest.KeyTimeout {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyTimeoutEach <: std.unittest.common.KeyFor<std.core.String> {
-    prop timeoutEach: std.unittest.KeyTimeoutEach
+    static prop timeoutEach: std.unittest.KeyTimeoutEach {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyTimeoutHandler <: std.unittest.common.KeyFor<(std.unittest.TestCaseInfo) -> Unit> {
-    prop timeoutHandler: std.unittest.KeyTimeoutHandler
+    static prop timeoutHandler: std.unittest.KeyTimeoutHandler {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyCaptureOutput <: std.unittest.common.KeyFor<Bool> {
-    prop captureOutput: std.unittest.KeyCaptureOutput
+    static prop captureOutput: std.unittest.KeyCaptureOutput {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyNoCaptureOutput <: std.unittest.common.KeyFor<Bool> {
-    prop noCaptureOutput: std.unittest.KeyNoCaptureOutput
+    static prop noCaptureOutput: std.unittest.KeyNoCaptureOutput {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyShowAllOutput <: std.unittest.common.KeyFor<Bool> {
-    prop showAllOutput: std.unittest.KeyShowAllOutput
+    static prop showAllOutput: std.unittest.KeyShowAllOutput {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyVerbose <: std.unittest.common.KeyFor<Bool> {
-    prop verbose: std.unittest.KeyVerbose
+    static prop verbose: std.unittest.KeyVerbose {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyMeasurement <: std.unittest.common.KeyFor<std.unittest.Measurement> {
-    prop measurement: std.unittest.KeyMeasurement
+    static prop measurement: std.unittest.KeyMeasurement {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyMeasurementInfo <: std.unittest.common.KeyFor<std.unittest.MeasurementInfo> {
-    prop measurementInfo: std.unittest.KeyMeasurementInfo
+    static prop measurementInfo: std.unittest.KeyMeasurementInfo {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyInternalTestrunnerInputPath <: std.unittest.common.KeyFor<std.core.String> {
-    prop internalTestrunnerInputPath: std.unittest.KeyInternalTestrunnerInputPath
+    static prop internalTestrunnerInputPath: std.unittest.KeyInternalTestrunnerInputPath {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyDeathAware <: std.unittest.common.KeyFor<Bool> {
-    prop deathAware: std.unittest.KeyDeathAware
+    static prop deathAware: std.unittest.KeyDeathAware {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyBaseline <: std.unittest.common.KeyFor<std.core.String> {
-    prop baseline: std.unittest.KeyBaseline
+    static prop baseline: std.unittest.KeyBaseline {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyFilter <: std.unittest.common.KeyFor<std.core.String> {
-    prop filter: std.unittest.KeyFilter
+    static prop filter: std.unittest.KeyFilter {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyIncludeTags <: std.unittest.common.KeyFor<std.core.String> {
-    prop includeTags: std.unittest.KeyIncludeTags
+    static prop includeTags: std.unittest.KeyIncludeTags {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyExcludeTags <: std.unittest.common.KeyFor<std.core.String> {
-    prop excludeTags: std.unittest.KeyExcludeTags
+    static prop excludeTags: std.unittest.KeyExcludeTags {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyBaselinePath <: std.unittest.common.KeyFor<std.core.String> {
-    prop baselinePath: std.unittest.KeyBaselinePath
+    static prop baselinePath: std.unittest.KeyBaselinePath {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyInternalWorkerId <: std.unittest.common.KeyFor<Int64> {
-    prop internalWorkerId: std.unittest.KeyInternalWorkerId
+    static prop internalWorkerId: std.unittest.KeyInternalWorkerId {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyInternalNWorkers <: std.unittest.common.KeyFor<Int64> {
-    prop internalNWorkers: std.unittest.KeyInternalNWorkers
+    static prop internalNWorkers: std.unittest.KeyInternalNWorkers {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyInternalWorkerSkipNTests <: std.unittest.common.KeyFor<Int64> {
-    prop internalWorkerSkipNTests: std.unittest.KeyInternalWorkerSkipNTests
+    static prop internalWorkerSkipNTests: std.unittest.KeyInternalWorkerSkipNTests {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyInternalMainProcessPort <: std.unittest.common.KeyFor<UInt16> {
-    prop internalMainProcessPort: std.unittest.KeyInternalMainProcessPort
+    static prop internalMainProcessPort: std.unittest.KeyInternalMainProcessPort {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyDryRun <: std.unittest.common.KeyFor<Bool> {
-    prop dryRun: std.unittest.KeyDryRun
+    static prop dryRun: std.unittest.KeyDryRun {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyShowTags <: std.unittest.common.KeyFor<Bool> {
-    prop showTags: std.unittest.KeyShowTags
+    static prop showTags: std.unittest.KeyShowTags {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyNoProgress <: std.unittest.common.KeyFor<Bool> {
-    prop noProgress: std.unittest.KeyNoProgress
+    static prop noProgress: std.unittest.KeyNoProgress {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyProgressBrief <: std.unittest.common.KeyFor<Bool> {
-    prop progressBrief: std.unittest.KeyProgressBrief
+    static prop progressBrief: std.unittest.KeyProgressBrief {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
 
 struct KeyProgressEntriesLimit <: std.unittest.common.KeyFor<Int64> {
-    prop progressEntriesLimit: std.unittest.KeyProgressEntriesLimit
+    static prop progressEntriesLimit: std.unittest.KeyProgressEntriesLimit {
+        get() { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 }
@@ -2898,27 +3240,37 @@ enum ParallelInfo {
 
     | Parallel(Int64)
 
-    func fromDefaultConfiguration: std.unittest.ParallelInfo
+    static func fromDefaultConfiguration(): std.unittest.ParallelInfo { /* compiled code */ }
 
-    prop nWorkers: Int64
+    prop nWorkers: Int64 {
+        get() { /* compiled code */ }
+    }
 }
 
 class PowerAssertValue <: std.core.Object & std.unittest.common.Serializable<std.unittest.PowerAssertValue> {
     init(value: std.core.String, expression: std.core.String, position: Int64, isException: Bool) { /* compiled code */ }
 
-    prop value: std.core.String
+    prop value: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop range: std.core.Range<Int64>
+    prop range: std.core.Range<Int64> {
+        get() { /* compiled code */ }
+    }
 
-    prop valuePosition: Int64
+    prop valuePosition: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop safeValueNextPosition: Int64
+    prop safeValueNextPosition: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func skipped(expression: std.core.String, position: Int64): std.unittest.PowerAssertValue
+    static func skipped(expression: std.core.String, position: Int64): std.unittest.PowerAssertValue { /* compiled code */ }
 
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.PowerAssertValue
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.PowerAssertValue { /* compiled code */ }
 
     let kind: std.unittest.PowerAssertValueKind
 
@@ -2936,9 +3288,9 @@ enum PowerAssertValueKind <: std.unittest.common.Serializable<std.unittest.Power
 
     | PASkipped
 
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.PowerAssertValueKind
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.PowerAssertValueKind { /* compiled code */ }
 }
 
 class PowerAssertDiagramBuilder {
@@ -2950,20 +3302,20 @@ class PowerAssertDiagramBuilder {
 
     init(expression: std.core.String) { /* compiled code */ }
 
-    func r(value: T, exprAsText: std.core.String, position: Int64): T
+    func r(value: T, exprAsText: std.core.String, position: Int64): T { /* compiled code */ }
 
-    func r(value: Rune, exprAsText: std.core.String, position: Int64): Rune
+    func r(value: Rune, exprAsText: std.core.String, position: Int64): Rune { /* compiled code */ }
 
-    func r(value: std.core.String, exprAsText: std.core.String, position: Int64): std.core.String
+    func r(value: std.core.String, exprAsText: std.core.String, position: Int64): std.core.String { /* compiled code */ }
 
-    func h(exception: std.core.Exception, exprAsText: std.core.String, position: Int64): Nothing
+    func h(exception: std.core.Exception, exprAsText: std.core.String, position: Int64): Nothing { /* compiled code */ }
 
-    func w(passed: Bool): Unit
+    func w(passed: Bool): Unit { /* compiled code */ }
 }
 
-func EnableANSITerminal: Bool
+foreign func EnableANSITerminal(): Bool
 
-func DisableANSITerminal: Bool
+foreign func DisableANSITerminal(): Bool
 
 var isConsoleUtf8: Bool
 
@@ -2974,56 +3326,62 @@ class TerminalPrettyPrinter <: std.unittest.common.PrettyPrinter {
 
     init(configuration: std.unittest.common.Configuration) { /* compiled code */ }
 
-    prop terminalHeight: std.core.Option<UInt64>
+    prop terminalHeight: std.core.Option<UInt64> {
+        get() { /* compiled code */ }
+    }
 
-    prop terminalWidth: std.core.Option<UInt64>
+    prop terminalWidth: std.core.Option<UInt64> {
+        get() { /* compiled code */ }
+    }
 
-    func exclusive(action: (std.unittest.TerminalPrettyPrinter) -> T): T
+    func exclusive(action: (std.unittest.TerminalPrettyPrinter) -> T): T { /* compiled code */ }
 
-    func up(lines: Int64): Unit
+    func up(lines: Int64): Unit { /* compiled code */ }
 
-    func down(lines: Int64): Unit
+    func down(lines: Int64): Unit { /* compiled code */ }
 
-    func toBottom: Unit
+    func toBottom(): Unit { /* compiled code */ }
 
-    func setColumn(column: Int64): Unit
+    func setColumn(column: Int64): Unit { /* compiled code */ }
 
-    func saveCursorPos: Unit
+    func saveCursorPos(): Unit { /* compiled code */ }
 
-    func restoreCursorPos: Unit
+    func restoreCursorPos(): Unit { /* compiled code */ }
 
-    func hideCursor: Unit
+    func hideCursor(): Unit { /* compiled code */ }
 
-    func showCursor: Unit
+    func showCursor(): Unit { /* compiled code */ }
 
-    func setScrollableMargins(start: std.core.Option<Int64>, end: std.core.Option<Int64>): Unit
+    func setScrollableMargins(start: std.core.Option<Int64>, end: std.core.Option<Int64>): Unit { /* compiled code */ }
 
-    func clearAhead: Unit
+    func clearAhead(): Unit { /* compiled code */ }
 
-    func clearLine: Unit
+    func clearLine(): Unit { /* compiled code */ }
 
-    func put(s: std.core.String): Unit
+    override func put(s: std.core.String): Unit { /* compiled code */ }
 
-    func flush: Unit
+    func flush(): Unit { /* compiled code */ }
 
-    func setColor(color: std.unittest.common.Color): Unit
+    override func setColor(color: std.unittest.common.Color): Unit { /* compiled code */ }
 
-    prop instance: std.unittest.TerminalPrettyPrinter
+    static prop instance: std.unittest.TerminalPrettyPrinter {
+        get() { /* compiled code */ }
+    }
 
-    func fillLimitedSpace(spaceSize: Int64, body: () -> Unit): std.unittest.common.PrettyPrinter
+    func fillLimitedSpace(spaceSize: Int64, body: () -> Unit): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.unittest.TerminalPrettyPrinter
+    static func fromDefaultConfiguration(): std.unittest.TerminalPrettyPrinter { /* compiled code */ }
 
     init(isColored: Bool, isOtherAnsiAble: Bool) { /* compiled code */ }
 }
 
-func SetConsoleOutputCP(cp: UInt32): UInt32
+foreign func SetConsoleOutputCP(cp: UInt32): UInt32
 
-func setUtf8OutputCP: Bool
+func setUtf8OutputCP(): Bool { /* compiled code */ }
 
-func GetTerminalWidth: UInt64
+foreign func GetTerminalWidth(): UInt64
 
-func GetTerminalHeight: UInt64
+foreign func GetTerminalHeight(): UInt64
 
 class CapturedProcessResult {
     let stdOut: std.core.Array<UInt8>
@@ -3033,26 +3391,26 @@ class CapturedProcessResult {
     init(stdOut: std.core.Array<UInt8>, stdErr: std.core.Array<UInt8>) { /* compiled code */ }
 }
 
-func processStart(ctx: std.unittest.MainExecutionCtx): std.unittest.WrappedProcess
+func processStart(ctx: std.unittest.MainExecutionCtx): std.unittest.WrappedProcess { /* compiled code */ }
 
-func renderException(exception: std.core.Exception, preamble: std.core.Option<std.unittest.common.PrettyText>): std.unittest.common.PrettyText
+func renderException(exception: std.core.Exception, preamble: std.core.Option<std.unittest.common.PrettyText>): std.unittest.common.PrettyText { /* compiled code */ }
 
-func exceptionToString(e: std.core.Exception): std.core.String
+func exceptionToString(e: std.core.Exception): std.core.String { /* compiled code */ }
 
-func indexOfFirstIrrelevantEntry(elements: std.core.Array<std.core.StackTraceElement>): Int64
+func indexOfFirstIrrelevantEntry(elements: std.core.Array<std.core.StackTraceElement>): Int64 { /* compiled code */ }
 
-func isEntryPoint(_: std.core.StackTraceElement): Bool
+func isEntryPoint(_: std.core.StackTraceElement): Bool { /* compiled code */ }
 
-func isLambda(element: std.core.StackTraceElement): Bool
+func isLambda(element: std.core.StackTraceElement): Bool { /* compiled code */ }
 
-func methodName(element: std.core.StackTraceElement): std.core.String
+func methodName(element: std.core.StackTraceElement): std.core.String { /* compiled code */ }
 
 extend TestGroupResult {
-    func reportCsv(dir: std.fs.Path, raw: Bool): Unit
+    func reportCsv(dir: std.fs.Path, raw: Bool): Unit { /* compiled code */ }
 }
 
 extend TestSuiteResult {
-    func reportBenchCsv(raw: Bool): std.core.ToString
+    func reportBenchCsv(raw: Bool): std.core.ToString { /* compiled code */ }
 }
 
 let STYLES: std.core.String
@@ -3064,20 +3422,20 @@ let ROOT_TEMPLATE: std.core.String
 var gnuplotAvailable: Bool
 
 extend TestGroupResult {
-    func reportHtml(dir: std.fs.Path): Unit
+    func reportHtml(dir: std.fs.Path): Unit { /* compiled code */ }
 
-    func collectClassObjects(passedFQNames: std.core.Iterable<std.unittest.TestCaseId>): std.collection.ArrayList<std.unittest.common.JsonObject>
+    func collectClassObjects(passedFQNames: std.core.Iterable<std.unittest.TestCaseId>): std.collection.ArrayList<std.unittest.common.JsonObject> { /* compiled code */ }
 
-    func envRow(name: std.core.String, value: T): std.unittest.common.JsonObject
+    func envRow(name: std.core.String, value: T): std.unittest.common.JsonObject { /* compiled code */ }
 
-    func collectEnvironment: std.unittest.common.JsonArray
+    func collectEnvironment(): std.unittest.common.JsonArray { /* compiled code */ }
 
-    func tryGetNative(f: () -> std.core.String): std.core.String
+    func tryGetNative(f: () -> std.core.String): std.core.String { /* compiled code */ }
 
-    func collectAllResults(directory: std.fs.Path): std.collection.HashMap<std.unittest.TestCaseId, std.unittest.common.JsonValue>
+    func collectAllResults(directory: std.fs.Path): std.collection.HashMap<std.unittest.TestCaseId, std.unittest.common.JsonValue> { /* compiled code */ }
 }
 
-func measurementModel(step: std.unittest.BenchStepEntry, directory: std.fs.Path, index: Int64): (Float64, std.unittest.common.JsonObject)
+func measurementModel(step: std.unittest.BenchStepEntry, directory: std.fs.Path, index: Int64): (Float64, std.unittest.common.JsonObject) { /* compiled code */ }
 
 struct BenchStepEntry {
     let result: std.unittest.BenchmarkResult
@@ -3092,24 +3450,24 @@ struct BenchStepEntry {
 }
 
 extend StatisticsSample {
-    func createStatsRow(name: std.core.String, dir: std.fs.Path, change: std.core.Option<Float64>): std.unittest.common.JsonObject
+    func createStatsRow(name: std.core.String, dir: std.fs.Path, change: std.core.Option<Float64>): std.unittest.common.JsonObject { /* compiled code */ }
 
-    func drawKde(into: std.fs.Path): Unit
+    func drawKde(into: std.fs.Path): Unit { /* compiled code */ }
 }
 
 extend BenchmarkResult {
-    func draw(into: std.fs.Path, mName: std.core.String): Unit
+    func draw(into: std.fs.Path, mName: std.core.String): Unit { /* compiled code */ }
 }
 
 let NO_INFO: std.core.String
 
-func getOsVersion: std.core.String
+func getOsVersion(): std.core.String { /* compiled code */ }
 
-func getCpuName: std.core.String
+func getCpuName(): std.core.String { /* compiled code */ }
 
-func getCompilerVersion: std.core.String
+func getCompilerVersion(): std.core.String { /* compiled code */ }
 
-func getTargetTriple: std.core.String
+func getTargetTriple(): std.core.String { /* compiled code */ }
 
 enum TestCode <: std.core.ToString & std.unittest.common.PrettyPrintable & std.core.Equatable<std.unittest.TestCode> {
     | PASS
@@ -3124,19 +3482,19 @@ enum TestCode <: std.core.ToString & std.unittest.common.PrettyPrintable & std.c
 
     | NORUN
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func mostSevereWith(other: std.unittest.TestCode): std.unittest.TestCode
+    func mostSevereWith(other: std.unittest.TestCode): std.unittest.TestCode { /* compiled code */ }
 
-    func isFailure: Bool
+    func isFailure(): Bool { /* compiled code */ }
 
-    func toStringTense: std.core.String
+    func toStringTense(): std.core.String { /* compiled code */ }
 
-    operator func ==(right: std.unittest.TestCode): Bool
+    operator func ==(right: std.unittest.TestCode): Bool { /* compiled code */ }
 
-    operator func !=(right: std.unittest.TestCode): Bool
+    operator func !=(right: std.unittest.TestCode): Bool { /* compiled code */ }
 
-    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
 class XmlBuilder <: std.core.Object & std.core.ToString {
@@ -3146,13 +3504,13 @@ class XmlBuilder <: std.core.Object & std.core.ToString {
 
     var encoding_: std.core.Option<std.core.ToString>
 
-    func version(v: std.core.ToString): std.unittest.XmlBuilder
+    func version(v: std.core.ToString): std.unittest.XmlBuilder { /* compiled code */ }
 
-    func encoding(format: std.core.ToString): std.unittest.XmlBuilder
+    func encoding(format: std.core.ToString): std.unittest.XmlBuilder { /* compiled code */ }
 
-    func element(name: std.core.ToString, childBuilder: (std.unittest.XmlElementBuilder) -> Unit): std.unittest.XmlBuilder
+    func element(name: std.core.ToString, childBuilder: (std.unittest.XmlElementBuilder) -> Unit): std.unittest.XmlBuilder { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -3166,23 +3524,29 @@ class XmlElementBuilder <: std.core.Object & std.core.ToString {
 
     var content_: std.core.ToString
 
-    prop attributes: std.collection.ArrayList<(std.core.ToString, std.core.ToString)>
+    mut prop attributes: std.collection.ArrayList<(std.core.ToString, std.core.ToString)> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop content: std.core.ToString
+    mut prop content: std.core.ToString {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func name(name: std.core.ToString): std.unittest.XmlElementBuilder
+    func name(name: std.core.ToString): std.unittest.XmlElementBuilder { /* compiled code */ }
 
-    func attribute(key: std.core.ToString, value: std.core.ToString): std.unittest.XmlElementBuilder
+    func attribute(key: std.core.ToString, value: std.core.ToString): std.unittest.XmlElementBuilder { /* compiled code */ }
 
-    func optionalAttribute(key: std.core.ToString, value: std.core.Option<std.core.String>): std.unittest.XmlElementBuilder
+    func optionalAttribute(key: std.core.ToString, value: std.core.Option<std.core.String>): std.unittest.XmlElementBuilder { /* compiled code */ }
 
-    func element(contentBuilder: () -> std.core.ToString): std.unittest.XmlElementBuilder
+    func element(contentBuilder: () -> std.core.ToString): std.unittest.XmlElementBuilder { /* compiled code */ }
 
-    func element(name: std.core.ToString, childBuilder: (std.unittest.XmlElementBuilder) -> Unit): std.unittest.XmlElementBuilder
+    func element(name: std.core.ToString, childBuilder: (std.unittest.XmlElementBuilder) -> Unit): std.unittest.XmlElementBuilder { /* compiled code */ }
 
-    func build(sb: std.core.StringBuilder): Unit
+    func build(sb: std.core.StringBuilder): Unit { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
     let level: UInt64
 
@@ -3190,15 +3554,15 @@ class XmlElementBuilder <: std.core.Object & std.core.ToString {
 }
 
 extend TestSuiteId {
-    func asClassName: std.core.String
+    func asClassName(): std.core.String { /* compiled code */ }
 }
 
 extend TestGroupResult {
-    func reportXml(dir: std.fs.Path): Unit
+    func reportXml(dir: std.fs.Path): Unit { /* compiled code */ }
 }
 
 extend TestSuiteId {
-    func reportFileName(isBench: Bool, extension: std.core.String): std.core.String
+    func reportFileName(isBench: Bool, extension: std.core.String): std.core.String { /* compiled code */ }
 }
 
 class CsvReporter <: std.core.Object & std.unittest.Reporter<std.unittest.BenchReport, Unit> {
@@ -3232,19 +3596,19 @@ class TextReporter <: std.core.Object & std.unittest.Reporter<std.unittest.TestR
 }
 
 interface TextReporterBase <: std.unittest.Reporter<std.unittest.TestReport, PP> & std.unittest.Reporter<std.unittest.BenchReport, PP> {
-    func printReport(report: std.unittest.Report): PP
+    func printReport(report: std.unittest.Report): PP { /* compiled code */ }
 }
 
 extend TextReporter <: TextReporterBase {
-    func printReport(report: std.unittest.Report): PP
+    func printReport(report: std.unittest.Report): PP { /* compiled code */ }
 }
 
 extend ConsoleReporter <: TextReporterBase {
-    func printReport(report: std.unittest.Report): Unit
+    func printReport(report: std.unittest.Report): Unit { /* compiled code */ }
 }
 
 class RawStatsReporter <: std.core.Object & std.unittest.Reporter<std.unittest.BenchReport, std.collection.HashMap<std.core.String, (Float64, Float64)>> {
-    func benchResultsAsMap(result: std.unittest.TestGroupResult): std.collection.HashMap<std.core.String, (Float64, Float64)>
+    func benchResultsAsMap(result: std.unittest.TestGroupResult): std.collection.HashMap<std.core.String, (Float64, Float64)> { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -3264,23 +3628,27 @@ class ProgressReporter {
 
     let isActive: std.sync.AtomicBool
 
-    prop updateQueue: std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress>
+    prop updateQueue: std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress> {
+        get() { /* compiled code */ }
+    }
 
-    func startReporting: Unit
+    func startReporting(): Unit { /* compiled code */ }
 
-    func stopAndClear: Unit
+    func stopAndClear(): Unit { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.core.Option<std.unittest.ProgressReporter>
+    static func fromDefaultConfiguration(): std.core.Option<std.unittest.ProgressReporter> { /* compiled code */ }
 }
 
 interface UTProgressReporter {
-    prop updateQueue: std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress>
+    prop updateQueue: std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress> {
+        get() { /* compiled code */ }
+    }
 
-    func start: Unit
+    func start(): Unit { /* compiled code */ }
 
-    func report(terminalHeight: std.core.Option<UInt64>, terminalWidth: std.core.Option<UInt64>): std.unittest.common.PrettyText
+    func report(terminalHeight: std.core.Option<UInt64>, terminalWidth: std.core.Option<UInt64>): std.unittest.common.PrettyText { /* compiled code */ }
 
-    func reset: Unit
+    func reset(): Unit { /* compiled code */ }
 }
 
 class TestProgressReporter <: std.core.Object & std.unittest.UTProgressReporter {
@@ -3292,11 +3660,13 @@ class TestProgressReporter <: std.core.Object & std.unittest.UTProgressReporter 
 
     let booker: std.unittest.TestProgressCollector
 
-    prop updateQueue: std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress>
+    override prop updateQueue: std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress> {
+        get() { /* compiled code */ }
+    }
 
-    func start: Unit
+    override func start(): Unit { /* compiled code */ }
 
-    func report(terminalHeight: std.core.Option<UInt64>, terminalWidth: std.core.Option<UInt64>): std.unittest.common.PrettyText
+    override func report(terminalHeight: std.core.Option<UInt64>, terminalWidth: std.core.Option<UInt64>): std.unittest.common.PrettyText { /* compiled code */ }
 
     let testCasesParallelism: Int64
 
@@ -3346,41 +3716,63 @@ class TestProgressCollector {
 
     let finishedPackages: std.collection.ArrayList<std.core.String>
 
-    prop totalCasesCount: UInt64
+    prop totalCasesCount: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop finishedCasesCount: UInt64
+    prop finishedCasesCount: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop passedCasesCount: UInt64
+    prop passedCasesCount: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop failedCasesCount: UInt64
+    prop failedCasesCount: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop crashedWorkersCount: UInt64
+    prop crashedWorkersCount: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop registeredPackagesCount: UInt64
+    prop registeredPackagesCount: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop currentPackagesCount: UInt64
+    prop currentPackagesCount: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop lastFailedStep: std.core.Option<std.unittest.FailedTestCaseProgressData>
+    prop lastFailedStep: std.core.Option<std.unittest.FailedTestCaseProgressData> {
+        get() { /* compiled code */ }
+    }
 
-    prop currentPackages: std.core.Array<std.unittest.PackageProgressData>
+    prop currentPackages: std.core.Array<std.unittest.PackageProgressData> {
+        get() { /* compiled code */ }
+    }
 
-    prop currentTestCases: std.core.Array<std.unittest.TestCaseProgressData>
+    prop currentTestCases: std.core.Array<std.unittest.TestCaseProgressData> {
+        get() { /* compiled code */ }
+    }
 
-    prop summary: std.unittest.SummaryProgressData
+    prop summary: std.unittest.SummaryProgressData {
+        get() { /* compiled code */ }
+    }
 
-    func start: Unit
+    func start(): Unit { /* compiled code */ }
 
-    func flushChanges: Unit
+    func flushChanges(): Unit { /* compiled code */ }
 
     init(testCasesParallelism: Int64) { /* compiled code */ }
 }
 
 struct UniqueWorkerId <: std.core.Hashable & std.core.Equatable<std.unittest.UniqueWorkerId> {
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 
-    operator func ==(other: std.unittest.UniqueWorkerId): Bool
+    operator func ==(other: std.unittest.UniqueWorkerId): Bool { /* compiled code */ }
 
-    operator func !=(other: std.unittest.UniqueWorkerId): Bool
+    operator func !=(other: std.unittest.UniqueWorkerId): Bool { /* compiled code */ }
 
     let id: Int64
 
@@ -3410,13 +3802,13 @@ class Progress <: std.core.Object & std.unittest.common.PrettyPrintable {
 
     let GRAY_COLOR: std.unittest.common.Color
 
-    func update(positive: Bool): Unit
+    func update(positive: Bool): Unit { /* compiled code */ }
 
-    func expand(extendBy: UInt64): Unit
+    func expand(extendBy: UInt64): Unit { /* compiled code */ }
 
-    func pprint(to: std.unittest.common.PrettyPrinter, crashedWorkers: UInt64, width: Int64, mainBar: Bool): std.unittest.common.PrettyPrinter
+    func pprint(to: std.unittest.common.PrettyPrinter, crashedWorkers: UInt64, width: Int64, mainBar: Bool): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+    override func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
     var totalPieces: Int64
 
@@ -3424,7 +3816,7 @@ class Progress <: std.core.Object & std.unittest.common.PrettyPrintable {
 }
 
 struct FailedTestCaseProgressData {
-    func trimmed(limit: Int64): std.core.String
+    func trimmed(limit: Int64): std.core.String { /* compiled code */ }
 
     let name: std.unittest.TestCaseName
 
@@ -3436,11 +3828,13 @@ struct FailedTestCaseProgressData {
 }
 
 struct TestCaseProgressData {
-    prop duration: std.core.Duration
+    prop duration: std.core.Duration {
+        get() { /* compiled code */ }
+    }
 
-    func trimmed(limit: Int64): std.core.String
+    func trimmed(limit: Int64): std.core.String { /* compiled code */ }
 
-    func trim(suiteId: std.unittest.TestSuiteId, name: std.unittest.TestCaseName, limit: Int64): std.core.String
+    static func trim(suiteId: std.unittest.TestSuiteId, name: std.unittest.TestCaseName, limit: Int64): std.core.String { /* compiled code */ }
 
     let name: std.unittest.TestCaseName
 
@@ -3452,11 +3846,15 @@ struct TestCaseProgressData {
 }
 
 struct PackageProgressData {
-    prop finishPercent: UInt64
+    prop finishPercent: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop duration: std.core.Duration
+    prop duration: std.core.Duration {
+        get() { /* compiled code */ }
+    }
 
-    func trimmed(limit: Int64): std.core.String
+    func trimmed(limit: Int64): std.core.String { /* compiled code */ }
 
     let name: std.core.String
 
@@ -3474,11 +3872,17 @@ struct PackageProgressData {
 }
 
 struct SummaryProgressData {
-    prop finishPercent: UInt64
+    prop finishPercent: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    prop isFailed: Bool
+    prop isFailed: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop duration: std.core.Duration
+    prop duration: std.core.Duration {
+        get() { /* compiled code */ }
+    }
 
     let passedCases: UInt64
 
@@ -3510,37 +3914,49 @@ enum TestCaseName <: std.core.ToString {
 
     | CNStep(std.unittest.LStep)
 
-    func toString: std.core.String
+    override func toString(): std.core.String { /* compiled code */ }
 }
 
 extend ExecutionResultPart {
-    func toCaseName: std.unittest.TestCaseName
+    func toCaseName(): std.unittest.TestCaseName { /* compiled code */ }
 }
 
 extend ExecutionResultBody {
-    prop isSkip: Bool
+    prop isSkip: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop isFailed: Bool
+    prop isFailed: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop firstFailedStep: std.unittest.RunStepResult
+    prop firstFailedStep: std.unittest.RunStepResult {
+        get() { /* compiled code */ }
+    }
 
-    prop isPassed: Bool
+    prop isPassed: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop isClassLifecycle: Bool
+    prop isClassLifecycle: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop isBeforeAll: Bool
+    prop isBeforeAll: Bool {
+        get() { /* compiled code */ }
+    }
 }
 
 extend TestCaseId {
-    func toDisplayString: std.core.String
+    func toDisplayString(): std.core.String { /* compiled code */ }
 }
 
 extend TestSuiteId {
-    func toDisplayString: std.core.String
+    func toDisplayString(): std.core.String { /* compiled code */ }
 }
 
 struct ArgumentDescription {
-    func intoErrorMessage: std.core.Option<std.unittest.common.PrettyText>
+    func intoErrorMessage(): std.core.Option<std.unittest.common.PrettyText> { /* compiled code */ }
 
     let textDescription: std.core.Option<std.unittest.common.PrettyText>
 
@@ -3554,7 +3970,7 @@ struct ArgumentDescription {
 }
 
 struct RenderOptions {
-    func fromConfiguration(configuration: std.unittest.common.Configuration): std.unittest.RenderOptions
+    static func fromConfiguration(configuration: std.unittest.common.Configuration): std.unittest.RenderOptions { /* compiled code */ }
 
     let baselineString: std.core.Option<std.core.String>
 
@@ -3568,81 +3984,83 @@ enum GroupResultPart <: std.unittest.Result {
 
     | ProcessError(std.unittest.TestProcessError)
 
-    func walk(visitor: (std.unittest.Result) -> Unit): Unit
+    func walk(visitor: (std.unittest.Result) -> Unit): Unit { /* compiled code */ }
 
-    func visitAll(visitor: (V) -> Unit): Unit
+    func visitAll(visitor: (V) -> Unit): Unit { /* compiled code */ }
 
-    prop details: std.unittest.Details
+    prop details: std.unittest.Details {
+        get() { /* compiled code */ }
+    }
 }
 
 extend LStep <: Serializable {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.LStep
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.LStep { /* compiled code */ }
 }
 
 extend StepKind <: Serializable {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.StepKind
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.StepKind { /* compiled code */ }
 }
 
 extend StepInfo <: Serializable {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.StepInfo
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.StepInfo { /* compiled code */ }
 }
 
 extend RunStepResult {
-    func doSerialize: std.unittest.common.DataModelStruct
+    func doSerialize(): std.unittest.common.DataModelStruct { /* compiled code */ }
 
-    func doDeserialize(dm: std.unittest.common.DataModel): std.unittest.RunStepResult
+    static func doDeserialize(dm: std.unittest.common.DataModel): std.unittest.RunStepResult { /* compiled code */ }
 }
 
 extend TestCaseResult {
-    func doSerialize: std.unittest.common.DataModelStruct
+    func doSerialize(): std.unittest.common.DataModelStruct { /* compiled code */ }
 
-    func doDeserialize(dm: std.unittest.common.DataModel): std.unittest.TestCaseResult
+    static func doDeserialize(dm: std.unittest.common.DataModel): std.unittest.TestCaseResult { /* compiled code */ }
 }
 
 extend TestCaseReportInfo <: Serializable {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestCaseReportInfo
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestCaseReportInfo { /* compiled code */ }
 }
 
 extend TestSuiteResult {
-    func doSerialize: std.unittest.common.DataModelStruct
+    func doSerialize(): std.unittest.common.DataModelStruct { /* compiled code */ }
 
-    func doDeserialize(dm: std.unittest.common.DataModel): std.unittest.TestSuiteResult
+    static func doDeserialize(dm: std.unittest.common.DataModel): std.unittest.TestSuiteResult { /* compiled code */ }
 }
 
 extend TestSuiteReportInfo <: Serializable {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestSuiteReportInfo
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.TestSuiteReportInfo { /* compiled code */ }
 }
 
 extend TestGroupResult {
-    func doSerialize: std.unittest.common.DataModelStruct
+    func doSerialize(): std.unittest.common.DataModelStruct { /* compiled code */ }
 
-    func doDeserialize(dm: std.unittest.common.DataModel): std.unittest.TestGroupResult
+    static func doDeserialize(dm: std.unittest.common.DataModel): std.unittest.TestGroupResult { /* compiled code */ }
 }
 
 extend RenderOptions <: Serializable {
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.RenderOptions
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.RenderOptions { /* compiled code */ }
 }
 
 struct ArrayOfTuples <: std.unittest.common.Serializable<std.unittest.ArrayOfTuples<A, B>> {
     init(col: std.core.Collection<(A, B)>) { /* compiled code */ }
 
-    func original: std.core.Array<(A, B)>
+    func original(): std.core.Array<(A, B)> { /* compiled code */ }
 
-    func serializeInternal: std.unittest.common.DataModel
+    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
-    func deserialize(dm: std.unittest.common.DataModel): std.unittest.ArrayOfTuples<A, B>
+    static func deserialize(dm: std.unittest.common.DataModel): std.unittest.ArrayOfTuples<A, B> { /* compiled code */ }
 
     let left: std.core.Array<A>
 
@@ -3670,11 +4088,11 @@ class Measurements {
 
     var r2: Float64
 
-    func calculateMedian: std.unittest.Measurements
+    func calculateMedian(): std.unittest.Measurements { /* compiled code */ }
 
-    func calcSlopes: Unit
+    func calcSlopes(): Unit { /* compiled code */ }
 
-    func calculateMean: std.unittest.Measurements
+    func calculateMean(): std.unittest.Measurements { /* compiled code */ }
 
     let data: std.core.Array<(Float64, Float64)>
 
@@ -3682,25 +4100,27 @@ class Measurements {
 }
 
 interface AsFloat {
-    func asFloat: Float64
+    func asFloat(): Float64 { /* compiled code */ }
 }
 
 extend Extend <: AsFloat {
-    func asFloat: Float64
+    func asFloat(): Float64 { /* compiled code */ }
 }
 
 class FlatMapProcessor <: std.unittest.DataStrategyProcessor<R> {
     var provider: std.unittest.RememberingDataProvider<R>
 
-    prop isInfinite: Bool
+    prop isInfinite: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<R>
+    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<R> { /* compiled code */ }
 
-    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<R>
+    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<R> { /* compiled code */ }
 
-    func lastItemInfo: std.core.Array<std.unittest.InputParameter>
+    func lastItemInfo(): std.core.Array<std.unittest.InputParameter> { /* compiled code */ }
 
-    func lastItem(_: std.unittest.common.Configuration): R
+    func lastItem(_: std.unittest.common.Configuration): R { /* compiled code */ }
 
     let orig: std.unittest.DataStrategyProcessor<T>
 
@@ -3714,15 +4134,15 @@ class LazyCyclicNode {
 
     var prev: std.unittest.LazyCyclicNode
 
-    func initialize: std.unittest.LazyCyclicNode
+    func initialize(): std.unittest.LazyCyclicNode { /* compiled code */ }
 
-    func advance: std.core.Option<Unit>
+    func advance(): std.core.Option<Unit> { /* compiled code */ }
 
-    func recover: Unit
+    func recover(): Unit { /* compiled code */ }
 
-    func add(other: std.unittest.LazyCyclicNode): Unit
+    func add(other: std.unittest.LazyCyclicNode): Unit { /* compiled code */ }
 
-    func removeSelf: std.unittest.LazyCyclicNode
+    func removeSelf(): std.unittest.LazyCyclicNode { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -3732,15 +4152,17 @@ class FlatMapStrategyProcessor <: std.unittest.DataStrategyProcessor<R> {
 
     var strategy: std.unittest.common.DataStrategy<R>
 
-    prop isInfinite: Bool
+    prop isInfinite: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<R>
+    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<R> { /* compiled code */ }
 
-    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<R>
+    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<R> { /* compiled code */ }
 
-    func lastItemInfo: std.core.Array<std.unittest.InputParameter>
+    func lastItemInfo(): std.core.Array<std.unittest.InputParameter> { /* compiled code */ }
 
-    func lastItem(_: std.unittest.common.Configuration): R
+    func lastItem(_: std.unittest.common.Configuration): R { /* compiled code */ }
 
     let orig: std.unittest.DataStrategyProcessor<T>
 
@@ -3750,15 +4172,17 @@ class FlatMapStrategyProcessor <: std.unittest.DataStrategyProcessor<R> {
 }
 
 class MapProcessor <: std.unittest.DataStrategyProcessor<R> {
-    prop isInfinite: Bool
+    prop isInfinite: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<R>
+    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<R> { /* compiled code */ }
 
-    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<R>
+    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<R> { /* compiled code */ }
 
-    func lastItemInfo: std.core.Array<std.unittest.InputParameter>
+    func lastItemInfo(): std.core.Array<std.unittest.InputParameter> { /* compiled code */ }
 
-    func lastItem(configuration: std.unittest.common.Configuration): R
+    func lastItem(configuration: std.unittest.common.Configuration): R { /* compiled code */ }
 
     let orig: std.unittest.DataStrategyProcessor<T>
 
@@ -3768,15 +4192,17 @@ class MapProcessor <: std.unittest.DataStrategyProcessor<R> {
 }
 
 class CartesianProductProcessor <: std.unittest.DataStrategyProcessor<(T0, T1)> {
-    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<(T0, T1)>
+    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<(T0, T1)> { /* compiled code */ }
 
-    prop isInfinite: Bool
+    prop isInfinite: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<(T0, T1)>
+    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<(T0, T1)> { /* compiled code */ }
 
-    func lastItemInfo: std.core.Array<std.unittest.InputParameter>
+    func lastItemInfo(): std.core.Array<std.unittest.InputParameter> { /* compiled code */ }
 
-    func lastItem(configuration: std.unittest.common.Configuration): (T0, T1)
+    func lastItem(configuration: std.unittest.common.Configuration): (T0, T1) { /* compiled code */ }
 
     let left: std.unittest.DataStrategyProcessor<T0>
 
@@ -3790,7 +4216,7 @@ class CartesianProductIterator <: std.core.Iterator<(A, B)> {
 
     var right: std.core.Iterator<B>
 
-    func next: std.core.Option<(A, B)>
+    override func next(): std.core.Option<(A, B)> { /* compiled code */ }
 
     let left: std.core.Iterator<A>
 
@@ -3804,17 +4230,21 @@ class SimpleProcessor <: std.unittest.DataStrategyProcessor<T> {
 
     var _delegate: std.core.Option<std.unittest.common.DataStrategy<T>>
 
-    prop strategy: std.unittest.common.DataStrategy<T>
+    prop strategy: std.unittest.common.DataStrategy<T> {
+        get() { /* compiled code */ }
+    }
 
-    prop isInfinite: Bool
+    prop isInfinite: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<T>
+    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<T> { /* compiled code */ }
 
-    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<T>
+    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<T> { /* compiled code */ }
 
-    func lastItemInfo: std.core.Array<std.unittest.InputParameter>
+    func lastItemInfo(): std.core.Array<std.unittest.InputParameter> { /* compiled code */ }
 
-    func lastItem(_: std.unittest.common.Configuration): T
+    func lastItem(_: std.unittest.common.Configuration): T { /* compiled code */ }
 
     let buildDelegate: () -> std.unittest.common.DataStrategy<T>
 
@@ -3824,7 +4254,7 @@ class SimpleProcessor <: std.unittest.DataStrategyProcessor<T> {
 }
 
 class RememberingIterable <: std.core.Iterator<T> {
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 
     let delegate: std.core.Iterator<T>
 
@@ -3834,7 +4264,7 @@ class RememberingIterable <: std.core.Iterator<T> {
 }
 
 class RememberingLazyIterator <: std.core.Iterator<T> {
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 
     let delegate: std.unittest.RememberingLazyIterable<T>
 
@@ -3846,11 +4276,11 @@ class RememberingLazyIterable <: std.unittest.LazyCyclicNode & std.core.Iterable
 
     var origLastItem: T
 
-    func recover: Unit
+    func recover(): Unit { /* compiled code */ }
 
-    func advance: std.core.Option<Unit>
+    func advance(): std.core.Option<Unit> { /* compiled code */ }
 
-    func iterator: std.core.Iterator<T>
+    func iterator(): std.core.Iterator<T> { /* compiled code */ }
 
     let delegate: std.core.Iterator<T>
 
@@ -3860,7 +4290,7 @@ class RememberingLazyIterable <: std.unittest.LazyCyclicNode & std.core.Iterable
 }
 
 class IterableMix <: std.core.Iterator<T> {
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 
     let delegate1: std.core.Iterator<T>
 
@@ -3870,9 +4300,9 @@ class IterableMix <: std.core.Iterator<T> {
 }
 
 class LazyCyclicNodeEngine <: std.core.Iterator<T> {
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 
-    func advance: std.core.Option<Unit>
+    func advance(): std.core.Option<Unit> { /* compiled code */ }
 
     var current: std.unittest.LazyCyclicNode
 
@@ -3894,17 +4324,17 @@ enum ProcessorResult {
 }
 
 extend DataStrategyProcessor {
-    func map(f: (T) -> R): std.unittest.MapProcessor<T, R>
+    func map(f: (T) -> R): std.unittest.MapProcessor<T, R> { /* compiled code */ }
 
-    func mapWithConfig(f: (T, std.unittest.common.Configuration) -> R): std.unittest.MapProcessor<T, R>
+    func mapWithConfig(f: (T, std.unittest.common.Configuration) -> R): std.unittest.MapProcessor<T, R> { /* compiled code */ }
 
-    func flatMap(f: (T) -> std.unittest.common.DataProvider<R>): std.unittest.FlatMapProcessor<T, R>
+    func flatMap(f: (T) -> std.unittest.common.DataProvider<R>): std.unittest.FlatMapProcessor<T, R> { /* compiled code */ }
 
-    func flatMapStrategy(f: (T) -> std.unittest.common.DataStrategy<R>): std.unittest.FlatMapStrategyProcessor<T, R>
+    func flatMapStrategy(f: (T) -> std.unittest.common.DataStrategy<R>): std.unittest.FlatMapStrategyProcessor<T, R> { /* compiled code */ }
 
-    func product(p: std.unittest.DataStrategyProcessor<R>): std.unittest.CartesianProductProcessor<T, R>
+    func product(p: std.unittest.DataStrategyProcessor<R>): std.unittest.CartesianProductProcessor<T, R> { /* compiled code */ }
 
-    func productWithUnit(p: P): std.unittest.MapProcessor<(T, Unit), T>
+    func productWithUnit(p: P): std.unittest.MapProcessor<(T, Unit), T> { /* compiled code */ }
 }
 
 class TestSuiteExecutor {
@@ -3912,13 +4342,13 @@ class TestSuiteExecutor {
 
     let suiteInfo: std.unittest.TestSuiteReportInfo
 
-    func execute: std.unittest.TestSuiteResult
+    func execute(): std.unittest.TestSuiteResult { /* compiled code */ }
 
-    func runSkip(testCaseResult: std.unittest.TestCaseResult): Unit
+    func runSkip(testCaseResult: std.unittest.TestCaseResult): Unit { /* compiled code */ }
 
-    func runNoRun(testCaseResult: std.unittest.TestCaseResult): Unit
+    func runNoRun(testCaseResult: std.unittest.TestCaseResult): Unit { /* compiled code */ }
 
-    func runSingleCase(caseConfiguration: std.unittest.common.Configuration, executor: std.unittest.Executor): (std.unittest.TestCaseResult) -> Unit
+    func runSingleCase(caseConfiguration: std.unittest.common.Configuration, executor: std.unittest.Executor): (std.unittest.TestCaseResult) -> Unit { /* compiled code */ }
 
     let externalConfiguration: std.unittest.common.Configuration
 
@@ -3932,21 +4362,25 @@ class TestSuiteExecutor {
 }
 
 extend TestSuite {
-    prop wholeConfiguration: std.unittest.common.Configuration
+    prop wholeConfiguration: std.unittest.common.Configuration {
+        get() { /* compiled code */ }
+    }
 
-    prop allCasesIterator: std.core.Iterable<std.unittest.CaseOrBench>
+    prop allCasesIterator: std.core.Iterable<std.unittest.CaseOrBench> {
+        get() { /* compiled code */ }
+    }
 
-    func allCasesToBeExecuted(filterService: std.unittest.FilterService, suiteId: std.unittest.TestSuiteId): std.core.Array<std.unittest.CaseOrBench>
+    func allCasesToBeExecuted(filterService: std.unittest.FilterService, suiteId: std.unittest.TestSuiteId): std.core.Array<std.unittest.CaseOrBench> { /* compiled code */ }
 
-    func casesCountToBeExecuted(filterService: std.unittest.FilterService, suiteId: std.unittest.TestSuiteId): Int64
+    func casesCountToBeExecuted(filterService: std.unittest.FilterService, suiteId: std.unittest.TestSuiteId): Int64 { /* compiled code */ }
 
-    func runBeforeEach(caseShortName: std.core.String): Unit
+    func runBeforeEach(caseShortName: std.core.String): Unit { /* compiled code */ }
 
-    func runAfterEach(caseShortName: std.core.String): Unit
+    func runAfterEach(caseShortName: std.core.String): Unit { /* compiled code */ }
 
-    func runBeforeAll: Unit
+    func runBeforeAll(): Unit { /* compiled code */ }
 
-    func runAfterAll: Unit
+    func runAfterAll(): Unit { /* compiled code */ }
 }
 
 class TempDirectory {
@@ -3960,29 +4394,31 @@ class TempDirectory {
 
     var tempDir: std.core.Option<std.fs.Path>
 
-    prop path: std.fs.Path
+    prop path: std.fs.Path {
+        get() { /* compiled code */ }
+    }
 
-    func createTempFile(dir: std.fs.Path, prefix: std.core.String, suffix: std.core.String): std.fs.File
+    func createTempFile(dir: std.fs.Path, prefix: std.core.String, suffix: std.core.String): std.fs.File { /* compiled code */ }
 
-    func createTempPath(dir: std.fs.Path, prefix: std.core.String, suffix: std.core.String): std.fs.Path
+    func createTempPath(dir: std.fs.Path, prefix: std.core.String, suffix: std.core.String): std.fs.Path { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func substituteTemplate(template: std.core.String, values: std.unittest.common.JsonValue): std.core.String
+func substituteTemplate(template: std.core.String, values: std.unittest.common.JsonValue): std.core.String { /* compiled code */ }
 
 class Root {
     var templates: std.collection.HashMap<std.core.String, std.unittest.Template>
 
     var rootTemplate: std.unittest.Template
 
-    func substitute(values: std.unittest.common.JsonValue): std.core.String
+    func substitute(values: std.unittest.common.JsonValue): std.core.String { /* compiled code */ }
 
     init(t: std.core.String) { /* compiled code */ }
 }
 
 class Template {
-    func fromString(text: std.core.String): std.unittest.Template
+    static func fromString(text: std.core.String): std.unittest.Template { /* compiled code */ }
 
     var REPEATABLES_MATCHER: std.regex.Regex
 
@@ -3990,7 +4426,7 @@ class Template {
 
     let REPETITIONS_SANITY_CHECK: Int64
 
-    func substitute(values: std.unittest.common.JsonValue, templates: std.collection.HashMap<std.core.String, std.unittest.Template>, index: Int64): std.core.Option<std.core.String>
+    func substitute(values: std.unittest.common.JsonValue, templates: std.collection.HashMap<std.core.String, std.unittest.Template>, index: Int64): std.core.Option<std.core.String> { /* compiled code */ }
 
     let name: std.core.String
 
@@ -3999,37 +4435,37 @@ class Template {
     init(name: std.core.String, baseText: std.core.String) { /* compiled code */ }
 }
 
-func object(data: std.core.Array<(std.core.String, std.unittest.IntoJson)>): std.unittest.common.JsonObject
+func object(data: std.core.Array<(std.core.String, std.unittest.IntoJson)>): std.unittest.common.JsonObject { /* compiled code */ }
 
 interface IntoJson {
-    func json: std.unittest.common.JsonValue
+    func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
 extend JsonValue <: IntoJson {
-    func json: std.unittest.common.JsonValue
+    func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
 extend String <: IntoJson {
-    func json: std.unittest.common.JsonValue
+    func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
 extend Extend <: IntoJson {
-    func json: std.unittest.common.JsonValue
+    func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
 extend Option <: IntoJson {
-    func json: std.unittest.common.JsonValue
+    func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
 extend Array <: IntoJson {
-    func json: std.unittest.common.JsonValue
+    func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
 extend ArrayList <: IntoJson {
-    func json: std.unittest.common.JsonValue
+    func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
-func runTestStep(caseId: std.unittest.TestCaseId, f: () -> Unit): Unit
+func runTestStep(caseId: std.unittest.TestCaseId, f: () -> Unit): Unit { /* compiled code */ }
 
 class TestCaseExecutor <: std.core.Object & std.unittest.Executor {
     var generationStep: Int64
@@ -4038,9 +4474,9 @@ class TestCaseExecutor <: std.core.Object & std.unittest.Executor {
 
     var hasMoreParameters: Bool
 
-    func execute(_: std.unittest.TestSuiteReportInfo, tcase: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit
+    func execute(_: std.unittest.TestSuiteReportInfo, tcase: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
-    func formatArguments(inputs: std.core.Array<std.unittest.InputParameter>): std.core.Option<std.unittest.common.PrettyText>
+    static func formatArguments(inputs: std.core.Array<std.unittest.InputParameter>): std.core.Option<std.unittest.common.PrettyText> { /* compiled code */ }
 
     let strategy: std.unittest.DataStrategyProcessor<T>
 
@@ -4050,10 +4486,10 @@ class TestCaseExecutor <: std.core.Object & std.unittest.Executor {
 }
 
 extend RunStepResult {
-    func withUpdatedStep(newKind: std.unittest.StepKind): std.unittest.RunStepResult
+    func withUpdatedStep(newKind: std.unittest.StepKind): std.unittest.RunStepResult { /* compiled code */ }
 }
 
-func strategyErrorAsResult(e: std.core.Exception, descr: std.unittest.ArgumentDescription): std.unittest.RunStepResult
+func strategyErrorAsResult(e: std.core.Exception, descr: std.unittest.ArgumentDescription): std.unittest.RunStepResult { /* compiled code */ }
 
 let SHOW_ALL_OUTPUT_KEY: std.core.String
 
@@ -4067,10 +4503,12 @@ let OP_VERBOSE: std.core.String
 
 let VERBOSE_KEY: std.core.String
 
-func tagsToString(tags: std.core.Array<std.core.String>): std.core.Option<std.core.String>
+func tagsToString(tags: std.core.Array<std.core.String>): std.core.Option<std.core.String> { /* compiled code */ }
 
 extend Configuration {
-    prop bench: Bool
+    prop bench: Bool {
+        get() { /* compiled code */ }
+    }
 }
 
 class PackageTextReport {
@@ -4080,7 +4518,7 @@ class PackageTextReport {
 
     var failures: std.collection.HashMap<std.unittest.TestCaseId, Int64>
 
-    func printPackage(packageResult: std.unittest.TestGroupResult): Unit
+    func printPackage(packageResult: std.unittest.TestGroupResult): Unit { /* compiled code */ }
 
     let pp: std.unittest.common.PrettyPrinter
 
@@ -4093,7 +4531,7 @@ class PackageTextReport {
     init(pp: std.unittest.common.PrettyPrinter, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration, detailed: Bool) { /* compiled code */ }
 }
 
-func appendDashLine(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+func appendDashLine(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
 class TextReportEntry {
     let checkResults: std.core.Array<std.unittest.CheckResult>
@@ -4112,7 +4550,7 @@ class TextReportEntry {
 }
 
 class ProjectTextReport {
-    func printProject(projectResult: std.unittest.ProjectExecutionResult): Unit
+    func printProject(projectResult: std.unittest.ProjectExecutionResult): Unit { /* compiled code */ }
 
     let pp: std.unittest.common.PrettyPrinter
 
@@ -4124,23 +4562,23 @@ class ProjectTextReport {
 }
 
 class TextReports {
-    func printDefaultReport(pp: std.unittest.common.PrettyPrinter, packageResult: std.unittest.TestGroupResult, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration): Unit
+    static func printDefaultReport(pp: std.unittest.common.PrettyPrinter, packageResult: std.unittest.TestGroupResult, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
-    func printProjectSummaryReport(projectResult: std.unittest.ProjectExecutionResult, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration): Unit
+    static func printProjectSummaryReport(projectResult: std.unittest.ProjectExecutionResult, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
-    func printIntermediatePackageResult(pp: std.unittest.TerminalPrettyPrinter, packageResult: std.unittest.TestGroupResult, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration): Unit
+    static func printIntermediatePackageResult(pp: std.unittest.TerminalPrettyPrinter, packageResult: std.unittest.TestGroupResult, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
 
-func lifecycleStageFailedText(ls: std.unittest.LStep, newLine: Bool): std.unittest.common.PrettyText
+func lifecycleStageFailedText(ls: std.unittest.LStep, newLine: Bool): std.unittest.common.PrettyText { /* compiled code */ }
 
-func printSummary(pp: std.unittest.common.PrettyPrinter, result: std.unittest.ResultContainer<T>, config: std.unittest.common.Configuration, printFailures: Bool): Unit
+func printSummary(pp: std.unittest.common.PrettyPrinter, result: std.unittest.ResultContainer<T>, config: std.unittest.common.Configuration, printFailures: Bool): Unit { /* compiled code */ }
 
 extend CheckResult <: PrettyPrintable {
-    func pprintWithFailedPrefix(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+    func pprintWithFailedPrefix(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 
-    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
+    func pprint(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
 }
 
 let OP_TIMEOUT_EACH_NAME: std.core.String
@@ -4151,20 +4589,22 @@ let TIMEOUT_EACH_KEY: std.core.String
 
 let VALUE_TIMEOUT_PATTERN: std.regex.Regex
 
-func cancellationPoint: Unit
+func cancellationPoint(): Unit { /* compiled code */ }
 
-func fillTimeoutKey(configuration: std.unittest.common.Configuration): Unit
+func fillTimeoutKey(configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
 class TransportMain <: std.core.Object & std.core.Resource {
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    prop port: UInt16
+    prop port: UInt16 {
+        get() { /* compiled code */ }
+    }
 
-    func accept: std.unittest.TransportChannel
+    func accept(): std.unittest.TransportChannel { /* compiled code */ }
 
-    func fromDefaultConfiguration: std.unittest.TransportMain
+    static func fromDefaultConfiguration(): std.unittest.TransportMain { /* compiled code */ }
 
     let socket: std.net.TcpServerSocket
 
@@ -4172,11 +4612,17 @@ class TransportMain <: std.core.Object & std.core.Resource {
 }
 
 struct WorkerOutput {
-    prop stdouts: std.core.Array<std.core.String>
+    prop stdouts: std.core.Array<std.core.String> {
+        get() { /* compiled code */ }
+    }
 
-    prop stderrs: std.core.Array<std.core.String>
+    prop stderrs: std.core.Array<std.core.String> {
+        get() { /* compiled code */ }
+    }
 
-    prop captured: std.core.Array<std.unittest.CapturedOutput>
+    prop captured: std.core.Array<std.unittest.CapturedOutput> {
+        get() { /* compiled code */ }
+    }
 
     let stdout: std.core.Array<UInt8>
 
@@ -4190,7 +4636,7 @@ class UnittestException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class ErrorWrapperException <: std.core.Exception {
@@ -4198,37 +4644,37 @@ class ErrorWrapperException <: std.core.Exception {
 
     init(message: std.core.String, error: std.core.Error) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 
-    func toString: std.core.String
+    override func toString(): std.core.String { /* compiled code */ }
 }
 
 class UnittestTimeoutException <: std.core.Exception {
     init() { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-func CJ_FS_IsFileORLinkToFile(path: CString): Int8
+foreign func CJ_FS_IsFileORLinkToFile(path: CString): Int8
 
-func CJ_FS_IsDirORLinkToFDir(path: CString): Int8
+foreign func CJ_FS_IsDirORLinkToFDir(path: CString): Int8
 
 extend DataModel {
-    func asStruct: std.unittest.common.DataModelStruct
+    func asStruct(): std.unittest.common.DataModelStruct { /* compiled code */ }
 }
 
-func min(a: T, b: T): T
+func min(a: T, b: T): T { /* compiled code */ }
 
-func max(a: T, b: T): T
+func max(a: T, b: T): T { /* compiled code */ }
 
-func mapParallelOrdered(bufferSize: Int64, f: (T) -> V): (std.core.Iterable<T>) -> std.core.Iterator<V>
+func mapParallelOrdered(bufferSize: Int64, f: (T) -> V): (std.core.Iterable<T>) -> std.core.Iterator<V> { /* compiled code */ }
 
 class ParallelOrderedMapIterator <: std.core.Iterator<T> {
     var futures: std.collection.ArrayList<std.core.Future<T>>
 
     var currentIdx: Int64
 
-    func next: std.core.Option<T>
+    func next(): std.core.Option<T> { /* compiled code */ }
 
     let bufferSize: Int64
 
@@ -4238,7 +4684,7 @@ class ParallelOrderedMapIterator <: std.core.Iterator<T> {
 }
 
 class ChainIterator <: std.core.Iterator<T> {
-    func next: std.core.Option<T>
+    override func next(): std.core.Option<T> { /* compiled code */ }
 
     let l: std.core.Iterator<T>
 
@@ -4247,6 +4693,6 @@ class ChainIterator <: std.core.Iterator<T> {
     init(l: std.core.Iterator<T>, r: std.core.Iterator<T>) { /* compiled code */ }
 }
 
-func chain(l: std.core.Iterable<T>, r: std.core.Iterable<T>): std.core.Iterable<T>
+func chain(l: std.core.Iterable<T>, r: std.core.Iterable<T>): std.core.Iterable<T> { /* compiled code */ }
 
-func beforeEach(action: (std.core.Option<T>) -> Unit): (std.core.Iterable<T>) -> std.core.Iterator<T>
+func beforeEach(action: (std.core.Option<T>) -> Unit): (std.core.Iterable<T>) -> std.core.Iterator<T> { /* compiled code */ }

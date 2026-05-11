@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
@@ -139,7 +140,7 @@ private class LLCfirStatusTargetResolver(
 
     @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
     override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
-        if (cfirClassLike is CfirClass) {
+        if (cfirClassLike is CfirClass || cfirClassLike is CfirInterface) {
             doResolveWithoutLock(cfirClassLike)
             transformer.storeClass(cfirClassLike) {
                 action()
@@ -151,12 +152,12 @@ private class LLCfirStatusTargetResolver(
         }
     }
 
-    private fun resolveClassTypeParameters(klass: CfirClass) {
-        klass.typeParameters.forEach { it.transformSingle(transformer, data = null) }
+    private fun resolveClassLikeTypeParameters(classLike: CfirClassLikeDeclaration) {
+        classLike.transformTypeParameters(transformer, data = null)
     }
 
-    private fun resolveCallableMembers(klass: CfirClass) {
-        for (member in klass.declarations) {
+    private fun resolveCallableMembers(classLike: CfirClassLikeDeclaration) {
+        for (member in classLike.declarations) {
             if (member !is CfirCallableDeclaration || !resolveMode.shouldBeResolved(member)) continue
 
             member.lazyResolveToPhase(resolverPhase.previous)
@@ -168,7 +169,16 @@ private class LLCfirStatusTargetResolver(
         is CfirClass -> {
             if (transformer.statusComputationSession[target].requiresComputation) {
                 target.lazyResolveToPhase(resolverPhase.previous)
-                resolveClass(target)
+                resolveClassLike(target)
+            }
+
+            true
+        }
+
+        is CfirInterface -> {
+            if (transformer.statusComputationSession[target].requiresComputation) {
+                target.lazyResolveToPhase(resolverPhase.previous)
+                resolveClassLike(target)
             }
 
             true
@@ -237,30 +247,34 @@ private class LLCfirStatusTargetResolver(
         else -> false
     }
 
-    private fun resolveClass(klass: CfirClass) {
-        transformer.statusComputationSession.startComputing(klass)
+    private fun resolveClassLike(classLike: CfirClassLikeDeclaration) {
+        transformer.statusComputationSession.startComputing(classLike)
 
         if (resolveMode.resolveSupertypes) {
-            transformer.statusComputationSession.forceResolveStatusesOfSupertypes(klass)
+            transformer.statusComputationSession.forceResolveStatusesOfSupertypes(classLike)
         }
 
-        performCustomResolveUnderLock(klass) {
-            transformer.transformClassStatus(klass)
-            transformer.storeClass(klass) {
-                resolveClassTypeParameters(klass)
+        performCustomResolveUnderLock(classLike) {
+            when (classLike) {
+                is CfirClass -> transformer.transformClassStatus(classLike)
+                is CfirInterface -> transformer.transformInterfaceStatus(classLike)
+                else -> error("Unexpected class-like declaration ${classLike::class.simpleName} for low-level STATUS resolver")
+            }
+            transformer.storeClass(classLike) {
+                resolveClassLikeTypeParameters(classLike)
             }
         }
 
         if (resolveMode.resolveSupertypes) {
-            transformer.storeClass(klass) {
-                withContainingDeclaration(klass) {
-                    resolveCallableMembers(klass)
+            transformer.storeClass(classLike) {
+                withContainingDeclaration(classLike) {
+                    resolveCallableMembers(classLike)
                 }
             }
 
-            transformer.statusComputationSession.endComputing(klass)
+            transformer.statusComputationSession.endComputing(classLike)
         } else {
-            transformer.statusComputationSession.computeOnlyDeclarationStatus(klass)
+            transformer.statusComputationSession.computeOnlyDeclarationStatus(classLike)
         }
     }
 
@@ -280,6 +294,7 @@ private class LLCfirStatusTargetResolver(
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {
             is CfirClass -> error("should be resolved in doResolveWithoutLock")
+            is CfirInterface -> error("should be resolved in doResolveWithoutLock")
             is CfirFile -> Unit
             else -> target.transformSingle(transformer, data = null)
         }
@@ -289,6 +304,10 @@ private class LLCfirStatusTargetResolver(
         CfirStatusResolveTransformer(statusComputationSession) {
         override fun transformClass(klass: CfirClass, data: Nothing?): CfirClass {
             return klass
+        }
+
+        override fun transformInterface(interfaceDeclaration: CfirInterface, data: Nothing?): CfirInterface {
+            return interfaceDeclaration
         }
     }
 }

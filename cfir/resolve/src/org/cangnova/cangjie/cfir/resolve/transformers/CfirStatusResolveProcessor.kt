@@ -179,17 +179,17 @@ open class AbstractCfirStatusResolveTransformer(
     val statusComputationSession: CfirStatusComputationSession,
 ) : CfirAbstractTreeTransformer<Nothing?>(CfirResolvePhase.STATUS) {
     @PrivateForInline
-    val classes: MutableList<CfirClass> = mutableListOf()
+    val classes: MutableList<CfirClassLikeDeclaration> = mutableListOf()
     val statusResolver: CfirStatusResolver = CfirStatusResolver(session, statusComputationSession.useSiteScopeSession)
     override val session: CfirSession
         get() = statusComputationSession.useSiteSession
     @OptIn(PrivateForInline::class)
-    val containingClass: CfirClass?
+    val containingClass: CfirClassLikeDeclaration?
         get() = classes.lastOrNull()
 
     @OptIn(PrivateForInline::class)
     inline fun storeClass(
-        klass: CfirClass,
+        klass: CfirClassLikeDeclaration,
         computeResult: () -> Unit,
     ) {
         classes += klass
@@ -241,8 +241,8 @@ open class AbstractCfirStatusResolveTransformer(
         return target
     }
 
-    protected fun transformClassMembers(klass: CfirClass) {
-        val declarations = klass.declarations
+    protected fun transformClassLikeMembers(classLike: CfirClassLikeDeclaration) {
+        val declarations = classLike.declarations
         declarations.forEach { declaration ->
             if (declaration !is CfirClassLikeDeclaration) {
                 declaration.transformSingle(this, null)
@@ -276,7 +276,19 @@ open class AbstractCfirStatusResolveTransformer(
                 statusComputationSession.forceResolveStatusesOfSupertypes(klass)
                 klass.transformTypeParameters(this, null)
                 transformClassStatus(klass, outerClass)
-                transformClassMembers(klass)
+                transformClassLikeMembers(klass)
+            }
+        }
+    }
+
+    override fun transformInterface(interfaceDeclaration: CfirInterface, data: Nothing?): CfirInterface {
+        val outerClass = containingClass
+        return withResolvedStatusPhase(interfaceDeclaration) {
+            storeClass(interfaceDeclaration) {
+                statusComputationSession.forceResolveStatusesOfSupertypes(interfaceDeclaration)
+                interfaceDeclaration.transformTypeParameters(this, null)
+                transformInterfaceStatus(interfaceDeclaration, outerClass)
+                transformClassLikeMembers(interfaceDeclaration)
             }
         }
     }
@@ -289,9 +301,22 @@ open class AbstractCfirStatusResolveTransformer(
      */
     fun transformClassStatus(
         klass: CfirClass,
-        containingClass: CfirClass? = this.containingClass,
+        containingClass: CfirClassLikeDeclaration? = this.containingClass,
     ) {
         klass.replaceStatus(statusResolver.resolveStatus(klass, containingClass, isLocal = false))
+    }
+
+    /**
+     * 只计算并发布 interface 自身 STATUS。
+     *
+     * 仓颉把 interface 从 class 节点中拆出，但 STATUS 阶段仍对位 Kotlin class-like
+     * 声明路径，必须显式发布自身 resolved status 后再进入成员解析。
+     */
+    fun transformInterfaceStatus(
+        interfaceDeclaration: CfirInterface,
+        containingClass: CfirClassLikeDeclaration? = this.containingClass,
+    ) {
+        interfaceDeclaration.replaceStatus(statusResolver.resolveStatus(interfaceDeclaration, containingClass, isLocal = false))
     }
 
     override fun transformTypeAlias(typeAlias: CfirTypeAlias, data: Nothing?): CfirTypeAlias {
@@ -562,7 +587,7 @@ class CfirStatusResolver(
 ) {
     fun getOverriddenProperties(
         property: CfirProperty,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
     ): List<CfirProperty> {
         val scope = containingClass?.unsubstitutedScope(
             useSiteSession = session,
@@ -581,7 +606,7 @@ class CfirStatusResolver(
 
     fun getOverriddenFunctions(
         function: CfirNamedFunction,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
     ): List<CfirNamedFunction> {
         val scope = containingClass?.unsubstitutedScope(
             useSiteSession = session,
@@ -600,7 +625,21 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirClass,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
+        isLocal: Boolean,
+    ): CfirResolvedDeclarationStatus {
+        return resolveStatus(
+            declaration = declaration,
+            status = declaration.status,
+            containingClass = containingClass,
+            containingProperty = null,
+            isLocal = isLocal,
+        )
+    }
+
+    fun resolveStatus(
+        declaration: CfirInterface,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
     ): CfirResolvedDeclarationStatus {
         return resolveStatus(
@@ -614,7 +653,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirTypeAlias,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
     ): CfirResolvedDeclarationStatus {
         return resolveStatus(
@@ -628,7 +667,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirFunction,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
     ): CfirResolvedDeclarationStatus {
         return resolveStatus(
@@ -642,7 +681,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirNamedFunction,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
         overriddenStatuses: List<CfirResolvedDeclarationStatus>,
     ): CfirResolvedDeclarationStatus {
@@ -658,7 +697,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirConstructor,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
     ): CfirResolvedDeclarationStatus {
         return resolveStatus(
@@ -672,7 +711,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirEnumConstructor,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
     ): CfirResolvedDeclarationStatus {
         return resolveStatus(
@@ -686,7 +725,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirProperty,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
         overriddenStatuses: List<CfirResolvedDeclarationStatus>,
     ): CfirResolvedDeclarationStatus {
@@ -702,7 +741,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirPropertyAccessor,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         containingProperty: CfirProperty?,
         isLocal: Boolean,
         overriddenStatuses: List<CfirResolvedDeclarationStatus>,
@@ -719,7 +758,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirVariable,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
     ): CfirResolvedDeclarationStatus {
         return resolveStatus(
@@ -733,7 +772,7 @@ class CfirStatusResolver(
 
     fun resolveStatus(
         declaration: CfirExtend,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
     ): CfirResolvedDeclarationStatus {
         return resolveStatus(
@@ -748,7 +787,7 @@ class CfirStatusResolver(
     private fun resolveStatus(
         declaration: CfirDeclaration,
         status: CfirDeclarationStatus,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
         containingProperty: CfirProperty?,
         isLocal: Boolean,
         overriddenStatuses: List<CfirResolvedDeclarationStatus> = emptyList(),
@@ -809,10 +848,11 @@ class CfirStatusResolver(
     private fun resolveModality(
         declaration: CfirDeclaration,
         containingProperty: CfirProperty?,
-        containingClass: CfirClass?,
+        containingClass: CfirClassLikeDeclaration?,
     ): Modality {
         return when (declaration) {
-            is CfirClass -> if (declaration is CfirInterface) Modality.ABSTRACT else Modality.FINAL
+            is CfirInterface -> Modality.ABSTRACT
+            is CfirClass -> Modality.FINAL
             is CfirCallableDeclaration -> {
                 val containingPropertyModality = containingProperty?.status?.modality
                 when {
@@ -839,6 +879,7 @@ class CfirStatusResolver(
 private fun CfirDeclaration.statusOrNull(): CfirDeclarationStatus? {
     return when (this) {
         is CfirClass -> status
+        is CfirInterface -> status
         is CfirFunction -> status
         is CfirProperty -> status
         is CfirEnumConstructor -> status

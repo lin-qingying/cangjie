@@ -5,19 +5,19 @@ package std.ref
 
 import std.core.*
 
-func getEagerWeakRefPolicy: std.ref.CleanupPolicy
+func getEagerWeakRefPolicy(): std.ref.CleanupPolicy { /* compiled code */ }
 
 enum CleanupPolicy <: std.core.Equatable<std.ref.CleanupPolicy> {
     | EAGER
 
     | DEFERRED
 
-    operator func ==(that: std.ref.CleanupPolicy): Bool
+    operator func ==(that: std.ref.CleanupPolicy): Bool { /* compiled code */ }
 
-    operator func !=(that: std.ref.CleanupPolicy): Bool
+    operator func !=(that: std.ref.CleanupPolicy): Bool { /* compiled code */ }
 }
 
-func getDeferredWeakRefPolicy: std.ref.CleanupPolicy
+func getDeferredWeakRefPolicy(): std.ref.CleanupPolicy { /* compiled code */ }
 
 class WeakRefBase {
     var _value: std.core.Option<std.core.Object>
@@ -30,9 +30,13 @@ class WeakRefBase {
 class WeakRef <: std.ref.WeakRefBase {
     init(value: T, cleanupPolicy: std.ref.CleanupPolicy) { /* compiled code */ }
 
-    prop cleanupPolicy: std.ref.CleanupPolicy
+    prop cleanupPolicy: std.ref.CleanupPolicy {
+        get() { /* compiled code */ }
+    }
 
-    prop value: std.core.Option<T>
+    prop value: std.core.Option<T> {
+        get() { /* compiled code */ }
+    }
 
-    func clear: Unit
+    func clear(): Unit { /* compiled code */ }
 }

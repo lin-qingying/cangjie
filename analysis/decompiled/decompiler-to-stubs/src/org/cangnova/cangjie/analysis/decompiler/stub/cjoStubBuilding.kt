@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.decompiler.stub
 
 import com.intellij.psi.stubs.StubElement
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -158,9 +159,56 @@ internal fun createEmptyDeclarationHeaderStubs(parent: StubElement<*>, modifierM
 }
 
 internal fun createCallableModifierMask(isOperator: Boolean): Long {
-    return ModifierMaskUtils.computeMask { modifier ->
-        modifier == CjTokens.OPERATOR_KEYWORD && isOperator
-    }
+    return createCallableModifierMask(
+        isOperator = isOperator,
+        isAbstract = false,
+        isStatic = false,
+        isForeign = false,
+    )
+}
+
+internal fun createDeclarationModifierMask(
+    status: CfirDeclarationStatus,
+    isOperator: Boolean = false,
+): Long {
+    return ModifierMaskUtils.computeMask(
+        hasModifier = { modifier ->
+            when (modifier) {
+                CjTokens.ABSTRACT_KEYWORD -> status.isAbstract
+                CjTokens.STATIC_KEYWORD -> status.isStatic
+                CjTokens.MUT_KEYWORD -> status.isMut
+                CjTokens.OVERRIDE_KEYWORD -> status.isOverride
+                CjTokens.REDEF_KEYWORD -> status.isRedef
+                CjTokens.UNSAFE_KEYWORD -> status.isUnsafe
+                CjTokens.OPERATOR_KEYWORD -> isOperator
+                else -> false
+            }
+        },
+        hasAdditionalModifier = { keyword ->
+            keyword == CjTokens.FOREIGN_KEYWORD && status.isForeign
+        },
+    )
+}
+
+internal fun createCallableModifierMask(
+    isOperator: Boolean = false,
+    isAbstract: Boolean = false,
+    isStatic: Boolean = false,
+    isForeign: Boolean = false,
+): Long {
+    return ModifierMaskUtils.computeMask(
+        hasModifier = { modifier ->
+            when (modifier) {
+                CjTokens.OPERATOR_KEYWORD -> isOperator
+                CjTokens.ABSTRACT_KEYWORD -> isAbstract
+                CjTokens.STATIC_KEYWORD -> isStatic
+                else -> false
+            }
+        },
+        hasAdditionalModifier = { keyword ->
+            keyword == CjTokens.FOREIGN_KEYWORD && isForeign
+        },
+    )
 }
 
 /**
@@ -185,7 +233,7 @@ internal fun createDeclarationStub(
     context: CjoStubBuilderContext,
 ) {
     when (declaration) {
-        is CfirMainFunction -> createMainFunctionStub(parent, context)
+        is CfirMainFunction -> createMainFunctionStub(parent, declaration, context)
         is CfirFinalizer -> createFinalizerStub(parent, declaration, context)
         is CfirErrorFunction -> createErrorFunctionStub(parent, declaration, context)
         is CfirErrorNamedValue -> createErrorNamedValueStub(parent, declaration, context)

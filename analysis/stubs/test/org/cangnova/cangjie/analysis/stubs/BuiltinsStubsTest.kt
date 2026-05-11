@@ -1,13 +1,8 @@
 package org.cangnova.cangjie.analysis.stubs
 
-import com.intellij.mock.MockApplication
-import com.intellij.mock.MockProject
 import com.intellij.psi.PsiManager
-import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiDecompiledTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
-import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformState
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
-import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.api.util.requireIsInstance
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.decompiled.psi.file.CjDecompiledFile
@@ -26,8 +21,7 @@ class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
     override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
     override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> = listOf(
-        CaAnalysisApiDecompiledTestServiceRegistrar,
-        BuiltinsStubsTestServiceRegistrar,
+        CjoCompiledStubsTestServiceRegistrar,
     )
 
     @Test
@@ -40,36 +34,36 @@ class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
                 .resolve("builtins")
                 .resolve("test.cj")
             runTest(testDataFile.toString()) { testServices ->
-                    val project = testServices.cjTestModuleStructure.project
-                    CjoCompiledTestEnvironment.installBuiltinsProjectStructure(project)
-                    val psiManager = PsiManager.getInstance(project)
-                    val targetFileName = System.getProperty("cangjie.builtins.test.file")
-                    val builtinFiles = BuiltinsVirtualFileProvider.getInstance()
-                        .getBuiltinVirtualFiles()
-                        .sortedBy { it.path }
-                        .filter { virtualFile -> targetFileName == null || virtualFile.name == targetFileName }
-                        .mapNotNull { virtualFile -> psiManager.findFile(virtualFile) }
+                val project = testServices.cjTestModuleStructure.project
+                CjoCompiledTestEnvironment.installBuiltinsProjectStructure(project)
+                val psiManager = PsiManager.getInstance(project)
+                val targetFileName = System.getProperty("cangjie.builtins.test.file")
+                val builtinFiles = BuiltinsVirtualFileProvider.getInstance()
+                    .getBuiltinVirtualFiles()
+                    .sortedBy { it.path }
+                    .filter { virtualFile -> targetFileName == null || virtualFile.name == targetFileName }
+                    .mapNotNull { virtualFile -> psiManager.findFile(virtualFile) }
 
-                    assertTrue(builtinFiles.isNotEmpty(), "Builtins provider must expose `.cjo` files")
+                assertTrue(builtinFiles.isNotEmpty(), "Builtins provider must expose `.cjo` files")
 
-                    builtinFiles.forEach { builtinFile ->
-                        println("BuiltinsStubsTest: ${builtinFile.name} compute")
-                        requireIsInstance<CjDecompiledFile>(builtinFile)
-                        val fileStub = CjoCompiledStubsTestEngine.compute(builtinFile)
-                        assertMatchesGolden(
-                            actual = CjoCompiledStubsTestEngine.render(fileStub),
-                            expectedFile = goldenFile(builtinFile.name, ".stubs.txt"),
-                        )
-                        println("BuiltinsStubsTest: ${builtinFile.name} text")
-                        assertMatchesGolden(
-                            actual = requireNotNull(builtinFile.text) {
-                                "${builtinFile.name} unexpectedly doesn't have decompiled text"
-                            },
-                            expectedFile = goldenFile(builtinFile.name, ".decompiled.text.cj"),
-                        )
-                        println("BuiltinsStubsTest: ${builtinFile.name} validate")
-                        CjoCompiledStubsTestEngine.validate(builtinFile, fileStub)
-                    }
+                builtinFiles.forEach { builtinFile ->
+                    println("BuiltinsStubsTest: ${builtinFile.name} compute")
+                    requireIsInstance<CjDecompiledFile>(builtinFile)
+                    val fileStub = CjoCompiledStubsTestEngine.compute(builtinFile)
+                    assertMatchesGolden(
+                        actual = CjoCompiledStubsTestEngine.render(fileStub),
+                        expectedFile = goldenFile(builtinFile.name, ".stubs.txt"),
+                    )
+                    println("BuiltinsStubsTest: ${builtinFile.name} text")
+                    assertMatchesGolden(
+                        actual = requireNotNull(builtinFile.text) {
+                            "${builtinFile.name} unexpectedly doesn't have decompiled text"
+                        },
+                        expectedFile = goldenFile(builtinFile.name, ".decompiled.text.cj"),
+                    )
+                    println("BuiltinsStubsTest: ${builtinFile.name} validate")
+                    CjoCompiledStubsTestEngine.validate(builtinFile, fileStub)
+                }
             }
         }
     }
@@ -99,24 +93,4 @@ class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
     }
 
     private fun String.normalizeLineSeparators(): String = replace("\r\n", "\n")
-
-    private object BuiltinsStubsTestServiceRegistrar : org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar() {
-        private val pluginXmls = listOf(
-            "META-INF/analysis-api/cangjie-low-level-api-cfir.xml",
-            "META-INF/analysis-api/cangjie-analysis-stubs.xml",
-        )
-
-        override fun registerApplicationServices(application: MockApplication, testServices: TestServices) {
-            pluginXmls.forEach { pluginXmlPath ->
-                PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
-            }
-        }
-
-        override fun registerProjectServices(project: MockProject, testServices: TestServices) {
-            project.registerService(CaStandalonePlatformState::class.java, CaStandalonePlatformState::class.java)
-            pluginXmls.forEach { pluginXmlPath ->
-                PluginStructureProvider.registerProjectServices(project, pluginXmlPath)
-            }
-        }
-    }
 }

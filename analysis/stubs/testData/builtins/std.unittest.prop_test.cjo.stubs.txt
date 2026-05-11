@@ -42,26 +42,31 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
@@ -107,21 +112,25 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FUNC
@@ -167,16 +176,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
@@ -196,86 +208,103 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Rune]
       CangJieStub$FUNC
@@ -714,6 +743,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -732,7 +762,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -766,6 +796,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
@@ -783,7 +814,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -823,7 +854,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -863,7 +894,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -903,7 +934,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -943,7 +974,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -983,7 +1014,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1023,7 +1054,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1063,7 +1094,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1103,7 +1134,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1143,7 +1174,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1183,7 +1214,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1223,7 +1254,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1263,7 +1294,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1303,7 +1334,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1343,7 +1374,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1383,7 +1414,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1423,7 +1454,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1473,7 +1504,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1523,7 +1554,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1573,7 +1604,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1627,7 +1658,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1672,7 +1703,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1722,7 +1753,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1767,7 +1798,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1812,6 +1843,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
@@ -1850,7 +1882,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1958,7 +1990,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2080,7 +2112,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2216,7 +2248,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2358,19 +2390,21 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2421,17 +2455,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2479,17 +2515,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2537,17 +2575,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2595,17 +2635,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2653,17 +2695,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2711,17 +2755,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2769,17 +2815,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2827,17 +2875,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2885,17 +2935,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2943,17 +2995,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3001,17 +3055,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3059,17 +3115,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3117,17 +3175,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3167,7 +3227,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3211,7 +3271,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3234,7 +3294,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3260,7 +3320,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3303,7 +3363,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3361,7 +3421,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3415,7 +3475,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3444,7 +3504,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3485,7 +3545,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3530,7 +3590,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3579,7 +3639,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=R]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3684,7 +3744,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3699,7 +3760,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3798,9 +3859,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3879,137 +3942,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$USER_TYPE
-                            CangJieStub$USER_TYPE
-                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
-                        CangJieStub$TYPE_ARGUMENT_LIST
-                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                            CangJieStub$TYPE_REFERENCE
-                              CangJieStub$USER_TYPE
-                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$USER_TYPE
-                            CangJieStub$USER_TYPE
-                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
-                        CangJieStub$TYPE_ARGUMENT_LIST
-                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                            CangJieStub$TYPE_REFERENCE
-                              CangJieStub$USER_TYPE
-                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$USER_TYPE
-                            CangJieStub$USER_TYPE
-                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
-                        CangJieStub$TYPE_ARGUMENT_LIST
-                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                            CangJieStub$TYPE_REFERENCE
-                              CangJieStub$USER_TYPE
-                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=Lazy]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$USER_TYPE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
-                    CangJieStub$TYPE_ARGUMENT_LIST
-                      CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                        CangJieStub$TYPE_REFERENCE
-                          CangJieStub$USER_TYPE
-                            CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$USER_TYPE
-                            CangJieStub$USER_TYPE
-                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
-                        CangJieStub$TYPE_ARGUMENT_LIST
-                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                            CangJieStub$TYPE_REFERENCE
-                              CangJieStub$USER_TYPE
-                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
@@ -4112,33 +4046,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$USER_TYPE
-                          CangJieStub$USER_TYPE
-                            CangJieStub$USER_TYPE
-                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
-                        CangJieStub$TYPE_ARGUMENT_LIST
-                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                            CangJieStub$TYPE_REFERENCE
-                              CangJieStub$USER_TYPE
-                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
@@ -4266,7 +4175,161 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$USER_TYPE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$USER_TYPE
+                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
+                        CangJieStub$TYPE_ARGUMENT_LIST
+                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                            CangJieStub$TYPE_REFERENCE
+                              CangJieStub$USER_TYPE
+                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$USER_TYPE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$USER_TYPE
+                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
+                        CangJieStub$TYPE_ARGUMENT_LIST
+                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                            CangJieStub$TYPE_REFERENCE
+                              CangJieStub$USER_TYPE
+                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$USER_TYPE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$USER_TYPE
+                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
+                        CangJieStub$TYPE_ARGUMENT_LIST
+                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                            CangJieStub$TYPE_REFERENCE
+                              CangJieStub$USER_TYPE
+                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$USER_TYPE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$USER_TYPE
+                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
+                        CangJieStub$TYPE_ARGUMENT_LIST
+                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                            CangJieStub$TYPE_REFERENCE
+                              CangJieStub$USER_TYPE
+                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$USER_TYPE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$USER_TYPE
+                              CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                          CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
+                        CangJieStub$TYPE_ARGUMENT_LIST
+                          CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                            CangJieStub$TYPE_REFERENCE
+                              CangJieStub$USER_TYPE
+                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Lazy]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$USER_TYPE
+                          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=LazyNode]
+                    CangJieStub$TYPE_ARGUMENT_LIST
+                      CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                        CangJieStub$TYPE_REFERENCE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4335,7 +4398,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4367,7 +4430,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4413,6 +4476,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -4541,7 +4605,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4591,90 +4655,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$USER_TYPE
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$USER_TYPE
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$USER_TYPE
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-        CangJieStub$TYPE_REFERENCE
-          CangJieStub$USER_TYPE
-            CangJieStub$USER_TYPE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-              CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-            CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
-            CangJieStub$TYPE_ARGUMENT_LIST
-              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                CangJieStub$TYPE_REFERENCE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-      CangJieStub$FUNC
-        CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
-        CangJieStub$VALUE_PARAMETER_LIST
-          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
-            CangJieStub$ANNOTATIONS
-            CangJieStub$TYPE_REFERENCE
-              CangJieStub$USER_TYPE
-                CangJieStub$USER_TYPE
-                  CangJieStub$USER_TYPE
-                    CangJieStub$USER_TYPE
-                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
-                    CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
-                  CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
-                CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
-                CangJieStub$TYPE_ARGUMENT_LIST
-                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
-                    CangJieStub$TYPE_REFERENCE
-                      CangJieStub$USER_TYPE
-                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
             CangJieStub$TYPE_REFERENCE
@@ -4739,7 +4721,89 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=LazySeq]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4908,86 +4972,103 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Rune]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
       CangJieStub$FUNC
@@ -5200,7 +5281,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=random]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5210,6 +5291,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=prop_test]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=KeyRandom]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=name]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -5220,6 +5303,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=KeyRandom]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -5254,7 +5339,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5336,7 +5422,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5389,7 +5475,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5418,7 +5504,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5447,9 +5533,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isInfinite]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=RandomDataStrategy]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -5457,6 +5545,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
         CangJieStub$USER_TYPE
@@ -5501,7 +5590,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5605,7 +5695,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5666,7 +5756,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5695,7 +5785,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5724,9 +5814,11 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=isInfinite]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[override]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
+        CangJieStub$PROPERTY_BODY
+          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=min]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
@@ -5792,6 +5884,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5843,6 +5936,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5869,6 +5963,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5895,6 +5990,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5921,6 +6017,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5947,6 +6044,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5973,6 +6071,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -5999,6 +6098,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6025,6 +6125,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6051,6 +6152,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6077,6 +6179,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6103,6 +6206,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6129,6 +6233,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6155,6 +6260,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6181,6 +6287,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6207,6 +6314,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6243,6 +6351,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6279,6 +6388,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6315,6 +6425,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6355,6 +6466,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6386,6 +6498,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6434,6 +6547,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6476,6 +6590,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6522,6 +6637,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6572,6 +6688,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -6617,7 +6734,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -6676,7 +6793,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T1]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -6755,7 +6872,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T2]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -6854,7 +6971,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T3]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -6973,7 +7090,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=T4]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7029,6 +7146,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7051,6 +7169,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7073,6 +7192,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -7095,6 +7215,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.prop_test, facadeF
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE

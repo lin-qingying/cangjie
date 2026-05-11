@@ -39,6 +39,8 @@ object CjTokenSets {
         CjStubElementTypes.ENUM,
         CjStubElementTypes.EXTEND,
         CjStubElementTypes.FUNCTION,
+        CjStubElementTypes.MAIN_FUNC,
+        CjStubElementTypes.MACRO,
         CjStubElementTypes.VARIABLE,
         CjStubElementTypes.PROPERTY,
         CjStubElementTypes.TYPEALIAS,
@@ -57,6 +59,8 @@ object CjTokenSets {
         CjStubElementTypes.ENUM,
         CjStubElementTypes.EXTEND,
         CjStubElementTypes.FUNCTION,
+        CjStubElementTypes.MAIN_FUNC,
+        CjStubElementTypes.MACRO,
         CjStubElementTypes.VARIABLE,
         CjStubElementTypes.TYPEALIAS,
     )

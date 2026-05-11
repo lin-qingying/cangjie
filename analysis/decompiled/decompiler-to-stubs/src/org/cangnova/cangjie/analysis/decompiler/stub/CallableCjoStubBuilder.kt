@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.decompiler.stub
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.builtins.StandardNames.MAIN
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
@@ -25,6 +26,7 @@ import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
 import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.psi.CjEnumConstructorTypeEntry
+import org.cangnova.cangjie.psi.CjPropertyBody
 import org.cangnova.cangjie.psi.CjPrimaryConstructor
 import org.cangnova.cangjie.psi.CjSecondaryConstructor
 import org.cangnova.cangjie.psi.stubs.PatternKind
@@ -43,6 +45,7 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImp
 import org.cangnova.cangjie.psi.stubs.impl.CangJieNamedFunctionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyAccessorStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieTuplePatternStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieTypePatternStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieVarOrEnumPatternStubImpl
@@ -56,6 +59,7 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieWildcardPatternStubImpl
  */
 internal fun createMainFunctionStub(
     parent: StubElement<*>,
+    declaration: org.cangnova.cangjie.cfir.declarations.CfirMainFunction,
     context: CjoStubBuilderContext,
 ) {
     val fqName = context.packageFqName.firstSegment()?.let { firstSegment ->
@@ -68,7 +72,16 @@ internal fun createMainFunctionStub(
         fqName = fqName,
         origin = null,
     )
-    createEmptyDeclarationHeaderStubs(functionStub)
+    createEmptyDeclarationHeaderStubs(
+        functionStub,
+        createDeclarationModifierMask(declaration.status),
+    )
+    context.typeStubBuilder.createCallableParameterListStub(
+        parent = functionStub,
+        valueParameters = declaration.valueParameters,
+        createEmptyList = true,
+    )
+    context.typeStubBuilder.createCallableReturnTypeReferenceStub(functionStub, declaration.returnTypeRef)
 }
 
 /**
@@ -121,7 +134,7 @@ internal fun createFinalizerStub(
         parent = parent,
         elementType = CjStubElementTypes.FINALIZER,
         containingClassName = StringRef.fromString(context.owningClassSimpleName ?: "finalizer"),
-        hasBody = declaration.body != null,
+        hasBody = true,
     )
     createEmptyDeclarationHeaderStubs(finalizerStub)
     context.typeStubBuilder.createCallableParameterListStub(
@@ -141,7 +154,7 @@ internal fun createFunctionStub(
             parent = parent,
             elementType = CjStubElementTypes.FINALIZER,
             containingClassName = StringRef.fromString(context.owningClassSimpleName),
-            hasBody = declaration.body != null,
+            hasBody = true,
         )
         createEmptyDeclarationHeaderStubs(finalizerStub)
         context.typeStubBuilder.createCallableParameterListStub(
@@ -169,19 +182,23 @@ internal fun createFunctionStub(
         return
     }
 
+    val hasBody = compiledCallableHasBody(declaration.status)
     val functionStub = CangJieNamedFunctionStubImpl(
         parent = parent,
         element = CjStubElementTypes.FUNCTION,
         nameRef = StringRef.fromString(declaration.name.asString()),
         isTopLevel = parent is CangJieFileStubImpl,
         fqName = callableFqName(parent, context, declaration.name),
-        hasBlockBody = declaration.body != null,
-        hasBody = declaration.body != null,
+        hasBlockBody = hasBody,
+        hasBody = hasBody,
         hasTypeParameterListBeforeFunctionName = false,
         origin = null,
     )
-    createEmptyDeclarationHeaderStubs(functionStub, createCallableModifierMask(declaration.status.isOperator))
-    context.typeStubBuilder.createCallableParameterListStub(functionStub, declaration.valueParameters)
+    createEmptyDeclarationHeaderStubs(
+        functionStub,
+        createDeclarationModifierMask(declaration.status, isOperator = declaration.status.isOperator),
+    )
+    context.typeStubBuilder.createCallableParameterListStub(functionStub, declaration.valueParameters, createEmptyList = true)
     context.typeStubBuilder.createCallableReturnTypeReferenceStub(functionStub, declaration.returnTypeRef)
 }
 
@@ -190,19 +207,23 @@ internal fun createMacroStub(
     declaration: CfirMacroDeclaration,
     context: CjoStubBuilderContext,
 ) {
+    val hasBody = compiledCallableHasBody(declaration.status)
     val macroStub = CangJieMacroStubImpl(
         parent = parent,
         element = CjStubElementTypes.MACRO,
         nameRef = StringRef.fromString(declaration.name.asString()),
         isTopLevel = parent is CangJieFileStubImpl,
         fqName = callableFqName(parent, context, declaration.name),
-        hasBlockBody = declaration.body != null,
-        hasBody = declaration.body != null,
+        hasBlockBody = hasBody,
+        hasBody = hasBody,
         hasTypeParameterListBeforeFunctionName = false,
         origin = null,
     )
-    createEmptyDeclarationHeaderStubs(macroStub)
-    context.typeStubBuilder.createCallableParameterListStub(macroStub, declaration.valueParameters)
+    createEmptyDeclarationHeaderStubs(
+        macroStub,
+        createDeclarationModifierMask(declaration.status),
+    )
+    context.typeStubBuilder.createCallableParameterListStub(macroStub, declaration.valueParameters, createEmptyList = true)
     context.typeStubBuilder.createCallableReturnTypeReferenceStub(macroStub, declaration.returnTypeRef)
 }
 
@@ -216,8 +237,12 @@ internal fun createPropertyStub(
         name = StringRef.fromString(declaration.name.asString()),
         fqName = callableFqName(parent, context, declaration.name),
     )
-    createEmptyDeclarationHeaderStubs(propertyStub)
+    createEmptyDeclarationHeaderStubs(
+        propertyStub,
+        createDeclarationModifierMask(declaration.status),
+    )
     context.typeStubBuilder.createDeclaredTypeReferenceStub(propertyStub, declaration.returnTypeRef)
+    createPropertyBodyStub(propertyStub, declaration, context)
 }
 
 internal fun createFieldStub(
@@ -400,6 +425,59 @@ private fun createPatternStub(
     }
 }
 
+private fun createPropertyBodyStub(
+    propertyStub: CangJiePropertyStubImpl,
+    declaration: CfirProperty,
+    context: CjoStubBuilderContext,
+) {
+    if (!compiledPropertyHasBody(declaration.status)) return
+
+    val propertyBodyStub = CangJiePlaceHolderStubImpl<CjPropertyBody>(
+        propertyStub,
+        CjStubElementTypes.PROPERTY_BODY,
+    )
+    createPropertyAccessorStub(
+        parent = propertyBodyStub,
+        isGetter = true,
+        context = context,
+    )
+    if (declaration.status.isMut) {
+        createPropertyAccessorStub(
+            parent = propertyBodyStub,
+            isGetter = false,
+            context = context,
+        )
+    }
+}
+
+private fun createPropertyAccessorStub(
+    parent: StubElement<*>,
+    isGetter: Boolean,
+    context: CjoStubBuilderContext,
+) {
+    val accessorStub = CangJiePropertyAccessorStubImpl(
+        parent = parent,
+        isGetter = isGetter,
+        hasBody = true,
+        hasBlockBody = true,
+    )
+    if (isGetter) {
+        return
+    } else {
+        context.typeStubBuilder.createSimpleParameterListStub(
+            parent = accessorStub,
+            parameterNames = listOf(PROPERTY_SETTER_PARAMETER_NAME),
+            includeAnnotations = false,
+        )
+    }
+}
+
+private fun compiledPropertyHasBody(status: CfirDeclarationStatus): Boolean {
+    return !status.isAbstract && !status.isForeign
+}
+
+private const val PROPERTY_SETTER_PARAMETER_NAME = "value"
+
 private fun CfirPattern.toPatternKind(): PatternKind = when (this) {
     is CfirBindingPattern -> PatternKind.BINDING
     is CfirTuplePattern -> PatternKind.TUPLE
@@ -422,4 +500,8 @@ private fun callableFqName(
     } else {
         null
     }
+}
+
+private fun compiledCallableHasBody(status: CfirDeclarationStatus): Boolean {
+    return !status.isAbstract && !status.isForeign
 }

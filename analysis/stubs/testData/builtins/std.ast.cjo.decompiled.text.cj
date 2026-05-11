@@ -90,7 +90,7 @@ enum NodeFormat_AnyExpr {
     | AnyExpr_ARRAY_EXPR
 }
 
-func EnumValuesNodeFormat_AnyExpr(e: UInt8): std.ast.NodeFormat_AnyExpr
+func EnumValuesNodeFormat_AnyExpr(e: UInt8): std.ast.NodeFormat_AnyExpr { /* compiled code */ }
 
 enum NodeFormat_AnyPattern {
     | AnyPattern_NONE
@@ -114,7 +114,7 @@ enum NodeFormat_AnyPattern {
     | AnyPattern_COMMAND_TYPE_PATTERN
 }
 
-func EnumValuesNodeFormat_AnyPattern(e: UInt8): std.ast.NodeFormat_AnyPattern
+func EnumValuesNodeFormat_AnyPattern(e: UInt8): std.ast.NodeFormat_AnyPattern { /* compiled code */ }
 
 enum NodeFormat_MacroParam {
     | MacroParam_NONE
@@ -122,7 +122,7 @@ enum NodeFormat_MacroParam {
     | MacroParam_MACRO_EXPAND_PARAM
 }
 
-func EnumValuesNodeFormat_MacroParam(e: UInt8): std.ast.NodeFormat_MacroParam
+func EnumValuesNodeFormat_MacroParam(e: UInt8): std.ast.NodeFormat_MacroParam { /* compiled code */ }
 
 enum NodeFormat_AnyType {
     | AnyType_NONE
@@ -148,7 +148,7 @@ enum NodeFormat_AnyType {
     | AnyType_CONSTANT_TYPE
 }
 
-func EnumValuesNodeFormat_AnyType(e: UInt8): std.ast.NodeFormat_AnyType
+func EnumValuesNodeFormat_AnyType(e: UInt8): std.ast.NodeFormat_AnyType { /* compiled code */ }
 
 enum NodeFormat_AnyDecl {
     | AnyDecl_NONE
@@ -186,7 +186,7 @@ enum NodeFormat_AnyDecl {
     | AnyDecl_FUNC_PARAM
 }
 
-func EnumValuesNodeFormat_AnyDecl(e: UInt8): std.ast.NodeFormat_AnyDecl
+func EnumValuesNodeFormat_AnyDecl(e: UInt8): std.ast.NodeFormat_AnyDecl { /* compiled code */ }
 
 enum NodeFormat_AnyNode {
     | AnyNode_NONE
@@ -208,7 +208,7 @@ enum NodeFormat_AnyNode {
     | AnyNode_ANNOTATION
 }
 
-func EnumValuesNodeFormat_AnyNode(e: UInt8): std.ast.NodeFormat_AnyNode
+func EnumValuesNodeFormat_AnyNode(e: UInt8): std.ast.NodeFormat_AnyNode { /* compiled code */ }
 
 enum NodeFormat_AccessibleKind {
     | AccessibleKind_ACCESSIBLE_PUBLIC
@@ -218,7 +218,7 @@ enum NodeFormat_AccessibleKind {
     | AccessibleKind_ACCESSIBLE_INTERNAL
 }
 
-func EnumValuesNodeFormat_AccessibleKind(e: UInt8): std.ast.NodeFormat_AccessibleKind
+func EnumValuesNodeFormat_AccessibleKind(e: UInt8): std.ast.NodeFormat_AccessibleKind { /* compiled code */ }
 
 enum NodeFormat_ImportKind {
     | ImportKind_IMPORT_SINGLE
@@ -230,7 +230,7 @@ enum NodeFormat_ImportKind {
     | ImportKind_IMPORT_MULTI
 }
 
-func EnumValuesNodeFormat_ImportKind(e: UInt8): std.ast.NodeFormat_ImportKind
+func EnumValuesNodeFormat_ImportKind(e: UInt8): std.ast.NodeFormat_ImportKind { /* compiled code */ }
 
 enum NodeFormat_ReExportKind {
     | ReExportKind_REEXPORT_PRIVATE
@@ -242,7 +242,7 @@ enum NodeFormat_ReExportKind {
     | ReExportKind_REEXPORT_PUBLIC
 }
 
-func EnumValuesNodeFormat_ReExportKind(e: UInt8): std.ast.NodeFormat_ReExportKind
+func EnumValuesNodeFormat_ReExportKind(e: UInt8): std.ast.NodeFormat_ReExportKind { /* compiled code */ }
 
 struct NodeFormat_Position {
     let BYTE_ALIGNMENT: UInt32
@@ -275,19 +275,19 @@ class NodeFormat_MatchCase <: std.ast.FlatBufferObject {
 
     let BIT_OR_POS_VEC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetPatterns: std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>>
+    func GetPatterns(): std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>> { /* compiled code */ }
 
-    func GetPatternguard: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetPatternguard(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetIfPos: std.ast.NodeFormat_Position
+    func GetIfPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetArrowPos: std.ast.NodeFormat_Position
+    func GetArrowPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExprOrDecls: std.core.Option<std.ast.NodeFormat_Block>
+    func GetExprOrDecls(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 
-    func GetBitOrPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetBitOrPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 }
 
 class NodeFormat_NodeBase <: std.ast.FlatBufferObject {
@@ -299,11 +299,11 @@ class NodeFormat_NodeBase <: std.ast.FlatBufferObject {
 
     let AST_KIND: UInt16
 
-    func GetBegin: std.ast.NodeFormat_Position
+    func GetBegin(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetEnd: std.ast.NodeFormat_Position
+    func GetEnd(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAstKind: std.core.String
+    func GetAstKind(): std.core.String { /* compiled code */ }
 }
 
 class NodeFormat_Pattern <: std.ast.FlatBufferObject {
@@ -315,27 +315,27 @@ class NodeFormat_Pattern <: std.ast.FlatBufferObject {
 
     let PATTERN: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetPatternType: std.ast.NodeFormat_AnyPattern
+    func GetPatternType(): std.ast.NodeFormat_AnyPattern { /* compiled code */ }
 
-    func GetPatternAsConstPattern: std.core.Option<std.ast.NodeFormat_ConstPattern>
+    func GetPatternAsConstPattern(): std.core.Option<std.ast.NodeFormat_ConstPattern> { /* compiled code */ }
 
-    func GetPatternAsWildcardPattern: std.core.Option<std.ast.NodeFormat_WildcardPattern>
+    func GetPatternAsWildcardPattern(): std.core.Option<std.ast.NodeFormat_WildcardPattern> { /* compiled code */ }
 
-    func GetPatternAsVarPattern: std.core.Option<std.ast.NodeFormat_VarPattern>
+    func GetPatternAsVarPattern(): std.core.Option<std.ast.NodeFormat_VarPattern> { /* compiled code */ }
 
-    func GetPatternAsExceptTypePattern: std.core.Option<std.ast.NodeFormat_ExceptTypePattern>
+    func GetPatternAsExceptTypePattern(): std.core.Option<std.ast.NodeFormat_ExceptTypePattern> { /* compiled code */ }
 
-    func GetPatternAsTypePattern: std.core.Option<std.ast.NodeFormat_TypePattern>
+    func GetPatternAsTypePattern(): std.core.Option<std.ast.NodeFormat_TypePattern> { /* compiled code */ }
 
-    func GetPatternAsEnumPattern: std.core.Option<std.ast.NodeFormat_EnumPattern>
+    func GetPatternAsEnumPattern(): std.core.Option<std.ast.NodeFormat_EnumPattern> { /* compiled code */ }
 
-    func GetPatternAsVarOrEnumPattern: std.core.Option<std.ast.NodeFormat_VarOrEnumPattern>
+    func GetPatternAsVarOrEnumPattern(): std.core.Option<std.ast.NodeFormat_VarOrEnumPattern> { /* compiled code */ }
 
-    func GetPatternAsTuplePattern: std.core.Option<std.ast.NodeFormat_TuplePattern>
+    func GetPatternAsTuplePattern(): std.core.Option<std.ast.NodeFormat_TuplePattern> { /* compiled code */ }
 
-    func GetPatternAsCommandTypePattern: std.core.Option<std.ast.NodeFormat_CommandTypePattern>
+    func GetPatternAsCommandTypePattern(): std.core.Option<std.ast.NodeFormat_CommandTypePattern> { /* compiled code */ }
 }
 
 class NodeFormat_Expr <: std.ast.FlatBufferObject {
@@ -347,87 +347,87 @@ class NodeFormat_Expr <: std.ast.FlatBufferObject {
 
     let EXPR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetExprType: std.ast.NodeFormat_AnyExpr
+    func GetExprType(): std.ast.NodeFormat_AnyExpr { /* compiled code */ }
 
-    func GetExprAsBinaryExpr: std.core.Option<std.ast.NodeFormat_BinaryExpr>
+    func GetExprAsBinaryExpr(): std.core.Option<std.ast.NodeFormat_BinaryExpr> { /* compiled code */ }
 
-    func GetExprAsUnaryExpr: std.core.Option<std.ast.NodeFormat_UnaryExpr>
+    func GetExprAsUnaryExpr(): std.core.Option<std.ast.NodeFormat_UnaryExpr> { /* compiled code */ }
 
-    func GetExprAsParenExpr: std.core.Option<std.ast.NodeFormat_ParenExpr>
+    func GetExprAsParenExpr(): std.core.Option<std.ast.NodeFormat_ParenExpr> { /* compiled code */ }
 
-    func GetExprAsLitConstExpr: std.core.Option<std.ast.NodeFormat_LitConstExpr>
+    func GetExprAsLitConstExpr(): std.core.Option<std.ast.NodeFormat_LitConstExpr> { /* compiled code */ }
 
-    func GetExprAsCallExpr: std.core.Option<std.ast.NodeFormat_CallExpr>
+    func GetExprAsCallExpr(): std.core.Option<std.ast.NodeFormat_CallExpr> { /* compiled code */ }
 
-    func GetExprAsRefExpr: std.core.Option<std.ast.NodeFormat_RefExpr>
+    func GetExprAsRefExpr(): std.core.Option<std.ast.NodeFormat_RefExpr> { /* compiled code */ }
 
-    func GetExprAsReturnExpr: std.core.Option<std.ast.NodeFormat_ReturnExpr>
+    func GetExprAsReturnExpr(): std.core.Option<std.ast.NodeFormat_ReturnExpr> { /* compiled code */ }
 
-    func GetExprAsAssignExpr: std.core.Option<std.ast.NodeFormat_AssignExpr>
+    func GetExprAsAssignExpr(): std.core.Option<std.ast.NodeFormat_AssignExpr> { /* compiled code */ }
 
-    func GetExprAsMemberAccess: std.core.Option<std.ast.NodeFormat_MemberAccess>
+    func GetExprAsMemberAccess(): std.core.Option<std.ast.NodeFormat_MemberAccess> { /* compiled code */ }
 
-    func GetExprAsIfExpr: std.core.Option<std.ast.NodeFormat_IfExpr>
+    func GetExprAsIfExpr(): std.core.Option<std.ast.NodeFormat_IfExpr> { /* compiled code */ }
 
-    func GetExprAsBlock: std.core.Option<std.ast.NodeFormat_Block>
+    func GetExprAsBlock(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 
-    func GetExprAsLambdaExpr: std.core.Option<std.ast.NodeFormat_LambdaExpr>
+    func GetExprAsLambdaExpr(): std.core.Option<std.ast.NodeFormat_LambdaExpr> { /* compiled code */ }
 
-    func GetExprAsArrayLit: std.core.Option<std.ast.NodeFormat_ArrayLit>
+    func GetExprAsArrayLit(): std.core.Option<std.ast.NodeFormat_ArrayLit> { /* compiled code */ }
 
-    func GetExprAsTupleLit: std.core.Option<std.ast.NodeFormat_TupleLit>
+    func GetExprAsTupleLit(): std.core.Option<std.ast.NodeFormat_TupleLit> { /* compiled code */ }
 
-    func GetExprAsSubscriptExpr: std.core.Option<std.ast.NodeFormat_SubscriptExpr>
+    func GetExprAsSubscriptExpr(): std.core.Option<std.ast.NodeFormat_SubscriptExpr> { /* compiled code */ }
 
-    func GetExprAsRangeExpr: std.core.Option<std.ast.NodeFormat_RangeExpr>
+    func GetExprAsRangeExpr(): std.core.Option<std.ast.NodeFormat_RangeExpr> { /* compiled code */ }
 
-    func GetExprAsForInExpr: std.core.Option<std.ast.NodeFormat_ForInExpr>
+    func GetExprAsForInExpr(): std.core.Option<std.ast.NodeFormat_ForInExpr> { /* compiled code */ }
 
-    func GetExprAsIsExpr: std.core.Option<std.ast.NodeFormat_IsExpr>
+    func GetExprAsIsExpr(): std.core.Option<std.ast.NodeFormat_IsExpr> { /* compiled code */ }
 
-    func GetExprAsAsExpr: std.core.Option<std.ast.NodeFormat_AsExpr>
+    func GetExprAsAsExpr(): std.core.Option<std.ast.NodeFormat_AsExpr> { /* compiled code */ }
 
-    func GetExprAsTrailingClosureExpr: std.core.Option<std.ast.NodeFormat_TrailingClosureExpr>
+    func GetExprAsTrailingClosureExpr(): std.core.Option<std.ast.NodeFormat_TrailingClosureExpr> { /* compiled code */ }
 
-    func GetExprAsTypeConvExpr: std.core.Option<std.ast.NodeFormat_TypeConvExpr>
+    func GetExprAsTypeConvExpr(): std.core.Option<std.ast.NodeFormat_TypeConvExpr> { /* compiled code */ }
 
-    func GetExprAsThrowExpr: std.core.Option<std.ast.NodeFormat_ThrowExpr>
+    func GetExprAsThrowExpr(): std.core.Option<std.ast.NodeFormat_ThrowExpr> { /* compiled code */ }
 
-    func GetExprAsTryExpr: std.core.Option<std.ast.NodeFormat_TryExpr>
+    func GetExprAsTryExpr(): std.core.Option<std.ast.NodeFormat_TryExpr> { /* compiled code */ }
 
-    func GetExprAsPrimitiveTypeExpr: std.core.Option<std.ast.NodeFormat_PrimitiveTypeExpr>
+    func GetExprAsPrimitiveTypeExpr(): std.core.Option<std.ast.NodeFormat_PrimitiveTypeExpr> { /* compiled code */ }
 
-    func GetExprAsWhileExpr: std.core.Option<std.ast.NodeFormat_WhileExpr>
+    func GetExprAsWhileExpr(): std.core.Option<std.ast.NodeFormat_WhileExpr> { /* compiled code */ }
 
-    func GetExprAsDoWhileExpr: std.core.Option<std.ast.NodeFormat_DoWhileExpr>
+    func GetExprAsDoWhileExpr(): std.core.Option<std.ast.NodeFormat_DoWhileExpr> { /* compiled code */ }
 
-    func GetExprAsJumpExpr: std.core.Option<std.ast.NodeFormat_JumpExpr>
+    func GetExprAsJumpExpr(): std.core.Option<std.ast.NodeFormat_JumpExpr> { /* compiled code */ }
 
-    func GetExprAsIncOrDecExpr: std.core.Option<std.ast.NodeFormat_IncOrDecExpr>
+    func GetExprAsIncOrDecExpr(): std.core.Option<std.ast.NodeFormat_IncOrDecExpr> { /* compiled code */ }
 
-    func GetExprAsSpawnExpr: std.core.Option<std.ast.NodeFormat_SpawnExpr>
+    func GetExprAsSpawnExpr(): std.core.Option<std.ast.NodeFormat_SpawnExpr> { /* compiled code */ }
 
-    func GetExprAsSynchronizedExpr: std.core.Option<std.ast.NodeFormat_SynchronizedExpr>
+    func GetExprAsSynchronizedExpr(): std.core.Option<std.ast.NodeFormat_SynchronizedExpr> { /* compiled code */ }
 
-    func GetExprAsLetPatternDestructor: std.core.Option<std.ast.NodeFormat_LetPatternDestructor>
+    func GetExprAsLetPatternDestructor(): std.core.Option<std.ast.NodeFormat_LetPatternDestructor> { /* compiled code */ }
 
-    func GetExprAsTokenPart: std.core.Option<std.ast.NodeFormat_TokenPart>
+    func GetExprAsTokenPart(): std.core.Option<std.ast.NodeFormat_TokenPart> { /* compiled code */ }
 
-    func GetExprAsQuoteExpr: std.core.Option<std.ast.NodeFormat_QuoteExpr>
+    func GetExprAsQuoteExpr(): std.core.Option<std.ast.NodeFormat_QuoteExpr> { /* compiled code */ }
 
-    func GetExprAsMatchExpr: std.core.Option<std.ast.NodeFormat_MatchExpr>
+    func GetExprAsMatchExpr(): std.core.Option<std.ast.NodeFormat_MatchExpr> { /* compiled code */ }
 
-    func GetExprAsOptionalExpr: std.core.Option<std.ast.NodeFormat_OptionalExpr>
+    func GetExprAsOptionalExpr(): std.core.Option<std.ast.NodeFormat_OptionalExpr> { /* compiled code */ }
 
-    func GetExprAsOptionalChainExpr: std.core.Option<std.ast.NodeFormat_OptionalChainExpr>
+    func GetExprAsOptionalChainExpr(): std.core.Option<std.ast.NodeFormat_OptionalChainExpr> { /* compiled code */ }
 
-    func GetExprAsMacroExpandExpr: std.core.Option<std.ast.NodeFormat_MacroExpandExpr>
+    func GetExprAsMacroExpandExpr(): std.core.Option<std.ast.NodeFormat_MacroExpandExpr> { /* compiled code */ }
 
-    func GetExprAsWildcardExpr: std.core.Option<std.ast.NodeFormat_WildcardExpr>
+    func GetExprAsWildcardExpr(): std.core.Option<std.ast.NodeFormat_WildcardExpr> { /* compiled code */ }
 
-    func GetExprAsArrayExpr: std.core.Option<std.ast.NodeFormat_ArrayExpr>
+    func GetExprAsArrayExpr(): std.core.Option<std.ast.NodeFormat_ArrayExpr> { /* compiled code */ }
 }
 
 class NodeFormat_Block <: std.ast.FlatBufferObject {
@@ -445,17 +445,17 @@ class NodeFormat_Block <: std.ast.FlatBufferObject {
 
     let UNSAFE_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetBody: std.core.Array<std.core.Option<std.ast.NodeFormat_Node>>
+    func GetBody(): std.core.Array<std.core.Option<std.ast.NodeFormat_Node>> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIsUnsafe: Bool
+    func GetIsUnsafe(): Bool { /* compiled code */ }
 
-    func GetUnsafePos: std.ast.NodeFormat_Position
+    func GetUnsafePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class FlatBufferObject {
@@ -475,13 +475,13 @@ class NodeFormat_MatchCaseOther <: std.ast.FlatBufferObject {
 
     let EXPR_OR_DECLS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetMatchExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetMatchExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetArrowPos: std.ast.NodeFormat_Position
+    func GetArrowPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExprOrDecls: std.core.Option<std.ast.NodeFormat_Block>
+    func GetExprOrDecls(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 }
 
 class NodeFormat_ConstPattern <: std.ast.FlatBufferObject {
@@ -493,11 +493,11 @@ class NodeFormat_ConstPattern <: std.ast.FlatBufferObject {
 
     let OPERATOR_CALL_EXPR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLiteral: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetLiteral(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetOperatorCallExpr: std.core.Option<std.ast.NodeFormat_CallExpr>
+    func GetOperatorCallExpr(): std.core.Option<std.ast.NodeFormat_CallExpr> { /* compiled code */ }
 }
 
 class NodeFormat_WildcardPattern <: std.ast.FlatBufferObject {
@@ -505,7 +505,7 @@ class NodeFormat_WildcardPattern <: std.ast.FlatBufferObject {
 
     let BASE: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 }
 
 class NodeFormat_VarPattern <: std.ast.FlatBufferObject {
@@ -515,9 +515,9 @@ class NodeFormat_VarPattern <: std.ast.FlatBufferObject {
 
     let VAR_DECL: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetVarDecl: std.core.Option<std.ast.NodeFormat_VarDecl>
+    func GetVarDecl(): std.core.Option<std.ast.NodeFormat_VarDecl> { /* compiled code */ }
 }
 
 class NodeFormat_ExceptTypePattern <: std.ast.FlatBufferObject {
@@ -535,17 +535,17 @@ class NodeFormat_ExceptTypePattern <: std.ast.FlatBufferObject {
 
     let BIT_OR_POS_VEC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetPattern: std.core.Option<std.ast.NodeFormat_Pattern>
+    func GetPattern(): std.core.Option<std.ast.NodeFormat_Pattern> { /* compiled code */ }
 
-    func GetPatternPos: std.ast.NodeFormat_Position
+    func GetPatternPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypes: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetTypes(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetBitOrPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetBitOrPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 }
 
 class NodeFormat_TypePattern <: std.ast.FlatBufferObject {
@@ -559,13 +559,13 @@ class NodeFormat_TypePattern <: std.ast.FlatBufferObject {
 
     let TYPE: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetPattern: std.core.Option<std.ast.NodeFormat_Pattern>
+    func GetPattern(): std.core.Option<std.ast.NodeFormat_Pattern> { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 }
 
 class NodeFormat_EnumPattern <: std.ast.FlatBufferObject {
@@ -583,17 +583,17 @@ class NodeFormat_EnumPattern <: std.ast.FlatBufferObject {
 
     let COMMA_POS_VEC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetRef: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetRef(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetPatterns: std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>>
+    func GetPatterns(): std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetCommaPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCommaPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 }
 
 class NodeFormat_VarOrEnumPattern <: std.ast.FlatBufferObject {
@@ -605,11 +605,11 @@ class NodeFormat_VarOrEnumPattern <: std.ast.FlatBufferObject {
 
     let PATTERN: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetIdentifier: std.core.String
+    func GetIdentifier(): std.core.String { /* compiled code */ }
 
-    func GetPattern: std.core.Option<std.ast.NodeFormat_Pattern>
+    func GetPattern(): std.core.Option<std.ast.NodeFormat_Pattern> { /* compiled code */ }
 }
 
 class NodeFormat_TuplePattern <: std.ast.FlatBufferObject {
@@ -625,15 +625,15 @@ class NodeFormat_TuplePattern <: std.ast.FlatBufferObject {
 
     let COMMA_POS_VEC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetPatterns: std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>>
+    func GetPatterns(): std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetCommaPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCommaPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 }
 
 class NodeFormat_CommandTypePattern <: std.ast.FlatBufferObject {
@@ -651,17 +651,17 @@ class NodeFormat_CommandTypePattern <: std.ast.FlatBufferObject {
 
     let BIT_OR_POS_VEC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetPattern: std.core.Option<std.ast.NodeFormat_Pattern>
+    func GetPattern(): std.core.Option<std.ast.NodeFormat_Pattern> { /* compiled code */ }
 
-    func GetPatternPos: std.ast.NodeFormat_Position
+    func GetPatternPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypes: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetTypes(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetBitOrPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetBitOrPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 }
 
 class NodeFormat_CallExpr <: std.ast.FlatBufferObject {
@@ -677,15 +677,15 @@ class NodeFormat_CallExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetBaseFunc: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetBaseFunc(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetArgs: std.core.Array<std.core.Option<std.ast.NodeFormat_FuncArg>>
+    func GetArgs(): std.core.Array<std.core.Option<std.ast.NodeFormat_FuncArg>> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_VarDecl <: std.ast.FlatBufferObject {
@@ -707,21 +707,21 @@ class NodeFormat_VarDecl <: std.ast.FlatBufferObject {
 
     let EMPTYKEYWORD: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetInitializer: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetInitializer(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetAssignPos: std.ast.NodeFormat_Position
+    func GetAssignPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIsVar: Bool
+    func GetIsVar(): Bool { /* compiled code */ }
 
-    func GetIsEnumConstruct: Bool
+    func GetIsEnumConstruct(): Bool { /* compiled code */ }
 
-    func GetEmptyKeyword: Bool
+    func GetEmptyKeyword(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_Type <: std.ast.FlatBufferObject {
@@ -733,29 +733,29 @@ class NodeFormat_Type <: std.ast.FlatBufferObject {
 
     let TYPE: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetTypeType: std.ast.NodeFormat_AnyType
+    func GetTypeType(): std.ast.NodeFormat_AnyType { /* compiled code */ }
 
-    func GetTypeAsRefType: std.core.Option<std.ast.NodeFormat_RefType>
+    func GetTypeAsRefType(): std.core.Option<std.ast.NodeFormat_RefType> { /* compiled code */ }
 
-    func GetTypeAsPrimitiveType: std.core.Option<std.ast.NodeFormat_PrimitiveType>
+    func GetTypeAsPrimitiveType(): std.core.Option<std.ast.NodeFormat_PrimitiveType> { /* compiled code */ }
 
-    func GetTypeAsFuncType: std.core.Option<std.ast.NodeFormat_FuncType>
+    func GetTypeAsFuncType(): std.core.Option<std.ast.NodeFormat_FuncType> { /* compiled code */ }
 
-    func GetTypeAsThisType: std.core.Option<std.ast.NodeFormat_ThisType>
+    func GetTypeAsThisType(): std.core.Option<std.ast.NodeFormat_ThisType> { /* compiled code */ }
 
-    func GetTypeAsParenType: std.core.Option<std.ast.NodeFormat_ParenType>
+    func GetTypeAsParenType(): std.core.Option<std.ast.NodeFormat_ParenType> { /* compiled code */ }
 
-    func GetTypeAsQualifiedType: std.core.Option<std.ast.NodeFormat_QualifiedType>
+    func GetTypeAsQualifiedType(): std.core.Option<std.ast.NodeFormat_QualifiedType> { /* compiled code */ }
 
-    func GetTypeAsOptionType: std.core.Option<std.ast.NodeFormat_OptionType>
+    func GetTypeAsOptionType(): std.core.Option<std.ast.NodeFormat_OptionType> { /* compiled code */ }
 
-    func GetTypeAsTupleType: std.core.Option<std.ast.NodeFormat_TupleType>
+    func GetTypeAsTupleType(): std.core.Option<std.ast.NodeFormat_TupleType> { /* compiled code */ }
 
-    func GetTypeAsVArrayType: std.core.Option<std.ast.NodeFormat_VArrayType>
+    func GetTypeAsVArrayType(): std.core.Option<std.ast.NodeFormat_VArrayType> { /* compiled code */ }
 
-    func GetTypeAsConstantType: std.core.Option<std.ast.NodeFormat_ConstantType>
+    func GetTypeAsConstantType(): std.core.Option<std.ast.NodeFormat_ConstantType> { /* compiled code */ }
 }
 
 class NodeFormat_BinaryExpr <: std.ast.FlatBufferObject {
@@ -771,15 +771,15 @@ class NodeFormat_BinaryExpr <: std.ast.FlatBufferObject {
 
     let OPERATOR_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetLeftExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRightExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetRightExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetOperatorKind: UInt16
+    func GetOperatorKind(): UInt16 { /* compiled code */ }
 
-    func GetOperatorPos: std.ast.NodeFormat_Position
+    func GetOperatorPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_IsExpr <: std.ast.FlatBufferObject {
@@ -793,13 +793,13 @@ class NodeFormat_IsExpr <: std.ast.FlatBufferObject {
 
     let IS_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetIsType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetIsType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetIsPos: std.ast.NodeFormat_Position
+    func GetIsPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_AsExpr <: std.ast.FlatBufferObject {
@@ -813,13 +813,13 @@ class NodeFormat_AsExpr <: std.ast.FlatBufferObject {
 
     let AS_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetAsType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetAsType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetAsPos: std.ast.NodeFormat_Position
+    func GetAsPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_UnaryExpr <: std.ast.FlatBufferObject {
@@ -833,13 +833,13 @@ class NodeFormat_UnaryExpr <: std.ast.FlatBufferObject {
 
     let OPERATOR_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetOperatorKind: UInt16
+    func GetOperatorKind(): UInt16 { /* compiled code */ }
 
-    func GetOperatorPos: std.ast.NodeFormat_Position
+    func GetOperatorPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_WildcardExpr <: std.ast.FlatBufferObject {
@@ -847,7 +847,7 @@ class NodeFormat_WildcardExpr <: std.ast.FlatBufferObject {
 
     let BASE: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 }
 
 class NodeFormat_ArrayExpr <: std.ast.FlatBufferObject {
@@ -865,17 +865,17 @@ class NodeFormat_ArrayExpr <: std.ast.FlatBufferObject {
 
     let ISVALUEARRAY: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetArgs: std.core.Array<std.core.Option<std.ast.NodeFormat_FuncArg>>
+    func GetArgs(): std.core.Array<std.core.Option<std.ast.NodeFormat_FuncArg>> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIsValueArray: Bool
+    func GetIsValueArray(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_FuncArg <: std.ast.FlatBufferObject {
@@ -895,19 +895,19 @@ class NodeFormat_FuncArg <: std.ast.FlatBufferObject {
 
     let WITHINOUT: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetName: std.core.String
+    func GetName(): std.core.String { /* compiled code */ }
 
-    func GetNamePos: std.ast.NodeFormat_Position
+    func GetNamePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetCommaPos: std.ast.NodeFormat_Position
+    func GetCommaPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetWithInout: Bool
+    func GetWithInout(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_ParenExpr <: std.ast.FlatBufferObject {
@@ -921,13 +921,13 @@ class NodeFormat_ParenExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_LitConstExpr <: std.ast.FlatBufferObject {
@@ -945,17 +945,17 @@ class NodeFormat_LitConstExpr <: std.ast.FlatBufferObject {
 
     let IS_SINGLE_QUOTE: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLiteral: std.core.String
+    func GetLiteral(): std.core.String { /* compiled code */ }
 
-    func GetLiteralConstKind: UInt16
+    func GetLiteralConstKind(): UInt16 { /* compiled code */ }
 
-    func GetDelimiterNum: UInt16
+    func GetDelimiterNum(): UInt16 { /* compiled code */ }
 
-    func GetStringKind: UInt16
+    func GetStringKind(): UInt16 { /* compiled code */ }
 
-    func GetIsSingleQuote: Bool
+    func GetIsSingleQuote(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_RefExpr <: std.ast.FlatBufferObject {
@@ -977,21 +977,21 @@ class NodeFormat_RefExpr <: std.ast.FlatBufferObject {
 
     let IS_QUOTE_DOLLAR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetRef: std.core.Option<std.ast.NodeFormat_Reference>
+    func GetRef(): std.core.Option<std.ast.NodeFormat_Reference> { /* compiled code */ }
 
-    func GetLeftAnglePos: std.ast.NodeFormat_Position
+    func GetLeftAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypeArguments: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetTypeArguments(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetRightAnglePos: std.ast.NodeFormat_Position
+    func GetRightAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIsThis: Bool
+    func GetIsThis(): Bool { /* compiled code */ }
 
-    func GetIsSuper: Bool
+    func GetIsSuper(): Bool { /* compiled code */ }
 
-    func GetIsQuoteDollar: Bool
+    func GetIsQuoteDollar(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_Reference <: std.ast.FlatBufferObject {
@@ -1001,9 +1001,9 @@ class NodeFormat_Reference <: std.ast.FlatBufferObject {
 
     let IDENTIFIER_POS: UInt16
 
-    func GetIdentifier: std.core.String
+    func GetIdentifier(): std.core.String { /* compiled code */ }
 
-    func GetIdentifierPos: std.ast.NodeFormat_Position
+    func GetIdentifierPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_ReturnExpr <: std.ast.FlatBufferObject {
@@ -1015,11 +1015,11 @@ class NodeFormat_ReturnExpr <: std.ast.FlatBufferObject {
 
     let EXPR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetReturnPos: std.ast.NodeFormat_Position
+    func GetReturnPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 }
 
 class NodeFormat_AssignExpr <: std.ast.FlatBufferObject {
@@ -1035,15 +1035,15 @@ class NodeFormat_AssignExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_EXPR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftValue: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetLeftValue(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetAssignOp: UInt16
+    func GetAssignOp(): UInt16 { /* compiled code */ }
 
-    func GetAssignPos: std.ast.NodeFormat_Position
+    func GetAssignPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetRightExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 }
 
 class NodeFormat_MemberAccess <: std.ast.FlatBufferObject {
@@ -1065,21 +1065,21 @@ class NodeFormat_MemberAccess <: std.ast.FlatBufferObject {
 
     let RIGHT_ANGLE_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetBaseExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetBaseExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetDotPos: std.ast.NodeFormat_Position
+    func GetDotPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetField: std.core.String
+    func GetField(): std.core.String { /* compiled code */ }
 
-    func GetFieldPos: std.ast.NodeFormat_Position
+    func GetFieldPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftAnglePos: std.ast.NodeFormat_Position
+    func GetLeftAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypeArguments: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetTypeArguments(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetRightAnglePos: std.ast.NodeFormat_Position
+    func GetRightAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_IfExpr <: std.ast.FlatBufferObject {
@@ -1105,25 +1105,25 @@ class NodeFormat_IfExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetIfPos: std.ast.NodeFormat_Position
+    func GetIfPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetCondExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetCondExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_Block>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 
-    func GetHasElse: Bool
+    func GetHasElse(): Bool { /* compiled code */ }
 
-    func GetElsePos: std.ast.NodeFormat_Position
+    func GetElsePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetElseBody: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetElseBody(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetIsElseIf: Bool
+    func GetIsElseIf(): Bool { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_LetPatternDestructor <: std.ast.FlatBufferObject {
@@ -1139,15 +1139,15 @@ class NodeFormat_LetPatternDestructor <: std.ast.FlatBufferObject {
 
     let INITIALIZER: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetPatterns: std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>>
+    func GetPatterns(): std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>> { /* compiled code */ }
 
-    func GetBitOrPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetBitOrPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetBackarrowPos: std.ast.NodeFormat_Position
+    func GetBackarrowPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetInitializer: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetInitializer(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 }
 
 class NodeFormat_LambdaExpr <: std.ast.FlatBufferObject {
@@ -1159,11 +1159,11 @@ class NodeFormat_LambdaExpr <: std.ast.FlatBufferObject {
 
     let MOCKSUPPORTED: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_FuncBody>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_FuncBody> { /* compiled code */ }
 
-    func GetMockSupported: Bool
+    func GetMockSupported(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_FuncBody <: std.ast.FlatBufferObject {
@@ -1185,21 +1185,21 @@ class NodeFormat_FuncBody <: std.ast.FlatBufferObject {
 
     let GENERIC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetParamList: std.core.Option<std.ast.NodeFormat_FuncParamList>
+    func GetParamList(): std.core.Option<std.ast.NodeFormat_FuncParamList> { /* compiled code */ }
 
-    func GetArrowPos: std.ast.NodeFormat_Position
+    func GetArrowPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetRetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetHasBody: Bool
+    func GetHasBody(): Bool { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_Block>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 
-    func GetGeneric: std.core.Option<std.ast.NodeFormat_Generic>
+    func GetGeneric(): std.core.Option<std.ast.NodeFormat_Generic> { /* compiled code */ }
 }
 
 class NodeFormat_ArrayLit <: std.ast.FlatBufferObject {
@@ -1215,15 +1215,15 @@ class NodeFormat_ArrayLit <: std.ast.FlatBufferObject {
 
     let RIGHT_CURL_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetChildren: std.core.Array<std.core.Option<std.ast.NodeFormat_Expr>>
+    func GetChildren(): std.core.Array<std.core.Option<std.ast.NodeFormat_Expr>> { /* compiled code */ }
 
-    func GetCommaPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCommaPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_TupleLit <: std.ast.FlatBufferObject {
@@ -1239,15 +1239,15 @@ class NodeFormat_TupleLit <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetChildren: std.core.Array<std.core.Option<std.ast.NodeFormat_Expr>>
+    func GetChildren(): std.core.Array<std.core.Option<std.ast.NodeFormat_Expr>> { /* compiled code */ }
 
-    func GetCommaPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCommaPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_SubscriptExpr <: std.ast.FlatBufferObject {
@@ -1265,17 +1265,17 @@ class NodeFormat_SubscriptExpr <: std.ast.FlatBufferObject {
 
     let IS_TUPLE_ACCESS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetBaseExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetBaseExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetLeftSquarePos: std.ast.NodeFormat_Position
+    func GetLeftSquarePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIndexExprs: std.core.Array<std.core.Option<std.ast.NodeFormat_Expr>>
+    func GetIndexExprs(): std.core.Array<std.core.Option<std.ast.NodeFormat_Expr>> { /* compiled code */ }
 
-    func GetRightSquarePos: std.ast.NodeFormat_Position
+    func GetRightSquarePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIsTupleAccess: Bool
+    func GetIsTupleAccess(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_MatchExpr <: std.ast.FlatBufferObject {
@@ -1299,23 +1299,23 @@ class NodeFormat_MatchExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_CURL_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetMatchMode: Bool
+    func GetMatchMode(): Bool { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetSelector: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetSelector(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetMatchCases: std.core.Array<std.core.Option<std.ast.NodeFormat_MatchCase>>
+    func GetMatchCases(): std.core.Array<std.core.Option<std.ast.NodeFormat_MatchCase>> { /* compiled code */ }
 
-    func GetMatchCaseOthers: std.core.Array<std.core.Option<std.ast.NodeFormat_MatchCaseOther>>
+    func GetMatchCaseOthers(): std.core.Array<std.core.Option<std.ast.NodeFormat_MatchCaseOther>> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_RangeExpr <: std.ast.FlatBufferObject {
@@ -1335,19 +1335,19 @@ class NodeFormat_RangeExpr <: std.ast.FlatBufferObject {
 
     let IS_CLOSED: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetStartExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetStartExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRangePos: std.ast.NodeFormat_Position
+    func GetRangePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetStopExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetStopExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetStepExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetStepExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetIsClosed: Bool
+    func GetIsClosed(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_ForInExpr <: std.ast.FlatBufferObject {
@@ -1371,23 +1371,23 @@ class NodeFormat_ForInExpr <: std.ast.FlatBufferObject {
 
     let BODY: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetPattern: std.core.Option<std.ast.NodeFormat_Pattern>
+    func GetPattern(): std.core.Option<std.ast.NodeFormat_Pattern> { /* compiled code */ }
 
-    func GetInPos: std.ast.NodeFormat_Position
+    func GetInPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetInExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetInExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIfPos: std.ast.NodeFormat_Position
+    func GetIfPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetPatternGuard: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetPatternGuard(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_Block>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 }
 
 class NodeFormat_WhileExpr <: std.ast.FlatBufferObject {
@@ -1405,17 +1405,17 @@ class NodeFormat_WhileExpr <: std.ast.FlatBufferObject {
 
     let BODY: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetWhilePos: std.ast.NodeFormat_Position
+    func GetWhilePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetCondExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetCondExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_Block>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 }
 
 class NodeFormat_SpawnExpr <: std.ast.FlatBufferObject {
@@ -1435,19 +1435,19 @@ class NodeFormat_SpawnExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetSpawnPos: std.ast.NodeFormat_Position
+    func GetSpawnPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTaskExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetTaskExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetHasArg: Bool
+    func GetHasArg(): Bool { /* compiled code */ }
 
-    func GetSpawnArgExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetSpawnArgExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_SynchronizedExpr <: std.ast.FlatBufferObject {
@@ -1465,17 +1465,17 @@ class NodeFormat_SynchronizedExpr <: std.ast.FlatBufferObject {
 
     let BODY: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetSyncPos: std.ast.NodeFormat_Position
+    func GetSyncPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetMutexExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetMutexExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_Block>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 }
 
 class NodeFormat_TrailingClosureExpr <: std.ast.FlatBufferObject {
@@ -1491,15 +1491,15 @@ class NodeFormat_TrailingClosureExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_LAMBDA: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftLambda: std.ast.NodeFormat_Position
+    func GetLeftLambda(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetLambda: std.core.Option<std.ast.NodeFormat_LambdaExpr>
+    func GetLambda(): std.core.Option<std.ast.NodeFormat_LambdaExpr> { /* compiled code */ }
 
-    func GetRightLambda: std.ast.NodeFormat_Position
+    func GetRightLambda(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_TypeConvExpr <: std.ast.FlatBufferObject {
@@ -1515,15 +1515,15 @@ class NodeFormat_TypeConvExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_ThrowExpr <: std.ast.FlatBufferObject {
@@ -1533,9 +1533,9 @@ class NodeFormat_ThrowExpr <: std.ast.FlatBufferObject {
 
     let EXPR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 }
 
 class NodeFormat_TryExpr <: std.ast.FlatBufferObject {
@@ -1569,33 +1569,33 @@ class NodeFormat_TryExpr <: std.ast.FlatBufferObject {
 
     let CATCH_RIGHT_PAREN_POS_VEC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetResourceSpec: std.core.Array<std.core.Option<std.ast.NodeFormat_VarDecl>>
+    func GetResourceSpec(): std.core.Array<std.core.Option<std.ast.NodeFormat_VarDecl>> { /* compiled code */ }
 
-    func GetIsResourceSpec: Bool
+    func GetIsResourceSpec(): Bool { /* compiled code */ }
 
-    func GetTryBlock: std.core.Option<std.ast.NodeFormat_Block>
+    func GetTryBlock(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 
-    func GetCatchBlocks: std.core.Array<std.core.Option<std.ast.NodeFormat_Block>>
+    func GetCatchBlocks(): std.core.Array<std.core.Option<std.ast.NodeFormat_Block>> { /* compiled code */ }
 
-    func GetCatchPatterns: std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>>
+    func GetCatchPatterns(): std.core.Array<std.core.Option<std.ast.NodeFormat_Pattern>> { /* compiled code */ }
 
-    func GetFinallyPos: std.ast.NodeFormat_Position
+    func GetFinallyPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetFinallyBlock: std.core.Option<std.ast.NodeFormat_Block>
+    func GetFinallyBlock(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 
-    func GetResourceSpecLparenPos: std.ast.NodeFormat_Position
+    func GetResourceSpecLparenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetResourceSpecRparenPos: std.ast.NodeFormat_Position
+    func GetResourceSpecRparenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetResourceSpecCommaPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetResourceSpecCommaPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetCatchPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCatchPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetCatchLeftParenPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCatchLeftParenPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetCatchRightParenPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCatchRightParenPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 }
 
 class NodeFormat_DoWhileExpr <: std.ast.FlatBufferObject {
@@ -1615,19 +1615,19 @@ class NodeFormat_DoWhileExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetDoPos: std.ast.NodeFormat_Position
+    func GetDoPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_Block>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_Block> { /* compiled code */ }
 
-    func GetWhilePos: std.ast.NodeFormat_Position
+    func GetWhilePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetCondExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetCondExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_IncOrDecExpr <: std.ast.FlatBufferObject {
@@ -1641,13 +1641,13 @@ class NodeFormat_IncOrDecExpr <: std.ast.FlatBufferObject {
 
     let EXPR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetOperatorKind: UInt16
+    func GetOperatorKind(): UInt16 { /* compiled code */ }
 
-    func GetOperatorPos: std.ast.NodeFormat_Position
+    func GetOperatorPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 }
 
 class NodeFormat_OptionalExpr <: std.ast.FlatBufferObject {
@@ -1659,11 +1659,11 @@ class NodeFormat_OptionalExpr <: std.ast.FlatBufferObject {
 
     let QUEST_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetBaseExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetBaseExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetQuestPos: std.ast.NodeFormat_Position
+    func GetQuestPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_OptionalChainExpr <: std.ast.FlatBufferObject {
@@ -1673,9 +1673,9 @@ class NodeFormat_OptionalChainExpr <: std.ast.FlatBufferObject {
 
     let EXPR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 }
 
 class NodeFormat_Token <: std.ast.FlatBufferObject {
@@ -1687,11 +1687,11 @@ class NodeFormat_Token <: std.ast.FlatBufferObject {
 
     let POS: UInt16
 
-    func GetKind: UInt16
+    func GetKind(): UInt16 { /* compiled code */ }
 
-    func GetValue: std.core.String
+    func GetValue(): std.core.String { /* compiled code */ }
 
-    func GetPos: std.ast.NodeFormat_Position
+    func GetPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_TokenPart <: std.ast.FlatBufferObject {
@@ -1699,7 +1699,7 @@ class NodeFormat_TokenPart <: std.ast.FlatBufferObject {
 
     let TOKENS: UInt16
 
-    func GetTokens: std.core.Array<std.core.Option<std.ast.NodeFormat_Token>>
+    func GetTokens(): std.core.Array<std.core.Option<std.ast.NodeFormat_Token>> { /* compiled code */ }
 }
 
 class NodeFormat_QuoteExpr <: std.ast.FlatBufferObject {
@@ -1713,13 +1713,13 @@ class NodeFormat_QuoteExpr <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetExprs: std.core.Array<std.core.Option<std.ast.NodeFormat_Expr>>
+    func GetExprs(): std.core.Array<std.core.Option<std.ast.NodeFormat_Expr>> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_FuncParamList <: std.ast.FlatBufferObject {
@@ -1733,13 +1733,13 @@ class NodeFormat_FuncParamList <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetParams: std.core.Array<std.core.Option<std.ast.NodeFormat_FuncParam>>
+    func GetParams(): std.core.Array<std.core.Option<std.ast.NodeFormat_FuncParam>> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_FuncParam <: std.ast.FlatBufferObject {
@@ -1767,27 +1767,27 @@ class NodeFormat_FuncParam <: std.ast.FlatBufferObject {
 
     let MACROPARAM: UInt16
 
-    func GetNodeBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetNodeBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_VarDecl>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_VarDecl> { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAssignment: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetAssignment(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetCommaPos: std.ast.NodeFormat_Position
+    func GetCommaPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIsNamedParam: Bool
+    func GetIsNamedParam(): Bool { /* compiled code */ }
 
-    func GetIsMemberParam: Bool
+    func GetIsMemberParam(): Bool { /* compiled code */ }
 
-    func GetNotMarkPos: std.ast.NodeFormat_Position
+    func GetNotMarkPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetHasLetOrVar: Bool
+    func GetHasLetOrVar(): Bool { /* compiled code */ }
 
-    func GetMacroParamType: std.ast.NodeFormat_MacroParam
+    func GetMacroParamType(): std.ast.NodeFormat_MacroParam { /* compiled code */ }
 
-    func GetMacroParamAsMacroExpandParam: std.core.Option<std.ast.NodeFormat_MacroExpandParam>
+    func GetMacroParamAsMacroExpandParam(): std.core.Option<std.ast.NodeFormat_MacroExpandParam> { /* compiled code */ }
 }
 
 class NodeFormat_MacroExpandParam <: std.ast.FlatBufferObject {
@@ -1797,9 +1797,9 @@ class NodeFormat_MacroExpandParam <: std.ast.FlatBufferObject {
 
     let INVOCATION: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_FuncParam>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_FuncParam> { /* compiled code */ }
 
-    func GetInvocation: std.core.Option<std.ast.NodeFormat_MacroInvocation>
+    func GetInvocation(): std.core.Option<std.ast.NodeFormat_MacroInvocation> { /* compiled code */ }
 }
 
 class NodeFormat_Generic <: std.ast.FlatBufferObject {
@@ -1815,15 +1815,15 @@ class NodeFormat_Generic <: std.ast.FlatBufferObject {
 
     let CONTENT: UInt16
 
-    func GetLeftAnglePos: std.ast.NodeFormat_Position
+    func GetLeftAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypeParameters: std.core.Array<std.core.Option<std.ast.NodeFormat_GenericParamDecl>>
+    func GetTypeParameters(): std.core.Array<std.core.Option<std.ast.NodeFormat_GenericParamDecl>> { /* compiled code */ }
 
-    func GetRightAnglePos: std.ast.NodeFormat_Position
+    func GetRightAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetGenericConstraints: std.core.Array<std.core.Option<std.ast.NodeFormat_GenericConstraint>>
+    func GetGenericConstraints(): std.core.Array<std.core.Option<std.ast.NodeFormat_GenericConstraint>> { /* compiled code */ }
 
-    func GetContent: std.core.String
+    func GetContent(): std.core.String { /* compiled code */ }
 }
 
 class NodeFormat_JumpExpr <: std.ast.FlatBufferObject {
@@ -1833,9 +1833,9 @@ class NodeFormat_JumpExpr <: std.ast.FlatBufferObject {
 
     let IS_BREAK: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetIsBreak: Bool
+    func GetIsBreak(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_PrimitiveTypeExpr <: std.ast.FlatBufferObject {
@@ -1845,9 +1845,9 @@ class NodeFormat_PrimitiveTypeExpr <: std.ast.FlatBufferObject {
 
     let KIND: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetKind: UInt16
+    func GetKind(): UInt16 { /* compiled code */ }
 }
 
 class NodeFormat_MacroExpandExpr <: std.ast.FlatBufferObject {
@@ -1865,17 +1865,17 @@ class NodeFormat_MacroExpandExpr <: std.ast.FlatBufferObject {
 
     let MODIFIERS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetInvocation: std.core.Option<std.ast.NodeFormat_MacroInvocation>
+    func GetInvocation(): std.core.Option<std.ast.NodeFormat_MacroInvocation> { /* compiled code */ }
 
-    func GetIdentifier: std.core.String
+    func GetIdentifier(): std.core.String { /* compiled code */ }
 
-    func GetIdentifierPos: std.ast.NodeFormat_Position
+    func GetIdentifierPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAnnotations: std.core.Array<std.core.Option<std.ast.NodeFormat_Annotation>>
+    func GetAnnotations(): std.core.Array<std.core.Option<std.ast.NodeFormat_Annotation>> { /* compiled code */ }
 
-    func GetModifiers: std.core.Array<std.core.Option<std.ast.NodeFormat_Modifier>>
+    func GetModifiers(): std.core.Array<std.core.Option<std.ast.NodeFormat_Modifier>> { /* compiled code */ }
 }
 
 class NodeFormat_TypeBase <: std.ast.FlatBufferObject {
@@ -1893,17 +1893,17 @@ class NodeFormat_TypeBase <: std.ast.FlatBufferObject {
 
     let BIT_AND_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetCommaPos: std.ast.NodeFormat_Position
+    func GetCommaPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypeParameterName: std.core.String
+    func GetTypeParameterName(): std.core.String { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypePos: std.ast.NodeFormat_Position
+    func GetTypePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetBitAndPos: std.ast.NodeFormat_Position
+    func GetBitAndPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_RefType <: std.ast.FlatBufferObject {
@@ -1919,15 +1919,15 @@ class NodeFormat_RefType <: std.ast.FlatBufferObject {
 
     let RIGHT_ANGLE_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetRef: std.core.Option<std.ast.NodeFormat_Reference>
+    func GetRef(): std.core.Option<std.ast.NodeFormat_Reference> { /* compiled code */ }
 
-    func GetLeftAnglePos: std.ast.NodeFormat_Position
+    func GetLeftAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypeArguments: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetTypeArguments(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetRightAnglePos: std.ast.NodeFormat_Position
+    func GetRightAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_PrimitiveType <: std.ast.FlatBufferObject {
@@ -1939,11 +1939,11 @@ class NodeFormat_PrimitiveType <: std.ast.FlatBufferObject {
 
     let KIND: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetTypeStr: std.core.String
+    func GetTypeStr(): std.core.String { /* compiled code */ }
 
-    func GetKind: UInt16
+    func GetKind(): UInt16 { /* compiled code */ }
 }
 
 class NodeFormat_FuncType <: std.ast.FlatBufferObject {
@@ -1963,19 +1963,19 @@ class NodeFormat_FuncType <: std.ast.FlatBufferObject {
 
     let ISC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetParamTypes: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetParamTypes(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetArrowPos: std.ast.NodeFormat_Position
+    func GetArrowPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetRetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetIsC: Bool
+    func GetIsC(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_ThisType <: std.ast.FlatBufferObject {
@@ -1983,7 +1983,7 @@ class NodeFormat_ThisType <: std.ast.FlatBufferObject {
 
     let BASE: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 }
 
 class NodeFormat_ParenType <: std.ast.FlatBufferObject {
@@ -1997,13 +1997,13 @@ class NodeFormat_ParenType <: std.ast.FlatBufferObject {
 
     let RIGHT_PAREN_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_QualifiedType <: std.ast.FlatBufferObject {
@@ -2025,21 +2025,21 @@ class NodeFormat_QualifiedType <: std.ast.FlatBufferObject {
 
     let RIGHT_ANGLE_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetBaseType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetBaseType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetDotPos: std.ast.NodeFormat_Position
+    func GetDotPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetField: std.core.String
+    func GetField(): std.core.String { /* compiled code */ }
 
-    func GetFieldPos: std.ast.NodeFormat_Position
+    func GetFieldPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftAnglePos: std.ast.NodeFormat_Position
+    func GetLeftAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypeArguments: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetTypeArguments(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetRightAnglePos: std.ast.NodeFormat_Position
+    func GetRightAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_OptionType <: std.ast.FlatBufferObject {
@@ -2053,13 +2053,13 @@ class NodeFormat_OptionType <: std.ast.FlatBufferObject {
 
     let QUEST_VECTOR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetComponentType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetComponentType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetQuestNum: Int32
+    func GetQuestNum(): Int32 { /* compiled code */ }
 
-    func GetQuestVector: std.core.Array<std.ast.NodeFormat_Position>
+    func GetQuestVector(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 }
 
 class NodeFormat_TupleType <: std.ast.FlatBufferObject {
@@ -2075,15 +2075,15 @@ class NodeFormat_TupleType <: std.ast.FlatBufferObject {
 
     let COMMA_POS_VECTOR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetFieldTypes: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetFieldTypes(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetCommaPosVector: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCommaPosVector(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 }
 
 class NodeFormat_VArrayType <: std.ast.FlatBufferObject {
@@ -2101,17 +2101,17 @@ class NodeFormat_VArrayType <: std.ast.FlatBufferObject {
 
     let RIGHTANGLEPOS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetVarrayPos: std.ast.NodeFormat_Position
+    func GetVarrayPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftAnglePos: std.ast.NodeFormat_Position
+    func GetLeftAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetTypeArgument: std.core.Option<std.ast.NodeFormat_Type>
+    func GetTypeArgument(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetConstantType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetConstantType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetRightAnglePos: std.ast.NodeFormat_Position
+    func GetRightAnglePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_ConstantType <: std.ast.FlatBufferObject {
@@ -2123,11 +2123,11 @@ class NodeFormat_ConstantType <: std.ast.FlatBufferObject {
 
     let DOLLARPOS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_TypeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_TypeBase> { /* compiled code */ }
 
-    func GetConstantExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetConstantExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetDollarPos: std.ast.NodeFormat_Position
+    func GetDollarPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_DeclBase <: std.ast.FlatBufferObject {
@@ -2149,21 +2149,21 @@ class NodeFormat_DeclBase <: std.ast.FlatBufferObject {
 
     let ISCONST: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetIdentifier: std.core.String
+    func GetIdentifier(): std.core.String { /* compiled code */ }
 
-    func GetIdentifierPos: std.ast.NodeFormat_Position
+    func GetIdentifierPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetKeywordPos: std.ast.NodeFormat_Position
+    func GetKeywordPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAnnotations: std.core.Array<std.core.Option<std.ast.NodeFormat_Annotation>>
+    func GetAnnotations(): std.core.Array<std.core.Option<std.ast.NodeFormat_Annotation>> { /* compiled code */ }
 
-    func GetModifiers: std.core.Array<std.core.Option<std.ast.NodeFormat_Modifier>>
+    func GetModifiers(): std.core.Array<std.core.Option<std.ast.NodeFormat_Modifier>> { /* compiled code */ }
 
-    func GetGeneric: std.core.Option<std.ast.NodeFormat_Generic>
+    func GetGeneric(): std.core.Option<std.ast.NodeFormat_Generic> { /* compiled code */ }
 
-    func GetIsConst: Bool
+    func GetIsConst(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_VarWithPatternDecl <: std.ast.FlatBufferObject {
@@ -2183,19 +2183,19 @@ class NodeFormat_VarWithPatternDecl <: std.ast.FlatBufferObject {
 
     let IS_VAR: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetInitializer: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetInitializer(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetPattern: std.core.Option<std.ast.NodeFormat_Pattern>
+    func GetPattern(): std.core.Option<std.ast.NodeFormat_Pattern> { /* compiled code */ }
 
-    func GetAssignPos: std.ast.NodeFormat_Position
+    func GetAssignPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIsVar: Bool
+    func GetIsVar(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_FuncDecl <: std.ast.FlatBufferObject {
@@ -2217,21 +2217,21 @@ class NodeFormat_FuncDecl <: std.ast.FlatBufferObject {
 
     let ISENUMCONSTRUCT: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetFuncBody: std.core.Option<std.ast.NodeFormat_FuncBody>
+    func GetFuncBody(): std.core.Option<std.ast.NodeFormat_FuncBody> { /* compiled code */ }
 
-    func GetIsSetter: Bool
+    func GetIsSetter(): Bool { /* compiled code */ }
 
-    func GetIsGetter: Bool
+    func GetIsGetter(): Bool { /* compiled code */ }
 
-    func GetOpKind: Int32
+    func GetOpKind(): Int32 { /* compiled code */ }
 
-    func GetIsEnumConstruct: Bool
+    func GetIsEnumConstruct(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_MainDecl <: std.ast.FlatBufferObject {
@@ -2241,9 +2241,9 @@ class NodeFormat_MainDecl <: std.ast.FlatBufferObject {
 
     let FUNC_BODY: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetFuncBody: std.core.Option<std.ast.NodeFormat_FuncBody>
+    func GetFuncBody(): std.core.Option<std.ast.NodeFormat_FuncBody> { /* compiled code */ }
 }
 
 class NodeFormat_MacroDecl <: std.ast.FlatBufferObject {
@@ -2257,13 +2257,13 @@ class NodeFormat_MacroDecl <: std.ast.FlatBufferObject {
 
     let FUNC_BODY: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetFuncBody: std.core.Option<std.ast.NodeFormat_FuncBody>
+    func GetFuncBody(): std.core.Option<std.ast.NodeFormat_FuncBody> { /* compiled code */ }
 }
 
 class NodeFormat_StructBody <: std.ast.FlatBufferObject {
@@ -2277,13 +2277,13 @@ class NodeFormat_StructBody <: std.ast.FlatBufferObject {
 
     let RIGHT_CURL_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetDecls: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetDecls(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_Decl <: std.ast.FlatBufferObject {
@@ -2295,41 +2295,41 @@ class NodeFormat_Decl <: std.ast.FlatBufferObject {
 
     let DECL: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetDeclType: std.ast.NodeFormat_AnyDecl
+    func GetDeclType(): std.ast.NodeFormat_AnyDecl { /* compiled code */ }
 
-    func GetDeclAsFuncDecl: std.core.Option<std.ast.NodeFormat_FuncDecl>
+    func GetDeclAsFuncDecl(): std.core.Option<std.ast.NodeFormat_FuncDecl> { /* compiled code */ }
 
-    func GetDeclAsMainDecl: std.core.Option<std.ast.NodeFormat_MainDecl>
+    func GetDeclAsMainDecl(): std.core.Option<std.ast.NodeFormat_MainDecl> { /* compiled code */ }
 
-    func GetDeclAsVarDecl: std.core.Option<std.ast.NodeFormat_VarDecl>
+    func GetDeclAsVarDecl(): std.core.Option<std.ast.NodeFormat_VarDecl> { /* compiled code */ }
 
-    func GetDeclAsVarWithPatternDecl: std.core.Option<std.ast.NodeFormat_VarWithPatternDecl>
+    func GetDeclAsVarWithPatternDecl(): std.core.Option<std.ast.NodeFormat_VarWithPatternDecl> { /* compiled code */ }
 
-    func GetDeclAsStructDecl: std.core.Option<std.ast.NodeFormat_StructDecl>
+    func GetDeclAsStructDecl(): std.core.Option<std.ast.NodeFormat_StructDecl> { /* compiled code */ }
 
-    func GetDeclAsClassDecl: std.core.Option<std.ast.NodeFormat_ClassDecl>
+    func GetDeclAsClassDecl(): std.core.Option<std.ast.NodeFormat_ClassDecl> { /* compiled code */ }
 
-    func GetDeclAsInterfaceDecl: std.core.Option<std.ast.NodeFormat_InterfaceDecl>
+    func GetDeclAsInterfaceDecl(): std.core.Option<std.ast.NodeFormat_InterfaceDecl> { /* compiled code */ }
 
-    func GetDeclAsGenericParamDecl: std.core.Option<std.ast.NodeFormat_GenericParamDecl>
+    func GetDeclAsGenericParamDecl(): std.core.Option<std.ast.NodeFormat_GenericParamDecl> { /* compiled code */ }
 
-    func GetDeclAsPrimaryCtorDecl: std.core.Option<std.ast.NodeFormat_PrimaryCtorDecl>
+    func GetDeclAsPrimaryCtorDecl(): std.core.Option<std.ast.NodeFormat_PrimaryCtorDecl> { /* compiled code */ }
 
-    func GetDeclAsPropDecl: std.core.Option<std.ast.NodeFormat_PropDecl>
+    func GetDeclAsPropDecl(): std.core.Option<std.ast.NodeFormat_PropDecl> { /* compiled code */ }
 
-    func GetDeclAsEnumDecl: std.core.Option<std.ast.NodeFormat_EnumDecl>
+    func GetDeclAsEnumDecl(): std.core.Option<std.ast.NodeFormat_EnumDecl> { /* compiled code */ }
 
-    func GetDeclAsTypeAliasDecl: std.core.Option<std.ast.NodeFormat_TypeAliasDecl>
+    func GetDeclAsTypeAliasDecl(): std.core.Option<std.ast.NodeFormat_TypeAliasDecl> { /* compiled code */ }
 
-    func GetDeclAsExtendDecl: std.core.Option<std.ast.NodeFormat_ExtendDecl>
+    func GetDeclAsExtendDecl(): std.core.Option<std.ast.NodeFormat_ExtendDecl> { /* compiled code */ }
 
-    func GetDeclAsMacroDecl: std.core.Option<std.ast.NodeFormat_MacroDecl>
+    func GetDeclAsMacroDecl(): std.core.Option<std.ast.NodeFormat_MacroDecl> { /* compiled code */ }
 
-    func GetDeclAsMacroExpandDecl: std.core.Option<std.ast.NodeFormat_MacroExpandDecl>
+    func GetDeclAsMacroExpandDecl(): std.core.Option<std.ast.NodeFormat_MacroExpandDecl> { /* compiled code */ }
 
-    func GetDeclAsFuncParam: std.core.Option<std.ast.NodeFormat_FuncParam>
+    func GetDeclAsFuncParam(): std.core.Option<std.ast.NodeFormat_FuncParam> { /* compiled code */ }
 }
 
 class NodeFormat_StructDecl <: std.ast.FlatBufferObject {
@@ -2345,15 +2345,15 @@ class NodeFormat_StructDecl <: std.ast.FlatBufferObject {
 
     let GENERIC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_StructBody>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_StructBody> { /* compiled code */ }
 
-    func GetUpperBoundPos: std.ast.NodeFormat_Position
+    func GetUpperBoundPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetSuperTypes: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetSuperTypes(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetGeneric: std.core.Option<std.ast.NodeFormat_Generic>
+    func GetGeneric(): std.core.Option<std.ast.NodeFormat_Generic> { /* compiled code */ }
 }
 
 class NodeFormat_ClassBody <: std.ast.FlatBufferObject {
@@ -2367,13 +2367,13 @@ class NodeFormat_ClassBody <: std.ast.FlatBufferObject {
 
     let RIGHT_CURL_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetDecls: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetDecls(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_ClassDecl <: std.ast.FlatBufferObject {
@@ -2389,15 +2389,15 @@ class NodeFormat_ClassDecl <: std.ast.FlatBufferObject {
 
     let SUB_DECLS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetUpperBoundPos: std.ast.NodeFormat_Position
+    func GetUpperBoundPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetSuperTypes: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetSuperTypes(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_ClassBody>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_ClassBody> { /* compiled code */ }
 
-    func GetSubDecls: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetSubDecls(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 }
 
 class NodeFormat_InterfaceBody <: std.ast.FlatBufferObject {
@@ -2411,13 +2411,13 @@ class NodeFormat_InterfaceBody <: std.ast.FlatBufferObject {
 
     let RIGHT_CURL_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetDecls: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetDecls(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_InterfaceDecl <: std.ast.FlatBufferObject {
@@ -2433,15 +2433,15 @@ class NodeFormat_InterfaceDecl <: std.ast.FlatBufferObject {
 
     let SUB_DECLS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetUpperBoundPos: std.ast.NodeFormat_Position
+    func GetUpperBoundPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetSuperTypes: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetSuperTypes(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetBody: std.core.Option<std.ast.NodeFormat_InterfaceBody>
+    func GetBody(): std.core.Option<std.ast.NodeFormat_InterfaceBody> { /* compiled code */ }
 
-    func GetSubDecls: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetSubDecls(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 }
 
 class NodeFormat_EnumDecl <: std.ast.FlatBufferObject {
@@ -2469,27 +2469,27 @@ class NodeFormat_EnumDecl <: std.ast.FlatBufferObject {
 
     let ELLIPSIS_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetHasArguments: Bool
+    func GetHasArguments(): Bool { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetConstructors: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetConstructors(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 
-    func GetBitOrPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetBitOrPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetMembers: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetMembers(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetUpperBoundPos: std.ast.NodeFormat_Position
+    func GetUpperBoundPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetSuperInterfaceTypes: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetSuperInterfaceTypes(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetHasEllipsis: Bool
+    func GetHasEllipsis(): Bool { /* compiled code */ }
 
-    func GetEllipsisPos: std.ast.NodeFormat_Position
+    func GetEllipsisPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_GenericParamDecl <: std.ast.FlatBufferObject {
@@ -2499,9 +2499,9 @@ class NodeFormat_GenericParamDecl <: std.ast.FlatBufferObject {
 
     let COMMA_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetCommaPos: std.ast.NodeFormat_Position
+    func GetCommaPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_PrimaryCtorDecl <: std.ast.FlatBufferObject {
@@ -2511,9 +2511,9 @@ class NodeFormat_PrimaryCtorDecl <: std.ast.FlatBufferObject {
 
     let FUNC_BODY: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetFuncBody: std.core.Option<std.ast.NodeFormat_FuncBody>
+    func GetFuncBody(): std.core.Option<std.ast.NodeFormat_FuncBody> { /* compiled code */ }
 }
 
 class NodeFormat_PropDecl <: std.ast.FlatBufferObject {
@@ -2531,17 +2531,17 @@ class NodeFormat_PropDecl <: std.ast.FlatBufferObject {
 
     let RIGHT_CURL_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_VarDecl>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_VarDecl> { /* compiled code */ }
 
-    func GetColonPos: std.ast.NodeFormat_Position
+    func GetColonPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetGetters: std.core.Array<std.core.Option<std.ast.NodeFormat_FuncDecl>>
+    func GetGetters(): std.core.Array<std.core.Option<std.ast.NodeFormat_FuncDecl>> { /* compiled code */ }
 
-    func GetSetters: std.core.Array<std.core.Option<std.ast.NodeFormat_FuncDecl>>
+    func GetSetters(): std.core.Array<std.core.Option<std.ast.NodeFormat_FuncDecl>> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_GenericConstraint <: std.ast.FlatBufferObject {
@@ -2561,19 +2561,19 @@ class NodeFormat_GenericConstraint <: std.ast.FlatBufferObject {
 
     let COMMA_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetWherePos: std.ast.NodeFormat_Position
+    func GetWherePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetType: std.core.Option<std.ast.NodeFormat_RefType>
+    func GetType(): std.core.Option<std.ast.NodeFormat_RefType> { /* compiled code */ }
 
-    func GetOperatorPos: std.ast.NodeFormat_Position
+    func GetOperatorPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetUpperBound: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetUpperBound(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetBitAndPosVec: std.core.Array<std.ast.NodeFormat_Position>
+    func GetBitAndPosVec(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetCommaPos: std.ast.NodeFormat_Position
+    func GetCommaPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_Annotation <: std.ast.FlatBufferObject {
@@ -2601,27 +2601,27 @@ class NodeFormat_Annotation <: std.ast.FlatBufferObject {
 
     let IS_COMPILE_TIME_VISIBLE: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetKind: UInt16
+    func GetKind(): UInt16 { /* compiled code */ }
 
-    func GetIdentPos: std.ast.NodeFormat_Position
+    func GetIdentPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIdentifier: std.core.String
+    func GetIdentifier(): std.core.String { /* compiled code */ }
 
-    func GetArgs: std.core.Array<std.core.Option<std.ast.NodeFormat_FuncArg>>
+    func GetArgs(): std.core.Array<std.core.Option<std.ast.NodeFormat_FuncArg>> { /* compiled code */ }
 
-    func GetOverflowStrategy: std.core.String
+    func GetOverflowStrategy(): std.core.String { /* compiled code */ }
 
-    func GetAttrs: std.core.Array<std.core.Option<std.core.String>>
+    func GetAttrs(): std.core.Array<std.core.Option<std.core.String>> { /* compiled code */ }
 
-    func GetCondExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetCondExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetLeftSquarePos: std.ast.NodeFormat_Position
+    func GetLeftSquarePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightSquarePos: std.ast.NodeFormat_Position
+    func GetRightSquarePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetIsCompileTimeVisible: Bool
+    func GetIsCompileTimeVisible(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_Modifier <: std.ast.FlatBufferObject {
@@ -2633,11 +2633,11 @@ class NodeFormat_Modifier <: std.ast.FlatBufferObject {
 
     let IS_EXPLICIT: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetKind: UInt16
+    func GetKind(): UInt16 { /* compiled code */ }
 
-    func GetIsExplicit: Bool
+    func GetIsExplicit(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_TypeAliasDecl <: std.ast.FlatBufferObject {
@@ -2651,13 +2651,13 @@ class NodeFormat_TypeAliasDecl <: std.ast.FlatBufferObject {
 
     let GENERIC: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetAssignPos: std.ast.NodeFormat_Position
+    func GetAssignPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetGeneric: std.core.Option<std.ast.NodeFormat_Generic>
+    func GetGeneric(): std.core.Option<std.ast.NodeFormat_Generic> { /* compiled code */ }
 }
 
 class NodeFormat_ExtendDecl <: std.ast.FlatBufferObject {
@@ -2679,21 +2679,21 @@ class NodeFormat_ExtendDecl <: std.ast.FlatBufferObject {
 
     let RIGHT_CURL_POS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetExtendedType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetExtendedType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetUpperBoundPos: std.ast.NodeFormat_Position
+    func GetUpperBoundPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetInterfaces: std.core.Array<std.core.Option<std.ast.NodeFormat_Type>>
+    func GetInterfaces(): std.core.Array<std.core.Option<std.ast.NodeFormat_Type>> { /* compiled code */ }
 
-    func GetWherePos: std.ast.NodeFormat_Position
+    func GetWherePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetMembers: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetMembers(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
 class NodeFormat_MacroExpandDecl <: std.ast.FlatBufferObject {
@@ -2703,9 +2703,9 @@ class NodeFormat_MacroExpandDecl <: std.ast.FlatBufferObject {
 
     let INVOCATION: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_DeclBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_DeclBase> { /* compiled code */ }
 
-    func GetInvocation: std.core.Option<std.ast.NodeFormat_MacroInvocation>
+    func GetInvocation(): std.core.Option<std.ast.NodeFormat_MacroInvocation> { /* compiled code */ }
 }
 
 class NodeFormat_Node <: std.ast.FlatBufferObject {
@@ -2717,25 +2717,25 @@ class NodeFormat_Node <: std.ast.FlatBufferObject {
 
     let ROOT: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetRootType: std.ast.NodeFormat_AnyNode
+    func GetRootType(): std.ast.NodeFormat_AnyNode { /* compiled code */ }
 
-    func GetRootAsExpr: std.core.Option<std.ast.NodeFormat_Expr>
+    func GetRootAsExpr(): std.core.Option<std.ast.NodeFormat_Expr> { /* compiled code */ }
 
-    func GetRootAsDecl: std.core.Option<std.ast.NodeFormat_Decl>
+    func GetRootAsDecl(): std.core.Option<std.ast.NodeFormat_Decl> { /* compiled code */ }
 
-    func GetRootAsType: std.core.Option<std.ast.NodeFormat_Type>
+    func GetRootAsType(): std.core.Option<std.ast.NodeFormat_Type> { /* compiled code */ }
 
-    func GetRootAsPattern: std.core.Option<std.ast.NodeFormat_Pattern>
+    func GetRootAsPattern(): std.core.Option<std.ast.NodeFormat_Pattern> { /* compiled code */ }
 
-    func GetRootAsFile: std.core.Option<std.ast.NodeFormat_File>
+    func GetRootAsFile(): std.core.Option<std.ast.NodeFormat_File> { /* compiled code */ }
 
-    func GetRootAsPackageSpec: std.core.Option<std.ast.NodeFormat_PackageSpec>
+    func GetRootAsPackageSpec(): std.core.Option<std.ast.NodeFormat_PackageSpec> { /* compiled code */ }
 
-    func GetRootAsImportSpec: std.core.Option<std.ast.NodeFormat_ImportSpec>
+    func GetRootAsImportSpec(): std.core.Option<std.ast.NodeFormat_ImportSpec> { /* compiled code */ }
 
-    func GetRootAsAnnotation: std.core.Option<std.ast.NodeFormat_Annotation>
+    func GetRootAsAnnotation(): std.core.Option<std.ast.NodeFormat_Annotation> { /* compiled code */ }
 }
 
 class NodeFormat_MacroInvocation <: std.ast.FlatBufferObject {
@@ -2767,31 +2767,31 @@ class NodeFormat_MacroInvocation <: std.ast.FlatBufferObject {
 
     let IS_COMPILE_TIME_VISIBLE: UInt16
 
-    func GetFullName: std.core.String
+    func GetFullName(): std.core.String { /* compiled code */ }
 
-    func GetIdentifier: std.core.String
+    func GetIdentifier(): std.core.String { /* compiled code */ }
 
-    func GetIdentifierPos: std.ast.NodeFormat_Position
+    func GetIdentifierPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftSquarePos: std.ast.NodeFormat_Position
+    func GetLeftSquarePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightSquarePos: std.ast.NodeFormat_Position
+    func GetRightSquarePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftParenPos: std.ast.NodeFormat_Position
+    func GetLeftParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetRightParenPos: std.ast.NodeFormat_Position
+    func GetRightParenPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAtPos: std.ast.NodeFormat_Position
+    func GetAtPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAttrs: std.core.Array<std.core.Option<std.ast.NodeFormat_Token>>
+    func GetAttrs(): std.core.Array<std.core.Option<std.ast.NodeFormat_Token>> { /* compiled code */ }
 
-    func GetArgs: std.core.Array<std.core.Option<std.ast.NodeFormat_Token>>
+    func GetArgs(): std.core.Array<std.core.Option<std.ast.NodeFormat_Token>> { /* compiled code */ }
 
-    func GetDecl: std.core.Option<std.ast.NodeFormat_Decl>
+    func GetDecl(): std.core.Option<std.ast.NodeFormat_Decl> { /* compiled code */ }
 
-    func GetHasParenthesis: Bool
+    func GetHasParenthesis(): Bool { /* compiled code */ }
 
-    func GetIsCompileTimeVisible: Bool
+    func GetIsCompileTimeVisible(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_File <: std.ast.FlatBufferObject {
@@ -2809,17 +2809,17 @@ class NodeFormat_File <: std.ast.FlatBufferObject {
 
     let DECLS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetFileName: std.core.String
+    func GetFileName(): std.core.String { /* compiled code */ }
 
-    func GetFilePath: std.core.String
+    func GetFilePath(): std.core.String { /* compiled code */ }
 
-    func GetPackage: std.core.Option<std.ast.NodeFormat_PackageSpec>
+    func GetPackage(): std.core.Option<std.ast.NodeFormat_PackageSpec> { /* compiled code */ }
 
-    func GetImports: std.core.Array<std.core.Option<std.ast.NodeFormat_ImportSpec>>
+    func GetImports(): std.core.Array<std.core.Option<std.ast.NodeFormat_ImportSpec>> { /* compiled code */ }
 
-    func GetDecls: std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>>
+    func GetDecls(): std.core.Array<std.core.Option<std.ast.NodeFormat_Decl>> { /* compiled code */ }
 }
 
 class NodeFormat_PackageSpec <: std.ast.FlatBufferObject {
@@ -2845,25 +2845,25 @@ class NodeFormat_PackageSpec <: std.ast.FlatBufferObject {
 
     let HASMACRO: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetMacroPos: std.ast.NodeFormat_Position
+    func GetMacroPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetPackagePos: std.ast.NodeFormat_Position
+    func GetPackagePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetPrefixPaths: std.core.Array<std.core.Option<std.core.String>>
+    func GetPrefixPaths(): std.core.Array<std.core.Option<std.core.String>> { /* compiled code */ }
 
-    func GetPrefixPoses: std.core.Array<std.ast.NodeFormat_Position>
+    func GetPrefixPoses(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetPrefixDotPoses: std.core.Array<std.ast.NodeFormat_Position>
+    func GetPrefixDotPoses(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetPackageName: std.core.String
+    func GetPackageName(): std.core.String { /* compiled code */ }
 
-    func GetPackageNamePos: std.ast.NodeFormat_Position
+    func GetPackageNamePos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAccessible: std.ast.NodeFormat_AccessibleKind
+    func GetAccessible(): std.ast.NodeFormat_AccessibleKind { /* compiled code */ }
 
-    func GetHasMacro: Bool
+    func GetHasMacro(): Bool { /* compiled code */ }
 }
 
 class NodeFormat_ImportSpec <: std.ast.FlatBufferObject {
@@ -2877,13 +2877,13 @@ class NodeFormat_ImportSpec <: std.ast.FlatBufferObject {
 
     let CONTENT: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetReExport: std.ast.NodeFormat_ReExportKind
+    func GetReExport(): std.ast.NodeFormat_ReExportKind { /* compiled code */ }
 
-    func GetImportPos: std.ast.NodeFormat_Position
+    func GetImportPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetContent: std.core.Option<std.ast.NodeFormat_ImportContent>
+    func GetContent(): std.core.Option<std.ast.NodeFormat_ImportContent> { /* compiled code */ }
 }
 
 class NodeFormat_ImportContent <: std.ast.FlatBufferObject {
@@ -2917,38 +2917,38 @@ class NodeFormat_ImportContent <: std.ast.FlatBufferObject {
 
     let RIGHTCURLPOS: UInt16
 
-    func GetBase: std.core.Option<std.ast.NodeFormat_NodeBase>
+    func GetBase(): std.core.Option<std.ast.NodeFormat_NodeBase> { /* compiled code */ }
 
-    func GetKind: std.ast.NodeFormat_ImportKind
+    func GetKind(): std.ast.NodeFormat_ImportKind { /* compiled code */ }
 
-    func GetPrefixPaths: std.core.Array<std.core.Option<std.core.String>>
+    func GetPrefixPaths(): std.core.Array<std.core.Option<std.core.String>> { /* compiled code */ }
 
-    func GetPrefixPoses: std.core.Array<std.ast.NodeFormat_Position>
+    func GetPrefixPoses(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetPrefixDotPoses: std.core.Array<std.ast.NodeFormat_Position>
+    func GetPrefixDotPoses(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetIdentifier: std.core.String
+    func GetIdentifier(): std.core.String { /* compiled code */ }
 
-    func GetIdentifierPos: std.ast.NodeFormat_Position
+    func GetIdentifierPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAsPos: std.ast.NodeFormat_Position
+    func GetAsPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetAsIdentifier: std.core.String
+    func GetAsIdentifier(): std.core.String { /* compiled code */ }
 
-    func GetAsIdentifierPos: std.ast.NodeFormat_Position
+    func GetAsIdentifierPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetLeftCurlPos: std.ast.NodeFormat_Position
+    func GetLeftCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 
-    func GetItems: std.core.Array<std.core.Option<std.ast.NodeFormat_ImportContent>>
+    func GetItems(): std.core.Array<std.core.Option<std.ast.NodeFormat_ImportContent>> { /* compiled code */ }
 
-    func GetCommaPoses: std.core.Array<std.ast.NodeFormat_Position>
+    func GetCommaPoses(): std.core.Array<std.ast.NodeFormat_Position> { /* compiled code */ }
 
-    func GetRightCurlPos: std.ast.NodeFormat_Position
+    func GetRightCurlPos(): std.ast.NodeFormat_Position { /* compiled code */ }
 }
 
-func isValidPosition(pos: std.ast.NodeFormat_Position): Bool
+func isValidPosition(pos: std.ast.NodeFormat_Position): Bool { /* compiled code */ }
 
-func isValidPosition(tk: std.ast.Token): Bool
+func isValidPosition(tk: std.ast.Token): Bool { /* compiled code */ }
 
 struct Token <: std.ast.ToBytes {
     let kind: std.ast.TokenKind
@@ -2969,39 +2969,39 @@ struct Token <: std.ast.ToBytes {
 
     init(k: std.ast.TokenKind, v: std.core.String, f: UInt32, l: Int32, c: Int32) { /* compiled code */ }
 
-    func addPosition(fileID: UInt32, line: Int32, colum: Int32): std.ast.Token
+    func addPosition(fileID: UInt32, line: Int32, colum: Int32): std.ast.Token { /* compiled code */ }
 
-    func addPosition(position: std.ast.NodeFormat_Position): std.ast.Token
+    func addPosition(position: std.ast.NodeFormat_Position): std.ast.Token { /* compiled code */ }
 
-    func addPosition(position: std.ast.Position): std.ast.Token
+    func addPosition(position: std.ast.Position): std.ast.Token { /* compiled code */ }
 
-    operator func ==(r: std.ast.Token): Bool
+    operator func ==(r: std.ast.Token): Bool { /* compiled code */ }
 
-    operator func !=(r: std.ast.Token): Bool
+    operator func !=(r: std.ast.Token): Bool { /* compiled code */ }
 
-    operator func +(r: std.ast.Tokens): std.ast.Tokens
+    operator func +(r: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-    operator func +(r: std.ast.Token): std.ast.Tokens
+    operator func +(r: std.ast.Token): std.ast.Tokens { /* compiled code */ }
 
-    func dump: Unit
+    func dump(): Unit { /* compiled code */ }
 
-    func toBytes: std.core.Array<UInt8>
+    func toBytes(): std.core.Array<UInt8> { /* compiled code */ }
 
-    func toBytes(arr: std.core.Array<UInt8>, start1: Int64): Int64
+    func toBytes(arr: std.core.Array<UInt8>, start1: Int64): Int64 { /* compiled code */ }
 
-    func getSize: Int64
+    func getSize(): Int64 { /* compiled code */ }
 }
 
-func isValidToken(tk: std.ast.Token): Bool
+func isValidToken(tk: std.ast.Token): Bool { /* compiled code */ }
 
-func getNodeBeginPos(nodeBase: std.core.Option<std.ast.NodeFormat_NodeBase>): std.ast.NodeFormat_Position
+func getNodeBeginPos(nodeBase: std.core.Option<std.ast.NodeFormat_NodeBase>): std.ast.NodeFormat_Position { /* compiled code */ }
 
-func getOperaterKindOrIdentTokens(opKind: Int32, pos: std.ast.NodeFormat_Position, ident: std.ast.Tokens): std.ast.Tokens
+func getOperaterKindOrIdentTokens(opKind: Int32, pos: std.ast.NodeFormat_Position, ident: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
 class Tokens <: std.core.Object & std.core.ToString & std.core.Iterable<std.ast.Token> & std.ast.ToBytes {
     var tokens: std.collection.ArrayList<std.ast.Token>
 
-    func refreshPosition: std.ast.Tokens
+    func refreshPosition(): std.ast.Tokens { /* compiled code */ }
 
     init() { /* compiled code */ }
 
@@ -3011,46 +3011,48 @@ class Tokens <: std.core.Object & std.core.ToString & std.core.Iterable<std.ast.
 
     init(tokArrayList: std.collection.ArrayList<std.ast.Token>) { /* compiled code */ }
 
-    prop size: Int64
+    prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func `get`(index: Int64): std.ast.Token
+    func `get`(index: Int64): std.ast.Token { /* compiled code */ }
 
-    func iterator: std.ast.TokensIterator
+    func iterator(): std.ast.TokensIterator { /* compiled code */ }
 
-    func concat(tokens: std.ast.Tokens): std.ast.Tokens
+    func concat(tokens: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-    operator func [](index: Int64): std.ast.Token
+    operator func [](index: Int64): std.ast.Token { /* compiled code */ }
 
-    operator func [](range: std.core.Range<Int64>): std.ast.Tokens
+    operator func [](range: std.core.Range<Int64>): std.ast.Tokens { /* compiled code */ }
 
-    operator func +(r: std.ast.Tokens): std.ast.Tokens
+    operator func +(r: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-    operator func +(r: std.ast.Token): std.ast.Tokens
+    operator func +(r: std.ast.Token): std.ast.Tokens { /* compiled code */ }
 
-    func append(tokens: std.ast.Tokens): std.ast.Tokens
+    func append(tokens: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-    func append(token: std.ast.Token): std.ast.Tokens
+    func append(token: std.ast.Token): std.ast.Tokens { /* compiled code */ }
 
-    func append(node: std.ast.Node): std.ast.Tokens
+    func append(node: std.ast.Node): std.ast.Tokens { /* compiled code */ }
 
-    func remove(index: Int64): std.ast.Tokens
+    func remove(index: Int64): std.ast.Tokens { /* compiled code */ }
 
-    func dump: Unit
+    func dump(): Unit { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func toBytes: std.core.Array<UInt8>
+    func toBytes(): std.core.Array<UInt8> { /* compiled code */ }
 
-    func toBytes(startFrom: Int64): std.core.Array<UInt8>
+    func toBytes(startFrom: Int64): std.core.Array<UInt8> { /* compiled code */ }
 
-    func getSize(startFrom: Int64): Int64
+    func getSize(startFrom: Int64): Int64 { /* compiled code */ }
 }
 
-func getIndent(indent: UInt16): std.core.String
+func getIndent(indent: UInt16): std.core.String { /* compiled code */ }
 
-func getTokenIndent(name: std.core.String, tk: std.ast.Token, indent: UInt16, noNameIndent: Bool, index: std.core.Option<Int64>): std.core.String
+func getTokenIndent(name: std.core.String, tk: std.ast.Token, indent: UInt16, noNameIndent: Bool, index: std.core.Option<Int64>): std.core.String { /* compiled code */ }
 
-func dumpNodes(name: std.core.String, contents: std.collection.ArrayList<N>, indent: UInt16): std.core.String
+func dumpNodes(name: std.core.String, contents: std.collection.ArrayList<N>, indent: UInt16): std.core.String { /* compiled code */ }
 
 class Node <: std.core.Object & std.ast.ToTokens {
     init() { /* compiled code */ }
@@ -3065,22 +3067,28 @@ class Node <: std.core.Object & std.ast.ToTokens {
 
     var beginNode: Bool
 
-    prop beginPos: std.ast.Position
+    mut prop beginPos: std.ast.Position {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop endPos: std.ast.Position
+    mut prop endPos: std.ast.Position {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump: Unit
+    func dump(): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func compareTokens(tokens1: std.ast.Tokens, tokens2: std.ast.Tokens): Bool
+func compareTokens(tokens1: std.ast.Tokens, tokens2: std.ast.Tokens): Bool { /* compiled code */ }
 
-func checkKindValue(k: std.ast.TokenKind, v: std.core.String): Bool
+func checkKindValue(k: std.ast.TokenKind, v: std.core.String): Bool { /* compiled code */ }
 
 enum TokenKind <: std.core.ToString {
     | DOT
@@ -3399,18 +3407,18 @@ enum TokenKind <: std.core.ToString {
 
     | ILLEGAL
 
-    operator func ==(right: std.ast.TokenKind): Bool
+    operator func ==(right: std.ast.TokenKind): Bool { /* compiled code */ }
 
-    operator func !=(right: std.ast.TokenKind): Bool
+    operator func !=(right: std.ast.TokenKind): Bool { /* compiled code */ }
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    func opPrecedence: Int64
+    func opPrecedence(): Int64 { /* compiled code */ }
 
-    func isNonAssociative: Bool
+    func isNonAssociative(): Bool { /* compiled code */ }
 }
 
-func getImportSpecTokens(imports: std.collection.ArrayList<std.ast.ImportList>): std.ast.Tokens
+func getImportSpecTokens(imports: std.collection.ArrayList<std.ast.ImportList>): std.ast.Tokens { /* compiled code */ }
 
 class ImportList <: std.ast.Node {
     init(reExportToken: std.ast.Token, imp: std.ast.Token, content: std.ast.ImportContent) { /* compiled code */ }
@@ -3427,22 +3435,31 @@ class ImportList <: std.ast.Node {
 
     let innerToken_: std.ast.Tokens
 
-    prop modifier: std.ast.Token
+    mut prop modifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordI: std.ast.Token
+    mut prop keywordI: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop content: std.ast.ImportContent
+    mut prop content: std.ast.ImportContent {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func isImportMulti: Bool
+    func isImportMulti(): Bool { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func dumpCommonContent(currentIndent: UInt16, upperBound: std.ast.Token, superTypes: std.collection.ArrayList<std.ast.TypeNode>, constraint: std.collection.ArrayList<std.ast.GenericConstraint>, body: std.ast.Body): std.core.String
+func dumpCommonContent(currentIndent: UInt16, upperBound: std.ast.Token, superTypes: std.collection.ArrayList<std.ast.TypeNode>, constraint: std.collection.ArrayList<std.ast.GenericConstraint>, body: std.ast.Body): std.core.String { /* compiled code */ }
 
 class TypeNode <: std.ast.Node {
     init(typeParameterName: std.ast.Token, colon: std.ast.Token) { /* compiled code */ }
@@ -3453,15 +3470,21 @@ class TypeNode <: std.ast.Node {
 
     var colon_: std.ast.Token
 
-    prop typeParameterName: std.ast.Token
+    mut prop typeParameterName: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class GenericConstraint <: std.ast.Node {
@@ -3479,21 +3502,36 @@ class GenericConstraint <: std.ast.Node {
 
     var bitAnds_: std.ast.Tokens
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop typeArgument: std.ast.TypeNode
+    mut prop typeArgument: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop upperBound: std.ast.Token
+    mut prop upperBound: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop upperBounds: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop upperBounds: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop bitAnds: std.ast.Tokens
+    mut prop bitAnds: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Body <: std.ast.Node {
@@ -3509,38 +3547,47 @@ class Body <: std.ast.Node {
 
     var rBrace_: std.ast.Token
 
-    prop lBrace: std.ast.Token
+    mut prop lBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop decls: std.collection.ArrayList<std.ast.Decl>
+    mut prop decls: std.collection.ArrayList<std.ast.Decl> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rBrace: std.ast.Token
+    mut prop rBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func referenceType2Tokens(upperBound: std.ast.Token, superTypes: std.collection.ArrayList<std.ast.TypeNode>, superTypeBitAnds: std.ast.Tokens, constraint: std.collection.ArrayList<std.ast.GenericConstraint>, constraintCommas: std.ast.Tokens): std.ast.Tokens
+func referenceType2Tokens(upperBound: std.ast.Token, superTypes: std.collection.ArrayList<std.ast.TypeNode>, superTypeBitAnds: std.ast.Tokens, constraint: std.collection.ArrayList<std.ast.GenericConstraint>, constraintCommas: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
 extend Tokens {
-    func tryGet(index: Int64): std.core.Option<std.ast.Token>
+    func tryGet(index: Int64): std.core.Option<std.ast.Token> { /* compiled code */ }
 }
 
 extend Token {
-    func tryGet: std.core.Option<std.ast.Token>
+    func tryGet(): std.core.Option<std.ast.Token> { /* compiled code */ }
 }
 
-func checkTokenType(tk: std.ast.Token, kind: std.ast.TokenKind): Unit
+func checkTokenType(tk: std.ast.Token, kind: std.ast.TokenKind): Unit { /* compiled code */ }
 
-func checkTokensType(tks: std.ast.Tokens, kind: std.ast.TokenKind): Unit
+func checkTokensType(tks: std.ast.Tokens, kind: std.ast.TokenKind): Unit { /* compiled code */ }
 
-func checkTokenTypeAssign(tk: std.ast.Token): Unit
+func checkTokenTypeAssign(tk: std.ast.Token): Unit { /* compiled code */ }
 
-func checkPrimitiveType(tk: std.ast.Token): Unit
+func checkPrimitiveType(tk: std.ast.Token): Unit { /* compiled code */ }
 
-func checkValid(input: std.ast.Token): std.ast.Token
+func checkValid(input: std.ast.Token): std.ast.Token { /* compiled code */ }
 
 class Decl <: std.ast.Node {
     init(annotations: std.collection.ArrayList<std.ast.Annotation>, modifiers: std.collection.ArrayList<std.ast.Modifier>, keyword: std.ast.Token, identifier: std.ast.Token, genericParam: std.core.Option<std.ast.GenericParam>, constraint: std.collection.ArrayList<std.ast.GenericConstraint>, constraintCommas: std.ast.Tokens, isGenericDecl: Bool) { /* compiled code */ }
@@ -3571,31 +3618,55 @@ class Decl <: std.ast.Node {
 
     var node: std.ast.Node
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop annotations: std.collection.ArrayList<std.ast.Annotation>
+    mut prop annotations: std.collection.ArrayList<std.ast.Annotation> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop modifiers: std.collection.ArrayList<std.ast.Modifier>
+    mut prop modifiers: std.collection.ArrayList<std.ast.Modifier> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop genericParam: std.ast.GenericParam
+    mut prop genericParam: std.ast.GenericParam {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop genericConstraint: std.collection.ArrayList<std.ast.GenericConstraint>
+    mut prop genericConstraint: std.collection.ArrayList<std.ast.GenericConstraint> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop constraintCommas: std.ast.Tokens
+    mut prop constraintCommas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func hasAttr(attr: std.core.String): Bool
+    func hasAttr(attr: std.core.String): Bool { /* compiled code */ }
 
-    func getAttrs: std.ast.Tokens
+    func getAttrs(): std.ast.Tokens { /* compiled code */ }
 
-    prop isGenericDecl: Bool
+    mut prop isGenericDecl: Bool {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Annotation <: std.ast.Node {
@@ -3621,21 +3692,36 @@ class Annotation <: std.ast.Node {
 
     var cond_: std.core.Option<std.ast.Expr>
 
-    prop at: std.ast.Token
+    mut prop at: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop arguments: std.collection.ArrayList<std.ast.Argument>
+    mut prop arguments: std.collection.ArrayList<std.ast.Argument> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop attributes: std.ast.Tokens
+    mut prop attributes: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop condition: std.ast.Expr
+    mut prop condition: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Modifier <: std.ast.Node {
@@ -3645,13 +3731,16 @@ class Modifier <: std.ast.Node {
 
     var kind_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class GenericParam <: std.ast.Node {
@@ -3669,195 +3758,204 @@ class GenericParam <: std.ast.Node {
 
     var commas_: std.ast.Tokens
 
-    prop lAngle: std.ast.Token
+    mut prop lAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop parameters: std.ast.Tokens
+    mut prop parameters: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rAngle: std.ast.Token
+    mut prop rAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Visitor {
     var breakTraverseFlag: Bool
 
-    func needBreakTraverse: Bool
+    func needBreakTraverse(): Bool { /* compiled code */ }
 
-    func breakTraverse: Unit
+    func breakTraverse(): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Node): Unit
+    func visit(_: std.ast.Node): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Expr): Unit
+    func visit(_: std.ast.Expr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.IsExpr): Unit
+    func visit(_: std.ast.IsExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.AsExpr): Unit
+    func visit(_: std.ast.AsExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.LitConstExpr): Unit
+    func visit(_: std.ast.LitConstExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.UnaryExpr): Unit
+    func visit(_: std.ast.UnaryExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.BinaryExpr): Unit
+    func visit(_: std.ast.BinaryExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ParenExpr): Unit
+    func visit(_: std.ast.ParenExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.CallExpr): Unit
+    func visit(_: std.ast.CallExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.RefExpr): Unit
+    func visit(_: std.ast.RefExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ReturnExpr): Unit
+    func visit(_: std.ast.ReturnExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.AssignExpr): Unit
+    func visit(_: std.ast.AssignExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MemberAccess): Unit
+    func visit(_: std.ast.MemberAccess): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.IfExpr): Unit
+    func visit(_: std.ast.IfExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.LetPatternExpr): Unit
+    func visit(_: std.ast.LetPatternExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MatchExpr): Unit
+    func visit(_: std.ast.MatchExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.WhileExpr): Unit
+    func visit(_: std.ast.WhileExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.LambdaExpr): Unit
+    func visit(_: std.ast.LambdaExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.SpawnExpr): Unit
+    func visit(_: std.ast.SpawnExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.SynchronizedExpr): Unit
+    func visit(_: std.ast.SynchronizedExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TrailingClosureExpr): Unit
+    func visit(_: std.ast.TrailingClosureExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TypeConvExpr): Unit
+    func visit(_: std.ast.TypeConvExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ForInExpr): Unit
+    func visit(_: std.ast.ForInExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PrimitiveTypeExpr): Unit
+    func visit(_: std.ast.PrimitiveTypeExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ArrayLiteral): Unit
+    func visit(_: std.ast.ArrayLiteral): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TupleLiteral): Unit
+    func visit(_: std.ast.TupleLiteral): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.SubscriptExpr): Unit
+    func visit(_: std.ast.SubscriptExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.RangeExpr): Unit
+    func visit(_: std.ast.RangeExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Block): Unit
+    func visit(_: std.ast.Block): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.DoWhileExpr): Unit
+    func visit(_: std.ast.DoWhileExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.JumpExpr): Unit
+    func visit(_: std.ast.JumpExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.IncOrDecExpr): Unit
+    func visit(_: std.ast.IncOrDecExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TryExpr): Unit
+    func visit(_: std.ast.TryExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ThrowExpr): Unit
+    func visit(_: std.ast.ThrowExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.OptionalExpr): Unit
+    func visit(_: std.ast.OptionalExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.QuoteExpr): Unit
+    func visit(_: std.ast.QuoteExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MacroExpandExpr): Unit
+    func visit(_: std.ast.MacroExpandExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.WildcardExpr): Unit
+    func visit(_: std.ast.WildcardExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VArrayExpr): Unit
+    func visit(_: std.ast.VArrayExpr): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Decl): Unit
+    func visit(_: std.ast.Decl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ClassDecl): Unit
+    func visit(_: std.ast.ClassDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.FuncDecl): Unit
+    func visit(_: std.ast.FuncDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MainDecl): Unit
+    func visit(_: std.ast.MainDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MacroDecl): Unit
+    func visit(_: std.ast.MacroDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.StructDecl): Unit
+    func visit(_: std.ast.StructDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.InterfaceDecl): Unit
+    func visit(_: std.ast.InterfaceDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PropDecl): Unit
+    func visit(_: std.ast.PropDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VarDecl): Unit
+    func visit(_: std.ast.VarDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PrimaryCtorDecl): Unit
+    func visit(_: std.ast.PrimaryCtorDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.EnumDecl): Unit
+    func visit(_: std.ast.EnumDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.FuncParam): Unit
+    func visit(_: std.ast.FuncParam): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TypeAliasDecl): Unit
+    func visit(_: std.ast.TypeAliasDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ExtendDecl): Unit
+    func visit(_: std.ast.ExtendDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MacroExpandDecl): Unit
+    func visit(_: std.ast.MacroExpandDecl): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TypeNode): Unit
+    func visit(_: std.ast.TypeNode): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.RefType): Unit
+    func visit(_: std.ast.RefType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PrimitiveType): Unit
+    func visit(_: std.ast.PrimitiveType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.FuncType): Unit
+    func visit(_: std.ast.FuncType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ThisType): Unit
+    func visit(_: std.ast.ThisType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ParenType): Unit
+    func visit(_: std.ast.ParenType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.QualifiedType): Unit
+    func visit(_: std.ast.QualifiedType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PrefixType): Unit
+    func visit(_: std.ast.PrefixType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TupleType): Unit
+    func visit(_: std.ast.TupleType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VArrayType): Unit
+    func visit(_: std.ast.VArrayType): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Pattern): Unit
+    func visit(_: std.ast.Pattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ConstPattern): Unit
+    func visit(_: std.ast.ConstPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.WildcardPattern): Unit
+    func visit(_: std.ast.WildcardPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VarPattern): Unit
+    func visit(_: std.ast.VarPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.VarOrEnumPattern): Unit
+    func visit(_: std.ast.VarOrEnumPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ExceptTypePattern): Unit
+    func visit(_: std.ast.ExceptTypePattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TypePattern): Unit
+    func visit(_: std.ast.TypePattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.EnumPattern): Unit
+    func visit(_: std.ast.EnumPattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.TuplePattern): Unit
+    func visit(_: std.ast.TuplePattern): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.GenericParam): Unit
+    func visit(_: std.ast.GenericParam): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.GenericConstraint): Unit
+    func visit(_: std.ast.GenericConstraint): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.MatchCase): Unit
+    func visit(_: std.ast.MatchCase): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Program): Unit
+    func visit(_: std.ast.Program): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.PackageHeader): Unit
+    func visit(_: std.ast.PackageHeader): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ImportList): Unit
+    func visit(_: std.ast.ImportList): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.ImportContent): Unit
+    func visit(_: std.ast.ImportContent): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Constructor): Unit
+    func visit(_: std.ast.Constructor): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Argument): Unit
+    func visit(_: std.ast.Argument): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Annotation): Unit
+    func visit(_: std.ast.Annotation): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Modifier): Unit
+    func visit(_: std.ast.Modifier): Unit { /* compiled code */ }
 
-    func visit(_: std.ast.Body): Unit
+    func visit(_: std.ast.Body): Unit { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -3877,19 +3975,31 @@ class ClassDecl <: std.ast.Decl {
 
     var classbody_: std.ast.Body
 
-    prop upperBound: std.ast.Token
+    mut prop upperBound: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypes: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypeBitAnds: std.ast.Tokens
+    mut prop superTypeBitAnds: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop body: std.ast.Body
+    mut prop body: std.ast.Body {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class StructDecl <: std.ast.Decl {
@@ -3907,19 +4017,31 @@ class StructDecl <: std.ast.Decl {
 
     var structbody_: std.ast.Body
 
-    prop upperBound: std.ast.Token
+    mut prop upperBound: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypes: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypeBitAnds: std.ast.Tokens
+    mut prop superTypeBitAnds: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop body: std.ast.Body
+    mut prop body: std.ast.Body {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class InterfaceDecl <: std.ast.Decl {
@@ -3937,19 +4059,31 @@ class InterfaceDecl <: std.ast.Decl {
 
     var interfacetbody_: std.ast.Body
 
-    prop upperBound: std.ast.Token
+    mut prop upperBound: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypes: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypeBitAnds: std.ast.Tokens
+    mut prop superTypeBitAnds: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop body: std.ast.Body
+    mut prop body: std.ast.Body {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class EnumDecl <: std.ast.Decl {
@@ -3977,27 +4111,51 @@ class EnumDecl <: std.ast.Decl {
 
     var ellipsis_: std.ast.Token
 
-    prop upperBound: std.ast.Token
+    mut prop upperBound: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypes: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypeBitAnds: std.ast.Tokens
+    mut prop superTypeBitAnds: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lBrace: std.ast.Token
+    mut prop lBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop constructors: std.collection.ArrayList<std.ast.Constructor>
+    mut prop constructors: std.collection.ArrayList<std.ast.Constructor> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop decls: std.collection.ArrayList<std.ast.Decl>
+    mut prop decls: std.collection.ArrayList<std.ast.Decl> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rBrace: std.ast.Token
+    mut prop rBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop ellipsis: std.ast.Token
+    mut prop ellipsis: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Constructor <: std.ast.Node {
@@ -4019,21 +4177,36 @@ class Constructor <: std.ast.Node {
 
     var annotations_: std.collection.ArrayList<std.ast.Annotation>
 
-    prop annotations: std.collection.ArrayList<std.ast.Annotation>
+    mut prop annotations: std.collection.ArrayList<std.ast.Annotation> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop typeArguments: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class ExtendDecl <: std.ast.Decl {
@@ -4053,23 +4226,41 @@ class ExtendDecl <: std.ast.Decl {
 
     var body_: std.ast.Body
 
-    prop identifier: std.ast.Token
+    override mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop extendType: std.ast.TypeNode
+    mut prop extendType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop upperBound: std.ast.Token
+    mut prop upperBound: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypes: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop superTypes: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop superTypeBitAnds: std.ast.Tokens
+    mut prop superTypeBitAnds: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop body: std.ast.Body
+    mut prop body: std.ast.Body {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class FuncDecl <: std.ast.Decl {
@@ -4095,27 +4286,48 @@ class FuncDecl <: std.ast.Decl {
 
     var isEnumConstruct: Bool
 
-    prop overloadOp: std.ast.Tokens
+    mut prop overloadOp: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop funcParams: std.collection.ArrayList<std.ast.FuncParam>
+    mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop declType: std.ast.TypeNode
+    mut prop declType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func isConst: Bool
+    func isConst(): Bool { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class FuncParam <: std.ast.Decl {
@@ -4141,23 +4353,38 @@ class FuncParam <: std.ast.Decl {
 
     var isMemberParam_: Bool
 
-    prop not: std.ast.Token
+    mut prop not: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop paramType: std.ast.TypeNode
+    mut prop paramType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop assign: std.ast.Token
+    mut prop assign: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func isMemberParam: Bool
+    func isMemberParam(): Bool { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Block <: std.ast.Expr {
@@ -4173,17 +4400,26 @@ class Block <: std.ast.Expr {
 
     var unsafe_: std.ast.Token
 
-    prop lBrace: std.ast.Token
+    mut prop lBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop nodes: std.collection.ArrayList<std.ast.Node>
+    mut prop nodes: std.collection.ArrayList<std.ast.Node> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rBrace: std.ast.Token
+    mut prop rBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class MainDecl <: std.ast.Decl {
@@ -4205,23 +4441,41 @@ class MainDecl <: std.ast.Decl {
 
     var block_: std.ast.Block
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop funcParams: std.collection.ArrayList<std.ast.FuncParam>
+    mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop declType: std.ast.TypeNode
+    mut prop declType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class MacroDecl <: std.ast.Decl {
@@ -4243,23 +4497,41 @@ class MacroDecl <: std.ast.Decl {
 
     var block_: std.ast.Block
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop funcParams: std.collection.ArrayList<std.ast.FuncParam>
+    mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop declType: std.ast.TypeNode
+    mut prop declType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class PrimaryCtorDecl <: std.ast.Decl {
@@ -4277,21 +4549,33 @@ class PrimaryCtorDecl <: std.ast.Decl {
 
     var block_: std.ast.Block
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop funcParams: std.collection.ArrayList<std.ast.FuncParam>
+    mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func isConst: Bool
+    func isConst(): Bool { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class VarDecl <: std.ast.Decl {
@@ -4315,45 +4599,60 @@ class VarDecl <: std.ast.Decl {
 
     var isEnumConstruct: Bool
 
-    prop pattern: std.ast.Pattern
+    mut prop pattern: std.ast.Pattern {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop declType: std.ast.TypeNode
+    mut prop declType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop assign: std.ast.Token
+    mut prop assign: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func isConst: Bool
+    func isConst(): Bool { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Expr <: std.ast.Node {
     init() { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(_: UInt16): std.core.String
+    func dump(_: UInt16): std.core.String { /* compiled code */ }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 }
 
 class Pattern <: std.ast.Node {
     init() { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(_: UInt16): std.core.String
+    func dump(_: UInt16): std.core.String { /* compiled code */ }
 }
 
 class PropDecl <: std.ast.Decl {
@@ -4375,23 +4674,41 @@ class PropDecl <: std.ast.Decl {
 
     var rCurl_: std.ast.Token
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop declType: std.ast.TypeNode
+    mut prop declType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lBrace: std.ast.Token
+    mut prop lBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop getter: std.ast.FuncDecl
+    mut prop getter: std.ast.FuncDecl {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop setter: std.ast.FuncDecl
+    mut prop setter: std.ast.FuncDecl {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rBrace: std.ast.Token
+    mut prop rBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class TypeAliasDecl <: std.ast.Decl {
@@ -4405,15 +4722,21 @@ class TypeAliasDecl <: std.ast.Decl {
 
     var aliasType_: std.ast.TypeNode
 
-    prop assign: std.ast.Token
+    mut prop assign: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop aliasType: std.ast.TypeNode
+    mut prop aliasType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class MacroExpandDecl <: std.ast.Decl {
@@ -4443,27 +4766,51 @@ class MacroExpandDecl <: std.ast.Decl {
 
     var isCompileTimeVisible_: Bool
 
-    prop fullIdentifier: std.ast.Token
+    mut prop fullIdentifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lSquare: std.ast.Token
+    mut prop lSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop macroAttrs: std.ast.Tokens
+    mut prop macroAttrs: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rSquare: std.ast.Token
+    mut prop rSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop macroInputs: std.ast.Tokens
+    mut prop macroInputs: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop macroInputDecl: std.ast.Decl
+    mut prop macroInputDecl: std.ast.Decl {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class MacroExpandParam <: std.ast.FuncParam {
@@ -4491,61 +4838,85 @@ class MacroExpandParam <: std.ast.FuncParam {
 
     var isCompileTimeVisible_: Bool
 
-    prop fullIdentifier: std.ast.Token
+    mut prop fullIdentifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lSquare: std.ast.Token
+    mut prop lSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop macroAttrs: std.ast.Tokens
+    mut prop macroAttrs: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rSquare: std.ast.Token
+    mut prop rSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop macroInputs: std.ast.Tokens
+    mut prop macroInputs: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop macroInputDecl: std.ast.Decl
+    mut prop macroInputDecl: std.ast.Decl {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func boundsCheck(buf: std.core.Array<UInt8>, sz: Int64): Bool
+func boundsCheck(buf: std.core.Array<UInt8>, sz: Int64): Bool { /* compiled code */ }
 
-func getUInt8(buf: std.core.Array<UInt8>): UInt8
+func getUInt8(buf: std.core.Array<UInt8>): UInt8 { /* compiled code */ }
 
-func getBool(buf: std.core.Array<UInt8>): Bool
+func getBool(buf: std.core.Array<UInt8>): Bool { /* compiled code */ }
 
-func getUInt16(buf: std.core.Array<UInt8>): UInt16
+func getUInt16(buf: std.core.Array<UInt8>): UInt16 { /* compiled code */ }
 
-func getUInt32(buf: std.core.Array<UInt8>): UInt32
+func getUInt32(buf: std.core.Array<UInt8>): UInt32 { /* compiled code */ }
 
-func getInt32(buf: std.core.Array<UInt8>): Int32
+func getInt32(buf: std.core.Array<UInt8>): Int32 { /* compiled code */ }
 
-func getUInt64(buf: std.core.Array<UInt8>): UInt64
+func getUInt64(buf: std.core.Array<UInt8>): UInt64 { /* compiled code */ }
 
-func getString(buf: std.core.Array<UInt8>, offset: Int64, len: UInt32): std.core.String
+func getString(buf: std.core.Array<UInt8>, offset: Int64, len: UInt32): std.core.String { /* compiled code */ }
 
 enum DiagReportLevel {
     | ERROR
 
     | WARNING
 
-    func level: Int32
+    func level(): Int32 { /* compiled code */ }
 }
 
-func diagReport(level: std.ast.DiagReportLevel, tokens: std.ast.Tokens, message: std.core.String, hint: std.core.String): Unit
+func diagReport(level: std.ast.DiagReportLevel, tokens: std.ast.Tokens, message: std.core.String, hint: std.core.String): Unit { /* compiled code */ }
 
 class ASTException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class ParseASTException <: std.core.Exception {
@@ -4553,7 +4924,7 @@ class ParseASTException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class BinaryExpr <: std.ast.Expr {
@@ -4569,19 +4940,28 @@ class BinaryExpr <: std.ast.Expr {
 
     var op_: std.ast.Token
 
-    prop leftExpr: std.ast.Expr
+    mut prop leftExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop op: std.ast.Token
+    mut prop op: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rightExpr: std.ast.Expr
+    mut prop rightExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class UnaryExpr <: std.ast.Expr {
@@ -4595,17 +4975,23 @@ class UnaryExpr <: std.ast.Expr {
 
     var op_: std.ast.Token
 
-    prop op: std.ast.Token
+    mut prop op: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class IsExpr <: std.ast.Expr {
@@ -4621,19 +5007,28 @@ class IsExpr <: std.ast.Expr {
 
     var shiftType_: std.ast.TypeNode
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop shiftType: std.ast.TypeNode
+    mut prop shiftType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class AsExpr <: std.ast.Expr {
@@ -4649,19 +5044,28 @@ class AsExpr <: std.ast.Expr {
 
     var shiftType_: std.ast.TypeNode
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop shiftType: std.ast.TypeNode
+    mut prop shiftType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class ParenExpr <: std.ast.Expr {
@@ -4677,17 +5081,26 @@ class ParenExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop parenthesizedExpr: std.ast.Expr
+    mut prop parenthesizedExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class LitConstExpr <: std.ast.Expr {
@@ -4699,13 +5112,16 @@ class LitConstExpr <: std.ast.Expr {
 
     var literal_: std.ast.Token
 
-    prop literal: std.ast.Token
+    mut prop literal: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class RefExpr <: std.ast.Expr {
@@ -4725,21 +5141,36 @@ class RefExpr <: std.ast.Expr {
 
     var rAngle_: std.ast.Token
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lAngle: std.ast.Token
+    mut prop lAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop typeArguments: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop commas: std.ast.Tokens
+    mut prop commas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rAngle: std.ast.Token
+    mut prop rAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class ReturnExpr <: std.ast.Expr {
@@ -4753,15 +5184,21 @@ class ReturnExpr <: std.ast.Expr {
 
     var expr_: std.core.Option<std.ast.Expr>
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class ThrowExpr <: std.ast.Expr {
@@ -4775,15 +5212,21 @@ class ThrowExpr <: std.ast.Expr {
 
     var expr_: std.ast.Expr
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class AssignExpr <: std.ast.Expr {
@@ -4799,19 +5242,28 @@ class AssignExpr <: std.ast.Expr {
 
     var rexpr_: std.ast.Expr
 
-    prop assign: std.ast.Token
+    mut prop assign: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop leftExpr: std.ast.Expr
+    mut prop leftExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rightExpr: std.ast.Expr
+    mut prop rightExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class CallExpr <: std.ast.Expr {
@@ -4829,21 +5281,33 @@ class CallExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
-    prop callFunc: std.ast.Expr
+    mut prop callFunc: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop arguments: std.collection.ArrayList<std.ast.Argument>
+    mut prop arguments: std.collection.ArrayList<std.ast.Argument> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class Argument <: std.ast.Node {
@@ -4861,19 +5325,31 @@ class Argument <: std.ast.Node {
 
     var comma_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class MemberAccess <: std.ast.Expr {
@@ -4897,27 +5373,48 @@ class MemberAccess <: std.ast.Expr {
 
     var rAngle_: std.ast.Token
 
-    prop baseExpr: std.ast.Expr
+    mut prop baseExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop dot: std.ast.Token
+    mut prop dot: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop field: std.ast.Token
+    mut prop field: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lAngle: std.ast.Token
+    mut prop lAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop typeArguments: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop commas: std.ast.Tokens
+    mut prop commas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rAngle: std.ast.Token
+    mut prop rAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class IfExpr <: std.ast.Expr {
@@ -4941,25 +5438,46 @@ class IfExpr <: std.ast.Expr {
 
     var elseExpr_: std.core.Option<std.ast.Expr>
 
-    prop keywordI: std.ast.Token
+    mut prop keywordI: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop condition: std.ast.Expr
+    mut prop condition: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop ifBlock: std.ast.Block
+    mut prop ifBlock: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordE: std.ast.Token
+    mut prop keywordE: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop elseExpr: std.ast.Expr
+    mut prop elseExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class LetPatternExpr <: std.ast.Expr {
@@ -4977,19 +5495,31 @@ class LetPatternExpr <: std.ast.Expr {
 
     var expr_: std.ast.Expr
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop pattern: std.ast.Pattern
+    mut prop pattern: std.ast.Pattern {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop backArrow: std.ast.Token
+    mut prop backArrow: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class MatchExpr <: std.ast.Expr {
@@ -5013,25 +5543,46 @@ class MatchExpr <: std.ast.Expr {
 
     var rCurl_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop selector: std.ast.Expr
+    mut prop selector: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lBrace: std.ast.Token
+    mut prop lBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop matchCases: std.collection.ArrayList<std.ast.MatchCase>
+    mut prop matchCases: std.collection.ArrayList<std.ast.MatchCase> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rBrace: std.ast.Token
+    mut prop rBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class MatchCase <: std.ast.Node {
@@ -5057,27 +5608,51 @@ class MatchCase <: std.ast.Node {
 
     var exprOrDecl_: std.ast.Block
 
-    prop keywordC: std.ast.Token
+    mut prop keywordC: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop patterns: std.collection.ArrayList<std.ast.Pattern>
+    mut prop patterns: std.collection.ArrayList<std.ast.Pattern> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop bitOrs: std.ast.Tokens
+    mut prop bitOrs: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordW: std.ast.Token
+    mut prop keywordW: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop patternGuard: std.ast.Expr
+    mut prop patternGuard: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop arrow: std.ast.Token
+    mut prop arrow: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class WhileExpr <: std.ast.Expr {
@@ -5097,21 +5672,36 @@ class WhileExpr <: std.ast.Expr {
 
     var block_: std.ast.Block
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop condition: std.ast.Expr
+    mut prop condition: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class DoWhileExpr <: std.ast.Expr {
@@ -5133,23 +5723,41 @@ class DoWhileExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
-    prop keywordD: std.ast.Token
+    mut prop keywordD: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordW: std.ast.Token
+    mut prop keywordW: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop condition: std.ast.Expr
+    mut prop condition: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class LambdaExpr <: std.ast.Expr {
@@ -5171,21 +5779,36 @@ class LambdaExpr <: std.ast.Expr {
 
     var mockSupported_: Bool
 
-    prop lBrace: std.ast.Token
+    mut prop lBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop funcParams: std.collection.ArrayList<std.ast.FuncParam>
+    mut prop funcParams: std.collection.ArrayList<std.ast.FuncParam> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop doubleArrow: std.ast.Token
+    mut prop doubleArrow: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop nodes: std.collection.ArrayList<std.ast.Node>
+    mut prop nodes: std.collection.ArrayList<std.ast.Node> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rBrace: std.ast.Token
+    mut prop rBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class SpawnExpr <: std.ast.Expr {
@@ -5205,21 +5828,36 @@ class SpawnExpr <: std.ast.Expr {
 
     var task_: std.ast.LambdaExpr
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop threadContext: std.ast.Expr
+    mut prop threadContext: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lambdaExpr: std.ast.LambdaExpr
+    mut prop lambdaExpr: std.ast.LambdaExpr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class SynchronizedExpr <: std.ast.Expr {
@@ -5239,21 +5877,36 @@ class SynchronizedExpr <: std.ast.Expr {
 
     var block_: std.ast.Block
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop structuredMutex: std.ast.Expr
+    mut prop structuredMutex: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class TrailingClosureExpr <: std.ast.Expr {
@@ -5267,15 +5920,21 @@ class TrailingClosureExpr <: std.ast.Expr {
 
     var lambda_: std.ast.LambdaExpr
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lambdaExpr: std.ast.LambdaExpr
+    mut prop lambdaExpr: std.ast.LambdaExpr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class TypeConvExpr <: std.ast.Expr {
@@ -5293,19 +5952,31 @@ class TypeConvExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
-    prop targetType: std.ast.PrimitiveType
+    mut prop targetType: std.ast.PrimitiveType {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class PrimitiveType <: std.ast.TypeNode {
@@ -5317,13 +5988,16 @@ class PrimitiveType <: std.ast.TypeNode {
 
     var keyword_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class ForInExpr <: std.ast.Expr {
@@ -5351,29 +6025,56 @@ class ForInExpr <: std.ast.Expr {
 
     var block_: std.ast.Block
 
-    prop keywordF: std.ast.Token
+    mut prop keywordF: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop pattern: std.ast.Pattern
+    mut prop pattern: std.ast.Pattern {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordI: std.ast.Token
+    mut prop keywordI: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordW: std.ast.Token
+    mut prop keywordW: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop patternGuard: std.ast.Expr
+    mut prop patternGuard: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop block: std.ast.Block
+    mut prop block: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class PrimitiveTypeExpr <: std.ast.Expr {
@@ -5385,13 +6086,16 @@ class PrimitiveTypeExpr <: std.ast.Expr {
 
     var keyword_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class ArrayLiteral <: std.ast.Expr {
@@ -5409,17 +6113,26 @@ class ArrayLiteral <: std.ast.Expr {
 
     var rSquare_: std.ast.Token
 
-    prop lSquare: std.ast.Token
+    mut prop lSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop elements: std.collection.ArrayList<std.ast.Expr>
+    mut prop elements: std.collection.ArrayList<std.ast.Expr> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rSquare: std.ast.Token
+    mut prop rSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class TupleLiteral <: std.ast.Expr {
@@ -5437,17 +6150,26 @@ class TupleLiteral <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop elements: std.collection.ArrayList<std.ast.Expr>
+    mut prop elements: std.collection.ArrayList<std.ast.Expr> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class RangeExpr <: std.ast.Expr {
@@ -5467,23 +6189,38 @@ class RangeExpr <: std.ast.Expr {
 
     var step_: std.core.Option<std.ast.Expr>
 
-    prop start: std.ast.Expr
+    mut prop start: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop op: std.ast.Token
+    mut prop op: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop end: std.ast.Expr
+    mut prop end: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop step: std.ast.Expr
+    mut prop step: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class SubscriptExpr <: std.ast.Expr {
@@ -5501,21 +6238,33 @@ class SubscriptExpr <: std.ast.Expr {
 
     var rSquare_: std.ast.Token
 
-    prop baseExpr: std.ast.Expr
+    mut prop baseExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lSquare: std.ast.Token
+    mut prop lSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop indexList: std.collection.ArrayList<std.ast.Expr>
+    mut prop indexList: std.collection.ArrayList<std.ast.Expr> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rSquare: std.ast.Token
+    mut prop rSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class JumpExpr <: std.ast.Expr {
@@ -5525,13 +6274,16 @@ class JumpExpr <: std.ast.Expr {
 
     var kind_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class IncOrDecExpr <: std.ast.Expr {
@@ -5545,17 +6297,23 @@ class IncOrDecExpr <: std.ast.Expr {
 
     var expr_: std.ast.Expr
 
-    prop op: std.ast.Token
+    mut prop op: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop expr: std.ast.Expr
+    mut prop expr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class TryExpr <: std.ast.Expr {
@@ -5591,27 +6349,51 @@ class TryExpr <: std.ast.Expr {
 
     var finallyBlock_: std.core.Option<std.ast.Block>
 
-    prop keywordT: std.ast.Token
+    mut prop keywordT: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop resourceSpec: std.collection.ArrayList<std.ast.VarDecl>
+    mut prop resourceSpec: std.collection.ArrayList<std.ast.VarDecl> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop tryBlock: std.ast.Block
+    mut prop tryBlock: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordsC: std.ast.Tokens
+    mut prop keywordsC: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop catchPatterns: std.collection.ArrayList<std.ast.Pattern>
+    mut prop catchPatterns: std.collection.ArrayList<std.ast.Pattern> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop catchBlocks: std.collection.ArrayList<std.ast.Block>
+    mut prop catchBlocks: std.collection.ArrayList<std.ast.Block> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordF: std.ast.Token
+    mut prop keywordF: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop finallyBlock: std.ast.Block
+    mut prop finallyBlock: std.ast.Block {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class OptionalExpr <: std.ast.Expr {
@@ -5625,17 +6407,23 @@ class OptionalExpr <: std.ast.Expr {
 
     var quest_: std.ast.Token
 
-    prop baseExpr: std.ast.Expr
+    mut prop baseExpr: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop quest: std.ast.Token
+    mut prop quest: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func precedence: Int64
+    func precedence(): Int64 { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class QuoteToken <: std.ast.Expr {
@@ -5643,13 +6431,16 @@ class QuoteToken <: std.ast.Expr {
 
     var tokens_: std.ast.Tokens
 
-    prop tokens: std.ast.Tokens
+    mut prop tokens: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class QuoteExpr <: std.ast.Expr {
@@ -5667,19 +6458,31 @@ class QuoteExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop exprs: std.collection.ArrayList<std.ast.Expr>
+    mut prop exprs: std.collection.ArrayList<std.ast.Expr> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class WildcardExpr <: std.ast.Expr {
@@ -5689,13 +6492,16 @@ class WildcardExpr <: std.ast.Expr {
 
     var keyword_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class VArrayExpr <: std.ast.Expr {
@@ -5713,19 +6519,31 @@ class VArrayExpr <: std.ast.Expr {
 
     var rParen_: std.ast.Token
 
-    prop vArrayType: std.ast.VArrayType
+    mut prop vArrayType: std.ast.VArrayType {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop arguments: std.collection.ArrayList<std.ast.Argument>
+    mut prop arguments: std.collection.ArrayList<std.ast.Argument> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class VArrayType <: std.ast.TypeNode {
@@ -5747,23 +6565,41 @@ class VArrayType <: std.ast.TypeNode {
 
     var rAngle_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lAngle: std.ast.Token
+    mut prop lAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop elementTy: std.ast.TypeNode
+    mut prop elementTy: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop dollar: std.ast.Token
+    mut prop dollar: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop size: std.ast.Token
+    mut prop size: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rAngle: std.ast.Token
+    mut prop rAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class MacroExpandExpr <: std.ast.Expr {
@@ -5795,34 +6631,58 @@ class MacroExpandExpr <: std.ast.Expr {
 
     var hasParenthesis_: Bool
 
-    prop at: std.ast.Token
+    mut prop at: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lSquare: std.ast.Token
+    mut prop lSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop macroAttrs: std.ast.Tokens
+    mut prop macroAttrs: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rSquare: std.ast.Token
+    mut prop rSquare: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop macroInputs: std.ast.Tokens
+    mut prop macroInputs: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func addParen(ret: std.ast.Tokens, innerExpr: std.ast.Expr, thisExpr: std.ast.Expr, addOnEqualPred: Bool): std.ast.Tokens
+func addParen(ret: std.ast.Tokens, innerExpr: std.ast.Expr, thisExpr: std.ast.Expr, addOnEqualPred: Bool): std.ast.Tokens { /* compiled code */ }
 
 let MACRO_OBJECT: std.core.ThreadLocal<CPointer<Unit>>
 
-func CJ_AST_ParseExpr(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>, tokenCounter: CPointer<Int64>): CPointer<std.ast.ParseRes>
+foreign func CJ_AST_ParseExpr(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>, tokenCounter: CPointer<Int64>): CPointer<std.ast.ParseRes>
 
 struct ParseRes {
     let node: CPointer<UInt8>
@@ -5832,65 +6692,65 @@ struct ParseRes {
     init() { /* compiled code */ }
 }
 
-func CJ_AST_ParseDecl(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>, tokenCounter: CPointer<Int64>): CPointer<std.ast.ParseRes>
+foreign func CJ_AST_ParseDecl(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>, tokenCounter: CPointer<Int64>): CPointer<std.ast.ParseRes>
 
-func CJ_AST_ParsePropMemberDecl(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>): CPointer<std.ast.ParseRes>
+foreign func CJ_AST_ParsePropMemberDecl(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>): CPointer<std.ast.ParseRes>
 
-func CJ_AST_ParsePrimaryConstructor(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>): CPointer<std.ast.ParseRes>
+foreign func CJ_AST_ParsePrimaryConstructor(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>): CPointer<std.ast.ParseRes>
 
-func CJ_AST_ParsePattern(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>, tokenCounter: CPointer<Int64>): CPointer<std.ast.ParseRes>
+foreign func CJ_AST_ParsePattern(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>, tokenCounter: CPointer<Int64>): CPointer<std.ast.ParseRes>
 
-func CJ_AST_ParseType(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>, tokenCounter: CPointer<Int64>): CPointer<std.ast.ParseRes>
+foreign func CJ_AST_ParseType(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>, tokenCounter: CPointer<Int64>): CPointer<std.ast.ParseRes>
 
-func CJ_AST_ParseTopLevel(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>): CPointer<std.ast.ParseRes>
+foreign func CJ_AST_ParseTopLevel(fptr: CPointer<Unit>, tokensBytes: CPointer<UInt8>): CPointer<std.ast.ParseRes>
 
-func CJ_AST_ParseAnnotationArguments(tokensBytes: CPointer<UInt8>): CPointer<std.ast.ParseRes>
+foreign func CJ_AST_ParseAnnotationArguments(tokensBytes: CPointer<UInt8>): CPointer<std.ast.ParseRes>
 
-func CJ_AST_Lex(fptr: CPointer<Unit>, code: CString): CPointer<UInt8>
+foreign func CJ_AST_Lex(fptr: CPointer<Unit>, code: CString): CPointer<UInt8>
 
-func CJ_CheckParentContext(fptr: CPointer<Unit>, parent: CString, report: Bool): Bool
+foreign func CJ_CheckParentContext(fptr: CPointer<Unit>, parent: CString, report: Bool): Bool
 
-func CJ_SetItemInfo(fptr: CPointer<Unit>, key: CString, value: CPointer<Unit>, valueType: UInt8): Unit
+foreign func CJ_SetItemInfo(fptr: CPointer<Unit>, key: CString, value: CPointer<Unit>, valueType: UInt8): Unit
 
-func CJ_GetChildMessages(fptr: CPointer<Unit>, children: CString): CPointer<CPointer<CPointer<Unit>>>
+foreign func CJ_GetChildMessages(fptr: CPointer<Unit>, children: CString): CPointer<CPointer<CPointer<Unit>>>
 
-func CJ_CheckAddSpace(tokBytes: CPointer<UInt8>, spaceFlag: CPointer<Bool>): Unit
+foreign func CJ_CheckAddSpace(tokBytes: CPointer<UInt8>, spaceFlag: CPointer<Bool>): Unit
 
-func CJ_AST_DiagReport(fptr: CPointer<Unit>, level: CPointer<Int32>, tokensBytes: CPointer<UInt8>, message: CString, hint: CString): UInt8
+foreign func CJ_AST_DiagReport(fptr: CPointer<Unit>, level: CPointer<Int32>, tokensBytes: CPointer<UInt8>, message: CString, hint: CString): UInt8
 
-func CJ_GetMacroPosition(fptr: CPointer<Unit>, fileID: CPointer<UInt32>, line: CPointer<Int32>, column: CPointer<Int32>): Unit
+foreign func CJ_GetMacroPosition(fptr: CPointer<Unit>, fileID: CPointer<UInt32>, line: CPointer<Int32>, column: CPointer<Int32>): Unit
 
-func CJ_AST_Float64ToCPointer(num: Float64): CString
+foreign func CJ_AST_Float64ToCPointer(num: Float64): CString
 
 let BUFFER_HEADER_SIZE: Int64
 
-func getInt32FromUnsafePointer(ptr: CPointer<UInt8>): Int32
+func getInt32FromUnsafePointer(ptr: CPointer<UInt8>): Int32 { /* compiled code */ }
 
-func parse(input: std.ast.Tokens, nativeParse: (CPointer<UInt8>) -> CPointer<std.ast.ParseRes>): std.ast.NodeFormat_Node
+func parse(input: std.ast.Tokens, nativeParse: (CPointer<UInt8>) -> CPointer<std.ast.ParseRes>): std.ast.NodeFormat_Node { /* compiled code */ }
 
-func parseFragment(input: std.ast.Tokens, startFrom: Int64, nativeParse: (CPointer<UInt8>, CPointer<Int64>) -> CPointer<std.ast.ParseRes>): (std.ast.NodeFormat_Node, Int64)
+func parseFragment(input: std.ast.Tokens, startFrom: Int64, nativeParse: (CPointer<UInt8>, CPointer<Int64>) -> CPointer<std.ast.ParseRes>): (std.ast.NodeFormat_Node, Int64) { /* compiled code */ }
 
-func genNodeFormatNode(pNode: CPointer<UInt8>, pTokensBytes: CPointer<UInt8>): std.ast.NodeFormat_Node
+func genNodeFormatNode(pNode: CPointer<UInt8>, pTokensBytes: CPointer<UInt8>): std.ast.NodeFormat_Node { /* compiled code */ }
 
-func getTokensFromBytes(pTokenArray: CPointer<UInt8>): std.ast.Tokens
+func getTokensFromBytes(pTokenArray: CPointer<UInt8>): std.ast.Tokens { /* compiled code */ }
 
-func cangjieLex(code: std.core.String): std.ast.Tokens
+func cangjieLex(code: std.core.String): std.ast.Tokens { /* compiled code */ }
 
-func cangjieLex(code: std.core.String, truncated: Bool): std.ast.Tokens
+func cangjieLex(code: std.core.String, truncated: Bool): std.ast.Tokens { /* compiled code */ }
 
-func unsafePointerCastFromUint8Array(arr: std.core.Array<UInt8>): CPointer<UInt8>
+func unsafePointerCastFromUint8Array(arr: std.core.Array<UInt8>): CPointer<UInt8> { /* compiled code */ }
 
 class MacroContextException <: std.core.Exception {
     init() { /* compiled code */ }
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-func assertParentContext(parentMacroName: std.core.String): Unit
+func assertParentContext(parentMacroName: std.core.String): Unit { /* compiled code */ }
 
-func insideParentContext(parentMacroName: std.core.String): Bool
+func insideParentContext(parentMacroName: std.core.String): Bool { /* compiled code */ }
 
 let ITEM_TYPE_STRING: UInt8
 
@@ -5900,13 +6760,13 @@ let ITEM_TYPE_BOOL: UInt8
 
 let ITEM_TYPE_TOKENS: UInt8
 
-func setItem(key: std.core.String, value: std.core.String): Unit
+func setItem(key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
 
-func setItem(key: std.core.String, value: Int64): Unit
+func setItem(key: std.core.String, value: Int64): Unit { /* compiled code */ }
 
-func setItem(key: std.core.String, value: Bool): Unit
+func setItem(key: std.core.String, value: Bool): Unit { /* compiled code */ }
 
-func setItem(key: std.core.String, value: std.ast.Tokens): Unit
+func setItem(key: std.core.String, value: std.ast.Tokens): Unit { /* compiled code */ }
 
 class McInfo {
     var keyVal: CString
@@ -5917,11 +6777,17 @@ class McInfo {
 
     init(keyVal_: CString, v: CPointer<Unit>, vType: UInt8) { /* compiled code */ }
 
-    prop keyV: CString
+    prop keyV: CString {
+        get() { /* compiled code */ }
+    }
 
-    prop value: CPointer<Unit>
+    prop value: CPointer<Unit> {
+        get() { /* compiled code */ }
+    }
 
-    prop valueType: UInt8
+    prop valueType: UInt8 {
+        get() { /* compiled code */ }
+    }
 }
 
 class MacroMessage {
@@ -5929,20 +6795,20 @@ class MacroMessage {
 
     init(res: std.collection.ArrayList<std.ast.McInfo>) { /* compiled code */ }
 
-    func hasItem(key: std.core.String): Bool
+    func hasItem(key: std.core.String): Bool { /* compiled code */ }
 
-    func getString(key: std.core.String): std.core.String
+    func getString(key: std.core.String): std.core.String { /* compiled code */ }
 
-    func getInt64(key: std.core.String): Int64
+    func getInt64(key: std.core.String): Int64 { /* compiled code */ }
 
-    func getBool(key: std.core.String): Bool
+    func getBool(key: std.core.String): Bool { /* compiled code */ }
 
-    func getTokens(key: std.core.String): std.ast.Tokens
+    func getTokens(key: std.core.String): std.ast.Tokens { /* compiled code */ }
 }
 
-func readCpointerToMap(cp: CPointer<CPointer<Unit>>): std.collection.ArrayList<std.ast.McInfo>
+func readCpointerToMap(cp: CPointer<CPointer<Unit>>): std.collection.ArrayList<std.ast.McInfo> { /* compiled code */ }
 
-func getChildMessages(children: std.core.String): std.collection.ArrayList<std.ast.MacroMessage>
+func getChildMessages(children: std.core.String): std.collection.ArrayList<std.ast.MacroMessage> { /* compiled code */ }
 
 class Table {
     var bytes: std.core.Array<UInt8>
@@ -5951,53 +6817,53 @@ class Table {
 
     init(buf: std.core.Array<UInt8>, position: UInt32) { /* compiled code */ }
 
-    func offset(slot: UInt16): UInt16
+    func offset(slot: UInt16): UInt16 { /* compiled code */ }
 
-    func getIndirect(offsetVal: UInt32): UInt32
+    func getIndirect(offsetVal: UInt32): UInt32 { /* compiled code */ }
 
-    func getByteVector(offsetVal: UInt32): std.core.Array<UInt8>
+    func getByteVector(offsetVal: UInt32): std.core.Array<UInt8> { /* compiled code */ }
 
-    func getVectorLenBySlot(slot: UInt16): Int64
+    func getVectorLenBySlot(slot: UInt16): Int64 { /* compiled code */ }
 
-    func getVectorStartBySlot(slot: UInt16): UInt32
+    func getVectorStartBySlot(slot: UInt16): UInt32 { /* compiled code */ }
 
-    func getString(offsetVal: UInt32): std.core.String
+    func getString(offsetVal: UInt32): std.core.String { /* compiled code */ }
 
-    func getUInt8(offsetVal: UInt32): UInt8
+    func getUInt8(offsetVal: UInt32): UInt8 { /* compiled code */ }
 
-    func getInt8(offsetVal: UInt32): Int8
+    func getInt8(offsetVal: UInt32): Int8 { /* compiled code */ }
 
-    func getBool(offsetVal: UInt32): Bool
+    func getBool(offsetVal: UInt32): Bool { /* compiled code */ }
 
-    func getUInt16(offsetVal: UInt32): UInt16
+    func getUInt16(offsetVal: UInt32): UInt16 { /* compiled code */ }
 
-    func getInt16(offsetVal: UInt32): Int16
+    func getInt16(offsetVal: UInt32): Int16 { /* compiled code */ }
 
-    func getUInt32(offsetVal: UInt32): UInt32
+    func getUInt32(offsetVal: UInt32): UInt32 { /* compiled code */ }
 
-    func getInt32(offsetVal: UInt32): Int32
+    func getInt32(offsetVal: UInt32): Int32 { /* compiled code */ }
 
-    func getUInt64(offsetVal: UInt32): UInt64
+    func getUInt64(offsetVal: UInt32): UInt64 { /* compiled code */ }
 
-    func getInt64(offsetVal: UInt32): Int64
+    func getInt64(offsetVal: UInt32): Int64 { /* compiled code */ }
 
-    func getUInt8Slot(slot: UInt16, default: UInt8): UInt8
+    func getUInt8Slot(slot: UInt16, default: UInt8): UInt8 { /* compiled code */ }
 
-    func getInt8Slot(slot: UInt16, default: Int8): Int8
+    func getInt8Slot(slot: UInt16, default: Int8): Int8 { /* compiled code */ }
 
-    func getBoolSlot(slot: UInt16, default: Bool): Bool
+    func getBoolSlot(slot: UInt16, default: Bool): Bool { /* compiled code */ }
 
-    func getUInt16Slot(slot: UInt16, default: UInt16): UInt16
+    func getUInt16Slot(slot: UInt16, default: UInt16): UInt16 { /* compiled code */ }
 
-    func getInt16Slot(slot: UInt16, default: Int16): Int16
+    func getInt16Slot(slot: UInt16, default: Int16): Int16 { /* compiled code */ }
 
-    func getUInt32Slot(slot: UInt16, default: UInt32): UInt32
+    func getUInt32Slot(slot: UInt16, default: UInt32): UInt32 { /* compiled code */ }
 
-    func getInt32Slot(slot: UInt16, default: Int32): Int32
+    func getInt32Slot(slot: UInt16, default: Int32): Int32 { /* compiled code */ }
 
-    func getUInt64Slot(slot: UInt16, default: UInt64): UInt64
+    func getUInt64Slot(slot: UInt16, default: UInt64): UInt64 { /* compiled code */ }
 
-    func getInt64Slot(slot: UInt16, default: Int64): Int64
+    func getInt64Slot(slot: UInt16, default: Int64): Int64 { /* compiled code */ }
 }
 
 struct Position <: std.ast.ToBytes {
@@ -6011,23 +6877,23 @@ struct Position <: std.ast.ToBytes {
 
     init(fileID: UInt32, line: Int32, column: Int32) { /* compiled code */ }
 
-    func isEmpty: Bool
+    func isEmpty(): Bool { /* compiled code */ }
 
-    operator func ==(r: std.ast.Position): Bool
+    operator func ==(r: std.ast.Position): Bool { /* compiled code */ }
 
-    operator func !=(r: std.ast.Position): Bool
+    operator func !=(r: std.ast.Position): Bool { /* compiled code */ }
 
-    func dump: Unit
+    func dump(): Unit { /* compiled code */ }
 
-    func toBytes: std.core.Array<UInt8>
+    func toBytes(): std.core.Array<UInt8> { /* compiled code */ }
 
-    func toBytes(arr: std.core.Array<UInt8>, start1: Int64): Int64
+    func toBytes(arr: std.core.Array<UInt8>, start1: Int64): Int64 { /* compiled code */ }
 
-    func getSize: Int64
+    func getSize(): Int64 { /* compiled code */ }
 }
 
 interface ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 class Program <: std.ast.Node {
@@ -6043,17 +6909,26 @@ class Program <: std.ast.Node {
 
     var decls_: std.collection.ArrayList<std.ast.Decl>
 
-    prop packageHeader: std.ast.PackageHeader
+    mut prop packageHeader: std.ast.PackageHeader {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop importLists: std.collection.ArrayList<std.ast.ImportList>
+    mut prop importLists: std.collection.ArrayList<std.ast.ImportList> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop decls: std.collection.ArrayList<std.ast.Decl>
+    mut prop decls: std.collection.ArrayList<std.ast.Decl> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class PackageHeader <: std.ast.Node {
@@ -6079,25 +6954,43 @@ class PackageHeader <: std.ast.Node {
 
     var isFromDerivation_: Bool
 
-    prop accessible: std.ast.Token
+    mut prop accessible: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordM: std.ast.Token
+    mut prop keywordM: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keywordP: std.ast.Token
+    mut prop keywordP: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop prefixPaths: std.ast.Tokens
+    mut prop prefixPaths: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop prefixDots: std.ast.Tokens
+    mut prop prefixDots: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop packageIdentifier: std.ast.Token
+    mut prop packageIdentifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 
-    func addPackageTokens(input: std.ast.Tokens): std.ast.Tokens
+    func addPackageTokens(input: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 }
 
 enum ImportKind <: std.core.ToString {
@@ -6109,7 +7002,7 @@ enum ImportKind <: std.core.ToString {
 
     | Multi
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 }
 
 class ImportContent <: std.ast.Node {
@@ -6137,190 +7030,217 @@ class ImportContent <: std.ast.Node {
 
     let innerToken_: std.ast.Tokens
 
-    prop importKind: std.ast.ImportKind
+    mut prop importKind: std.ast.ImportKind {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop prefixPaths: std.ast.Tokens
+    mut prop prefixPaths: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop prefixDots: std.ast.Tokens
+    mut prop prefixDots: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop importAlias: std.ast.Tokens
+    mut prop importAlias: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lBrace: std.ast.Token
+    mut prop lBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop items: std.collection.ArrayList<std.ast.ImportContent>
+    mut prop items: std.collection.ArrayList<std.ast.ImportContent> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop commas: std.ast.Tokens
+    mut prop commas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rBrace: std.ast.Token
+    mut prop rBrace: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func isImportAlias: Bool
+    func isImportAlias(): Bool { /* compiled code */ }
 
-    func isImportAll: Bool
+    func isImportAll(): Bool { /* compiled code */ }
 
-    func isImportMulti: Bool
+    func isImportMulti(): Bool { /* compiled code */ }
 
-    func isImportSingle: Bool
+    func isImportSingle(): Bool { /* compiled code */ }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 extend ArrayList <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Array <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-func parseDecl(input: std.ast.Tokens, astKind: std.core.String): std.ast.Decl
+func parseDecl(input: std.ast.Tokens, astKind: std.core.String): std.ast.Decl { /* compiled code */ }
 
-func parseDeclFragment(input: std.ast.Tokens, startFrom: Int64): (std.ast.Decl, Int64)
+func parseDeclFragment(input: std.ast.Tokens, startFrom: Int64): (std.ast.Decl, Int64) { /* compiled code */ }
 
-func generateDeclAST(declNode: std.core.Option<std.ast.NodeFormat_Decl>): std.ast.Decl
+func generateDeclAST(declNode: std.core.Option<std.ast.NodeFormat_Decl>): std.ast.Decl { /* compiled code */ }
 
-func createDeclBase(keyWord: std.ast.Token, declBase: std.ast.NodeFormat_DeclBase): std.ast.Decl
+func createDeclBase(keyWord: std.ast.Token, declBase: std.ast.NodeFormat_DeclBase): std.ast.Decl { /* compiled code */ }
 
-func generateGenericInfo(generic: std.core.Option<std.ast.NodeFormat_Generic>): (std.core.Option<std.ast.GenericParam>, std.collection.ArrayList<std.ast.GenericConstraint>, std.ast.Tokens, Bool)
+func generateGenericInfo(generic: std.core.Option<std.ast.NodeFormat_Generic>): (std.core.Option<std.ast.GenericParam>, std.collection.ArrayList<std.ast.GenericConstraint>, std.ast.Tokens, Bool) { /* compiled code */ }
 
-func createClassDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.ClassDecl
+func createClassDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.ClassDecl { /* compiled code */ }
 
-func createStrucDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.StructDecl
+func createStrucDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.StructDecl { /* compiled code */ }
 
-func createInterfaceDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.InterfaceDecl
+func createInterfaceDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.InterfaceDecl { /* compiled code */ }
 
-func createEnumDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.EnumDecl
+func createEnumDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.EnumDecl { /* compiled code */ }
 
-func createExtendDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.ExtendDecl
+func createExtendDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.ExtendDecl { /* compiled code */ }
 
-func createFuncDecl(decl: std.ast.NodeFormat_Decl, declBase: std.ast.NodeFormat_DeclBase): std.ast.Decl
+func createFuncDecl(decl: std.ast.NodeFormat_Decl, declBase: std.ast.NodeFormat_DeclBase): std.ast.Decl { /* compiled code */ }
 
-func createFuncParam(decl: std.ast.NodeFormat_Decl): std.ast.Decl
+func createFuncParam(decl: std.ast.NodeFormat_Decl): std.ast.Decl { /* compiled code */ }
 
-func createFuncParam(param: std.core.Option<std.ast.NodeFormat_FuncParam>, index: Int64, length: Int64): std.ast.FuncParam
+func createFuncParam(param: std.core.Option<std.ast.NodeFormat_FuncParam>, index: Int64, length: Int64): std.ast.FuncParam { /* compiled code */ }
 
-func generateFuncParams(funcBody: std.ast.NodeFormat_FuncBody): std.collection.ArrayList<std.ast.FuncParam>
+func generateFuncParams(funcBody: std.ast.NodeFormat_FuncBody): std.collection.ArrayList<std.ast.FuncParam> { /* compiled code */ }
 
-func generateCommonFuncDecl(funcDecl: std.core.Option<std.ast.NodeFormat_FuncDecl>, declNode: std.ast.Decl): std.ast.FuncDecl
+func generateCommonFuncDecl(funcDecl: std.core.Option<std.ast.NodeFormat_FuncDecl>, declNode: std.ast.Decl): std.ast.FuncDecl { /* compiled code */ }
 
-func createFuncBody(funcBody: std.core.Option<std.ast.NodeFormat_FuncBody>): (std.collection.ArrayList<std.ast.FuncParam>, std.ast.Token, std.core.Option<std.ast.TypeNode>, std.ast.Block, std.ast.Token, std.ast.Token)
+func createFuncBody(funcBody: std.core.Option<std.ast.NodeFormat_FuncBody>): (std.collection.ArrayList<std.ast.FuncParam>, std.ast.Token, std.core.Option<std.ast.TypeNode>, std.ast.Block, std.ast.Token, std.ast.Token) { /* compiled code */ }
 
-func createMainDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.MainDecl
+func createMainDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.MainDecl { /* compiled code */ }
 
-func createMacroDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.MacroDecl
+func createMacroDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.MacroDecl { /* compiled code */ }
 
-func createPrimaryCtorDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.PrimaryCtorDecl
+func createPrimaryCtorDecl(decl: std.ast.NodeFormat_Decl, declNode: std.ast.Decl): std.ast.PrimaryCtorDecl { /* compiled code */ }
 
-func createVarDeclNode(decl: std.core.Option<std.ast.NodeFormat_VarDecl>): std.ast.VarDecl
+func createVarDeclNode(decl: std.core.Option<std.ast.NodeFormat_VarDecl>): std.ast.VarDecl { /* compiled code */ }
 
-func createVarDecl(decl: std.ast.NodeFormat_Decl): std.ast.Decl
+func createVarDecl(decl: std.ast.NodeFormat_Decl): std.ast.Decl { /* compiled code */ }
 
-func createVarWithPatternDecl(decl: std.ast.NodeFormat_Decl): std.ast.Decl
+func createVarWithPatternDecl(decl: std.ast.NodeFormat_Decl): std.ast.Decl { /* compiled code */ }
 
-func createPropDecl(decl: std.ast.NodeFormat_Decl): std.ast.PropDecl
+func createPropDecl(decl: std.ast.NodeFormat_Decl): std.ast.PropDecl { /* compiled code */ }
 
-func createTypeAliasDecl(decl: std.ast.NodeFormat_Decl, declBase: std.ast.NodeFormat_DeclBase): std.ast.TypeAliasDecl
+func createTypeAliasDecl(decl: std.ast.NodeFormat_Decl, declBase: std.ast.NodeFormat_DeclBase): std.ast.TypeAliasDecl { /* compiled code */ }
 
-func createMacroExpandDecl(decl: std.ast.NodeFormat_Decl): std.ast.Decl
+func createMacroExpandDecl(decl: std.ast.NodeFormat_Decl): std.ast.Decl { /* compiled code */ }
 
-func parseExpr(input: std.ast.Tokens): std.ast.Expr
+func parseExpr(input: std.ast.Tokens): std.ast.Expr { /* compiled code */ }
 
-func parseExprFragment(input: std.ast.Tokens, startFrom: Int64): (std.ast.Expr, Int64)
+func parseExprFragment(input: std.ast.Tokens, startFrom: Int64): (std.ast.Expr, Int64) { /* compiled code */ }
 
-func generateExprAST(exprNode: std.core.Option<std.ast.NodeFormat_Expr>): std.ast.Expr
+func generateExprAST(exprNode: std.core.Option<std.ast.NodeFormat_Expr>): std.ast.Expr { /* compiled code */ }
 
-func createBlock(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createBlock(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func generateBlock(blockOption: std.core.Option<std.ast.NodeFormat_Block>): std.ast.Block
+func generateBlock(blockOption: std.core.Option<std.ast.NodeFormat_Block>): std.ast.Block { /* compiled code */ }
 
-func createBinaryExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createBinaryExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createUnaryExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createUnaryExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createIsExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createIsExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createAsExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createAsExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createParenExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createParenExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createLitConstExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr
+func createLitConstExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr { /* compiled code */ }
 
-func createCallExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createCallExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createRefExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createRefExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func generateRefExpr(ref: std.core.Option<std.ast.NodeFormat_RefExpr>): std.ast.RefExpr
+func generateRefExpr(ref: std.core.Option<std.ast.NodeFormat_RefExpr>): std.ast.RefExpr { /* compiled code */ }
 
-func createReturnExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createReturnExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createThrowExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createThrowExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createAssignExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createAssignExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createMemberAccess(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createMemberAccess(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createOptionalExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createOptionalExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createOptionalChainExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createOptionalChainExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createIfExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createIfExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createLetPatternExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.LetPatternExpr
+func createLetPatternExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.LetPatternExpr { /* compiled code */ }
 
-func generateMatchCase(mc: std.core.Option<std.ast.NodeFormat_MatchCase>): std.ast.MatchCase
+func generateMatchCase(mc: std.core.Option<std.ast.NodeFormat_MatchCase>): std.ast.MatchCase { /* compiled code */ }
 
-func generateMatchCaseOther(mco: std.core.Option<std.ast.NodeFormat_MatchCaseOther>): std.ast.MatchCase
+func generateMatchCaseOther(mco: std.core.Option<std.ast.NodeFormat_MatchCaseOther>): std.ast.MatchCase { /* compiled code */ }
 
-func createMatchExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr
+func createMatchExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr { /* compiled code */ }
 
-func createWhileExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createWhileExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createDoWhileExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createDoWhileExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createLambdaExpr(lambdaExpr: std.ast.NodeFormat_LambdaExpr): std.ast.LambdaExpr
+func createLambdaExpr(lambdaExpr: std.ast.NodeFormat_LambdaExpr): std.ast.LambdaExpr { /* compiled code */ }
 
-func createLambdaExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createLambdaExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createSpawnExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createSpawnExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createSynchronizedExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createSynchronizedExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createTrailingClosureExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createTrailingClosureExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createTypeConvExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createTypeConvExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createForInExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createForInExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createPrimitiveTypeExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr
+func createPrimitiveTypeExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr { /* compiled code */ }
 
-func createArrayLiteral(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createArrayLiteral(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createTupleLiteral(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createTupleLiteral(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createRangeExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createRangeExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createSubscriptExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createSubscriptExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createJumpExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr
+func createJumpExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr { /* compiled code */ }
 
-func createIncOrDecExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createIncOrDecExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createTryExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr
+func createTryExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr { /* compiled code */ }
 
-func createQuoteExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr
+func createQuoteExpr(expr: std.ast.NodeFormat_Expr, exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr { /* compiled code */ }
 
-func createQuoteToken(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createQuoteToken(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createWildcardExpr(exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr
+func createWildcardExpr(exprBase: std.ast.NodeFormat_NodeBase): std.ast.Expr { /* compiled code */ }
 
-func createArrayExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createArrayExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
-func createMacroExpandExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr
+func createMacroExpandExpr(expr: std.ast.NodeFormat_Expr): std.ast.Expr { /* compiled code */ }
 
 let EXPR_LIST: std.core.Array<std.core.String>
 
@@ -6330,61 +7250,61 @@ let TYPE_LIST: std.core.Array<std.core.String>
 
 let PATTERN_LIST: std.core.Array<std.core.String>
 
-func parseProgram(input: std.ast.Tokens): std.ast.Program
+func parseProgram(input: std.ast.Tokens): std.ast.Program { /* compiled code */ }
 
-func addPositionInfo(node: std.ast.Node, nodeBase: std.ast.NodeFormat_NodeBase): Unit
+func addPositionInfo(node: std.ast.Node, nodeBase: std.ast.NodeFormat_NodeBase): Unit { /* compiled code */ }
 
-func generateNode(n: std.core.Option<std.ast.NodeFormat_Node>): std.ast.Node
+func generateNode(n: std.core.Option<std.ast.NodeFormat_Node>): std.ast.Node { /* compiled code */ }
 
-func createAnnotation(anno: std.core.Option<std.ast.NodeFormat_Annotation>): std.ast.Annotation
+func createAnnotation(anno: std.core.Option<std.ast.NodeFormat_Annotation>): std.ast.Annotation { /* compiled code */ }
 
-func createModifier(modifier: std.core.Option<std.ast.NodeFormat_Modifier>): std.ast.Modifier
+func createModifier(modifier: std.core.Option<std.ast.NodeFormat_Modifier>): std.ast.Modifier { /* compiled code */ }
 
-func createArgument(arg: std.core.Option<std.ast.NodeFormat_FuncArg>): std.ast.Argument
+func createArgument(arg: std.core.Option<std.ast.NodeFormat_FuncArg>): std.ast.Argument { /* compiled code */ }
 
-func generateGenericParamTk(gp: std.core.Option<std.ast.NodeFormat_GenericParamDecl>): (std.ast.Token, std.ast.Token)
+func generateGenericParamTk(gp: std.core.Option<std.ast.NodeFormat_GenericParamDecl>): (std.ast.Token, std.ast.Token) { /* compiled code */ }
 
-func createGenericParam(gic: std.core.Option<std.ast.NodeFormat_Generic>): std.core.Option<std.ast.GenericParam>
+func createGenericParam(gic: std.core.Option<std.ast.NodeFormat_Generic>): std.core.Option<std.ast.GenericParam> { /* compiled code */ }
 
-func createGenericConstraint(flag: Bool, cons: std.core.Option<std.ast.NodeFormat_GenericConstraint>): std.ast.GenericConstraint
+func createGenericConstraint(flag: Bool, cons: std.core.Option<std.ast.NodeFormat_GenericConstraint>): std.ast.GenericConstraint { /* compiled code */ }
 
-func createMacroExpand(nodeInvocation: std.core.Option<std.ast.NodeFormat_MacroInvocation>, isDecl: Bool, isFuncParam: Bool): std.ast.Node
+func createMacroExpand(nodeInvocation: std.core.Option<std.ast.NodeFormat_MacroInvocation>, isDecl: Bool, isFuncParam: Bool): std.ast.Node { /* compiled code */ }
 
-func processCustomAnnotationLikeMacro(macroInputDecl: std.core.Option<std.ast.Decl>, macroNode: std.ast.Decl): std.ast.Decl
+func processCustomAnnotationLikeMacro(macroInputDecl: std.core.Option<std.ast.Decl>, macroNode: std.ast.Decl): std.ast.Decl { /* compiled code */ }
 
-func getPackageIdentToken(s: std.core.String): std.ast.Token
+func getPackageIdentToken(s: std.core.String): std.ast.Token { /* compiled code */ }
 
-func getPackagePrefixes(prefixPaths: std.core.Array<std.core.Option<std.core.String>>, prefixPoses: std.core.Array<std.ast.NodeFormat_Position>, prefixDotPoses: std.core.Array<std.ast.NodeFormat_Position>): (std.ast.Tokens, std.ast.Tokens)
+func getPackagePrefixes(prefixPaths: std.core.Array<std.core.Option<std.core.String>>, prefixPoses: std.core.Array<std.ast.NodeFormat_Position>, prefixDotPoses: std.core.Array<std.ast.NodeFormat_Position>): (std.ast.Tokens, std.ast.Tokens) { /* compiled code */ }
 
-func isSamePos(pos1: std.ast.NodeFormat_Position, pos2: std.ast.NodeFormat_Position): Bool
+func isSamePos(pos1: std.ast.NodeFormat_Position, pos2: std.ast.NodeFormat_Position): Bool { /* compiled code */ }
 
-func createPackageHeader(pkgHeader: std.core.Option<std.ast.NodeFormat_PackageSpec>): std.ast.PackageHeader
+func createPackageHeader(pkgHeader: std.core.Option<std.ast.NodeFormat_PackageSpec>): std.ast.PackageHeader { /* compiled code */ }
 
-func createImportContent(content: std.core.Option<std.ast.NodeFormat_ImportContent>): std.ast.ImportContent
+func createImportContent(content: std.core.Option<std.ast.NodeFormat_ImportContent>): std.ast.ImportContent { /* compiled code */ }
 
-func createImportList(imports: std.core.Option<std.ast.NodeFormat_ImportSpec>): std.ast.ImportList
+func createImportList(imports: std.core.Option<std.ast.NodeFormat_ImportSpec>): std.ast.ImportList { /* compiled code */ }
 
-func createProgram(file: std.core.Option<std.ast.NodeFormat_File>): std.ast.Program
+func createProgram(file: std.core.Option<std.ast.NodeFormat_File>): std.ast.Program { /* compiled code */ }
 
-func createConstructor(decl: std.core.Option<std.ast.NodeFormat_Decl>): std.ast.Constructor
+func createConstructor(decl: std.core.Option<std.ast.NodeFormat_Decl>): std.ast.Constructor { /* compiled code */ }
 
-func createArgumentTokens(m: std.ast.Decl): std.ast.Tokens
+func createArgumentTokens(m: std.ast.Decl): std.ast.Tokens { /* compiled code */ }
 
-func createCustomAnnotation(m: std.ast.Decl): std.ast.Annotation
+func createCustomAnnotation(m: std.ast.Decl): std.ast.Annotation { /* compiled code */ }
 
-func createConstructorLikeMacroExpand(decl: std.ast.NodeFormat_Decl): std.ast.Constructor
+func createConstructorLikeMacroExpand(decl: std.ast.NodeFormat_Decl): std.ast.Constructor { /* compiled code */ }
 
-func createConstructorWithAt(decl: std.ast.Decl): std.ast.Constructor
+func createConstructorWithAt(decl: std.ast.Decl): std.ast.Constructor { /* compiled code */ }
 
-func createConstructorWithAtExcl(decl: std.ast.Decl): std.ast.Constructor
+func createConstructorWithAtExcl(decl: std.ast.Decl): std.ast.Constructor { /* compiled code */ }
 
-func parsePattern(input: std.ast.Tokens): std.ast.Pattern
+func parsePattern(input: std.ast.Tokens): std.ast.Pattern { /* compiled code */ }
 
-func parsePatternFragment(input: std.ast.Tokens, startFrom: Int64): (std.ast.Pattern, Int64)
+func parsePatternFragment(input: std.ast.Tokens, startFrom: Int64): (std.ast.Pattern, Int64) { /* compiled code */ }
 
-func generatePatternAST(patternNode: std.core.Option<std.ast.NodeFormat_Pattern>): std.ast.Pattern
+func generatePatternAST(patternNode: std.core.Option<std.ast.NodeFormat_Pattern>): std.ast.Pattern { /* compiled code */ }
 
-func createVarPattern(pattern: std.ast.NodeFormat_Pattern): std.ast.VarPattern
+func createVarPattern(pattern: std.ast.NodeFormat_Pattern): std.ast.VarPattern { /* compiled code */ }
 
 class VarPattern <: std.ast.Pattern {
     init(identifier: std.ast.Token) { /* compiled code */ }
@@ -6393,16 +7313,19 @@ class VarPattern <: std.ast.Pattern {
 
     var identifier_: std.ast.Token
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func createConstPattern(pattern: std.ast.NodeFormat_Pattern): std.ast.ConstPattern
+func createConstPattern(pattern: std.ast.NodeFormat_Pattern): std.ast.ConstPattern { /* compiled code */ }
 
 class ConstPattern <: std.ast.Pattern {
     init(litConstExpr: std.ast.LitConstExpr) { /* compiled code */ }
@@ -6413,16 +7336,19 @@ class ConstPattern <: std.ast.Pattern {
 
     var litConstExpr_: std.ast.LitConstExpr
 
-    prop litConstExpr: std.ast.LitConstExpr
+    mut prop litConstExpr: std.ast.LitConstExpr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func createWildcardPattern(_: std.ast.NodeFormat_Pattern, pos: std.ast.NodeFormat_Position): std.ast.WildcardPattern
+func createWildcardPattern(_: std.ast.NodeFormat_Pattern, pos: std.ast.NodeFormat_Position): std.ast.WildcardPattern { /* compiled code */ }
 
 class WildcardPattern <: std.ast.Pattern {
     init(keyword: std.ast.Tokens) { /* compiled code */ }
@@ -6431,16 +7357,19 @@ class WildcardPattern <: std.ast.Pattern {
 
     var keyWord_: std.ast.Token
 
-    prop wildcard: std.ast.Token
+    mut prop wildcard: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func createVarOrEnumPattern(pattern: std.ast.NodeFormat_Pattern, pos: std.ast.NodeFormat_Position): std.ast.VarOrEnumPattern
+func createVarOrEnumPattern(pattern: std.ast.NodeFormat_Pattern, pos: std.ast.NodeFormat_Position): std.ast.VarOrEnumPattern { /* compiled code */ }
 
 class VarOrEnumPattern <: std.ast.Pattern {
     init(identifier: std.ast.Token) { /* compiled code */ }
@@ -6449,16 +7378,19 @@ class VarOrEnumPattern <: std.ast.Pattern {
 
     var identifier_: std.ast.Token
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func createExceptTypePattern(pattern: std.ast.NodeFormat_Pattern): std.ast.ExceptTypePattern
+func createExceptTypePattern(pattern: std.ast.NodeFormat_Pattern): std.ast.ExceptTypePattern { /* compiled code */ }
 
 class ExceptTypePattern <: std.ast.Pattern {
     init(pattern: std.ast.Pattern, colon: std.ast.Token, types: std.collection.ArrayList<std.ast.TypeNode>, bitOr: std.ast.Tokens) { /* compiled code */ }
@@ -6475,20 +7407,29 @@ class ExceptTypePattern <: std.ast.Pattern {
 
     var bitOr_: std.ast.Tokens
 
-    prop pattern: std.ast.Pattern
+    mut prop pattern: std.ast.Pattern {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop types: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop types: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func createTypePattern(pattern: std.ast.NodeFormat_Pattern): std.ast.TypePattern
+func createTypePattern(pattern: std.ast.NodeFormat_Pattern): std.ast.TypePattern { /* compiled code */ }
 
 class TypePattern <: std.ast.Pattern {
     init(pattern: std.ast.Pattern, colon: std.ast.Token, ty: std.ast.TypeNode) { /* compiled code */ }
@@ -6503,20 +7444,29 @@ class TypePattern <: std.ast.Pattern {
 
     var type_: std.ast.TypeNode
 
-    prop pattern: std.ast.Pattern
+    mut prop pattern: std.ast.Pattern {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop colon: std.ast.Token
+    mut prop colon: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop patternType: std.ast.TypeNode
+    mut prop patternType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func createEnumPattern(pattern: std.ast.NodeFormat_Pattern): std.ast.EnumPattern
+func createEnumPattern(pattern: std.ast.NodeFormat_Pattern): std.ast.EnumPattern { /* compiled code */ }
 
 class EnumPattern <: std.ast.Pattern {
     init(constructor: std.ast.Expr, lParen: std.ast.Token, patterns: std.collection.ArrayList<std.ast.Pattern>, commas: std.ast.Tokens, rParen: std.ast.Token) { /* compiled code */ }
@@ -6535,24 +7485,39 @@ class EnumPattern <: std.ast.Pattern {
 
     var rParen_: std.ast.Token
 
-    prop constructor: std.ast.Expr
+    mut prop constructor: std.ast.Expr {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop patterns: std.collection.ArrayList<std.ast.Pattern>
+    mut prop patterns: std.collection.ArrayList<std.ast.Pattern> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop commas: std.ast.Tokens
+    mut prop commas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func createTuplePattern(pattern: std.ast.NodeFormat_Pattern): std.ast.TuplePattern
+func createTuplePattern(pattern: std.ast.NodeFormat_Pattern): std.ast.TuplePattern { /* compiled code */ }
 
 class TuplePattern <: std.ast.Pattern {
     init(lParen: std.ast.Token, patterns: std.collection.ArrayList<std.ast.Pattern>, commas: std.ast.Tokens, rParen: std.ast.Token) { /* compiled code */ }
@@ -6569,86 +7534,98 @@ class TuplePattern <: std.ast.Pattern {
 
     var rParen_: std.ast.Token
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop patterns: std.collection.ArrayList<std.ast.Pattern>
+    mut prop patterns: std.collection.ArrayList<std.ast.Pattern> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop commas: std.ast.Tokens
+    mut prop commas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
-func parseType(input: std.ast.Tokens): std.ast.TypeNode
+func parseType(input: std.ast.Tokens): std.ast.TypeNode { /* compiled code */ }
 
-func parseTypeFragment(input: std.ast.Tokens, startFrom: Int64): (std.ast.TypeNode, Int64)
+func parseTypeFragment(input: std.ast.Tokens, startFrom: Int64): (std.ast.TypeNode, Int64) { /* compiled code */ }
 
-func generateTypeAST(tyNode: std.core.Option<std.ast.NodeFormat_Type>): std.ast.TypeNode
+func generateTypeAST(tyNode: std.core.Option<std.ast.NodeFormat_Type>): std.ast.TypeNode { /* compiled code */ }
 
-func createPrimitiveType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createPrimitiveType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
-func createRefType(tyNode: std.core.Option<std.ast.NodeFormat_RefType>, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createRefType(tyNode: std.core.Option<std.ast.NodeFormat_RefType>, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
-func createQualifiedType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createQualifiedType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
-func createParenType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createParenType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
-func createTupleType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createTupleType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
-func createThisType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createThisType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
-func createFuncType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createFuncType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
-func createVArrayType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createVArrayType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
-func createPrefixType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode
+func createPrefixType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
 interface ToBytes {
-    func toBytes: std.core.Array<UInt8>
+    func toBytes(): std.core.Array<UInt8> { /* compiled code */ }
 }
 
-func getMacroPosition(macroObjPtr: CPointer<Unit>): (UInt32, Int32, Int32)
+func getMacroPosition(macroObjPtr: CPointer<Unit>): (UInt32, Int32, Int32) { /* compiled code */ }
 
 let SIZE_OF_OFFSET: UInt32
 
 let SIZE_OF_UINT32: UInt32
 
-func castUInt32ToBytes(v: UInt32): std.core.Array<UInt8>
+func castUInt32ToBytes(v: UInt32): std.core.Array<UInt8> { /* compiled code */ }
 
-func castInt32ToBytes(v: Int32): std.core.Array<UInt8>
+func castInt32ToBytes(v: Int32): std.core.Array<UInt8> { /* compiled code */ }
 
-func castUInt16ToBytes(v: UInt16): std.core.Array<UInt8>
+func castUInt16ToBytes(v: UInt16): std.core.Array<UInt8> { /* compiled code */ }
 
-func castUInt32ToBytes(arr: std.core.Array<UInt8>, start: Int64, v: UInt32): Int64
+func castUInt32ToBytes(arr: std.core.Array<UInt8>, start: Int64, v: UInt32): Int64 { /* compiled code */ }
 
-func castInt32ToBytes(arr: std.core.Array<UInt8>, start: Int64, v: Int32): Int64
+func castInt32ToBytes(arr: std.core.Array<UInt8>, start: Int64, v: Int32): Int64 { /* compiled code */ }
 
-func castUInt16ToBytes(arr: std.core.Array<UInt8>, start: Int64, v: UInt16): Int64
+func castUInt16ToBytes(arr: std.core.Array<UInt8>, start: Int64, v: UInt16): Int64 { /* compiled code */ }
 
-func castStringToBytes(arr: std.core.Array<UInt8>, start1: Int64, s: std.core.String): Int64
+func castStringToBytes(arr: std.core.Array<UInt8>, start1: Int64, s: std.core.String): Int64 { /* compiled code */ }
 
-func concatBytes(l: std.core.Array<UInt8>, r: std.core.Array<UInt8>): std.core.Array<UInt8>
+func concatBytes(l: std.core.Array<UInt8>, r: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }
 
-func castStringToBytes(s: std.core.String): std.core.Array<UInt8>
+func castStringToBytes(s: std.core.String): std.core.Array<UInt8> { /* compiled code */ }
 
-func refreshPos(token: std.ast.Token, f: UInt32, l: Int32, c: Int32): std.ast.Token
+func refreshPos(token: std.ast.Token, f: UInt32, l: Int32, c: Int32): std.ast.Token { /* compiled code */ }
 
 let PATTERNS: std.core.Array<(std.ast.TokenKind, std.core.String, std.core.String)>
 
-func getTokenID(tk: std.ast.TokenKind): UInt16
+func getTokenID(tk: std.ast.TokenKind): UInt16 { /* compiled code */ }
 
-func getTokenKind(no: UInt16): std.ast.TokenKind
+func getTokenKind(no: UInt16): std.ast.TokenKind { /* compiled code */ }
 
-func getNewlineValue: std.core.String
+func getNewlineValue(): std.core.String { /* compiled code */ }
 
-func getTokenKindValue(tk: std.ast.TokenKind): std.core.String
+func getTokenKindValue(tk: std.ast.TokenKind): std.core.String { /* compiled code */ }
 
-func getTokenLiteral(tk: std.ast.TokenKind): std.core.String
+func getTokenLiteral(tk: std.ast.TokenKind): std.core.String { /* compiled code */ }
 
 class TokenKindHelper {
     let LIT_CONST_KIND_TO_TOKEN_KIND: std.core.Array<std.ast.TokenKind>
@@ -6657,11 +7634,11 @@ class TokenKindHelper {
 
     let PRIMITIVE_TYPE_KIND_TO_TOKEN_KIND: std.core.Array<std.ast.TokenKind>
 
-    func getPrimitiveTypeTokenKind(i: UInt16): std.ast.TokenKind
+    static func getPrimitiveTypeTokenKind(i: UInt16): std.ast.TokenKind { /* compiled code */ }
 
-    func getLiteralConstKind(i: UInt16): std.ast.TokenKind
+    static func getLiteralConstKind(i: UInt16): std.ast.TokenKind { /* compiled code */ }
 
-    func getStringKind(i: UInt16): std.ast.TokenKind
+    static func getStringKind(i: UInt16): std.ast.TokenKind { /* compiled code */ }
 
     init() { /* compiled code */ }
 }
@@ -6673,16 +7650,16 @@ class TokensIterator <: std.core.Iterator<std.ast.Token> {
 
     init(tokens: std.ast.Tokens) { /* compiled code */ }
 
-    func peek: std.core.Option<std.ast.Token>
+    func peek(): std.core.Option<std.ast.Token> { /* compiled code */ }
 
-    func seeing(kind: std.ast.TokenKind): Bool
+    func seeing(kind: std.ast.TokenKind): Bool { /* compiled code */ }
 
-    func next: std.core.Option<std.ast.Token>
+    func next(): std.core.Option<std.ast.Token> { /* compiled code */ }
 }
 
-func refreshTokensPosition(tks: std.ast.Tokens): std.ast.Tokens
+func refreshTokensPosition(tks: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-func tokenToString(tk: std.ast.Token): std.core.String
+func tokenToString(tk: std.ast.Token): std.core.String { /* compiled code */ }
 
 class ConcatTokens <: std.ast.Tokens {
     let leftChild: std.ast.Tokens
@@ -6693,81 +7670,83 @@ class ConcatTokens <: std.ast.Tokens {
 
     init(lc: std.ast.Tokens, rc: std.ast.Tokens) { /* compiled code */ }
 
-    prop size: Int64
+    override prop size: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    func `get`(index: Int64): std.ast.Token
+    override func `get`(index: Int64): std.ast.Token { /* compiled code */ }
 
-    operator func [](range: std.core.Range<Int64>): std.ast.Tokens
+    operator func [](range: std.core.Range<Int64>): std.ast.Tokens { /* compiled code */ }
 
-    func append(tks: std.ast.Tokens): std.ast.Tokens
+    override func append(tks: std.ast.Tokens): std.ast.Tokens { /* compiled code */ }
 
-    func append(tk: std.ast.Token): std.ast.Tokens
+    override func append(tk: std.ast.Token): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Token <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Tokens <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 extend Extend <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-func countDelimiter(charArray: std.core.Array<Rune>): (UInt16, std.core.String, std.core.String)
+func countDelimiter(charArray: std.core.Array<Rune>): (UInt16, std.core.String, std.core.String) { /* compiled code */ }
 
 extend String <: ToTokens {
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
 class RefType <: std.ast.TypeNode {
@@ -6787,21 +7766,36 @@ class RefType <: std.ast.TypeNode {
 
     var rAngle_: std.ast.Token
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lAngle: std.ast.Token
+    mut prop lAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop typeArguments: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop commas: std.ast.Tokens
+    mut prop commas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rAngle: std.ast.Token
+    mut prop rAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class QualifiedType <: std.ast.TypeNode {
@@ -6825,25 +7819,46 @@ class QualifiedType <: std.ast.TypeNode {
 
     var rAngle_: std.ast.Token
 
-    prop baseType: std.ast.TypeNode
+    mut prop baseType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop dot: std.ast.Token
+    mut prop dot: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop identifier: std.ast.Token
+    mut prop identifier: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lAngle: std.ast.Token
+    mut prop lAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop typeArguments: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop typeArguments: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop commas: std.ast.Tokens
+    mut prop commas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rAngle: std.ast.Token
+    mut prop rAngle: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class ParenType <: std.ast.TypeNode {
@@ -6859,17 +7874,26 @@ class ParenType <: std.ast.TypeNode {
 
     var rParen_: std.ast.Token
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop parenthesizedType: std.ast.TypeNode
+    mut prop parenthesizedType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class TupleType <: std.ast.TypeNode {
@@ -6887,17 +7911,26 @@ class TupleType <: std.ast.TypeNode {
 
     var rParen_: std.ast.Token
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop types: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop types: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class ThisType <: std.ast.TypeNode {
@@ -6909,13 +7942,16 @@ class ThisType <: std.ast.TypeNode {
 
     var keyword_: std.ast.Token
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class PrefixType <: std.ast.TypeNode {
@@ -6929,15 +7965,21 @@ class PrefixType <: std.ast.TypeNode {
 
     var baseType_: std.ast.TypeNode
 
-    prop prefixOps: std.ast.Tokens
+    mut prop prefixOps: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop baseType: std.ast.TypeNode
+    mut prop baseType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }
 
 class FuncType <: std.ast.TypeNode {
@@ -6961,23 +8003,44 @@ class FuncType <: std.ast.TypeNode {
 
     var retTy_: std.ast.TypeNode
 
-    prop keyword: std.ast.Token
+    mut prop keyword: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop lParen: std.ast.Token
+    mut prop lParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop types: std.collection.ArrayList<std.ast.TypeNode>
+    mut prop types: std.collection.ArrayList<std.ast.TypeNode> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop commas: std.ast.Tokens
+    mut prop commas: std.ast.Tokens {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop rParen: std.ast.Token
+    mut prop rParen: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop arrow: std.ast.Token
+    mut prop arrow: std.ast.Token {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop returnType: std.ast.TypeNode
+    mut prop returnType: std.ast.TypeNode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func toTokens: std.ast.Tokens
+    func toTokens(): std.ast.Tokens { /* compiled code */ }
 
-    func traverse(v: std.ast.Visitor): Unit
+    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String
+    func dump(indent: UInt16): std.core.String { /* compiled code */ }
 }

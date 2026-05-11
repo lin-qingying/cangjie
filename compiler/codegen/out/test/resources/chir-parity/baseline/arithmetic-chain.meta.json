@@ -1,0 +1,11 @@
+﻿{
+    "source":  "source/arithmetic-chain.cj",
+    "sample":  "arithmetic-chain",
+    "note":  "arithmetic operators and temp values",
+    "category":  "arithmetic",
+    "generatedAt":  "2026-03-13T21:36:29+08:00",
+    "baseline":  "baseline/arithmetic-chain.chir.json",
+    "target":  "x86_64-w64-mingw32",
+    "compiler":  "Cangjie Compiler 1.0.0 (cjnative)",
+    "officialOutput":  "cpp-baseline/arithmetic-chain.llvmir.txt"
+}

@@ -1,9 +1,6 @@
 package org.cangnova.cangjie.analysis.decompiler.stub.file
 
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.util.Disposer
 import com.intellij.testFramework.LightVirtualFile
-import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import org.cangnova.cangjie.name.FqName
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -23,20 +20,18 @@ import kotlin.io.path.readBytes
 class CjoBinaryFileReaderTest {
     @Test
     fun readPackageFqNameFromStdCoreBinary() {
-        withEnvironment {
-            val stdCoreBinary = locateStdlibFixtureRoot().resolve("std").resolve("std.core.cjo")
-            val virtualFile = object : LightVirtualFile(stdCoreBinary.fileName.toString(), CangJieBuiltInFileType, "") {
-                private val content = stdCoreBinary.readBytes()
+        val stdCoreBinary = locateStdlibFixtureRoot().resolve("std").resolve("std.core.cjo")
+        val virtualFile = object : LightVirtualFile(stdCoreBinary.fileName.toString(), CangJieBuiltInFileType, "") {
+            private val content = stdCoreBinary.readBytes()
 
-                override fun contentsToByteArray(): ByteArray = content
+            override fun contentsToByteArray(): ByteArray = content
 
-                override fun getInputStream() = ByteArrayInputStream(content)
-            }
-
-            val packageFqName = CjoBinaryFileReader.readPackageFqName(virtualFile)
-            assertNotNull(packageFqName, "reader should extract package fqName from `.cjo`")
-            assertEquals(FqName("std.core"), packageFqName)
+            override fun getInputStream() = ByteArrayInputStream(content)
         }
+
+        val packageFqName = CjoBinaryFileReader.readPackageFqName(virtualFile)
+        assertNotNull(packageFqName, "reader should extract package fqName from `.cjo`")
+        assertEquals(FqName("std.core"), packageFqName)
     }
 
     private fun locateStdlibFixtureRoot(): Path {
@@ -58,22 +53,5 @@ class CjoBinaryFileReaderTest {
         return generateSequence(start) { current -> current.parent }
             .firstOrNull { candidate -> candidate.resolve("settings.gradle.kts").isRegularFile() }
             ?: error("Cannot locate repository root from $start")
-    }
-
-    private fun withEnvironment(action: () -> Unit) {
-        val disposable = Disposer.newDisposable("CjoBinaryFileReaderTest")
-        try {
-            CangJieCoreEnvironment.createForTests(disposable)
-            action()
-        } finally {
-            val application = ApplicationManager.getApplication()
-            if (application != null) {
-                application.runWriteAction {
-                    Disposer.dispose(disposable)
-                }
-            } else {
-                Disposer.dispose(disposable)
-            }
-        }
     }
 }

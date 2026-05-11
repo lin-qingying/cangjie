@@ -144,7 +144,7 @@ private class ConeTypeParameterTypePointer(
 }
 
 private class ConeTypeProjectionPointer(
-    private val typePointer: ConeTypePointer<out ConeCangJieType>,
+    private val typePointer: ConeTypePointer< ConeCangJieType>,
 ) {
     fun restore(session: CaCfirSession): ConeTypeProjection? = typePointer.restore(session)
 }

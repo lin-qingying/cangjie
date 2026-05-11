@@ -21,27 +21,41 @@ import std.io.InputStream
 import std.math.numeric.Decimal
 
 interface ColumnInfo {
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop typeName: std.core.String
+    prop typeName: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop length: Int64
+    prop length: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop scale: Int64
+    prop scale: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop nullable: Bool
+    prop nullable: Bool {
+        get() { /* compiled code */ }
+    }
 
-    prop displaySize: Int64
+    prop displaySize: Int64 {
+        get() { /* compiled code */ }
+    }
 }
 
 interface Connection <: std.core.Resource {
-    prop state: std.database.sql.ConnectionState
+    prop state: std.database.sql.ConnectionState {
+        get() { /* compiled code */ }
+    }
 
-    func getMetaData: std.collection.Map<std.core.String, std.core.String>
+    func getMetaData(): std.collection.Map<std.core.String, std.core.String> { /* compiled code */ }
 
-    func prepareStatement(sql: std.core.String): std.database.sql.Statement
+    func prepareStatement(sql: std.core.String): std.database.sql.Statement { /* compiled code */ }
 
-    func createTransaction: std.database.sql.Transaction
+    func createTransaction(): std.database.sql.Transaction { /* compiled code */ }
 }
 
 enum ConnectionState <: std.core.Equatable<std.database.sql.ConnectionState> {
@@ -53,63 +67,80 @@ enum ConnectionState <: std.core.Equatable<std.database.sql.ConnectionState> {
 
     | Connected
 
-    operator func ==(rhs: std.database.sql.ConnectionState): Bool
+    operator func ==(rhs: std.database.sql.ConnectionState): Bool { /* compiled code */ }
 
-    operator func !=(rhs: std.database.sql.ConnectionState): Bool
+    operator func !=(rhs: std.database.sql.ConnectionState): Bool { /* compiled code */ }
 }
 
 interface Statement <: std.core.Resource {
-    prop parameterColumnInfos: std.core.Array<std.database.sql.ColumnInfo>
+    prop parameterColumnInfos: std.core.Array<std.database.sql.ColumnInfo> {
+        get() { /* compiled code */ }
+    }
 
-    func setOption(key: std.core.String, value: std.core.String): Unit
+    func setOption(key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
 
-    func update(params: std.core.Array<std.database.sql.SqlDbType>): std.database.sql.UpdateResult
+    func update(params: std.core.Array<std.database.sql.SqlDbType>): std.database.sql.UpdateResult { /* compiled code */ }
 
-    func query(params: std.core.Array<std.database.sql.SqlDbType>): std.database.sql.QueryResult
+    func query(params: std.core.Array<std.database.sql.SqlDbType>): std.database.sql.QueryResult { /* compiled code */ }
 
-    func `set`(index: Int64, value: T): Unit
+    func `set`(index: Int64, value: T): Unit { /* compiled code */ }
 
-    func setNull(index: Int64): Unit
+    func setNull(index: Int64): Unit { /* compiled code */ }
 
-    func update: std.database.sql.UpdateResult
+    func update(): std.database.sql.UpdateResult { /* compiled code */ }
 
-    func query: std.database.sql.QueryResult
+    func query(): std.database.sql.QueryResult { /* compiled code */ }
 }
 
 interface Transaction {
-    prop isoLevel: std.database.sql.TransactionIsoLevel
+    mut prop isoLevel: std.database.sql.TransactionIsoLevel {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop accessMode: std.database.sql.TransactionAccessMode
+    mut prop accessMode: std.database.sql.TransactionAccessMode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop deferrableMode: std.database.sql.TransactionDeferrableMode
+    mut prop deferrableMode: std.database.sql.TransactionDeferrableMode {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func begin: Unit
+    func begin(): Unit { /* compiled code */ }
 
-    func commit: Unit
+    func commit(): Unit { /* compiled code */ }
 
-    func rollback: Unit
+    func rollback(): Unit { /* compiled code */ }
 
-    func rollback(savePointName: std.core.String): Unit
+    func rollback(savePointName: std.core.String): Unit { /* compiled code */ }
 
-    func save(savePointName: std.core.String): Unit
+    func save(savePointName: std.core.String): Unit { /* compiled code */ }
 
-    func release(savePointName: std.core.String): Unit
+    func release(savePointName: std.core.String): Unit { /* compiled code */ }
 }
 
 interface Datasource <: std.core.Resource {
-    func setOption(key: std.core.String, value: std.core.String): Unit
+    func setOption(key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
 
-    func connect: std.database.sql.Connection
+    func connect(): std.database.sql.Connection { /* compiled code */ }
 }
 
 interface Driver {
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop version: std.core.String
+    prop version: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop preferredPooling: Bool
+    prop preferredPooling: Bool {
+        get() { /* compiled code */ }
+    }
 
-    func `open`(connectionString: std.core.String, opts: std.core.Array<(std.core.String, std.core.String)>): std.database.sql.Datasource
+    func `open`(connectionString: std.core.String, opts: std.core.Array<(std.core.String, std.core.String)>): std.database.sql.Datasource { /* compiled code */ }
 }
 
 class DriverManager {
@@ -119,21 +150,21 @@ class DriverManager {
 
     init() { /* compiled code */ }
 
-    func register(driverName: std.core.String, driver: std.database.sql.Driver): Unit
+    static func register(driverName: std.core.String, driver: std.database.sql.Driver): Unit { /* compiled code */ }
 
-    func deregister(driverName: std.core.String): Unit
+    static func deregister(driverName: std.core.String): Unit { /* compiled code */ }
 
-    func getDriver(driverName: std.core.String): std.core.Option<std.database.sql.Driver>
+    static func getDriver(driverName: std.core.String): std.core.Option<std.database.sql.Driver> { /* compiled code */ }
 
-    func drivers: std.core.Array<std.core.String>
+    static func drivers(): std.core.Array<std.core.String> { /* compiled code */ }
 }
 
 interface Pool <: std.core.Resource {
-    func acquire(timeout: std.core.Duration): std.core.Option<std.database.sql.Entry<T>>
+    func acquire(timeout: std.core.Duration): std.core.Option<std.database.sql.Entry<T>> { /* compiled code */ }
 
-    func release(entry: std.database.sql.Entry<T>): std.core.Option<Unit>
+    func release(entry: std.database.sql.Entry<T>): std.core.Option<Unit> { /* compiled code */ }
 
-    func discard(entry: std.database.sql.Entry<T>): std.core.Option<Unit>
+    func discard(entry: std.database.sql.Entry<T>): std.core.Option<Unit> { /* compiled code */ }
 }
 
 class Entry {
@@ -151,11 +182,13 @@ class Entry {
 
     init(pool: std.database.sql.Pool<T>, value: T) { /* compiled code */ }
 
-    prop value: T
+    prop value: T {
+        get() { /* compiled code */ }
+    }
 
-    func release: std.core.Option<Unit>
+    func release(): std.core.Option<Unit> { /* compiled code */ }
 
-    func idleDuration: std.core.Duration
+    func idleDuration(): std.core.Duration { /* compiled code */ }
 }
 
 struct Options {
@@ -185,27 +218,45 @@ class PooledDatasource <: std.core.Object & std.database.sql.Datasource {
 
     init(datasource: std.database.sql.Datasource) { /* compiled code */ }
 
-    prop idleTimeout: std.core.Duration
+    mut prop idleTimeout: std.core.Duration {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop maxLifeTime: std.core.Duration
+    mut prop maxLifeTime: std.core.Duration {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop keepaliveTime: std.core.Duration
+    mut prop keepaliveTime: std.core.Duration {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop maxSize: Int32
+    mut prop maxSize: Int32 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop maxIdleSize: Int32
+    mut prop maxIdleSize: Int32 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
     var _connTimeout: std.core.Duration
 
-    prop connectionTimeout: std.core.Duration
+    mut prop connectionTimeout: std.core.Duration {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func setOption(key: std.core.String, value: std.core.String): Unit
+    func setOption(key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
 
-    func connect: std.database.sql.Connection
+    func connect(): std.database.sql.Connection { /* compiled code */ }
 
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 }
 
 class ResourcePool <: std.core.Object & std.database.sql.Pool<T> & std.core.Equatable<std.database.sql.ResourcePool<T>> {
@@ -225,37 +276,43 @@ class ResourcePool <: std.core.Object & std.database.sql.Pool<T> & std.core.Equa
 
     init(options: std.database.sql.Options<T>) { /* compiled code */ }
 
-    prop maxSize: Int32
+    mut prop maxSize: Int32 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop maxIdleSize: Int32
+    mut prop maxIdleSize: Int32 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    func backgroundCheckIdleLife: Unit
+    func backgroundCheckIdleLife(): Unit { /* compiled code */ }
 
-    func checkLife: Unit
+    func checkLife(): Unit { /* compiled code */ }
 
-    func checkMaxLifeTime: Unit
+    func checkMaxLifeTime(): Unit { /* compiled code */ }
 
-    func checkIdleTimeout: Unit
+    func checkIdleTimeout(): Unit { /* compiled code */ }
 
-    func getIdleEntry(timeout: std.core.Duration): std.database.sql.Entry<T>
+    func getIdleEntry(timeout: std.core.Duration): std.database.sql.Entry<T> { /* compiled code */ }
 
-    func acquire(timeout: std.core.Duration): std.core.Option<std.database.sql.Entry<T>>
+    func acquire(timeout: std.core.Duration): std.core.Option<std.database.sql.Entry<T>> { /* compiled code */ }
 
-    func createEntry: std.database.sql.Entry<T>
+    func createEntry(): std.database.sql.Entry<T> { /* compiled code */ }
 
-    func release(entry: std.database.sql.Entry<T>): std.core.Option<Unit>
+    func release(entry: std.database.sql.Entry<T>): std.core.Option<Unit> { /* compiled code */ }
 
-    func discard(entry: std.database.sql.Entry<T>): std.core.Option<Unit>
+    func discard(entry: std.database.sql.Entry<T>): std.core.Option<Unit> { /* compiled code */ }
 
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 
-    operator func !=(rhs: std.database.sql.ResourcePool<T>): Bool
+    operator func !=(rhs: std.database.sql.ResourcePool<T>): Bool { /* compiled code */ }
 
-    operator func ==(rhs: std.database.sql.ResourcePool<T>): Bool
+    operator func ==(rhs: std.database.sql.ResourcePool<T>): Bool { /* compiled code */ }
 
-    func appendLegalIdleEntry(v: std.database.sql.Entry<T>, idleCount: Int64, list: std.collection.ArrayList<std.database.sql.Entry<T>>): Unit
+    func appendLegalIdleEntry(v: std.database.sql.Entry<T>, idleCount: Int64, list: std.collection.ArrayList<std.database.sql.Entry<T>>): Unit { /* compiled code */ }
 }
 
 class ProxyConnection <: std.core.Object & std.database.sql.Connection {
@@ -267,33 +324,39 @@ class ProxyConnection <: std.core.Object & std.database.sql.Connection {
 
     init(conn: std.database.sql.Connection, poolEntry: std.database.sql.Entry<std.database.sql.Connection>) { /* compiled code */ }
 
-    prop state: std.database.sql.ConnectionState
+    prop state: std.database.sql.ConnectionState {
+        get() { /* compiled code */ }
+    }
 
-    func getMetaData: std.collection.Map<std.core.String, std.core.String>
+    func getMetaData(): std.collection.Map<std.core.String, std.core.String> { /* compiled code */ }
 
-    func isClosed: Bool
+    func isClosed(): Bool { /* compiled code */ }
 
-    func close: Unit
+    func close(): Unit { /* compiled code */ }
 
-    func prepareStatement(sql: std.core.String): std.database.sql.Statement
+    func prepareStatement(sql: std.core.String): std.database.sql.Statement { /* compiled code */ }
 
-    func createTransaction: std.database.sql.Transaction
+    func createTransaction(): std.database.sql.Transaction { /* compiled code */ }
 }
 
 interface QueryResult <: std.core.Resource {
-    prop columnInfos: std.core.Array<std.database.sql.ColumnInfo>
+    prop columnInfos: std.core.Array<std.database.sql.ColumnInfo> {
+        get() { /* compiled code */ }
+    }
 
-    func next(values: std.core.Array<std.database.sql.SqlDbType>): Bool
+    func next(values: std.core.Array<std.database.sql.SqlDbType>): Bool { /* compiled code */ }
 
-    func next: Bool
+    func next(): Bool { /* compiled code */ }
 
-    func `get`(index: Int64): T
+    func `get`(index: Int64): T { /* compiled code */ }
 
-    func getOrNull(index: Int64): std.core.Option<T>
+    func getOrNull(index: Int64): std.core.Option<T> { /* compiled code */ }
 }
 
 interface SqlDbType {
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 interface SqlNullableDbType <: std.database.sql.SqlDbType {
@@ -304,9 +367,14 @@ class SqlChar <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.core.String) { /* compiled code */ }
 
-    prop value: std.core.String
+    mut prop value: std.core.String {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableChar <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -314,9 +382,14 @@ class SqlNullableChar <: std.core.Object & std.database.sql.SqlNullableDbType {
 
     init(v: std.core.Option<std.core.String>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.core.String>
+    mut prop value: std.core.Option<std.core.String> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlVarchar <: std.core.Object & std.database.sql.SqlDbType {
@@ -324,9 +397,14 @@ class SqlVarchar <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.core.String) { /* compiled code */ }
 
-    prop value: std.core.String
+    mut prop value: std.core.String {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableVarchar <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -334,9 +412,14 @@ class SqlNullableVarchar <: std.core.Object & std.database.sql.SqlNullableDbType
 
     init(v: std.core.Option<std.core.String>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.core.String>
+    mut prop value: std.core.Option<std.core.String> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlBinary <: std.core.Object & std.database.sql.SqlDbType {
@@ -344,9 +427,14 @@ class SqlBinary <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.core.Array<UInt8>) { /* compiled code */ }
 
-    prop value: std.core.Array<UInt8>
+    mut prop value: std.core.Array<UInt8> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableBinary <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -354,9 +442,14 @@ class SqlNullableBinary <: std.core.Object & std.database.sql.SqlNullableDbType 
 
     init(v: std.core.Option<std.core.Array<UInt8>>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.core.Array<UInt8>>
+    mut prop value: std.core.Option<std.core.Array<UInt8>> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlVarBinary <: std.core.Object & std.database.sql.SqlDbType {
@@ -364,9 +457,14 @@ class SqlVarBinary <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.core.Array<UInt8>) { /* compiled code */ }
 
-    prop value: std.core.Array<UInt8>
+    mut prop value: std.core.Array<UInt8> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableVarBinary <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -374,9 +472,14 @@ class SqlNullableVarBinary <: std.core.Object & std.database.sql.SqlNullableDbTy
 
     init(v: std.core.Option<std.core.Array<UInt8>>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.core.Array<UInt8>>
+    mut prop value: std.core.Option<std.core.Array<UInt8>> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlClob <: std.core.Object & std.database.sql.SqlDbType {
@@ -384,9 +487,14 @@ class SqlClob <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.io.InputStream) { /* compiled code */ }
 
-    prop value: std.io.InputStream
+    mut prop value: std.io.InputStream {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableClob <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -394,9 +502,14 @@ class SqlNullableClob <: std.core.Object & std.database.sql.SqlNullableDbType {
 
     init(v: std.core.Option<std.io.InputStream>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.io.InputStream>
+    mut prop value: std.core.Option<std.io.InputStream> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlBlob <: std.core.Object & std.database.sql.SqlDbType {
@@ -404,9 +517,14 @@ class SqlBlob <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.io.InputStream) { /* compiled code */ }
 
-    prop value: std.io.InputStream
+    mut prop value: std.io.InputStream {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableBlob <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -414,9 +532,14 @@ class SqlNullableBlob <: std.core.Object & std.database.sql.SqlNullableDbType {
 
     init(v: std.core.Option<std.io.InputStream>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.io.InputStream>
+    mut prop value: std.core.Option<std.io.InputStream> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlBool <: std.core.Object & std.database.sql.SqlDbType {
@@ -424,9 +547,14 @@ class SqlBool <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: Bool) { /* compiled code */ }
 
-    prop value: Bool
+    mut prop value: Bool {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableBool <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -434,9 +562,14 @@ class SqlNullableBool <: std.core.Object & std.database.sql.SqlNullableDbType {
 
     init(v: std.core.Option<Bool>) { /* compiled code */ }
 
-    prop value: std.core.Option<Bool>
+    mut prop value: std.core.Option<Bool> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlByte <: std.core.Object & std.database.sql.SqlDbType {
@@ -444,9 +577,14 @@ class SqlByte <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: Int8) { /* compiled code */ }
 
-    prop value: Int8
+    mut prop value: Int8 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableByte <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -454,9 +592,14 @@ class SqlNullableByte <: std.core.Object & std.database.sql.SqlNullableDbType {
 
     init(v: std.core.Option<Int8>) { /* compiled code */ }
 
-    prop value: std.core.Option<Int8>
+    mut prop value: std.core.Option<Int8> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlSmallInt <: std.core.Object & std.database.sql.SqlDbType {
@@ -464,9 +607,14 @@ class SqlSmallInt <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: Int16) { /* compiled code */ }
 
-    prop value: Int16
+    mut prop value: Int16 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableSmallInt <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -474,9 +622,14 @@ class SqlNullableSmallInt <: std.core.Object & std.database.sql.SqlNullableDbTyp
 
     init(v: std.core.Option<Int16>) { /* compiled code */ }
 
-    prop value: std.core.Option<Int16>
+    mut prop value: std.core.Option<Int16> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlInteger <: std.core.Object & std.database.sql.SqlDbType {
@@ -484,9 +637,14 @@ class SqlInteger <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: Int32) { /* compiled code */ }
 
-    prop value: Int32
+    mut prop value: Int32 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableInteger <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -494,9 +652,14 @@ class SqlNullableInteger <: std.core.Object & std.database.sql.SqlNullableDbType
 
     init(v: std.core.Option<Int32>) { /* compiled code */ }
 
-    prop value: std.core.Option<Int32>
+    mut prop value: std.core.Option<Int32> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlBigInt <: std.core.Object & std.database.sql.SqlDbType {
@@ -504,9 +667,14 @@ class SqlBigInt <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: Int64) { /* compiled code */ }
 
-    prop value: Int64
+    mut prop value: Int64 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableBigInt <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -514,9 +682,14 @@ class SqlNullableBigInt <: std.core.Object & std.database.sql.SqlNullableDbType 
 
     init(v: std.core.Option<Int64>) { /* compiled code */ }
 
-    prop value: std.core.Option<Int64>
+    mut prop value: std.core.Option<Int64> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlReal <: std.core.Object & std.database.sql.SqlDbType {
@@ -524,9 +697,14 @@ class SqlReal <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: Float32) { /* compiled code */ }
 
-    prop value: Float32
+    mut prop value: Float32 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableReal <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -534,9 +712,14 @@ class SqlNullableReal <: std.core.Object & std.database.sql.SqlNullableDbType {
 
     init(v: std.core.Option<Float32>) { /* compiled code */ }
 
-    prop value: std.core.Option<Float32>
+    mut prop value: std.core.Option<Float32> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlDouble <: std.core.Object & std.database.sql.SqlDbType {
@@ -544,9 +727,14 @@ class SqlDouble <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: Float64) { /* compiled code */ }
 
-    prop value: Float64
+    mut prop value: Float64 {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableDouble <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -554,9 +742,14 @@ class SqlNullableDouble <: std.core.Object & std.database.sql.SqlNullableDbType 
 
     init(v: std.core.Option<Float64>) { /* compiled code */ }
 
-    prop value: std.core.Option<Float64>
+    mut prop value: std.core.Option<Float64> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlDate <: std.core.Object & std.database.sql.SqlDbType {
@@ -564,9 +757,14 @@ class SqlDate <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.time.DateTime) { /* compiled code */ }
 
-    prop value: std.time.DateTime
+    mut prop value: std.time.DateTime {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableDate <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -574,9 +772,14 @@ class SqlNullableDate <: std.core.Object & std.database.sql.SqlNullableDbType {
 
     init(v: std.core.Option<std.time.DateTime>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.time.DateTime>
+    mut prop value: std.core.Option<std.time.DateTime> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlTime <: std.core.Object & std.database.sql.SqlDbType {
@@ -584,9 +787,14 @@ class SqlTime <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.time.DateTime) { /* compiled code */ }
 
-    prop value: std.time.DateTime
+    mut prop value: std.time.DateTime {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableTime <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -594,9 +802,14 @@ class SqlNullableTime <: std.core.Object & std.database.sql.SqlNullableDbType {
 
     init(v: std.core.Option<std.time.DateTime>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.time.DateTime>
+    mut prop value: std.core.Option<std.time.DateTime> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlTimeTz <: std.core.Object & std.database.sql.SqlDbType {
@@ -604,9 +817,14 @@ class SqlTimeTz <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.time.DateTime) { /* compiled code */ }
 
-    prop value: std.time.DateTime
+    mut prop value: std.time.DateTime {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableTimeTz <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -614,9 +832,14 @@ class SqlNullableTimeTz <: std.core.Object & std.database.sql.SqlNullableDbType 
 
     init(v: std.core.Option<std.time.DateTime>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.time.DateTime>
+    mut prop value: std.core.Option<std.time.DateTime> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlTimestamp <: std.core.Object & std.database.sql.SqlDbType {
@@ -624,9 +847,14 @@ class SqlTimestamp <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.time.DateTime) { /* compiled code */ }
 
-    prop value: std.time.DateTime
+    mut prop value: std.time.DateTime {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableTimestamp <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -634,9 +862,14 @@ class SqlNullableTimestamp <: std.core.Object & std.database.sql.SqlNullableDbTy
 
     init(v: std.core.Option<std.time.DateTime>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.time.DateTime>
+    mut prop value: std.core.Option<std.time.DateTime> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlInterval <: std.core.Object & std.database.sql.SqlDbType {
@@ -644,9 +877,14 @@ class SqlInterval <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.core.Duration) { /* compiled code */ }
 
-    prop value: std.core.Duration
+    mut prop value: std.core.Duration {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableInterval <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -654,9 +892,14 @@ class SqlNullableInterval <: std.core.Object & std.database.sql.SqlNullableDbTyp
 
     init(v: std.core.Option<std.core.Duration>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.core.Duration>
+    mut prop value: std.core.Option<std.core.Duration> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlDecimal <: std.core.Object & std.database.sql.SqlDbType {
@@ -664,9 +907,14 @@ class SqlDecimal <: std.core.Object & std.database.sql.SqlDbType {
 
     init(v: std.math.numeric.Decimal) { /* compiled code */ }
 
-    prop value: std.math.numeric.Decimal
+    mut prop value: std.math.numeric.Decimal {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlNullableDecimal <: std.core.Object & std.database.sql.SqlNullableDbType {
@@ -674,9 +922,14 @@ class SqlNullableDecimal <: std.core.Object & std.database.sql.SqlNullableDbType
 
     init(v: std.core.Option<std.math.numeric.Decimal>) { /* compiled code */ }
 
-    prop value: std.core.Option<std.math.numeric.Decimal>
+    mut prop value: std.core.Option<std.math.numeric.Decimal> {
+        get() { /* compiled code */ }
+        set(value) { /* compiled code */ }
+    }
 
-    prop name: std.core.String
+    prop name: std.core.String {
+        get() { /* compiled code */ }
+    }
 }
 
 class SqlException <: std.core.Exception {
@@ -684,11 +937,17 @@ class SqlException <: std.core.Exception {
 
     var _errorCode: Int64
 
-    prop sqlState: std.core.String
+    prop sqlState: std.core.String {
+        get() { /* compiled code */ }
+    }
 
-    prop errorCode: Int64
+    prop errorCode: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop message: std.core.String
+    override prop message: std.core.String {
+        get() { /* compiled code */ }
+    }
 
     init() { /* compiled code */ }
 
@@ -696,7 +955,7 @@ class SqlException <: std.core.Exception {
 
     init(message: std.core.String) { /* compiled code */ }
 
-    func getClassName: std.core.String
+    override func getClassName(): std.core.String { /* compiled code */ }
 }
 
 class SqlOption {
@@ -754,9 +1013,13 @@ class SqlOption {
 }
 
 interface UpdateResult {
-    prop rowCount: Int64
+    prop rowCount: Int64 {
+        get() { /* compiled code */ }
+    }
 
-    prop lastInsertId: Int64
+    prop lastInsertId: Int64 {
+        get() { /* compiled code */ }
+    }
 }
 
 enum TransactionIsoLevel <: std.core.ToString & std.core.Hashable & std.core.Equatable<std.database.sql.TransactionIsoLevel> {
@@ -776,13 +1039,13 @@ enum TransactionIsoLevel <: std.core.ToString & std.core.Hashable & std.core.Equ
 
     | Chaos
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    operator func ==(rhs: std.database.sql.TransactionIsoLevel): Bool
+    operator func ==(rhs: std.database.sql.TransactionIsoLevel): Bool { /* compiled code */ }
 
-    operator func !=(rhs: std.database.sql.TransactionIsoLevel): Bool
+    operator func !=(rhs: std.database.sql.TransactionIsoLevel): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 enum TransactionAccessMode <: std.core.ToString & std.core.Hashable & std.core.Equatable<std.database.sql.TransactionAccessMode> {
@@ -792,13 +1055,13 @@ enum TransactionAccessMode <: std.core.ToString & std.core.Hashable & std.core.E
 
     | ReadOnly
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    operator func ==(rhs: std.database.sql.TransactionAccessMode): Bool
+    operator func ==(rhs: std.database.sql.TransactionAccessMode): Bool { /* compiled code */ }
 
-    operator func !=(rhs: std.database.sql.TransactionAccessMode): Bool
+    operator func !=(rhs: std.database.sql.TransactionAccessMode): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }
 
 enum TransactionDeferrableMode <: std.core.ToString & std.core.Hashable & std.core.Equatable<std.database.sql.TransactionDeferrableMode> {
@@ -808,11 +1071,11 @@ enum TransactionDeferrableMode <: std.core.ToString & std.core.Hashable & std.co
 
     | NotDeferrable
 
-    func toString: std.core.String
+    func toString(): std.core.String { /* compiled code */ }
 
-    operator func ==(rhs: std.database.sql.TransactionDeferrableMode): Bool
+    operator func ==(rhs: std.database.sql.TransactionDeferrableMode): Bool { /* compiled code */ }
 
-    operator func !=(rhs: std.database.sql.TransactionDeferrableMode): Bool
+    operator func !=(rhs: std.database.sql.TransactionDeferrableMode): Bool { /* compiled code */ }
 
-    func hashCode: Int64
+    func hashCode(): Int64 { /* compiled code */ }
 }

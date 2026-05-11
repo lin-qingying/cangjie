@@ -17,105 +17,105 @@ enum CasingOption {
 }
 
 interface UnicodeRuneExtension {
-    func isLetter: Bool
+    func isLetter(): Bool { /* compiled code */ }
 
-    func isNumber: Bool
+    func isNumber(): Bool { /* compiled code */ }
 
-    func isLowerCase: Bool
+    func isLowerCase(): Bool { /* compiled code */ }
 
-    func isUpperCase: Bool
+    func isUpperCase(): Bool { /* compiled code */ }
 
-    func isTitleCase: Bool
+    func isTitleCase(): Bool { /* compiled code */ }
 
-    func isWhiteSpace: Bool
+    func isWhiteSpace(): Bool { /* compiled code */ }
 
-    func toUpperCase: Rune
+    func toUpperCase(): Rune { /* compiled code */ }
 
-    func toLowerCase: Rune
+    func toLowerCase(): Rune { /* compiled code */ }
 
-    func toTitleCase: Rune
+    func toTitleCase(): Rune { /* compiled code */ }
 
-    func toUpperCase(opt: std.unicode.CasingOption): Rune
+    func toUpperCase(opt: std.unicode.CasingOption): Rune { /* compiled code */ }
 
-    func toLowerCase(opt: std.unicode.CasingOption): Rune
+    func toLowerCase(opt: std.unicode.CasingOption): Rune { /* compiled code */ }
 
-    func toTitleCase(opt: std.unicode.CasingOption): Rune
+    func toTitleCase(opt: std.unicode.CasingOption): Rune { /* compiled code */ }
 }
 
 extend Extend <: UnicodeRuneExtension {
-    func isLetter: Bool
+    func isLetter(): Bool { /* compiled code */ }
 
-    func isNumber: Bool
+    func isNumber(): Bool { /* compiled code */ }
 
-    func isLowerCase: Bool
+    func isLowerCase(): Bool { /* compiled code */ }
 
-    func isUpperCase: Bool
+    func isUpperCase(): Bool { /* compiled code */ }
 
-    func isTitleCase: Bool
+    func isTitleCase(): Bool { /* compiled code */ }
 
-    func isWhiteSpace: Bool
+    func isWhiteSpace(): Bool { /* compiled code */ }
 
-    func toUpperCase: Rune
+    func toUpperCase(): Rune { /* compiled code */ }
 
-    func toLowerCase: Rune
+    func toLowerCase(): Rune { /* compiled code */ }
 
-    func toTitleCase: Rune
+    func toTitleCase(): Rune { /* compiled code */ }
 
-    func toUpperCase(opt: std.unicode.CasingOption): Rune
+    func toUpperCase(opt: std.unicode.CasingOption): Rune { /* compiled code */ }
 
-    func toLowerCase(opt: std.unicode.CasingOption): Rune
+    func toLowerCase(opt: std.unicode.CasingOption): Rune { /* compiled code */ }
 
-    func toTitleCase(opt: std.unicode.CasingOption): Rune
+    func toTitleCase(opt: std.unicode.CasingOption): Rune { /* compiled code */ }
 }
 
 interface UnicodeStringExtension {
-    func isBlank: Bool
+    func isBlank(): Bool { /* compiled code */ }
 
-    func toLower: std.core.String
+    func toLower(): std.core.String { /* compiled code */ }
 
-    func toLower(opt: std.unicode.CasingOption): std.core.String
+    func toLower(opt: std.unicode.CasingOption): std.core.String { /* compiled code */ }
 
-    func toTitle: std.core.String
+    func toTitle(): std.core.String { /* compiled code */ }
 
-    func toTitle(opt: std.unicode.CasingOption): std.core.String
+    func toTitle(opt: std.unicode.CasingOption): std.core.String { /* compiled code */ }
 
-    func toUpper: std.core.String
+    func toUpper(): std.core.String { /* compiled code */ }
 
-    func toUpper(opt: std.unicode.CasingOption): std.core.String
+    func toUpper(opt: std.unicode.CasingOption): std.core.String { /* compiled code */ }
 
-    func trim: std.core.String
+    func trim(): std.core.String { /* compiled code */ }
 
-    func trimRight: std.core.String
+    func trimRight(): std.core.String { /* compiled code */ }
 
-    func trimLeft: std.core.String
+    func trimLeft(): std.core.String { /* compiled code */ }
 
-    func trimStart: std.core.String
+    func trimStart(): std.core.String { /* compiled code */ }
 
-    func trimEnd: std.core.String
+    func trimEnd(): std.core.String { /* compiled code */ }
 }
 
 extend String <: UnicodeStringExtension {
-    func isBlank: Bool
+    func isBlank(): Bool { /* compiled code */ }
 
-    func toLower: std.core.String
+    func toLower(): std.core.String { /* compiled code */ }
 
-    func toUpper: std.core.String
+    func toUpper(): std.core.String { /* compiled code */ }
 
-    func toTitle: std.core.String
+    func toTitle(): std.core.String { /* compiled code */ }
 
-    func toLower(opt: std.unicode.CasingOption): std.core.String
+    func toLower(opt: std.unicode.CasingOption): std.core.String { /* compiled code */ }
 
-    func toUpper(opt: std.unicode.CasingOption): std.core.String
+    func toUpper(opt: std.unicode.CasingOption): std.core.String { /* compiled code */ }
 
-    func toTitle(opt: std.unicode.CasingOption): std.core.String
+    func toTitle(opt: std.unicode.CasingOption): std.core.String { /* compiled code */ }
 
-    func trim: std.core.String
+    func trim(): std.core.String { /* compiled code */ }
 
-    func trimLeft: std.core.String
+    func trimLeft(): std.core.String { /* compiled code */ }
 
-    func trimRight: std.core.String
+    func trimRight(): std.core.String { /* compiled code */ }
 
-    func trimStart: std.core.String
+    func trimStart(): std.core.String { /* compiled code */ }
 
-    func trimEnd: std.core.String
+    func trimEnd(): std.core.String { /* compiled code */ }
 }

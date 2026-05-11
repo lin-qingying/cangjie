@@ -19,61 +19,63 @@ class Random {
 
     init(seed: UInt64) { /* compiled code */ }
 
-    prop seed: UInt64
+    prop seed: UInt64 {
+        get() { /* compiled code */ }
+    }
 
-    func next(bits: UInt64): UInt64
+    func next(bits: UInt64): UInt64 { /* compiled code */ }
 
-    func nextBits(bits: UInt64): UInt64
+    func nextBits(bits: UInt64): UInt64 { /* compiled code */ }
 
-    func nextBool: Bool
+    func nextBool(): Bool { /* compiled code */ }
 
-    func nextUInt8: UInt8
+    func nextUInt8(): UInt8 { /* compiled code */ }
 
-    func nextUInt16: UInt16
+    func nextUInt16(): UInt16 { /* compiled code */ }
 
-    func nextUInt32: UInt32
+    func nextUInt32(): UInt32 { /* compiled code */ }
 
-    func nextUInt64: UInt64
+    func nextUInt64(): UInt64 { /* compiled code */ }
 
-    func nextInt8: Int8
+    func nextInt8(): Int8 { /* compiled code */ }
 
-    func nextInt16: Int16
+    func nextInt16(): Int16 { /* compiled code */ }
 
-    func nextInt32: Int32
+    func nextInt32(): Int32 { /* compiled code */ }
 
-    func nextInt64: Int64
+    func nextInt64(): Int64 { /* compiled code */ }
 
-    func nextUInt8(upper: UInt8): UInt8
+    func nextUInt8(upper: UInt8): UInt8 { /* compiled code */ }
 
-    func nextUInt16(upper: UInt16): UInt16
+    func nextUInt16(upper: UInt16): UInt16 { /* compiled code */ }
 
-    func nextUInt32(upper: UInt32): UInt32
+    func nextUInt32(upper: UInt32): UInt32 { /* compiled code */ }
 
-    func nextUInt64(upper: UInt64): UInt64
+    func nextUInt64(upper: UInt64): UInt64 { /* compiled code */ }
 
-    func nextInt8(upper: Int8): Int8
+    func nextInt8(upper: Int8): Int8 { /* compiled code */ }
 
-    func nextInt16(upper: Int16): Int16
+    func nextInt16(upper: Int16): Int16 { /* compiled code */ }
 
-    func nextInt32(upper: Int32): Int32
+    func nextInt32(upper: Int32): Int32 { /* compiled code */ }
 
-    func nextInt64(upper: Int64): Int64
+    func nextInt64(upper: Int64): Int64 { /* compiled code */ }
 
-    func nextUInt8s(array: std.core.Array<UInt8>): std.core.Array<UInt8>
+    func nextUInt8s(array: std.core.Array<UInt8>): std.core.Array<UInt8> { /* compiled code */ }
 
-    func nextBytes(bytes: std.core.Array<UInt8>): Unit
+    func nextBytes(bytes: std.core.Array<UInt8>): Unit { /* compiled code */ }
 
-    func nextBytes(length: Int32): std.core.Array<UInt8>
+    func nextBytes(length: Int32): std.core.Array<UInt8> { /* compiled code */ }
 
-    func nextFloat16: Float16
+    func nextFloat16(): Float16 { /* compiled code */ }
 
-    func nextFloat32: Float32
+    func nextFloat32(): Float32 { /* compiled code */ }
 
-    func nextFloat64: Float64
+    func nextFloat64(): Float64 { /* compiled code */ }
 
-    func nextGaussianFloat16(mean: Float16, sigma: Float16): Float16
+    func nextGaussianFloat16(mean: Float16, sigma: Float16): Float16 { /* compiled code */ }
 
-    func nextGaussianFloat32(mean: Float32, sigma: Float32): Float32
+    func nextGaussianFloat32(mean: Float32, sigma: Float32): Float32 { /* compiled code */ }
 
-    func nextGaussianFloat64(mean: Float64, sigma: Float64): Float64
+    func nextGaussianFloat64(mean: Float64, sigma: Float64): Float64 { /* compiled code */ }
 }
