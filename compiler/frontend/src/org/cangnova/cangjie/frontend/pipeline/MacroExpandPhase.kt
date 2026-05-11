@@ -84,6 +84,9 @@ class FrontendMacroConstructionService(
         // 即便 expander 把展开做了出来，同包 def/call 也应当被诊断为非法。
         reportSamePackageMacroDefinitions(pre, context, registry)
 
+        // baseline 第 12 节 Batch 5："alias conflict / macro package / ..."。
+        reportAliasConflicts(context, registry)
+
         val output = MacroExpandPhase.expandAndCollect(session, rawFiles, configuration, registry)
 
         // 当 expandAndCollect 产生 ERROR 级 registry 诊断、且 mode == STRICT 时，
@@ -131,6 +134,27 @@ class FrontendMacroConstructionService(
                 append("` cannot resolve to a macro definition declared in the same package `")
                 append(if (callPackage.isRoot) "<root>" else callPackage.asString())
                 append("`; macros must be provided by a separate macro package, artifact, or builtin.")
+            }
+            configuration.messageCollector.report(CompilerMessageSeverity.ERROR, message)
+            registry.addDiagnostic(
+                MacroConstructionDiagnostic(MacroConstructionDiagnostic.Severity.ERROR, message)
+            )
+        }
+    }
+
+    /**
+     * 报告 alias 冲突（同一短名绑到多个 fqn）。
+     */
+    private fun reportAliasConflicts(
+        context: MacroResolutionContext,
+        registry: MacroExpansionRegistry,
+    ) {
+        for (conflict in context.aliasConflicts) {
+            val message = buildString {
+                append("Macro import alias `")
+                append(conflict.alias.asString())
+                append("` is bound to multiple targets: ")
+                append(conflict.targets.joinToString(", ") { it.asString() })
             }
             configuration.messageCollector.report(CompilerMessageSeverity.ERROR, message)
             registry.addDiagnostic(

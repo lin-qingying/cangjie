@@ -32,6 +32,14 @@ data class MacroDefinitionEntry(
      * **不**进入 source final provider —— 因此该字段只在构造期使用。
      */
     val declaration: CfirMacroDeclaration? = null,
+    /** 当 entry 来自动态 macro 库时，库文件路径；其他情况为 null。 */
+    val libPath: String? = null,
+    /** 该 entry 对应的 executor ABI 版本（baseline 第 11 节 cache key 之一）。 */
+    val executorAbi: String? = null,
+    /** 若该宏支持 `@!` 强制形式则为 true（baseline 第 8 节 / 第 12 节 Batch 5）。 */
+    val supportsForcedKind: Boolean = false,
+    /** 若该宏支持 `plain-attr overload`（无括号 attr 形式），则为 true。 */
+    val supportsPlainAttrOverload: Boolean = false,
 ) {
     enum class Source {
         /** 由本次 build 中的源包内 `macro func ...` / `macro Name` 提供。不能作为合法宏调用目标。 */
