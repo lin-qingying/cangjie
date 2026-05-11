@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.cfir.resolve.providers.macro.RecordableRawCfirFiles
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -52,10 +53,84 @@ class CfirProviderImpl(
 
     private val state = State()
 
+    /**
+     * Source provider 注册状态机（baseline 第 5 节）。
+     *
+     * - [EMPTY]：尚未开始 macro construction；`getAllFiles()` 必为空。
+     * - [OPEN_FOR_EXPANDED_RECORD]：`recordExpandedFilesOnce` 正在写入展开后文件。
+     * - [FINALIZED]：已进入 ordinary resolve 阶段，禁止再写入。
+     *
+     * 唯一规范的进入路径：
+     * `recordExpandedRawFilesOnce(provider, files, registry)`。
+     */
+    private enum class RecordingState { EMPTY, OPEN_FOR_EXPANDED_RECORD, FINALIZED }
+
+    @Volatile
+    private var recordingState: RecordingState = RecordingState.EMPTY
+    private val recordingLock = Any()
+
+    /** Provider 是否已经被 finalized，禁止后续注册。 */
+    val isFinalized: Boolean get() = recordingState == RecordingState.FINALIZED
+
+    /** Provider 是否尚未开始任何注册（construction 前必须为 true）。 */
+    val isEmpty: Boolean get() = recordingState == RecordingState.EMPTY
+
     /** 返回所有已注册的源码文件。 */
     fun getAllFiles(): List<CfirFile> = state.fileMap.values.flatten()
 
+    /**
+     * 由 [org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce] 调用的
+     * 唯一规范注册入口：
+     * - 强制 `EMPTY → OPEN_FOR_EXPANDED_RECORD → FINALIZED` 单调推进；
+     * - 一次性写入所有由 macro construction 产出的可注册文件；
+     * - 写入完成立即 finalize，禁止再次进入。
+     */
+    internal fun recordExpandedFilesOnce(files: RecordableRawCfirFiles) {
+        synchronized(recordingLock) {
+            check(recordingState == RecordingState.EMPTY) {
+                "Source CfirProviderImpl is not empty (recordingState=$recordingState); " +
+                    "construction must run on a fresh source provider."
+            }
+            recordingState = RecordingState.OPEN_FOR_EXPANDED_RECORD
+            try {
+                for (file in files.files) {
+                    recordFileInternal(file)
+                }
+                recordingState = RecordingState.FINALIZED
+            } catch (t: Throwable) {
+                // 即使中途失败也强制进入 FINALIZED，避免后续混入残留 mutation
+                recordingState = RecordingState.FINALIZED
+                throw t
+            }
+        }
+    }
+
+    /**
+     * 历史兼容入口。
+     *
+     * 生产 pipeline 应当通过 `recordExpandedRawFilesOnce` 走 strict 路径。
+     * 此入口暂为：
+     * - 测试 fixture：在 `EMPTY` 状态首次调用进入 `OPEN_FOR_EXPANDED_RECORD`，连续调用累积注册（不自动 finalize）；
+     * - `FINALIZED` 后调用直接抛出，确保 baseline 第 5 节"FINALIZED 后禁止 record"始终生效。
+     *
+     * Batch 3 起将关闭该兼容入口，仅保留 `recordExpandedFilesOnce` 与 internal 实现。
+     */
     fun recordFile(file: CfirFile) {
+        synchronized(recordingLock) {
+            when (recordingState) {
+                RecordingState.EMPTY -> {
+                    recordingState = RecordingState.OPEN_FOR_EXPANDED_RECORD
+                    recordFileInternal(file)
+                }
+                RecordingState.OPEN_FOR_EXPANDED_RECORD -> recordFileInternal(file)
+                RecordingState.FINALIZED -> error(
+                    "Cannot record after CfirProviderImpl is finalized: file=${file.name}"
+                )
+            }
+        }
+    }
+
+    private fun recordFileInternal(file: CfirFile) {
         val packageName = file.packageDirective.packageFqName
         state.fileMap.getOrPut(packageName, ::mutableListOf).add(file)
         recordPackageAndParents(packageName)

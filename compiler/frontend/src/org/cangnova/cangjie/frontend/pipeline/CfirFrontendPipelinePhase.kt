@@ -17,8 +17,14 @@ import org.cangnova.cangjie.cfir.pipeline.AllModulesFrontendOutput
 import org.cangnova.cangjie.cfir.pipeline.CfirSessionConstructionUtils
 import org.cangnova.cangjie.cfir.pipeline.CfirSessionProducer
 import org.cangnova.cangjie.cfir.pipeline.SessionWithSources
+import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirFromCjFiles
+import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirViaLightTree
 import org.cangnova.cangjie.cfir.pipeline.resolveAndCheckCfir
+import org.cangnova.cangjie.cfir.pipeline.resolveAndCheckCfirAfterConstruction
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.resolve.transformers.MacroExpandAction
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -67,9 +73,15 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         val sessionFactoryContext = CfirDefaultSessionFactory.Context()
         val extensionRegistrars = emptyList<CfirExtensionRegistrar>()
 
-        val macroExpandAction = MacroExpandAction { session, files ->
-            MacroExpandPhase.expand(session = session, files = files, configuration = configuration)
-        }
+        // Baseline 第 1 节"主流程"：
+        //   pre → MacroConstructionService.expand → recordExpandedRawFilesOnce → resolve & check
+        //
+        // 当前 batch 仍以 STRICT 模式驱动 CLI：构造失败立刻终止该 module 的 resolve。
+        val constructionService = FrontendMacroConstructionService(configuration)
+
+        // 旧 MACRO_EXPAND phase 已不再调用，下面注入的 action 仅作为 baseline 过渡期占位
+        // （Batch 3 删除 ordinary phase 时一并清除）。
+        val legacyMacroExpandAction: MacroExpandAction? = null
 
         val sessionsWithSources = buildSessions(
             configuration = configuration,
@@ -79,22 +91,27 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             factory = factory,
             sessionFactoryContext = sessionFactoryContext,
             extensionRegistrars = extensionRegistrars,
-            macroExpandAction = macroExpandAction,
+            macroExpandAction = legacyMacroExpandAction,
         )
 
-        val outputs = sessionsWithSources.map { (session, sessionSources) ->
-            val rawCfirFiles = buildRawCfirFiles(
+        val outputs = sessionsWithSources.mapNotNull { (session, sessionSources) ->
+            val pre = buildPreMacroFromSources(
                 session = session,
                 sources = sessionSources,
                 environment = environment,
                 useLightTree = configuration.useLightTree,
             )
-            recordCfirFiles(session, rawCfirFiles)
-            resolveAndCheckCfir(
+            val (result, output) = resolveAndCheckCfirAfterConstruction(
                 session = session,
-                cfirFiles = rawCfirFiles,
+                pre = pre,
+                constructionService = constructionService,
+                constructionMode = MacroConstructionService.Mode.STRICT,
                 diagnosticsCollector = configuration.diagnosticsCollector,
             )
+            if (output == null) {
+                reportConstructionFailure(configuration, result)
+            }
+            output
         }
 
         return DefaultCfirFrontendPipelineArtifact(
@@ -243,33 +260,38 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         return result
     }
 
-    private fun buildRawCfirFiles(
+    private fun buildPreMacroFromSources(
         session: CfirSession,
         sources: List<CjSourceFile>,
         environment: VfsBasedProjectEnvironment,
         useLightTree: Boolean,
-    ): List<CfirFile> {
-        val firProvider = session.cfirProvider as CfirProviderImpl
+    ): PreMacroRawBuildResult {
         return if (useLightTree) {
-            val builder = LightTree2Cfir(
-                session = session,
-                scopeProvider = firProvider.cangjieScopeProvider,
-            )
-            sources.map { sourceFile ->
-                val (code, linesMapping) = sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use {
-                    it.readSourceFileWithMapping()
-                }
-                builder.buildCfirFile(code, sourceFile, linesMapping)
-            }
+            session.buildPreMacroRawCfirViaLightTree(sources)
         } else {
-            val builder = PsiRawCfirBuilder(session, firProvider.cangjieScopeProvider)
-            sources.toCjFiles(environment).map(builder::buildCfirFile)
+            session.buildPreMacroRawCfirFromCjFiles(sources.toCjFiles(environment))
         }
     }
 
-    private fun recordCfirFiles(session: CfirSession, files: List<CfirFile>) {
-        val firProvider = session.cfirProvider as CfirProviderImpl
-        files.forEach(firProvider::recordFile)
+    private fun reportConstructionFailure(
+        configuration: CompilerConfiguration,
+        result: MacroConstructionResult,
+    ) {
+        val label = when (result) {
+            is MacroConstructionResult.Failed -> "Macro construction failed"
+            is MacroConstructionResult.ExecutorUnavailable -> "Macro executor unavailable"
+            is MacroConstructionResult.Blocked -> "Macro construction blocked"
+            is MacroConstructionResult.Success,
+            is MacroConstructionResult.Degraded -> return
+        }
+        val details = result.registry.diagnostics
+            .filter { it.severity == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Severity.ERROR }
+            .joinToString("; ") { it.message }
+            .ifEmpty { "no further details" }
+        configuration.messageCollector.report(
+            CompilerMessageSeverity.ERROR,
+            "$label: $details",
+        )
     }
 
     private fun List<CjSourceFile>.toCjFiles(environment: VfsBasedProjectEnvironment): List<CjFile> {
