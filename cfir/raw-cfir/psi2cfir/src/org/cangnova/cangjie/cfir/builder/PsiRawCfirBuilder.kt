@@ -27,6 +27,7 @@ import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
+import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
@@ -1776,8 +1777,14 @@ class PsiRawCfirBuilder(
                 qualifiedName = qualifiedName,
                 kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
                 hasParenthesis = psi.input != null,
-                attrTokens = psi.attr?.text?.let { listOf(MacroSurfaceToken(it, 0, it.length)) }.orEmpty(),
-                inputTokens = psi.input?.text?.let { listOf(MacroSurfaceToken(it, 0, it.length)) }.orEmpty(),
+                attrTokens = MacroPayloadTokenizer.tokenize(
+                    psi.attr?.text,
+                    psi.attr?.textRange?.startOffset ?: 0,
+                ),
+                inputTokens = MacroPayloadTokenizer.tokenize(
+                    psi.input?.text,
+                    psi.input?.textRange?.startOffset ?: 0,
+                ),
                 sourceRange = MacroSurfaceSourceRange(
                     source = psi.toCjPsiSourceElement(),
                     startOffset = psi.textRange.startOffset,

@@ -71,7 +71,11 @@
       "Bash(\"C:/Users/lin17/.cangjie/sdks/cangjie-1.0.5/bin/cjc.exe\" -p localmain --output-type=staticlib --import-path .)",
       "Bash(\"C:/Users/lin17/.cangjie/sdks/cangjie-1.0.5/bin/cjc.exe\" -p other --output-type=staticlib)",
       "Bash(command -v cloc)",
-      "Bash(awk -F. 'NF>1 {print tolower\\($NF\\)}')"
+      "Bash(awk -F. 'NF>1 {print tolower\\($NF\\)}')",
+      "Read(//d/d/code/intellij/cangjie/**)",
+      "Bash(git restore *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)"
     ]
   }
 }
