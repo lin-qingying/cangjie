@@ -9,9 +9,14 @@ import org.cangnova.cangjie.cfir.session.CfirSession
  * Batch 1 阶段仅作为 [cfirFile] 的薄包装；
  * Batch 4 引入完整 PreMacro / MacroSurface 模型后，
  * 该类型会承载只含 surface 节点的中间 CFIR。
+ *
+ * @param surfaces  本文件中收集到的 macro surface 列表（baseline 第 7 节）。
+ *                  Batch 4a 阶段由 [buildPreMacroRawFiles] 默认填空；
+ *                  4b 起 PSI / LightTree builder 双覆盖时填入实际数据。
  */
 class PreMacroCfirFile internal constructor(
     val cfirFile: CfirFile,
+    val surfaces: List<MacroSurface> = emptyList(),
 )
 
 /**
@@ -29,6 +34,10 @@ class PreMacroRawBuildResult internal constructor(
 ) {
     val isEmpty: Boolean get() = files.isEmpty()
     val size: Int get() = files.size
+
+    /** 所有文件中收集到的 macro surface（聚合）。 */
+    val allSurfaces: List<MacroSurface>
+        get() = files.flatMap { it.surfaces }
 }
 
 /**
@@ -36,14 +45,25 @@ class PreMacroRawBuildResult internal constructor(
  *
  * Raw builder（PSI 或 LightTree）完成构建后，
  * 必须经此入口包装产物，**不得**直接调用 source provider 的注册接口。
+ *
+ * @param fileSurfaces  与 [rawCfirFiles] 顺序对齐的 per-file surface 列表；
+ *                      默认全空（Batch 4b 起由 PSI / LightTree builder 填入）。
  */
 fun buildPreMacroRawFiles(
     session: CfirSession,
     rawCfirFiles: List<CfirFile>,
-): PreMacroRawBuildResult = PreMacroRawBuildResult(
-    session = session,
-    files = rawCfirFiles.map(::PreMacroCfirFile),
-)
+    fileSurfaces: List<List<MacroSurface>> = List(rawCfirFiles.size) { emptyList() },
+): PreMacroRawBuildResult {
+    require(fileSurfaces.size == rawCfirFiles.size) {
+        "fileSurfaces size (${fileSurfaces.size}) must match rawCfirFiles size (${rawCfirFiles.size})"
+    }
+    return PreMacroRawBuildResult(
+        session = session,
+        files = rawCfirFiles.mapIndexed { index, cfirFile ->
+            PreMacroCfirFile(cfirFile = cfirFile, surfaces = fileSurfaces[index])
+        },
+    )
+}
 
 /**
  * 经过 [MacroConstructionService] 处理后、可被 [recordExpandedRawFilesOnce] 接受的文件包装。
