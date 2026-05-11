@@ -10,7 +10,6 @@ import java.util.*
  */
 internal object LLCfirLazyPhaseResolverByPhase {
     private val byPhase = EnumMap<CfirResolvePhase, LLCfirLazyResolver>(CfirResolvePhase::class.java).apply {
-        this[CfirResolvePhase.MACRO_EXPAND] = LLCfirMacroExpandLazyResolver
         this[CfirResolvePhase.SUPER_TYPES] = LLCfirSupertypeLazyResolver
         this[CfirResolvePhase.TYPES] = LLCfirTypeLazyResolver
         this[CfirResolvePhase.STATUS] = LLCfirStatusLazyResolver
