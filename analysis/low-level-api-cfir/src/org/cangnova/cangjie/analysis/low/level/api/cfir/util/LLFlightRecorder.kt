@@ -281,7 +281,8 @@ private val PHASE_COMPACT_NAMES = run {
             CfirResolvePhase.TYPES -> 6
             CfirResolvePhase.STATUS -> 7
             CfirResolvePhase.BODY_RESOLVE -> 13
-            CfirResolvePhase.MACRO_EXPAND -> 14
+            // 14 was MACRO_EXPAND, removed: macro expansion now runs in the
+            // pre-resolve construction step (baseline 第 1 节). Do not reuse 14.
             CfirResolvePhase.EXTENSIONS -> 15
             CfirResolvePhase.IMPLICIT_TYPES -> 16
         }

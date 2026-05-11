@@ -25,7 +25,6 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
-import org.cangnova.cangjie.cfir.resolve.transformers.MacroExpandAction
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.config.CompilerConfiguration
@@ -79,10 +78,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         // 当前 batch 仍以 STRICT 模式驱动 CLI：构造失败立刻终止该 module 的 resolve。
         val constructionService = FrontendMacroConstructionService(configuration)
 
-        // 旧 MACRO_EXPAND phase 已不再调用，下面注入的 action 仅作为 baseline 过渡期占位
-        // （Batch 3 删除 ordinary phase 时一并清除）。
-        val legacyMacroExpandAction: MacroExpandAction? = null
-
         val sessionsWithSources = buildSessions(
             configuration = configuration,
             rootModuleName = rootModuleName,
@@ -91,7 +86,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             factory = factory,
             sessionFactoryContext = sessionFactoryContext,
             extensionRegistrars = extensionRegistrars,
-            macroExpandAction = legacyMacroExpandAction,
         )
 
         val outputs = sessionsWithSources.mapNotNull { (session, sessionSources) ->
@@ -192,7 +186,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         factory: CfirDefaultSessionFactory,
         sessionFactoryContext: CfirDefaultSessionFactory.Context,
         extensionRegistrars: List<CfirExtensionRegistrar>,
-        macroExpandAction: MacroExpandAction? = null,
     ): List<SessionWithSources<CjSourceFile>> {
         val classpathPaths = classpathRoots.map { it.absolutePath }
         val moduleGroups = buildModuleGroups(groupedSources, rootModuleName)
@@ -232,7 +225,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
                         extensionRegistrars = extensionRegistrars,
                         configuration = configuration,
                         context = sessionFactoryContext,
-                        macroExpandAction = macroExpandAction,
                         init = sessionConfigurator,
                     )
                 },

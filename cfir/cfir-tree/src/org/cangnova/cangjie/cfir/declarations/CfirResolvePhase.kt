@@ -130,27 +130,10 @@ enum class CfirResolvePhase(
     IMPORTS,
 
     /**
-     * 宏展开阶段。
-     *
-     * 输入：
-     * - [IMPORTS] 完成。
-     *
-     * 输出：
-     * - 所有宏调用已被展开并替换回 CFIR 文件。
-     * - 展开可能替换整个 [CfirFile]（通过 MacroFileRebuilder 重建）。
-     *
-     * 说明：
-     * - 该阶段不是 jumping phase，不允许同阶段请求。
-     * - 宏展开必须在语义分析前完成，因为宏可能引入新的声明和类型引用。
-     * - 无宏调用时处理器为 pass-through（返回原文件列表）。
-     */
-    MACRO_EXPAND,
-
-    /**
      * 父类型图准备阶段。
      *
      * 输入：
-     * - [MACRO_EXPAND] 完成。
+     * - [IMPORTS] 完成（宏展开此前已在 source provider 注册前完成）。
      *
      * 输出：
      * - 声明处的父类/父接口关系完成绑定。

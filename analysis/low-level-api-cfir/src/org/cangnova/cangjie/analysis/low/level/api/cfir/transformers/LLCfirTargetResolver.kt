@@ -56,7 +56,6 @@ import org.cangnova.cangjie.psi.CjPatternVariable
  * Also, each [LLCfirResolveTarget] can define phase-specific rules.
  *
  * Implementations:
- * - [MACRO_EXPAND][CfirResolvePhase.MACRO_EXPAND] – [LLCfirMacroExpandLazyResolver]
  * - [SUPER_TYPES][CfirResolvePhase.SUPER_TYPES] – [LLCfirSuperTypeTargetResolver]
  * - [TYPES][CfirResolvePhase.TYPES] – [LLCfirTypeTargetResolver]
  * - [STATUS][CfirResolvePhase.STATUS] – [LLCfirStatusTargetResolver]
