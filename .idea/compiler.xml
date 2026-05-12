@@ -302,296 +302,296 @@
       <module name="gradle-settings-conventions.jvm-toolchain-provisioning" target="21" />
       <module name="gradle-settings-conventions.jvm-toolchain-provisioning.main" target="21" />
       <module name="gradle-settings-conventions.jvm-toolchain-provisioning.test" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.analysis-api-cfir-generator.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-cfir.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-cfir.test" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-cfir.test~1" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-cfir.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-impl-base.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-impl-base.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-impl-base.test" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~1" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-impl-base.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-platform-interface.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-standalone.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-standalone.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-standalone.test" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api-standalone.test~1" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api-standalone.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-api.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-api.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-api.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-internal-utils.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-internal-utils.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-internal-utils.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-internal-utils.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-internal-utils.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-test-framework.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-test-framework.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-test-framework.test" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-test-framework.test~1" target="21" />
       <module name="intellij.cangjie.analysis.analysis-test-framework.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-tools.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-tools.main" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.analysis-tools.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.analysis-tools.test" target="21" />
       <module name="intellij.cangjie.analysis.analysis-tools.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.cj-references.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.cj-references.main" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.cj-references.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.cj-references.test" target="21" />
       <module name="intellij.cangjie.analysis.cj-references.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-file-stubs.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~1" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-psi.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.decompiler-to-stubs.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.light-declarations-for-decompiled.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.main" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.decompiled.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.decompiled.test" target="21" />
       <module name="intellij.cangjie.analysis.decompiled.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.light-declarations.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.light-declarations.main" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.light-declarations.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.light-declarations.test" target="21" />
       <module name="intellij.cangjie.analysis.light-declarations.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.low-level-api-cfir.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.low-level-api-cfir.main" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.analysis.low-level-api-cfir.test" target="21" />
+      <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.analysis.low-level-api-cfir.test~1" target="21" />
       <module name="intellij.cangjie.analysis.low-level-api-cfir.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.stubs.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.stubs.main" target="21" />
       <module name="intellij.cangjie.analysis.stubs.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.stubs.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.stubs.test" target="21" />
       <module name="intellij.cangjie.analysis.stubs.test~3" target="21" />
-      <module name="intellij.cangjie.analysis.symbol-light-declarations.main~1" target="21" />
+      <module name="intellij.cangjie.analysis.symbol-light-declarations.main" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.main~3" target="21" />
-      <module name="intellij.cangjie.analysis.symbol-light-declarations.test~1" target="21" />
+      <module name="intellij.cangjie.analysis.symbol-light-declarations.test" target="21" />
       <module name="intellij.cangjie.analysis.symbol-light-declarations.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.analysis-tests.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.analysis-tests.main" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.analysis-tests.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.cfir.analysis-tests.test" target="21" />
+      <module name="intellij.cangjie.cfir.analysis-tests.testFixtures" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.cfir.analysis-tests.test~1" target="21" />
       <module name="intellij.cangjie.cfir.analysis-tests.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-common.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-common.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-common.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-common.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-common.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-cones.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-cones.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-cones.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-cones.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-cones.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-serialization.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-serialization.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-serialization.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-serialization.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-serialization.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-tree.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-tree.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-tree.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-tree.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test" target="21" />
       <module name="intellij.cangjie.cfir.cfir-tree.tree-generator.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test" target="21" />
       <module name="intellij.cangjie.cfir.checkers.checkers-component-generator.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.checkers.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.checkers.main" target="21" />
       <module name="intellij.cangjie.cfir.checkers.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.checkers.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.checkers.test" target="21" />
       <module name="intellij.cangjie.cfir.checkers.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.diagnostic-renderers.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.diagnostic-renderers.main" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.diagnostic-renderers.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.diagnostic-renderers.test" target="21" />
       <module name="intellij.cangjie.cfir.diagnostic-renderers.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.entrypoint.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.entrypoint.main" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.entrypoint.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.entrypoint.test" target="21" />
       <module name="intellij.cangjie.cfir.entrypoint.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.providers.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.providers.main" target="21" />
       <module name="intellij.cangjie.cfir.providers.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.providers.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.providers.test" target="21" />
       <module name="intellij.cangjie.cfir.providers.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test" target="21" />
+      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~1" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.light-tree2cfir.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test" target="21" />
+      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~1" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.psi2cfir.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test" target="21" />
       <module name="intellij.cangjie.cfir.raw-cfir.raw-cfir-common.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.resolve.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.resolve.main" target="21" />
       <module name="intellij.cangjie.cfir.resolve.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.resolve.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.resolve.test" target="21" />
       <module name="intellij.cangjie.cfir.resolve.test~3" target="21" />
-      <module name="intellij.cangjie.cfir.semantics.main~1" target="21" />
+      <module name="intellij.cangjie.cfir.semantics.main" target="21" />
       <module name="intellij.cangjie.cfir.semantics.main~3" target="21" />
-      <module name="intellij.cangjie.cfir.semantics.test~1" target="21" />
+      <module name="intellij.cangjie.cfir.semantics.test" target="21" />
       <module name="intellij.cangjie.cfir.semantics.test~3" target="21" />
-      <module name="intellij.cangjie.common.diagnostics.main~1" target="21" />
+      <module name="intellij.cangjie.common.diagnostics.main" target="21" />
       <module name="intellij.cangjie.common.diagnostics.main~3" target="21" />
-      <module name="intellij.cangjie.common.diagnostics.test~1" target="21" />
+      <module name="intellij.cangjie.common.diagnostics.test" target="21" />
       <module name="intellij.cangjie.common.diagnostics.test~3" target="21" />
-      <module name="intellij.cangjie.compiler.arguments.main~1" target="21" />
+      <module name="intellij.cangjie.compiler.arguments.main" target="21" />
       <module name="intellij.cangjie.compiler.arguments.main~3" target="21" />
-      <module name="intellij.cangjie.compiler.arguments.test~1" target="21" />
+      <module name="intellij.cangjie.compiler.arguments.test" target="21" />
       <module name="intellij.cangjie.compiler.arguments.test~3" target="21" />
-      <module name="intellij.cangjie.compiler.chir.main~1" target="21" />
+      <module name="intellij.cangjie.compiler.chir.main" target="21" />
       <module name="intellij.cangjie.compiler.chir.main~3" target="21" />
-      <module name="intellij.cangjie.compiler.chir.test~1" target="21" />
+      <module name="intellij.cangjie.compiler.chir.test" target="21" />
       <module name="intellij.cangjie.compiler.chir.test~3" target="21" />
-      <module name="intellij.cangjie.compiler.codegen.main~1" target="21" />
+      <module name="intellij.cangjie.compiler.codegen.main" target="21" />
       <module name="intellij.cangjie.compiler.codegen.main~3" target="21" />
-      <module name="intellij.cangjie.compiler.codegen.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.compiler.codegen.test" target="21" />
+      <module name="intellij.cangjie.compiler.codegen.testFixtures" target="21" />
       <module name="intellij.cangjie.compiler.codegen.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.compiler.codegen.test~1" target="21" />
       <module name="intellij.cangjie.compiler.codegen.test~3" target="21" />
-      <module name="intellij.cangjie.compiler.config.main~1" target="21" />
+      <module name="intellij.cangjie.compiler.config.main" target="21" />
       <module name="intellij.cangjie.compiler.config.main~3" target="21" />
-      <module name="intellij.cangjie.compiler.config.test~1" target="21" />
+      <module name="intellij.cangjie.compiler.config.test" target="21" />
       <module name="intellij.cangjie.compiler.config.test~3" target="21" />
-      <module name="intellij.cangjie.compiler.frontend-arguments-generator.main~1" target="21" />
+      <module name="intellij.cangjie.compiler.frontend-arguments-generator.main" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.main~3" target="21" />
-      <module name="intellij.cangjie.compiler.frontend-arguments-generator.test~1" target="21" />
+      <module name="intellij.cangjie.compiler.frontend-arguments-generator.test" target="21" />
       <module name="intellij.cangjie.compiler.frontend-arguments-generator.test~3" target="21" />
-      <module name="intellij.cangjie.compiler.frontend.main~1" target="21" />
+      <module name="intellij.cangjie.compiler.frontend.main" target="21" />
       <module name="intellij.cangjie.compiler.frontend.main~3" target="21" />
-      <module name="intellij.cangjie.compiler.frontend.test~1" target="21" />
+      <module name="intellij.cangjie.compiler.frontend.test" target="21" />
       <module name="intellij.cangjie.compiler.frontend.test~3" target="21" />
-      <module name="intellij.cangjie.compiler.phaser.main~1" target="21" />
+      <module name="intellij.cangjie.compiler.phaser.main" target="21" />
       <module name="intellij.cangjie.compiler.phaser.main~3" target="21" />
-      <module name="intellij.cangjie.compiler.phaser.test~1" target="21" />
+      <module name="intellij.cangjie.compiler.phaser.test" target="21" />
       <module name="intellij.cangjie.compiler.phaser.test~3" target="21" />
-      <module name="intellij.cangjie.compiler.plugin.main~1" target="21" />
+      <module name="intellij.cangjie.compiler.plugin.main" target="21" />
       <module name="intellij.cangjie.compiler.plugin.main~3" target="21" />
-      <module name="intellij.cangjie.compiler.plugin.test~1" target="21" />
+      <module name="intellij.cangjie.compiler.plugin.test" target="21" />
       <module name="intellij.cangjie.compiler.plugin.test~3" target="21" />
-      <module name="intellij.cangjie.dependencies.intellij-core.main~1" target="21" />
+      <module name="intellij.cangjie.dependencies.intellij-core.main" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.main~3" target="21" />
-      <module name="intellij.cangjie.dependencies.intellij-core.test~1" target="21" />
+      <module name="intellij.cangjie.dependencies.intellij-core.test" target="21" />
       <module name="intellij.cangjie.dependencies.intellij-core.test~3" target="21" />
       <module name="intellij.cangjie.deveco-cangjie.product" target="21" />
-      <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main~1" target="21" />
+      <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.main~3" target="21" />
-      <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test~1" target="21" />
+      <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-api.test~3" target="21" />
-      <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main~1" target="21" />
+      <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.main~3" target="21" />
-      <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test~1" target="21" />
+      <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test" target="21" />
       <module name="intellij.cangjie.llvm-interop.llvm-interop-jni.test~3" target="21" />
-      <module name="intellij.cangjie.macro.macro-common.main~1" target="21" />
+      <module name="intellij.cangjie.macro.macro-common.main" target="21" />
       <module name="intellij.cangjie.macro.macro-common.main~3" target="21" />
-      <module name="intellij.cangjie.macro.macro-common.test~1" target="21" />
+      <module name="intellij.cangjie.macro.macro-common.test" target="21" />
       <module name="intellij.cangjie.macro.macro-common.test~3" target="21" />
-      <module name="intellij.cangjie.macro.macro-process.main~1" target="21" />
+      <module name="intellij.cangjie.macro.macro-process.main" target="21" />
       <module name="intellij.cangjie.macro.macro-process.main~3" target="21" />
-      <module name="intellij.cangjie.macro.macro-process.test~1" target="21" />
+      <module name="intellij.cangjie.macro.macro-process.test" target="21" />
       <module name="intellij.cangjie.macro.macro-process.test~3" target="21" />
-      <module name="intellij.cangjie.macro.macro-stub.main~1" target="21" />
+      <module name="intellij.cangjie.macro.macro-stub.main" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.main~3" target="21" />
-      <module name="intellij.cangjie.macro.macro-stub.test~1" target="21" />
+      <module name="intellij.cangjie.macro.macro-stub.test" target="21" />
       <module name="intellij.cangjie.macro.macro-stub.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.analysis-test-framework.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.analysis-test-framework.main" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.analysis-test-framework.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.analysis-test-framework.test" target="21" />
       <module name="intellij.cangjie.prepare.analysis-test-framework.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.frontend-embeddable.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.frontend-embeddable.main" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.frontend-embeddable.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.frontend-embeddable.test" target="21" />
       <module name="intellij.cangjie.prepare.frontend-embeddable.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.frontend.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.frontend.main" target="21" />
       <module name="intellij.cangjie.prepare.frontend.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.frontend.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.frontend.test" target="21" />
       <module name="intellij.cangjie.prepare.frontend.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-cfir-for-ide-module.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-for-ide-module.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-analysis-api-standalone-for-ide-module.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-cfir-for-ide-module.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-common-for-ide-module.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies-module.cangjie-frontend-psi-for-ide-module.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-cfir-for-ide.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-for-ide.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-analysis-api-standalone-for-ide.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-cfir-for-ide.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-common-for-ide.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test" target="21" />
       <module name="intellij.cangjie.prepare.ide-plugin-dependencies.cangjie-frontend-psi-for-ide.test~3" target="21" />
-      <module name="intellij.cangjie.prepare.test-infrastructure.main~1" target="21" />
+      <module name="intellij.cangjie.prepare.test-infrastructure.main" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.main~3" target="21" />
-      <module name="intellij.cangjie.prepare.test-infrastructure.test~1" target="21" />
+      <module name="intellij.cangjie.prepare.test-infrastructure.test" target="21" />
       <module name="intellij.cangjie.prepare.test-infrastructure.test~3" target="21" />
-      <module name="intellij.cangjie.tests.test-infrastructure.main~1" target="21" />
+      <module name="intellij.cangjie.tests.test-infrastructure.main" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.main~3" target="21" />
-      <module name="intellij.cangjie.tests.test-infrastructure.testFixtures~1" target="21" />
+      <module name="intellij.cangjie.tests.test-infrastructure.test" target="21" />
+      <module name="intellij.cangjie.tests.test-infrastructure.testFixtures" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.testFixtures~3" target="21" />
-      <module name="intellij.cangjie.tests.test-infrastructure.test~1" target="21" />
       <module name="intellij.cangjie.tests.test-infrastructure.test~3" target="21" />
       <module name="org.cangnova.cangjie.build.gradle-build-conventions.analysis-coverage-convention" target="21" />
       <module name="org.cangnova.cangjie.build.gradle-build-conventions.analysis-coverage-convention.main" target="21" />

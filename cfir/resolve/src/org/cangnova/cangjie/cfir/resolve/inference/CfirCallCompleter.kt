@@ -42,6 +42,7 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
@@ -151,6 +152,7 @@ class CfirCallCompleter(
     ) {
         if (resolutionMode !is ResolutionMode.WithExpectedType) return
         val expectedType = resolutionMode.expectedType.fullyExpandedType()
+        if (!candidate.shouldUseExpectedTypeForCompletion(initialType, expectedType)) return
         val system = candidate.system
 
         when {
@@ -175,6 +177,21 @@ class CfirCallCompleter(
                 system.addSubtypeConstraint(initialType, expectedType, ConeExpectedTypeConstraintPosition)
             }
         }
+    }
+
+    /**
+     * enum 构造器的 owner 泛型只能从同一个 enum 的期望类型中推断。
+     * 若期望类型属于其它 enum/非 enum，官方 enum sugar 路径不会把该期望类型
+     * 注入构造器泛型约束，而是保留构造器自身类型，后续再报告裸泛型或类型不匹配。
+     */
+    private fun Candidate.shouldUseExpectedTypeForCompletion(
+        initialType: ConeCangJieType,
+        expectedType: ConeCangJieType,
+    ): Boolean {
+        if (symbol.takeIf { it.isBound }?.cfir !is CfirEnumConstructor) return true
+        val initialEnumType = initialType.fullyExpandedType() as? ConeEnumType ?: return true
+        val expectedEnumType = expectedType.fullyExpandedType() as? ConeEnumType ?: return false
+        return initialEnumType.classId == expectedEnumType.classId
     }
 
     private fun Candidate.isSyntheticFunctionCallThatShouldUseEqualityConstraint(

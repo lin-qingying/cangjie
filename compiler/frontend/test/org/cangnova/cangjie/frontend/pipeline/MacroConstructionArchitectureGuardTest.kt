@@ -1,0 +1,428 @@
+package org.cangnova.cangjie.frontend.pipeline
+
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallForestBuilder
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroForestEvaluator
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
+import org.cangnova.cangjie.macro.MacroCallInfo
+import org.cangnova.cangjie.macro.MacroExecutor
+import org.cangnova.cangjie.macro.MacroExpansionResult
+import org.cangnova.cangjie.macro.TokenInfo
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+import java.nio.charset.StandardCharsets.UTF_8
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+
+/**
+ * 宏 construction 架构边界守卫。
+ *
+ * 这些测试不验证具体宏语义，只防止旧 ordinary resolve / text patch 通道回流。
+ */
+class MacroConstructionArchitectureGuardTest {
+    @Test
+    fun resolvePhaseModelDoesNotContainMacroExpandPhase() {
+        assertFalse(
+            CfirResolvePhase.entries.any { it.name == "MACRO_EXPAND" },
+            "Macro expansion must not be modeled as an ordinary CfirResolvePhase.",
+        )
+
+        val phaseSource = readRepoFile("cfir/cfir-tree/src/org/cangnova/cangjie/cfir/declarations/CfirResolvePhase.kt")
+        assertFalse(
+            Regex("""\bMACRO_EXPAND\b""").containsMatchIn(phaseSource),
+            "CfirResolvePhase source must not reintroduce MACRO_EXPAND.",
+        )
+    }
+
+    @Test
+    fun ordinaryResolveSourcesDoNotReferenceRemovedMacroExpandPhase() {
+        val forbiddenPatterns = listOf(
+            Regex("""\bCfirResolvePhase\s*\.\s*MACRO_EXPAND\b"""),
+            Regex("""\bMacroExpandAction\b"""),
+            Regex("""\bCfirMacroExpandResolveProcessor\b"""),
+        )
+        val violations = sourceFilesUnder("cfir", "analysis", "compiler")
+            .filterNot { it.fileName.toString() == "MacroConstructionArchitectureGuardTest.kt" }
+            .flatMap { path ->
+                val text = Files.readString(path, UTF_8)
+                forbiddenPatterns
+                    .filter { pattern -> pattern.containsMatchIn(text) }
+                    .map { pattern -> root.relativize(path).toString() + ": " + pattern.pattern }
+            }
+
+        assertTrue(
+            violations.isEmpty(),
+            "Removed macro-expand resolve phase must not be referenced by ordinary resolve paths:\n" +
+                violations.joinToString(separator = "\n"),
+        )
+    }
+
+    @Test
+    fun sourceProviderDoesNotExposeRecordFile() {
+        val publicMethodNames = CfirProviderImpl::class.java.methods.mapTo(mutableSetOf()) { it.name }
+        val declaredRecordFileMethods = CfirProviderImpl::class.java.declaredMethods.filter { it.name == "recordFile" }
+
+        assertFalse(
+            "recordFile" in publicMethodNames,
+            "CfirProviderImpl must not expose public recordFile; use recordExpandedRawFilesOnce.",
+        )
+        assertTrue(
+            declaredRecordFileMethods.isEmpty(),
+            "CfirProviderImpl must not keep a direct recordFile side door.",
+        )
+    }
+
+    @Test
+    fun runResolutionDoesNotAcceptBareCfirFileList() {
+        val analyseSource = readRepoFile("cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt")
+        val bareListRunResolution = Regex(
+            pattern = """fun\s+CfirSession\s*\.\s*runResolution\s*\([^)]*List\s*<\s*CfirFile\s*>""",
+            options = setOf(RegexOption.DOT_MATCHES_ALL),
+        )
+
+        assertFalse(
+            bareListRunResolution.containsMatchIn(analyseSource),
+            "runResolution public API must accept RecordableRawCfirFiles, not bare List<CfirFile>.",
+        )
+    }
+
+    @Test
+    fun semanticMacroPathDoesNotReferenceTextPatchExpansion() {
+        val forbiddenTokens = listOf(
+            "DefaultMacro" + "Replacer",
+            "DefaultMacro" + "Expander",
+            "MacroCallInfo" + "Factory",
+            "MacroPsiExpansion" + "Service",
+            "expanded" + "Text",
+            "text" + "Patch",
+            "Text" + "Patch",
+        )
+        val violations = sourceFilesUnder("compiler", "cfir", "analysis", "tests")
+            .filterNot { it.fileName.toString() == "MacroConstructionArchitectureGuardTest.kt" }
+            .flatMap { path ->
+                val text = Files.readString(path, UTF_8)
+                forbiddenTokens
+                    .filter { token -> token in text }
+                    .map { token -> root.relativize(path).toString() + ": " + token }
+            }
+
+        assertTrue(
+            violations.isEmpty(),
+            "Text patch macro expansion must not be referenced by semantic paths:\n" +
+                violations.joinToString(separator = "\n"),
+        )
+    }
+
+    @Test
+    fun sourceProviderRegistrationUsesFinalRegistrarOnly() {
+        val forbiddenPatterns = listOf(
+            Regex("""\.\s*recordFile\s*\("""),
+            Regex("""fun\s+recordFile\s*\("""),
+        )
+        val violations = sourceFilesUnder("compiler", "cfir", "analysis", "tests")
+            .filterNot { it.fileName.toString() == "MacroConstructionArchitectureGuardTest.kt" }
+            .flatMap { path ->
+                val text = Files.readString(path, UTF_8)
+                forbiddenPatterns
+                    .filter { pattern -> pattern.containsMatchIn(text) }
+                    .map { pattern -> root.relativize(path).toString() + ": " + pattern.pattern }
+            }
+
+        assertTrue(
+            violations.isEmpty(),
+            "Source provider file registration must go through recordExpandedRawFilesOnce only:\n" +
+                violations.joinToString(separator = "\n"),
+            )
+    }
+
+    @Test
+    fun rawBuildersCoverAllMacroSurfaceShapes() {
+        val requiredMacroSurfaceConstructions = listOf(
+            "MacroSurfaceDecl" to Regex("""\bMacroSurfaceDecl\s*\("""),
+            "MacroSurfaceParam" to Regex("""\bMacroSurfaceParam\s*\("""),
+            "MacroSurfaceExpr" to Regex("""\bMacroSurfaceExpr\s*\("""),
+        )
+        val builtinNonMacroSurfaceCoverage = listOf(
+            "IfAvailableSurface" to Regex("""\bIfAvailableSurface\s*\("""),
+            "BuiltinNonMacroSurface" to Regex("""\bis\s+BuiltinNonMacroSurface\b"""),
+        )
+        val builderSourceGroups = listOf(
+            BuilderSourceGroup(
+                displayName = "PSI raw builder",
+                relativePaths = listOf(
+                    "cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt",
+                ),
+            ),
+            BuilderSourceGroup(
+                displayName = "LightTree raw builder",
+                relativePaths = listOf(
+                    "cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirDeclarationBuilder.kt",
+                    "cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirExpressionBuilder.kt",
+                ),
+            ),
+        )
+
+        val violations = builderSourceGroups.flatMap { group ->
+            val source = group.relativePaths.joinToString(separator = "\n") { readRepoFile(it) }
+            buildList {
+                for ((surfaceName, constructionPattern) in requiredMacroSurfaceConstructions) {
+                    if (!constructionPattern.containsMatchIn(source)) {
+                        add("${group.displayName}: missing explicit $surfaceName construction")
+                    }
+                }
+
+                val hasBuiltinNonMacroCoverage = builtinNonMacroSurfaceCoverage.any { (_, pattern) ->
+                    pattern.containsMatchIn(source)
+                }
+                if (!hasBuiltinNonMacroCoverage) {
+                    add(
+                        "${group.displayName}: missing explicit IfAvailableSurface construction " +
+                            "or BuiltinNonMacroSurface branch",
+                    )
+                }
+            }
+        }
+
+        assertTrue(
+            violations.isEmpty(),
+            "PSI and LightTree raw builders must not diverge in macro surface coverage:\n" +
+                violations.joinToString(separator = "\n"),
+        )
+    }
+
+    @Test
+    fun macroConstructionApiSupportsExecutableForestExecutorFragmentSpliceChain() {
+        val surface = macroSurface(
+            surfaceId = 1L,
+            name = "Outer",
+            startOffset = 0,
+            endOffset = 20,
+            inputTokens = listOf(MacroSurfaceToken("inner", 0, 5, "IDENTIFIER")),
+        )
+        val forest = MacroCallForestBuilder.build(listOf(surface))
+        val executor = RecordingMacroExecutor(
+            resultTokens = listOf(TokenInfo(kind = 1.toUByte(), value = "expanded")),
+        )
+        val parser = object : MacroFragmentParser {
+            override fun parse(
+                node: MacroCallNode,
+                tokens: List<MacroSurfaceToken>,
+                mode: MacroFragmentParser.Mode,
+            ): MacroFragmentResult = MacroFragmentResult.Success(node, tokens, mode)
+        }
+        val splicer = object : MacroStableSplicer {
+            val slots = mutableListOf<MacroReplaceSlot>()
+
+            override fun applySlices(
+                files: List<org.cangnova.cangjie.cfir.declarations.CfirFile>,
+                slots: List<MacroReplaceSlot>,
+            ): List<org.cangnova.cangjie.cfir.declarations.CfirFile> {
+                this.slots += slots
+                return files
+            }
+        }
+
+        val evaluatorResults = MacroForestEvaluator(maxIterations = 1).evaluate(
+            forest = forest,
+            expand = { node, childResults ->
+                val result = executor.execute(
+                    listOf(
+                        MacroCallInfo(
+                            idName = node.surface.qualifiedName!!.shortName().asString(),
+                            methodName = "call",
+                            packageName = node.surface.scopeContext.packageFqName.asString(),
+                            argTokens = node.surface.inputTokens.map { TokenInfo(kind = 1.toUByte(), value = it.text) },
+                            parentNames = node.parentNames,
+                        )
+                    )
+                ).single() as MacroExpansionResult.Success
+                result.tokens.mapIndexed { index, token ->
+                    MacroSurfaceToken(
+                        text = token.value,
+                        startOffset = index,
+                        endOffset = index + token.value.length,
+                        kindName = token.kind.toString(),
+                    )
+                } + childResults.values.flatten()
+            },
+        )
+        val rootNode = forest.roots.single()
+        val fragment = parser.parse(
+            node = rootNode,
+            tokens = evaluatorResults.getValue(rootNode),
+            mode = MacroFragmentParser.Mode.EXPRESSION,
+        )
+        splicer.applySlices(
+            files = emptyList(),
+            slots = listOf(MacroReplaceSlot(surface.replaceHandle, surface, fragment)),
+        )
+
+        assertEquals(listOf("Outer"), executor.executedCalls.map { it.idName })
+        assertTrue(fragment is MacroFragmentResult.Success)
+        assertEquals(surface.replaceHandle, splicer.slots.single().handle)
+    }
+
+    @Test
+    fun frontendMacroConstructionServiceMainFlowReferencesForestExecutorFragmentAndSplice() {
+        val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
+        val requiredFlowTokens = listOf(
+            "MacroCallForestBuilder",
+            "MacroForestEvaluator",
+            "macroExecutorFactory",
+            "MacroFragmentParser",
+            "MacroStableSplicer",
+        )
+        val missing = requiredFlowTokens.filterNot { it in source }
+
+        assertTrue(
+            missing.isEmpty(),
+            "FrontendMacroConstructionService must wire forest/evaluator/executor/fragment/splice in its main flow; " +
+                "missing: ${missing.joinToString()}",
+        )
+    }
+
+    @Test
+    fun resolveAndCheckMainFlowKeepsConstructionBeforeProviderRegistrationAndOrdinaryResolve() {
+        val source = readRepoFile("cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt")
+        val symbolIndexIndex = source.indexOf("val symbolIndex = buildMacroSymbolIndex(pre)")
+        val bindIndex = source.indexOf("val context = bindMacroImports(pre, symbolIndex)")
+        val expandIndex = source.indexOf("val result = constructionService.expand(pre, context, constructionMode)")
+        val recordIndex = source.indexOf("recordExpandedRawFilesOnce(provider, recordable, result.registry)")
+        val resolveIndex = source.indexOf("val output = resolveAndCheckCfir(session, recordable, diagnosticsCollector)")
+
+        assertTrue(
+            source.indexOf("fun resolveAndCheckCfirAfterConstruction(") >= 0,
+            "resolveAndCheckCfirAfterConstruction entrypoint must exist.",
+        )
+        assertTrue(
+            listOf(symbolIndexIndex, bindIndex, expandIndex, recordIndex, resolveIndex).all { it >= 0 },
+            "resolveAndCheckCfirAfterConstruction must spell out symbol-index -> bind -> expand -> record -> resolve.",
+        )
+        assertTrue(
+            symbolIndexIndex < bindIndex && bindIndex < expandIndex && expandIndex < recordIndex && recordIndex < resolveIndex,
+            "Macro construction must happen before source-provider registration and ordinary resolve.",
+        )
+    }
+
+    private fun readRepoFile(relativePath: String): String =
+        Files.readString(root.resolve(relativePath), UTF_8)
+
+    private fun sourceFilesUnder(vararg topLevelDirs: String): List<Path> =
+        topLevelDirs.flatMap { dir ->
+            val start = root.resolve(dir)
+            if (!Files.exists(start)) return@flatMap emptyList()
+
+            val stream = Files.walk(start)
+            try {
+                stream
+                    .filter { Files.isRegularFile(it) }
+                    .filter { it.toString().endsWith(".kt") || it.toString().endsWith(".kts") }
+                    .filter { !isGeneratedOrBuildOutput(it) }
+                    .toList()
+            } finally {
+                stream.close()
+            }
+        }
+
+    private fun isGeneratedOrBuildOutput(path: Path): Boolean {
+        val relative = root.relativize(path)
+        return relative.any { part ->
+            part.toString() in setOf("bin", "build", ".gradle", "out")
+        }
+    }
+
+    private fun macroSurface(
+        surfaceId: Long,
+        name: String,
+        startOffset: Int,
+        endOffset: Int,
+        inputTokens: List<MacroSurfaceToken>,
+    ): MacroSurfaceExpr {
+        val packageFqName = FqName("sample")
+        return MacroSurfaceExpr(
+            surfaceId = surfaceId,
+            qualifiedName = FqName.topLevel(Name.identifier(name)),
+            kind = MacroSurface.Kind.PLAIN,
+            hasParenthesis = true,
+            attrTokens = emptyList(),
+            inputTokens = inputTokens,
+            sourceRange = MacroSurfaceSourceRange(null, startOffset, endOffset),
+            scopeContext = MacroSurfaceScopeContext(
+                packageFqName = packageFqName,
+                enclosingClassFqName = null,
+                enclosingFunctionName = Name.identifier("useMacro"),
+            ),
+            modifiers = emptyList(),
+            carriedAnnotations = emptyList(),
+            capturedRawSyntax = "@$name()",
+            containerContext = MacroSurfaceContainerContext(
+                outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.FUNCTION_BODY,
+                isInsidePrimaryConstructor = false,
+                isInsideEnumBody = false,
+                isInsideBlock = true,
+            ),
+            replaceHandle = CfirReplaceHandle(surfaceId),
+        )
+    }
+
+    private class RecordingMacroExecutor(
+        private val resultTokens: List<TokenInfo>,
+    ) : MacroExecutor {
+        val executedCalls: MutableList<MacroCallInfo> = mutableListOf()
+
+        override fun loadLibraries(libPaths: List<String>) {}
+
+        override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
+            executedCalls += calls
+            return calls.map {
+                MacroExpansionResult.Success(
+                    tokens = resultTokens,
+                    expandedText = resultTokens.joinToString(separator = "") { token -> token.value },
+                )
+            }
+        }
+
+        override fun reset() {}
+
+        override fun isAvailable(): Boolean = true
+
+        override fun close() {}
+    }
+
+    private data class BuilderSourceGroup(
+        val displayName: String,
+        val relativePaths: List<String>,
+    )
+
+    private companion object {
+        val root: Path = findRepoRoot()
+
+        private fun findRepoRoot(): Path {
+            var current = Paths.get("").toAbsolutePath()
+            while (current.parent != null) {
+                if (Files.exists(current.resolve("settings.gradle.kts"))) {
+                    return current
+                }
+                current = current.parent
+            }
+            error("Cannot locate repository root from ${Paths.get("").toAbsolutePath()}")
+        }
+    }
+}

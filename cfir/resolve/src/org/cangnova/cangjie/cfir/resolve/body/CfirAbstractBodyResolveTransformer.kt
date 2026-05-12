@@ -168,13 +168,13 @@ abstract class CfirAbstractBodyResolveTransformer(
                 }
 
             return buildList {
-                // 当前文件顶层声明必须先于包级/导入级 scope，避免默认导入抢占本地声明。
-                add(CfirFileDeclaredTopLevelScope(file))
-                add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
-                add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
-                add(CfirExplicitStarImportingScope(imports, symbolProvider))
-                add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+                // Scope 列表按低优先级到高优先级排列，tower 反向遍历时会先命中当前文件声明。
                 add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
+                add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+                add(CfirExplicitStarImportingScope(imports, symbolProvider))
+                add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
+                add(CfirFileDeclaredTopLevelScope(file))
+                add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
             }
         }
 

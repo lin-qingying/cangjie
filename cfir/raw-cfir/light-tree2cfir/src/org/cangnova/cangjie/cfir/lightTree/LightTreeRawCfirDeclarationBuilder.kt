@@ -5,13 +5,23 @@ import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
+import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
+import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceIdGenerator
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
@@ -70,6 +80,11 @@ class LightTreeRawCfirDeclarationBuilder(
         return toDeclarationStatus(context.inLocalContext, inInterfaceContext, defaultVisibility)
     }
 
+    private enum class MacroSurfaceOwnerKind {
+        DECLARATION,
+        PARAMETER,
+    }
+
     // ===== AbstractRawCfirBuilder 抽象方法实现 =====
 
     // ===== 表达式构建器（延迟初始化，解决循环依赖） =====
@@ -123,32 +138,37 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 声明转换入口 =====
 
-    fun convertDeclaration(node: LighterASTNode): CfirDeclaration = when (node.tokenType) {
-        CjNodeTypes.CLASS -> convertClass(node, CfirClassKind.CLASS)
-        CjNodeTypes.INTERFACE -> convertClass(node, CfirClassKind.INTERFACE)
-        CjNodeTypes.STRUCT -> convertClass(node, CfirClassKind.STRUCT)
-        CjNodeTypes.ENUM -> convertClass(node, CfirClassKind.ENUM)
-        CjNodeTypes.EXTEND -> convertExtend(node)
-        CjNodeTypes.FUNC -> convertFunction(node)
-        CjNodeTypes.MAIN_FUNC -> convertMainFunction(node)
-        CjNodeTypes.MACRO -> convertMacroDeclaration(node)
-        CjNodeTypes.FINALIZER -> convertFinalizer(node)
-        CjNodeTypes.PROPERTY -> convertProperty(node)
-        CjNodeTypes.FIELD -> convertFieldVariable(node)
-        CjNodeTypes.VARIABLE -> convertPatternVariable(node)
-        CjNodeTypes.PRIMARY_CONSTRUCTOR -> convertConstructor(node, isPrimary = true)
-        CjNodeTypes.SECONDARY_CONSTRUCTOR -> convertConstructor(node, isPrimary = false)
-        CjNodeTypes.TYPEALIAS -> convertTypeAlias(node)
-        CjNodeTypes.ENUM_CONSTRUCTOR -> convertEnumConstructor(node)
-        else -> buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
-            buildInvalidDeclaration {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                reason = "Unsupported declaration: ${node.tokenType}"
+    fun convertDeclaration(node: LighterASTNode): CfirDeclaration {
+        val modifiers = LightTreeModifierList.from(tree, node)
+        collectMacroSurfacesFromAnnotations(node, modifiers, MacroSurfaceOwnerKind.DECLARATION)
+
+        return when (node.tokenType) {
+            CjNodeTypes.CLASS -> convertClass(node, CfirClassKind.CLASS)
+            CjNodeTypes.INTERFACE -> convertClass(node, CfirClassKind.INTERFACE)
+            CjNodeTypes.STRUCT -> convertClass(node, CfirClassKind.STRUCT)
+            CjNodeTypes.ENUM -> convertClass(node, CfirClassKind.ENUM)
+            CjNodeTypes.EXTEND -> convertExtend(node)
+            CjNodeTypes.FUNC -> convertFunction(node)
+            CjNodeTypes.MAIN_FUNC -> convertMainFunction(node)
+            CjNodeTypes.MACRO -> convertMacroDeclaration(node)
+            CjNodeTypes.FINALIZER -> convertFinalizer(node)
+            CjNodeTypes.PROPERTY -> convertProperty(node)
+            CjNodeTypes.FIELD -> convertFieldVariable(node)
+            CjNodeTypes.VARIABLE -> convertPatternVariable(node)
+            CjNodeTypes.PRIMARY_CONSTRUCTOR -> convertConstructor(node, isPrimary = true)
+            CjNodeTypes.SECONDARY_CONSTRUCTOR -> convertConstructor(node, isPrimary = false)
+            CjNodeTypes.TYPEALIAS -> convertTypeAlias(node)
+            CjNodeTypes.ENUM_CONSTRUCTOR -> convertEnumConstructor(node)
+            else -> buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
+                buildInvalidDeclaration {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    reason = "Unsupported declaration: ${node.tokenType}"
+                }
             }
         }
     }
@@ -744,6 +764,9 @@ class LightTreeRawCfirDeclarationBuilder(
         node: LighterASTNode,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
     ): CfirValueParameter {
+        val modifiers = LightTreeModifierList.from(tree, node)
+        collectMacroSurfacesFromAnnotations(node, modifiers, MacroSurfaceOwnerKind.PARAMETER)
+
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
         val paramName = if (nameNode != null) Name.identifier(nameNode.asText()) else Name.special("<error>")
         val typeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
@@ -776,6 +799,254 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.containingDeclarationSymbol = containingDeclarationSymbol
             }
         }
+    }
+
+    /**
+     * LightTree 声明/参数层的 annotation surface 采集入口。
+     *
+     * 这里只记录 construction-only surface，不把 annotation 语义写回最终 CFIR 节点；
+     * `@IfAvailable` 归入 builtin non-macro surface，避免进入普通 macro executor 路径。
+     */
+    private fun collectMacroSurfacesFromAnnotations(
+        ownerNode: LighterASTNode,
+        modifiers: LightTreeModifierList,
+        ownerKind: MacroSurfaceOwnerKind,
+    ) {
+        if (modifiers.annotations.isEmpty()) return
+
+        val carriedAnnotations = modifiers.annotations.map { it.asText() }
+        modifiers.annotations.forEach { annotation ->
+            buildMacroSurfaceFromAnnotation(
+                ownerNode = ownerNode,
+                annotation = annotation,
+                ownerKind = ownerKind,
+                modifiers = modifiers.modifierTexts,
+                carriedAnnotations = carriedAnnotations,
+            )?.let { collectedMacroSurfaces += it }
+        }
+    }
+
+    private fun buildMacroSurfaceFromAnnotation(
+        ownerNode: LighterASTNode,
+        annotation: LighterASTNode,
+        ownerKind: MacroSurfaceOwnerKind,
+        modifiers: List<String>,
+        carriedAnnotations: List<String>,
+    ): MacroSurface? {
+        val rawName = extractAnnotationNameText(annotation) ?: return null
+        val shortName = rawName.substringAfterLast('.')
+        val qualifiedName = macroSurfaceQualifiedName(rawName)
+        val surfaceId = MacroSurfaceIdGenerator.next()
+        val attrNode = findFirstDescendantByType(annotation, CjNodeTypes.MACRO_ATTR)
+        val inputNode = findFirstDescendantByType(annotation, CjNodeTypes.MACRO_INPUT)
+            ?: findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
+        val attrTokens = tokenizeSurfacePayload(attrNode)
+        val inputTokens = tokenizeSurfacePayload(inputNode)
+        val isForced = annotation.asText().trimStart().startsWith("@!")
+        val common = MacroSurfaceCommon(
+            surfaceId = surfaceId,
+            qualifiedName = qualifiedName,
+            kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+            hasParenthesis = inputNode != null,
+            attrTokens = attrTokens,
+            inputTokens = inputTokens,
+            sourceRange = MacroSurfaceSourceRange(
+                source = annotation.toSource(),
+                startOffset = annotation.startOffset,
+                endOffset = annotation.endOffset,
+            ),
+            scopeContext = macroSurfaceScopeContext(),
+            modifiers = modifiers,
+            carriedAnnotations = carriedAnnotations,
+            capturedRawSyntax = annotation.asText(),
+            containerContext = macroSurfaceContainerContext(ownerNode),
+            replaceHandle = CfirReplaceHandle(handleId = surfaceId),
+        )
+
+        if (shortName == "IfAvailable") {
+            return IfAvailableSurface(
+                surfaceId = common.surfaceId,
+                qualifiedName = common.qualifiedName,
+                kind = common.kind,
+                hasParenthesis = common.hasParenthesis,
+                attrTokens = common.attrTokens,
+                inputTokens = common.inputTokens,
+                sourceRange = common.sourceRange,
+                scopeContext = common.scopeContext,
+                modifiers = common.modifiers,
+                carriedAnnotations = common.carriedAnnotations,
+                capturedRawSyntax = common.capturedRawSyntax,
+                containerContext = common.containerContext,
+                replaceHandle = common.replaceHandle,
+                branchTokens = inputTokens,
+            )
+        }
+
+        return when (ownerKind) {
+            MacroSurfaceOwnerKind.DECLARATION -> MacroSurfaceDecl(
+                surfaceId = common.surfaceId,
+                qualifiedName = common.qualifiedName,
+                kind = common.kind,
+                hasParenthesis = common.hasParenthesis,
+                attrTokens = common.attrTokens,
+                inputTokens = common.inputTokens,
+                sourceRange = common.sourceRange,
+                scopeContext = common.scopeContext,
+                modifiers = common.modifiers,
+                carriedAnnotations = common.carriedAnnotations,
+                capturedRawSyntax = common.capturedRawSyntax,
+                containerContext = common.containerContext,
+                replaceHandle = common.replaceHandle,
+            )
+            MacroSurfaceOwnerKind.PARAMETER -> MacroSurfaceParam(
+                surfaceId = common.surfaceId,
+                qualifiedName = common.qualifiedName,
+                kind = common.kind,
+                hasParenthesis = common.hasParenthesis,
+                attrTokens = common.attrTokens,
+                inputTokens = common.inputTokens,
+                sourceRange = common.sourceRange,
+                scopeContext = common.scopeContext,
+                modifiers = common.modifiers,
+                carriedAnnotations = common.carriedAnnotations,
+                capturedRawSyntax = common.capturedRawSyntax,
+                containerContext = common.containerContext,
+                replaceHandle = common.replaceHandle,
+            )
+        }
+    }
+
+    private data class MacroSurfaceCommon(
+        val surfaceId: Long,
+        val qualifiedName: FqName?,
+        val kind: MacroSurface.Kind,
+        val hasParenthesis: Boolean,
+        val attrTokens: List<MacroSurfaceToken>,
+        val inputTokens: List<MacroSurfaceToken>,
+        val sourceRange: MacroSurfaceSourceRange,
+        val scopeContext: MacroSurfaceScopeContext,
+        val modifiers: List<String>,
+        val carriedAnnotations: List<String>,
+        val capturedRawSyntax: String,
+        val containerContext: MacroSurfaceContainerContext,
+        val replaceHandle: CfirReplaceHandle,
+    )
+
+    private fun tokenizeSurfacePayload(node: LighterASTNode?): List<MacroSurfaceToken> {
+        return MacroPayloadTokenizer.tokenize(
+            payload = node?.asText(),
+            baseOffset = node?.startOffset ?: 0,
+        )
+    }
+
+    private fun extractAnnotationNameText(annotation: LighterASTNode): String? {
+        val nameNode = findAnnotationNameNode(annotation) ?: return null
+        return nameNode.asText().trim().takeIf { it.isNotEmpty() }
+    }
+
+    private fun findAnnotationNameNode(annotation: LighterASTNode): LighterASTNode? {
+        var result: LighterASTNode? = null
+
+        fun visit(node: LighterASTNode) {
+            when (node.tokenType) {
+                CjNodeTypes.VALUE_ARGUMENT_LIST,
+                CjNodeTypes.MACRO_INPUT,
+                CjNodeTypes.MACRO_ATTR,
+                -> return
+                CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
+                CjNodeTypes.REFERENCE_EXPRESSION,
+                -> result = node
+            }
+            tree.forEachChildren(node, ::visit)
+        }
+
+        visit(annotation)
+        return result
+    }
+
+    private fun findFirstDescendantByType(
+        node: LighterASTNode,
+        tokenType: com.intellij.psi.tree.IElementType,
+    ): LighterASTNode? {
+        if (node.tokenType == tokenType) return node
+        tree.forEachChildren(node) { child ->
+            findFirstDescendantByType(child, tokenType)?.let { return it }
+        }
+        return null
+    }
+
+    private fun macroSurfaceQualifiedName(rawName: String): FqName {
+        val normalizedName = rawName.trim()
+        if (normalizedName.contains('.')) return FqName(normalizedName)
+
+        val name = Name.identifier(normalizedName)
+        return if (packageFqName.isRoot) {
+            FqName.topLevel(name)
+        } else {
+            packageFqName.child(name)
+        }
+    }
+
+    private fun macroSurfaceScopeContext(): MacroSurfaceScopeContext {
+        val classFqName = (containerSymbolIfAny as? CfirClassLikeSymbol<*>)?.classId?.asSingleFqName()
+        val functionName = (containerSymbolIfAny as? CfirCallableSymbol<*>)?.name
+        return MacroSurfaceScopeContext(
+            packageFqName = packageFqName,
+            enclosingClassFqName = classFqName,
+            enclosingFunctionName = functionName,
+        )
+    }
+
+    private fun macroSurfaceContainerContext(ownerNode: LighterASTNode): MacroSurfaceContainerContext {
+        return MacroSurfaceContainerContext(
+            outerDeclarationKind = outerDeclarationKind(ownerNode),
+            isInsidePrimaryConstructor = ownerNode.tokenType == CjNodeTypes.PRIMARY_CONSTRUCTOR ||
+                    hasAncestor(ownerNode, CjNodeTypes.PRIMARY_CONSTRUCTOR),
+            isInsideEnumBody = ownerNode.tokenType == CjNodeTypes.ENUM_BODY || hasAncestor(ownerNode, CjNodeTypes.ENUM_BODY),
+            isInsideBlock = hasAncestor(ownerNode, CjNodeTypes.BLOCK) || hasAncestor(ownerNode, CjNodeTypes.CASE_BLOCK),
+            commaListPosition = commaListPosition(ownerNode),
+        )
+    }
+
+    private fun outerDeclarationKind(ownerNode: LighterASTNode): MacroSurfaceContainerContext.OuterDeclarationKind {
+        var current = ownerNode.getParent()
+        while (current != null) {
+            when (current.tokenType) {
+                CjNodeTypes.ENUM_BODY -> return MacroSurfaceContainerContext.OuterDeclarationKind.ENUM_BODY
+                CjNodeTypes.INTERFACE_BODY -> return MacroSurfaceContainerContext.OuterDeclarationKind.INTERFACE_BODY
+                CjNodeTypes.CLASS_BODY -> return when (containerSymbolIfAny) {
+                    is CfirStructSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.STRUCT_BODY
+                    is CfirEnumSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.ENUM_BODY
+                    is CfirInterfaceSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.INTERFACE_BODY
+                    else -> MacroSurfaceContainerContext.OuterDeclarationKind.CLASS_BODY
+                }
+                CjNodeTypes.PROPERTY_BODY -> return MacroSurfaceContainerContext.OuterDeclarationKind.PROPERTY_BODY
+                CjNodeTypes.BLOCK,
+                CjNodeTypes.CASE_BLOCK,
+                -> return MacroSurfaceContainerContext.OuterDeclarationKind.FUNCTION_BODY
+            }
+            current = current.getParent()
+        }
+
+        return if (context.inLocalContext) {
+            MacroSurfaceContainerContext.OuterDeclarationKind.FUNCTION_BODY
+        } else {
+            MacroSurfaceContainerContext.OuterDeclarationKind.TOP_LEVEL
+        }
+    }
+
+    private fun hasAncestor(node: LighterASTNode, tokenType: com.intellij.psi.tree.IElementType): Boolean {
+        var current = node.getParent()
+        while (current != null) {
+            if (current.tokenType == tokenType) return true
+            current = current.getParent()
+        }
+        return false
+    }
+
+    private fun commaListPosition(node: LighterASTNode): Int? {
+        val parent = node.getParent()?.takeIf { it.tokenType == CjNodeTypes.VALUE_PARAMETER_LIST } ?: return null
+        return tree.getChildrenByType(parent, CjNodeTypes.VALUE_PARAMETER).indexOf(node).takeIf { it >= 0 }
     }
 
     // ===== 文件级构建辅助 =====

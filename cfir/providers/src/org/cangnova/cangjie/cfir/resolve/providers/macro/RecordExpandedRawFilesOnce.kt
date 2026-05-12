@@ -22,10 +22,9 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
  * - source provider state（已由 [CfirProviderImpl] 状态机强制）
  * - no `CfirMacroExpression` macro call（架构 guard，本函数内置）
  *
- * 由于 4a 阶段 PSI / LightTree builder 仍可能产出旧 [CfirMacroExpression]，
- * 本函数对它的检测策略由 [enforceLegacyMacroExpressionAbsent] 控制：
- * - `true`：发现残留即抛出（baseline 最终目标，Batch 10 默认开启）；
- * - `false`：日志 warn 后继续注册（4a 默认值，避免破坏现有 expansion path）。
+ * 当前冻结基线默认强制拒绝旧 [CfirMacroExpression] 进入 final provider：
+ * - `true`：发现残留即抛出（Batch 10 默认值）；
+ * - `false`：仅供显式架构审计/诊断调用方选择 warn 后继续注册，生产默认路径不得依赖该分支。
  *
  * @param provider 当前 session 的 source provider
  * @param files 经 [MacroConstructionService] 产出的可注册文件
@@ -48,7 +47,7 @@ fun recordExpandedRawFilesOnce(
         if (enforceLegacyMacroExpressionAbsent) {
             error(msg)
         }
-        // 4a 阶段：仅 warn 到 stderr，避免破坏现有 expansion path
+        // 显式关闭守卫时仅 warn 到 stderr；默认生产路径不应进入该分支。
         System.err.println("[macro-construction] WARN $msg")
     }
 

@@ -13,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjRealSourceElementKind
@@ -34,6 +35,12 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
         val source = result.source as? AbstractCjSourceElement ?: return
         val actualType = result.coneTypeOrNull ?: return
         if (actualType is ConeErrorType) return
+        if (result is CfirMatchExpression && result.branches.any { branch ->
+                branch.body.coneTypeOrNull is ConeErrorType || branch.coneTypeOrNull is ConeErrorType
+            }
+        ) {
+            return
+        }
         if (expression.source?.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor) return
 
         val containingFunction = expression.target.labeledElement

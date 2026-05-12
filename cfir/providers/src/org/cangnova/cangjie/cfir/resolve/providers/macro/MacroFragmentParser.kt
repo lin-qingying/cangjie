@@ -51,6 +51,8 @@ sealed class MacroFragmentResult {
         override val originNode: MacroCallNode,
         val tokens: List<MacroSurfaceToken>,
         val mode: MacroFragmentParser.Mode,
+        /** raw builder 重新解析得到的 construction-only payload，由 stable splicer 消费。 */
+        val payload: Any? = null,
     ) : MacroFragmentResult()
 
     data class CustomAnnotation(
@@ -102,8 +104,8 @@ data class MacroReplaceSlot(
 /**
  * Construction-only splice 入口：把一组 [MacroReplaceSlot] 应用到 final CFIR。
  *
- * Batch 8 阶段仅承载接口；具体实现替换由 Batch 10
- * "DefaultMacroReplacer 退场 + 真实 splice" 一并完成。
+ * Batch 8 阶段仅承载接口；具体实现替换由 Batch 10 的 stable-splice
+ * 接入阶段完成。
  */
 interface MacroStableSplicer {
     /**

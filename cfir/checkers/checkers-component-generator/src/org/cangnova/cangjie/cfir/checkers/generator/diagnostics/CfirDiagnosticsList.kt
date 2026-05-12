@@ -432,7 +432,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * 真实检测逻辑后续按对应 checker 接入。
      */
     val EXCEPTION by object : DiagnosticGroup("Exception") {
-        val THROW_EXPR_WITH_WRONG_TYPE by error<PsiElement>()
+        val THROW_EXPR_WITH_WRONG_TYPE by error<PsiElement>(PositioningStrategy.THROW_KEYWORD)
 
         val CATCH_TYPE_MUST_EXTEND_EXCEPTION by error<CjTypeReference>()
 

@@ -14,5 +14,5 @@ func useTypePosition(): Unit {
 }
 
 func useQualifier(): Int64 {
-    return <!CANNOT_INFER_PARAMETER_TYPE!>Box<!>.create()
+    return <!UNABLE_TO_INFER_GENERIC_FUNC!>Box.create()<!>
 }

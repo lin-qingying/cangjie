@@ -6,7 +6,7 @@ class Box {
 }
 
 class AmbiguousBox {
-    <!CONFLICTING_OVERLOADS!>init(value: Int64, left!: Int64 = 0)<!> {}
+    init(value: Int64, left!: Int64 = 0) {}
     <!CONFLICTING_OVERLOADS!>init(value: Int64, right!: Int64 = 0)<!> {}
 }
 

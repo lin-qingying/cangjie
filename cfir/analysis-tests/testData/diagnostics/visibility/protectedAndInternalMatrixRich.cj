@@ -53,7 +53,7 @@ package outsider
 import visibilitymatrix.*
 
 func unrelatedPackageInternal(base: Base): Int64 {
-    return base.<!UNRESOLVED_REFERENCE!>internalValue<!>()
+    return base.<!INVISIBLE_MEMBER!>internalValue<!>()
 }
 
 func unrelatedPackageProtected(base: Base): Int64 {

@@ -5,6 +5,9 @@ import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnos
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferType
+import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -14,13 +17,18 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.expressions.CfirPerformExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirSmartCastExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
@@ -28,12 +36,17 @@ import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 浮点字面量范围检查器
@@ -100,6 +113,7 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
         val type = expression.coneTypeOrNull
         if (type !is ConeErrorType) return
         if (expression is CfirBlock) return
+        if (expression is CfirMatchBranch && expression.body.coneTypeOrNull is ConeErrorType) return
         if (expression is CfirSmartCastExpression) return
 
         if (expression is CfirDiagnosticHolder) return
@@ -119,6 +133,11 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
         val source = expression.source
         if (source != null) {
             val diagnostic = type.diagnostic
+            if (diagnostic is ConeMismatchingHandleBlockError &&
+                (expression is CfirTryExpression || expression is CfirHandleClause)
+            ) {
+                return
+            }
             if (diagnostic is ConeCannotInferType) return
             if (diagnostic is ConeSimpleDiagnostic) {
                 when (diagnostic.kind) {
@@ -126,9 +145,16 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
                     else -> {}
                 }
             }
+            val diagnosticSource = when {
+                expression is CfirPerformExpression && diagnostic is ConeCommandIncompatibleTypeError ->
+                    expression.expression.source ?: source
+                expression is CfirHandleClause && diagnostic is ConeCommandHandleTypeError ->
+                    expression.commandPattern.typeRefs.firstOrNull()?.source ?: expression.commandPattern.source ?: source
+                else -> source
+            }
             ErrorNodeDiagnosticCollectorComponent.reportCfirDiagnostic(
                 diagnostic,
-                source,
+                diagnosticSource,
                 context,
                 reporter = reporter,
             )
@@ -215,3 +241,76 @@ object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
         }
     }
 }
+
+/**
+ * throw 表达式类型检查。
+ *
+ * 对齐官方 C++ `TypeCheckExpr/ThrowExpr.cpp`：
+ * - 被抛表达式必须是 `std.core.Exception` 或 `std.core.Error` 的子类型；
+ * - `throw` 表达式本身在 resolve 阶段保持 `Nothing`，这里只负责诊断。
+ */
+object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirThrowExpression) {
+        val thrownType = expression.exception.coneTypeOrNull ?: return
+        if (thrownType is ConeErrorType) return
+        if (thrownType == ConePrimitiveType.NOTHING) return
+        if (thrownType.isSubtypeOfExceptionOrError(context)) return
+
+        reporter.reportOn(
+            source = expression.source,
+            factory = CfirErrors.THROW_EXPR_WITH_WRONG_TYPE,
+        )
+    }
+}
+
+/**
+ * try/catch 异常类型检查。
+ *
+ * 对齐官方 C++ `TypeCheckPattern.cpp#ChkExceptTypePattern`：
+ * - catch 参数类型必须是 `std.core.Exception` 或 `std.core.Error` 的子类型；
+ * - 后续 catch 类型若已被前面的 catch 类型覆盖，报告 `USELESS_EXCEPTION_TYPE`。
+ */
+object CfirCatchTypeChecker : CfirTryExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirTryExpression) {
+        val includedTypes = mutableListOf<ConeCangJieType>()
+
+        for (catchClause in expression.catches) {
+            val typeRef = catchClause.parameter.returnTypeRef as? CfirResolvedTypeRef ?: continue
+            val catchType = typeRef.coneType
+            if (catchType is ConeErrorType) continue
+
+            if (!catchType.isSubtypeOfExceptionOrError(context)) {
+                reporter.reportOn(
+                    source = typeRef.source ?: catchClause.parameter.source,
+                    factory = CfirErrors.CATCH_TYPE_MUST_EXTEND_EXCEPTION,
+                )
+                continue
+            }
+
+            if (includedTypes.any { previous -> catchType.isSubtypeOf(previous, context) }) {
+                reporter.reportOn(
+                    source = typeRef.source ?: catchClause.parameter.source,
+                    factory = CfirErrors.USELESS_EXCEPTION_TYPE,
+                )
+            } else {
+                includedTypes += catchType
+            }
+        }
+    }
+}
+
+private fun ConeCangJieType.isSubtypeOfExceptionOrError(
+    context: CheckerContext,
+): Boolean {
+    val exceptionType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Exception.toLookupTag())
+    val errorType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Error.toLookupTag())
+    return isSubtypeOf(exceptionType, context) || isSubtypeOf(errorType, context)
+}
+
+private fun ConeCangJieType.isSubtypeOf(
+    superType: ConeCangJieType,
+    context: CheckerContext,
+): Boolean =
+    AbstractTypeChecker.isSubtypeOf(context.session.typeContext, this, superType) == true

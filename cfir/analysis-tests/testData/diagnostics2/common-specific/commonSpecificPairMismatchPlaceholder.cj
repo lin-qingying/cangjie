@@ -3,8 +3,8 @@ common interface Printable {
     func print(): Unit
 }
 
-specific interface Printable {
+specific interface <!CLASSIFIER_REDECLARATION!>Printable<!> {
     func print(): Unit
 }
 
-<!NOT_MATCHED, SPECIFIC_HAS_DIFFERENT_KIND!>specific class Printable {}<!>
+specific class <!CLASSIFIER_REDECLARATION!>Printable<!> {}

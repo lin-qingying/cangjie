@@ -126,7 +126,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val ILLEGAL_SCOPE_USE_OF_ANNOTATION: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ILLEGAL_SCOPE_USE_OF_ANNOTATION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // Exception
-    val THROW_EXPR_WITH_WRONG_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_THROW_EXPR_WITH_WRONG_TYPE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val THROW_EXPR_WITH_WRONG_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_THROW_EXPR_WITH_WRONG_TYPE", Severity.ERROR, SourceElementPositioningStrategies.THROW_KEYWORD, PsiElement::class, getRendererFactory())
     val CATCH_TYPE_MUST_EXTEND_EXCEPTION: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CATCH_TYPE_MUST_EXTEND_EXCEPTION", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
     val USELESS_EXCEPTION_TYPE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_USELESS_EXCEPTION_TYPE", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
 

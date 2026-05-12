@@ -147,6 +147,18 @@ object LightTreePositioningStrategies {
             return markElement(mutModifier, startOffset, endOffset, tree, node)
         }
     }
+    val THROW_KEYWORD: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val throwKeyword = tree.findChildByType(node, CjTokens.THROW_KEYWORD)
+                ?: return super.mark(node, startOffset, endOffset, tree)
+            return markElement(throwKeyword, startOffset, endOffset, tree, node)
+        }
+    }
 
     val OPERATOR: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(
@@ -334,6 +346,7 @@ private fun LighterASTNode.isExpressionLike(): Boolean {
 
 private fun FlyweightCapableTreeStructure<LighterASTNode>.nameIdentifier(node: LighterASTNode): LighterASTNode? =
     findChildByType(node, CjTokens.IDENTIFIER)
+        ?: findChildByType(node, CjTokens.INIT_KEYWORD)
 
 fun FlyweightCapableTreeStructure<LighterASTNode>.collectDescendantsOfType(
     node: LighterASTNode, type: IElementType,

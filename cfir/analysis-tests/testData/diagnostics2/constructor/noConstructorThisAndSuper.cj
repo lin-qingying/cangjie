@@ -19,6 +19,6 @@ open class Base {
 
 class Child <: Base {
     init() {
-        super(<!NO_VALUE_FOR_PARAMETER!>1<!>)
+        super<!NO_VALUE_FOR_PARAMETER!>(1)<!>
     }
 }

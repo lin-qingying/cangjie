@@ -6,7 +6,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -118,11 +117,6 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             factory = CfirErrors.CANNOT_WEAKEN_ACCESS_PRIVILEGE,
             a = firstIncompatibleOverridden.name,
             b = firstIncompatibleOverridden.cfir.status.visibility,
-            positioningStrategy = if (declaration.status.isVisibilityExplicit) {
-                SourceElementPositioningStrategies.VISIBILITY_MODIFIER
-            } else {
-                null
-            },
         )
     }
 

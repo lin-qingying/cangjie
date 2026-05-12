@@ -530,15 +530,15 @@ open class CfirDeclarationsResolveTransformer(
                     aliasName = importPath.alias
                     aliasSource = null
                 }
-            }
+        }
         return buildList {
-            // 声明解析阶段同样要先看到当前文件顶层声明，保证后续类型与 extend 规则建立在正确的本地符号之上。
-            add(CfirFileDeclaredTopLevelScope(file))
-            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
-            add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
-            add(CfirExplicitStarImportingScope(imports, symbolProvider))
-            add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+            // Scope 列表按低优先级到高优先级排列，声明解析阶段同样保持本地声明优先。
             add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
+            add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+            add(CfirExplicitStarImportingScope(imports, symbolProvider))
+            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
+            add(CfirFileDeclaredTopLevelScope(file))
+            add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
         }
     }
     // ── Named function ────────────────────────────────────────────────────
