@@ -330,7 +330,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 构造器委托调用形成递归
-        val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
+        val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
         // this/super 构造器委托调用出现在非法位置
         val ILLEGAL_THIS_OR_SUPER_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
@@ -338,7 +338,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 父类不存在可隐式调用的无参构造器，要求显式 super(...)
-        val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>()
+        val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
         // break/continue 必须位于循环体内
         val INVALID_LOOP_CONTROL by error<PsiElement>()
@@ -356,7 +356,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("variableName")
         }
 
-        val CLASS_UNINITIALIZED_FIELD by error<PsiElement> {
+        val CLASS_UNINITIALIZED_FIELD by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("fieldName")
         }
     }
@@ -1995,6 +1995,68 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // createMock/createSpy 的泛型包装函数需要 @Frozen 注解
         val MOCK_FROZEN_REQUIRED by error<PsiElement> {
             parameter<Name>("functionName")
+        }
+    }
+
+    /**
+     * Macro construction step 相关诊断（baseline 第 9-10 节）。
+     *
+     * 这些 factory 都对应 `MacroExpansionRegistry` 的
+     * `MacroConstructionDiagnostic.Kind` 枚举值；
+     * ordinary checker 只看 final CFIR，渲染时通过
+     * `originSurfaceId` 反查 registry 找到原 macro 位点。
+     */
+    val MACRO by object : DiagnosticGroup("Macro") {
+        // baseline 第 9 节 "MACRO_NOT_EXPANDED": IDE degraded 模式产物
+        // —— typed error placeholder 替代了 macro call，原 macro 调用未展开。
+        val MACRO_NOT_EXPANDED by error<PsiElement> {
+            parameter<String>("macroName")
+        }
+
+        // baseline 第 9 节 "MACRO_EXPANSION_FAILED": construction step 中
+        // executor 调用或 fragment parse 失败、且未降级。
+        val MACRO_EXPANSION_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        // baseline 第 4 节 "同包 macro def/call": 源包内同时存在 macro 定义和调用。
+        val MACRO_SAME_PACKAGE_DEF_CALL by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<FqName>("packageName")
+        }
+
+        // baseline Batch 5 "alias conflict": 同一 alias 短名绑到多个 fqn。
+        val MACRO_ALIAS_CONFLICT by error<PsiElement> {
+            parameter<Name>("alias")
+            parameter<Collection<FqName>>("targets")
+        }
+
+        // baseline 第 4 节 "no executor / unresolved / cannot-open-lib /
+        // REEVALFAILED" 诊断 typed factory。
+        val MACRO_EXECUTOR_UNAVAILABLE by error<PsiElement> {
+            parameter<String>("hint")
+        }
+
+        val MACRO_CANNOT_OPEN_LIB by error<PsiElement> {
+            parameter<String>("libPath")
+            parameter<String>("reason")
+        }
+
+        val MACRO_REEVALUATION_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_UNRESOLVED by error<PsiElement> {
+            parameter<Name>("macroName")
+        }
+
+        // baseline Batch 7 cycle detection: 同 fingerprint 在 forest evaluator
+        // 多次出现，超出 iteration limit。
+        val MACRO_CYCLE by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<Collection<String>>("cycleChain")
         }
     }
 }
