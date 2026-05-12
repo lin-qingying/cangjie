@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -23,6 +24,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
@@ -384,6 +386,12 @@ class CfirProviderImpl(
                 val callableId = CallableId(packageFqName, declaration.name)
                 state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                 state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(declaration.name)
+            }
+
+            is CfirConstructor -> {
+                val symbol = declaration.symbol as? CfirConstructorSymbol ?: return
+                state.callableContainerFileMap[symbol] = containingFile
+                state.callableOwnerClassIdMap[symbol] = containingClass
             }
 
             is CfirFunction -> {
