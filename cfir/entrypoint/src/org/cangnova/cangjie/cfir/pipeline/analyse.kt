@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesO
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
+import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.parsing.CangJieLightParser
@@ -185,7 +186,11 @@ fun CfirSession.runCheckers(
     diagnosticsCollector: BaseDiagnosticsCollector,
 ): Map<CfirFile, List<CjDiagnostic>> {
     val collector = DiagnosticComponentsFactory.create(this, scopeSession)
-    val diagnosticsReporter = PendingDiagnosticsReporterImpl(diagnosticsCollector)
+    val registry = macroExpansionRegistry
+    val diagnosticsReporter = PendingDiagnosticsReporterImpl(
+        delegate = diagnosticsCollector,
+        sourceMapper = { source -> registry?.originSourceForGeneratedSource(source) },
+    )
     for (file in firFiles) {
         withFileAnalysisExceptionWrapping(file) {
             collector.collectDiagnostics(file, diagnosticsReporter)

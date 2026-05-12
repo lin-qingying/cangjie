@@ -39,10 +39,13 @@ class MacroCallNode internal constructor(
     children: List<MacroCallNode>,
 ) {
     private val _children: MutableList<MacroCallNode> = children.toMutableList()
+    private val _childEdges: MutableList<MacroCallEdge> = mutableListOf()
     val children: List<MacroCallNode> get() = _children
+    val childEdges: List<MacroCallEdge> get() = _childEdges
 
-    internal fun addChild(child: MacroCallNode) {
+    internal fun addChild(child: MacroCallNode, edge: MacroCallEdge) {
         _children += child
+        _childEdges += edge
     }
 
     /** Baseline 第 7 节"parentNames"：从 root 到自身路径上各级 macro 名（去重）。 */
@@ -55,8 +58,31 @@ class MacroCallNode internal constructor(
                 current = current.parent
             }
             return acc.reversed()
-        }
+    }
 }
+
+/**
+ * Child surface 位于 parent payload 的哪条 token 通道。
+ */
+enum class MacroPayloadChannel {
+    ATTR,
+    INPUT,
+    UNRESOLVED,
+}
+
+/**
+ * Parent -> direct child 的稳定替换边。
+ *
+ * [replaceRange] 是 child macro surface 在宿主源码中的完整范围；[channel]
+ * 由 parent 的 attr/input token 覆盖关系判定，用于后续只替换对应 payload
+ * 通道中的 token 段，禁止退化为 flatten。
+ */
+data class MacroCallEdge(
+    val parent: MacroCallNode,
+    val child: MacroCallNode,
+    val channel: MacroPayloadChannel,
+    val replaceRange: MacroSurfaceSourceRange?,
+)
 
 /**
  * Macro forest 构造器。
@@ -105,7 +131,15 @@ object MacroCallForestBuilder {
                 val parentNode = nodeByIdentity.getValue(parentEntry.third)
                 val merged = MacroCallNode(surface = surface, parent = parentNode, children = node.children)
                 nodeByIdentity[surface] = merged
-                parentNode.addChild(merged)
+                parentNode.addChild(
+                    child = merged,
+                    edge = MacroCallEdge(
+                        parent = parentNode,
+                        child = merged,
+                        channel = parentNode.surface.payloadChannelFor(surface),
+                        replaceRange = surface.sourceRange,
+                    ),
+                )
             }
             stack.addLast(entry)
         }
@@ -119,6 +153,19 @@ object MacroCallForestBuilder {
                 ),
             )
         return MacroCallForest(roots)
+    }
+
+    private fun MacroSurface.payloadChannelFor(child: MacroSurface): MacroPayloadChannel {
+        val range = child.sourceRange ?: return MacroPayloadChannel.UNRESOLVED
+        return when {
+            inputTokens.containsSurfaceRange(range) -> MacroPayloadChannel.INPUT
+            attrTokens.containsSurfaceRange(range) -> MacroPayloadChannel.ATTR
+            else -> MacroPayloadChannel.UNRESOLVED
+        }
+    }
+
+    private fun List<MacroSurfaceToken>.containsSurfaceRange(range: MacroSurfaceSourceRange): Boolean {
+        return any { token -> token.startOffset >= range.startOffset && token.endOffset <= range.endOffset }
     }
 }
 
@@ -135,14 +182,30 @@ data class MacroExpansionFingerprint(
     val inputTokensHash: Int,
 ) {
     companion object {
-        fun of(node: MacroCallNode): MacroExpansionFingerprint {
+        fun of(
+            node: MacroCallNode,
+            childResults: Map<MacroCallNode, List<MacroSurfaceToken>> = emptyMap(),
+        ): MacroExpansionFingerprint {
             val surface = node.surface
             return MacroExpansionFingerprint(
                 qualifiedName = surface.qualifiedName?.asString(),
                 parentNames = node.parentNames,
-                attrTokensHash = surface.attrTokens.map { it.text }.hashCode(),
-                inputTokensHash = surface.inputTokens.map { it.text }.hashCode(),
+                attrTokensHash = surface.attrTokens.textHashWithChildResults(childResults),
+                inputTokensHash = surface.inputTokens.textHashWithChildResults(childResults),
             )
+        }
+
+        private fun List<MacroSurfaceToken>.textHashWithChildResults(
+            childResults: Map<MacroCallNode, List<MacroSurfaceToken>>,
+        ): Int {
+            if (childResults.isEmpty()) return map { it.text }.hashCode()
+            return buildList {
+                addAll(this@textHashWithChildResults.map { it.text })
+                for ((child, result) in childResults) {
+                    add(child.surface.surfaceId.toString())
+                    addAll(result.map { it.text })
+                }
+            }.hashCode()
         }
     }
 }
@@ -185,17 +248,20 @@ class MacroForestEvaluator(
         val maxPerNode = maxIterations.coerceAtLeast(1)
 
         for (node in forest.allNodes) {
-            val fingerprint = MacroExpansionFingerprint.of(node)
+            val childResults = node.children.mapNotNull { child ->
+                results[child]?.let { child to it }
+            }.toMap()
+            if (childResults.size != node.children.size) {
+                continue
+            }
+
+            val fingerprint = MacroExpansionFingerprint.of(node, childResults)
             val history = seenFingerprints.getOrPut(fingerprint) { mutableListOf() }
             history += node
             if (history.size > maxPerNode) {
                 onCycle(MacroExpansionCycle(fingerprint, history.toList()))
                 continue
             }
-
-            val childResults = node.children.mapNotNull { child ->
-                results[child]?.let { child to it }
-            }.toMap()
 
             val expanded = expand(node, childResults) ?: continue
             results[node] = expanded

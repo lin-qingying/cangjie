@@ -816,14 +816,6 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformQuoteExpression(quoteExpression, data)
     }
 
-    open fun transformMacroExpression(macroExpression: CfirMacroExpression, data: D): CfirStatement {
-        return transformElement(macroExpression, data)
-    }
-
-    final override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: D): CfirStatement {
-        return transformMacroExpression(macroExpression, data)
-    }
-
     open fun transformSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): CfirStatement {
         return transformElement(subscriptExpression, data)
     }

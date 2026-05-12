@@ -48,6 +48,49 @@ class MacroCallForestTest {
     }
 
     @Test
+    fun `forest records child payload channel from parent token coverage`() {
+        val inputChild = surface(id = 2, name = "InputChild", start = 20, end = 30)
+        val attrChild = surface(id = 3, name = "AttrChild", start = 50, end = 60)
+        val parent = surface(
+            id = 1,
+            name = "Parent",
+            start = 0,
+            end = 100,
+            inputTokens = listOf(token("@InputChild", 20, 30)),
+        ).copy(
+            attrTokens = listOf(token("@AttrChild", 50, 60)),
+        )
+
+        val forest = MacroCallForestBuilder.build(listOf(parent, attrChild, inputChild))
+        val edges = forest.roots.single().childEdges.associate {
+            it.child.surface.qualifiedName!!.shortName().asString() to it.channel
+        }
+
+        assertEquals(MacroPayloadChannel.INPUT, edges.getValue("InputChild"))
+        assertEquals(MacroPayloadChannel.ATTR, edges.getValue("AttrChild"))
+    }
+
+    @Test
+    fun `evaluator skips parent when a direct child has no expansion result`() {
+        val outer = surface(id = 1, name = "Outer", start = 0, end = 100)
+        val inner = surface(id = 2, name = "Inner", start = 20, end = 30)
+        val forest = MacroCallForestBuilder.build(listOf(outer, inner))
+        val visited = mutableListOf<String>()
+
+        val results = MacroForestEvaluator().evaluate(
+            forest = forest,
+            expand = { node, _ ->
+                val name = node.surface.qualifiedName!!.shortName().asString()
+                visited += name
+                if (name == "Inner") null else listOf(token("${name.lowercase()}Result"))
+            },
+        )
+
+        assertEquals(listOf("Inner"), visited)
+        assertEquals(emptyMap<MacroCallNode, List<MacroSurfaceToken>>(), results)
+    }
+
+    @Test
     fun `evaluator reports fingerprint cycle through callback`() {
         val first = surface(id = 1, name = "Loop", start = 0, end = 10, inputTokens = listOf(token("same")))
         val second = surface(id = 2, name = "Loop", start = 20, end = 30, inputTokens = listOf(token("same")))
@@ -103,10 +146,12 @@ class MacroCallForestTest {
         )
     }
 
-    private fun token(text: String): MacroSurfaceToken = MacroSurfaceToken(
+    private fun token(text: String): MacroSurfaceToken = token(text, 0, text.length)
+
+    private fun token(text: String, startOffset: Int, endOffset: Int): MacroSurfaceToken = MacroSurfaceToken(
         text = text,
-        startOffset = 0,
-        endOffset = text.length,
+        startOffset = startOffset,
+        endOffset = endOffset,
         kindName = "TEST",
     )
 }

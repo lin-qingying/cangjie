@@ -90,6 +90,14 @@ private object CorrespondingPropertyKey : CfirDeclarationDataKey()
  */
 var CfirValueParameter.correspondingProperty: CfirProperty? by CfirDeclarationDataRegistry.data(CorrespondingPropertyKey)
 
+private object IsCatchParameterPropertyKey : CfirDeclarationDataKey()
+
+/**
+ * catch 参数在 CFIR 中按 local property 建模，但语义上不是普通属性声明。
+ * 用这个标记把它和常规 `prop` 区分开，供 checker / renderer / CFA 精确识别。
+ */
+var CfirProperty.isCatchParameter: Boolean? by CfirDeclarationDataRegistry.data(IsCatchParameterPropertyKey)
+
 private object ContainingClassKey : CfirDeclarationDataKey()
 fun CfirCallableSymbol<*>.dispatchReceiverClassLookupTagOrNull(): ConeClassLikeLookupTag? =
     cfir.dispatchReceiverClassLookupTagOrNull()

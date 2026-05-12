@@ -954,16 +954,6 @@ class CfirRenderer(
             println("}")
         }
 
-        override fun visitMacroExpression(macroExpression: CfirMacroExpression) {
-            val name = macroExpression.name?.asString() ?: "<macro>"
-            println("MACRO_EXPR($name) {")
-            printer.pushIndent()
-            macroExpression.attrText?.let { println("attr: \"$it\"") }
-            macroExpression.inputText?.let { println("input: \"$it\"") }
-            printer.popIndent()
-            println("}")
-        }
-
         override fun visitSubscriptExpression(subscript: CfirSubscriptExpression) {
             println("SUBSCRIPT {")
             printer.pushIndent()

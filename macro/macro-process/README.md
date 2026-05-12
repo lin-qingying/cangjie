@@ -1,10 +1,10 @@
 # macro/macro-process/ — 外部进程宏执行器
 
-`MacroExecutor` 的**生产实现**：通过外部子进程 `LSPMacroServer` 执行仓颉 native 宏函数。
+`MacroExecutor` 的**外部进程执行层**：抽象进程协议编排，并提供通过外部子进程 `LSPMacroServer` 执行仓颉 native 宏函数的具体实现。
 
 ## 关键包
 
-`org.cangnova.cangjie.macro.process` — `ProcessMacroExecutor` 主体、子进程生命周期管理、IO 流封装。
+`org.cangnova.cangjie.macro.process` — `ProcessMacroExecutor` 抽象基类、`LspMacroServerMacroExecutor` 具体后端、进程生命周期管理、IO 流封装。
 
 ## 通信协议
 

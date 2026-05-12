@@ -10,9 +10,6 @@
 
 package org.cangnova.cangjie.macro
 
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
-
 /**
  * 源码位置信息
  */
@@ -50,15 +47,6 @@ data class MacroCallInfo(
 )
 
 /**
- * 宏调用在 CFIR 树中的位置
- */
-data class MacroCallSite(
-    val expression: CfirMacroExpression,
-    val file: CfirFile,
-    val callInfo: MacroCallInfo,
-)
-
-/**
  * 宏诊断信息
  */
 data class MacroDiagnosticInfo(
@@ -91,22 +79,3 @@ sealed class MacroExpansionResult {
         val diagnostics: List<MacroDiagnosticInfo> = emptyList(),
     ) : MacroExpansionResult()
 }
-
-/**
- * 宏替换输出
- */
-data class MacroReplacementOutput(
-    val files: List<CfirFile>,
-    val diagnostics: List<MacroDiagnosticInfo>,
-    val replacedCount: Int,
-)
-
-/**
- * 完整宏展开输出
- */
-data class MacroExpansionOutput(
-    val files: List<CfirFile>,
-    val diagnostics: List<MacroDiagnosticInfo>,
-    val expandedCount: Int,
-    val iterations: Int,
-)

@@ -268,7 +268,7 @@ object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker() {
  * try/catch 异常类型检查。
  *
  * 对齐官方 C++ `TypeCheckPattern.cpp#ChkExceptTypePattern`：
- * - catch 参数类型必须是 `std.core.Exception` 或 `std.core.Error` 的子类型；
+ * - catch 参数属性类型必须是 `std.core.Exception` 或 `std.core.Error` 的子类型；
  * - 后续 catch 类型若已被前面的 catch 类型覆盖，报告 `USELESS_EXCEPTION_TYPE`。
  */
 object CfirCatchTypeChecker : CfirTryExpressionChecker() {
@@ -297,6 +297,34 @@ object CfirCatchTypeChecker : CfirTryExpressionChecker() {
             } else {
                 includedTypes += catchType
             }
+        }
+    }
+}
+
+/**
+ * try-with-resources 资源类型检查。
+ *
+ * 对齐官方 `TypeCheckExpr/TryExpr.cpp`：资源说明表达式的结果类型必须实现 `std.core.Resource`，
+ * 但即使类型不匹配，资源绑定名和 try body 仍继续分析。
+ */
+object CfirTryResourceTypeChecker : CfirTryExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirTryExpression) {
+        if (expression.resources.isEmpty()) return
+
+        val resourceType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Resource.toLookupTag())
+        for (resource in expression.resources) {
+            val actualType = (resource.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+            if (actualType is ConeErrorType) continue
+            if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, resourceType) == true) continue
+
+            reporter.reportOn(
+                source = resource.source,
+                factory = CfirErrors.MISMATCHED_TYPES_BECAUSE,
+                a = resourceType,
+                b = actualType,
+                c = "try-with-resources requires std.core.Resource",
+            )
         }
     }
 }

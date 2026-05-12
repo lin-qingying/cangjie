@@ -779,7 +779,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
     val catchClause: Element by element(Expression, name = "Catch") {
         parent(expression)
-        +field("parameter", valueParameter, withTransform = true)
+        +field("parameter", property, withTransform = true)
         +field("body", block, withTransform = true)
     }
 
@@ -825,6 +825,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
     val tryExpression: Element by element(Expression, name = "TryExpression") {
         parent(expression)
+        +listField("resources", fieldVariable, withTransform = true)
         +field("tryBlock", block, withTransform = true)
         +listField("handlers", handleClause, withTransform = true)
         +listField("catches", catchClause, withTransform = true)
@@ -934,6 +935,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         parent(expression)
         +field("start", expression, withTransform = true)
         +field("end", expression, withTransform = true)
+        +field("step", expression, nullable = true, withTransform = true)
         +field("isInclusive", booleanType)
     }
 
@@ -974,13 +976,6 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +listField("interpolations", expression, withTransform = true)
     }
 
-
-    val macroExpression: Element by element(Expression, name = "MacroExpression") {
-        parent(expression)
-        +field("name", nameType, nullable = true)
-        +field("inputText", stringType, nullable = true)
-        +field("attrText", stringType, nullable = true)
-    }
 
     val subscriptExpression: Element by element(Expression, name = "SubscriptExpression") {
         parent(expression)

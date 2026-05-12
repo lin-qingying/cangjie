@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirLoopTarget
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.isCatchParameter
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjPsiSourceFileLinesMapping
@@ -45,6 +46,7 @@ import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjTokens
@@ -89,9 +91,8 @@ class PsiRawCfirBuilder(
      * [consumeCollectedMacroSurfaces] 取出列表，并交给
      * `org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles`。
      *
-     * 该 accumulator 与 `CfirMacroExpression` 节点同时生成；macro construction
-     * 会在 provider 注册前拒绝残留的旧节点，后续稳定 splice 接入后切换为
-     * "surface-only"。
+     * expression surface 使用 typed error carrier 作为稳定替换锚点；
+     * raw builder 不再为新 macro 调用生成旧 CFIR macro-expression carrier。
      */
     private val collectedMacroSurfaces: MutableList<MacroSurface> = mutableListOf()
 
@@ -175,10 +176,47 @@ class PsiRawCfirBuilder(
         return converter.convertDeclaration(cjDeclaration)
     }
 
+    /**
+     * Macro fragment reparse 入口。
+     *
+     * 片段不是完整文件，必须显式继承原 macro 位点的包上下文，保证
+     * fragment 内生成的 symbol/callableId 与宿主文件一致。
+     */
+    fun buildDeclarationInPackage(declaration: CjDeclaration, packageFqName: FqName): CfirDeclaration {
+        return withPackageContext(packageFqName) {
+            converter.convertDeclaration(declaration)
+        }
+    }
+
     override fun buildExpression(expression: PsiElement): CfirExpression {
         val cjExpression = expression as? CjExpression
             ?: error("Expected CjExpression but was ${expression::class.qualifiedName}")
         return converter.convertExpression(cjExpression)
+    }
+
+    /**
+     * Macro expression fragment reparse 入口。
+     */
+    fun buildExpressionInPackage(expression: CjExpression, packageFqName: FqName): CfirExpression {
+        return withPackageContext(packageFqName) {
+            converter.convertExpression(expression)
+        }
+    }
+
+    /**
+     * Macro parameter fragment reparse 入口。
+     *
+     * 参数 fragment 必须复用原宿主 callable symbol；不能通过临时 wrapper
+     * 函数生成新的 containing symbol 后再放回原函数参数列表。
+     */
+    fun buildValueParameterInPackage(
+        parameter: CjParameter,
+        containingSymbol: CfirBasedSymbol<*>,
+        packageFqName: FqName,
+    ): CfirValueParameter {
+        return withPackageContext(packageFqName) {
+            converter.convertValueParameter(parameter, containingSymbol)
+        }
     }
 
     private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
@@ -229,8 +267,7 @@ class PsiRawCfirBuilder(
         // ===== 声明转换 =====
 
         fun convertDeclaration(psi: CjDeclaration): CfirDeclaration {
-            collectMacroAnnotationSurfaces(psi, AnnotationSurfaceTarget.DECLARATION)
-            return when (psi) {
+            val declaration = when (psi) {
                 is CjClass -> convertClass(psi, CfirClassKind.CLASS)
                 is CjInterface -> convertClass(psi, CfirClassKind.INTERFACE)
                 is CjStruct -> convertClass(psi, CfirClassKind.STRUCT)
@@ -259,6 +296,8 @@ class PsiRawCfirBuilder(
                     }
                 }
             }
+            collectMacroAnnotationSurfaces(psi, AnnotationSurfaceTarget.DECLARATION, declaration)
+            return declaration
         }
 
         private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirDeclaration {
@@ -788,8 +827,7 @@ class PsiRawCfirBuilder(
             psi: CjParameter,
             containingSymbol: CfirBasedSymbol<*>,
         ): CfirValueParameter {
-            collectMacroAnnotationSurfaces(psi, AnnotationSurfaceTarget.PARAMETER)
-            return buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(psi.nameAsSafeName))) { symbol ->
+            val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(psi.nameAsSafeName))) { symbol ->
                 buildValueParameter {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     source = psi.toCjPsiSourceElement()
@@ -807,6 +845,8 @@ class PsiRawCfirBuilder(
                     containingDeclarationSymbol = containingSymbol
                 }
             }
+            collectMacroAnnotationSurfaces(psi, AnnotationSurfaceTarget.PARAMETER, parameter)
+            return parameter
         }
 
         /**
@@ -816,6 +856,7 @@ class PsiRawCfirBuilder(
         private fun collectMacroAnnotationSurfaces(
             annotated: CjAnnotated,
             target: AnnotationSurfaceTarget,
+            carrier: CfirDeclaration,
         ) {
             val entries = annotated.annotationEntries
             if (entries.isEmpty()) return
@@ -831,6 +872,7 @@ class PsiRawCfirBuilder(
                 collectedMacroSurfaces += buildMacroAnnotationSurface(
                     annotation = annotation,
                     target = target,
+                    carrier = carrier,
                     modifiers = modifiers,
                     carriedAnnotations = carriedAnnotations,
                     containerContext = containerContext,
@@ -841,6 +883,7 @@ class PsiRawCfirBuilder(
         private fun buildMacroAnnotationSurface(
             annotation: CjAnnotation,
             target: AnnotationSurfaceTarget,
+            carrier: CfirDeclaration,
             modifiers: List<String>,
             carriedAnnotations: List<String>,
             containerContext: MacroSurfaceContainerContext,
@@ -856,7 +899,7 @@ class PsiRawCfirBuilder(
             val inputTokens = MacroPayloadTokenizer.tokenize(
                 valueArgumentList?.text,
                 valueArgumentList?.textRange?.startOffset ?: 0,
-            )
+            ).toMacroSurfaceTokens()
             val sourceRange = MacroSurfaceSourceRange(
                 source = annotation.toCjPsiSourceElement(),
                 startOffset = annotation.textRange.startOffset,
@@ -867,7 +910,7 @@ class PsiRawCfirBuilder(
                 enclosingClassFqName = null,
                 enclosingFunctionName = enclosingFunctionName(),
             )
-            val replaceHandle = CfirReplaceHandle(handleId = surfaceId)
+            val replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier)
 
             if (annotation.shortName?.asString() == IF_AVAILABLE_ANNOTATION_NAME) {
                 return IfAvailableSurface(
@@ -1261,10 +1304,12 @@ class PsiRawCfirBuilder(
                 ?: buildErrorExpression(reason = "Missing range start")
             val end = psi.right?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing range end")
+            val step = psi.step?.let { convertExpression(it) }
             return buildRangeExpression {
                 source = psi.toCjPsiSourceElement()
                 this.start = start
                 this.end = end
+                this.step = step
                 isInclusive = psi.operationToken == CjTokens.RANGEEQ
             }
         }
@@ -1776,7 +1821,31 @@ class PsiRawCfirBuilder(
             }
         }
 
+        private fun convertTryResource(psi: CjTryResource): CfirFieldVariable {
+            val parameter = psi.parameter
+            val resourceName = parameter?.nameAsSafeName ?: Name.special("<error>")
+            val resourceStatus = cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL))
+            return buildSourceDeclaration(CfirFieldVariableSymbol(callableIdFor(resourceName))) { symbol ->
+                buildFieldVariable {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = psi.toCjPsiSourceElement()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = true
+                    dispatchReceiverType = null
+                    status = resourceStatus
+                    returnTypeRef = convertTypeRef(parameter?.typeReference)
+                    name = resourceName
+                    initializer = psi.expression?.let(::convertExpression)
+                    isVar = false
+                }
+            }
+        }
+
         private fun convertTry(psi: CjTryExpression): CfirTryExpression {
+            val resources = psi.tryResourceList?.resources?.map(::convertTryResource).orEmpty()
             val tryBlock = convertBlock(psi.tryBlock)
             val handlers = psi.handleClauses.map { clause ->
                 val body = clause.handleBody?.let(::convertBlock)
@@ -1796,9 +1865,10 @@ class PsiRawCfirBuilder(
             val catches = psi.catchClauses.map { clause ->
                 val catchParam = clause.catchParameter
                 val catchParamName = catchParam?.name?.let { Name.identifier(it) } ?: Name.special("<error>")
+                val catchStatus = cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL))
                 val parameter =
-                    buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(catchParamName))) { symbol ->
-                        buildValueParameter {
+                    buildSourceDeclaration(CfirPropertySymbol(callableIdFor(catchParamName))) { symbol ->
+                        buildProperty {
                             resolvePhase = CfirResolvePhase.RAW_CFIR
                             source = (catchParam ?: clause).toCjPsiSourceElement()
                             this.symbol = symbol
@@ -1806,15 +1876,14 @@ class PsiRawCfirBuilder(
                             moduleData = baseModuleData
 
                             attributes = CfirDeclarationAttributes.EMPTY
-                            isLocal = false
-                            isNamed = false
-                            status = CfirDeclarationStatusImpl.DEFAULT
+                            isLocal = true
+                            dispatchReceiverType = null
+                            status = catchStatus
                             returnTypeRef =
                                 catchParam?.typeReferences?.firstOrNull()?.let(::convertTypeRef) ?: buildImplicitTypeRef()
                             name = catchParamName
-                            containingDeclarationSymbol = containerSymbol
                         }
-                    }
+                    }.also { it.isCatchParameter = true }
                 val body = clause.catchBody?.let {
                     if (it is CjBlockExpression) convertBlock(it) else buildBlock {
                         source = it.toCjPsiSourceElement()
@@ -1834,6 +1903,7 @@ class PsiRawCfirBuilder(
 
             return buildTryExpression {
                 source = psi.toCjPsiSourceElement()
+                this.resources.addAll(resources)
                 this.tryBlock = tryBlock
                 this.handlers.addAll(handlers)
                 this.catches.addAll(catches)
@@ -1960,6 +2030,13 @@ class PsiRawCfirBuilder(
             val text = psi.text.orEmpty()
             val isForced = text.startsWith("@!")
             val currentPackage = this@PsiRawCfirBuilder.context.packageFqName
+            val source = psi.toCjPsiSourceElement()
+            val carrier = buildErrorExpressionNode {
+                this.source = source
+                diagnostic = ConeSimpleDiagnostic(
+                    "Macro expression `$text` is a construction-only surface and must be replaced before final provider registration.",
+                )
+            }
             val qualifiedName = psi.shortName?.let {
                 if (currentPackage.isRoot) FqName.topLevel(it) else currentPackage.child(it)
             }
@@ -1971,13 +2048,13 @@ class PsiRawCfirBuilder(
                 attrTokens = MacroPayloadTokenizer.tokenize(
                     psi.attr?.text,
                     psi.attr?.textRange?.startOffset ?: 0,
-                ),
+                ).toMacroSurfaceTokens(),
                 inputTokens = MacroPayloadTokenizer.tokenize(
                     psi.input?.text,
                     psi.input?.textRange?.startOffset ?: 0,
-                ),
+                ).toMacroSurfaceTokens(),
                 sourceRange = MacroSurfaceSourceRange(
-                    source = psi.toCjPsiSourceElement(),
+                    source = source,
                     startOffset = psi.textRange.startOffset,
                     endOffset = psi.textRange.endOffset,
                 ),
@@ -1995,14 +2072,9 @@ class PsiRawCfirBuilder(
                     isInsideEnumBody = false,
                     isInsideBlock = false,
                 ),
-                replaceHandle = CfirReplaceHandle(handleId = surfaceId),
+                replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
             )
-            return buildMacroExpression {
-                source = psi.toCjPsiSourceElement()
-                name = psi.shortName
-                inputText = psi.input?.text
-                attrText = psi.attr?.text
-            }
+            return carrier
         }
 
         /**
@@ -2405,4 +2477,15 @@ class PsiRawCfirBuilder(
     }
 
 
+}
+
+private fun List<org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
+    return map { token ->
+        MacroSurfaceToken(
+            text = token.text,
+            startOffset = token.startOffset,
+            endOffset = token.endOffset,
+            kindName = token.kindName,
+        )
+    }
 }

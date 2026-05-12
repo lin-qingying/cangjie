@@ -2,18 +2,20 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.psi
 
@@ -39,8 +41,7 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
         if (calleeName != createMockName && calleeName != createSpyName) return
 
         val source = expression.calleeReference.source ?: expression.source ?: return
-        val targetTypeRef = expression.typeArguments.firstOrNull() as? CfirResolvedTypeRef
-        val targetType = targetTypeRef?.coneType
+        val targetType = expression.typeArguments.firstOrNull()?.coneTypeOrNull
 
         if (targetType == null || targetType is ConeFunctionType || targetType is ConeTupleType || targetType.classIdOrPrimitiveClassId == null) {
             reporter.reportOn(source, CfirErrors.MOCK_UNSUPPORTED_TYPE)
@@ -49,6 +50,10 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
 
         val targetClassId = targetType.classIdOrPrimitiveClassId ?: return
         val targetDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(targetClassId)?.cfir as? CfirClassLikeDeclaration
+        if (targetDeclaration !is CfirClass && targetDeclaration !is CfirInterface) {
+            reporter.reportOn(source, CfirErrors.MOCK_UNSUPPORTED_TYPE)
+            return
+        }
 
         if (!context.containingFilePath.orEmpty().contains("test", ignoreCase = true)) {
             reporter.reportOn(source, CfirErrors.MOCK_NOT_IN_TEST_MODE, "--test")

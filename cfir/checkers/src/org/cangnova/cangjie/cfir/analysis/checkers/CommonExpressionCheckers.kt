@@ -51,6 +51,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirSpawnSemanticsChecker,
             CfirExpressionWithErrorTypeChecker,
             CfirFunctionBodyTypeMismatchChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirRangeSemanticsChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
         )
 
@@ -117,6 +118,8 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val tryExpressionCheckers: Set<CfirTryExpressionChecker>
         get() = setOf(
             CfirTryHandleReturnChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryTargetTypeMismatchChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryResourceTypeChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirCatchTypeChecker,
         )
 

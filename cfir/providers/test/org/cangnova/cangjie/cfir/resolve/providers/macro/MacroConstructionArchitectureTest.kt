@@ -11,20 +11,17 @@ import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.declarations.builder.buildMacroDeclaration
-import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
-import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
-import org.cangnova.cangjie.cfir.expressions.builder.buildMacroExpression
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -181,29 +178,6 @@ class MacroConstructionArchitectureTest {
     }
 
     @Test
-    fun `recordExpandedRawFilesOnce rejects residual old CfirMacroExpression in final CFIR`() {
-        val fixture = Fixture()
-        val provider = CfirProviderImpl(fixture.session)
-        val file = fixture.file(
-            packageName = "test.pkg",
-            declarations = listOf(fixture.functionWithLegacyMacroExpression("useMacro", "test.pkg")),
-        )
-        val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
-        val result = MacroConstructionService.successOf(
-            pre = pre,
-            files = pre.files.map { it.cfirFile },
-            registry = MacroExpansionRegistry.EMPTY,
-        )
-
-        val failure = assertThrows<IllegalStateException> {
-            recordExpandedRawFilesOnce(provider, result.recordableFiles, result.registry)
-        }
-
-        assertTrue(failure.message!!.contains("residual CfirMacroExpression"))
-        assertTrue(provider.isEmpty)
-    }
-
-    @Test
     fun `recordExpandedRawFilesOnce records surfaces only after construction result becomes recordable`() {
         val fixture = Fixture()
         val provider = CfirProviderImpl(fixture.session)
@@ -226,6 +200,16 @@ class MacroConstructionArchitectureTest {
 
         assertTrue(provider.isFinalized)
         assertEquals(listOf(file), provider.getAllFiles())
+    }
+
+    @Test
+    fun `registry records generated source origin for ordinary checker remap`() {
+        val generatedSource = CjOffsetsOnlySourceElement(startOffset = 10, endOffset = 20)
+        val registry = MacroExpansionRegistry()
+
+        registry.registerGeneratedSource(generatedSource, originSurfaceId = 42L)
+
+        assertEquals(42L, registry.generatedSourceOriginById[generatedSource])
     }
 
     private class Fixture {
@@ -284,25 +268,6 @@ class MacroConstructionArchitectureTest {
             this.name = Name.identifier(name)
         }
 
-        fun functionWithLegacyMacroExpression(name: String, packageName: String) = buildNamedFunction {
-            source = null
-            moduleData = this@Fixture.moduleData
-            resolvePhase = CfirResolvePhase.RAW_CFIR
-            origin = CfirDeclarationOrigin.Library
-            attributes = CfirDeclarationAttributes.EMPTY
-            isLocal = false
-            status = CfirDeclarationStatusImpl.DEFAULT
-            returnTypeRef = buildImplicitTypeRef()
-            body = buildBlock {
-                statements += buildMacroExpression {
-                    this.name = Name.identifier("legacy")
-                    inputText = "legacy()"
-                }
-            }
-            symbol = CfirNamedFunctionSymbol(CallableId(FqName(packageName), Name.identifier(name)))
-            this.name = Name.identifier(name)
-            isMut = false
-        }
     }
 
     private companion object {

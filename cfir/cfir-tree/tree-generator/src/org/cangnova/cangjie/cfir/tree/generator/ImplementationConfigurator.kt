@@ -257,7 +257,6 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         synchronizedExpression,
         unsafeExpression,
         quoteExpression,
-        macroExpression,
         subscriptExpression,
         errorExpression,
 

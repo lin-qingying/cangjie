@@ -318,15 +318,7 @@ private class CfirInitializationFlowAnalyzer(
     ): InitializationState {
         val tryState = analyzeScopedBlock(expression.tryBlock, state)
         val catchStates = expression.catches.map { catchClause ->
-            val catchState = state
-                .declare(
-                    TrackedVariableInfo(
-                        symbol = catchClause.parameter.symbol,
-                        diagnosticName = catchClause.parameter.name,
-                    ),
-                    initialized = true,
-                )
-            analyzeScopedBlock(catchClause.body, catchState)
+            analyzeScopedBlock(catchClause.body, state)
         }
 
         val mergedWithoutFinally = (listOf(tryState) + catchStates).reduce(::mergeBranchStates)

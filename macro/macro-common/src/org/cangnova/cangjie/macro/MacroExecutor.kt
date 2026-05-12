@@ -15,7 +15,7 @@ package org.cangnova.cangjie.macro
  *
  * 接收序列化的宏调用信息，返回展开后的 token 流。
  * 两种实现：
- * - [ProcessMacroExecutor][org.cangnova.cangjie.macro.process.ProcessMacroExecutor]：外部进程
+ * - LspMacroServerMacroExecutor（`:macro:macro-process`）：LSPMacroServer 外部进程
  * - [StubMacroExecutor][org.cangnova.cangjie.macro.stub.StubMacroExecutor]：测试桩
  */
 interface MacroExecutor : AutoCloseable {

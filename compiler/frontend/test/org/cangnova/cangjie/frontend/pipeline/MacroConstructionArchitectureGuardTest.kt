@@ -203,7 +203,48 @@ class MacroConstructionArchitectureGuardTest {
         assertTrue(
             violations.isEmpty(),
             "PSI and LightTree raw builders must not diverge in macro surface coverage:\n" +
+            violations.joinToString(separator = "\n"),
+        )
+    }
+
+    @Test
+    fun rawExpressionMacroBuildersDoNotCreateLegacyCfirMacroExpressionCarrier() {
+        val builderSources = listOf(
+            "cfir/raw-cfir/psi2cfir/src/org/cangnova/cangjie/cfir/builder/PsiRawCfirBuilder.kt",
+            "cfir/raw-cfir/light-tree2cfir/src/org/cangnova/cangjie/cfir/lightTree/LightTreeRawCfirExpressionBuilder.kt",
+        ).associateWith(::readRepoFile)
+        val violations = builderSources.flatMap { (path, source) ->
+            val convertMacroExpression = source.substringAfter("convertMacroExpression", "")
+                .substringBefore("convertCasePattern", missingDelimiterValue = source.substringAfter("convertMacroExpression", ""))
+                .substringBefore("// ===== 辅助方法", missingDelimiterValue = source.substringAfter("convertMacroExpression", ""))
+            buildList {
+                if ("buildMacroExpression" in convertMacroExpression) {
+                    add("$path: convertMacroExpression must not build legacy CfirMacroExpression carrier")
+                }
+                if ("CfirReplaceHandle(handleId = surfaceId, carrier = carrier)" !in convertMacroExpression) {
+                    add("$path: convertMacroExpression must attach the typed carrier to CfirReplaceHandle")
+                }
+            }
+        }
+
+        assertTrue(
+            violations.isEmpty(),
+            "Expression macro raw builders must produce construction-only typed carriers:\n" +
                 violations.joinToString(separator = "\n"),
+        )
+    }
+
+    @Test
+    fun frontendStableSplicerUsesReplaceHandleCarrierIdentity() {
+        val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
+
+        assertTrue(
+            "IdentityHashMap<CfirExpression, MacroReplaceSlot>" in source,
+            "Stable splicer must match typed expression carriers by object identity, not source offset.",
+        )
+        assertTrue(
+            "slot.handle.carrier" in source && "transformErrorExpression" in source,
+            "Stable splicer must consume CfirReplaceHandle.carrier before legacy macro-expression fallback.",
         )
     }
 
@@ -295,6 +336,116 @@ class MacroConstructionArchitectureGuardTest {
             missing.isEmpty(),
             "FrontendMacroConstructionService must wire forest/evaluator/executor/fragment/splice in its main flow; " +
                 "missing: ${missing.joinToString()}",
+        )
+    }
+
+    @Test
+    fun frontendMacroConstructionServiceDoesNotUseDebugSourceForBuiltinMacroPosition() {
+        val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
+
+        assertFalse(
+            "getElementTextInContextForDebug" in source,
+            "sourceFile builtin macro must use host file metadata, not debug source text.",
+        )
+        assertFalse(
+            Regex("""val\s+line\s*=\s*surface\.sourceRange\?\.startOffset""").containsMatchIn(source),
+            "sourceLine builtin macro must not expose raw source offset as a line number.",
+        )
+        assertTrue(
+            "sourceFileLinesMapping?.getLineByOffset" in source,
+            "sourceLine builtin macro must map source offset through CfirFile.sourceFileLinesMapping.",
+        )
+    }
+
+    @Test
+    fun frontendMacroConstructionServiceUsesRealBuiltinNonMacroDesugarerByDefault() {
+        val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
+
+        assertTrue(
+            "CangJieBuiltinNonMacroDesugarer" in source,
+            "Frontend macro construction must default to the Cangjie builtin non-macro desugarer.",
+        )
+        assertFalse(
+            Regex("""builtinNonMacroDesugarer\s*:\s*BuiltinNonMacroDesugarer\s*=\s*IdentityBuiltinNonMacroDesugarer""")
+                .containsMatchIn(source),
+            "Frontend macro construction must not default @IfAvailable handling to identity desugar.",
+        )
+    }
+
+    @Test
+    fun macroConstructionDiagnosticsUseStructuredAliasConflictPayload() {
+        val apiSource = readRepoFile("cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroConstructionApi.kt")
+        val frontendSource = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
+        val collectorSource = readRepoFile(
+            "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/components/MacroConstructionDiagnosticCollectorComponent.kt",
+        )
+        val factorySource = readRepoFile(
+            "cfir/checkers/src/org/cangnova/cangjie/cfir/analysis/collectors/components/DiagnosticComponentsFactory.kt",
+        )
+
+        assertTrue(
+            "relatedName: Name?" in apiSource && "relatedTargets: List<FqName>" in apiSource,
+            "MacroConstructionDiagnostic must carry structured name/target payload for non-surface diagnostics.",
+        )
+        assertTrue(
+            "relatedName = conflict.alias" in frontendSource && "relatedTargets = conflict.targets" in frontendSource,
+            "Alias conflict reporting must populate structured diagnostic payload.",
+        )
+        assertTrue(
+            "diagnostic.relatedTargets" in collectorSource && "diagnostic.relatedName" in collectorSource,
+            "Checker collector must report alias conflict from structured payload, not empty target lists.",
+        )
+        assertTrue(
+            "MacroConstructionDiagnosticCollectorComponent(session, reporter)" in factorySource,
+            "Macro construction diagnostics must be registered in ordinary checker component factory.",
+        )
+        assertTrue(
+            "checkAndCommitReportsOn(source, data, commitEverything = true)" in collectorSource,
+            "Macro construction diagnostics must be committed at original macro/import site immediately.",
+        )
+    }
+
+    @Test
+    fun ordinaryCheckerDiagnosticsAreRemappedThroughMacroRegistry() {
+        val apiSource = readRepoFile("cfir/providers/src/org/cangnova/cangjie/cfir/resolve/providers/macro/MacroConstructionApi.kt")
+        val frontendSource = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
+        val analyseSource = readRepoFile("cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt")
+        val pendingReporterSource = readRepoFile(
+            "common/diagnostics/src/org/cangnova/cangjie/cfir/diagnostics/impl/PendingDiagnosticsReporterImpl.kt",
+        )
+        val llCollectorSource = readRepoFile(
+            "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/FileStructureElementDiagnosticsCollector.kt",
+        )
+        val llReporterSource = readRepoFile(
+            "analysis/low-level-api-cfir/src/org/cangnova/cangjie/analysis/low/level/api/cfir/diagnostics/LLCfirDiagnosticReporter.kt",
+        )
+
+        assertTrue(
+            "registerGeneratedCfirElement" in apiSource &&
+                "originSourceForGeneratedSource" in apiSource,
+            "Macro registry must map generated CFIR source elements back to original macro surfaces.",
+        )
+        assertTrue(
+            "registry.registerGeneratedCfirElement" in frontendSource,
+            "Successful macro splice must register generated payload sources before ordinary checkers run.",
+        )
+        assertTrue(
+            "sourceMapper = { source -> registry?.originSourceForGeneratedSource(source) }" in analyseSource,
+            "runCheckers must pass macro source remapping into PendingDiagnosticsReporterImpl.",
+        )
+        assertTrue(
+            "remapSourceIfNeeded" in pendingReporterSource &&
+                "CjOffsetsOnlyDiagnosticWithParameters" in pendingReporterSource,
+            "Pending diagnostics must rewrite ordinary checker diagnostics to mapped macro sources.",
+        )
+        assertTrue(
+            "session.macroExpansionRegistry?.originSourceForGeneratedSource(source)" in llCollectorSource,
+            "Low-level analysis diagnostics must use the same macro registry source remap as CLI checkers.",
+        )
+        assertTrue(
+            "toPsiDiagnosticAt" in llReporterSource &&
+                "sourceMapper(currentElement)" in llReporterSource,
+            "Low-level analysis reporter must remap generated diagnostic sources before committing PSI diagnostics.",
         )
     }
 

@@ -11,7 +11,7 @@ import kotlin.contracts.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
@@ -24,7 +24,7 @@ class CfirCatchBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
-    lateinit var parameter: CfirValueParameter
+    lateinit var parameter: CfirProperty
     lateinit var body: CfirBlock
 
     @OptIn(CfirImplementationDetail::class)

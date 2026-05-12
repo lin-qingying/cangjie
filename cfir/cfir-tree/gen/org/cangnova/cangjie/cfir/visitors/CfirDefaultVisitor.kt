@@ -224,9 +224,6 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitQuoteExpression(quoteExpression: CfirQuoteExpression, data: D): R =
         visitExpression(quoteExpression, data)
 
-    override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: D): R =
-        visitExpression(macroExpression, data)
-
     override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): R =
         visitExpression(subscriptExpression, data)
 

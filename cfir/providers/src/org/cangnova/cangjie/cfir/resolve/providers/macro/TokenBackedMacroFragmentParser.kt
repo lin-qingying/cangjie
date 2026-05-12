@@ -26,6 +26,13 @@ class TokenBackedMacroFragmentParser(
      * 装配时不同，所以只持有为 [Any] 引用。
      */
     private val reparse: (text: String, mode: MacroFragmentParser.Mode, owner: MacroCallNode) -> Any?,
+    /**
+     * 对 macro executor 产出的 newTokens 做 lexer/token-stage 复扫。
+     *
+     * providers 模块不能直接依赖 PSI lexer；装配方必须注入 raw-cfir-common
+     * 的 tokenizer，测试可注入等价实现。
+     */
+    private val reTokenize: (List<MacroSurfaceToken>) -> List<MacroSurfaceToken>,
 ) : MacroFragmentParser {
 
     override fun parse(
@@ -34,7 +41,8 @@ class TokenBackedMacroFragmentParser(
         mode: MacroFragmentParser.Mode,
     ): MacroFragmentResult {
         // baseline Batch 8: 先按 token-stage 重组文本（newTokens token-stage re-eval）
-        val source = MacroTokenReEvaluator.reTokenizeText(tokens).trim()
+        val reEvaluatedTokens = MacroTokenReEvaluator.reTokenize(tokens, reTokenize)
+        val source = MacroTokenReEvaluator.reTokenizeText(reEvaluatedTokens).trim()
         if (source.isEmpty()) {
             return MacroFragmentResult.Failure(
                 originNode = node,
@@ -60,12 +68,12 @@ class TokenBackedMacroFragmentParser(
                 MacroFragmentResult.CustomAnnotation(
                     originNode = node,
                     annotationName = annotationName,
-                    tokens = tokens,
+                    tokens = reEvaluatedTokens,
                 )
             }
             else -> MacroFragmentResult.Success(
                 originNode = node,
-                tokens = tokens,
+                tokens = reEvaluatedTokens,
                 mode = mode,
                 payload = payload,
             )

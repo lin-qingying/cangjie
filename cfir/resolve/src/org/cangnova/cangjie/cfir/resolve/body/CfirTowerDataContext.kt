@@ -15,6 +15,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirLocalScopes
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueMapper
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
@@ -60,6 +61,18 @@ data class CfirTowerDataContext private constructor(
             towerDataElements = towerDataElements.set(indexOfLastLocalScope, newLastScope.asTowerDataElement(isLocal = true)),
             localScopes = localScopes.set(localScopes.lastIndex, newLastScope),
             localVariableScopeStorage = localVariableScopeStorage.addLocalVariable(variable.symbol)
+        )
+    }
+
+    fun addLocalProperty(property: CfirProperty, session: CfirSession): CfirTowerDataContext {
+        val oldLastScope = localScopes.lastOrNull() ?: return this
+        val indexOfLastLocalScope = towerDataElements.indexOfLast { it.scope === oldLastScope }
+        val newLastScope = oldLastScope.storeProperty(property, session)
+
+        return copy(
+            towerDataElements = towerDataElements.set(indexOfLastLocalScope, newLastScope.asTowerDataElement(isLocal = true)),
+            localScopes = localScopes.set(localScopes.lastIndex, newLastScope),
+            localVariableScopeStorage = localVariableScopeStorage.addLocalVariable(property.symbol)
         )
     }
 

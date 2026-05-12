@@ -113,6 +113,8 @@ data class MacroSurfaceContainerContext(
  */
 data class CfirReplaceHandle(
     val handleId: Long,
+    /** raw builder 放入 CFIR 的 construction-only carrier，splice 只能按对象身份匹配，不能退回源码 offset。 */
+    val carrier: Any? = null,
 )
 
 /**

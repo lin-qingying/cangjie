@@ -317,9 +317,6 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitQuoteExpression(quoteExpression: CfirQuoteExpression, data: D): R =
         visitElement(quoteExpression, data)
 
-    open fun visitMacroExpression(macroExpression: CfirMacroExpression, data: D): R =
-        visitElement(macroExpression, data)
-
     open fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): R =
         visitElement(subscriptExpression, data)
 
