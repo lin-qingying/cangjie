@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * 单个 macro-related import 的绑定结果。
@@ -28,6 +29,7 @@ data class MacroImportBinding(
 data class MacroAliasConflict(
     val alias: Name,
     val targets: List<FqName>,
+    val source: CjSourceElement?,
 )
 
 /**
@@ -244,6 +246,7 @@ fun bindMacroImports(
     val bindings = mutableListOf<MacroImportBinding>()
     val packageAliases = mutableMapOf<Name, FqName>()
     val aliasTargets = mutableMapOf<Name, MutableSet<FqName>>()
+    val aliasSources = mutableMapOf<Name, CjSourceElement?>()
 
     for (preFile in pre.files) {
         val file = preFile.cfirFile
@@ -272,13 +275,14 @@ fun bindMacroImports(
                     packageAliases[alias] = fqn.parent()
                 }
                 aliasTargets.getOrPut(alias) { mutableSetOf() } += fqn
+                aliasSources.putIfAbsent(alias, import.aliasSource ?: import.source)
             }
         }
     }
 
     val conflicts = aliasTargets
         .filter { it.value.size > 1 }
-        .map { (alias, targets) -> MacroAliasConflict(alias, targets.toList()) }
+        .map { (alias, targets) -> MacroAliasConflict(alias, targets.toList(), aliasSources[alias]) }
 
     return MacroResolutionContext(
         symbolIndex = symbolIndex,

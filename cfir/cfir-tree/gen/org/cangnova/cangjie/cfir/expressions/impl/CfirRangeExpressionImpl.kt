@@ -25,6 +25,7 @@ class CfirRangeExpressionImpl @CfirImplementationDetail constructor(
     override var coneTypeOrNull: ConeCangJieType?,
     override var start: CfirExpression,
     override var end: CfirExpression,
+    override var step: CfirExpression?,
     override val isInclusive: Boolean,
 ) : CfirRangeExpression() {
 
@@ -32,12 +33,14 @@ class CfirRangeExpressionImpl @CfirImplementationDetail constructor(
         annotations.forEach { it.accept(visitor, data) }
         start.accept(visitor, data)
         end.accept(visitor, data)
+        step?.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirRangeExpressionImpl {
         transformAnnotations(transformer, data)
         transformStart(transformer, data)
         transformEnd(transformer, data)
+        transformStep(transformer, data)
         return this
     }
 
@@ -53,6 +56,11 @@ class CfirRangeExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformEnd(transformer: CfirTransformer<D>, data: D): CfirRangeExpressionImpl {
         end = end.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformStep(transformer: CfirTransformer<D>, data: D): CfirRangeExpressionImpl {
+        step = step?.transform(transformer, data)
         return this
     }
 

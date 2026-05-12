@@ -1,7 +1,19 @@
 package org.cangnova.cangjie.cfir.builder.macro
 
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.lexer.CangJieLexer
+
+/**
+ * Raw builder 层中立 token。
+ *
+ * 该类型不依赖 providers 层，调用方在 PSI/LightTree/frontend 装配边界
+ * 显式映射为 construction core 的 `MacroSurfaceToken`。
+ */
+data class MacroPayloadToken(
+    val text: String,
+    val startOffset: Int,
+    val endOffset: Int,
+    val kindName: String? = null,
+)
 
 /**
  * Macro construction 期 attr / input payload token 拆词工具。
@@ -30,17 +42,17 @@ object MacroPayloadTokenizer {
      *                   `startOffset` / `endOffset` 都会加上这个基准，
      *                   使其直接对齐宿主源文件坐标。
      */
-    fun tokenize(payload: CharSequence?, baseOffset: Int = 0): List<MacroSurfaceToken> {
+    fun tokenize(payload: CharSequence?, baseOffset: Int = 0): List<MacroPayloadToken> {
         if (payload.isNullOrEmpty()) return emptyList()
         val lexer = CangJieLexer()
         lexer.start(payload, 0, payload.length, 0)
-        val tokens = mutableListOf<MacroSurfaceToken>()
+        val tokens = mutableListOf<MacroPayloadToken>()
         while (lexer.tokenType != null) {
             val start = lexer.tokenStart
             val end = lexer.tokenEnd
             val text = payload.substring(start, end)
             val kind = lexer.tokenType?.toString()
-            tokens += MacroSurfaceToken(
+            tokens += MacroPayloadToken(
                 text = text,
                 startOffset = baseOffset + start,
                 endOffset = baseOffset + end,
@@ -49,5 +61,16 @@ object MacroPayloadTokenizer {
             lexer.advance()
         }
         return tokens
+    }
+
+    /**
+     * 对 macro executor 返回的 newTokens 做真实 lexer 复扫。
+     *
+     * providers 层的 `TokenBackedMacroFragmentParser` 只能接收函数注入；
+     * raw-cfir-common 作为拥有仓颉 lexer 的层，提供唯一生产级复扫入口。
+     */
+    fun reTokenize(tokens: List<MacroPayloadToken>): List<MacroPayloadToken> {
+        val text = tokens.joinToString(separator = "") { it.text }
+        return tokenize(text, baseOffset = 0)
     }
 }

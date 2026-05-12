@@ -58,6 +58,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInheritanceTh
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCJMappingChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirObjCCJMappingChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertySemanticsChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirUnusedExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirVArrayExtraChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckers
 
@@ -68,6 +69,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
             CfirTypeConstraintsChecker,
+            CfirUnusedExpressionChecker,
         )
 
     override val invalidDeclarationCheckers: Set<CfirInvalidDeclarationChecker>

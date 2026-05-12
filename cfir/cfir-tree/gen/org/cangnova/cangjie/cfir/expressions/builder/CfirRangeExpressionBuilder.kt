@@ -25,6 +25,7 @@ class CfirRangeExpressionBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     lateinit var start: CfirExpression
     lateinit var end: CfirExpression
+    var step: CfirExpression? = null
     var isInclusive: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
 
     @OptIn(CfirImplementationDetail::class)
@@ -35,6 +36,7 @@ class CfirRangeExpressionBuilder {
             coneTypeOrNull,
             start,
             end,
+            step,
             isInclusive,
         )
     }
@@ -60,6 +62,7 @@ inline fun buildRangeExpressionCopy(original: CfirRangeExpression, init: CfirRan
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
     copyBuilder.start = original.start
     copyBuilder.end = original.end
+    copyBuilder.step = original.step
     copyBuilder.isInclusive = original.isInclusive
     return copyBuilder.apply(init).build()
 }

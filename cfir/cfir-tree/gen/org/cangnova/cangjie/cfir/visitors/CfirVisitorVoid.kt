@@ -816,14 +816,6 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(quoteExpression)
     }
 
-    final override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: Nothing?) {
-        visitMacroExpression(macroExpression)
-    }
-
-    open fun visitMacroExpression(macroExpression: CfirMacroExpression) {
-        visitElement(macroExpression)
-    }
-
     final override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: Nothing?) {
         visitSubscriptExpression(subscriptExpression)
     }

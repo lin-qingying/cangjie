@@ -124,8 +124,30 @@ interface MacroStableSplicer {
  */
 object MacroTokenReEvaluator {
     /**
+     * 对 executor 输出 token 执行一次真实 token-stage 复扫。
+     *
+     * 复扫器由 raw-cfir-common/PSI/LightTree 装配层注入，避免 providers
+     * 反向依赖 lexer 模块；这里负责强制 construction 主流程消费复扫后的
+     * token，而不是直接把原始展开文本交给语义路径。
+     */
+    fun reTokenize(
+        tokens: List<MacroSurfaceToken>,
+        tokenizer: (List<MacroSurfaceToken>) -> List<MacroSurfaceToken>,
+    ): List<MacroSurfaceToken> = tokenizer(tokens)
+
+    /**
      * 把 [tokens] 重新拼接成字符串并按 lexer 切分。
      * 用于 child 展开后 parent args 的 stable normalization。
      */
     fun reTokenizeText(tokens: List<MacroSurfaceToken>): String = tokens.joinToString(separator = "") { it.text }
+
+    /** 测试/未装配场景只保留文本，不允许据此宣称生产 lexer 复扫完成。 */
+    fun preserveTextTokens(tokens: List<MacroSurfaceToken>): List<MacroSurfaceToken> {
+        val text = reTokenizeText(tokens)
+        return if (text.isEmpty()) {
+            emptyList()
+        } else {
+            listOf(MacroSurfaceToken(text = text, startOffset = 0, endOffset = text.length))
+        }
+    }
 }

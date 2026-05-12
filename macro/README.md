@@ -18,7 +18,7 @@ macro-common  ─┬─→ macro-process  (生产实现)
 | 模块 | 职责 |
 |---|---|
 | `macro-common` | 宏展开接口定义、数据模型、`protocol/` FlatBuffers 编解码 |
-| `macro-process` | `ProcessMacroExecutor`：外部进程 LSPMacroServer 实现，匿名管道通信 |
+| `macro-process` | `ProcessMacroExecutor` 抽象外部进程协议；`LspMacroServerMacroExecutor` 实现 LSPMacroServer 匿名管道通信 |
 | `macro-stub` | `StubMacroExecutor`：测试与 IDE 桩，不启动子进程 |
 
 ## 核心接口链

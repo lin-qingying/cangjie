@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.isCatchParameter
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -486,6 +487,7 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkPropertyAccessors(property: CfirProperty) {
+        if (property.isCatchParameter == true) return
         if (context.containingDeclarations.lastOrNull() is CfirInterface) return
         if (property.status.isAbstract) return
         if (property.getter == null && property.setter == null) {

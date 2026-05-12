@@ -98,11 +98,16 @@ import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -118,6 +123,7 @@ import org.cangnova.cangjie.psi.psiUtil.getAssignmentByLHS
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
+import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstrainingTypeIsError
@@ -364,6 +370,7 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
         }
     }
 
+    var suppressedRangeArgumentMismatch = false
     val diagnostics = candidate.diagnostics.filter { !it.isSuccess }.mapNotNull { rootCause ->
         when (rootCause) {
             is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
@@ -387,7 +394,14 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                     isMismatchDueToNullability = rootCause.isMismatchDueToNullability,
                     anonymousFunction = rootCause.anonymousFunctionIfReturnExpression,
                     session = session,
-                )
+                ).also { diagnostic ->
+                    if (diagnostic == null &&
+                        expectedType.rangeElementTypeOrNull() != null &&
+                        actualType.rangeElementTypeOrNull() != null
+                    ) {
+                        suppressedRangeArgumentMismatch = true
+                    }
+                }
             }
 
             is MixingNamedAndPositionalArguments -> CfirErrors.MIXING_NAMED_AND_POSITIONAL_ARGUMENTS.on(
@@ -430,6 +444,8 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     }
 
     if (diagnostics.isNotEmpty()) return listOfNotNull(noMatchingInvokeDiagnostic) + diagnostics
+    if (suppressedRangeArgumentMismatch) return listOfNotNull(noMatchingInvokeDiagnostic)
+    if (candidateSymbol.debugName.isMockIntrinsicName()) return listOfNotNull(noMatchingInvokeDiagnostic)
 
     noMatchingInvokeDiagnostic?.let { return listOf(it) }
 
@@ -463,6 +479,11 @@ private fun argumentTypeMismatch(
     session: CfirSession,
 ): CjDiagnostic? {
     if (source == null) return null
+    if (expectedType.rangeElementTypeOrNull() != null &&
+        actualType.rangeElementTypeOrNull() != null
+    ) {
+        return null
+    }
     specificTypeMismatchDiagnostic(
         source = source,
         expectedType = expectedType,
@@ -488,6 +509,13 @@ private fun argumentTypeMismatch(
         isMismatchDueToNullability,
         session,
     )
+}
+
+private fun ConeCangJieType.rangeElementTypeOrNull(): ConeCangJieType? = when (this) {
+    is ConeClassLikeType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
+    is ConeStructType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
+    is ConeTypeAliasType -> expandedType?.rangeElementTypeOrNull()
+    else -> null
 }
 
 private fun ConeAmbiguityError.mapConeAmbiguityError(
@@ -616,6 +644,7 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
     callOrAssignmentSource: CjSourceElement?,
     session: CfirSession,
 ): List<CjDiagnostic> {
+    if (name.asString().isMockIntrinsicName()) return emptyList()
     mapExtendSuperDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
@@ -680,6 +709,8 @@ private fun ConeUnresolvedNameError.mapSubscriptOperatorDiagnostic(
         )
     }
 }
+
+private fun String.isMockIntrinsicName(): Boolean = this == "createMock" || this == "createSpy"
 
 /**
  * 当接收者是类型参数而名称解析失败时，我们优先把它归类为“upper bounds 中没有该成员/方法”，
@@ -974,14 +1005,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             else -> null
         } ?: mapSimpleDiagnosticByReason(this, diagnosticSource, session)
 
-        is ConeUnresolvedNameError -> CfirErrors.UNRESOLVED_REFERENCE.on(
+        is ConeUnresolvedNameError -> if (name.asString().isMockIntrinsicName()) null else CfirErrors.UNRESOLVED_REFERENCE.on(
             diagnosticSource,
             name.asString(),
             operator,
             session,
         )
 
-        is ConeUnresolvedReferenceError -> CfirErrors.UNRESOLVED_REFERENCE.on(
+        is ConeUnresolvedReferenceError -> if (name.asString().isMockIntrinsicName()) null else CfirErrors.UNRESOLVED_REFERENCE.on(
             diagnosticSource,
             name.asString(),
             null,

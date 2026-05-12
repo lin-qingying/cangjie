@@ -6,8 +6,10 @@ import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirLoopTarget
+import org.cangnova.cangjie.cfir.isCatchParameter
 import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
@@ -33,6 +35,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.descriptors.Modality
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjNodeTypes
@@ -332,6 +336,7 @@ class LightTreeRawCfirExpressionBuilder(
     private fun convertRange(node: LighterASTNode): CfirRangeExpression {
         var left: LighterASTNode? = null
         var right: LighterASTNode? = null
+        var step: LighterASTNode? = null
         var isInclusive = false
 
         tree.forEachChildren(node) { child ->
@@ -343,7 +348,8 @@ class LightTreeRawCfirExpressionBuilder(
                 }
                 else -> if (isExpressionToken(child.tokenType)) {
                     if (left == null) left = child
-                    else right = child
+                    else if (right == null) right = child
+                    else step = child
                 }
             }
         }
@@ -352,11 +358,13 @@ class LightTreeRawCfirExpressionBuilder(
             ?: buildErrorExpression(reason = "Missing range start")
         val end = right?.let { convertExpression(it) }
             ?: buildErrorExpression(reason = "Missing range end")
+        val stepExpression = step?.let { convertExpression(it) }
 
         return buildRangeExpression {
             source = node.toSource()
             this.start = start
             this.end = end
+            this.step = stepExpression
             this.isInclusive = isInclusive
         }
     }
@@ -1284,14 +1292,51 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    private fun convertTryResource(node: LighterASTNode): CfirFieldVariable {
+        val parameterNode = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER)
+        val nameText = parameterNode?.let { tree.findChildByType(it, CjTokens.IDENTIFIER)?.asText() }
+        val resourceName = nameText?.let(Name::identifier) ?: Name.special("<error>")
+        val resourceTypeRef = parameterNode
+            ?.let { tree.findChildByType(it, CjNodeTypes.TYPE_REFERENCE) }
+            ?.let { convertTypeReference(it, tree, source) { typeRefNode -> typeRefNode.toSourceElement() } }
+            ?: buildImplicitTypeRef()
+        var initializerNode: LighterASTNode? = null
+        tree.forEachChildren(node) { child ->
+            if (child === parameterNode) return@forEachChildren
+            if (isExpressionToken(child.tokenType)) {
+                initializerNode = child
+            }
+        }
+        val resourceStatus = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL))
+        return buildSourceDeclaration(CfirFieldVariableSymbol(callableIdFor(resourceName))) { symbol ->
+            buildFieldVariable {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                source = node.toSource()
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = true
+                dispatchReceiverType = null
+                status = resourceStatus
+                returnTypeRef = resourceTypeRef
+                name = resourceName
+                initializer = initializerNode?.let(::convertExpression)
+                isVar = false
+            }
+        }
+    }
+
     private fun convertTry(node: LighterASTNode): CfirTryExpression {
         var tryBlockNode: LighterASTNode? = null
+        var resourceListNode: LighterASTNode? = null
         val handleNodes = mutableListOf<LighterASTNode>()
         val catchNodes = mutableListOf<LighterASTNode>()
         var finallyNode: LighterASTNode? = null
 
         tree.forEachChildren(node) { child ->
             when (child.tokenType) {
+                CjNodeTypes.TRY_RESOURCE_LIST -> resourceListNode = child
                 CjNodeTypes.BLOCK -> {
                     if (tryBlockNode == null) tryBlockNode = child
                 }
@@ -1301,6 +1346,11 @@ class LightTreeRawCfirExpressionBuilder(
             }
         }
 
+        val resources = resourceListNode?.let { resourceList ->
+            tree.getChildrenByType(resourceList, CjNodeTypes.TRY_RESOURCE).map { resourceNode ->
+                convertTryResource(resourceNode)
+            }
+        } ?: emptyList()
         val tryBlock = tryBlockNode?.let { convertBlock(it) } ?: buildBlock { source = node.toSource() }
         val handlers = handleNodes.map { handleNode ->
             val commandPatternNode = tree.findChildByType(handleNode, CjNodeTypes.COMMAND_TYPE_PATTERN)
@@ -1335,22 +1385,22 @@ class LightTreeRawCfirExpressionBuilder(
                 ?: buildImplicitTypeRef()
 
             val catchParamName = if (paramName != null) Name.identifier(paramName) else Name.special("<error>")
-            val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(catchParamName))) { symbol ->
-                buildValueParameter {
+            val catchStatus = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL))
+            val parameter = buildSourceDeclaration(CfirPropertySymbol(callableIdFor(catchParamName))) { symbol ->
+                buildProperty {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
                     source = (catchParamNode ?: catchNode).toSource()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                     attributes = CfirDeclarationAttributes.EMPTY
-                    isLocal = false
-                    isNamed = false
-                    status = CfirDeclarationStatusImpl.DEFAULT
+                    isLocal = true
+                    dispatchReceiverType = null
+                    status = catchStatus
                     returnTypeRef = paramTypeRef
                     name = catchParamName
-                    containingDeclarationSymbol = containerSymbol
                 }
-            }
+            }.also { it.isCatchParameter = true }
             val body = catchBodyNode?.let { convertBlock(it) } ?: buildBlock { source = catchNode.toSource() }
             buildCatch {
                 source = catchNode.toSource()
@@ -1366,6 +1416,7 @@ class LightTreeRawCfirExpressionBuilder(
 
         return buildTryExpression {
             source = node.toSource()
+            this.resources.addAll(resources)
             this.tryBlock = tryBlock
             this.handlers.addAll(handlers)
             this.catches.addAll(catches)
@@ -1575,6 +1626,13 @@ class LightTreeRawCfirExpressionBuilder(
         val nameStr = nameNode?.asText()
         val name = nameStr?.let { Name.identifier(it) }
         val surfaceId = MacroSurfaceIdGenerator.next()
+        val sourceElement = node.toSource()
+        val carrier = buildErrorExpressionNode {
+            source = sourceElement
+            diagnostic = ConeSimpleDiagnostic(
+                "Macro expression `$text` is a construction-only surface and must be replaced before final provider registration.",
+            )
+        }
         val qualifiedName = name?.let {
             if (context.packageFqName.isRoot) {
                 org.cangnova.cangjie.name.FqName.topLevel(it)
@@ -1590,13 +1648,13 @@ class LightTreeRawCfirExpressionBuilder(
             attrTokens = MacroPayloadTokenizer.tokenize(
                 attrNode?.asText(),
                 attrNode?.startOffset ?: 0,
-            ),
+            ).toMacroSurfaceTokens(),
             inputTokens = MacroPayloadTokenizer.tokenize(
                 inputNode?.asText(),
                 inputNode?.startOffset ?: 0,
-            ),
+            ).toMacroSurfaceTokens(),
             sourceRange = MacroSurfaceSourceRange(
-                source = null,
+                source = node.toSource(),
                 startOffset = node.startOffset,
                 endOffset = node.endOffset,
             ),
@@ -1614,15 +1672,10 @@ class LightTreeRawCfirExpressionBuilder(
                 isInsideEnumBody = false,
                 isInsideBlock = false,
             ),
-            replaceHandle = CfirReplaceHandle(handleId = surfaceId),
+            replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
         )
 
-        return buildMacroExpression {
-            source = node.toSource()
-            this.name = name
-            inputText = inputNode?.asText()
-            attrText = attrNode?.asText()
-        }
+        return carrier
     }
 
     // ===== 辅助方法 =====
@@ -1721,5 +1774,16 @@ class LightTreeRawCfirExpressionBuilder(
             isExpressionToken(tt) || isDeclarationToken(tt) || isPatternToken(tt)
                     || tt == CjNodeTypes.OPERATION_REFERENCE
                     || tt == CjNodeTypes.REFERENCE_EXPRESSION
+    }
+}
+
+private fun List<org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
+    return map { token ->
+        MacroSurfaceToken(
+            text = token.text,
+            startOffset = token.startOffset,
+            endOffset = token.endOffset,
+            kindName = token.kindName,
+        )
     }
 }

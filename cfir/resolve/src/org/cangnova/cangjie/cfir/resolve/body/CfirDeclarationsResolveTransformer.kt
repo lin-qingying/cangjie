@@ -305,9 +305,14 @@ open class CfirDeclarationsResolveTransformer(
                     property.typeParameters,
                 )
             )
+            if (property.isLocal) {
+                context.storeProperty(property, session)
+            }
         }
 
-        context.replaceTowerDataContext(savedContext)
+        if (!property.isLocal) {
+            context.replaceTowerDataContext(savedContext)
+        }
         bumpPhase(property)
         return property
     }

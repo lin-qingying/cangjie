@@ -2,6 +2,12 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Raw CFIR 构建产物中、尚未注册到 source provider 的单个文件包装。
@@ -91,8 +97,14 @@ data class MacroConstructionDiagnostic(
      * Batch 9 的 diagnostic renderer 通过该 id 反查 [MacroExpansionRegistry.originSurfaceById]。
      */
     val originSurfaceId: Long? = null,
+    /** 非 surface 诊断的原始源码位点，例如 macro import alias 冲突。 */
+    val originSource: CjSourceElement? = null,
     /** Baseline 第 9 节 typed factory：未展开 / 展开失败 / 同包 / 无 executor / 等。 */
     val kind: Kind = Kind.GENERIC,
+    /** 结构化诊断名，用于 alias / unresolved 等非 surface 诊断，避免从 message 反解析。 */
+    val relatedName: Name? = null,
+    /** 结构化诊断目标，用于 alias conflict 等需要完整目标集合的诊断。 */
+    val relatedTargets: List<FqName> = emptyList(),
 ) {
     enum class Severity { INFO, WARNING, ERROR }
 
@@ -119,6 +131,9 @@ data class MacroConstructionDiagnostic(
  *   ordinary checker 上报的诊断可通过 `originSurfaceId` 字段映射回原 macro site；
  * - `placeholderOriginById` 维护 degraded mode 下生成的 typed error
  *   placeholder 与原 surface 的关系，便于 LSP / IDE 渲染。
+ * - `generatedSourceOriginById` 维护 successful splice 后生成 CFIR 的 source
+ *   与原始 macro surface 的关系；ordinary checker 诊断提交前通过该表
+ *   重定位到原 macro 调用位点。
  *
  * `MacroExpansionRegistry` 作为 [org.cangnova.cangjie.cfir.session.CfirSessionComponent]
  * 候选，可通过 [org.cangnova.cangjie.cfir.session.CfirSession.register] 挂到 session 上；
@@ -128,6 +143,7 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     private val _diagnostics: MutableList<MacroConstructionDiagnostic> = mutableListOf()
     private val _originSurfaceById: MutableMap<Long, MacroSurface> = mutableMapOf()
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
+    private val _generatedSourceOriginById: MutableMap<AbstractCjSourceElement, Long> = mutableMapOf()
     private val _generatedDisplayText: MutableMap<Long, String> = mutableMapOf()
 
     val diagnostics: List<MacroConstructionDiagnostic>
@@ -155,6 +171,16 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     val placeholderOriginById: Map<Long, Long>
         get() = _placeholderOriginById.toMap()
 
+    /**
+     * `generated source -> originSurfaceId` 反查。
+     *
+     * Successful splice 后，普通 checker 仍只遍历 final CFIR；当 checker 在
+     * 展开产物 source 上报错时，diagnostic reporter 通过此表定位回原 macro
+     * 调用 source。
+     */
+    val generatedSourceOriginById: Map<AbstractCjSourceElement, Long>
+        get() = _generatedSourceOriginById.toMap()
+
     /** 可选：surface 展开后用于 IDE 展示的文本（不参与 semantic）。 */
     val generatedDisplayText: Map<Long, String>
         get() = _generatedDisplayText.toMap()
@@ -175,6 +201,24 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
         _placeholderOriginById[placeholderId] = originSurfaceId
     }
 
+    fun registerGeneratedSource(source: AbstractCjSourceElement?, originSurfaceId: Long) {
+        if (source != null) {
+            _generatedSourceOriginById[source] = originSurfaceId
+        }
+    }
+
+    fun registerGeneratedCfirElement(element: CfirElement, originSurfaceId: Long) {
+        element.accept(
+            object : CfirDefaultVisitor<Unit, Unit>() {
+                override fun visitElement(element: CfirElement, data: Unit) {
+                    registerGeneratedSource(element.source, originSurfaceId)
+                    element.acceptChildren(this, data)
+                }
+            },
+            Unit,
+        )
+    }
+
     fun registerGeneratedDisplayText(surfaceId: Long, text: String) {
         _generatedDisplayText[surfaceId] = text
     }
@@ -183,6 +227,11 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     fun originSurfaceForPlaceholder(placeholderId: Long): MacroSurface? {
         val originId = _placeholderOriginById[placeholderId] ?: return null
         return _originSurfaceById[originId]
+    }
+
+    fun originSourceForGeneratedSource(source: AbstractCjSourceElement): CjSourceElement? {
+        val originId = _generatedSourceOriginById[source] ?: return null
+        return _originSurfaceById[originId]?.sourceRange?.source
     }
 
     companion object {
@@ -316,7 +365,7 @@ fun MacroConstructionService.expandWithDefaultContext(
     libraryDefinitions: List<MacroDefinitionEntry> = emptyList(),
     sharedBuiltinDefinitions: List<MacroDefinitionEntry> = emptyList(),
     macroArtifactDefinitions: List<MacroDefinitionEntry> = emptyList(),
-    defaultMacroImports: List<org.cangnova.cangjie.name.FqName> = emptyList(),
+    defaultMacroImports: List<FqName> = emptyList(),
 ): MacroConstructionResult {
     val symbolIndex = buildMacroSymbolIndex(
         pre = pre,

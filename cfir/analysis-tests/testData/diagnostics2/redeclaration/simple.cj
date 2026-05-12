@@ -12,20 +12,20 @@ class <!CLASSIFIER_REDECLARATION!>abc<!> {
 class <!CLASSIFIER_REDECLARATION!>abc<!> {
     prop a: Int {
         get() {
-            1
+            <!UNUSED_EXPRESSION!>1<!>
         }
     }
 
-    <!REDECLARATION!>func a<!>() {}
+    func <!REDECLARATION!>a<!>() {}
 
     let <!REDECLARATION!>a<!> = 1
 
-    <!CONFLICTING_OVERLOADS!>func a<!>() {
+    <!CONFLICTING_OVERLOADS!>func a()<!> {
     }
 }
 
-<!REDECLARATION!>func abc<!>() {}
-<!REDECLARATION, CONFLICTING_OVERLOADS!>func abc<!>() {}
+func <!REDECLARATION!>abc<!>() {}
+<!CONFLICTING_OVERLOADS!>func abc()<!> {}
 
 let <!REDECLARATION!>abc<!> = 1
 

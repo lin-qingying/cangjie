@@ -9,10 +9,13 @@ class TokenBackedMacroFragmentParserTest {
     @Test
     fun `empty token stream returns failure without invoking reparse`() {
         var reparseCalls = 0
-        val parser = TokenBackedMacroFragmentParser { _, _, _ ->
-            reparseCalls++
-            Any()
-        }
+        val parser = TokenBackedMacroFragmentParser(
+            reparse = { _, _, _ ->
+                reparseCalls++
+                Any()
+            },
+            reTokenize = MacroTokenReEvaluator::preserveTextTokens,
+        )
 
         val result = parser.parse(
             node = node("Empty"),
@@ -28,10 +31,13 @@ class TokenBackedMacroFragmentParserTest {
     @Test
     fun `successful expression parse returns construction-only success`() {
         val received = mutableListOf<Pair<String, MacroFragmentParser.Mode>>()
-        val parser = TokenBackedMacroFragmentParser { text, mode, _ ->
-            received += text to mode
-            Any()
-        }
+        val parser = TokenBackedMacroFragmentParser(
+            reparse = { text, mode, _ ->
+                received += text to mode
+                Any()
+            },
+            reTokenize = { it },
+        )
         val tokens = listOf(token("1"), token(" + "), token("2"))
 
         val result = parser.parse(
@@ -49,11 +55,14 @@ class TokenBackedMacroFragmentParserTest {
 
     @Test
     fun `custom annotation mode returns CustomAnnotation without final CFIR payload`() {
-        val parser = TokenBackedMacroFragmentParser { text, mode, _ ->
-            assertEquals("@Anno(value)", text)
-            assertEquals(MacroFragmentParser.Mode.CUSTOM_ANNOTATION, mode)
-            "raw-builder-payload-must-not-escape"
-        }
+        val parser = TokenBackedMacroFragmentParser(
+            reparse = { text, mode, _ ->
+                assertEquals("@Anno(value)", text)
+                assertEquals(MacroFragmentParser.Mode.CUSTOM_ANNOTATION, mode)
+                "raw-builder-payload-must-not-escape"
+            },
+            reTokenize = MacroTokenReEvaluator::preserveTextTokens,
+        )
 
         val result = parser.parse(
             node = node("pkg.Anno"),
@@ -65,6 +74,35 @@ class TokenBackedMacroFragmentParserTest {
         val annotation = result as MacroFragmentResult.CustomAnnotation
         assertEquals("Anno", annotation.annotationName.asString())
         assertEquals("@Anno(value)", annotation.tokens.joinToString(separator = "") { it.text })
+    }
+
+    @Test
+    fun `parser consumes token-stage re-evaluation output before reparse`() {
+        val received = mutableListOf<String>()
+        val parser = TokenBackedMacroFragmentParser(
+            reparse = { text, _, _ ->
+                received += text
+                Any()
+            },
+            reTokenize = {
+                listOf(
+                    token("normalized"),
+                    token("("),
+                    token("42"),
+                    token(")"),
+                )
+            },
+        )
+
+        val result = parser.parse(
+            node = node("ExprMacro"),
+            tokens = listOf(token("ignored text")),
+            mode = MacroFragmentParser.Mode.EXPRESSION,
+        )
+
+        assertTrue(result is MacroFragmentResult.Success)
+        assertEquals(listOf("normalized(42)"), received)
+        assertEquals("normalized(42)", (result as MacroFragmentResult.Success).tokens.joinToString(separator = "") { it.text })
     }
 
     private fun node(name: String): MacroCallNode {

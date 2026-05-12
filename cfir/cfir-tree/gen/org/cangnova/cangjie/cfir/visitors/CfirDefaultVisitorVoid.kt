@@ -292,10 +292,6 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(quoteExpression)
     }
 
-    override fun visitMacroExpression(macroExpression: CfirMacroExpression) {
-        visitExpression(macroExpression)
-    }
-
     override fun visitSubscriptExpression(subscriptExpression: CfirSubscriptExpression) {
         visitExpression(subscriptExpression)
     }
