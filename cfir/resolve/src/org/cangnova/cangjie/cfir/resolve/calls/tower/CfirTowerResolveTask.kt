@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.resolve.calls.tower
 
 import org.cangnova.cangjie.cfir.calls.ExpressionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
+import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
@@ -133,7 +135,7 @@ internal open class CfirTowerResolveTask(
 
     suspend fun runResolverForExpressionReceiver(
         info: CallInfo,
-        receiverExpression: org.cangnova.cangjie.cfir.expressions.CfirExpression,
+        receiverExpression: CfirExpression,
     ) {
         val explicitReceiver = ExpressionReceiverValue(receiverExpression)
 
@@ -164,6 +166,22 @@ internal open class CfirTowerResolveTask(
                     explicitReceiverKind = ExplicitReceiverKind.DISPATCH_RECEIVER,
                 )
             },
+        )
+    }
+
+    suspend fun runResolverForQualifierReceiver(
+        info: CallInfo,
+        receiverExpression: CfirExpression,
+    ) {
+        val callableScope = receiverExpression.qualifierScopeOrNull(components.session) ?: return
+        processLevel(
+            ScopeBasedTowerLevel(
+                components = components,
+                scope = callableScope,
+                dispatchReceiver = ExpressionReceiverValue(receiverExpression),
+            ),
+            info,
+            CfirTowerGroup.MEMBER,
         )
     }
 }

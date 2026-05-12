@@ -1329,8 +1329,10 @@ class LightTreeRawCfirExpressionBuilder(
                 val nameNode = tree.findChildByType(it, CjTokens.IDENTIFIER)
                 nameNode?.asText()
             }
-            // 对齐 PSI: CjCatchParameter.typeReference 硬编码返回 null
-            val paramTypeRef = buildImplicitTypeRef()
+            val paramTypeRef = catchParamNode
+                ?.let { tree.findChildByType(it, CjNodeTypes.TYPE_REFERENCE) }
+                ?.let { convertTypeReference(it, tree, source) { typeRefNode -> typeRefNode.toSourceElement() } }
+                ?: buildImplicitTypeRef()
 
             val catchParamName = if (paramName != null) Name.identifier(paramName) else Name.special("<error>")
             val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(catchParamName))) { symbol ->

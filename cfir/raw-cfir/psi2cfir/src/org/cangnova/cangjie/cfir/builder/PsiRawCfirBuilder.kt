@@ -29,10 +29,13 @@ import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
+import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceIdGenerator
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
@@ -86,8 +89,8 @@ class PsiRawCfirBuilder(
      * [consumeCollectedMacroSurfaces] 取出列表，并交给
      * `org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles`。
      *
-     * 该 accumulator 与 `CfirMacroExpression` 节点同时生成，二者并存仅为兼容现有
-     * `DefaultMacroExpander` 路径；Batch 10 移除 expander 后将切换为
+     * 该 accumulator 与 `CfirMacroExpression` 节点同时生成；macro construction
+     * 会在 provider 注册前拒绝残留的旧节点，后续稳定 splice 接入后切换为
      * "surface-only"。
      */
     private val collectedMacroSurfaces: MutableList<MacroSurface> = mutableListOf()
@@ -129,6 +132,15 @@ class PsiRawCfirBuilder(
 
     private inline fun buildOrLazyBlock(buildBlock: () -> CfirBlock?): CfirBlock? {
         return buildOrLazy(buildBlock) { buildLazyBlock() }
+    }
+
+    private enum class AnnotationSurfaceTarget {
+        DECLARATION,
+        PARAMETER,
+    }
+
+    private companion object {
+        private const val IF_AVAILABLE_ANNOTATION_NAME: String = "IfAvailable"
     }
 
     // ===== Public API =====
@@ -216,32 +228,35 @@ class PsiRawCfirBuilder(
 
         // ===== 声明转换 =====
 
-        fun convertDeclaration(psi: CjDeclaration): CfirDeclaration = when (psi) {
-            is CjClass -> convertClass(psi, CfirClassKind.CLASS)
-            is CjInterface -> convertClass(psi, CfirClassKind.INTERFACE)
-            is CjStruct -> convertClass(psi, CfirClassKind.STRUCT)
-            is CjEnum -> convertClass(psi, CfirClassKind.ENUM)
-            is CjExtend -> convertExtend(psi)
-            is CjMainFunction -> convertMainFunction(psi)
-            is CjMacroDeclaration -> convertMacroDeclaration(psi)
-            is CjNamedFunction -> convertFunction(psi)
-            is CjFinalizer -> convertFinalizer(psi)
-            is CjProperty -> convertProperty(psi)
-            is CjFieldVariable -> convertFieldVariable(psi)
-            is CjPatternVariable -> convertPatternVariable(psi)
-            is CjPrimaryConstructor -> convertConstructor(psi, isPrimary = true)
-            is CjSecondaryConstructor -> convertConstructor(psi, isPrimary = false)
-            is CjTypeAlias -> convertTypeAlias(psi)
-            else -> buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
-                buildInvalidDeclaration {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = psi.toCjPsiSourceElement()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
+        fun convertDeclaration(psi: CjDeclaration): CfirDeclaration {
+            collectMacroAnnotationSurfaces(psi, AnnotationSurfaceTarget.DECLARATION)
+            return when (psi) {
+                is CjClass -> convertClass(psi, CfirClassKind.CLASS)
+                is CjInterface -> convertClass(psi, CfirClassKind.INTERFACE)
+                is CjStruct -> convertClass(psi, CfirClassKind.STRUCT)
+                is CjEnum -> convertClass(psi, CfirClassKind.ENUM)
+                is CjExtend -> convertExtend(psi)
+                is CjMainFunction -> convertMainFunction(psi)
+                is CjMacroDeclaration -> convertMacroDeclaration(psi)
+                is CjNamedFunction -> convertFunction(psi)
+                is CjFinalizer -> convertFinalizer(psi)
+                is CjProperty -> convertProperty(psi)
+                is CjFieldVariable -> convertFieldVariable(psi)
+                is CjPatternVariable -> convertPatternVariable(psi)
+                is CjPrimaryConstructor -> convertConstructor(psi, isPrimary = true)
+                is CjSecondaryConstructor -> convertConstructor(psi, isPrimary = false)
+                is CjTypeAlias -> convertTypeAlias(psi)
+                else -> buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
+                    buildInvalidDeclaration {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        source = psi.toCjPsiSourceElement()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
 
-                    attributes = CfirDeclarationAttributes.EMPTY
-                    reason = "Unsupported declaration: ${psi.javaClass.simpleName}"
+                        attributes = CfirDeclarationAttributes.EMPTY
+                        reason = "Unsupported declaration: ${psi.javaClass.simpleName}"
+                    }
                 }
             }
         }
@@ -773,6 +788,7 @@ class PsiRawCfirBuilder(
             psi: CjParameter,
             containingSymbol: CfirBasedSymbol<*>,
         ): CfirValueParameter {
+            collectMacroAnnotationSurfaces(psi, AnnotationSurfaceTarget.PARAMETER)
             return buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(psi.nameAsSafeName))) { symbol ->
                 buildValueParameter {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
@@ -791,6 +807,181 @@ class PsiRawCfirBuilder(
                     containingDeclarationSymbol = containingSymbol
                 }
             }
+        }
+
+        /**
+         * 声明和参数上的注解在 PSI raw builder 层提取为 macro construction surface，
+         * 与 Kotlin raw FIR builder 在 raw builder helper 中集中采集 annotation 的层级保持一致。
+         */
+        private fun collectMacroAnnotationSurfaces(
+            annotated: CjAnnotated,
+            target: AnnotationSurfaceTarget,
+        ) {
+            val entries = annotated.annotationEntries
+            if (entries.isEmpty()) return
+
+            val modifiers = (annotated as? CjModifierListOwner)
+                ?.modifierList
+                ?.let(::collectModifierNames)
+                .orEmpty()
+            val carriedAnnotations = entries.map { it.text }
+            val containerContext = macroContainerContext(annotated, target)
+
+            for (annotation in entries) {
+                collectedMacroSurfaces += buildMacroAnnotationSurface(
+                    annotation = annotation,
+                    target = target,
+                    modifiers = modifiers,
+                    carriedAnnotations = carriedAnnotations,
+                    containerContext = containerContext,
+                )
+            }
+        }
+
+        private fun buildMacroAnnotationSurface(
+            annotation: CjAnnotation,
+            target: AnnotationSurfaceTarget,
+            modifiers: List<String>,
+            carriedAnnotations: List<String>,
+            containerContext: MacroSurfaceContainerContext,
+        ): MacroSurface {
+            val surfaceId = MacroSurfaceIdGenerator.next()
+            val kind = if (annotation.text.startsWith("@!")) {
+                MacroSurface.Kind.FORCED
+            } else {
+                MacroSurface.Kind.PLAIN
+            }
+            val qualifiedName = annotation.shortName?.let(::macroSurfaceQualifiedName)
+            val valueArgumentList = annotation.valueArgumentList
+            val inputTokens = MacroPayloadTokenizer.tokenize(
+                valueArgumentList?.text,
+                valueArgumentList?.textRange?.startOffset ?: 0,
+            )
+            val sourceRange = MacroSurfaceSourceRange(
+                source = annotation.toCjPsiSourceElement(),
+                startOffset = annotation.textRange.startOffset,
+                endOffset = annotation.textRange.endOffset,
+            )
+            val scopeContext = MacroSurfaceScopeContext(
+                packageFqName = context.packageFqName,
+                enclosingClassFqName = null,
+                enclosingFunctionName = enclosingFunctionName(),
+            )
+            val replaceHandle = CfirReplaceHandle(handleId = surfaceId)
+
+            if (annotation.shortName?.asString() == IF_AVAILABLE_ANNOTATION_NAME) {
+                return IfAvailableSurface(
+                    surfaceId = surfaceId,
+                    qualifiedName = qualifiedName,
+                    kind = kind,
+                    hasParenthesis = valueArgumentList != null,
+                    attrTokens = emptyList(),
+                    inputTokens = inputTokens,
+                    sourceRange = sourceRange,
+                    scopeContext = scopeContext,
+                    modifiers = modifiers,
+                    carriedAnnotations = carriedAnnotations,
+                    capturedRawSyntax = annotation.text,
+                    containerContext = containerContext,
+                    replaceHandle = replaceHandle,
+                    branchTokens = inputTokens,
+                )
+            }
+
+            return when (target) {
+                AnnotationSurfaceTarget.DECLARATION -> MacroSurfaceDecl(
+                    surfaceId = surfaceId,
+                    qualifiedName = qualifiedName,
+                    kind = kind,
+                    hasParenthesis = valueArgumentList != null,
+                    attrTokens = emptyList(),
+                    inputTokens = inputTokens,
+                    sourceRange = sourceRange,
+                    scopeContext = scopeContext,
+                    modifiers = modifiers,
+                    carriedAnnotations = carriedAnnotations,
+                    capturedRawSyntax = annotation.text,
+                    containerContext = containerContext,
+                    replaceHandle = replaceHandle,
+                )
+                AnnotationSurfaceTarget.PARAMETER -> MacroSurfaceParam(
+                    surfaceId = surfaceId,
+                    qualifiedName = qualifiedName,
+                    kind = kind,
+                    hasParenthesis = valueArgumentList != null,
+                    attrTokens = emptyList(),
+                    inputTokens = inputTokens,
+                    sourceRange = sourceRange,
+                    scopeContext = scopeContext,
+                    modifiers = modifiers,
+                    carriedAnnotations = carriedAnnotations,
+                    capturedRawSyntax = annotation.text,
+                    containerContext = containerContext,
+                    replaceHandle = replaceHandle,
+                )
+            }
+        }
+
+        private fun macroSurfaceQualifiedName(name: Name): FqName {
+            return if (context.packageFqName.isRoot) {
+                FqName.topLevel(name)
+            } else {
+                context.packageFqName.child(name)
+            }
+        }
+
+        private fun collectModifierNames(modifierList: CjModifierList): List<String> {
+            return CjTokens.MODIFIER_KEYWORDS_ARRAY
+                .filter { modifierList.hasModifier(it) }
+                .map { it.value }
+        }
+
+        private fun macroContainerContext(
+            annotated: CjAnnotated,
+            target: AnnotationSurfaceTarget,
+        ): MacroSurfaceContainerContext {
+            return MacroSurfaceContainerContext(
+                outerDeclarationKind = macroOuterDeclarationKind(target),
+                isInsidePrimaryConstructor = annotated.hasParentOfType<CjPrimaryConstructor>(),
+                isInsideEnumBody = containerSymbolIfAny is CfirEnumSymbol || annotated.hasParentOfType<CjEnum>(),
+                isInsideBlock = context.inLocalContext,
+            )
+        }
+
+        private fun macroOuterDeclarationKind(target: AnnotationSurfaceTarget): MacroSurfaceContainerContext.OuterDeclarationKind {
+            if (context.inLocalContext) {
+                return MacroSurfaceContainerContext.OuterDeclarationKind.FUNCTION_BODY
+            }
+
+            return when (containerSymbolIfAny) {
+                is CfirInterfaceSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.INTERFACE_BODY
+                is CfirStructSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.STRUCT_BODY
+                is CfirEnumSymbol -> MacroSurfaceContainerContext.OuterDeclarationKind.ENUM_BODY
+                is CfirClassLikeSymbol<*> -> MacroSurfaceContainerContext.OuterDeclarationKind.CLASS_BODY
+                else -> when (target) {
+                    AnnotationSurfaceTarget.DECLARATION -> MacroSurfaceContainerContext.OuterDeclarationKind.TOP_LEVEL
+                    AnnotationSurfaceTarget.PARAMETER -> MacroSurfaceContainerContext.OuterDeclarationKind.NONE
+                }
+            }
+        }
+
+        private fun enclosingFunctionName(): Name? {
+            return when (val symbol = containerSymbolIfAny) {
+                is CfirNamedFunctionSymbol -> symbol.callableId.callableName
+                is CfirMainFunctionSymbol -> symbol.callableId.callableName
+                is CfirMacroDeclarationSymbol -> symbol.callableId.callableName
+                is CfirPropertyAccessorSymbol -> symbol.callableId.callableName
+                else -> null
+            }
+        }
+
+        private inline fun <reified T : PsiElement> PsiElement.hasParentOfType(): Boolean {
+            var current = parent
+            while (current != null) {
+                if (current is T) return true
+                current = current.parent
+            }
+            return false
         }
 
         private fun convertTypeParameter(
@@ -1619,7 +1810,7 @@ class PsiRawCfirBuilder(
                             isNamed = false
                             status = CfirDeclarationStatusImpl.DEFAULT
                             returnTypeRef =
-                                if (catchParam != null) convertTypeRef(catchParam.typeReference) else buildImplicitTypeRef()
+                                catchParam?.typeReferences?.firstOrNull()?.let(::convertTypeRef) ?: buildImplicitTypeRef()
                             name = catchParamName
                             containingDeclarationSymbol = containerSymbol
                         }

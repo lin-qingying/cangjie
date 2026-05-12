@@ -5,9 +5,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.pipeline.AllModulesFrontendOutput
 import org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput
-import org.cangnova.cangjie.cfir.pipeline.buildCfirFromCjFiles
-import org.cangnova.cangjie.cfir.pipeline.buildCfirViaLightTree
+import org.cangnova.cangjie.cfir.pipeline.buildRecordableCfirFromCjFiles
+import org.cangnova.cangjie.cfir.pipeline.buildRecordableCfirViaLightTree
 import org.cangnova.cangjie.cfir.pipeline.runResolution
+import org.cangnova.cangjie.cfir.resolve.providers.macro.RecordableRawCfirFiles
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.psi.CjFile
@@ -27,6 +28,7 @@ class CfirAnalyzerFacade(
     val parser: CfirParser,
     val diagnosticReporterForLightTree: DiagnosticReporter? = null
 ) : AbstractCfirAnalyzerFacade() {
+    private var recordableFiles: RecordableRawCfirFiles? = null
     private var cfirFiles: List<CfirFile>? = null
     private var _scopeSession: ScopeSession? = null
     override val scopeSession: ScopeSession
@@ -36,17 +38,24 @@ class CfirAnalyzerFacade(
         get() = AllModulesFrontendOutput(listOf(SingleModuleFrontendOutput(session, scopeSession, cfirFiles!!)))
 
     private fun buildRawCfir() {
-        if (cfirFiles != null) return
-        cfirFiles = when (parser) {
-            CfirParser.LightTree -> session.buildCfirViaLightTree(lightTreeFiles, diagnosticReporterForLightTree, reportFilesAndLines = null)
-            CfirParser.Psi -> session.buildCfirFromCjFiles(cjFiles)
+        if (recordableFiles != null) return
+        recordableFiles = when (parser) {
+            CfirParser.LightTree -> session.buildRecordableCfirViaLightTree(
+                lightTreeFiles,
+                diagnosticReporterForLightTree,
+                reportFilesAndLines = null,
+            )
+            CfirParser.Psi -> session.buildRecordableCfirFromCjFiles(cjFiles)
         }
+        cfirFiles = recordableFiles!!.files
     }
 
     override fun runResolution(): List<CfirFile> {
         if (cfirFiles == null) buildRawCfir()
         if (_scopeSession != null) return cfirFiles!!
-        _scopeSession = session.runResolution(cfirFiles!!).first
+        val (scopeSession, resolvedFiles) = session.runResolution(recordableFiles!!)
+        _scopeSession = scopeSession
+        cfirFiles = resolvedFiles
         return cfirFiles!!
     }
 }

@@ -810,7 +810,10 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         components.dataFlowAnalyzer.enterJump(returnExpression)
-        returnExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
+        val expectedReturnTypeRef = returnExpression.target.labeledElement.returnTypeRef as? CfirResolvedTypeRef
+        val resultResolutionMode = expectedReturnTypeRef?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent
+        returnExpression.transformResult(transformer, resultResolutionMode)
+        returnExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
         returnExpression.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
         components.dataFlowAnalyzer.exitJump(returnExpression)
         return returnExpression
@@ -1288,6 +1291,28 @@ open class CfirExpressionsResolveTransformer(
             }
         )
         return tryExpression
+    }
+
+    override fun transformCatch(
+        catch: CfirCatch,
+        data: ResolutionMode,
+    ): CfirExpression {
+        catch.transformAnnotations(transformer, data)
+
+        val parameter = catch.parameter
+        val resolvedTypeRef = resolveSuperTypeRef(parameter.returnTypeRef)
+        if (resolvedTypeRef !== parameter.returnTypeRef) {
+            parameter.replaceReturnTypeRef(resolvedTypeRef)
+        }
+
+        context.withTowerDataCleanup {
+            context.addLocalScope(CfirLocalScope(session))
+            context.storeValueParameterIfNeeded(parameter, session)
+            catch.transformBody(transformer, ResolutionMode.ContextIndependent)
+        }
+
+        catch.replaceConeTypeOrNull(catch.body.coneTypeOrNull ?: builtinTypes.unitType)
+        return catch
     }
 
     // ── Subscript ─────────────────────────────────────────────────────────────

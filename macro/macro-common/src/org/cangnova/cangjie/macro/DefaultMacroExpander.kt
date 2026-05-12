@@ -2,6 +2,18 @@ package org.cangnova.cangjie.macro
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 
+/**
+ * 旧 collect -> execute -> text replacement 宏展开编排器。
+ *
+ * 该编排器依赖 [MacroReplacer] 将 [MacroExpansionResult.Success.expandedText]
+ * 写回源码并重建 CFIR，属于 PLAN Batch 10 明确禁止的旧语义路径。
+ * 仅保留源码以便审计旧实现，不允许生产代码继续装配或调用。
+ */
+@Deprecated(
+    message = "Use MacroConstructionService construction flow instead. " +
+        "DefaultMacroExpander still orchestrates the forbidden text replacement semantic path.",
+    level = DeprecationLevel.ERROR,
+)
 class DefaultMacroExpander(
     private val collector: MacroCollector,
     private val executor: MacroExecutor,

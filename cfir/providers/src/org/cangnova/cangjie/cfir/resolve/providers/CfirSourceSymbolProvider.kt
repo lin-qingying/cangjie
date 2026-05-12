@@ -107,31 +107,6 @@ class CfirProviderImpl(
         }
     }
 
-    /**
-     * 历史兼容入口。
-     *
-     * 生产 pipeline 应当通过 `recordExpandedRawFilesOnce` 走 strict 路径。
-     * 此入口暂为：
-     * - 测试 fixture：在 `EMPTY` 状态首次调用进入 `OPEN_FOR_EXPANDED_RECORD`，连续调用累积注册（不自动 finalize）；
-     * - `FINALIZED` 后调用直接抛出，确保 baseline 第 5 节"FINALIZED 后禁止 record"始终生效。
-     *
-     * Batch 3 起将关闭该兼容入口，仅保留 `recordExpandedFilesOnce` 与 internal 实现。
-     */
-    fun recordFile(file: CfirFile) {
-        synchronized(recordingLock) {
-            when (recordingState) {
-                RecordingState.EMPTY -> {
-                    recordingState = RecordingState.OPEN_FOR_EXPANDED_RECORD
-                    recordFileInternal(file)
-                }
-                RecordingState.OPEN_FOR_EXPANDED_RECORD -> recordFileInternal(file)
-                RecordingState.FINALIZED -> error(
-                    "Cannot record after CfirProviderImpl is finalized: file=${file.name}"
-                )
-            }
-        }
-    }
-
     private fun recordFileInternal(file: CfirFile) {
         val packageName = file.packageDirective.packageFqName
         state.fileMap.getOrPut(packageName, ::mutableListOf).add(file)

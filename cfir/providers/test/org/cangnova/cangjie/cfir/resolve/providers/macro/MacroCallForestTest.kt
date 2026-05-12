@@ -1,0 +1,112 @@
+package org.cangnova.cangjie.cfir.resolve.providers.macro
+
+import org.cangnova.cangjie.name.FqName
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertSame
+import org.junit.jupiter.api.Test
+
+class MacroCallForestTest {
+    @Test
+    fun `roots are sorted deterministically by source range and surface id`() {
+        val later = surface(id = 30, name = "Later", start = 40, end = 50)
+        val firstLowerId = surface(id = 10, name = "FirstLowerId", start = 10, end = 15)
+        val noRangeLowerId = surface(id = 1, name = "NoRangeLowerId", start = null, end = null)
+        val noRangeHigherId = surface(id = 40, name = "NoRangeHigherId", start = null, end = null)
+
+        val forest = MacroCallForestBuilder.build(
+            listOf(later, noRangeHigherId, firstLowerId, noRangeLowerId),
+        )
+
+        assertEquals(
+            listOf("FirstLowerId", "Later", "NoRangeLowerId", "NoRangeHigherId"),
+            forest.roots.map { it.surface.qualifiedName!!.shortName().asString() },
+        )
+    }
+
+    @Test
+    fun `evaluator visits nested forest child first and passes direct child results to parent`() {
+        val outer = surface(id = 1, name = "Outer", start = 0, end = 100)
+        val middle = surface(id = 2, name = "Middle", start = 10, end = 80)
+        val inner = surface(id = 3, name = "Inner", start = 20, end = 30)
+        val forest = MacroCallForestBuilder.build(listOf(outer, inner, middle))
+        val visited = mutableListOf<String>()
+        val childResultSizes = linkedMapOf<String, Int>()
+
+        val results = MacroForestEvaluator().evaluate(
+            forest = forest,
+            expand = { node, childResults ->
+                val name = node.surface.qualifiedName!!.shortName().asString()
+                visited += name
+                childResultSizes[name] = childResults.size
+                listOf(token("${name.lowercase()}Result"))
+            },
+        )
+
+        assertEquals(listOf("Inner", "Middle", "Outer"), visited)
+        assertEquals(mapOf("Inner" to 0, "Middle" to 1, "Outer" to 1), childResultSizes)
+        assertEquals(listOf("innerResult", "middleResult", "outerResult"), results.values.flatten().map { it.text })
+    }
+
+    @Test
+    fun `evaluator reports fingerprint cycle through callback`() {
+        val first = surface(id = 1, name = "Loop", start = 0, end = 10, inputTokens = listOf(token("same")))
+        val second = surface(id = 2, name = "Loop", start = 20, end = 30, inputTokens = listOf(token("same")))
+        val cycles = mutableListOf<MacroExpansionCycle>()
+
+        MacroForestEvaluator(maxIterations = 1).evaluate(
+            forest = MacroCallForestBuilder.build(listOf(first, second)),
+            expand = { node, _ -> listOf(token(node.surface.surfaceId.toString())) },
+            onCycle = cycles::add,
+        )
+
+        assertEquals(1, cycles.size)
+        assertEquals("Loop", cycles.single().fingerprint.qualifiedName)
+        assertEquals(listOf(1L, 2L), cycles.single().nodes.map { it.surface.surfaceId })
+        assertSame(first, cycles.single().nodes.first().surface)
+        assertSame(second, cycles.single().nodes.last().surface)
+    }
+
+    private fun surface(
+        id: Long,
+        name: String,
+        start: Int?,
+        end: Int?,
+        inputTokens: List<MacroSurfaceToken> = emptyList(),
+    ): MacroSurfaceExpr {
+        return MacroSurfaceExpr(
+            surfaceId = id,
+            qualifiedName = FqName(name),
+            kind = MacroSurface.Kind.PLAIN,
+            hasParenthesis = true,
+            attrTokens = emptyList(),
+            inputTokens = inputTokens,
+            sourceRange = if (start != null && end != null) MacroSurfaceSourceRange(
+                source = null,
+                startOffset = start,
+                endOffset = end,
+            ) else null,
+            scopeContext = MacroSurfaceScopeContext(
+                packageFqName = FqName("test"),
+                enclosingClassFqName = null,
+                enclosingFunctionName = null,
+            ),
+            modifiers = emptyList(),
+            carriedAnnotations = emptyList(),
+            capturedRawSyntax = null,
+            containerContext = MacroSurfaceContainerContext(
+                outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.FUNCTION_BODY,
+                isInsidePrimaryConstructor = false,
+                isInsideEnumBody = false,
+                isInsideBlock = true,
+            ),
+            replaceHandle = CfirReplaceHandle(id),
+        )
+    }
+
+    private fun token(text: String): MacroSurfaceToken = MacroSurfaceToken(
+        text = text,
+        startOffset = 0,
+        endOffset = text.length,
+        kindName = "TEST",
+    )
+}

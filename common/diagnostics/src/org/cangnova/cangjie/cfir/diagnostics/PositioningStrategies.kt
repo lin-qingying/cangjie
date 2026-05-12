@@ -7,6 +7,7 @@ import org.cangnova.cangjie.psi.CjBinaryExpression
 import org.cangnova.cangjie.psi.CjBinaryExpressionWithTypeRHS
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjCallExpression
+import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjFieldVariable
@@ -21,6 +22,7 @@ import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjParenthesizedExpression
 import org.cangnova.cangjie.psi.CjQualifiedExpression
 import org.cangnova.cangjie.psi.CjReferenceExpression
+import org.cangnova.cangjie.psi.CjThrowExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.psi.CjUnaryExpression
 import org.cangnova.cangjie.psi.CjUserType
@@ -31,6 +33,9 @@ object PositioningStrategies {
     val DEFAULT: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {}
     val ACTUAL_DECLARATION_NAME: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
         override fun mark(element: PsiElement): List<TextRange> {
+            if (element is CjConstructor<*>) {
+                element.getIdentifyingElement()?.let { return markElement(it) }
+            }
             val namedDeclaration = element as? CjNamedDeclaration ?: return super.mark(element)
             val nameIdentifier = namedDeclaration.nameIdentifier ?: return super.mark(element)
             return markElement(nameIdentifier)
@@ -123,6 +128,14 @@ object PositioningStrategies {
             val modifier = modifierOwner.modifierList?.getModifier(CjTokens.MUT_KEYWORD)
                 ?: return ACTUAL_DECLARATION_NAME.mark(element)
             return markElement(modifier)
+        }
+    }
+    val THROW_KEYWORD: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            val throwExpression = element as? CjThrowExpression ?: return super.mark(element)
+            val throwKeyword = throwExpression.node.findChildByType(CjTokens.THROW_KEYWORD)?.psi
+                ?: return super.mark(element)
+            return markElement(throwKeyword)
         }
     }
 

@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.analysis.diagnostics
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
@@ -40,6 +42,7 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeInconsistentError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
 import org.cangnova.cangjie.cfir.diagnostic.ConeGenericConstraintNotLooserError
@@ -254,6 +257,14 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
     val errors = candidate.errors
+    if (isBareStaticGenericQualifierInferenceError(session)) {
+        return listOfNotNull(
+            CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
+                qualifiedAccessSource ?: source ?: return emptyList(),
+                session,
+            )
+        )
+    }
     if (hasGenericInferenceConstraintMismatch()) {
         return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
     }
@@ -321,6 +332,20 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
             }
         )
     }
+}
+
+private fun ConeConstraintSystemHasContradiction.isBareStaticGenericQualifierInferenceError(
+    session: CfirSession,
+): Boolean {
+    val callable = candidate.symbol.cfir as? CfirCallableDeclaration ?: return false
+    if (!callable.status.isStatic) return false
+    if (candidate.errors.none { it is NotEnoughInformationForTypeParameter<*> }) return false
+
+    val receiver = candidate.callInfo.explicitReceiver as? CfirQualifiedAccessExpression ?: return false
+    if (receiver.typeArguments.isNotEmpty()) return false
+
+    val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return false
+    return ownerSymbol.cfir.typeParameters.isNotEmpty()
 }
 
 private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
@@ -554,7 +579,7 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
         }
     }
 
-    val factory = if (isCallLikeContext) CfirErrors.AMBIGUOUS_FUNCTION_CALL else CfirErrors.AMBIGUOUS_USE
+    val factory = if (isCallLike || isCallLikeContext) CfirErrors.AMBIGUOUS_FUNCTION_CALL else CfirErrors.AMBIGUOUS_USE
     return listOfNotNull(factory.on(diagnosticSource, name, session))
 }
 
@@ -991,6 +1016,21 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
         is ConeGenericTypeInconsistentError -> CfirErrors.GENERIC_TYPE_INCONSISTENT.on(
             diagnosticSource, typeParameterName, session,
         )
+
+        is ConeUnmatchedTypeArgumentsError -> {
+            if (actualCount == 0) {
+                CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(
+                    diagnosticSource,
+                    symbol.name,
+                    session,
+                )
+            } else {
+                CfirErrors.GENERIC_ARGUMENT_NO_MATCH.on(
+                    diagnosticSource,
+                    session,
+                )
+            }
+        }
 
         is ConeGenericArgumentNoMatchError -> CfirErrors.GENERIC_ARGUMENT_NO_MATCH.on(
             diagnosticSource, session,

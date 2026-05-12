@@ -6,7 +6,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
@@ -43,7 +42,6 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
             source = declaration.source,
             factory = CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,
             a = declaration.name,
-            positioningStrategy = SourceElementPositioningStrategies.DECLARATION_START_TO_NAME,
         )
     }
 

@@ -46,7 +46,11 @@ interface CfirPlatformConflictDeclarationsDiagnosticDispatcher : CfirSessionComp
                 is CfirFunctionSymbol<*>,
 
                 is CfirEnumConstructorSymbol,
-                -> CfirErrors.CONFLICTING_OVERLOADS
+                -> if (symbols.any { it.isFunctionLikeRedeclaration() }) {
+                    CfirErrors.CONFLICTING_OVERLOADS
+                } else {
+                    CfirErrors.REDECLARATION
+                }
 
                 is CfirClassLikeSymbol<*>
                     if symbols.any { it is CfirClassLikeSymbol<*> } ->
@@ -164,3 +168,6 @@ private fun CfirBasedSymbol<*>.boundSourceOrNull(): CjSourceElement? =
 
 private fun Collection<CfirBasedSymbol<*>>.renderNames(): List<String> =
     asSequence().mapNotNull(CfirRedeclarationPresenter::diagnosticName).distinct().sorted().toList()
+
+private fun CfirBasedSymbol<*>.isFunctionLikeRedeclaration(): Boolean =
+    this is CfirConstructorSymbol || this is CfirFunctionSymbol<*> || this is CfirEnumConstructorSymbol

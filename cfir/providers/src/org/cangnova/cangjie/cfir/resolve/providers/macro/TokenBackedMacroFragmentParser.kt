@@ -67,6 +67,7 @@ class TokenBackedMacroFragmentParser(
                 originNode = node,
                 tokens = tokens,
                 mode = mode,
+                payload = payload,
             )
         }
     }
@@ -76,15 +77,15 @@ class TokenBackedMacroFragmentParser(
 }
 
 /**
- * `MacroStableSplicer` 的最小实现：通过 `CfirReplaceHandle.handleId` 把
- * 旧 `CfirMacroExpression` 节点替换为 fragment 产物。
+ * `MacroStableSplicer` 的 construction 边界占位实现。
  *
- * Batch 8 阶段实现仅占位（保留 files 不变并把 fragment 注入 registry），
- * 真实节点级 splice 由 Batch 10 拆除 `DefaultMacroReplacer` 时一并接入。
+ * [TokenBackedMacroFragmentParser] 只负责 newTokens 的 token-stage re-eval，
+ * 再把 raw fragment reparse 结果作为 construction-only [MacroFragmentResult]
+ * 交回宏构造流水线；它不产生 provider-visible final CFIR，也不替换旧节点。
  *
- * 之所以保留占位实现：text-patch + 全文件重建仍然能正确消除
- * `CfirMacroExpression`，无须 node-level splice；
- * 真实 splice 与 fragment parser 必须**同时**接入才能保证语义一致。
+ * 在 stable splice 接入前，本对象只保留 files 不变，作为禁止旧语义路径进入
+ * final provider 的 hard boundary placeholder；真实节点级 splice 必须通过
+ * [CfirReplaceHandle] 接入，不能由本占位对象宣称完成。
  */
 object IdentityMacroStableSplicer : MacroStableSplicer {
     override fun applySlices(files: List<CfirFile>, slots: List<MacroReplaceSlot>): List<CfirFile> = files
@@ -94,7 +95,7 @@ object IdentityMacroStableSplicer : MacroStableSplicer {
  * `BuiltinNonMacroDesugarer` 的占位实现：保留 [fragment] 不变。
  *
  * Batch 8 阶段仅提供入口；具体 `@IfAvailable` 等 desugar 逻辑由 Batch 10
- * 在拆 text-patch path 同时接入。
+ * 在 stable splice / construction desugar 接入阶段完成。
  */
 object IdentityBuiltinNonMacroDesugarer : BuiltinNonMacroDesugarer {
     override fun desugar(surface: BuiltinNonMacroSurface, fragment: MacroFragmentResult.Success): MacroFragmentResult? {

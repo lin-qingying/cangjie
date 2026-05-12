@@ -87,6 +87,7 @@ object CfirMapArguments : ResolutionStage() {
 
         var nextPositionalIndex = 0
         var seenNamedArgument = false
+        var hasUnmappedNamedArgumentError = false
 
         for (argument in argumentInfos) {
             val argumentName = argument.name
@@ -95,16 +96,19 @@ object CfirMapArguments : ResolutionStage() {
                 val parameter = parameters.firstOrNull { it.name == argumentName }
                 if (parameter == null) {
                     sink.reportDiagnostic(NamedParameterNotFound(argument.atom.expression, argumentName))
+                    hasUnmappedNamedArgumentError = true
                     continue
                 }
                 if (!parameter.isNamed) {
                     sink.reportDiagnostic(
                         NamedArgumentsNotAllowed(argument.atom.expression, "parameter '${parameter.name.asString()}'")
                     )
+                    hasUnmappedNamedArgumentError = true
                     continue
                 }
                 if (!usedParameters.add(parameter)) {
                     sink.reportDiagnostic(ArgumentPassedTwice(argument.atom.expression, parameter))
+                    hasUnmappedNamedArgumentError = true
                     continue
                 }
                 argumentMapping[argument.atom] = parameter
@@ -137,12 +141,14 @@ object CfirMapArguments : ResolutionStage() {
             nextPositionalIndex += 1
         }
 
-        parameters
-            .filterNot { it in usedParameters }
-            .filter { it.defaultValue == null }
-            .forEach { parameter ->
-                sink.reportDiagnostic(NoValueForParameter(parameter))
-            }
+        if (!hasUnmappedNamedArgumentError) {
+            parameters
+                .filterNot { it in usedParameters }
+                .filter { it.defaultValue == null }
+                .forEach { parameter ->
+                    sink.reportDiagnostic(NoValueForParameter(parameter))
+                }
+        }
 
         candidate.initializeArgumentMapping(argumentAtoms, argumentMapping)
         candidate.numDefaults = parameters.count { it !in usedParameters && it.defaultValue != null }

@@ -104,8 +104,10 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                 if (tupleType == null) {
                     reporter.reportOn(
                         source = pattern.source,
-                        factory = CfirErrors.TUPLE_PATTERN_NOT_MATCH,
-                        a = expectedType.patternTypeText(),
+                        factory = CfirErrors.TYPE_MISMATCH,
+                        a = expectedType,
+                        b = ConeTupleType(emptyList()),
+                        c = false,
                     )
                     return
                 }

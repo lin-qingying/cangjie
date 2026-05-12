@@ -486,6 +486,8 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkPropertyAccessors(property: CfirProperty) {
+        if (context.containingDeclarations.lastOrNull() is CfirInterface) return
+        if (property.status.isAbstract) return
         if (property.getter == null && property.setter == null) {
             reporter.reportOn(
                 source = property.source,

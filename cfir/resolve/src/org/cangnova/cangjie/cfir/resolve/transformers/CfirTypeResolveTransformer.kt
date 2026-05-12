@@ -504,6 +504,7 @@ class CfirTypeResolveTransformer(
             }
 
         return buildList {
+            // CfirTypeResolver 按顺序查找 scope；这里必须高优先级在前。
             add(CfirFileDeclaredTopLevelScope(file))
             add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
             add(CfirExplicitSimpleImportingScope(imports, symbolProvider))

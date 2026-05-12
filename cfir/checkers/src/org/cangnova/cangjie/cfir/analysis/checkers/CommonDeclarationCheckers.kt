@@ -51,7 +51,6 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionRetur
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGeneralSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGenericDeepChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInheritanceDeepChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInterfaceSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirLambdaParameterTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMockSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGenericJavaInteropChecker
@@ -152,7 +151,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirClassStructSemanticsChecker,
             CfirConstDeclarationChecker,
             CfirInheritanceDeepChecker,
-            CfirInterfaceSemanticsChecker,
             CfirCommonSpecificChecker,
             CfirMockSemanticsChecker,
             CfirGenericJavaInteropChecker,

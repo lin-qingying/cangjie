@@ -28,6 +28,10 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.MUT_MODIFIER,
         PositioningStrategies.MUT_MODIFIER,
     )
+    val THROW_KEYWORD = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.THROW_KEYWORD,
+        PositioningStrategies.THROW_KEYWORD,
+    )
     val VARIABLE_INITIALIZER: AbstractSourceElementPositioningStrategy = DEFAULT
     val PATTERN_VARIABLE_INITIALIZER: AbstractSourceElementPositioningStrategy = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.INITIALIZER_EQ,

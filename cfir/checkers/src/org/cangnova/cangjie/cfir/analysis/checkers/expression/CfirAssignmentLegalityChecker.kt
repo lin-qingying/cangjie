@@ -108,8 +108,8 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
     private fun CfirQualifiedAccessExpression.isImmutableFieldAssignmentForbidden(field: CfirFieldVariable): Boolean {
         if (field.isVar) return false
         val inConstructor = context.findClosestDeclaration<CfirConstructor>() != null
-        if (!inConstructor || explicitReceiver != null) return true
-        return field.initializer != null || field.status.isCommon
+        if (!inConstructor) return true
+        return field.initializer != null
     }
 
     private sealed interface AssignmentTarget {

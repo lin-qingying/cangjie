@@ -23,7 +23,6 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjSourceElement
@@ -249,9 +248,15 @@ class ErrorNodeDiagnosticCollectorComponent(
     private fun findOwningCallOrAssignment(owner: CfirElement, context: CheckerContext): CfirElement? {
         return when (owner) {
             is CfirFunctionCall,
-            is CfirNamedAccessExpression,
-            is CfirQualifiedAccessExpression,
             is CfirAssignment -> owner   // 节点本身就是调用/赋值，直接作为宿主
+            is CfirNamedAccessExpression,
+            is CfirQualifiedAccessExpression -> {
+                // callee 自身携带错误类型时，宿主仍应是外层调用；否则调用语境诊断会退化为普通引用诊断。
+                val ownerReference = owner.toReferenceOrNull()
+                context.callsOrAssignments.asReversed().firstOrNull { candidate ->
+                    candidate is CfirFunctionCall && candidate.toReferenceOrNull() == ownerReference
+                } ?: owner
+            }
             else -> context.callsOrAssignments.lastOrNull()  // 从上下文栈中取最近宿主
         }
     }
@@ -334,14 +339,6 @@ class ErrorNodeDiagnosticCollectorComponent(
      * null 表达式（无接收者）视为"可以解析"，返回 false。
      */
     private fun CfirExpression?.cannotBeResolved(): Boolean {
-        if (this is CfirQualifiedAccessExpression) {
-            val resolvedReference = calleeReference as? org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-            val classLikeSymbol = resolvedReference?.resolvedSymbol as? CfirClassLikeSymbol<*>
-            if (classLikeSymbol != null && typeArguments.isEmpty() && classLikeSymbol.cfir.typeParameters.isNotEmpty()) {
-                return true
-            }
-        }
-
         return when (val diagnostic = (this?.coneTypeOrNull as? ConeErrorType)?.diagnostic) {
             is ConeUnresolvedNameError,
             is ConeUnresolvedReferenceError,

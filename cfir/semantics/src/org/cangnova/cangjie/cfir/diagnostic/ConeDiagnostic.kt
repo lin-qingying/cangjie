@@ -80,7 +80,8 @@ interface ConeDiagnosticWithCandidates : ConeDiagnostic {
 class ConeAmbiguityError(
     val name: Name,
     val applicability: CandidateApplicability,
-    val candidatesWithErrors: Map<out AbstractCandidate, ConeDiagnostic?>
+    val candidatesWithErrors: Map<out AbstractCandidate, ConeDiagnostic?>,
+    val isCallLike: Boolean = false,
 ) : ConeDiagnosticWithCandidates {
     override val reason: String get() = "Ambiguity: $name, ${candidateSymbols.map { describeSymbol(it) }}"
     override val candidates: Collection<AbstractCandidate> get() = candidatesWithErrors.keys

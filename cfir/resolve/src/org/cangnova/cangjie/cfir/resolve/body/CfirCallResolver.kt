@@ -3,20 +3,27 @@ package org.cangnova.cangjie.cfir.resolve.body
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionHolder
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
-import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
 import org.cangnova.cangjie.cfir.diagnostic.ConeNoConstructorError
+import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
 import org.cangnova.cangjie.cfir.diagnostic.ConeResolutionToClassifierError
 import org.cangnova.cangjie.cfir.diagnostic.ConeHiddenCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
@@ -31,7 +38,9 @@ import org.cangnova.cangjie.cfir.resolve.CollectionLiteralOuterCandidateContext
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.createConeDiagnosticForCandidateWithError
 import org.cangnova.cangjie.cfir.resolve.doesResolutionResultOverrideOtherToPreserveCompatibility
+import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedClass
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
@@ -55,6 +64,8 @@ import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
@@ -62,11 +73,17 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -110,7 +127,6 @@ class CfirCallResolver(
             resolutionMode = resolutionMode,
             collectionLiteralContext = collectionLiteralContext,
         )
-
         var effectiveResult = result
         var expectedCallKind: CallKind? = null
         var expectedCandidates: Collection<Candidate>? = null
@@ -518,7 +534,7 @@ class CfirCallResolver(
                             ?: matchedClassifier
                         val actualDeclaration = actualClassifier.cfir as? CfirClassLikeDeclaration
                         if (actualDeclaration is org.cangnova.cangjie.cfir.declarations.CfirEnum) {
-                            ConeEnumTypeCannotBeUsedAsConstructorError(actualClassifier.name)
+                            ConeNoMatchingInvokeOperatorError(actualClassifier.name, actualClassifier.constructType())
                         } else {
                             ConeNoConstructorError
                         }
@@ -549,13 +565,24 @@ class CfirCallResolver(
                 val candidatesWithErrors = candidates.associateWith {
                     runIf(!it.isSuccessful) { createConeDiagnosticForCandidateWithError(it.applicability, it) }
                 }
-                ConeAmbiguityError(name, applicability, candidatesWithErrors as Map<AbstractCandidate, ConeDiagnostic?>)
+                ConeAmbiguityError(
+                    name,
+                    applicability,
+                    candidatesWithErrors as Map<AbstractCandidate, ConeDiagnostic?>,
+                    isCallLike = callInfo.callKind == CallKind.Function || callInfo.callKind == CallKind.EnumConstructorCall,
+                )
             }
 
             else -> {
                 val candidate = candidates.single()
-                runIf(!candidate.isSuccessful) {
-                    createConeDiagnosticForCandidateWithError(applicability, candidate)
+                when {
+                    !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
+                    candidate.isBareGenericEnumValueConstructorWithoutMatchingExpectedType() -> ConeSimpleDiagnostic(
+                        "generic enum constructor should be used with type argument",
+                        DiagnosticKind.GenericTypeWithoutTypeArgument,
+                    )
+                    candidate.hasUninferableBareStaticGenericQualifier() -> ConeUnableToInferGenericFuncError()
+                    else -> null
                 }
             }
         }
@@ -591,6 +618,60 @@ class CfirCallResolver(
         }
 
         return CfirNamedReferenceWithCandidate(source, name, candidate)
+    }
+
+    /**
+     * `Box.create()` 这类裸泛型类名静态成员调用属于调用推断错误。
+     * 当 owner 泛型参数没有显式实参，且完全没有出现在可调用签名中时，
+     * 调用上下文不可能为这些参数提供约束。
+     */
+    private fun Candidate.hasUninferableBareStaticGenericQualifier(): Boolean {
+        val callable = symbol.cfir as? CfirCallableDeclaration ?: return false
+        if (!callable.status.isStatic) return false
+
+        val receiver = callInfo.explicitReceiver as? CfirQualifiedAccessExpression ?: return false
+        if (receiver.typeArguments.isNotEmpty()) return false
+
+        val owner = receiver.unwrapSmartcastExpression().resolvedQualifierClassifier(session)?.cfir
+            as? CfirClassLikeDeclaration ?: return false
+        val ownerTypeParameterSymbols = owner.typeParameters.mapTo(linkedSetOf()) { it.symbol }
+        if (ownerTypeParameterSymbols.isEmpty()) return false
+
+        val signatureTypes = buildList {
+            callable.returnTypeRef.coneTypeOrNull?.let(::add)
+            if (callable is CfirFunction) {
+                callable.valueParameters.mapNotNullTo(this) { it.returnTypeRef.coneTypeOrNull }
+            }
+        }
+
+        return ownerTypeParameterSymbols.any { ownerTypeParameter ->
+            signatureTypes.none { type -> type.referencesTypeParameter(ownerTypeParameter) }
+        }
+    }
+
+    /**
+     * 官方 enum sugar 中，无参泛型 enum constructor 在没有同 owner enum 的期望类型、
+     * 且没有显式类型实参时，报告裸泛型类型实参缺失。
+     */
+    private fun Candidate.isBareGenericEnumValueConstructorWithoutMatchingExpectedType(): Boolean {
+        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
+        if (enumConstructor.valueParameters.isNotEmpty()) return false
+        if (callInfo.typeArguments.isNotEmpty()) return false
+
+        val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return false
+        val ownerClassId = session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId ?: return false
+        val ownerEnum = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir as? CfirEnum
+            ?: return false
+        if (ownerEnum.typeParameters.isEmpty()) return false
+
+        val expectedEnumType = callInfo.resolutionMode.expectedType?.fullyExpandedType() as? ConeEnumType
+        return expectedEnumType?.classId != ownerClassId
+    }
+
+    private fun ConeCangJieType.referencesTypeParameter(
+        symbol: org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol,
+    ): Boolean = contains { type ->
+        type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol == symbol
     }
 
     private fun collectClassConstructorCandidates(

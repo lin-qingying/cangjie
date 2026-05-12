@@ -174,6 +174,7 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
             }
 
         return buildList {
+            // CfirTypeResolver 按顺序查找 scope；lazy type resolve 与普通类型解析保持一致。
             add(CfirFileDeclaredTopLevelScope(file))
             add(CfirPackageMemberScope(file.packageDirective.packageFqName, resolveTargetSession))
             add(CfirExplicitSimpleImportingScope(imports, symbolProvider))

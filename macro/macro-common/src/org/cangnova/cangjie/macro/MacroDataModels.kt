@@ -72,7 +72,10 @@ data class MacroDiagnosticInfo(
  */
 sealed class MacroExpansionResult {
     /**
-     * 展开成功
+     * 展开成功。
+     *
+     * [expandedText] 仅供测试、日志、LSP/debug 展示使用；语义路径必须消费
+     * [tokens] 并进入 construction fragment/splice 流程，不能把文本替换回源码。
      */
     data class Success(
         val tokens: List<TokenInfo>,

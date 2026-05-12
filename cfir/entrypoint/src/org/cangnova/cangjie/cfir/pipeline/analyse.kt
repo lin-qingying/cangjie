@@ -45,16 +45,15 @@ import org.cangnova.cangjie.source.readSourceFileWithMapping
 fun CfirSession.buildPreMacroRawCfirFromCjFiles(cjFiles: Collection<CjFile>): PreMacroRawBuildResult {
     val firProvider = cfirProvider as CfirProviderImpl
     val builder = PsiRawCfirBuilder(this, firProvider.cangjieScopeProvider)
-    val rawFiles = cjFiles.map(builder::buildCfirFile)
-    val perFileSurfaces = rawFiles.map { _ ->
-        // PSI builder accumulates into one shared list; consume once and assign all to last file.
-        emptyList<org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface>()
-    }.toMutableList()
-    val collected = builder.consumeCollectedMacroSurfaces()
-    if (collected.isNotEmpty() && perFileSurfaces.isNotEmpty()) {
-        perFileSurfaces[perFileSurfaces.lastIndex] = collected
+    val rawFilesWithSurfaces = cjFiles.map { cjFile ->
+        val cfirFile = builder.buildCfirFile(cjFile)
+        cfirFile to builder.consumeCollectedMacroSurfaces()
     }
-    return buildPreMacroRawFiles(this, rawFiles, perFileSurfaces)
+    return buildPreMacroRawFiles(
+        session = this,
+        rawCfirFiles = rawFilesWithSurfaces.map { it.first },
+        fileSurfaces = rawFilesWithSurfaces.map { it.second },
+    )
 }
 
 /**
@@ -97,8 +96,7 @@ fun CfirSession.buildPreMacroRawCfirViaLightTree(
  *   `buildPreMacroRawCfirFromCjFiles → MacroConstructionService.expand → recordExpandedRawFilesOnce`
  */
 fun CfirSession.buildCfirFromCjFiles(cjFiles: Collection<CjFile>): List<CfirFile> {
-    val pre = buildPreMacroRawCfirFromCjFiles(cjFiles)
-    return finalizeIdentity(pre)
+    return buildRecordableCfirFromCjFiles(cjFiles).files
 }
 
 /**
@@ -110,11 +108,34 @@ fun CfirSession.buildCfirViaLightTree(
     @Suppress("UNUSED_PARAMETER") diagnosticReporterForLightTree: DiagnosticReporter? = null,
     reportFilesAndLines: ((String, Int) -> Unit)? = null,
 ): List<CfirFile> {
+    return buildRecordableCfirViaLightTree(lightTreeFiles, diagnosticReporterForLightTree, reportFilesAndLines).files
+}
+
+/**
+ * 构建无宏源码的 identity recordable 包装，并通过唯一入口写入 source provider。
+ *
+ * 这是 Kotlin `buildFirFromKtFiles -> provider.recordFile` 在仓颉宏 construction
+ * 边界下的对应形态：调用方拿到的是 [RecordableRawCfirFiles]，后续只能通过
+ * [runResolution] 进入 ordinary resolve。
+ */
+fun CfirSession.buildRecordableCfirFromCjFiles(cjFiles: Collection<CjFile>): RecordableRawCfirFiles {
+    val pre = buildPreMacroRawCfirFromCjFiles(cjFiles)
+    return finalizeIdentity(pre)
+}
+
+/**
+ * LightTree 版本的 identity recordable 构建入口，语义同 [buildRecordableCfirFromCjFiles]。
+ */
+fun CfirSession.buildRecordableCfirViaLightTree(
+    lightTreeFiles: Collection<CjSourceFile>,
+    diagnosticReporterForLightTree: DiagnosticReporter? = null,
+    reportFilesAndLines: ((String, Int) -> Unit)? = null,
+): RecordableRawCfirFiles {
     val pre = buildPreMacroRawCfirViaLightTree(lightTreeFiles, diagnosticReporterForLightTree, reportFilesAndLines)
     return finalizeIdentity(pre)
 }
 
-private fun CfirSession.finalizeIdentity(pre: PreMacroRawBuildResult): List<CfirFile> {
+private fun CfirSession.finalizeIdentity(pre: PreMacroRawBuildResult): RecordableRawCfirFiles {
     val provider = cfirProvider as CfirProviderImpl
     val result = MacroConstructionService.Identity.expandWithDefaultContext(
         pre = pre,
@@ -123,7 +144,7 @@ private fun CfirSession.finalizeIdentity(pre: PreMacroRawBuildResult): List<Cfir
     val success = result as? MacroConstructionResult.Success
         ?: error("Identity macro construction must return Success, got ${result::class.simpleName}")
     recordExpandedRawFilesOnce(provider, success.recordableFiles, success.registry)
-    return success.recordableFiles.files
+    return success.recordableFiles
 }
 
 fun List<CjSourceFile>.asCjFilesList(): List<CjFile> {
@@ -137,16 +158,13 @@ fun List<CjSourceFile>.asCjFilesList(): List<CjFile> {
  * 是 source CFIR 文件进入 ordinary resolve 的唯一规范输入（baseline 第 2 节硬性边界 #1）。
  */
 fun CfirSession.runResolution(files: RecordableRawCfirFiles): Pair<ScopeSession, List<CfirFile>> {
-    return runResolution(files.files)
+    return runResolutionFiles(files.files)
 }
 
 /**
- * 历史 overload：直接接 `List<CfirFile>`。
- *
- * 仅为 test fixture / 兼容路径保留；
- * Batch 3 删除 `MACRO_EXPAND` phase 时会进一步收紧到只接 [RecordableRawCfirFiles]。
+ * 内部实现：公开 API 不再接收裸 `List<CfirFile>`，避免绕过 macro construction 边界。
  */
-fun CfirSession.runResolution(cfirFiles: List<CfirFile>): Pair<ScopeSession, List<CfirFile>> {
+private fun CfirSession.runResolutionFiles(cfirFiles: List<CfirFile>): Pair<ScopeSession, List<CfirFile>> {
     val resolveProcessor = CfirTotalResolveProcessor(this)
     val resolvedFiles = resolveProcessor.process(cfirFiles)
     return resolveProcessor.scopeSession to resolvedFiles
@@ -190,7 +208,7 @@ fun CfirSession.runCheckers(
  */
 fun resolveAndCheckCfir(
     session: CfirSession,
-    cfirFiles: List<CfirFile>,
+    cfirFiles: RecordableRawCfirFiles,
     diagnosticsCollector: BaseDiagnosticsCollector,
 ): SingleModuleFrontendOutput {
     val (scopeSession, fir) = session.runResolution(cfirFiles)
@@ -233,6 +251,6 @@ fun resolveAndCheckCfirAfterConstruction(
     }
     val provider = session.cfirProvider as CfirProviderImpl
     recordExpandedRawFilesOnce(provider, recordable, result.registry)
-    val output = resolveAndCheckCfir(session, recordable.files, diagnosticsCollector)
+    val output = resolveAndCheckCfir(session, recordable, diagnosticsCollector)
     return result to output
 }

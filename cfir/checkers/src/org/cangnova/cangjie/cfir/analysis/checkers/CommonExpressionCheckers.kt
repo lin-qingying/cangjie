@@ -36,11 +36,11 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirOrPatternVaria
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirDeprecatedCallChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryHandleReturnChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirThrowExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSpawnSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirInoutSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirExpressionWithErrorTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirFunctionBodyTypeMismatchChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirEffectsBasicChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSubscriptAssignmentChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirSubscriptExpressionChecker
 
@@ -50,7 +50,6 @@ object CommonExpressionCheckers : ExpressionCheckers() {
             CfirLoopConditionTypeMismatchChecker,
             CfirSpawnSemanticsChecker,
             CfirExpressionWithErrorTypeChecker,
-            CfirEffectsBasicChecker,
             CfirFunctionBodyTypeMismatchChecker,
             org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirQuoteImportChecker,
         )
@@ -116,7 +115,15 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         get() = setOf(CfirIllegalSuperReferenceChecker)
 
     override val tryExpressionCheckers: Set<CfirTryExpressionChecker>
-        get() = setOf(CfirTryHandleReturnChecker)
+        get() = setOf(
+            CfirTryHandleReturnChecker,
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirCatchTypeChecker,
+        )
+
+    override val throwExpressionCheckers: Set<CfirThrowExpressionChecker>
+        get() = setOf(
+            org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirThrowExpressionTypeChecker,
+        )
 
     override val subscriptExpressionCheckers: Set<CfirSubscriptExpressionChecker>
         get() = setOf(CfirSubscriptAssignmentChecker)

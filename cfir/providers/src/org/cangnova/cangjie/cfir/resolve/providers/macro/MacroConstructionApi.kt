@@ -124,7 +124,7 @@ data class MacroConstructionDiagnostic(
  * 候选，可通过 [org.cangnova.cangjie.cfir.session.CfirSession.register] 挂到 session 上；
  * 多模块 build 时每个 source session 各持一份。
  */
-class MacroExpansionRegistry {
+class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComponent {
     private val _diagnostics: MutableList<MacroConstructionDiagnostic> = mutableListOf()
     private val _originSurfaceById: MutableMap<Long, MacroSurface> = mutableMapOf()
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()

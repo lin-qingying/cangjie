@@ -9,6 +9,7 @@ import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * LightTree 修饰符解析（对齐 PSI 版的 CjModifierList 行为）。
@@ -19,6 +20,7 @@ import org.cangnova.cangjie.psi.CjNodeTypes
 class LightTreeModifierList(
     private val tree: FlyweightCapableTreeStructure<LighterASTNode>,
     private val modifierListNode: LighterASTNode?,
+    val annotations: List<LighterASTNode>,
 ) {
     /** 修饰符 Token 类型集合（用于快速查找） */
     private val modifierTokens: Set<com.intellij.psi.tree.IElementType> by lazy {
@@ -70,6 +72,18 @@ class LightTreeModifierList(
     val isUnsafe: Boolean get() = hasModifier(CjTokens.UNSAFE_KEYWORD)
     val isForeign: Boolean get() = hasModifier(CjTokens.FOREIGN_KEYWORD)
 
+    /** 按源码顺序暴露声明/参数修饰符文本，供 construction-only surface 携带。 */
+    val modifierTexts: List<String> by lazy {
+        if (modifierListNode == null) return@lazy emptyList()
+        val result = mutableListOf<String>()
+        tree.forEachChildren(modifierListNode) { child ->
+            if (child.tokenType != CjStubElementTypes.ANNOTATIONS && child.tokenType != CjNodeTypes.ANNOTATION) {
+                result.add(child.tokenType.toString())
+            }
+        }
+        result
+    }
+
     /**
      * 转换为 [CfirDeclarationStatus]，与 [AbstractRawCfirBuilder.buildDeclarationStatus] 对齐。
      */
@@ -111,7 +125,32 @@ class LightTreeModifierList(
             declarationNode: LighterASTNode,
         ): LightTreeModifierList {
             val modifierList = tree.findChildByType(declarationNode, CjNodeTypes.MODIFIER_LIST)
-            return LightTreeModifierList(tree, modifierList)
+            val annotations = buildList {
+                collectAnnotationsFrom(tree, declarationNode, this)
+                if (modifierList != null) {
+                    collectAnnotationsFrom(tree, modifierList, this)
+                }
+            }
+            return LightTreeModifierList(tree, modifierList, annotations)
+        }
+
+        private fun collectAnnotationsFrom(
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+            node: LighterASTNode,
+            result: MutableList<LighterASTNode>,
+        ) {
+            tree.forEachChildren(node) { child ->
+                when (child.tokenType) {
+                    CjStubElementTypes.ANNOTATIONS -> tree.forEachChildren(child) { annotation ->
+                        if (annotation.tokenType == CjNodeTypes.ANNOTATION || annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+                            result.add(annotation)
+                        }
+                    }
+                    CjNodeTypes.ANNOTATION,
+                    CjNodeTypes.MACRO_EXPRESSION,
+                    -> result.add(child)
+                }
+            }
         }
     }
 }
