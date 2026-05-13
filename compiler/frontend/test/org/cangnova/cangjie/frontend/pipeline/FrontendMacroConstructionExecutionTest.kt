@@ -50,8 +50,14 @@ import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.source.toSourceLinesMapping
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.macro.MacroCallInfo
+import org.cangnova.cangjie.macro.MacroDiagnosticInfo
+import org.cangnova.cangjie.macro.MacroDiagnosticSeverity
 import org.cangnova.cangjie.macro.MacroExpansionResult
 import org.cangnova.cangjie.macro.MacroExecutor
+import org.cangnova.cangjie.macro.MacroLibraryLoadFailure
+import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
+import org.cangnova.cangjie.macro.MacroLibraryLoadResult
+import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -396,7 +402,436 @@ class FrontendMacroConstructionExecutionTest {
         )
     }
 
-    private fun macroExpressionCarrierFixture(): MacroExpressionCarrierFixture {
+    // ============================================================
+    // Batch 5 独立用例（PLAN.md §12 Batch 5）
+    // 与 cfir/analysis-tests/testData/diagnostics2/macro/ 下的
+    // alias_conflict / lib_path / executor_unavailable /
+    // forced_kind_mismatch / plain_attr_overload 5 个 .cj 规范对齐：
+    // 这里在程序级别断言 FrontendMacroConstructionService 真正按
+    // baseline §4 / §8 产出对应的 MacroConstructionDiagnostic.Kind。
+    // ============================================================
+
+    @Test
+    fun batch5_executorUnavailableYieldsExecutorUnavailableDiagnosticAndDegradedMode() {
+        val surface = expressionSurface(
+            surfaceId = 4001L,
+            qualifiedName = FqName("macros.Reformat"),
+            packageFqName = FqName("sample"),
+        )
+        val fixture = macroSurfaceFixture(surface)
+        val configuration = CompilerConfiguration().apply {
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+            // 不注入 macroExecutorFactory → executor 不可用
+        }
+
+        val result = FrontendMacroConstructionService(configuration).expand(
+            pre = fixture.pre,
+            context = contextWithArtifact(fixture.pre, "Reformat"),
+            mode = MacroConstructionService.Mode.DEGRADED,
+        )
+
+        val registry = (result as? MacroConstructionResult.Degraded)?.registry
+            ?: (result as? MacroConstructionResult.Failed)?.registry
+            ?: error("Expected Degraded/Failed when executor is unavailable, got ${result::class.simpleName}")
+        assertTrue(
+            registry.diagnostics.any {
+                it.kind == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_UNAVAILABLE
+            },
+            "Missing MACRO_EXECUTOR_UNAVAILABLE diagnostic; got: ${registry.diagnostics.map { it.kind }}",
+        )
+    }
+
+    @Test
+    fun batch5_forcedKindOnNonForcedMacroReportsAtexclMismatch() {
+        val surface = expressionSurface(
+            surfaceId = 4002L,
+            qualifiedName = FqName("macros.PlainOnly"),
+            packageFqName = FqName("sample"),
+        ).copy(kind = MacroSurface.Kind.FORCED)
+        val fixture = macroSurfaceFixture(surface)
+        val configuration = CompilerConfiguration().apply {
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+            macroExecutorFactory = MacroExecutorFactory { RecordingExecutor() }
+        }
+
+        val context = bindMacroImports(
+            pre = fixture.pre,
+            symbolIndex = buildMacroSymbolIndex(
+                pre = fixture.pre,
+                macroArtifactDefinitions = listOf(
+                    MacroDefinitionEntry(
+                        packageFqName = FqName("macros"),
+                        name = Name.identifier("PlainOnly"),
+                        source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
+                        supportsForcedKind = false,
+                    ),
+                ),
+            ),
+        )
+        val result = FrontendMacroConstructionService(configuration).expand(
+            pre = fixture.pre,
+            context = context,
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        val registry = (result as? MacroConstructionResult.Failed)?.registry
+            ?: error("Forced-kind mismatch must be Failed in STRICT mode, got ${result::class.simpleName}")
+        val mismatch = registry.diagnostics.singleOrNull {
+            it.kind == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Kind.MACRO_EXPAND_ATEXCL
+        }
+        assertTrue(mismatch != null, "Expected a MACRO_EXPAND_ATEXCL diagnostic for unsupported forced macro")
+        assertTrue(
+            mismatch!!.message.contains("@!"),
+            "Diagnostic message should mention `@!` invocation: ${mismatch.message}",
+        )
+    }
+
+    @Test
+    fun batch5_libPathFlowsThroughExecutorLoadLibraries() {
+        val fixture = macroExpressionCarrierFixture(macroName = "WithLib")
+        val executor = LibPathRecordingExecutor(
+            MacroExpansionResult.Success(emptyList(), "42"),
+        )
+        val parser = object : MacroFragmentParser {
+            override fun parse(
+                node: MacroCallNode,
+                tokens: List<MacroSurfaceToken>,
+                mode: MacroFragmentParser.Mode,
+            ): MacroFragmentResult = MacroFragmentResult.Success(
+                originNode = node,
+                tokens = tokens,
+                mode = mode,
+                payload = buildErrorExpression {
+                    diagnostic = ConeSimpleDiagnostic("expanded WithLib payload")
+                },
+            )
+        }
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { parser }
+        }
+
+        val context = bindMacroImports(
+            pre = fixture.pre,
+            symbolIndex = buildMacroSymbolIndex(
+                pre = fixture.pre,
+                macroArtifactDefinitions = listOf(
+                    MacroDefinitionEntry(
+                        packageFqName = FqName("macros"),
+                        name = Name.identifier("WithLib"),
+                        source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
+                        libPath = "stub.dylib",
+                    ),
+                ),
+            ),
+        )
+        FrontendMacroConstructionService(configuration).expand(
+            pre = fixture.pre,
+            context = context,
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertTrue(
+            executor.loadedLibPaths.contains("stub.dylib"),
+            "Macro construction must call executor.loadLibraries with the lib path from MacroDefinitionEntry: " +
+            "${executor.loadedLibPaths}",
+        )
+    }
+
+    @Test
+    fun batch5_loadLibraryFailureReportsCannotOpenLibAndSkipsExecute() {
+        val fixture = macroExpressionCarrierFixture(macroName = "WithLib")
+        val executor = LoadFailingExecutor(
+            MacroLibraryLoadFailure(
+                libPath = "broken.dylib",
+                kind = MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB,
+                message = "open-lib failed: broken.dylib",
+            )
+        )
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+        }
+
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+            pre = fixture.pre,
+            context = bindMacroImports(
+                pre = fixture.pre,
+                symbolIndex = buildMacroSymbolIndex(
+                    pre = fixture.pre,
+                    macroArtifactDefinitions = listOf(
+                        MacroDefinitionEntry(
+                            packageFqName = FqName("macros"),
+                            name = Name.identifier("WithLib"),
+                            source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
+                            libPath = "broken.dylib",
+                        ),
+                    ),
+                ),
+            ),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertEquals(0, executor.executeCallCount, "Executor.execute must not run after DefLib/loadLibraries failure.")
+        val registry = (result as? MacroConstructionResult.Failed)?.registry
+            ?: error("Load failure must drive Failed in STRICT mode, got ${result::class.simpleName}")
+        val diagnostic = registry.diagnostics.single()
+        assertEquals(
+            org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Kind.MACRO_CANNOT_OPEN_LIB,
+            diagnostic.kind,
+        )
+        assertEquals("broken.dylib", diagnostic.macroLibraryPath)
+        assertEquals(
+            org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Origin.EXECUTOR,
+            diagnostic.diagnosticOrigin,
+        )
+    }
+
+    @Test
+    fun batch5_diagReportWarningIsRecordedWithoutBlockingStrictExpansion() {
+        val fixture = macroExpressionCarrierFixture(macroName = "Warn")
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Success(
+                tokens = listOf(tokenInfo("42")),
+                "42",
+                diagnostics = listOf(
+                    MacroDiagnosticInfo(
+                        severity = MacroDiagnosticSeverity.WARNING,
+                        message = "macro warning",
+                        hint = "check generated token",
+                        begin = SourcePosition(line = 2, column = 3),
+                        end = SourcePosition(line = 2, column = 5),
+                    )
+                ),
+            ),
+        )
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+        }
+
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+            pre = fixture.pre,
+            context = contextWithArtifact(fixture.pre, "Warn"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        val registry = (result as? MacroConstructionResult.Success)?.registry
+            ?: error("WARNING diagReport must not block strict expansion, got ${result::class.simpleName}")
+        val diagnostic = registry.diagnostics.single()
+        assertEquals(org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Severity.WARNING, diagnostic.severity)
+        assertEquals(org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Origin.DIAG_REPORT, diagnostic.diagnosticOrigin)
+        assertEquals("check generated token", diagnostic.hint)
+        assertEquals(2, diagnostic.tokenRangeBeginLine)
+        assertEquals(3, diagnostic.tokenRangeBeginColumn)
+        assertEquals(2, diagnostic.tokenRangeEndLine)
+        assertEquals(5, diagnostic.tokenRangeEndColumn)
+    }
+
+    @Test
+    fun batch5_diagReportErrorBlocksStrictExpansionAfterBeingRecorded() {
+        val fixture = macroExpressionCarrierFixture(macroName = "Error")
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Success(
+                tokens = listOf(tokenInfo("42")),
+                "42",
+                diagnostics = listOf(
+                    MacroDiagnosticInfo(
+                        severity = MacroDiagnosticSeverity.ERROR,
+                        message = "macro error",
+                        begin = SourcePosition(line = 4, column = 1),
+                        end = SourcePosition(line = 4, column = 7),
+                    )
+                ),
+            ),
+        )
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+        }
+
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+            pre = fixture.pre,
+            context = contextWithArtifact(fixture.pre, "Error"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        val registry = (result as? MacroConstructionResult.Failed)?.registry
+            ?: error("ERROR diagReport must block strict expansion, got ${result::class.simpleName}")
+        val diagnostic = registry.diagnostics.single()
+        assertEquals(org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Severity.ERROR, diagnostic.severity)
+        assertEquals(org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Origin.DIAG_REPORT, diagnostic.diagnosticOrigin)
+        assertEquals("macro error", diagnostic.message)
+        assertEquals(4, diagnostic.tokenRangeBeginLine)
+        assertEquals(1, diagnostic.tokenRangeBeginColumn)
+        assertEquals(4, diagnostic.tokenRangeEndLine)
+        assertEquals(7, diagnostic.tokenRangeEndColumn)
+    }
+
+    @Test
+    fun batch5_failureResultDiagReportIsRecordedBeforeExecutorFailure() {
+        val fixture = macroExpressionCarrierFixture(macroName = "FailWithDiag")
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Failure(
+                message = "executor expansion failed",
+                kind = org.cangnova.cangjie.macro.MacroExpansionFailureKind.EXPAND_FAILED,
+                diagnostics = listOf(
+                    MacroDiagnosticInfo(
+                        severity = MacroDiagnosticSeverity.WARNING,
+                        message = "warning before failure",
+                        hint = "emitted by macro library",
+                        begin = SourcePosition(line = 8, column = 2),
+                        end = SourcePosition(line = 8, column = 9),
+                    )
+                ),
+            )
+        )
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+        }
+
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+            pre = fixture.pre,
+            context = contextWithArtifact(fixture.pre, "FailWithDiag"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        val registry = (result as? MacroConstructionResult.Failed)?.registry
+            ?: error("Executor failure must block strict expansion, got ${result::class.simpleName}")
+        val diagReport = registry.diagnostics.singleOrNull {
+            it.diagnosticOrigin == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Origin.DIAG_REPORT
+        } ?: error("Failure result diagnostics must be preserved as DIAG_REPORT: ${registry.diagnostics}")
+        val executorFailure = registry.diagnostics.singleOrNull {
+            it.kind == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Kind.MACRO_EXPAND_FAILED
+        } ?: error("Executor failure kind must be preserved: ${registry.diagnostics}")
+        assertEquals(org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Severity.WARNING, diagReport.severity)
+        assertEquals("warning before failure", diagReport.message)
+        assertEquals("emitted by macro library", diagReport.hint)
+        assertEquals(8, diagReport.tokenRangeBeginLine)
+        assertEquals(2, diagReport.tokenRangeBeginColumn)
+        assertEquals("executor expansion failed", executorFailure.message)
+    }
+
+    @Test
+    fun batch5_aliasConflictIsReportedFromBindMacroImports() {
+        // 真实构造两条 import 指向不同 fqn 但绑同一短名 `Bar`，
+        // 让 bindMacroImports 自然产出 aliasConflicts，再走 expand 转 MACRO_ALIAS_CONFLICT。
+        val session = object : CfirSession(CfirSession.Kind.Source) {}
+        val moduleData = TestModuleData(session)
+        session.register(CfirModuleData::class, moduleData)
+        val packageFqName = FqName("sample")
+        val fooFq = FqName("macros.foo").child(Name.identifier("A"))
+        val bazFq = FqName("macros.baz").child(Name.identifier("B"))
+        val sharedAlias = Name.identifier("Bar")
+        val firstImport = org.cangnova.cangjie.cfir.declarations.builder.buildImport {
+            this.importedFqName = fooFq
+            this.isAllUnder = false
+            this.aliasName = sharedAlias
+        }
+        val secondImport = org.cangnova.cangjie.cfir.declarations.builder.buildImport {
+            this.importedFqName = bazFq
+            this.isAllUnder = false
+            this.aliasName = sharedAlias
+        }
+        val file = buildFile {
+            this.moduleData = moduleData
+            resolvePhase = CfirResolvePhase.RAW_CFIR
+            origin = CfirDeclarationOrigin.Synthetic.Error
+            attributes = CfirDeclarationAttributes.EMPTY
+            symbol = CfirFileSymbol()
+            name = "alias.cj"
+            packageDirective = buildPackageDirective {
+                this.packageFqName = packageFqName
+            }
+            imports += firstImport
+            imports += secondImport
+        }
+        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(emptyList()))
+        val context = bindMacroImports(
+            pre = pre,
+            symbolIndex = buildMacroSymbolIndex(
+                pre = pre,
+                macroArtifactDefinitions = listOf(
+                    MacroDefinitionEntry(
+                        packageFqName = FqName("macros.foo"),
+                        name = Name.identifier("A"),
+                        source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
+                    ),
+                    MacroDefinitionEntry(
+                        packageFqName = FqName("macros.baz"),
+                        name = Name.identifier("B"),
+                        source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
+                    ),
+                ),
+            ),
+        )
+        val configuration = CompilerConfiguration().apply {
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+        }
+        val result = FrontendMacroConstructionService(configuration).expand(
+            pre = pre,
+            context = context,
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        val registry = (result as? MacroConstructionResult.Failed)?.registry
+            ?: error("Alias conflict must drive Failed in STRICT mode, got ${result::class.simpleName}")
+        val conflict = registry.diagnostics.singleOrNull {
+            it.kind == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Kind.MACRO_ALIAS_CONFLICT
+        }
+        assertTrue(conflict != null, "Expected MACRO_ALIAS_CONFLICT diagnostic")
+        assertEquals(sharedAlias, conflict!!.relatedName)
+        assertEquals(setOf(fooFq, bazFq), conflict.relatedTargets.toSet())
+    }
+
+    @Test
+    fun batch5_plainAttrWithoutOverloadSupportReportsPlainMacroMismatch() {
+        val surface = expressionSurface(
+            surfaceId = 4005L,
+            qualifiedName = FqName("macros.PlainOnly"),
+            packageFqName = FqName("sample"),
+        ).copy(hasParenthesis = false)
+        val fixture = macroSurfaceFixture(surface)
+        val executor = LibPathRecordingExecutor(MacroExpansionResult.Success(emptyList(), ""))
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+        }
+
+        val context = bindMacroImports(
+            pre = fixture.pre,
+            symbolIndex = buildMacroSymbolIndex(
+                pre = fixture.pre,
+                macroArtifactDefinitions = listOf(
+                    MacroDefinitionEntry(
+                        packageFqName = FqName("macros"),
+                        name = Name.identifier("PlainOnly"),
+                        source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
+                        supportsPlainAttrOverload = false,
+                    ),
+                ),
+            ),
+        )
+        val result = FrontendMacroConstructionService(
+            configuration = configuration,
+            stableSplicer = RecordingSplicer(),
+        ).expand(
+            pre = fixture.pre,
+            context = context,
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        val registry = (result as? MacroConstructionResult.Failed)?.registry
+            ?: error("Plain-attr mismatch must be Failed in STRICT mode, got ${result::class.simpleName}")
+        val mismatch = registry.diagnostics.singleOrNull {
+            it.kind == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Kind.MACRO_EXPECT_PLAIN_MACRO
+        }
+        assertTrue(mismatch != null, "Expected MACRO_EXPECT_PLAIN_MACRO for unsupported plain-attr overload")
+        assertTrue(executor.calls.isEmpty(), "Plain-attr mismatch must not invoke executor: ${executor.calls}")
+    }
+
+    private fun macroExpressionCarrierFixture(macroName: String = "Generated"): MacroExpressionCarrierFixture {
         val session = object : CfirSession(CfirSession.Kind.Source) {}
         val moduleData = TestModuleData(session)
         session.register(CfirModuleData::class, moduleData)
@@ -406,7 +841,7 @@ class FrontendMacroConstructionExecutionTest {
         }
         val surface = expressionSurface(
             surfaceId = 3000L,
-            qualifiedName = FqName("macros.Generated"),
+            qualifiedName = FqName("macros").child(Name.identifier(macroName)),
             packageFqName = packageFqName,
         ).copy(
             replaceHandle = CfirReplaceHandle(3000L, carrier),
@@ -757,15 +1192,55 @@ class FrontendMacroConstructionExecutionTest {
     )
 
     private class RecordingExecutor(
-        private val result: MacroExpansionResult,
+        private val result: MacroExpansionResult = MacroExpansionResult.Success(emptyList(), ""),
     ) : MacroExecutor {
         val calls = mutableListOf<MacroCallInfo>()
 
-        override fun loadLibraries(libPaths: List<String>) {}
+        override fun loadLibraries(libPaths: List<String>) = org.cangnova.cangjie.macro.MacroLibraryLoadResult.Success(libPaths.toList())
         override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
             this.calls += calls
             return calls.map { result }
         }
+        override fun reset() {}
+        override fun isAvailable(): Boolean = true
+        override fun close() {}
+    }
+
+    private class LibPathRecordingExecutor(
+        private val result: MacroExpansionResult,
+    ) : MacroExecutor {
+        val calls = mutableListOf<MacroCallInfo>()
+        val loadedLibPaths = mutableListOf<String>()
+
+        override fun loadLibraries(libPaths: List<String>): org.cangnova.cangjie.macro.MacroLibraryLoadResult {
+            loadedLibPaths += libPaths
+            return org.cangnova.cangjie.macro.MacroLibraryLoadResult.Success(libPaths.toList())
+        }
+
+        override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
+            this.calls += calls
+            return calls.map { result }
+        }
+
+        override fun reset() {}
+        override fun isAvailable(): Boolean = true
+        override fun close() {}
+    }
+
+    private class LoadFailingExecutor(
+        private val failure: MacroLibraryLoadFailure,
+    ) : MacroExecutor {
+        var executeCallCount: Int = 0
+
+        override fun loadLibraries(libPaths: List<String>): MacroLibraryLoadResult {
+            return MacroLibraryLoadResult.Failure(listOf(failure))
+        }
+
+        override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
+            executeCallCount += 1
+            return calls.map { MacroExpansionResult.Success(emptyList(), "") }
+        }
+
         override fun reset() {}
         override fun isAvailable(): Boolean = true
         override fun close() {}
@@ -776,7 +1251,7 @@ class FrontendMacroConstructionExecutionTest {
     ) : MacroExecutor {
         val calls = mutableListOf<MacroCallInfo>()
 
-        override fun loadLibraries(libPaths: List<String>) {}
+        override fun loadLibraries(libPaths: List<String>) = org.cangnova.cangjie.macro.MacroLibraryLoadResult.Success(libPaths.toList())
         override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
             this.calls += calls
             return calls.map { call ->

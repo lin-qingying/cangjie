@@ -40,8 +40,8 @@ class TokenBackedMacroFragmentParser(
         tokens: List<MacroSurfaceToken>,
         mode: MacroFragmentParser.Mode,
     ): MacroFragmentResult {
-        // baseline Batch 8: 先按 token-stage 重组文本（newTokens token-stage re-eval）
-        val reEvaluatedTokens = MacroTokenReEvaluator.reTokenize(tokens, reTokenize)
+        // baseline Batch 8: 先按 token-stage 重组到稳定点（newTokens token-stage re-eval）
+        val reEvaluatedTokens = MacroTokenReEvaluator.reTokenizeUntilStable(tokens, reTokenize)
         val source = MacroTokenReEvaluator.reTokenizeText(reEvaluatedTokens).trim()
         if (source.isEmpty()) {
             return MacroFragmentResult.Failure(
@@ -50,11 +50,21 @@ class TokenBackedMacroFragmentParser(
             )
         }
 
-        val payload = runCatching { reparse(source, mode, node) }.getOrNull()
-            ?: return MacroFragmentResult.Failure(
+        // 区分 reparse 抛错与返回 null：抛错说明 raw builder 内部异常，返回 null 说明
+        // 装配层显式判定无法 reparse；二者诊断信息不同，便于上层定位是 reparse 通道
+        // 未注入还是 reparse 真正失败。
+        val payload = try {
+            reparse(source, mode, node)
+        } catch (failure: Throwable) {
+            return MacroFragmentResult.Failure(
                 originNode = node,
-                reason = "Raw builder reported a parse failure for fragment text: ${source.take(60)}",
+                reason = "Raw builder threw while reparsing fragment text " +
+                    "(${failure::class.simpleName}: ${failure.message ?: "no message"}): ${source.take(60)}",
             )
+        } ?: return MacroFragmentResult.Failure(
+            originNode = node,
+            reason = "Raw builder reported a parse failure for fragment text: ${source.take(60)}",
+        )
 
         return when (mode) {
             MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {

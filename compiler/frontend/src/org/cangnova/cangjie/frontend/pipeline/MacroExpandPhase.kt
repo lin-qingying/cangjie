@@ -29,6 +29,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroForestEvaluator
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroBuiltinRegistries
+import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroPayloadChannel
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
@@ -48,9 +51,17 @@ import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
+import org.cangnova.cangjie.config.languageVersionSettings
+import org.cangnova.cangjie.config.moduleName
+import org.cangnova.cangjie.config.useLightTree
 import org.cangnova.cangjie.macro.MacroCallInfo
+import org.cangnova.cangjie.macro.MacroDiagnosticSeverity
+import org.cangnova.cangjie.macro.MacroExpansionFailureKind
 import org.cangnova.cangjie.macro.MacroExpansionResult
 import org.cangnova.cangjie.macro.MacroExecutor
+import org.cangnova.cangjie.macro.MacroLibraryLoadFailure
+import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
+import org.cangnova.cangjie.macro.MacroLibraryLoadResult
 import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.macro.TokenInfo
 import org.cangnova.cangjie.name.CallableId
@@ -78,6 +89,48 @@ object FrontendMacroConfigurationKeys {
     @JvmField
     val MACRO_FRAGMENT_PARSER_FACTORY =
         CompilerConfigurationKey.create<MacroFragmentParserFactory>("MACRO_FRAGMENT_PARSER_FACTORY")
+
+    @JvmField
+    val MACRO_ARTIFACT_PACKAGES =
+        CompilerConfigurationKey.create<List<MacroArtifactPackage>>("MACRO_ARTIFACT_PACKAGES")
+
+    @JvmField
+    val MACRO_EXECUTOR_ABI_VERSION =
+        CompilerConfigurationKey.create<String>("MACRO_EXECUTOR_ABI_VERSION")
+
+    @JvmField
+    val MACRO_SOURCE_PACKAGE_COMPILATION_REQUESTS =
+        CompilerConfigurationKey.create<List<MacroSourcePackageCompilationRequest>>(
+            "MACRO_SOURCE_PACKAGE_COMPILATION_REQUESTS",
+        )
+
+    @JvmField
+    val MACRO_PACKAGE_COMPILATION_ORCHESTRATOR =
+        CompilerConfigurationKey.create<MacroPackageCompilationOrchestrator>("MACRO_PACKAGE_COMPILATION_ORCHESTRATOR")
+
+    @JvmField
+    val MACRO_COMPILATION_CACHE_CONTEXT =
+        CompilerConfigurationKey.create<MacroCompilationCacheContext>("MACRO_COMPILATION_CACHE_CONTEXT")
+
+    /**
+     * 测试专用：直接注入额外的 [MacroDefinitionEntry] 列表，不经
+     * `MacroArtifactResolver` 加载。生产路径不写此 key（始终为 `emptyList()`）。
+     * 由 `cfir/analysis-tests` 的 `MacroConstructionEnvironmentConfigurator` 在
+     * 读取 `MACRO_DEFINITION` directive 后写入，让 testdata 能描述自己的 macro 入口。
+     */
+    @JvmField
+    val MACRO_ARTIFACT_DEFINITIONS_OVERRIDE =
+        CompilerConfigurationKey.create<List<MacroDefinitionEntry>>("MACRO_ARTIFACT_DEFINITIONS_OVERRIDE")
+
+    /**
+     * Macro construction 模式。CLI 生产路径恒为 `STRICT`；
+     * IDE / analysis 路径以及部分 testdata 通过设置 `DEGRADED` 让构造期诊断
+     * 也能流过 ordinary checker（`MacroConstructionDiagnosticCollectorComponent`），
+     * 而不是仅作为 compiler message 报告。
+     */
+    @JvmField
+    val MACRO_CONSTRUCTION_MODE =
+        CompilerConfigurationKey.create<MacroConstructionService.Mode>("MACRO_CONSTRUCTION_MODE")
 }
 
 var CompilerConfiguration.macroExecutorFactory: MacroExecutorFactory?
@@ -96,6 +149,48 @@ var CompilerConfiguration.macroFragmentParserFactory: MacroFragmentParserFactory
     get() = get(FrontendMacroConfigurationKeys.MACRO_FRAGMENT_PARSER_FACTORY)
     set(value) {
         putIfNotNull(FrontendMacroConfigurationKeys.MACRO_FRAGMENT_PARSER_FACTORY, value)
+    }
+
+var CompilerConfiguration.macroArtifactPackages: List<MacroArtifactPackage>
+    get() = get(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_PACKAGES, emptyList())
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_PACKAGES, value)
+    }
+
+var CompilerConfiguration.macroArtifactDefinitionsOverride: List<MacroDefinitionEntry>
+    get() = get(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_DEFINITIONS_OVERRIDE, emptyList())
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_DEFINITIONS_OVERRIDE, value)
+    }
+
+var CompilerConfiguration.macroConstructionMode: MacroConstructionService.Mode
+    get() = get(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_MODE, MacroConstructionService.Mode.STRICT)
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_MODE, value)
+    }
+
+var CompilerConfiguration.macroExecutorAbiVersion: String
+    get() = get(FrontendMacroConfigurationKeys.MACRO_EXECUTOR_ABI_VERSION, MacroExecutor.DEFAULT_ABI_VERSION)
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_EXECUTOR_ABI_VERSION, value)
+    }
+
+var CompilerConfiguration.macroSourcePackageCompilationRequests: List<MacroSourcePackageCompilationRequest>
+    get() = get(FrontendMacroConfigurationKeys.MACRO_SOURCE_PACKAGE_COMPILATION_REQUESTS, emptyList())
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_SOURCE_PACKAGE_COMPILATION_REQUESTS, value)
+    }
+
+var CompilerConfiguration.macroPackageCompilationOrchestrator: MacroPackageCompilationOrchestrator?
+    get() = get(FrontendMacroConfigurationKeys.MACRO_PACKAGE_COMPILATION_ORCHESTRATOR)
+    set(value) {
+        putIfNotNull(FrontendMacroConfigurationKeys.MACRO_PACKAGE_COMPILATION_ORCHESTRATOR, value)
+    }
+
+var CompilerConfiguration.macroCompilationCacheContext: MacroCompilationCacheContext
+    get() = get(FrontendMacroConfigurationKeys.MACRO_COMPILATION_CACHE_CONTEXT, MacroCompilationCacheContext())
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_COMPILATION_CACHE_CONTEXT, value)
     }
 
 /**
@@ -138,6 +233,10 @@ class FrontendMacroConstructionService(
             replaceSurfaceOnlyDegradedPlaceholders(pre, expandedFiles, registry)
             builtDegradedPlaceholders = true
         }
+
+        // baseline 第 11 节 cache key：splice 完成后逐文件计算 13 维 key，
+        // 写入 registry 供上游 IDE / build cache 失效判定。
+        registerCacheKeys(pre, context, expandedFiles, registry)
 
         // baseline 第 10 节："session/analysis 长生命周期 registry"挂到 session
         // 上，供 ordinary checker / IDE / LSP 通过 `session.macroExpansionRegistry` 读取。
@@ -208,6 +307,7 @@ class FrontendMacroConstructionService(
                     qualifier = surface.qualifiedName?.parent()?.takeUnless { it == surface.scopeContext.packageFqName },
                     name = name,
                     kind = surface.kind,
+                    hasParenthesis = surface.hasParenthesis,
                 )
                 if (node.hasUnresolvedChildPayloadChannel(childResults)) {
                     reportError(
@@ -316,10 +416,11 @@ class FrontendMacroConstructionService(
                 null
             }
             is MacroResolution.KindMismatch -> {
+                val (kind, reason) = resolution.toConstructionDiagnostic()
                 reportError(
                     registry = registry,
-                    message = "Macro call `@${resolution.entry.name.asString()}` does not support `${surface.kind}` invocation.",
-                    kind = MacroConstructionDiagnostic.Kind.MACRO_UNRESOLVED,
+                    message = reason,
+                    kind = kind,
                     originSurfaceId = surface.surfaceId,
                 )
                 null
@@ -388,37 +489,90 @@ class FrontendMacroConstructionService(
             return null
         }
 
-        entry.libPath?.takeIf { it.isNotBlank() }?.let { executor.loadLibraries(listOf(it)) }
+        entry.libPath?.takeIf { it.isNotBlank() }?.let { libPath ->
+            when (val loadResult = executor.loadLibraries(listOf(libPath))) {
+                is MacroLibraryLoadResult.Success -> Unit
+                is MacroLibraryLoadResult.Failure -> {
+                    loadResult.failures.forEach { failure ->
+                        reportLibraryLoadFailure(surface, failure, registry)
+                    }
+                    return null
+                }
+            }
+        }
         val callInfo = surface.toMacroCallInfo(entry, node.parentNames, refreshedTokens, preFile)
         val result = executor.execute(listOf(callInfo)).singleOrNull()
-            ?: MacroExpansionResult.Failure("Macro executor returned no result for `${entry.name.asString()}`.")
+            ?: MacroExpansionResult.Failure(
+                message = "Macro executor returned no result for `${entry.name.asString()}`.",
+                kind = MacroExpansionFailureKind.PROTOCOL_ERROR,
+            )
 
         return when (result) {
             is MacroExpansionResult.Success -> {
-                result.diagnostics.forEach { diagnostic ->
-                    registry.addDiagnostic(
-                        MacroConstructionDiagnostic(
-                            severity = if (diagnostic.severity > 0) {
-                                MacroConstructionDiagnostic.Severity.ERROR
-                            } else {
-                                MacroConstructionDiagnostic.Severity.INFO
-                            },
-                            message = diagnostic.message,
-                            originSurfaceId = surface.surfaceId,
-                        )
-                    )
-                }
+                recordMacroDiagReports(surface, result.diagnostics, registry)
                 result.tokens.toMacroSurfaceTokens()
             }
             is MacroExpansionResult.Failure -> {
+                recordMacroDiagReports(surface, result.diagnostics, registry)
                 reportError(
                     registry = registry,
                     message = result.message,
-                    kind = MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED,
+                    kind = result.kind.toConstructionDiagnosticKind(),
                     originSurfaceId = surface.surfaceId,
+                    diagnosticOrigin = MacroConstructionDiagnostic.Origin.EXECUTOR,
                 )
                 null
             }
+        }
+    }
+
+    private fun recordMacroDiagReports(
+        surface: MacroSurface,
+        diagnostics: List<org.cangnova.cangjie.macro.MacroDiagnosticInfo>,
+        registry: MacroExpansionRegistry,
+    ) {
+        diagnostics.forEach { diagnostic ->
+            registry.addDiagnostic(
+                MacroConstructionDiagnostic(
+                    severity = diagnostic.severity.toConstructionSeverity(),
+                    message = diagnostic.message,
+                    originSurfaceId = surface.surfaceId,
+                    diagnosticOrigin = MacroConstructionDiagnostic.Origin.DIAG_REPORT,
+                    hint = diagnostic.hint.takeIf(String::isNotBlank),
+                    tokenRangeBeginLine = diagnostic.begin.line.takeIf { it > 0 },
+                    tokenRangeBeginColumn = diagnostic.begin.column.takeIf { it > 0 },
+                    tokenRangeEndLine = diagnostic.end.line.takeIf { it > 0 },
+                    tokenRangeEndColumn = diagnostic.end.column.takeIf { it > 0 },
+                )
+            )
+        }
+    }
+
+    private fun reportLibraryLoadFailure(
+        surface: MacroSurface,
+        failure: MacroLibraryLoadFailure,
+        registry: MacroExpansionRegistry,
+    ) {
+        reportError(
+            registry = registry,
+            message = failure.message,
+            kind = failure.kind.toConstructionDiagnosticKind(),
+            originSurfaceId = surface.surfaceId,
+            macroLibraryPath = failure.libPath,
+            diagnosticOrigin = MacroConstructionDiagnostic.Origin.EXECUTOR,
+        )
+    }
+
+    private fun MacroResolution.KindMismatch.toConstructionDiagnostic():
+        Pair<MacroConstructionDiagnostic.Kind, String> {
+        val macroName = entry.name.asString()
+        return when (reason) {
+            MacroResolution.KindMismatch.Reason.FORCED_KIND_NOT_SUPPORTED ->
+                MacroConstructionDiagnostic.Kind.MACRO_EXPAND_ATEXCL to
+                    "Macro call `@$macroName` does not support `@!` forced invocation."
+            MacroResolution.KindMismatch.Reason.PLAIN_ATTR_OVERLOAD_NOT_SUPPORTED ->
+                MacroConstructionDiagnostic.Kind.MACRO_EXPECT_PLAIN_MACRO to
+                    "Macro call `@$macroName` requires parenthesized plain macro invocation."
         }
     }
 
@@ -539,6 +693,10 @@ class FrontendMacroConstructionService(
             MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_UNAVAILABLE,
             MacroConstructionDiagnostic.Kind.MACRO_REEVALUATION_FAILED,
             MacroConstructionDiagnostic.Kind.MACRO_UNRESOLVED -> true
+            // 由 baseline §9 / artifact-resolver 引入的新增 kind 默认保守归类为不可降级，
+            // 避免在 STRICT 模式下因新增诊断悄悄走 DEGRADED 占位路径。
+            // 后续按需把可降级的 kind 显式列入上面的白名单。
+            else -> false
         }
     }
 
@@ -696,6 +854,8 @@ class FrontendMacroConstructionService(
         originSource: org.cangnova.cangjie.source.CjSourceElement? = null,
         relatedName: org.cangnova.cangjie.name.Name? = null,
         relatedTargets: List<org.cangnova.cangjie.name.FqName> = emptyList(),
+        macroLibraryPath: String? = null,
+        diagnosticOrigin: MacroConstructionDiagnostic.Origin = MacroConstructionDiagnostic.Origin.CONSTRUCTION,
     ) {
         registry.addDiagnostic(
             MacroConstructionDiagnostic(
@@ -704,10 +864,163 @@ class FrontendMacroConstructionService(
                 originSurfaceId = originSurfaceId,
                 originSource = originSource,
                 kind = kind,
+                macroLibraryPath = macroLibraryPath,
+                diagnosticOrigin = diagnosticOrigin,
                 relatedName = relatedName,
                 relatedTargets = relatedTargets,
             )
         )
+    }
+
+    /**
+     * 按文件计算 13 维 [MacroExpansionCacheKey] 并写入 [registry]（baseline §11）。
+     *
+     * 每个维度的取值入口：
+     * -  1. sourceContentHash         ← `CfirFile.sourceFile.getContentsAsStream()` 的 SHA-256
+     * -  2. fileIdentity              ← `sourceFile.path ?: cfirFile.name`
+     * -  3. macroSurfaceRangesHash    ← surfaces 的 `(id, fqn, range)` 序列
+     * -  4. importsHash               ← `imports` + `defaultMacroImports` + 该文件相关 `importBindings`
+     * -  5. modulePackageIdentity     ← `moduleData.name` + `packageFqName`
+     * -  6. sdkSignature              ← `configuration.languageVersionSettings.toString()`
+     * -  7. macroDependencySignature  ← 非源包 [MacroDefinitionEntry]（lib/shared/artifact/builtin）+ artifact/dylib/BCHIR hash
+     * -  8. compilerOptionsHash       ← `useLightTree` + `moduleName` + iteration limit + compiler/debug/parallel/target/env
+     * -  9. executorAbi               ← `executor.abiVersion ?: "none"`
+     * - 10. constructionAlgorithmVersion ← `MacroConstructionService.ALGORITHM_VERSION`
+     * - 11. tokenScannerVersion       ← `MacroPayloadTokenizer.VERSION`
+     * - 12. fragmentParserVersion     ← `MacroFragmentParser.VERSION`
+     * - 13. runtimeFingerprint        ← `MacroBuiltinRegistries.VERSION` + maxIterations + 展开产物快照 hash
+     */
+    private fun registerCacheKeys(
+        pre: PreMacroRawBuildResult,
+        context: MacroResolutionContext,
+        expandedFiles: List<CfirFile>,
+        registry: MacroExpansionRegistry,
+    ) {
+        val sdkSignature = org.cangnova.cangjie.utils.StableHash.sha256(
+            configuration.languageVersionSettings.toString(),
+        )
+        val macroDependencySignature = computeMacroDependencySignature(context)
+        val compilerOptionsHash = org.cangnova.cangjie.utils.StableHash.sha256Of(
+            "lightTree=${configuration.useLightTree}",
+            "moduleName=${configuration.moduleName.orEmpty()}",
+            "maxIterations=${configuration.macroExpandMaxIterations}",
+            "macroCompilerOptions=${configuration.macroCompilationCacheContext.compilerOptionsFingerprint}",
+            "macroDebugFlags=${configuration.macroCompilationCacheContext.debugFlagsFingerprint}",
+            "macroParallelFlags=${configuration.macroCompilationCacheContext.parallelFlagsFingerprint}",
+            "macroTargetPlatform=${configuration.macroCompilationCacheContext.targetPlatform}",
+            "macroRuntimeLoaderEnv=${configuration.macroCompilationCacheContext.runtimeLoaderEnvironmentFingerprint}",
+        )
+        val executorAbi = configuration.macroExecutorFactory
+            ?.create(pre.session)
+            ?.abiVersion
+            ?: "none"
+        val maxIterations = configuration.macroExpandMaxIterations
+        val expandedByName: Map<String, CfirFile> = expandedFiles.associateBy { it.name }
+
+        for (preFile in pre.files) {
+            val cfirFile = preFile.cfirFile
+            val expanded = expandedByName[cfirFile.name] ?: cfirFile
+            val identity = cfirFile.sourceFile?.path ?: cfirFile.name
+            val key = MacroExpansionCacheKey(
+                sourceContentHash = hashSourceContent(cfirFile),
+                fileIdentity = identity,
+                macroSurfaceRangesHash = hashSurfaces(preFile.surfaces),
+                importsHash = hashImports(cfirFile, context),
+                modulePackageIdentity = "${cfirFile.moduleData.name}::${cfirFile.packageDirective.packageFqName.asString()}",
+                sdkSignature = sdkSignature,
+                macroDependencySignature = macroDependencySignature,
+                compilerOptionsHash = compilerOptionsHash,
+                executorAbi = executorAbi,
+                constructionAlgorithmVersion = MacroConstructionService.ALGORITHM_VERSION,
+                tokenScannerVersion = MacroPayloadTokenizer.VERSION,
+                fragmentParserVersion = MacroFragmentParser.VERSION,
+                runtimeFingerprint = org.cangnova.cangjie.utils.StableHash.sha256Of(
+                    "builtinRegistry=${MacroBuiltinRegistries.VERSION}",
+                    "iterationLimit=$maxIterations",
+                    "result=${hashResultSnapshot(expanded)}",
+                ),
+            )
+            registry.registerCacheKey(identity, key)
+        }
+    }
+
+    private fun hashSourceContent(file: CfirFile): String {
+        val text = runCatching {
+            file.sourceFile?.getContentsAsStream()?.use { stream ->
+                stream.readBytes().toString(Charsets.UTF_8)
+            }
+        }.getOrNull() ?: file.name
+        return org.cangnova.cangjie.utils.StableHash.sha256(text)
+    }
+
+    private fun hashSurfaces(surfaces: List<MacroSurface>): String {
+        if (surfaces.isEmpty()) return "surfaces:empty"
+        val parts = surfaces.map { surface ->
+            val range = surface.sourceRange
+            "${surface.surfaceId}|${surface.qualifiedName?.asString().orEmpty()}|" +
+                "${range?.startOffset ?: -1}|${range?.endOffset ?: -1}|${surface.kind}"
+        }
+        return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
+    }
+
+    private fun hashImports(file: CfirFile, context: MacroResolutionContext): String {
+        val importParts = file.imports.map { import ->
+            "${import.importedFqName?.asString().orEmpty()}|" +
+                "wildcard=${import.isAllUnder}|alias=${import.aliasName?.asString().orEmpty()}"
+        }
+        val defaultParts = context.defaultMacroImports.map { it.asString() }
+        val bindingParts = context.importBindings.map { binding ->
+            "${binding.importedFqName.asString()}->${binding.resolvedTargets.joinToString(",") { it.fqName.asString() }}"
+        }
+        return org.cangnova.cangjie.utils.StableHash.sha256Of(importParts + defaultParts + bindingParts)
+    }
+
+    private fun computeMacroDependencySignature(context: MacroResolutionContext): String {
+        val sourceTargets = context.symbolIndex.sources.map { it.fqName.asString() }
+        val foreignTargets = context.symbolIndex.foreigns.map { entry ->
+            "${entry.fqName.asString()}|${entry.source}|lib=${entry.libPath.orEmpty()}|abi=${entry.executorAbi.orEmpty()}|" +
+                "artifact=${entry.artifactSignature.orEmpty()}|cjo=${entry.cjoHash.orEmpty()}|" +
+                "dylib=${entry.dynamicLibHash.orEmpty()}|bchir=${entry.dependenciesBchirHash.orEmpty()}|" +
+                "resolver=${entry.resolverAlgorithmVersion ?: -1}"
+        }
+        return org.cangnova.cangjie.utils.StableHash.sha256Of(sourceTargets + foreignTargets)
+    }
+
+    private fun hashResultSnapshot(file: CfirFile): String {
+        if (file.declarations.isEmpty()) return "result:empty"
+        val parts = file.declarations.map { it::class.simpleName.orEmpty() }
+        return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
+    }
+
+    private fun Int.toConstructionSeverity(): MacroConstructionDiagnostic.Severity {
+        return when (this) {
+            MacroDiagnosticSeverity.INFO -> MacroConstructionDiagnostic.Severity.INFO
+            MacroDiagnosticSeverity.WARNING -> MacroConstructionDiagnostic.Severity.WARNING
+            MacroDiagnosticSeverity.ERROR -> MacroConstructionDiagnostic.Severity.ERROR
+            else -> MacroConstructionDiagnostic.Severity.ERROR
+        }
+    }
+
+    private fun MacroExpansionFailureKind.toConstructionDiagnosticKind(): MacroConstructionDiagnostic.Kind {
+        return when (this) {
+            MacroExpansionFailureKind.CANNOT_FIND_METHOD -> MacroConstructionDiagnostic.Kind.MACRO_CANNOT_FIND_METHOD
+            MacroExpansionFailureKind.EVALUATE_FAILED -> MacroConstructionDiagnostic.Kind.MACRO_EVALUATE_FAILED
+            MacroExpansionFailureKind.EXPAND_FAILED -> MacroConstructionDiagnostic.Kind.MACRO_EXPAND_FAILED
+            MacroExpansionFailureKind.PROTOCOL_ERROR -> MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_PROTOCOL_ERROR
+            MacroExpansionFailureKind.SERVER_DISCONNECTED -> MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_SERVER_DISCONNECTED
+            MacroExpansionFailureKind.TIMEOUT -> MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_TIMEOUT
+            MacroExpansionFailureKind.SERVER_CRASH -> MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_SERVER_CRASH
+        }
+    }
+
+    private fun MacroLibraryLoadFailureKind.toConstructionDiagnosticKind(): MacroConstructionDiagnostic.Kind {
+        return when (this) {
+            MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB -> MacroConstructionDiagnostic.Kind.MACRO_CANNOT_OPEN_LIB
+            MacroLibraryLoadFailureKind.PROTOCOL_ERROR -> MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_PROTOCOL_ERROR
+            MacroLibraryLoadFailureKind.SERVER_DISCONNECTED -> MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_SERVER_DISCONNECTED
+            MacroLibraryLoadFailureKind.TIMEOUT -> MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_TIMEOUT
+            MacroLibraryLoadFailureKind.SERVER_CRASH -> MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_SERVER_CRASH
+        }
     }
 }
 

@@ -101,6 +101,26 @@ data class MacroConstructionDiagnostic(
     val originSource: CjSourceElement? = null,
     /** Baseline 第 9 节 typed factory：未展开 / 展开失败 / 同包 / 无 executor / 等。 */
     val kind: Kind = Kind.GENERIC,
+    /** package-level artifact 相关诊断的包名。 */
+    val artifactPackage: FqName? = null,
+    /** `.cjo` 或 artifact 本体路径。 */
+    val artifactPath: String? = null,
+    /** 宏动态库路径。 */
+    val macroLibraryPath: String? = null,
+    /** 诊断来源；`DIAG_REPORT` 表示宏库主动上报的用户诊断。 */
+    val diagnosticOrigin: Origin = Origin.CONSTRUCTION,
+    /** 宏包源码编译 invocation id；用于把使用方诊断关联回独立 `--compile-macro` invocation。 */
+    val compileInvocationId: String? = null,
+    /** 宏包源码编译原始诊断引用；由外层 CLI / build orchestration 维护其生命周期。 */
+    val sourceDiagnosticsRef: String? = null,
+    /** 宏库 diagReport 的 hint。 */
+    val hint: String? = null,
+    /** diagReport / protocol 诊断的 token range 起点。 */
+    val tokenRangeBeginLine: Int? = null,
+    val tokenRangeBeginColumn: Int? = null,
+    /** diagReport / protocol 诊断的 token range 终点。 */
+    val tokenRangeEndLine: Int? = null,
+    val tokenRangeEndColumn: Int? = null,
     /** 结构化诊断名，用于 alias / unresolved 等非 surface 诊断，避免从 message 反解析。 */
     val relatedName: Name? = null,
     /** 结构化诊断目标，用于 alias conflict 等需要完整目标集合的诊断。 */
@@ -108,14 +128,43 @@ data class MacroConstructionDiagnostic(
 ) {
     enum class Severity { INFO, WARNING, ERROR }
 
+    enum class Origin {
+        CONSTRUCTION,
+        ARTIFACT_RESOLVER,
+        ORCHESTRATION,
+        EXECUTOR,
+        DIAG_REPORT,
+    }
+
     enum class Kind {
         GENERIC,
         MACRO_NOT_EXPANDED,
         MACRO_EXPANSION_FAILED,
+        MACRO_UNDEFINED_PACKAGE,
+        MACRO_UNDECLARED_IDENTIFIER,
+        MACRO_EXPECT_MACRO_DEFINITION,
+        MACRO_DEPENDENCY_COMPILE_FAILED,
+        MACRO_AMBIGUOUS_MATCH,
+        MACRO_CANNOT_FIND_DEPENDENCY_BCHIR,
+        MACRO_EXPECT_PLAIN_MACRO,
+        MACRO_EXPECT_ATTRIBUTED_MACRO,
+        MACRO_EXPAND_ATEXCL,
+        MACRO_INVALID_ATTR_TOKENS,
+        MACRO_INVALID_INPUT_TOKENS,
+        MACRO_INVALID_ESCAPE,
         MACRO_SAME_PACKAGE_DEF_CALL,
         MACRO_ALIAS_CONFLICT,
         MACRO_EXECUTOR_UNAVAILABLE,
         MACRO_CANNOT_OPEN_LIB,
+        MACRO_CANNOT_FIND_METHOD,
+        MACRO_EVALUATE_FAILED,
+        MACRO_EXPAND_FAILED,
+        MACRO_EXPAND_CODE_SHOULD_NOT_HAVE_MACROCALL,
+        MACRO_CALL_SAVE_FILE_FAILED,
+        MACRO_EXECUTOR_PROTOCOL_ERROR,
+        MACRO_EXECUTOR_SERVER_DISCONNECTED,
+        MACRO_EXECUTOR_TIMEOUT,
+        MACRO_EXECUTOR_SERVER_CRASH,
         MACRO_REEVALUATION_FAILED,
         MACRO_UNRESOLVED,
         MACRO_CYCLE,
@@ -145,6 +194,7 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
     private val _placeholderOriginById: MutableMap<Long, Long> = mutableMapOf()
     private val _generatedSourceOriginById: MutableMap<AbstractCjSourceElement, Long> = mutableMapOf()
     private val _generatedDisplayText: MutableMap<Long, String> = mutableMapOf()
+    private val _cacheKeys: MutableMap<String, MacroExpansionCacheKey> = linkedMapOf()
 
     val diagnostics: List<MacroConstructionDiagnostic>
         get() = _diagnostics.toList()
@@ -223,6 +273,34 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
         _generatedDisplayText[surfaceId] = text
     }
 
+    /**
+     * 注册某 `CfirFile` 的 cache key（baseline 第 11 节）。
+     *
+     * key 由 [FrontendMacroConstructionService] 在 splice 完成后逐文件计算，
+     * 上游 IDE / build cache 通过 [cacheKeys] 与 [moduleSignature] 决定何时失效。
+     */
+    fun registerCacheKey(fileIdentity: String, key: MacroExpansionCacheKey) {
+        _cacheKeys[fileIdentity] = key
+    }
+
+    /** 按 fileIdentity 索引的 cache key 表。 */
+    val cacheKeys: Map<String, MacroExpansionCacheKey>
+        get() = _cacheKeys.toMap()
+
+    /**
+     * 模块级签名：把所有文件 cache key 的 stableHash 按 fileIdentity 排序后聚合成一个 hash。
+     *
+     * 任何文件的任一 cache 维度变化都会改变本签名；
+     * baseline 第 11 节 "macro artifact / import / builtin registry 改变时模块级失效"。
+     */
+    fun moduleSignature(): String {
+        if (_cacheKeys.isEmpty()) return EMPTY_MODULE_SIGNATURE
+        val parts = _cacheKeys.entries
+            .sortedBy { it.key }
+            .flatMap { (id, key) -> listOf(id, key.stableHash()) }
+        return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
+    }
+
     /** LSP / debug pass: 已知 placeholder id 反查原 surface。 */
     fun originSurfaceForPlaceholder(placeholderId: Long): MacroSurface? {
         val originId = _placeholderOriginById[placeholderId] ?: return null
@@ -236,6 +314,8 @@ class MacroExpansionRegistry : org.cangnova.cangjie.cfir.session.CfirSessionComp
 
     companion object {
         val EMPTY: MacroExpansionRegistry = MacroExpansionRegistry()
+
+        const val EMPTY_MODULE_SIGNATURE: String = "macro-module:empty"
     }
 }
 
@@ -311,6 +391,14 @@ interface MacroConstructionService {
     }
 
     companion object {
+        /**
+         * Macro construction 算法版本（baseline §11 cache key 第 10 维）。
+         *
+         * 主流程顺序、forest 推进策略、splice 语义、degraded placeholder 形态
+         * 任一变更都必须递增；上游 cache 据此整体失效。
+         */
+        const val ALGORITHM_VERSION: Int = 1
+
         /**
          * 无宏 identity 实现：把 raw 文件原样打包为可注册输入，
          * 不调用 executor、不做任何展开。

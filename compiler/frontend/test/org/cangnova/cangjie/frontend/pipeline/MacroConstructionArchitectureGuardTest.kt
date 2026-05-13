@@ -452,9 +452,12 @@ class MacroConstructionArchitectureGuardTest {
     @Test
     fun resolveAndCheckMainFlowKeepsConstructionBeforeProviderRegistrationAndOrdinaryResolve() {
         val source = readRepoFile("cfir/entrypoint/src/org/cangnova/cangjie/cfir/pipeline/analyse.kt")
-        val symbolIndexIndex = source.indexOf("val symbolIndex = buildMacroSymbolIndex(pre)")
+        val symbolIndexIndex = source.indexOf("val symbolIndex = buildMacroSymbolIndex(")
+        val artifactDefinitionsIndex = source.indexOf("macroArtifactDefinitions = macroArtifactDefinitions")
         val bindIndex = source.indexOf("val context = bindMacroImports(pre, symbolIndex)")
+        val preDiagnosticsErrorGateIndex = source.indexOf("preConstructionDiagnostics.any")
         val expandIndex = source.indexOf("val result = constructionService.expand(pre, context, constructionMode)")
+        val preDiagnosticsMergeIndex = source.indexOf("result.registry.addAll(preConstructionDiagnostics)")
         val recordIndex = source.indexOf("recordExpandedRawFilesOnce(provider, recordable, result.registry)")
         val resolveIndex = source.indexOf("val output = resolveAndCheckCfir(session, recordable, diagnosticsCollector)")
 
@@ -463,12 +466,141 @@ class MacroConstructionArchitectureGuardTest {
             "resolveAndCheckCfirAfterConstruction entrypoint must exist.",
         )
         assertTrue(
-            listOf(symbolIndexIndex, bindIndex, expandIndex, recordIndex, resolveIndex).all { it >= 0 },
-            "resolveAndCheckCfirAfterConstruction must spell out symbol-index -> bind -> expand -> record -> resolve.",
+            listOf(
+                symbolIndexIndex,
+                artifactDefinitionsIndex,
+                bindIndex,
+                preDiagnosticsErrorGateIndex,
+                expandIndex,
+                preDiagnosticsMergeIndex,
+                recordIndex,
+                resolveIndex,
+            ).all { it >= 0 },
+            "resolveAndCheckCfirAfterConstruction must spell out artifact-aware symbol-index -> bind -> error diagnostics gate -> expand -> diagnostics merge -> record -> resolve.",
         )
         assertTrue(
-            symbolIndexIndex < bindIndex && bindIndex < expandIndex && expandIndex < recordIndex && recordIndex < resolveIndex,
-            "Macro construction must happen before source-provider registration and ordinary resolve.",
+            symbolIndexIndex < artifactDefinitionsIndex &&
+                artifactDefinitionsIndex < bindIndex &&
+                bindIndex < preDiagnosticsErrorGateIndex &&
+                preDiagnosticsErrorGateIndex < expandIndex &&
+                expandIndex < preDiagnosticsMergeIndex &&
+                preDiagnosticsMergeIndex < recordIndex &&
+                recordIndex < resolveIndex,
+            "Macro artifact diagnostics and construction must happen before source-provider registration and ordinary resolve.",
+        )
+    }
+
+    @Test
+    fun tokenReEvaluatorReachesFixedPoint() {
+        val initial = listOf(MacroSurfaceToken(text = "foo  42", startOffset = 0, endOffset = 7))
+        var calls = 0
+        val tokenizer: (List<MacroSurfaceToken>) -> List<MacroSurfaceToken> = { tokens ->
+            calls += 1
+            when (calls) {
+                1 -> listOf(
+                    MacroSurfaceToken("foo", 0, 3, "IDENTIFIER"),
+                    MacroSurfaceToken("  ", 3, 5, "WS"),
+                    MacroSurfaceToken("42", 5, 7, "INT"),
+                )
+                else -> tokens
+            }
+        }
+        val stable = org.cangnova.cangjie.cfir.resolve.providers.macro.MacroTokenReEvaluator
+            .reTokenizeUntilStable(initial, tokenizer, maxIterations = 4)
+        assertEquals(3, stable.size, "Token re-evaluation must split the joined sequence on the first pass.")
+        assertEquals(2, calls, "Stable iteration must verify with one extra tokenizer call after the first split.")
+    }
+
+    @Test
+    fun tokenBackedFragmentParserReportsFailureWhenReparseReturnsNull() {
+        val surface = macroSurface(
+            surfaceId = 99L,
+            name = "NoReparse",
+            startOffset = 0,
+            endOffset = 5,
+            inputTokens = listOf(MacroSurfaceToken("x", 0, 1, "IDENTIFIER")),
+        )
+        val node = MacroCallForestBuilder.build(listOf(surface)).roots.single()
+        val parser = org.cangnova.cangjie.cfir.resolve.providers.macro.TokenBackedMacroFragmentParser(
+            reparse = { _, _, _ -> null },
+            reTokenize = { tokens -> tokens },
+        )
+        val result = parser.parse(
+            node = node,
+            tokens = surface.inputTokens,
+            mode = MacroFragmentParser.Mode.EXPRESSION,
+        )
+        assertTrue(
+            result is MacroFragmentResult.Failure,
+            "TokenBackedMacroFragmentParser must surface Failure when reparse returns null instead of silently passing.",
+        )
+    }
+
+    @Test
+    fun macroExpansionCacheKeyExposesThirteenDimensions() {
+        val properties = org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey::class
+            .java.declaredFields
+            .filter { !java.lang.reflect.Modifier.isStatic(it.modifiers) }
+            .map { it.name }
+        assertTrue(
+            properties.size >= 13,
+            "MacroExpansionCacheKey must keep at least 13 dimensions (baseline §11); actual: $properties",
+        )
+        assertEquals(
+            13,
+            org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey.DIMENSION_COUNT,
+            "MacroExpansionCacheKey.DIMENSION_COUNT must equal the documented baseline §11 dimension list.",
+        )
+    }
+
+    @Test
+    fun frontendMacroConstructionServiceRegistersCacheKeyPerFile() {
+        val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpandPhase.kt")
+        assertTrue(
+            "registerCacheKeys(pre, context, expandedFiles, registry)" in source,
+            "FrontendMacroConstructionService must compute per-file cache keys after splice completes.",
+        )
+        assertTrue(
+            "MacroConstructionService.ALGORITHM_VERSION" in source &&
+                "MacroPayloadTokenizer.VERSION" in source &&
+                "MacroFragmentParser.VERSION" in source &&
+                "MacroBuiltinRegistries.VERSION" in source,
+            "Cache key construction must reference all four versioning constants (algorithm/scanner/parser/builtin).",
+        )
+        assertTrue(
+            "configuration.languageVersionSettings" in source,
+            "Cache key must derive SDK signature from CompilerConfiguration.languageVersionSettings.",
+        )
+        assertTrue(
+            "macroRuntimeLoaderEnv" in source &&
+                "macroTargetPlatform" in source &&
+                "entry.artifactSignature" in source &&
+                "entry.dynamicLibHash" in source &&
+                "entry.dependenciesBchirHash" in source &&
+                "entry.resolverAlgorithmVersion" in source,
+            "Cache key must include macro artifact signature, dylib/BCHIR hashes, target platform, loader env, and resolver algorithm version.",
+        )
+    }
+
+    @Test
+    fun frontendPipelineRunsExpansionDemandedMacroPackageCompilationBeforeArtifactResolution() {
+        val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/CfirFrontendPipelinePhase.kt")
+        val preIndex = source.indexOf("val sessionPreResults = sessionsWithSources.map")
+        val compileIndex = source.indexOf("val macroCompilation = compileRequiredMacroSourcePackages(configuration, sessionPreResults.map { it.pre })")
+        val resolverIndex = source.indexOf("val artifactResolver = MacroArtifactResolver()")
+        val packagesIndex = source.indexOf("configuration.macroArtifactPackages + macroCompilation.artifactPackages")
+        val diagnosticsIndex = source.indexOf("macroCompilation.diagnostics + artifactResolution.diagnostics")
+
+        assertTrue(
+            listOf(preIndex, compileIndex, resolverIndex, packagesIndex, diagnosticsIndex).all { it >= 0 },
+            "Frontend phase must derive macro compilation demand from pre macro results before resolving compiled macro artifacts.",
+        )
+        assertTrue(
+            preIndex < compileIndex &&
+                compileIndex < resolverIndex &&
+                resolverIndex < packagesIndex &&
+                packagesIndex < diagnosticsIndex,
+            "Macro package compilation must be driven by expansion demand and then merged into artifact resolution.",
         )
     }
 
@@ -538,7 +670,8 @@ class MacroConstructionArchitectureGuardTest {
     ) : MacroExecutor {
         val executedCalls: MutableList<MacroCallInfo> = mutableListOf()
 
-        override fun loadLibraries(libPaths: List<String>) {}
+        override fun loadLibraries(libPaths: List<String>) =
+            org.cangnova.cangjie.macro.MacroLibraryLoadResult.Success(libPaths.toList())
 
         override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
             executedCalls += calls

@@ -44,6 +44,14 @@ data class MacroBuiltinRegistries(
     val nonMacros: Set<Name>,
 ) {
     companion object {
+        /**
+         * Builtin registry 版本（baseline §11 cache key 第 12/13 维之一）。
+         *
+         * 任何 [DEFAULT] 内 macros / annotations / nonMacros 名单变更都必须递增；
+         * 上游 cache 据此整体失效。
+         */
+        const val VERSION: Int = 1
+
         val DEFAULT: MacroBuiltinRegistries = MacroBuiltinRegistries(
             macros = BuiltinMacroRegistry.all.toSet(),
             // 暂未完整 lower 仓颉内建 annotation，先注册常用的几个
@@ -117,12 +125,14 @@ class MacroResolutionContext internal constructor(
      *
      * 当 [kind] 为 [MacroSurface.Kind.FORCED]（`@!`）时，
      * 仅返回支持强制形式的宏（[MacroDefinitionEntry.supportsForcedKind]）。
+     * 当 [hasParenthesis] 为 false 时，仅返回显式支持 plain-attr overload 的宏。
      */
     fun resolveMacroCall(
         callPackage: FqName,
         qualifier: FqName?,
         name: Name,
         kind: MacroSurface.Kind = MacroSurface.Kind.PLAIN,
+        hasParenthesis: Boolean = true,
     ): MacroResolution {
         // 1. builtin non-macro：先于一切 macro lookup
         if (name in builtinRegistries.nonMacros) {
@@ -133,7 +143,7 @@ class MacroResolutionContext internal constructor(
         if (name in builtinRegistries.macros) {
             val builtin = symbolIndex.lookupByFqName(FqName.topLevel(name))
             if (builtin != null && builtin.source == MacroDefinitionEntry.Source.BUILTIN_MACRO) {
-                return verifyKindOrUnresolved(builtin, kind) ?: MacroResolution.Builtin(builtin)
+                return verifyCallShapeOrMismatch(builtin, kind, hasParenthesis) ?: MacroResolution.Builtin(builtin)
             }
         }
 
@@ -147,7 +157,7 @@ class MacroResolutionContext internal constructor(
         if (qualifier != null) {
             val resolved = symbolIndex.lookupByFqName(qualifier.child(name))
             if (resolved != null) {
-                return verifyKindOrUnresolved(resolved, kind) ?: MacroResolution.Resolved(resolved)
+                return verifyCallShapeOrMismatch(resolved, kind, hasParenthesis) ?: MacroResolution.Resolved(resolved)
             }
         }
 
@@ -155,7 +165,7 @@ class MacroResolutionContext internal constructor(
         for (binding in importBindings) {
             if (binding.aliasName == name || (!binding.isAllUnder && binding.importedFqName.shortName() == name)) {
                 val target = binding.resolvedTargets.firstOrNull() ?: continue
-                return verifyKindOrUnresolved(target, kind) ?: MacroResolution.Resolved(target)
+                return verifyCallShapeOrMismatch(target, kind, hasParenthesis) ?: MacroResolution.Resolved(target)
             }
         }
 
@@ -164,7 +174,7 @@ class MacroResolutionContext internal constructor(
             if (binding.isAllUnder) {
                 val candidate = symbolIndex.lookupByFqName(binding.importedFqName.child(name))
                 if (candidate != null) {
-                    return verifyKindOrUnresolved(candidate, kind) ?: MacroResolution.Resolved(candidate)
+                    return verifyCallShapeOrMismatch(candidate, kind, hasParenthesis) ?: MacroResolution.Resolved(candidate)
                 }
             }
         }
@@ -173,7 +183,7 @@ class MacroResolutionContext internal constructor(
         for (defaultPkg in defaultMacroImports) {
             val candidate = symbolIndex.lookupByFqName(defaultPkg.child(name))
             if (candidate != null) {
-                return verifyKindOrUnresolved(candidate, kind) ?: MacroResolution.Resolved(candidate)
+                return verifyCallShapeOrMismatch(candidate, kind, hasParenthesis) ?: MacroResolution.Resolved(candidate)
             }
         }
 
@@ -186,15 +196,19 @@ class MacroResolutionContext internal constructor(
     }
 
     /**
-     * 若 [target] 支持 [kind]，返回 null（继续返回 Resolved）；
+     * 若 [target] 支持调用形态，返回 null（继续返回 Resolved）；
      * 否则返回 [MacroResolution.KindMismatch]。
      */
-    private fun verifyKindOrUnresolved(
+    private fun verifyCallShapeOrMismatch(
         target: MacroDefinitionEntry,
         kind: MacroSurface.Kind,
+        hasParenthesis: Boolean,
     ): MacroResolution? {
         if (kind == MacroSurface.Kind.FORCED && !target.supportsForcedKind) {
-            return MacroResolution.KindMismatch(target, kind)
+            return MacroResolution.KindMismatch(target, MacroResolution.KindMismatch.Reason.FORCED_KIND_NOT_SUPPORTED)
+        }
+        if (!hasParenthesis && !target.supportsPlainAttrOverload) {
+            return MacroResolution.KindMismatch(target, MacroResolution.KindMismatch.Reason.PLAIN_ATTR_OVERLOAD_NOT_SUPPORTED)
         }
         return null
     }
@@ -219,8 +233,14 @@ sealed class MacroResolution {
     /** target 不支持调用方使用的 [MacroSurface.Kind]（如 `@!` 形式）。 */
     data class KindMismatch(
         val entry: MacroDefinitionEntry,
-        val requestedKind: MacroSurface.Kind,
+        val reason: Reason,
     ) : MacroResolution()
+    {
+        enum class Reason {
+            FORCED_KIND_NOT_SUPPORTED,
+            PLAIN_ATTR_OVERLOAD_NOT_SUPPORTED,
+        }
+    }
 
     /** 找不到任何匹配。 */
     data class Unresolved(val name: Name) : MacroResolution()

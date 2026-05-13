@@ -20,7 +20,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.entrypoint.configuration.initializeCfirFrontendConfiguration
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
@@ -85,7 +84,7 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
 ) {
     override fun executePhase(input: ConfigurationPipelineArtifact): DefaultCfirFrontendPipelineArtifact? {
         val (configuration, rootDisposable) = input
-        configuration.initializeCfirFrontendConfiguration()
+        configuration.initializeCfirFrontendMacroCompilationConfiguration()
 
         val (environment, sourcesProvider) = createEnvironmentAndSources(configuration, rootDisposable) ?: return null
         val sources = sourcesProvider()
@@ -108,8 +107,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         //   pre → MacroConstructionService.expand → recordExpandedRawFilesOnce → resolve & check
         //
         // 当前 batch 仍以 STRICT 模式驱动 CLI：构造失败立刻终止该 module 的 resolve。
-        val constructionService = FrontendMacroConstructionService(configuration)
-
         val sessionsWithSources = buildSessions(
             configuration = configuration,
             rootModuleName = rootModuleName,
@@ -120,19 +117,36 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             extensionRegistrars = extensionRegistrars,
         )
 
-        val outputs = sessionsWithSources.mapNotNull { (session, sessionSources) ->
-            val pre = buildPreMacroFromSources(
+        val sessionPreResults = sessionsWithSources.map { (session, sessionSources) ->
+            SessionPreMacroResult(
                 session = session,
-                sources = sessionSources,
-                environment = environment,
-                useLightTree = configuration.useLightTree,
+                pre = buildPreMacroFromSources(
+                    session = session,
+                    sources = sessionSources,
+                    environment = environment,
+                    useLightTree = configuration.useLightTree,
+                ),
             )
+        }
+
+        val constructionService = FrontendMacroConstructionService(configuration)
+        val macroCompilation = compileRequiredMacroSourcePackages(configuration, sessionPreResults.map { it.pre })
+        val artifactResolver = MacroArtifactResolver()
+        val artifactResolution = artifactResolver.resolve(
+            packages = configuration.macroArtifactPackages + macroCompilation.artifactPackages,
+            expectedExecutorAbiVersion = configuration.macroExecutorAbiVersion,
+        )
+        val preConstructionDiagnostics = macroCompilation.diagnostics + artifactResolution.diagnostics
+
+        val outputs = sessionPreResults.mapNotNull { (session, pre) ->
             val (result, output) = resolveAndCheckCfirAfterConstruction(
                 session = session,
                 pre = pre,
                 constructionService = constructionService,
-                constructionMode = MacroConstructionService.Mode.STRICT,
+                constructionMode = configuration.macroConstructionMode,
                 diagnosticsCollector = configuration.diagnosticsCollector,
+                macroArtifactDefinitions = artifactResolution.definitions + configuration.macroArtifactDefinitionsOverride,
+                preConstructionDiagnostics = preConstructionDiagnostics,
             )
             if (output == null) {
                 reportConstructionFailure(configuration, result)
@@ -147,6 +161,37 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             sourceFiles = sources.allSources,
         )
     }
+
+    private fun compileRequiredMacroSourcePackages(
+        configuration: CompilerConfiguration,
+        preResults: List<PreMacroRawBuildResult>,
+    ): MacroPackageCompilationResult {
+        val requests = selectMacroSourcePackageCompilationRequestsForExpansion(
+            preResults = preResults,
+            requests = configuration.macroSourcePackageCompilationRequests,
+            suppliedArtifacts = configuration.macroArtifactPackages,
+        )
+        if (requests.isEmpty()) return MacroPackageCompilationResult()
+
+        val orchestrator = configuration.macroPackageCompilationOrchestrator
+            ?: return MacroPackageCompilationResult(
+                diagnostics = unresolvedMacroPackageCompilationDiagnostics(requests),
+            )
+
+        return orchestrator.compileMacroPackages(
+            requests = requests,
+            context = MacroPackageCompilationContext(
+                configuration = configuration,
+                executorAbiVersion = configuration.macroExecutorAbiVersion,
+                cacheContext = configuration.macroCompilationCacheContext,
+            ),
+        )
+    }
+
+    private data class SessionPreMacroResult(
+        val session: CfirSession,
+        val pre: PreMacroRawBuildResult,
+    )
 
     private data class EnvironmentAndSources(
         val environment: VfsBasedProjectEnvironment,
@@ -533,6 +578,8 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
 }
 
 private fun List<MacroSurfaceToken>.reTokenizeMacroSurfaceTokens(): List<MacroSurfaceToken> {
+    // PLAN.md §8 token-stage re-eval：先单步 lex，再由调用方（TokenBackedMacroFragmentParser）
+    // 调用 reTokenizeUntilStable 反复 lex 至稳定。这里只承担"一次真实 lexer 复扫"。
     val payloadTokens = MacroPayloadTokenizer.tokenize(joinToString(separator = "") { it.text }, baseOffset = 0)
     return payloadTokens.map { token ->
         MacroSurfaceToken(

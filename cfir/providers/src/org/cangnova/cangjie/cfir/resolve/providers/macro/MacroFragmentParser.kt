@@ -29,6 +29,15 @@ interface MacroFragmentParser {
     ): MacroFragmentResult
 
     enum class Mode { EXPRESSION, DECLARATION, CUSTOM_ANNOTATION }
+
+    companion object {
+        /**
+         * Fragment parser 算法版本。PLAN.md §11 cache key 第 12 维。
+         *
+         * 解析入口、custom-annotation fallback、payload 类型语义有变化时递增。
+         */
+        const val VERSION: Int = 1
+    }
 }
 
 /**
@@ -134,6 +143,39 @@ object MacroTokenReEvaluator {
         tokens: List<MacroSurfaceToken>,
         tokenizer: (List<MacroSurfaceToken>) -> List<MacroSurfaceToken>,
     ): List<MacroSurfaceToken> = tokenizer(tokens)
+
+    /**
+     * 重复 [reTokenize] 直到序列稳定或达上限。
+     *
+     * Baseline §8 "newTokens 先 token-stage re-eval 到 stable，再 fragment parse"
+     * 的纯函数式实现：调用方注入具体 lexer-backed tokenizer 后，本函数保证返回值
+     * 与对其再次 lex 的结果一致（达到 fixed-point），或在 [maxIterations] 之后
+     * 兜底返回最后一次结果。
+     */
+    fun reTokenizeUntilStable(
+        tokens: List<MacroSurfaceToken>,
+        tokenizer: (List<MacroSurfaceToken>) -> List<MacroSurfaceToken>,
+        maxIterations: Int = 4,
+    ): List<MacroSurfaceToken> {
+        require(maxIterations >= 1) { "maxIterations must be >= 1, got $maxIterations" }
+        var current = tokens
+        repeat(maxIterations) {
+            val next = tokenizer(current)
+            if (next.sameSequence(current)) return next
+            current = next
+        }
+        return current
+    }
+
+    private fun List<MacroSurfaceToken>.sameSequence(other: List<MacroSurfaceToken>): Boolean {
+        if (size != other.size) return false
+        for (i in indices) {
+            val a = this[i]
+            val b = other[i]
+            if (a.text != b.text || a.kindName != b.kindName) return false
+        }
+        return true
+    }
 
     /**
      * 把 [tokens] 重新拼接成字符串并按 lexer 切分。
