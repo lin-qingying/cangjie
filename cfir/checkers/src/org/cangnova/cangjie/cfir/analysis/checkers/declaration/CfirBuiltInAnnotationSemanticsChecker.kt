@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
@@ -12,6 +13,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.resolve.defaultType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -19,6 +22,7 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
@@ -31,6 +35,7 @@ import org.cangnova.cangjie.psi.CjTypeStatement
 import org.cangnova.cangjie.psi.ValueArgument
 import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 统一承接当前 CFIR 中已经具备稳定建模基础的内建注解/平台注解规则。
@@ -44,10 +49,13 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
 object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
-        val owner = declaration.source?.psi as? CjModifierListOwner ?: return
-        checkAnnotationMetaRules(declaration, owner)
-        checkPlatformAnnotationSyntax(declaration, owner)
-        checkForeignNameRules(declaration, owner)
+        val owner = declaration.source?.psi as? CjModifierListOwner
+        if (owner != null) {
+            checkAnnotationMetaRules(declaration, owner)
+            checkPlatformAnnotationSyntax(declaration, owner)
+        }
+        checkCallingConventionRules(declaration)
+        checkForeignNameRules(declaration)
     }
 }
 
@@ -261,6 +269,32 @@ private fun checkPlatformAnnotationSyntax(
                 factory = CfirErrors.HIDE_MISSING_HIDE,
             )
         }
+    }
+}
+
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkCallingConventionRules(declaration: CfirDeclaration) {
+    val callingConvEntries = declaration.findAnnotations(Name.identifier("CallingConv"))
+    if (callingConvEntries.isEmpty()) return
+
+    val isAllowedTopLevelForeignFunction =
+        declaration is CfirFunction &&
+            declaration.status.isForeign &&
+            declaration.dispatchReceiverType == null
+    if (isAllowedTopLevelForeignFunction) return
+
+    val diagnosticFactory = if (declaration is CfirCallableDeclaration && declaration.dispatchReceiverType != null) {
+        CfirErrors.ILLEGAL_SCOPE_USE_OF_ANNOTATION
+    } else {
+        CfirErrors.ONLY_CFUNC_CAN_USE_ANNOTATION
+    }
+
+    for (entry in callingConvEntries) {
+        reporter.reportOn(
+            source = entry.source ?: declaration.source,
+            factory = diagnosticFactory,
+            a = "CallingConv",
+        )
     }
 }
 
@@ -629,6 +663,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
     for (member in declaration.declarations) {
         when (member) {
             is CfirNamedFunction -> {
+                checkObjCInitMethodReturnType(declaration, member)
                 if (member.valueParameters.size > 1 && !member.hasAnnotation(FOREIGN_NAME)) {
                     reporter.reportOn(
                         source = member.source ?: declaration.source,
@@ -729,11 +764,6 @@ private fun isObjCTypeCompatible(type: org.cangnova.cangjie.cfir.types.ConeCangJ
     return targetDecl.hasAnnotation(OBJC_MIRROR) || targetDecl.hasAnnotation(OBJC_IMPL)
 }
 
-private fun CfirDeclaration.hasAnnotation(annotationName: Name): Boolean {
-    val owner = source?.psi as? CjModifierListOwner
-    return owner?.hasAnnotationEntry(annotationName) == true
-}
-
 private fun CfirDeclaration.hasAnyAnnotation(vararg annotationNames: Name): Boolean =
     annotationNames.any(::hasAnnotation)
 
@@ -777,6 +807,9 @@ private fun CjModifierListOwner.hasAnnotationEntry(annotationName: Name): Boolea
 
 private fun CjAnnotation.toSourceOrDeclarationSource(declaration: CfirDeclaration): org.cangnova.cangjie.source.CjSourceElement? =
     this.toCjPsiSourceElement() ?: declaration.source
+
+private fun CfirAnnotation.toSourceOrDeclarationSource(declaration: CfirDeclaration): org.cangnova.cangjie.source.CjSourceElement? =
+    this.source ?: declaration.source
 
 private fun CjExpression.isLiteralLike(): Boolean = when (this) {
     is CjConstantExpression -> true
@@ -822,11 +855,32 @@ private val allowedIfAvailableArgumentNames: Set<String> = setOf(
  * - @ForeignName 注解冲突检查
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun checkObjCInitMethodReturnType(
+    declaration: CfirClassLikeDeclaration,
+    member: CfirNamedFunction,
+) {
+    if (!declaration.hasAnnotation(OBJC_MIRROR)) return
+    if (!member.hasAnnotation(Name.identifier("ObjCInit"))) return
+    if (!member.status.isStatic) return
+
+    val returnTypeRef = member.returnTypeRef as? CfirResolvedTypeRef ?: return
+    val expectedType = declaration.defaultType()
+    val actualType = returnTypeRef.coneType
+    if (AbstractTypeChecker.equalTypes(context.session.typeContext, expectedType, actualType)) return
+
+    checkTypeMismatch(
+        expectedType = expectedType,
+        actualType = actualType,
+        source = returnTypeRef.source ?: member.source ?: declaration.source ?: return,
+        diagnosticFactory = CfirErrors.TYPE_MISMATCH,
+    )
+}
+
+context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkForeignNameRules(
     declaration: CfirDeclaration,
-    owner: CjModifierListOwner,
 ) {
-    val foreignNameEntries = owner.findAnnotationEntries(FOREIGN_NAME)
+    val foreignNameEntries = declaration.findAnnotations(FOREIGN_NAME)
     if (foreignNameEntries.isEmpty()) return
 
     // @ForeignName 不能出现在被 override 的声明上
@@ -859,8 +913,8 @@ private fun checkForeignNameRules(
     }
 
     // 派生注解冲突：@ForeignName 与其衍生出的 @ForeignSetterName/@ForeignGetterName 不能同时出现
-    val foreignGetterEntries = owner.findAnnotationEntries(Name.identifier("ForeignGetterName"))
-    val foreignSetterEntries = owner.findAnnotationEntries(Name.identifier("ForeignSetterName"))
+    val foreignGetterEntries = declaration.findAnnotations(Name.identifier("ForeignGetterName"))
+    val foreignSetterEntries = declaration.findAnnotations(Name.identifier("ForeignSetterName"))
     if (foreignNameEntries.isNotEmpty() && (foreignGetterEntries.isNotEmpty() || foreignSetterEntries.isNotEmpty())) {
         val declName = when (declaration) {
             is CfirNamedFunction -> declaration.name
@@ -870,7 +924,7 @@ private fun checkForeignNameRules(
         val derivedName = if (foreignGetterEntries.isNotEmpty())
             Name.identifier("ForeignGetterName") else Name.identifier("ForeignSetterName")
         reporter.reportOn(
-            source = foreignNameEntries.first().toSourceOrDeclarationSource(declaration),
+            source = foreignNameEntries.first().source ?: declaration.source,
             factory = CfirErrors.FOREIGN_NAME_CONFLICTING_DERIVED_ANNOTATION,
             a = declName,
             b = FOREIGN_NAME,

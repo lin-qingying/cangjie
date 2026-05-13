@@ -19,8 +19,13 @@ package org.cangnova.cangjie.macro
  * - [StubMacroExecutor][org.cangnova.cangjie.macro.stub.StubMacroExecutor]：测试桩
  */
 interface MacroExecutor : AutoCloseable {
-    /** 加载宏动态库路径 */
-    fun loadLibraries(libPaths: List<String>)
+    /**
+     * 加载宏动态库路径。
+     *
+     * 返回结构化结果，调用方必须区分动态库打开失败、协议错误和 server 断开，
+     * 不允许把 DefLib 阶段失败折叠成普通宏展开失败。
+     */
+    fun loadLibraries(libPaths: List<String>): MacroLibraryLoadResult
 
     /** 执行一批宏调用 */
     fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult>
@@ -30,4 +35,18 @@ interface MacroExecutor : AutoCloseable {
 
     /** 是否可用 */
     fun isAvailable(): Boolean
+
+    /**
+     * Executor ABI / 协议版本（CFIR PLAN.md §11 cache key 第 9 维）。
+     *
+     * 默认 `"v1"`；具体实现（如 LSP / process executor）须覆盖为真实协议版本，
+     * 任何向后不兼容的协议/序列化/动态库 ABI 变更都必须递增字符串值。
+     * 上游 macro cache 据此整体失效。
+     */
+    val abiVersion: String
+        get() = DEFAULT_ABI_VERSION
+
+    companion object {
+        const val DEFAULT_ABI_VERSION: String = "v1"
+    }
 }
