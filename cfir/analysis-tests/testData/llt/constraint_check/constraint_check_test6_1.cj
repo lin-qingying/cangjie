@@ -8,7 +8,7 @@
 
 // UpperBound: Array Type
 
-func foo<T>() where T <: Array<Int32> {
+func foo<T>() where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>Array<Int32><!> {
     return 0
 }
 
@@ -16,22 +16,18 @@ open class Base {}
 
 class Child <: Base {}
 
-func bar<T>() where T <: Array<(Int32, Base)> {
+func bar<T>() where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>Array<(Int32, Base)><!> {
     return 0
 }
 
-func jay<T>() where T <: (Int32, Array<Base>) {
+func jay<T>() where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>(Int32, Array<Base>)<!> {
     return 0
 }
 
 main(): Int64 {
     foo<Array<Int32>>()
     bar<Array<(Int32, Base)>>()
-    bar<Array<(Int32, Child)>>()
+    <!GENERIC_ARGUMENT_NO_MATCH!>bar<Array<(Int32, Child)>>()<!>
     jay<(Int32, Array<Base>)>()
-    jay<(Int32, Array<Child>)>()
+    <!GENERIC_ARGUMENT_NO_MATCH!>jay<(Int32, Array<Child>)>()<!>
 }
-
-// ASSERT: scan-2 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan-3 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 5

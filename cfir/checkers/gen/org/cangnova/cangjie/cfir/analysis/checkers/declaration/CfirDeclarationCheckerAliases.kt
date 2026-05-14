@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -36,6 +37,7 @@ typealias CfirSimpleFunctionChecker = CfirDeclarationChecker<CfirNamedFunction>
 typealias CfirPropertyChecker = CfirDeclarationChecker<CfirProperty>
 typealias CfirClassLikeChecker = CfirDeclarationChecker<CfirClassLikeDeclaration>
 typealias CfirAnonymousFunctionChecker = CfirDeclarationChecker<CfirAnonymousFunction>
+typealias CfirPropertyAccessorChecker = CfirDeclarationChecker<CfirPropertyAccessor>
 typealias CfirConstructorChecker = CfirDeclarationChecker<CfirConstructor>
 typealias CfirFileChecker = CfirDeclarationChecker<CfirFile>
 typealias CfirTypeParameterChecker = CfirDeclarationChecker<CfirTypeParameter>

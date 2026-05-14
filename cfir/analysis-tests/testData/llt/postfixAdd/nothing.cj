@@ -8,9 +8,6 @@
 
 main() {
     var a = return 10
-    a++
+    <!TYPE_MISMATCH!>a++<!>
     0
 }
-
-// ASSERT: scan "DiagKind": "sema_mismatched_types"
-// ASSERT: scan "Errors": 1,

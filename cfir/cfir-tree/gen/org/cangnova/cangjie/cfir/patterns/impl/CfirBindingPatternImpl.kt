@@ -27,17 +27,24 @@ class CfirBindingPatternImpl @CfirImplementationDetail constructor(
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         typeRef?.accept(visitor, data)
+        bindingVariable?.accept(visitor, data)
         nestedPattern?.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirBindingPatternImpl {
         transformTypeRef(transformer, data)
+        transformBindingVariable(transformer, data)
         transformNestedPattern(transformer, data)
         return this
     }
 
     override fun <D> transformTypeRef(transformer: CfirTransformer<D>, data: D): CfirBindingPatternImpl {
         typeRef = typeRef?.transform(transformer, data)
+        return this
+    }
+
+    override fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirBindingPatternImpl {
+        bindingVariable = bindingVariable?.transform(transformer, data)
         return this
     }
 

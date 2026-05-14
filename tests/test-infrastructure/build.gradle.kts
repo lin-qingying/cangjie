@@ -32,8 +32,6 @@ dependencies {
     testFixturesApi(libs.junit.jupiter.api)
     testRuntimeOnly(libs.junit.jupiter.engine)
     testFixturesApi(libs.junit.platform.launcher)
-    // TestDataPath 注解仅编译期使用，compileOnly 避免运行时加载 JUnit5TestSessionListener
-    testFixturesCompileOnly(intellijTestFramework()) { isTransitive = false }
 }
 val compileTestKotlin: KotlinCompile by tasks
 compileTestKotlin.compilerOptions {

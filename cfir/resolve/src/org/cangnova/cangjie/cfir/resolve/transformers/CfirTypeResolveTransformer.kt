@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
@@ -17,10 +18,15 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
@@ -147,7 +153,31 @@ class CfirTypeResolveTransformer(
         return extend
     }
 
+    override fun transformNamedFunction(
+        namedFunction: CfirNamedFunction,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirNamedFunction = transformFunctionHeader(namedFunction, data) as CfirNamedFunction
+
+    override fun transformMainFunction(
+        mainFunction: CfirMainFunction,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirMainFunction = transformFunctionHeader(mainFunction, data) as CfirMainFunction
+
+    override fun transformMacroDeclaration(
+        macroDeclaration: CfirMacroDeclaration,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirMacroDeclaration = transformFunctionHeader(macroDeclaration, data) as CfirMacroDeclaration
+
+    override fun transformFinalizer(
+        finalizer: CfirFinalizer,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirFinalizer = transformFunctionHeader(finalizer, data) as CfirFinalizer
+
     override fun transformFunction(function: CfirFunction, data: CfirTypeResolutionConfiguration): CfirFunction {
+        return transformFunctionHeader(function, data)
+    }
+
+    private fun transformFunctionHeader(function: CfirFunction, data: CfirTypeResolutionConfiguration): CfirFunction {
         val configuration = data
             .withTopContainer(function)
             .withAdditionalTypeParameters(function.typeParameters)
@@ -179,15 +209,48 @@ class CfirTypeResolveTransformer(
         return constructor
     }
 
+    override fun transformEnumConstructor(
+        enumConstructor: CfirEnumConstructor,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirEnumConstructor {
+        val configuration = data
+            .withTopContainer(enumConstructor)
+            .withAdditionalTypeParameters(enumConstructor.typeParameters)
+        enumConstructor.transformTypeParameters(this, configuration)
+        if (enumConstructor.returnTypeRef is CfirImplicitTypeRef) {
+            val ownerEnum = data.topContainer as? CfirEnum
+            val ownerType = ownerEnum?.let(::buildConstructedTypeForConstructorOwner)
+                ?: ConeErrorType(ConeSimpleDiagnostic("cannot resolve enum constructor owner type"))
+            enumConstructor.replaceReturnTypeRef(
+                enumConstructor.returnTypeRef.resolvedTypeFromPrototype(
+                    ownerType,
+                    enumConstructor.returnTypeRef.source,
+                ),
+            )
+        } else {
+            enumConstructor.transformReturnTypeRef(this, configuration)
+        }
+        enumConstructor.transformValueParameters(this, configuration)
+        bumpPhase(enumConstructor)
+        return enumConstructor
+    }
+
     override fun transformProperty(property: CfirProperty, data: CfirTypeResolutionConfiguration): CfirProperty {
         val configuration = data
             .withTopContainer(property)
             .withAdditionalTypeParameters(property.typeParameters)
         property.transformTypeParameters(this, configuration)
         property.transformReturnTypeRef(this, configuration)
+        property.transformGetter(this, configuration)
+        property.transformSetter(this, configuration)
         bumpPhase(property)
         return property
     }
+
+    override fun transformPropertyAccessor(
+        propertyAccessor: CfirPropertyAccessor,
+        data: CfirTypeResolutionConfiguration,
+    ): CfirPropertyAccessor = transformFunctionHeader(propertyAccessor, data) as CfirPropertyAccessor
 
     override fun transformVariable(variable: CfirVariable, data: CfirTypeResolutionConfiguration): CfirVariable {
         bumpPhase(variable)
@@ -441,6 +504,7 @@ class CfirTypeResolveTransformer(
             }
 
         return buildList {
+            // CfirTypeResolver 按顺序查找 scope；这里必须高优先级在前。
             add(CfirFileDeclaredTopLevelScope(file))
             add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
             add(CfirExplicitSimpleImportingScope(imports, symbolProvider))

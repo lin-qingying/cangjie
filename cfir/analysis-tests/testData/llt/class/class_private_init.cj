@@ -24,24 +24,24 @@ class A {
 
 class B {
     public func m() {
-        var a = A()
+        var a = A<!NO_VALUE_FOR_PARAMETER!>()<!>
     }
 }
 
-class C <: A {
+class C <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>A<!> {
     public init() {
-        super()
+        super<!NO_VALUE_FOR_PARAMETER!>()<!>
     }
     public init(a: Int64) {
         super(a)
     }
     public func k() {
-        var a = A()
+        var a = A<!NO_VALUE_FOR_PARAMETER!>()<!>
         var b = A(1) // OK
         var c = A(1, 1) // OK
     }
     public static func j() {
-        var a = A()
+        var a = A<!NO_VALUE_FOR_PARAMETER!>()<!>
         var b = A(1) // OK
         var c = A(1, 1) // OK
     }
@@ -49,83 +49,7 @@ class C <: A {
 
 main() {
     var a = A(1)
-    var b = A()
+    var b = A<!NO_VALUE_FOR_PARAMETER!>()<!>
     var c = A(1, 1) // OK
     return 0
 }
-
-/* SCAN
-error: super class 'A' is not inheritable
-  ==> class_private_init.cj:31:12:
-   | 
-31 | class C <: A {
-   |            ^ 
-   | 
-
-error: missing arguments for parameter list '(Int64, Int64)' in call
-  ==> class_private_init.cj:27:18:
-   | 
-27 |         var a = A()
-   |                  ^^ expected 2 arguments, found 0
-   | 
-note: found candidate
-  ==> class_private_init.cj:12:12:
-   | 
-12 |     public init(b: Int64, c: Int64) {}
-   |            ^^^^ 
-   | 
-
-error: missing arguments for parameter list '(Int64, Int64)' in call
-  ==> class_private_init.cj:33:14:
-   | 
-33 |         super()
-   |              ^^ expected 2 arguments, found 0
-   | 
-note: found candidate
-  ==> class_private_init.cj:12:12:
-   | 
-12 |     public init(b: Int64, c: Int64) {}
-   |            ^^^^ 
-   | 
-
-error: missing arguments for parameter list '(Int64, Int64)' in call
-  ==> class_private_init.cj:39:18:
-   | 
-39 |         var a = A()
-   |                  ^^ expected 2 arguments, found 0
-   | 
-note: found candidate
-  ==> class_private_init.cj:12:12:
-   | 
-12 |     public init(b: Int64, c: Int64) {}
-   |            ^^^^ 
-   | 
-
-error: missing arguments for parameter list '(Int64, Int64)' in call
-  ==> class_private_init.cj:44:18:
-   | 
-44 |         var a = A()
-   |                  ^^ expected 2 arguments, found 0
-   | 
-note: found candidate
-  ==> class_private_init.cj:12:12:
-   | 
-12 |     public init(b: Int64, c: Int64) {}
-   |            ^^^^ 
-   | 
-
-error: missing arguments for parameter list '(Int64, Int64)' in call
-  ==> class_private_init.cj:52:14:
-   | 
-52 |     var b = A()
-   |              ^^ expected 2 arguments, found 0
-   | 
-note: found candidate
-  ==> class_private_init.cj:12:12:
-   | 
-12 |     public init(b: Int64, c: Int64) {}
-   |            ^^^^ 
-   | 
-
-6 errors generated, 6 errors printed.
-*/

@@ -57,6 +57,12 @@ class CangJieNameReferenceExpressionStubImpl :
     override fun getReferencedName(): String {
         return referencedName.string
     }
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieNameReferenceExpressionStubImpl = CangJieNameReferenceExpressionStubImpl(
+        parent = newParent,
+        referencedName = referencedName,
+        myClassRef = isClassRef,
+    )
 }
 class CangJieNameBasicReferenceExpressionStubImpl :
     CangJieStubBaseImpl<CjNameBasicReferenceExpression>,
@@ -84,4 +90,10 @@ class CangJieNameBasicReferenceExpressionStubImpl :
     override fun getReferencedName(): String {
         return referencedName.string
     }
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieNameBasicReferenceExpressionStubImpl = CangJieNameBasicReferenceExpressionStubImpl(
+        parent = newParent,
+        referencedName = referencedName,
+        myClassRef = isClassRef,
+    )
 }

@@ -1,10 +1,6 @@
-
-func a():ToString{
-return ""
+func a(): ToString {
+    return ""
 }
 
-main():Unit{
-
-
-
+main(): Unit {
 }

@@ -9,7 +9,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjExtend
@@ -91,8 +91,8 @@ class AnalysisApiSymbolEquivalenceTest : AbstractAnalysisApiExecutionTest(
 
             val extendMemberNames = (extendDeclaration.symbol as CaExtendSymbol)
                 .declaredMemberScope
-                .getCallableSymbols(Name.identifier("prettyPrint"))
-            assertTrue(extendMemberNames.isNotEmpty())
+                .callables(Name.identifier("prettyPrint"))
+            assertTrue(extendMemberNames.any())
         }
     }
 }

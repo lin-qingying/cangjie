@@ -110,7 +110,6 @@ private fun groupTopLevelByName(declarations: List<CfirDeclaration>): Map<Name, 
                 val presentation = CfirRedeclarationPresenter.represent(symbol) ?: continue
                 val group = groups.getOrPut(declaration.name, ::DeclarationBuckets)
                 group.classLikes += symbol to presentation
-                group.constructors += collectConstructorsForClassLike(symbol)
             }
 
             else -> Unit
@@ -136,7 +135,7 @@ internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevel(
         val groupHasSimpleFunctions = group.simpleFunctions.isNotEmpty()
 
         fun collect(
-            declarations: List<Pair<out CfirBasedSymbol<*>, String>>,
+            declarations: List<Pair<CfirBasedSymbol<*>, String>>,
             conflictingSymbol: CfirBasedSymbol<*>,
             conflictingPresentation: String? = null,
             conflictingFile: CfirFile? = null,
@@ -209,6 +208,8 @@ internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevel(
                 collect(group.extensionProperties, conflictingSymbol = it)
             }
         }
+
+        collectFunctionNameRedeclarations(group)
     }
 }
 
@@ -237,6 +238,7 @@ internal fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectClassMembers(cl
 
                 val representation = CfirRedeclarationPresenter.represent(declaredFunction) ?: continue
                 collect(declaredFunction, representation, functionDeclarations)
+                collect(declaredFunction, representation, otherDeclarations)
 
                 useSiteScope.processFunctionsByName(declaredFunction.name) { anotherFunction ->
                     if (
@@ -356,14 +358,30 @@ private fun <D : CfirBasedSymbol<*>, S : D> CfirDeclarationCollector<D>.collect(
 
         val conflicts = SmartSet.create<CfirBasedSymbol<*>>()
         for (otherDeclaration in declarations) {
-            if (otherDeclaration != declaration && getConflictState(declaration, otherDeclaration) == ConflictState.Conflict) {
+            if (
+                otherDeclaration != declaration &&
+                declaration.shouldReportRedeclarationWith(otherDeclaration) &&
+                getConflictState(declaration, otherDeclaration) == ConflictState.Conflict
+            ) {
                 conflicts += otherDeclaration
-                declarationConflictingSymbols.getOrPut(otherDeclaration) { SmartSet.create() }.add(declaration)
             }
         }
 
-        declarationConflictingSymbols[declaration] = conflicts
+        declarationConflictingSymbols.mergeConflicts(declaration, conflicts)
     }
+}
+
+private fun <D : CfirBasedSymbol<*>> MutableMap<D, SmartSet<CfirBasedSymbol<*>>>.mergeConflicts(
+    declaration: D,
+    conflicts: SmartSet<CfirBasedSymbol<*>>,
+) {
+    if (conflicts.isEmpty()) {
+        getOrPut(declaration) { SmartSet.create() }
+        return
+    }
+
+    val current = getOrPut(declaration) { SmartSet.create() }
+    conflicts.forEach { current += it }
 }
 
 private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict(
@@ -375,6 +393,7 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict
     conflictingFile: CfirFile? = null,
 ) {
     if (conflictingSymbol == declaration) return
+    if (declaration is CfirFunctionSymbol<*> && conflictingSymbol is CfirConstructorSymbol) return
 
     if (declaration.isBound && conflictingSymbol.isBound) {
         val declarationModule = declaration.cfir.moduleData
@@ -409,9 +428,45 @@ private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectTopLevelConflict
         return
     }
 
-    if (getConflictState(declaration, conflictingSymbol) == ConflictState.Conflict) {
+    if (
+        declaration.shouldReportRedeclarationWith(conflictingSymbol) &&
+        getConflictState(declaration, conflictingSymbol) == ConflictState.Conflict
+    ) {
         declarationConflictingSymbols.getOrPut(declaration) { SmartSet.create() }.add(conflictingSymbol)
     }
+}
+
+private fun CfirDeclarationCollector<CfirBasedSymbol<*>>.collectFunctionNameRedeclarations(group: DeclarationBuckets) {
+    val nonFunctionDeclarations = (group.classLikes + group.properties + group.extensionProperties)
+        .sortedBy { (symbol, _) -> symbol.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE }
+
+    val functions = group.simpleFunctions
+        .sortedBy { (symbol, _) -> symbol.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE }
+
+    for ((function, _) in functions) {
+        val functionSource = function.boundSourceOrNull() ?: continue
+        if (functions.any { (otherFunction, _) ->
+                otherFunction != function &&
+                    (otherFunction.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE) < functionSource.startOffset
+            }
+        ) {
+            continue
+        }
+
+        nonFunctionDeclarations
+            .asSequence()
+            .map { (symbol, _) -> symbol }
+            .filter { (it.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE) < functionSource.startOffset }
+            .forEach { previous ->
+                declarationConflictingSymbols.getOrPut(function) { SmartSet.create() }.add(previous)
+            }
+    }
+}
+
+private fun CfirBasedSymbol<*>.shouldReportRedeclarationWith(conflicting: CfirBasedSymbol<*>): Boolean {
+    val declarationSource = boundSourceOrNull() ?: return true
+    val conflictingSource = conflicting.boundSourceOrNull() ?: return true
+    return declarationSource.startOffset >= conflictingSource.startOffset
 }
 
 private fun shouldCheckForMultiplatformRedeclaration(

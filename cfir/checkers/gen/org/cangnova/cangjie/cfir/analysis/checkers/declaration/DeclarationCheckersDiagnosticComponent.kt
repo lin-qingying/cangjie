@@ -57,6 +57,10 @@ class DeclarationCheckersDiagnosticComponent(
         checkers.allAnonymousFunctionCheckers.check(anonymousFunction, data)
     }
 
+    override fun visitPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: CheckerContext) {
+        checkers.allPropertyAccessorCheckers.check(propertyAccessor, data)
+    }
+
     override fun visitConstructor(constructor: CfirConstructor, data: CheckerContext) {
         checkers.allConstructorCheckers.check(constructor, data)
     }
@@ -95,6 +99,10 @@ class DeclarationCheckersDiagnosticComponent(
 
     override fun visitInvalidDeclaration(invalidDeclaration: CfirInvalidDeclaration, data: CheckerContext) {
         checkers.allInvalidDeclarationCheckers.check(invalidDeclaration, data)
+    }
+
+    override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable, data: CheckerContext) {
+        checkers.allCallableDeclarationCheckers.check(patternBindingVariable, data)
     }
 
     override fun visitMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: CheckerContext) {

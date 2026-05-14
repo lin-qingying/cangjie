@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.providers
 import org.cangnova.cangjie.cfir.nameConflictsTracker
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
@@ -17,11 +18,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
+import org.cangnova.cangjie.cfir.resolve.providers.macro.RecordableRawCfirFiles
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
@@ -52,10 +55,59 @@ class CfirProviderImpl(
 
     private val state = State()
 
+    /**
+     * Source provider 注册状态机（baseline 第 5 节）。
+     *
+     * - [EMPTY]：尚未开始 macro construction；`getAllFiles()` 必为空。
+     * - [OPEN_FOR_EXPANDED_RECORD]：`recordExpandedFilesOnce` 正在写入展开后文件。
+     * - [FINALIZED]：已进入 ordinary resolve 阶段，禁止再写入。
+     *
+     * 唯一规范的进入路径：
+     * `recordExpandedRawFilesOnce(provider, files, registry)`。
+     */
+    private enum class RecordingState { EMPTY, OPEN_FOR_EXPANDED_RECORD, FINALIZED }
+
+    @Volatile
+    private var recordingState: RecordingState = RecordingState.EMPTY
+    private val recordingLock = Any()
+
+    /** Provider 是否已经被 finalized，禁止后续注册。 */
+    val isFinalized: Boolean get() = recordingState == RecordingState.FINALIZED
+
+    /** Provider 是否尚未开始任何注册（construction 前必须为 true）。 */
+    val isEmpty: Boolean get() = recordingState == RecordingState.EMPTY
+
     /** 返回所有已注册的源码文件。 */
     fun getAllFiles(): List<CfirFile> = state.fileMap.values.flatten()
 
-    fun recordFile(file: CfirFile) {
+    /**
+     * 由 [org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce] 调用的
+     * 唯一规范注册入口：
+     * - 强制 `EMPTY → OPEN_FOR_EXPANDED_RECORD → FINALIZED` 单调推进；
+     * - 一次性写入所有由 macro construction 产出的可注册文件；
+     * - 写入完成立即 finalize，禁止再次进入。
+     */
+    internal fun recordExpandedFilesOnce(files: RecordableRawCfirFiles) {
+        synchronized(recordingLock) {
+            check(recordingState == RecordingState.EMPTY) {
+                "Source CfirProviderImpl is not empty (recordingState=$recordingState); " +
+                    "construction must run on a fresh source provider."
+            }
+            recordingState = RecordingState.OPEN_FOR_EXPANDED_RECORD
+            try {
+                for (file in files.files) {
+                    recordFileInternal(file)
+                }
+                recordingState = RecordingState.FINALIZED
+            } catch (t: Throwable) {
+                // 即使中途失败也强制进入 FINALIZED，避免后续混入残留 mutation
+                recordingState = RecordingState.FINALIZED
+                throw t
+            }
+        }
+    }
+
+    private fun recordFileInternal(file: CfirFile) {
         val packageName = file.packageDirective.packageFqName
         state.fileMap.getOrPut(packageName, ::mutableListOf).add(file)
         recordPackageAndParents(packageName)
@@ -309,6 +361,12 @@ class CfirProviderImpl(
                 val callableId = CallableId(packageFqName, declaration.name)
                 state.callableMap.getOrPut(callableId, ::mutableListOf).add(symbol)
                 state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(declaration.name)
+            }
+
+            is CfirConstructor -> {
+                val symbol = declaration.symbol as? CfirConstructorSymbol ?: return
+                state.callableContainerFileMap[symbol] = containingFile
+                state.callableOwnerClassIdMap[symbol] = containingClass
             }
 
             is CfirFunction -> {

@@ -16,21 +16,21 @@ interface I1 {
 
 abstract class C1 <: I1 {}
 
-class C2 <: I1 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C2<!> <: I1 {}
 
-class C3 <: I1 { // expected: regex class 'C3' missing abstract modifier or abstract function 'foo' should be implemented
-    public func foo(): Int64 { // expected: regex The return type of the override/implement function must be the same as or a subtype of the overridden/implemented function
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C3<!> <: I1 {
+    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): Int64 {
         return 0
     }
 }
 
-class C4 <: I2 {
+class C4 <: <!UNRESOLVED_REFERENCE!>I2<!> {
     public func foo(): Base {
         return Base()
     }
 }
 
-class C5 <: I2 {
+class C5 <: <!UNRESOLVED_REFERENCE!>I2<!> {
     public func foo(): Derived {
         return Derived()
     }
@@ -39,47 +39,3 @@ class C5 <: I2 {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: undeclared type name 'I2'
-  ==> interface_implement_invalid_2.cj:27:13:
-   | 
-27 | class C4 <: I2 {
-   |             ^ 
-   | 
-
-error: undeclared type name 'I2'
-  ==> interface_implement_invalid_2.cj:33:13:
-   | 
-33 | class C5 <: I2 {
-   |             ^ 
-   | 
-
-error: class 'C2' missing abstract modifier, otherwise abstract function or property should be implemented
-  ==> interface_implement_invalid_2.cj:19:1:
-   | 
-19 | class C2 <: I1 {}
-   | ^ 
-   | 
-note: unimplemented interface function 'foo'
-  ==> interface_implement_invalid_2.cj:14:5:
-   | 
-14 |     func foo(): Base
-   |     ^ 
-   | 
-
-error: return type of 'foo' is not identical or not a subtype of the overridden/redefined/implement function
-  ==> interface_implement_invalid_2.cj:22:17:
-   | 
-22 |     public func foo(): Int64 { // expected: regex The return type of the override/implement function must be the same as or a subtype of the overridden/implemented function
-   |                 ^^^ 
-   | 
-note: 'Int64' is not a subtype of 'Class-Base'
-  ==> interface_implement_invalid_2.cj:14:10:
-   | 
-14 |     func foo(): Base
-   |          ^^^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

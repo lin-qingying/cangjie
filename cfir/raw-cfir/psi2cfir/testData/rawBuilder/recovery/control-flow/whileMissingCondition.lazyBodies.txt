@@ -1,2 +1,4 @@
 FILE: whileMissingCondition.cj
-    internal? func whileMissingCondition(): R|Unit|
+    internal? func whileMissingCondition(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

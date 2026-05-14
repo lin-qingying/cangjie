@@ -34,6 +34,7 @@ private const val CHECKERS_COMPONENT_FQN = "org.cangnova.cangjie.cfir.analysis.c
 private const val FIR_ELEMENT_FQN = "org.cangnova.cangjie.cfir.CfirElement"
 private const val WITH_ENTRY_FQN = "org.cangnova.cangjie.utils.exceptions.withCfirEntry"
 private const val RETHROW_FQN = "org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails"
+private const val SHOULD_RETHROW_FQN = "org.cangnova.cangjie.utils.exceptions.shouldIjPlatformExceptionBeRethrown"
 
 class Generator(
     private val configuration: CheckersConfiguration,
@@ -190,6 +191,7 @@ class Generator(
                 "$FIR_FQN.$checkersPackageName.*",
                 CHECKERS_COMPONENT_FQN,
                 FIR_ELEMENT_FQN,
+                SHOULD_RETHROW_FQN,
                 WITH_ENTRY_FQN,
                 RETHROW_FQN
             )
@@ -368,5 +370,4 @@ class Generator(
         generateDiagnosticComponent()
     }
 }
-
 

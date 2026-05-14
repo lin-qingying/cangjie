@@ -41,4 +41,8 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 class CangJieEnumPatternStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjEnumPattern>(parent, CjStubElementTypes.ENUM_PATTERN),
-    CangJieEnumPatternStub
+    CangJieEnumPatternStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieEnumPatternStubImpl = CangJieEnumPatternStubImpl(
+        parent = newParent,
+    )
+}

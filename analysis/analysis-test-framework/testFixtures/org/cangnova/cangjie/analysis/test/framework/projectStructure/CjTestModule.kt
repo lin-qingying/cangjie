@@ -22,7 +22,6 @@ class CjTestModule(
     val moduleKind: TestModuleKind,
     val caModule: CaModule,
     val binaryArtifactModule: CaLibraryModule?,
-    val auxiliaryModules: List<CaModule>,
     val psiFiles: List<PsiFile>,
 ) {
     val name: String
@@ -37,9 +36,6 @@ class CjTestModule(
             binaryArtifactModule
                 ?.takeUnless { it === caModule }
                 ?.let(::add)
-            addAll(auxiliaryModules.filter { auxiliaryModule ->
-                auxiliaryModule !== caModule && auxiliaryModule !== binaryArtifactModule
-            })
         }
 
     /**

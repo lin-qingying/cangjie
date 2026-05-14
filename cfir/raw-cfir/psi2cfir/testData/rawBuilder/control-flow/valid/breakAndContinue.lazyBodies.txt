@@ -1,2 +1,4 @@
 FILE: breakAndContinue.cj
-    internal? func loopControl(): R|Unit|
+    internal? func loopControl(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -244,13 +244,28 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
             .filterIsInstance<ConeResolvedLambdaAtom>()
             .takeIf { it.isNotEmpty() } ?: return false
 
-        var anyAnalyzed = false
-        for (argument in lambdaArguments) {
-            val notFixedInputTypeVariables = argument.inputTypes
-                .flatMap { it.extractTypeVariables() }
-                .filter { it !in fixedTypeVariables }
+        fun ConeResolvedLambdaAtom.notFixedInputTypeVariables() =
+            inputTypes.flatMap { it.extractTypeVariables() }.filter { it !in fixedTypeVariables }
 
-            if (notFixedInputTypeVariables.isEmpty()) continue
+        val lambdaArgumentsWithNotFixedInputs = lambdaArguments.filter { it.notFixedInputTypeVariables().isNotEmpty() }
+        val dangerousMultiLambdaBuilderInference = lambdaArgumentsWithNotFixedInputs.size >= 2
+        val builder = getBuilder()
+
+        var anyAnalyzed = false
+        for ((index, argument) in lambdaArgumentsWithNotFixedInputs.withIndex()) {
+            val notFixedInputTypeVariables = argument.notFixedInputTypeVariables()
+
+            if (dangerousMultiLambdaBuilderInference && index > 0) {
+                for (variable in notFixedInputTypeVariables) {
+                    val typeParameter = variable.typeParameter ?: continue
+                    addError(AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction(argument.anonymousFunction, typeParameter))
+                }
+                builder.markCouldBeResolvedWithUnrestrictedBuilderInference()
+            }
+
+            for (variable in notFixedInputTypeVariables) {
+                builder.markPostponedVariable(notFixedTypeVariables.getValue(variable).typeVariable)
+            }
             analyzer.analyze(argument, withPCLASession = true)
             anyAnalyzed = true
         }

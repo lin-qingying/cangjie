@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
@@ -12,6 +13,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjRealSourceElementKind
@@ -21,7 +23,6 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 函数返回类型检查器。
@@ -34,6 +35,12 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
         val source = result.source as? AbstractCjSourceElement ?: return
         val actualType = result.coneTypeOrNull ?: return
         if (actualType is ConeErrorType) return
+        if (result is CfirMatchExpression && result.branches.any { branch ->
+                branch.body.coneTypeOrNull is ConeErrorType || branch.coneTypeOrNull is ConeErrorType
+            }
+        ) {
+            return
+        }
         if (expression.source?.kind == CjFakeSourceElementKind.DelegatedPropertyAccessor) return
 
         val containingFunction = expression.target.labeledElement
@@ -79,7 +86,7 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
             return
         }
 
-        if (!AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, expectedType)) {
+        if (!isSubtypeForTypeMismatch(context.session, context.session.typeContext, actualType, expectedType)) {
             reporter.reportOn(
                 source, CfirErrors.RETURN_TYPE_MISMATCH,
                 expectedType,

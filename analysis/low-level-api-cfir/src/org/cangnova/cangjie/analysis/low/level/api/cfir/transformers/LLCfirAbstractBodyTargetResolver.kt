@@ -12,7 +12,6 @@ import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformerDispatcher
-import org.cangnova.cangjie.cfir.resolve.body.ReturnTypeCalculatorWithJump
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 
 internal sealed class LLCfirAbstractBodyTargetResolver(
@@ -20,7 +19,7 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
     resolvePhase: CfirResolvePhase,
     protected val llImplicitBodyResolveComputationSession: LLImplicitBodyResolveComputationSession = LLImplicitBodyResolveComputationSession(),
 ) : LLCfirTargetResolver(resolveTarget, resolvePhase) {
-    protected fun createReturnTypeCalculator(): ReturnTypeCalculatorWithJump = ReturnTypeCalculatorWithJump(
+    protected fun createReturnTypeCalculator(): LLCfirReturnTypeCalculatorWithJump = LLCfirReturnTypeCalculatorWithJump(
         resolveTargetSession,
         resolveTargetScopeSession,
         llImplicitBodyResolveComputationSession,
@@ -36,19 +35,26 @@ internal sealed class LLCfirAbstractBodyTargetResolver(
 
     @Deprecated("Should never be called directly, only for override purposes, please use withFile", level = DeprecationLevel.ERROR)
     override fun withContainingFile(cfirFile: CfirFile, action: () -> Unit) {
-        transformer.declarationsTransformer.context.withFile(cfirFile) {
+        transformer.declarationsTransformer.withFile(cfirFile) {
             action()
+            cfirFile
         }
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
+    @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
+    override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
         val declarationsTransformer = transformer.declarationsTransformer
         val context = declarationsTransformer.context
-        context.withContainingClass(cfirClass) {
-            context.withScopesForClass(cfirClass, declarationsTransformer.components) {
+        val actionWithScopes = {
+            context.withScopesForClass(cfirClassLike, declarationsTransformer.components) {
                 action()
             }
+        }
+
+        if (cfirClassLike is CfirClass) {
+            context.withContainingClass(cfirClassLike, actionWithScopes)
+        } else {
+            actionWithScopes()
         }
     }
 

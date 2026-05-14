@@ -801,7 +801,7 @@ private fun createImportingScopes(file: CfirFile, session: CfirSession): List<Cf
         .map(ImportPath::toImport)
 
     return buildList {
-        // supertype 解析与 body/declaration 解析必须共享同一套文件级名字优先级。
+        // CfirTypeResolver 按顺序查找 scope；supertype 解析同样必须高优先级在前。
         add(CfirFileDeclaredTopLevelScope(file))
         add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
         add(CfirExplicitSimpleImportingScope(imports, symbolProvider))

@@ -11,9 +11,13 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.Duplicat
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isErrorElement
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.builder.toCompoundAssignName
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
+import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
 import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
@@ -103,6 +107,24 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
         }
     }
 
+    override fun visitBindingPattern(bindingPattern: CfirBindingPattern, data: MutableMap<CjElement, CfirElement>) {
+        recordPatternBindingVariable(bindingPattern, bindingPattern.bindingVariable, data)
+        bindingPattern.typeRef?.accept(this, data)
+        bindingPattern.bindingVariable?.accept(this, data)
+        bindingPattern.nestedPattern?.accept(this, data)
+    }
+
+    override fun visitVarOrEnumPattern(varOrEnumPattern: CfirVarOrEnumPattern, data: MutableMap<CjElement, CfirElement>) {
+        recordPatternBindingVariable(varOrEnumPattern, varOrEnumPattern.bindingVariable, data)
+        varOrEnumPattern.bindingVariable?.accept(this, data)
+    }
+
+    override fun visitTypePattern(typePattern: CfirTypePattern, data: MutableMap<CjElement, CfirElement>) {
+        recordPatternBindingVariable(typePattern, typePattern.bindingVariable, data)
+        typePattern.typeRef.accept(this, data)
+        typePattern.bindingVariable?.accept(this, data)
+    }
+
     //@formatter:off
     override fun visitReference(reference: CfirReference, data: MutableMap<CjElement, CfirElement>) {}
     override fun visitControlFlowGraphReference(controlFlowGraphReference: CfirControlFlowGraphReference, data: MutableMap<CjElement, CfirElement>) {}
@@ -133,6 +155,22 @@ internal open class CfirElementsRecorder : CfirVisitor<Unit, MutableMap<CjElemen
     protected fun cacheElement(element: CfirElement, cache: MutableMap<CjElement, CfirElement>) {
         val psi = element.anchorPsi as? CjElement ?: return
         cache(psi, element, cache)
+    }
+
+    /**
+     * 仓颉 pattern 的源码节点对应语义绑定声明，而不是 pattern 容器本身。
+     *
+     * 对齐官方编译器 `VarPattern.varDecl`：pattern 负责语法结构，
+     * 进入作用域并暴露给 Analysis API 的是内部绑定变量声明。
+     */
+    private fun recordPatternBindingVariable(
+        pattern: CfirElement,
+        bindingVariable: CfirPatternBindingVariable?,
+        cache: MutableMap<CjElement, CfirElement>,
+    ) {
+        val psi = pattern.anchorPsi as? CjElement ?: return
+        val variable = bindingVariable ?: return
+        cache(psi, variable, cache)
     }
 
     private val CfirLiteralExpression.isConverted: Boolean

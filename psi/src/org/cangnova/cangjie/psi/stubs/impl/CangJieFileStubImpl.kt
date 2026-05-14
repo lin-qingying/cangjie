@@ -25,18 +25,18 @@
 package org.cangnova.cangjie.psi.stubs.impl
 
 import com.intellij.psi.PsiElement
+import com.intellij.psi.stubs.ObjectStubBase
 import com.intellij.psi.stubs.ObjectStubSerializer
 import com.intellij.psi.stubs.PsiFileStubImpl
 import com.intellij.psi.stubs.StubInputStream
 import com.intellij.psi.stubs.StubOutputStream
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.IStubFileElementType
-import com.intellij.util.io.AbstractStringEnumerator
-import com.intellij.util.io.UnsyncByteArrayOutputStream
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.stubs.CangJieFileStub
+import org.cangnova.cangjie.psi.stubs.CangJieStubElement
 import org.cangnova.cangjie.psi.stubs.CangJieFileStubKind
 import org.cangnova.cangjie.psi.stubs.elements.CjFileElementType
 import org.cangnova.cangjie.utils.checkWithAttachment
@@ -124,88 +124,32 @@ class CangJieFileStubImpl(
     }
 }
 
-/**
- * 通用 stub 深拷贝。
- *
- * 不能再依赖零散的 `copyInto()` 手写实现，因为 decompiled file 会引入：
- * - package/import placeholder stub
- * - import directive stub
- * - extend stub
- * 等更多 compiled 视图子节点。
- *
- * 这里统一走 stub serializer / deserializer 链路复制整棵树，
- * 保证所有可序列化 stub 在 source / decompiled 两条链上都能稳定复用。
- */
-private fun <P : PsiElement, S : StubElement<P>> serializeAndDeserializeStub(
-    originalStub: S,
-    deserializedParentStub: StubElement<*>?,
-    buffer: UnsyncByteArrayOutputStream,
-    storage: CangJieStringEnumerator,
-): S {
-    buffer.reset()
+fun CangJieFileStubImpl.deepCopy(): CangJieFileStubImpl = copyStubRecursively(
+    originalStub = this,
+    newParentStub = null,
+) as CangJieFileStubImpl
 
-    @Suppress("DEPRECATION")
-    val serializer = if (originalStub is com.intellij.psi.stubs.PsiFileStub<*>) {
-        originalStub.type
-    } else {
-        originalStub.stubType
+private fun <T : PsiElement> copyStubRecursively(
+    originalStub: StubElement<T>,
+    newParentStub: StubElement<*>?,
+): StubElement<*> {
+    require(originalStub is CangJieStubElement<*>) {
+        "${CangJieStubElement::class.simpleName} is expected, but ${originalStub::class.simpleName} is found"
     }
 
-    @Suppress("UNCHECKED_CAST")
-    serializer as ObjectStubSerializer<StubElement<*>, StubElement<*>>
+    val stubCopy = originalStub.copyInto(newParentStub)
+    if (originalStub is ObjectStubBase<*> && originalStub.isDangling) {
+        (stubCopy as ObjectStubBase<*>).markDangling()
+    }
 
-    serializer.serialize(originalStub, StubOutputStream(buffer, storage))
-
-    val stubInputStream = StubInputStream(buffer.toInputStream(), storage)
-    val deserializedStub = serializer.deserialize(stubInputStream, deserializedParentStub)
     checkWithAttachment(
-        stubInputStream.read() == -1,
-        { "Deserializer must consume the same number of bytes as serializer writes" },
-    )
-    checkWithAttachment(
-        originalStub::class == deserializedStub::class,
-        { "${originalStub::class.simpleName} is expected, but ${deserializedStub::class.simpleName} is found" },
+        originalStub::class == stubCopy::class,
+        { "${originalStub::class.simpleName} is expected, but ${stubCopy::class.simpleName} is found" },
     )
 
     for (originalChild in originalStub.childrenStubs) {
-        serializeAndDeserializeStub(
-            originalStub = originalChild,
-            deserializedParentStub = deserializedStub,
-            buffer = buffer,
-            storage = storage,
-        )
+        copyStubRecursively(originalStub = originalChild, newParentStub = stubCopy)
     }
 
-    @Suppress("UNCHECKED_CAST")
-    return deserializedStub as S
-}
-
-fun CangJieFileStubImpl.deepCopy(): CangJieFileStubImpl = serializeAndDeserializeStub(
-    originalStub = this,
-    deserializedParentStub = null,
-    buffer = UnsyncByteArrayOutputStream(),
-    storage = CangJieStringEnumerator(),
-) as CangJieFileStubImpl
-
-private class CangJieStringEnumerator : AbstractStringEnumerator {
-    private val values = HashMap<String, Int>()
-    private val strings = mutableListOf<String>()
-
-    override fun enumerate(value: String?): Int {
-        if (value == null) return 0
-        return values.getOrPut(value) {
-            strings += value
-            values.size + 1
-        }
-    }
-
-    override fun valueOf(idx: Int): String? = if (idx == 0) null else strings[idx - 1]
-
-    override fun markCorrupted() = Unit
-
-    override fun close() = Unit
-
-    override fun isDirty(): Boolean = false
-
-    override fun force() = Unit
+    return stubCopy
 }

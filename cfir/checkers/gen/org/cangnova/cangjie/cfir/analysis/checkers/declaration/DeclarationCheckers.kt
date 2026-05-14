@@ -24,6 +24,7 @@ abstract class DeclarationCheckers {
     open val propertyCheckers: Set<CfirPropertyChecker> = emptySet()
     open val classLikeCheckers: Set<CfirClassLikeChecker> = emptySet()
     open val anonymousFunctionCheckers: Set<CfirAnonymousFunctionChecker> = emptySet()
+    open val propertyAccessorCheckers: Set<CfirPropertyAccessorChecker> = emptySet()
     open val constructorCheckers: Set<CfirConstructorChecker> = emptySet()
     open val fileCheckers: Set<CfirFileChecker> = emptySet()
     open val typeParameterCheckers: Set<CfirTypeParameterChecker> = emptySet()
@@ -44,6 +45,7 @@ abstract class DeclarationCheckers {
     @CheckersComponentInternal internal val allPropertyCheckers: Array<CfirPropertyChecker> by lazy { (propertyCheckers + callableDeclarationCheckers + memberDeclarationCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirPropertyChecker> }
     @CheckersComponentInternal internal val allClassLikeCheckers: Array<CfirClassLikeChecker> by lazy { (classLikeCheckers + memberDeclarationCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirClassLikeChecker> }
     @CheckersComponentInternal internal val allAnonymousFunctionCheckers: Array<CfirAnonymousFunctionChecker> by lazy { (anonymousFunctionCheckers + functionCheckers + callableDeclarationCheckers + memberDeclarationCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirAnonymousFunctionChecker> }
+    @CheckersComponentInternal internal val allPropertyAccessorCheckers: Array<CfirPropertyAccessorChecker> by lazy { (propertyAccessorCheckers + functionCheckers + callableDeclarationCheckers + memberDeclarationCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirPropertyAccessorChecker> }
     @CheckersComponentInternal internal val allConstructorCheckers: Array<CfirConstructorChecker> by lazy { (constructorCheckers + functionCheckers + callableDeclarationCheckers + memberDeclarationCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirConstructorChecker> }
     @CheckersComponentInternal internal val allFileCheckers: Array<CfirFileChecker> by lazy { (fileCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirFileChecker> }
     @CheckersComponentInternal internal val allTypeParameterCheckers: Array<CfirTypeParameterChecker> by lazy { (typeParameterCheckers + basicDeclarationCheckers).toTypedArray() as Array<CfirTypeParameterChecker> }

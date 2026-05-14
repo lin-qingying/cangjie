@@ -1,3 +1,7 @@
 FILE: topLevelFunction.cj
-    internal? func add(a: R|Int64|, b: R|Int64|): R|Int64|
-    internal? func identity<T>(x: R|T|): R|T|
+    internal? func add(a: R|Int64|, b: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func <T>identity(x: R|T|): R|T| {
+        <element: CfirLazyBlock>
+    }

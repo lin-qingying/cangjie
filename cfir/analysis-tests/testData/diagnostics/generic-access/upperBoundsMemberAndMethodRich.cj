@@ -1,6 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
 interface Named {
-    public func name(): String
+    func name(): String
 }
 
 class User <: Named {

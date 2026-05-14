@@ -86,6 +86,7 @@ class CfirDeclarationToStringTest {
             name = "sample.cj"
             packageDirective = buildPackageDirective {
                 packageFqName = FqName("sample")
+                isMacroPackage = false
             }
         }
 

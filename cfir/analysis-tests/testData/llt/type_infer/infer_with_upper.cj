@@ -18,7 +18,7 @@ struct B<T> where T <: I<T> {
 
 func test<T>() where T <: I<T> {
     // test for error report for this 'A()'
-    return A()
+    return <!UNABLE_TO_INFER_GENERIC_FUNC!>A()<!>
 }
 
 func test2<T>() where T <: I<T> {
@@ -36,6 +36,3 @@ main() {
     test<Int64>()
     return 0
 }
-
-// ASSERT: scan-1 sema_unable_to_infer_generic_func
-// ASSERT: scan "Errors": 1

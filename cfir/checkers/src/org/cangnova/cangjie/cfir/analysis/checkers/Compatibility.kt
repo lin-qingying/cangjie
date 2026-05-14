@@ -31,9 +31,9 @@ private fun buildCompatibilityMap(): Map<Pair<CjKeywordToken, CjKeywordToken>, C
 
     result += incompatibilityRegister(PRIVATE_KEYWORD, PROTECTED_KEYWORD, PUBLIC_KEYWORD, INTERNAL_KEYWORD)
 
-    result += deprecatedRegister(ABSTRACT_KEYWORD, OPEN_KEYWORD)
-    result += deprecatedRegister(SEALED_KEYWORD, PUBLIC_KEYWORD)
-    result += deprecatedRegister(SEALED_KEYWORD, OPEN_KEYWORD)
+    result += redundantRegister(ABSTRACT_KEYWORD, OPEN_KEYWORD)
+    result += redundantRegister(SEALED_KEYWORD, PUBLIC_KEYWORD)
+    result += redundantRegister(SEALED_KEYWORD, OPEN_KEYWORD)
 
     result += incompatibilityRegister(CONST_KEYWORD, ABSTRACT_KEYWORD)
     result += incompatibilityRegister(CONST_KEYWORD, OPEN_KEYWORD)

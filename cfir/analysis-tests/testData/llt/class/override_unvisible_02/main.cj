@@ -11,7 +11,7 @@
 import pkg.*
 
 extend B {
-    func ff() {
+    func <!EXTEND_MEMBER_CANNOT_SHADOW!>ff<!>() {
         3
     } // f3. conflict 
 }
@@ -23,16 +23,3 @@ main() {
     }
     return 0
 }
-
-/* SCAN
-error: extend member 'ff' is not allowed to shadow members of 'Class-B'
-  ==> main.cj:14:10:
-   | 
-14 |     func ff() {
-   |          ^^ 
-   | 
-note: shadowed definition of 'ff' is here
-  ==> (package pkg)pkg.cj:16:20:
-
-1 error generated, 1 error printed.
-*/

@@ -13,7 +13,6 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassKind
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
@@ -46,7 +45,6 @@ internal class CaCfirClassSymbol private constructor(
     override val lazyCfirSymbol: Lazy<CfirClassLikeSymbol<*>>,
 ) : CaClassSymbol,
     CaCfirCjBasedSymbol<CjTypeStatement, CfirClassLikeSymbol<*>>,
-    CaCfirBackedSymbol<CfirClassLikeSymbol<*>>,
     CaTypeParameterOwnerSymbol,
     CaDeclarationContainerSymbol {
     override val cfirSymbol: CfirClassLikeSymbol<*>
@@ -64,9 +62,6 @@ internal class CaCfirClassSymbol private constructor(
         lazyCfirSymbol = lazyOf(symbol),
     )
 
-    override val backingSymbol: CfirClassLikeSymbol<*>
-        get() = cfirSymbol
-
     private val status
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
@@ -78,9 +73,6 @@ internal class CaCfirClassSymbol private constructor(
 
     override val psi: PsiElement?
         get() = withValidityAssertion { backingPsi ?: findPsi() }
-
-    override val containingDeclaration: CaSymbol?
-        get() = withValidityAssertion { analysisSession.findContainingDeclarationSymbol(psi) }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion { status?.visibility?.asPublicVisibility() ?: CaSymbolVisibility.PUBLIC }
@@ -106,7 +98,7 @@ internal class CaCfirClassSymbol private constructor(
         }
 
     override val location
-        get() = withValidityAssertion { backingPsi?.location ?: analysisSession.locationForDeclaration(this) }
+        get() = withValidityAssertion { backingPsi?.location ?: getSymbolKind() }
 
     override val classKind: CaClassKind
         get() = withValidityAssertion {
@@ -136,7 +128,6 @@ internal class CaCfirTypeAliasSymbol private constructor(
     override val lazyCfirSymbol: Lazy<CfirTypeAliasSymbol>,
 ) : CaTypeAliasSymbol,
     CaCfirCjBasedSymbol<CjTypeAlias, CfirTypeAliasSymbol>,
-    CaCfirBackedSymbol<CfirTypeAliasSymbol>,
     CaTypeParameterOwnerSymbol {
     override val cfirSymbol: CfirTypeAliasSymbol
         get() = super<CaCfirCjBasedSymbol>.cfirSymbol
@@ -153,9 +144,6 @@ internal class CaCfirTypeAliasSymbol private constructor(
         lazyCfirSymbol = lazyOf(symbol),
     )
 
-    override val backingSymbol: CfirTypeAliasSymbol
-        get() = cfirSymbol
-
     private val status
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
@@ -167,9 +155,6 @@ internal class CaCfirTypeAliasSymbol private constructor(
 
     override val psi: PsiElement?
         get() = withValidityAssertion { backingPsi ?: findPsi() }
-
-    override val containingDeclaration: CaSymbol?
-        get() = withValidityAssertion { analysisSession.findContainingDeclarationSymbol(psi) }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion { status?.visibility?.asPublicVisibility() ?: CaSymbolVisibility.PUBLIC }
@@ -195,7 +180,7 @@ internal class CaCfirTypeAliasSymbol private constructor(
         }
 
     override val location
-        get() = withValidityAssertion { backingPsi?.location ?: analysisSession.locationForDeclaration(this) }
+        get() = withValidityAssertion { backingPsi?.location ?: getSymbolKind() }
 
     override val expandedType: CaType
         get() = withValidityAssertion {

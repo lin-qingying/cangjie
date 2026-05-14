@@ -12,42 +12,12 @@ main(): Int64 {
         func g() {
             x
         }
-        g
+        <!USE_FUNC_CAPTURE_VAR_ALONE!>g<!>
     }
     {
         x: Int64, y: Int64 =>
         var a = x + y
-        {=> 2 * a}
+        <!USE_FUNC_CAPTURE_VAR_ALONE!>{=> 2 * a}<!>
     }
     return 0
 }
-
-/* SCAN
-error: function capturing mutable variables needs to be called directly
-  ==> capture_var_as_return.cj:15:9:
-   | 
-15 |         g
-   |         ^ 
-   | 
-note: 'x' is mutable
-  ==> capture_var_as_return.cj:13:13:
-   | 
-13 |             x
-   |             ^ 
-   | 
-
-error: lambda capturing mutable variables needs to be called directly
-  ==> capture_var_as_return.cj:20:9:
-   | 
-20 |         {=> 2 * a}
-   |         ^^^^^^^^^^ 
-   | 
-note: 'a' is mutable
-  ==> capture_var_as_return.cj:20:17:
-   | 
-20 |         {=> 2 * a}
-   |                 ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -61,5 +61,12 @@ open class CangJieInterfaceStubImpl(
 
     override fun getClassId(): ClassId? = classId
 
-//    override fun isTopLevel() = isTopLevel
+    override fun copyInto(newParent: StubElement<*>?): CangJieInterfaceStubImpl = CangJieInterfaceStubImpl(
+        type = stubType as CjInterfaceElementType,
+        parent = newParent,
+        qualifiedName = qualifiedName,
+        classId = classId,
+        name = name,
+        superNames = superNames,
+    )
 }

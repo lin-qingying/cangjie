@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.declarations
 
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.Name
@@ -16,6 +17,14 @@ fun enumConstructorPayloadParameterName(index: Int): Name = Name.identifier("enu
 fun CfirEnumConstructor.payloadArity(): Int = valueParameters.size
 
 fun CfirEnumConstructor.payloadParameterTypesOrEmpty(): List<ConeCangJieType> {
+    /**
+     * enum constructor 的 payload 类型属于声明头信息。
+     *
+     * analysis / pattern resolve / renderer 都会通过这个共享入口读取 payload 参数类型，
+     * 因此必须先把声明推进到 TYPES，不能要求所有调用方各自手动补 lazy resolve。
+     */
+    lazyResolveToPhase(CfirResolvePhase.TYPES)
+
     val payloadTypes = ArrayList<ConeCangJieType>(valueParameters.size)
     for (valueParameter in valueParameters) {
         val payloadType = valueParameter.returnTypeRef.coneTypeOrNull ?: return emptyList()

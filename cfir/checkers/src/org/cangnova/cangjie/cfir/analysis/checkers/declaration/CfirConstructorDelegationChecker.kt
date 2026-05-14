@@ -74,10 +74,15 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         val candidates = constructors.filter { constructor -> constructor.matchesDelegationCall(call) }
 
         when {
-            candidates.isEmpty() -> reporter.reportOn(
-                source = call.delegationDiagnosticSource() ?: declaration.source,
-                factory = CfirErrors.NO_CONSTRUCTOR,
-            )
+            candidates.isEmpty() -> {
+                if (reportConstructorArgumentCountMismatch(listOf(declaration) + constructors.filter { it !== declaration }, call)) {
+                    return
+                }
+                reporter.reportOn(
+                    source = call.delegationDiagnosticSource() ?: declaration.source,
+                    factory = CfirErrors.NO_CONSTRUCTOR,
+                )
+            }
 
             candidates.size > 1 -> reporter.reportOn(
                 source = call.delegationDiagnosticSource() ?: declaration.source,
@@ -86,7 +91,7 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
             )
 
             declaration.hasDelegationCycle(constructors) -> reporter.reportOn(
-                source = call.delegationDiagnosticSource() ?: declaration.source,
+                source = declaration.source ?: call.delegationDiagnosticSource(),
                 factory = CfirErrors.RECURSIVE_CONSTRUCTOR_CALL,
             )
         }
@@ -109,10 +114,15 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         val candidates = constructors.filter { constructor -> constructor.matchesDelegationCall(call) }
 
         when {
-            candidates.isEmpty() -> reporter.reportOn(
-                source = call.delegationDiagnosticSource() ?: declaration.source,
-                factory = CfirErrors.NO_CONSTRUCTOR,
-            )
+            candidates.isEmpty() -> {
+                if (reportConstructorArgumentCountMismatch(constructors, call)) {
+                    return
+                }
+                reporter.reportOn(
+                    source = call.delegationDiagnosticSource() ?: declaration.source,
+                    factory = CfirErrors.NO_CONSTRUCTOR,
+                )
+            }
 
             candidates.size > 1 -> reporter.reportOn(
                 source = call.delegationDiagnosticSource() ?: declaration.source,
@@ -143,6 +153,38 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
     }
 }
 
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun reportConstructorArgumentCountMismatch(
+    constructors: List<CfirConstructor>,
+    call: CfirFunctionCall,
+): Boolean {
+    val argumentCount = call.argumentList.arguments.size
+    val tooManyTarget = constructors.firstOrNull { constructor -> argumentCount > constructor.valueParameters.size }
+    if (tooManyTarget != null) {
+        val source = call.argumentList.arguments.getOrNull(tooManyTarget.valueParameters.size)?.source
+            ?: call.delegationDiagnosticSource()
+        reporter.reportOn(
+            source = source,
+            factory = CfirErrors.TOO_MANY_ARGUMENTS,
+            a = call.delegationName(),
+        )
+        return true
+    }
+
+    val missingTarget = constructors.firstOrNull { constructor -> argumentCount < constructor.requiredParameterCount() }
+        ?: return false
+    val missingParameter = missingTarget.valueParameters
+        .drop(argumentCount)
+        .firstOrNull { parameter -> parameter.defaultValue == null }
+        ?: return false
+    reporter.reportOn(
+        source = call.source ?: call.delegationDiagnosticSource(),
+        factory = CfirErrors.NO_VALUE_FOR_PARAMETER,
+        a = missingParameter.name,
+    )
+    return true
+}
+
 private enum class DelegationKind(val keyword: String) {
     THIS("this"),
     SUPER("super"),
@@ -158,6 +200,9 @@ private data class ConstructorDelegationCall(
  * 这样既贴近 Kotlin FIR 的报错体验，也能避免把整段调用都染成同一类构造器语义错误。
  */
 private fun CfirFunctionCall.delegationDiagnosticSource() = calleeReference.source ?: source
+
+private fun CfirFunctionCall.delegationName(): Name =
+    (calleeReference as? CfirNamedReference)?.name ?: Name.special("<constructor>")
 
 private fun CfirElement?.asDelegationCallOrNull(): ConstructorDelegationCall? {
     if (this is CfirWrappedExpression) {

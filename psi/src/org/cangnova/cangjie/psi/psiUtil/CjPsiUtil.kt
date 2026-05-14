@@ -224,6 +224,12 @@ fun CjSimpleNameExpression.getReceiverExpression(): CjExpression? {
 fun PsiElement.isFunctionalExpression(): Boolean = this is CjNamedFunction && nameIdentifier == null
 fun CjElement.containingClass(): CjClass? = getStrictParentOfType()
 
+val CjAbstractClassBody.containingClass: CjTypeStatement?
+    get() = when (val parent = parent) {
+        is CjTypeStatement -> parent
+        else -> null
+    }
+
 fun CjSimpleNameExpression.getTopmostParentQualifiedExpressionForSelector(): CjQualifiedExpression? {
     return generateSequence<CjExpression>(this) {
         val parentQualified = it.parent as? CjQualifiedExpression

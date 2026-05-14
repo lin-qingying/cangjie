@@ -17,7 +17,7 @@ func wrongResumeValue(): Int64 {
     return try {
         1
     } handle (cmd: IntCommand) {
-        <!TYPE_MISMATCH!>resume with false<!>
+        resume with <!TYPE_MISMATCH!>false<!>
     }
 }
 
@@ -25,6 +25,6 @@ func wrongResumeValueForBool(): Bool {
     return try {
         true
     } handle (cmd: BoolCommand) {
-        <!TYPE_MISMATCH!>resume with 1<!>
+        resume with <!TYPE_MISMATCH!>1<!>
     }
 }

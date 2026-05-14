@@ -22,19 +22,8 @@ interface I2 {
     }
 }
 
-class C <: I1 & I2 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class C<!> <: I1 & I2 {}
 
 main() {
     return 0
 }
-
-/* SCAN
-error: interface property 'a' must be implemented in 'C'
-  ==> interface_property4.cj:25:1:
-   | 
-25 | class C <: I1 & I2 {}
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -14,6 +14,8 @@ dependencies {
     testFixturesApi(project(":analysis:analysis-api-impl-base"))
     testFixturesApi(project(":analysis:analysis-api-cfir"))
     testFixturesApi(project(":analysis:analysis-api-standalone"))
+    testFixturesApi(project(":analysis:decompiled:decompiler-to-psi"))
+    testFixturesApi(project(":analysis:decompiled:decompiler-to-file-stubs"))
     testFixturesApi(project(":psi"))
     testFixturesApi(project(":cfir:cfir-tree"))
 

@@ -1,6 +1,4 @@
 // FILE: extendMemberReference.cj
-// TARGET_NAME: prettyPrint
-// EXPECTED_RENDERED_DECLARATION: func prettyPrint(): String
 package sample.symbols.render
 
 interface Printable {
@@ -17,5 +15,5 @@ extend Document <: Printable {
 }
 
 func consume(doc: Document): String {
-    return doc.prettyPrint()
+    return doc.<caret>prettyPrint()
 }

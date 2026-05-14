@@ -14,45 +14,56 @@ import org.cangnova.cangjie.analysis.api.types.CaTypeProjection
 import org.cangnova.cangjie.analysis.api.types.CaUnionType
 import org.cangnova.cangjie.name.ClassId
 
+/**
+ * 类型构造协议。
+ *
+ * 设计要点/职责:
+ * - 提供从 ClassId / Symbol / 元素类型出发,按声明式 builder 模式构造各类 [CaType] 的入口。
+ * - 函数、元组、Intersection、Union 等复合类型直接以参数列表构造,避免暴露内部构造细节。
+ * - 协议层只负责"构造"而不参与"求解",因此结果在语义上不进行类型推断或归一化。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaTypeCreator`。
+ */
 interface CaTypeCreator : CaLifetimeOwner {
     /**
-     * Builds a class type with the given class ID.
+     * 基于 [ClassId] 构造一个类类型。
      *
-     * A generic class type can be built by providing type arguments using the [init] block.
-     * The caller is supposed to provide the correct number of type arguments for the class.
+     * 对泛型类，通过 [init] 块按声明顺序追加类型实参，调用方需要自行保证实参数量正确。
      *
-     * For Kotlin built-in types, consider using the overload that accepts a [CaClassLikeSymbol] instead:
-     * `buildClassType(builtinTypes.string)`.
+     * 对内置类型推荐改用 [CaClassLikeSymbol] 重载，例如：
+     * `buildClassType(builtinTypes.string)`。
      *
-     *  #### Example
+     * #### 示例
      *
      * ```kotlin
-     * buildClassType(ClassId.fromString("kotlin/collections/List")) {
-     *     argument(buildClassType(ClassId.fromString("kotlin/String")))
+     * buildClassType(ClassId.fromString("std/collections/List")) {
+     *     argument(buildClassType(ClassId.fromString("std/core/String")))
      * }
      * ```
      */
-    public fun buildClassType(classId: ClassId, init: CaClassTypeBuilder.() -> Unit = {}): CaType
+    fun buildClassType(classId: ClassId, init: CaClassTypeBuilder.() -> Unit = {}): CaType
 
     /**
-     * Builds a class type with the given class symbol.
+     * 基于类符号 [symbol] 构造一个类类型。
      *
-     * A generic class type can be built by providing type arguments using the [init] block.
-     * The caller is supposed to provide the correct number of type arguments for the class.
+     * 对泛型类，通过 [init] 块按声明顺序追加类型实参，调用方需要自行保证实参数量正确。
      *
-     * #### Example
+     * #### 示例
      *
      * ```kotlin
      * buildClassType(builtinTypes.string)
      * ```
      */
-    public fun buildClassType(symbol: CaClassLikeSymbol, init: CaClassTypeBuilder.() -> Unit = {}): CaType
+    fun buildClassType(symbol: CaClassLikeSymbol, init: CaClassTypeBuilder.() -> Unit = {}): CaType
 
     /**
-     * Builds a [CaTypeParameterType] with the given type parameter symbol.
+     * 根据类型参数符号 [symbol] 构造一个 [CaTypeParameterType]。
      */
-    public fun buildTypeParameterType(symbol: CaTypeParameterSymbol, init: CaTypeParameterTypeBuilder.() -> Unit = {}): CaTypeParameterType
+    fun buildTypeParameterType(symbol: CaTypeParameterSymbol, init: CaTypeParameterTypeBuilder.() -> Unit = {}): CaTypeParameterType
 
+    /**
+     * 构造函数类型;通过标志位区分常规函数、C 互操作函数、闭包以及变长参数函数。
+     */
     fun buildFunctionType(
         parameterTypes: List<CaType>,
         returnType: CaType,
@@ -61,53 +72,66 @@ interface CaTypeCreator : CaLifetimeOwner {
         hasVariableLengthArgument: Boolean = false,
     ): CaFunctionType
 
+    /**
+     * 构造元组类型,按 [elementTypes] 给定的顺序与元数。
+     */
     fun buildTupleType(
         elementTypes: List<CaType>,
     ): CaTupleType
 
+    /**
+     * 构造由若干 [conjuncts] 组成的交叉类型(intersection type)。
+     */
     fun buildIntersectionType(
         conjuncts: List<CaType>,
     ): CaIntersectionType
 
+    /**
+     * 构造由若干 [alternatives] 组成的联合类型(union type)。
+     */
     fun buildUnionType(
         alternatives: Collection<CaType>,
     ): CaUnionType
 }
 
+/**
+ * 类型 builder 的公共基接口;所有 builder 共享 lifetime 校验与公共能力插槽。
+ */
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaTypeBuilder : CaLifetimeOwner
+interface CaTypeBuilder : CaLifetimeOwner
 
 
 /**
- * A builder for class types.
+ * 类类型 builder。
  *
  * @see CaTypeCreator.buildClassType
  */
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaClassTypeBuilder : CaTypeBuilder {
+interface CaClassTypeBuilder : CaTypeBuilder {
 
 
-
-    public val arguments: List<CaTypeProjection>
 
     /**
-     * Adds a type projection as an [argument] to the class type.
+     * 当前累计的类型实参列表(按追加顺序)。
      */
-    public fun argument(argument: CaTypeProjection)
+    val arguments: List<CaTypeProjection>
 
     /**
-     * Adds a [type] argument to the class type, with the given [variance].
+     * 追加一个类型投影 [argument] 作为类型实参。
      */
-    public fun argument(type: CaType )
+    fun argument(argument: CaTypeProjection)
+
+    /**
+     * 以给定类型 [type] 追加一个类型实参；具体型变信息按构造规则取默认值。
+     */
+    fun argument(type: CaType )
 }
 
 /**
- * A builder for type parameter types.
+ * 类型参数类型 builder。
  *
  * @see CaTypeCreator.buildTypeParameterType
  */
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaTypeParameterTypeBuilder : CaTypeBuilder {
-
-}
+interface CaTypeParameterTypeBuilder : CaTypeBuilder
 

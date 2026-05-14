@@ -13,7 +13,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    public redef func foo(): Int64 {
+    public <!REDEF_INSTANCE_ERROR!>redef<!> func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>(): Int64 {
         return 3
     }
 }
@@ -21,21 +21,3 @@ class C2 <: C1 {
 main(): Int64 {
     return 1
 }
-
-/* SCAN
-error: 'redef' cannot be used to modify an instance 'function'
-  ==> class_redef_6.cj:16:12:
-   | 
-16 |     public redef func foo(): Int64 {
-   |            ^ 
-   | 
-
-error: non-static member 'foo' cannot have the same name with static member in parent class or interfaces
-  ==> class_redef_6.cj:16:5:
-   | 
-16 |     public redef func foo(): Int64 {
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

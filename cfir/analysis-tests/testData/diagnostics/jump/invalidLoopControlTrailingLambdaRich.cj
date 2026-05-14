@@ -5,10 +5,10 @@ func runTwice(value: Int64, block: (Int64) -> Unit) {
 
 func jumpAcrossTrailingLambdaBoundary(flag: Bool): Unit {
     while (flag) {
-        runTwice(0) { value =>
+        runTwice(0) { _ =>
             <!INVALID_LOOP_CONTROL!>break<!>
         }
-        runTwice(1) { value =>
+        runTwice(1) { _ =>
             <!INVALID_LOOP_CONTROL!>continue<!>
         }
         break

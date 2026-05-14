@@ -13,7 +13,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    public static redef func foo1(): Int64 {
+    public static <!NOTHING_TO_OVERRIDE!>redef<!> func foo1(): Int64 {
         return 3
     }
 }
@@ -21,14 +21,3 @@ class C2 <: C1 {
 main(): Int64 {
     return 1
 }
-
-/* SCAN
-error: 'redef' function 'foo1' does not have a redefined 'static' function in its supertype
-  ==> class_redef_7.cj:16:5:
-   | 
-16 |     public static redef func foo1(): Int64 {
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

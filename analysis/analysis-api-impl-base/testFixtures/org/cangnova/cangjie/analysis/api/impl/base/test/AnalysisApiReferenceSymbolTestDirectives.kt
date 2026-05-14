@@ -23,7 +23,7 @@ object AnalysisApiReferenceSymbolTestDirectives : SimpleDirectivesContainer() {
     )
 
     val EXPECTED_ORIGINAL_PSI_CLASS by stringDirective(
-        description = "symbol.getOriginalPsi() 应恢复到的 PSI 简单类名。",
+        description = "symbol.psi 应恢复到的 PSI 简单类名。",
         applicability = DirectiveApplicability.File,
     )
 

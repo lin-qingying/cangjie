@@ -1,0 +1,855 @@
+CangJieFileStubImpl[MultifileClass[packageFqName=std.posix, facadeFqName=std.posix, facadePartSimpleNames=[file_dir, native, operation_id, os_sys]]]
+  CangJieStub$PACKAGE_DIRECTIVE
+    CangJieStub$DOT_QUALIFIED_EXPRESSION
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=posix]
+  CangJieStub$IMPORT_LIST
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.posix]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.O_RDONLY, name=O_RDONLY]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=O_RDONLY]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.O_RDWR, name=O_RDWR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=O_RDWR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.O_WRONLY, name=O_WRONLY]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=O_WRONLY]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.O_APPEND, name=O_APPEND]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=O_APPEND]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.O_CREAT, name=O_CREAT]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=O_CREAT]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.O_EXCL, name=O_EXCL]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=O_EXCL]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.O_TRUNC, name=O_TRUNC]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=O_TRUNC]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IRUSR, name=S_IRUSR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IRUSR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IWUSR, name=S_IWUSR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IWUSR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IXUSR, name=S_IXUSR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IXUSR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IRWXU, name=S_IRWXU]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IRWXU]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IRGRP, name=S_IRGRP]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IRGRP]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IWGRP, name=S_IWGRP]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IWGRP]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IXGRP, name=S_IXGRP]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IXGRP]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IRWXG, name=S_IRWXG]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IRWXG]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IROTH, name=S_IROTH]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IROTH]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IWOTH, name=S_IWOTH]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IWOTH]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IXOTH, name=S_IXOTH]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IXOTH]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IRWXO, name=S_IRWXO]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IRWXO]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SEEK_SET, name=SEEK_SET]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SEEK_SET]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SEEK_CUR, name=SEEK_CUR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SEEK_CUR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SEEK_END, name=SEEK_END]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SEEK_END]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IFREG, name=S_IFREG]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IFREG]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IFDIR, name=S_IFDIR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IFDIR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IFCHR, name=S_IFCHR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IFCHR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IFBLK, name=S_IFBLK]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IFBLK]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IFIFO, name=S_IFIFO]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IFIFO]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IFLNK, name=S_IFLNK]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IFLNK]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.S_IFSOCK, name=S_IFSOCK]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=S_IFSOCK]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.AT_EMPTY_PATH, name=AT_EMPTY_PATH]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=AT_EMPTY_PATH]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.AT_SYMLINK_FOLLOW, name=AT_SYMLINK_FOLLOW]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=AT_SYMLINK_FOLLOW]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.AT_FDCWD, name=AT_FDCWD]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=AT_FDCWD]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.AT_REMOVEDIR, name=AT_REMOVEDIR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=AT_REMOVEDIR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGHUP, name=SIGHUP]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGHUP]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGINT, name=SIGINT]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGINT]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGQUIT, name=SIGQUIT]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGQUIT]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGILL, name=SIGILL]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGILL]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGTRAP, name=SIGTRAP]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGTRAP]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGABRT, name=SIGABRT]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGABRT]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGIOT, name=SIGIOT]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGIOT]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGBUS, name=SIGBUS]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGBUS]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGFPE, name=SIGFPE]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGFPE]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGKILL, name=SIGKILL]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGKILL]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGUSR1, name=SIGUSR1]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGUSR1]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGSEGV, name=SIGSEGV]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGSEGV]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGUSR2, name=SIGUSR2]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGUSR2]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGPIPE, name=SIGPIPE]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGPIPE]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGALRM, name=SIGALRM]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGALRM]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGTERM, name=SIGTERM]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGTERM]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGSTKFLT, name=SIGSTKFLT]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGSTKFLT]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGCHLD, name=SIGCHLD]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGCHLD]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGCONT, name=SIGCONT]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGCONT]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGSTOP, name=SIGSTOP]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGSTOP]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGTSTP, name=SIGTSTP]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGTSTP]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGTTIN, name=SIGTTIN]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGTTIN]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGTTOU, name=SIGTTOU]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGTTOU]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGURG, name=SIGURG]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGURG]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGXCPU, name=SIGXCPU]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGXCPU]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGXFSZ, name=SIGXFSZ]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGXFSZ]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGVTALRM, name=SIGVTALRM]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGVTALRM]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGPROF, name=SIGPROF]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGPROF]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGWINCH, name=SIGWINCH]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGWINCH]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGIO, name=SIGIO]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGIO]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGPWR, name=SIGPWR]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGPWR]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.SIGSYS, name=SIGSYS]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=SIGSYS]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.R_OK, name=R_OK]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=R_OK]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.W_OK, name=W_OK]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=W_OK]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.X_OK, name=X_OK]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=X_OK]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$BINDING_PATTERN[fqName=std.posix.F_OK, name=F_OK]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=F_OK]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UInt32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UInt32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int64]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int64]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=UInt8]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UIntNative]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=IntNative]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=CPointer]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$BASIC_TYPE[basicType=UInt8]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UIntNative]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=IntNative]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Bool]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Bool]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Bool]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Bool]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Bool]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$USER_TYPE
+        CangJieStub$USER_TYPE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+          CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UInt32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=UInt32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=UInt32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Int32]
+  CangJieStub$FUNC
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$VALUE_PARAMETER_LIST
+      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Int32]
+    CangJieStub$TYPE_REFERENCE
+      CangJieStub$BASIC_TYPE[basicType=Bool]

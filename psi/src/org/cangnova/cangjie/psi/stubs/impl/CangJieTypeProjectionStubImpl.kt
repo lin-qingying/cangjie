@@ -34,4 +34,9 @@ class CangJieTypeProjectionStubImpl(parent: StubElement<*>, private val projecti
     override fun getProjectionKind(): CjProjectionKind {
         return CjProjectionKind.entries[projectionKindOrdinal]
     }
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieTypeProjectionStubImpl = CangJieTypeProjectionStubImpl(
+        parent = requireNotNull(newParent),
+        projectionKindOrdinal = projectionKindOrdinal,
+    )
 }

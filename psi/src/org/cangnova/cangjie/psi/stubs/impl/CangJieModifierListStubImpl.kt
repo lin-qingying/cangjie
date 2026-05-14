@@ -40,4 +40,10 @@ class CangJieModifierListStubImpl(parent: StubElement<*>?, @JvmField val mask: L
     override fun toString(): String {
         return super.toString() + maskToString(mask)
     }
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieModifierListStubImpl = CangJieModifierListStubImpl(
+        parent = newParent,
+        mask = mask,
+        elementType = stubType as CjModifierListElementType<*>,
+    )
 }

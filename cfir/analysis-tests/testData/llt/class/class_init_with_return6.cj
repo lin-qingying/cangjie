@@ -5,15 +5,11 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%frontendCompiler %typecheck %f 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 
 class A {
     public init() {
         if (true) {
-            return A()
+            return <!RETURN_TYPE_MISMATCH!>A()<!>
         }
     }
 }
-
-// ASSERT: scan expected 'Unit', found 'Class-A'

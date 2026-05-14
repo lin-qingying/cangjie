@@ -1,5 +1,6 @@
 FILE: publicVisibilityDisplay.cj
     public class ExplicitPublic {
+        init()
         public func explicitPublic(): R|Unit| {
         }
         internal? func implicitInternal(): R|Unit| {
@@ -12,6 +13,7 @@ FILE: publicVisibilityDisplay.cj
                 INT(2)
     }
     internal? class ImplicitInternalFromClassDefault {
+        init()
         public func publicMember(): R|Unit| {
         }
     }

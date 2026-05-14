@@ -3,7 +3,10 @@ package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.visibi
 import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.components.createUseSiteVisibilityChecker
+import org.cangnova.cangjie.analysis.api.symbols.symbol
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceTestUtils.findUsageSimpleName
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceTestUtils.isExtendMemberDeclaration
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiVisibilityTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedSymbolVisibility
@@ -14,11 +17,14 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.visibilityTargetKind
 import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
+import org.cangnova.cangjie.psi.CjDotQualifiedExpression
+import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeStatement
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -27,12 +33,9 @@ import org.junit.jupiter.api.Assertions.assertNotNull
 /**
  * visibility checker generated 测试。
  *
- * 这组测试把“声明自身的可见性元数据”和“当前 use-site session 下的可见性结果”拆成两段校验：
- * 1. 在目标声明所属文件的 session 中校验 `visibility` / `isVisibilityExplicit`；
- * 2. 在主文件的 use-site session 中校验 `isVisible()`。
- *
- * 这样既能覆盖 source/local/extend 的基础映射，也能表达跨模块 internal 在主 session 中不可见的情况，
- * 避免把 declaration metadata 与 use-site visibility 混成同一个语义层次。
+ * 这组测试把“声明元数据”和“use-site 可见性”拆开校验：
+ * 1. 先在目标声明所在文件的 session 中校验 `visibility` / `isVisibilityExplicit`；
+ * 2. 再在主文件 use-site session 中通过 `createUseSiteVisibilityChecker(...)` 校验可见性。
  */
 abstract class AbstractVisibilityCheckerTest : AbstractAnalysisApiComponentTest() {
     override val additionalDirectives: List<DirectivesContainer>
@@ -57,9 +60,47 @@ abstract class AbstractVisibilityCheckerTest : AbstractAnalysisApiComponentTest(
 
         analyzeForTest(mainFile) {
             val symbol = tryResolveDeclarationSymbol(targetDeclaration)
-            val actualVisible = symbol?.isVisible() ?: false
+            val useSiteElement = runCatching { findUsageSimpleName(mainFile, directives.targetNameText) }.getOrNull()
+            val receiverExpression = useSiteElement?.getStrictParentOfType<CjDotQualifiedExpression>()
+            val actualVisible = symbol?.let { declarationSymbol ->
+                checkVisibility(
+                    declarationSymbol = declarationSymbol,
+                    useSiteElement = useSiteElement ?: mainFile,
+                    receiverExpression = receiverExpression?.receiverExpression,
+                    useSiteFileSymbol = mainFile.symbol,
+                )
+            } ?: false
             assertEquals(directives.expectedVisibleInSession, actualVisible)
         }
+    }
+
+    private fun CaSession.checkVisibility(
+        declarationSymbol: CaDeclarationSymbol,
+        useSiteElement: PsiElement,
+        receiverExpression: CjExpression?,
+        useSiteFileSymbol: org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol,
+    ): Boolean {
+        val visibleByUseSiteChecker = createUseSiteVisibilityChecker(
+            useSiteFile = useSiteFileSymbol,
+            receiverExpression = receiverExpression,
+            position = useSiteElement,
+        ).isVisible(declarationSymbol)
+
+        @Suppress("DEPRECATION")
+        val visibleByDeprecatedEntry = isVisible(
+            candidateSymbol = declarationSymbol,
+            useSiteFile = useSiteFileSymbol,
+            receiverExpression = receiverExpression,
+            position = useSiteElement,
+        )
+
+        assertEquals(
+            visibleByDeprecatedEntry,
+            visibleByUseSiteChecker,
+            "deprecated isVisible(...) 与 createUseSiteVisibilityChecker(...).isVisible(...) 结果不一致。",
+        )
+
+        return visibleByUseSiteChecker
     }
 
     private fun findTargetDeclaration(

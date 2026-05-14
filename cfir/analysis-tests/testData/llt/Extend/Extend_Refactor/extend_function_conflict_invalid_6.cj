@@ -21,7 +21,7 @@ interface I2 {
 class C1 {}
 
 extend C1 <: I1 & I2 {
-    public func foo(): Int32 {
+    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>foo<!>(): Int32 {
         2
     }
 }
@@ -29,20 +29,3 @@ extend C1 <: I1 & I2 {
 main() {
     return -1
 }
-
-/* SCAN
-error: return type of 'foo' is not identical or not a subtype of the overridden/redefined/implement function
-  ==> extend_function_conflict_invalid_6.cj:24:17:
-   | 
-24 |     public func foo(): Int32 {
-   |                 ^^^ 
-   | 
-note: 'Int32' is not a subtype of 'Int64'
-  ==> extend_function_conflict_invalid_6.cj:24:17:
-   | 
-24 |     public func foo(): Int32 {
-   |                 ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

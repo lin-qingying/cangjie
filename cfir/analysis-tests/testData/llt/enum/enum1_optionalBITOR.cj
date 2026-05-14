@@ -16,54 +16,9 @@ enum TimeUnit2 {
 }
 
 func codegenUnitTest(): TimeUnit {
-    var time1 = TimeUnit.Year3(1)
-    var time2 = TimeUnit2.Month2(1)
-    var time3 = TimeUnit2.Year
-    var time4 = TimeUnit.Year(1)
-    return 0
+    var time1 = TimeUnit.<!NOT_MEMBER_OF!>Year3<!>(1)
+    var time2 = TimeUnit2.Month2<!NO_VALUE_FOR_PARAMETER!>(1)<!>
+    var time3 = TimeUnit2.<!NOT_MEMBER_OF!>Year<!>
+    var time4 = <!NO_MATCHING_OPERATOR_INVOKE!>TimeUnit.Year<!>(1)
+    return <!RETURN_TYPE_MISMATCH!>0<!>
 }
-
-/* SCAN
-error: 'Year3' is not a member of enum 'TimeUnit'
-  ==> enum1_optionalBITOR.cj:19:26:
-   | 
-19 |     var time1 = TimeUnit.Year3(1)
-   |                          ^^^^^ 
-   | 
-
-error: missing argument for parameter list '(Int32, Int32)' in call
-  ==> enum1_optionalBITOR.cj:20:33:
-   | 
-20 |     var time2 = TimeUnit2.Month2(1)
-   |                                 ^^^ expected 2 arguments, found 1
-   | 
-note: found candidate
-  ==> enum1_optionalBITOR.cj:15:7:
-   | 
-15 |     | Month2(Int32, Int32)
-   |       ^^^^^^ 
-   | 
-
-error: 'Year' is not a member of enum 'TimeUnit2'
-  ==> enum1_optionalBITOR.cj:21:27:
-   | 
-21 |     var time3 = TimeUnit2.Year
-   |                           ^^^^ 
-   | 
-
-error: no matching function for operator '()' function call
-  ==> enum1_optionalBITOR.cj:22:17:
-   | 
-22 |     var time4 = TimeUnit.Year(1)
-   |                 ^ 
-   | 
-
-error: cannot convert an integer literal to type 'Enum-TimeUnit'
-  ==> enum1_optionalBITOR.cj:23:12:
-   | 
-23 |     return 0
-   |            ^ 
-   | 
-
-5 errors generated, 5 errors printed.
-*/

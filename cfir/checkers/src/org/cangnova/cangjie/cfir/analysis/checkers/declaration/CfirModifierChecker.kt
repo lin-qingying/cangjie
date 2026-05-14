@@ -144,14 +144,6 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
             )
         }
 
-        if (callable.status.isOverride && callable.status.isStatic) {
-            val overrideModifier = modifiers.modifierByToken(CjTokens.OVERRIDE_KEYWORD) ?: return
-            reporter.reportOn(
-                overrideModifier.source,
-                CfirErrors.OVERRIDE_STATIC_ERROR,
-                callable.declarationKindName(),
-            )
-        }
     }
 
     private fun CfirCallableDeclaration.declarationKindName(): String = when (this) {

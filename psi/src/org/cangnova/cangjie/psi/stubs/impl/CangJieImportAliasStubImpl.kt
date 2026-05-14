@@ -36,4 +36,9 @@ class CangJieImportAliasStubImpl(
     private val name: StringRef?,
 ) : CangJieStubBaseImpl<CjImportAlias>(parent, CjStubElementTypes.IMPORT_ALIAS), CangJieImportAliasStub {
     override fun getName(): String? = StringRef.toString(name)
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieImportAliasStubImpl = CangJieImportAliasStubImpl(
+        parent = newParent,
+        name = name,
+    )
 }

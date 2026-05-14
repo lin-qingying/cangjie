@@ -9,13 +9,16 @@ import com.intellij.psi.search.searches.ReferencesSearch
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.Processor
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.idea.search.CangJieReferencesSearchExecutor
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
+import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -53,7 +56,7 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
     @Test
     fun extendMemberUsages(mainFile: CjFile) {
         val declaration = PsiTreeUtil.findChildrenOfType(mainFile, CjNamedFunction::class.java)
-            .single { it.name == "prettyPrint" && it.parent is CjExtend }
+            .single { it.name == "prettyPrint" && it.getStrictParentOfType<CjExtend>() != null }
 
         val references = findUsages(declaration)
         assertEquals(2, references.size, "extend 成员 usages 数量不正确")
@@ -64,7 +67,7 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
     }
 
     @Test
-    fun importAliasUsages(mainFile: CjFile) {
+    fun importAliasUsages(mainFile: CjFile, testServices: TestServices) {
         val alias = PsiTreeUtil.findChildrenOfType(mainFile, CjImportAlias::class.java)
             .single { it.name == "welcome" }
 
@@ -72,7 +75,8 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
         assertEquals(2, aliasReferences.size, "import alias usages 数量不正确")
         assertReferencesStayInsideLocalScope(alias, aliasReferences)
 
-        val providerFile = siblingFiles(mainFile).single { it.name == "provider.cj" }
+        val providerFile = testServices.cjTestModuleStructure.allCjFiles
+            .single { it.name == "provider.cj" }
         val originalDeclaration = PsiTreeUtil.findChildrenOfType(providerFile, CjNamedFunction::class.java)
             .single { it.name == "greet" }
 
@@ -128,12 +132,5 @@ class AnalysisApiFindUsagesTest : AbstractAnalysisApiExecutionTest(
             },
             "局部声明的 usages 不应逃逸出其 LocalSearchScope",
         )
-    }
-
-    private fun siblingFiles(mainFile: CjFile): List<CjFile> {
-        return mainFile.containingDirectory?.files
-            ?.filterIsInstance<CjFile>()
-            ?.toList()
-            .orEmpty()
     }
 }

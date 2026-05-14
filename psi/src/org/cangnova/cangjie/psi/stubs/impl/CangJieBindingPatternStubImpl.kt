@@ -52,4 +52,9 @@ class CangJieBindingPatternStubImpl(
 
     override fun getName(): String? = StringRef.toString(nameRef)
 
+    override fun copyInto(newParent: StubElement<*>?): CangJieBindingPatternStubImpl = CangJieBindingPatternStubImpl(
+        parent = newParent,
+        nameRef = nameRef,
+        fqName = fqName,
+    )
 }

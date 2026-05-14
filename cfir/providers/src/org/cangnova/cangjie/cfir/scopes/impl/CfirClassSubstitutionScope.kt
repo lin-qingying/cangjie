@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideSymbolAttr
+import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideAttr
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -92,9 +92,13 @@ class CfirClassSubstitutionScope(
         functionSymbol: CfirNamedFunctionSymbol,
         processor: (CfirNamedFunctionSymbol, CfirTypeScope) -> ProcessorAction
     ): ProcessorAction {
-        val originalSymbol = functionSymbol.unwrapOriginalForSubstitutionOverride()
-        return useSiteMemberScope.processDirectOverriddenFunctionsWithBaseScope(originalSymbol) { overridden, baseScope ->
-            processor(substituteFunctionSymbol(overridden), substitutedBaseScope(baseScope))
+        val original = functionSymbol.originalForSubstitutionOverride as? CfirNamedFunctionSymbol
+        return when {
+            original == null || original !in functionOverrideCache -> {
+                useSiteMemberScope.processDirectOverriddenFunctionsWithBaseScope(functionSymbol, processor)
+            }
+            processor(original, useSiteMemberScope) == ProcessorAction.STOP -> ProcessorAction.STOP
+            else -> ProcessorAction.NONE
         }
     }
 
@@ -102,9 +106,13 @@ class CfirClassSubstitutionScope(
         propertySymbol: CfirPropertySymbol,
         processor: (CfirPropertySymbol, CfirTypeScope) -> ProcessorAction,
     ): ProcessorAction {
-        val originalSymbol = propertySymbol.unwrapOriginalForSubstitutionOverride()
-        return useSiteMemberScope.processDirectOverriddenPropertiesWithBaseScope(originalSymbol) { overridden, baseScope ->
-            processor(substitutePropertySymbol(overridden), substitutedBaseScope(baseScope))
+        val original = propertySymbol.originalForSubstitutionOverride as? CfirPropertySymbol
+        return when {
+            original == null || original !in propertyOverrideCache -> {
+                useSiteMemberScope.processDirectOverriddenPropertiesWithBaseScope(propertySymbol, processor)
+            }
+            processor(original, useSiteMemberScope) == ProcessorAction.STOP -> ProcessorAction.STOP
+            else -> ProcessorAction.NONE
         }
     }
 
@@ -165,15 +173,15 @@ class CfirClassSubstitutionScope(
 
         val declaration = symbol.cfir as? CfirNamedFunction ?: return symbol
         val copiedSymbol = CfirNamedFunctionSymbol(symbol.callableId)
-        buildNamedFunctionCopy(declaration) {
+        val copiedDeclaration = buildNamedFunctionCopy(declaration) {
             origin = substitutionOverrideOrigin(symbol)
             this.symbol = copiedSymbol
-            attributes.originalForSubstitutionOverrideSymbolAttr = symbol
             dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
             returnTypeRef = substituteTypeRef(symbol.resolvedReturnTypeRef, substitutor)
             valueParameters.clear()
             valueParameters += substituteValueParameters(declaration.valueParameters, substitutor)
         }
+        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
         return copiedSymbol
     }
 
@@ -183,15 +191,15 @@ class CfirClassSubstitutionScope(
 
         val declaration = symbol.cfir
         val copiedSymbol = CfirPropertySymbol(symbol.callableId)
-        buildPropertyCopy(declaration) {
+        val copiedDeclaration = buildPropertyCopy(declaration) {
             origin = substitutionOverrideOrigin(symbol)
             this.symbol = copiedSymbol
-            attributes.originalForSubstitutionOverrideSymbolAttr = symbol
             dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
             returnTypeRef = substituteTypeRef(symbol.resolvedReturnTypeRef, substitutor)
             getter = substituteAccessorFunction(declaration.getter, substitutor)
             setter = substituteAccessorFunction(declaration.setter, substitutor)
         }
+        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
         return copiedSymbol
     }
 
@@ -201,13 +209,13 @@ class CfirClassSubstitutionScope(
 
         val declaration = symbol.cfir
         val copiedSymbol = CfirFieldVariableSymbol(symbol.callableId)
-        buildFieldVariableCopy(declaration) {
+        val copiedDeclaration = buildFieldVariableCopy(declaration) {
             origin = substitutionOverrideOrigin(symbol)
             this.symbol = copiedSymbol
-            attributes.originalForSubstitutionOverrideSymbolAttr = symbol
             dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
             returnTypeRef = substituteTypeRef(symbol.resolvedReturnTypeRef, substitutor)
         }
+        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
         return copiedSymbol
     }
 
@@ -215,15 +223,16 @@ class CfirClassSubstitutionScope(
         function ?: return null
         val symbol = function.symbol
         val copiedSymbol = CfirPropertyAccessorSymbol()
-        return buildPropertyAccessorCopy(function) {
+        val copiedDeclaration = buildPropertyAccessorCopy(function) {
             origin = substitutionOverrideOrigin(symbol)
             this.symbol = copiedSymbol
-            attributes.originalForSubstitutionOverrideSymbolAttr = symbol
             dispatchReceiverType = substituteDispatchReceiverType(function.dispatchReceiverType, substitutor)
             returnTypeRef = substituteTypeRef(symbol.resolvedReturnTypeRef, substitutor)
             valueParameters.clear()
             valueParameters += substituteValueParameters(function.valueParameters, substitutor)
         }
+        copiedDeclaration.originalForSubstitutionOverrideAttr = function
+        return copiedDeclaration
     }
 
     private fun substituteValueParameters(
@@ -256,6 +265,18 @@ class CfirClassSubstitutionScope(
     }
 
     private fun substitutionOverrideOrigin(symbol: CfirCallableSymbol<*>): CfirDeclarationOrigin {
+        val ownerExtend = session.extendProvider.getContainingExtend(symbol)
+        if (ownerExtend != null) {
+            val ownerClassId = (ownerExtend.extendedTypeRef as? CfirResolvedTypeRef)
+                ?.coneType
+                ?.classIdOrPrimitiveClassId
+            return if (ownerClassId != null && ownerClassId == dispatchReceiverType.classIdOrPrimitiveClassId) {
+                CfirDeclarationOrigin.SubstitutionOverride.CallSite
+            } else {
+                CfirDeclarationOrigin.SubstitutionOverride.DeclarationSite
+            }
+        }
+
         val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
         return if (ownerClassId != null && ownerClassId == dispatchReceiverType.classIdOrPrimitiveClassId) {
             CfirDeclarationOrigin.SubstitutionOverride.CallSite
@@ -265,17 +286,19 @@ class CfirClassSubstitutionScope(
     }
 
     private fun computeCallableSubstitutor(symbol: CfirCallableSymbol<*>): ConeSubstitutor? {
+        val ownerExtend = session.extendProvider.getContainingExtend(symbol)
+            ?.takeIf(session.extendProvider::isExtendAccessible)
+        if (ownerExtend != null) {
+            return findExtendDeclarationSubstitutor(ownerExtend)
+        }
+
         val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
         if (ownerClassId != null) {
             val concreteOwnerType = concreteTypeForOwner(ownerClassId) ?: return null
             val ownerDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir ?: return null
             return createClassLikeDeclarationSubstitutor(ownerDeclaration, concreteOwnerType)
         }
-
-        val ownerExtend = session.extendProvider.getContainingExtend(symbol)
-            ?.takeIf(session.extendProvider::isExtendAccessible)
-            ?: return null
-        return findExtendDeclarationSubstitutor(ownerExtend)
+        return null
     }
 
     private fun concreteTypeForOwner(ownerClassId: ClassId): ConeCangJieType? {

@@ -40,4 +40,8 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 class CangJieWildcardPatternStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjWildcardPattern>(parent, CjStubElementTypes.WILDCARD_PATTERN),
-    CangJieWildcardPatternStub
+    CangJieWildcardPatternStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieWildcardPatternStubImpl = CangJieWildcardPatternStubImpl(
+        parent = newParent,
+    )
+}

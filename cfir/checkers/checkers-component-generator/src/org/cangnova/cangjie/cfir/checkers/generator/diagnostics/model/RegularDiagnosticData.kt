@@ -54,6 +54,7 @@ enum class PositioningStrategy {
     DECLARATION_RETURN_TYPE,
     OVERRIDE_MODIFIER,
     MUT_MODIFIER,
+    THROW_KEYWORD,
     DOT_BY_QUALIFIED,
     OPEN_MODIFIER,
     WHEN_EXPRESSION,
@@ -138,6 +139,5 @@ enum class PositioningStrategy {
         const val importToAdd = "org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies"
     }
 }
-
 
 

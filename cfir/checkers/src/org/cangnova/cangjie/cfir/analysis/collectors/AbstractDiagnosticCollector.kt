@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.lazyDeclarationResolver
 
 /**
  * Coordinates diagnostic collection by creating a visitor and running it on declarations.
@@ -20,7 +21,9 @@ abstract class AbstractDiagnosticCollector(
         val components = createComponents(reporter)
         val visitor = createVisitor(components, reporter)
         visitor.checkSettings()
-        cfirDeclaration.accept(visitor, null)
+        session.lazyDeclarationResolver.disableLazyResolveContractChecksInside {
+            cfirDeclaration.accept(visitor, null)
+        }
     }
 
     fun collectDiagnosticsInSettings(reporter: PendingDiagnosticReporter) {

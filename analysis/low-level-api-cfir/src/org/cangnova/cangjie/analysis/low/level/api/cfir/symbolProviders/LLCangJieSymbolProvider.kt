@@ -8,6 +8,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProvider
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
@@ -33,6 +34,8 @@ internal abstract class LLCangJieSymbolProvider(session: CfirSession) :
     abstract val declarationProvider: CangJieDeclarationProvider
 
     abstract val packageProvider: CangJiePackageProvider
+
+    internal open fun materializeTopLevelExtendFiles(): List<CfirFile> = emptyList()
 
     /**
      * Maps the [CfirCallableSymbol]s with the given [callableId] for known [callables] to [destination].

@@ -7,7 +7,20 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 
+/**
+ * 引用缩短(import shorten)协议。
+ *
+ * 设计要点/职责:
+ * - 在不修改源码的前提下,计算可被缩短的引用集合与需要补齐的 import,
+ *   将分析结果与真正的写入动作解耦。
+ * - 协议层只暴露稳定的命令/计划数据,不暴露策略类与缩短引擎细节。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaReferenceShortener`。
+ */
 interface CaReferenceShortener : CaLifetimeOwner {
+    /**
+     * 收集该文件全部可缩短的引用方案,作为执行前的全局快照。
+     */
     fun CjFile.collectReferenceShorteningPlan(): CaReferenceShorteningPlan
 
     /**

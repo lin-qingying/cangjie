@@ -14,51 +14,12 @@ struct R1 {
     }
 }
 
-func structMut<T>(obj: T): Unit where T <: R1 {
-    obj.foo()
+func structMut<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>(obj: T): Unit where T <: R1 {
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>obj.foo()<!>
     var r = R1()
-    let _ = r.foo
+    let _ = <!USE_MUTABLE_FUNC_ALONE!>r.foo<!>
 }
 
 main() {
     return 0
 }
-
-/* SCAN
-error: the upper bound 'Struct-R1' of generic parameter 'Generics-T' must be class or interface
-  ==> record_mut_invalid_17.cj:17:16:
-   | 
-17 | func structMut<T>(obj: T): Unit where T <: R1 {
-   |                ^ 
-   | 
-
-error: cannot use mutable function on immutable value
-  ==> record_mut_invalid_17.cj:18:5:
-   | 
-18 |     obj.foo()
-   |     ^^^ ~~~ is a mutable function
-   |     |
-   |     is immutable
-   | 
-note: 'obj' is a variable declared with 'let'
-  ==> record_mut_invalid_17.cj:17:19:
-   | 
-17 | func structMut<T>(obj: T): Unit where T <: R1 {
-   |                   ^^^ 
-   | 
-
-error: mutable function 'foo' cannot be used alone as reference
-  ==> record_mut_invalid_17.cj:20:15:
-   | 
-20 |     let _ = r.foo
-   |               ^^^ 
-   | 
-note: 'foo' is a mutable funciton
-  ==> record_mut_invalid_17.cj:12:21:
-   | 
-12 |     public mut func foo() {
-   |                     ^^^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

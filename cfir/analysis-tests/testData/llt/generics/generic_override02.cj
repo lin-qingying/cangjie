@@ -19,7 +19,7 @@ class CA<T> <: I3<I1> where T <: I1 {
     init(_x: T) {
         x = _x
     }
-    public func goo(): T {
+    public func <!OVERRIDING_RETURN_TYPE_MISMATCH!>goo<!>(): T {
         println("here")
         x
     }
@@ -32,20 +32,3 @@ struct TEST_1 <: I1 {
 }
 
 main() {}
-
-/* SCAN
-error: return type of 'goo' can only be class/interface type which implements or inherits the interface type 'Interface-I1'
-  ==> generic_override02.cj:22:5:
-   | 
-22 |     public func goo(): T {
-   |     ^ 
-   | 
-note: cannot override/implement the following function
-  ==> generic_override02.cj:14:5:
-   | 
-14 |     func goo(): T
-   |     ^^^^^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

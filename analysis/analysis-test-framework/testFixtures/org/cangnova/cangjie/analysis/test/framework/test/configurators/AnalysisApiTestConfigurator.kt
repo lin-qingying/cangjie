@@ -18,6 +18,15 @@ import java.nio.file.Path
  */
 abstract class AnalysisApiTestConfigurator {
     /**
+     * 测试输出文件变体前缀。
+     *
+     * 对齐 Kotlin Analysis API 测试框架的 `testPrefixes` 槽位，用于同一份测试数据在不同
+     * configurator 下存在专用 golden 文件时按顺序解析输出文件。
+     */
+    open val testPrefixes: List<String>
+        get() = emptyList()
+
+    /**
      * 是否在 dependent session 模式下运行当前测试。
      */
     abstract val analyseInDependentSession: Boolean

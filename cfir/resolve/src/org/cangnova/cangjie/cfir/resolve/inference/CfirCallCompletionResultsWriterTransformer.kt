@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.buildArgumentListForErrorCall
 import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
@@ -51,9 +52,15 @@ import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeApproximator
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -62,6 +69,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.types.coneTypeSafe
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
@@ -348,6 +356,24 @@ class CfirCallCompletionResultsWriterTransformer(
         return arrayLiteral
     }
 
+    override fun transformRangeExpression(rangeExpression: CfirRangeExpression, data: ExpectedArgumentType?): CfirExpression {
+        data?.argumentReplacements?.get(rangeExpression)?.let { replacement ->
+            return replacement.transformSingle(this, data)
+        }
+
+        val expectedRangeType = data?.getExpectedType(rangeExpression)?.rangeTypeOrNull()
+        val endpointExpectedType = expectedRangeType?.typeArguments?.singleOrNull()?.type
+        val endpointData = endpointExpectedType?.toExpectedType(data?.argumentReplacements)
+        rangeExpression.transformAnnotations(this, data)
+        rangeExpression.transformStart(this, endpointData)
+        rangeExpression.transformEnd(this, endpointData)
+        rangeExpression.transformStep(this, ConePrimitiveType.INT64.toExpectedType(data?.argumentReplacements))
+        if (expectedRangeType != null) {
+            rangeExpression.replaceConeTypeOrNull(expectedRangeType)
+        }
+        return rangeExpression
+    }
+
     override fun transformAnonymousFunctionExpression(
         anonymousFunctionExpression: CfirAnonymousFunctionExpression,
         data: ExpectedArgumentType?
@@ -615,6 +641,9 @@ class CfirCallCompletionResultsWriterTransformer(
     private fun CfirNamedReferenceWithCandidate.toResolvedReference(): CfirNamedReference {
         val errorDiagnostic = when {
             this is CfirErrorReferenceWithCandidate -> this.diagnostic
+            candidate.system.hasContradiction ->
+                ConeConstraintSystemHasContradiction(candidate)
+
             !candidate.lowestApplicability.isSuccess ->
                 ConeInapplicableCandidateError(candidate.lowestApplicability, candidate)
 
@@ -702,6 +731,13 @@ sealed class ExpectedArgumentType(
 private fun ExpectedArgumentType.getExpectedType(argument: CfirElement): ConeCangJieType? = when (this) {
     is ExpectedArgumentType.ArgumentsMap -> map[argument]
     is ExpectedArgumentType.ExpectedType -> type
+}
+
+private fun ConeCangJieType.rangeTypeOrNull(): ConeClassifierType? = when (this) {
+    is ConeClassLikeType -> takeIf { classId == StdlibClassIds.Range }
+    is ConeStructType -> takeIf { classId == StdlibClassIds.Range }
+    is ConeTypeAliasType -> expandedType?.rangeTypeOrNull()
+    else -> null
 }
 
 private fun ConeCangJieType.toExpectedType(

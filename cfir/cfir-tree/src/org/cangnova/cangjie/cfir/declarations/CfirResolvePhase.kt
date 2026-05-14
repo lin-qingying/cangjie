@@ -75,13 +75,10 @@
  * - [BODY_RESOLVE]
  *
  * 其中当前允许 same-phase lazy resolve 的阶段为：
- * - [SUPER_TYPES]
- * - [STATUS]
  * - [IMPLICIT_TYPES]
- * - [BODY_RESOLVE]
  *
- * [EXTENSIONS] 当前仍视为 jumping phase，但不允许 same-phase lazy resolve，
- * 以避免扩展链递归在尚无稳定收敛策略时引入死循环风险。
+ * 其他 jumping phase 仍可能在当前阶段内请求更低阶段的信息，
+ * 但不开放 same-phase lazy resolve。
  *
  * -----------------------------------------------------------------------------
  * 四、非本枚举职责
@@ -133,27 +130,10 @@ enum class CfirResolvePhase(
     IMPORTS,
 
     /**
-     * 宏展开阶段。
-     *
-     * 输入：
-     * - [IMPORTS] 完成。
-     *
-     * 输出：
-     * - 所有宏调用已被展开并替换回 CFIR 文件。
-     * - 展开可能替换整个 [CfirFile]（通过 MacroFileRebuilder 重建）。
-     *
-     * 说明：
-     * - 该阶段不是 jumping phase，不允许同阶段请求。
-     * - 宏展开必须在语义分析前完成，因为宏可能引入新的声明和类型引用。
-     * - 无宏调用时处理器为 pass-through（返回原文件列表）。
-     */
-    MACRO_EXPAND,
-
-    /**
      * 父类型图准备阶段。
      *
      * 输入：
-     * - [MACRO_EXPAND] 完成。
+     * - [IMPORTS] 完成（宏展开此前已在 source provider 注册前完成）。
      *
      * 输出：
      * - 声明处的父类/父接口关系完成绑定。
@@ -285,19 +265,12 @@ fun CfirResolvePhase.isItAllowedToCallLazyResolveTo(requestedPhase: CfirResolveP
  *
  * 说明：
  * - 并非所有 jumping phase 都允许同阶段请求。
- * - [SUPER_TYPES] 允许同阶段请求，以支持继承链递归展开与父类型图构建。
- * - [STATUS] 允许同阶段请求，以支持 override / modality / visibility 在父声明上的联动判定。
  * - [IMPLICIT_TYPES] 允许同阶段请求，
  *   以对齐 Kotlin `IMPLICIT_TYPES_BODY_RESOLVE` 的隐式类型递归求解能力。
- * - [BODY_RESOLVE] 不允许同阶段请求；
- *   low-level BODY resolver 会在 `doResolveWithoutLock()` 中走 `performCustomResolveUnderLock()` 构 CFG，
- *   若将其标成 jumping phase，会直接破坏该锁契约。
- * - [EXTENSIONS] 当前仍不开放 same-phase 请求，避免扩展链递归在尚无稳定收敛策略时引入死循环风险。
+ * - 其余阶段不允许同阶段请求，以保持 low-level resolver 的锁语义与 Kotlin 框架一致。
  */
 val CfirResolvePhase.isItAllowedToCallLazyResolveToTheSamePhase: Boolean
     get() = when (this) {
-        CfirResolvePhase.SUPER_TYPES,
-        CfirResolvePhase.STATUS,
         CfirResolvePhase.IMPLICIT_TYPES -> true
         else -> false
     }

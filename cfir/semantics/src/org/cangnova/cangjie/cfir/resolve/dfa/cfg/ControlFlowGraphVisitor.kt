@@ -68,6 +68,8 @@ abstract class ControlFlowGraphVisitor<out R, in D> {
     open fun visitTryMainBlockExitNode(node: TryMainBlockExitNode, data: D): R = visitNode(node, data)
     open fun visitCatchClauseEnterNode(node: CatchClauseEnterNode, data: D): R = visitNode(node, data)
     open fun visitCatchClauseExitNode(node: CatchClauseExitNode, data: D): R = visitNode(node, data)
+    open fun visitHandleClauseEnterNode(node: HandleClauseEnterNode, data: D): R = visitNode(node, data)
+    open fun visitHandleClauseExitNode(node: HandleClauseExitNode, data: D): R = visitNode(node, data)
     open fun visitFinallyBlockEnterNode(node: FinallyBlockEnterNode, data: D): R = visitNode(node, data)
     open fun visitFinallyBlockExitNode(node: FinallyBlockExitNode, data: D): R = visitNode(node, data)
     open fun visitTryExpressionExitNode(node: TryExpressionExitNode, data: D): R = visitNode(node, data)

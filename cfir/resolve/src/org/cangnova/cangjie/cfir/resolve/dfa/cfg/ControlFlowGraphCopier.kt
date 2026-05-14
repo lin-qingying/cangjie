@@ -209,6 +209,12 @@ internal class ControlFlowGraphCopier : ControlFlowGraphVisitor<CFGNode<*>, Unit
     override fun visitCatchClauseExitNode(node: CatchClauseExitNode, data: Unit): CFGNode<*> =
         CatchClauseExitNode(get(node.owner), node.fir, node.level)
 
+    override fun visitHandleClauseEnterNode(node: HandleClauseEnterNode, data: Unit): CFGNode<*> =
+        HandleClauseEnterNode(get(node.owner), node.fir, node.level)
+
+    override fun visitHandleClauseExitNode(node: HandleClauseExitNode, data: Unit): CFGNode<*> =
+        HandleClauseExitNode(get(node.owner), node.fir, node.level)
+
     override fun visitFinallyBlockEnterNode(node: FinallyBlockEnterNode, data: Unit): CFGNode<*> =
         FinallyBlockEnterNode(get(node.owner), node.fir, node.level)
 

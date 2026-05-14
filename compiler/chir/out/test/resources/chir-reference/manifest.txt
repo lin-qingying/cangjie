@@ -1,0 +1,5 @@
+# id|category|relativePath|anchor
+serializer-enum-mapping|unit|external/cangjie_compiler/unittests/CHIR/CHIRSerialzierTest.cpp|TEST_F(CHIRSerialzierTest, TypeKindEnum)
+deserializer-enum-mapping|unit|external/cangjie_compiler/unittests/CHIR/CHIRDeSerialzierTest.cpp|TEST_F(CHIRDeSerialzierTest, TypeKindEnum)
+serializer-api-entry|impl|external/cangjie_compiler/src/CHIR/Serializer/CHIRSerializer.cpp|CreateCHIRPackageDirect
+deserializer-api-entry|impl|external/cangjie_compiler/src/CHIR/Serializer/CHIRDeserializer.cpp|GetCHIRPackage

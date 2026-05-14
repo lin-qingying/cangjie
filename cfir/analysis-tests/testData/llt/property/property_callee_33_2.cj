@@ -17,7 +17,7 @@ struct Boo {
     }
     public prop bbb: Unit {
         get() {
-            aaa = 1
+            <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>aaa = 1<!>
         }
     }
 }
@@ -27,14 +27,3 @@ main(): Int32 {
     let t = b.bbb
     return b.aaa
 }
-
-/* SCAN
-error: immutable function 'get' cannot access mutable function 'set'
-  ==> property_callee_33_2.cj:20:13:
-   | 
-20 |             aaa = 1
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

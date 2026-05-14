@@ -15,5 +15,5 @@ func name1(): Unit {
 func name(): Unit {
     let a = B()
 
-    <!UNRESOLVED_REFERENCE!>!<!>a
+    <!INVALID_UNARY_EXPR!>!a<!>
 }

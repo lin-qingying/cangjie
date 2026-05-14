@@ -28,7 +28,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializatio
  * This class provides fallback symbols for top-level callables from synthetic multifile class part
  * ([MULTIFILE_CLASS_PART][org.cangnova.cangjie.load.kotlin.header.KotlinClassHeader.Kind.MULTIFILE_CLASS_PART]).
  *
- * @see org.cangnova.cangjie.analysis.decompiler.stub.file.ClsClassFinder.isKotlinInternalCompiledFile
+ * @see org.cangnova.cangjie.analysis.decompiler.stub.file.ClsClassFinder.isCangJieInternalCompiledFile
  * @see addCallableIfNeeded
  **/
 internal class LLCangJieStubBasedLibraryMultifileClassPartCallableSymbolProvider(val session: CfirSession) {

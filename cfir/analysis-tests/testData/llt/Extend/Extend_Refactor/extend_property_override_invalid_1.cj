@@ -17,7 +17,7 @@ extend C1 {
 }
 
 class C2 <: C1 {
-    public prop foo: Int64 {
+    public prop <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>foo<!>: Int64 {
         get() {
             return 2
         }
@@ -27,20 +27,3 @@ class C2 <: C1 {
 main() {
     return -1
 }
-
-/* SCAN
-error: cannot override property 'foo' in extend of supertype
-  ==> extend_property_override_invalid_1.cj:20:17:
-   | 
-20 |     public prop foo: Int64 {
-   |                 ^^^ 
-   | 
-note: overridden definition of 'foo' is here
-  ==> extend_property_override_invalid_1.cj:12:17:
-   | 
-12 |     public prop foo: Int64 {
-   |                 ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -1,2 +1,4 @@
 FILE: functionExpressions.cj
-    internal? func expressions(): R|Unit|
+    internal? func expressions(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

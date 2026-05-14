@@ -6,11 +6,9 @@ main():Int64 {
     try {
         "Hello"
     } handle (_: Command<Unit>) {
-        42
+        <!TYPE_MISMATCH!>42<!>
     }
 }
-
-// ASSERT: scan sema_mismatched_types
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

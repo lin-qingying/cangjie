@@ -16,7 +16,7 @@ import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
  */
 abstract class AbstractAnalysisApiComponentTest : AbstractAnalysisApiBasedTest() {
     override val additionalDirectives: List<DirectivesContainer>
-        get() = listOf(AnalysisApiComponentTestDirectives)
+        get() = super.additionalDirectives + AnalysisApiComponentTestDirectives
 
     /**
      * 反查主文件对应的测试文件指令。

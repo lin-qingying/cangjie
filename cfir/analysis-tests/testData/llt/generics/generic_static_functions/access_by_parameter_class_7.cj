@@ -11,7 +11,7 @@ open class C {
 }
 
 func Foo<U>(a: U) where U <: C {
-    var b = U.a
+    var b = <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>U<!>.a
     return b
 }
 
@@ -20,14 +20,3 @@ class C1 <: C {}
 main() {
     return Foo<C1>(C1())
 }
-
-/* SCAN
-error: 'a' is not a static member of exposed generic parameter 'U'
-  ==> access_by_parameter_class_7.cj:14:13:
-   | 
-14 |     var b = U.a
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

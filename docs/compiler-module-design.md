@@ -3,6 +3,8 @@
 > 从编译器子系统划分出发，基于 12 阶段编译管线和数据流方向，规划仓颉编译器的模块组织。
 > 不以当前代码量为依据，以职责边界和依赖方向为准则。
 > 保留仓库现有模块名，优先修正边界与依赖，不做大规模重命名。
+>
+> **现状提示（2026-05-11）**：本文是模块组织的**设计基线**，描述子系统应有的拆法与依赖方向。当前实际接入 `settings.gradle.kts` 的模块清单以 [`current-module-organization.md`](current-module-organization.md) 与 `settings.gradle.kts` 为准。文中提到的 `:cfir:symbols` 已演化为 `:cfir:semantics` + `:cfir:providers` 的组合，`:cfir:diagnostics` 实际是 `:common:diagnostics` + `:cfir:diagnostic-renderers`；`:cfir:deserialization` 与序列化合并为 `:cfir:cfir-serialization`。
 
 ---
 

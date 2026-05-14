@@ -808,6 +808,7 @@ EXPONENT_PART=[Ee][-]?{DIGITS_WITH_TRAILING_UNDERSCORE}      // 科学计数法�
 "as"         { return CjTokens.AS_KEYWORD; }
 "where"      { return CjTokens.WHERE_KEYWORD; }
 "spawn"      { return CjTokens.SPAWN_KEYWORD; }
+"inout"      { return CjTokens.INOUT_KEYWORD; }
 "quote"      { return CjTokens.QUOTE_KEYWORD; }
 "macro"      { return CjTokens.MACRO_KEYWORD; }
 "VArray"     { return CjTokens.VARRAY_KEYWORD; }

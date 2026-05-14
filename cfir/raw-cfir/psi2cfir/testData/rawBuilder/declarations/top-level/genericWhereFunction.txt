@@ -1,7 +1,7 @@
 FILE: genericWhereFunction.cj
     internal? interface C {
     }
-    internal? func add<T>(a: R|T|, b: R|T|): R|T| {
+    internal? func <T>add(a: R|T|, b: R|T|): R|T| {
         RETURN {
             NAMED_ACCESS(a)
         }

@@ -9,8 +9,6 @@ import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
-import org.cangnova.cangjie.analysis.api.util.withPsiEntry
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.element.builder.containingDeclaration
@@ -28,14 +26,11 @@ import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.realPsi
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.containingTypeStatement
 import org.cangnova.cangjie.name.OperatorNameConventions
-import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 
 internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(
     cfirFileBuilder: LLCfirFileBuilder,
@@ -55,15 +50,23 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile,
         // to avoid inconsistency between physical psi and its copy during completion
         findSourceNonLocalCfirDeclarationByProvider(
             firDeclarationProvider = { declaration ->
-                if (declaration is CjClassLikeDeclaration) {
+                if (declaration is CjExtend) {
+                    CfirElementFinder.findDeclaration(cfirFile, declaration)
+                } else if (declaration is CjClassLikeDeclaration) {
                     declaration.findCfir(provider)
                 } else {
                     val containingTypeStatement = declaration.containingTypeStatement
-                    val declarations = if (containingTypeStatement != null) {
-                        val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration
-                        containerClassLikeCfir?.declarations
-                    } else {
-                        cfirFile.declarations
+                    val declarations = when (containingTypeStatement) {
+                        is CjExtend -> {
+                            val containerExtendCfir = CfirElementFinder.findDeclaration(cfirFile, containingTypeStatement) as? CfirExtend
+                            containerExtendCfir?.declarations
+                        }
+                        is CjClassLikeDeclaration -> {
+                            val containerClassLikeCfir = containingTypeStatement.findCfir(provider) as? CfirClassLikeDeclaration
+                            containerClassLikeCfir?.declarations
+                        }
+                        null -> cfirFile.declarations
+                        else -> null
                     }
 
                     // It is possible that we will not be able to find the needed declaration here when the code is invalid
@@ -84,7 +87,7 @@ internal fun CjDeclaration.findSourceNonLocalCfirDeclaration(cfirFile: CfirFile,
     errorWithCfirSpecificEntries(
         "No cfir element was found for ${this::class.simpleName}",
         psi = this,
-        fir = cfirFile,
+        cfir = cfirFile,
         additionalInfos = { withEntry("isPhysical", isPhysical.toString()) }
     )
 }
@@ -118,8 +121,12 @@ private fun CjDeclaration.findSourceNonLocalCfirDeclarationByProvider(
 ): CfirDeclaration? {
     val candidate = when (this) {
         is CjTypeStatement,
+        is CjPatternVariable,
         is CjProperty,
         is CjNamedFunction,
+        is CjMainFunction,
+        is CjMacroDeclaration,
+        is CjFinalizer,
         is CjConstructor<*>,
         is CjTypeAlias,
             -> firDeclarationProvider(this)
@@ -190,7 +197,7 @@ private fun CjClassLikeDeclaration.findCfir(provider: CfirProvider): CfirClassLi
 val CfirFile.codeFragment: CfirCodeFragment
     get() {
         return declarations.singleOrNull() as? CfirCodeFragment
-            ?: errorWithCfirSpecificEntries("Code fragment not found in a CfirFile", fir = this)
+            ?: errorWithCfirSpecificEntries("Code fragment not found in a CfirFile", cfir = this)
     }
 
 val CfirDeclaration.isGeneratedDeclaration
@@ -216,7 +223,7 @@ internal inline fun CfirDeclaration.forEachDeclaration(action: (CfirDeclaration)
         is CfirClassLikeDeclaration -> forEachDeclaration(action)
         is CfirExtend -> forEachDeclaration(action)
         is CfirFile -> forEachDeclaration(action)
-        else -> errorWithCfirSpecificEntries("Unsupported declarations container", fir = this)
+        else -> errorWithCfirSpecificEntries("Unsupported declarations container", cfir = this)
     }
 }
 

@@ -15,7 +15,7 @@ public class Circle <: Drawable {}
 public class Square <: Drawable & Resizable {}
 
 // FILE: main.cj
-package main
+package localmain
 
 import shapes.Circle
 import shapes.Drawable

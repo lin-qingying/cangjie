@@ -5,6 +5,8 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -74,6 +76,10 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkHandlerBodyTypeMatch(handleClause: CfirHandleClause, tryBodyType: ConeCangJieType?) {
+        val parentStatement = context.containingStatements.asReversed().drop(1).firstOrNull()
+        if (parentStatement is CfirBlock) return
+        if (parentStatement !is CfirReturnExpression) return
+
         if (tryBodyType == null || tryBodyType is ConeErrorType) return
         val handlerBodyType = handleClause.body.coneTypeOrNull ?: return
         if (handlerBodyType is ConeErrorType) return
@@ -83,7 +89,7 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
             val typeContext = context.session.typeContext
             if (!org.cangnova.cangjie.type.AbstractTypeChecker.isSubtypeOf(typeContext, handlerBodyType, tryBodyType)) {
                 reporter.reportOn(
-                    source = handleClause.source,
+                    source = handleClause.body.source ?: handleClause.source,
                     factory = CfirErrors.MISMATCHING_HANDLE_BLOCK,
                     a = handlerBodyType,
                     b = tryBodyType,

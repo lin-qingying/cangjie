@@ -181,8 +181,8 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allBasicExpressionCheckers.check(quoteExpression, data)
     }
 
-    override fun visitMacroExpression(macroExpression: CfirMacroExpression, data: CheckerContext) {
-        checkers.allBasicExpressionCheckers.check(macroExpression, data)
+    override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(inoutArgumentExpression, data)
     }
 
     override fun visitBreakExpression(breakExpression: CfirBreakExpression, data: CheckerContext) {

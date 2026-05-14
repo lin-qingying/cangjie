@@ -73,7 +73,7 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
     companion object : ConeTypeRegistry<ConeAttribute<*>, ConeAttribute<*>>() {
         inline fun <reified T : ConeAttribute<T>> attributeAccessor(): ReadOnlyProperty<ConeAttributes, T?> {
             @Suppress("UNCHECKED_CAST")
-            return generateNullableAccessor<ConeAttribute<*>, T>(T::class) as ReadOnlyProperty<ConeAttributes, T?>
+            return generateNullableAccessor (T::class) as ReadOnlyProperty<ConeAttributes, T?>
         }
 
         val Empty: ConeAttributes = ConeAttributes(emptyList())

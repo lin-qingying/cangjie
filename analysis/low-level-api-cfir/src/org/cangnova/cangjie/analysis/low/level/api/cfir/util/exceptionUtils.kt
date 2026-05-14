@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 /*
  * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
@@ -21,25 +23,25 @@ import kotlin.contracts.contract
 fun errorWithCfirSpecificEntries(
     message: String,
     cause: Exception? = null,
-    fir: CfirElement? = null,
+    cfir: CfirElement? = null,
     coneType: ConeCangJieType? = null,
     psi: PsiElement? = null,
     additionalInfos: ExceptionAttachmentBuilder.() -> Unit = {},
 ): Nothing {
-    throw buildErrorWithCfirSpecificEntries(message, cause, fir, coneType, psi, additionalInfos)
+    throw buildErrorWithCfirSpecificEntries(message, cause, cfir, coneType, psi, additionalInfos)
 }
 
 fun buildErrorWithCfirSpecificEntries(
     message: String,
     cause: Exception? = null,
-    fir: CfirElement? = null,
+    cfir: CfirElement? = null,
     coneType: ConeCangJieType? = null,
     psi: PsiElement? = null,
     additionalInfos: ExceptionAttachmentBuilder.() -> Unit = {},
 ): Throwable =
     buildErrorWithAttachment(message, cause) {
-        if (fir != null) {
-            withCfirEntry("fir", fir)
+        if (cfir != null) {
+            withCfirEntry("cfir", cfir)
         }
 
         if (psi != null) {

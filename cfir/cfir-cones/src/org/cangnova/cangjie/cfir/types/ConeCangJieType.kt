@@ -76,6 +76,9 @@ sealed class ConeCangJieType : CangJieTypeMarker ,ConeCangJieTypeProjection(){
     open val isUnit: Boolean get() = false
     open val isNothing: Boolean get() = false
     open val isError: Boolean get() = false
+
+    abstract override fun equals(other: Any?): Boolean
+    abstract override fun hashCode(): Int
 }
 sealed class ConeSimpleCangJieType : ConeRigidType(), SimpleTypeMarker
 

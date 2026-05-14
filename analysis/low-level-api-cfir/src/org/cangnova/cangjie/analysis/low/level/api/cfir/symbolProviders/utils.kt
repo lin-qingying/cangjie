@@ -6,7 +6,11 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedCangJieSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.combined.LLCombinedPackageDelegationSymbolProvider
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -65,3 +69,13 @@ internal fun CfirSymbolNamesProvider.mayHaveTopLevelClassifier(classId: ClassId)
     val names = getTopLevelClassifierNamesInPackage(classId.packageFqName) ?: return true
     return classId.shortClassName in names
 }
+
+internal fun CfirSymbolProvider.materializeTopLevelExtendFiles(): List<CfirFile> =
+    when (this) {
+        is LLCangJieSymbolProvider -> materializeTopLevelExtendFiles()
+        is LLModuleWithDependenciesSymbolProvider -> providers.flatMap { it.materializeTopLevelExtendFiles() }
+        is LLCombinedCangJieSymbolProvider -> providers.flatMap { it.materializeTopLevelExtendFiles() }
+        is LLCombinedPackageDelegationSymbolProvider -> providers.flatMap { it.materializeTopLevelExtendFiles() }
+        is CfirCompositeSymbolProvider -> providers.flatMap { it.materializeTopLevelExtendFiles() }
+        else -> emptyList()
+    }

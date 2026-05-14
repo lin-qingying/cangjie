@@ -1,16 +1,13 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.context
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.Severity
-import org.cangnova.cangjie.cfir.expressions.CfirAssignment
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -27,6 +24,7 @@ abstract class CheckerContext : DiagnosticContext, SessionAndScopeSessionHolder 
     abstract val containingStatements: List<CfirStatement>
     abstract val containingElements: List<CfirElement>
     abstract val callsOrAssignments: List<CfirElement>
+    abstract val annotationContainers: List<CfirAnnotationContainer>
 
     abstract val suppressedDiagnostics: Set<String>
     abstract val allInfosSuppressed: Boolean
@@ -61,6 +59,11 @@ class MutableCheckerContext(
     override val returnTypeCalculator: ReturnTypeCalculator,
     override val reporter: DiagnosticReporter,
     override var containingFileSymbol: CfirFileSymbol?,
+    private val mutableDeclarations: MutableList<CfirDeclaration> = mutableListOf(),
+    private val mutableStatements: MutableList<CfirStatement> = mutableListOf(),
+    private val mutableElements: MutableList<CfirElement> = mutableListOf(),
+    private val mutableCallsOrAssignments: MutableList<CfirElement> = mutableListOf(),
+    private val mutableAnnotationContainers: MutableList<CfirAnnotationContainer> = mutableListOf(),
     override val suppressedDiagnostics: Set<String> = emptySet(),
     override val allInfosSuppressed: Boolean = false,
     override val allWarningsSuppressed: Boolean = false,
@@ -74,12 +77,6 @@ class MutableCheckerContext(
     allWarningsSuppressed = allWarningsSuppressed,
     allErrorsSuppressed = allErrorsSuppressed,
 ) {
-
-    private val mutableDeclarations = mutableListOf<CfirDeclaration>()
-    private val mutableStatements = mutableListOf<CfirStatement>()
-    private val mutableElements = mutableListOf<CfirElement>()
-    private val mutableCallsOrAssignments = mutableListOf<CfirElement>()
-
     override val containingDeclarations: List<CfirDeclaration>
         get() = mutableDeclarations
 
@@ -90,6 +87,8 @@ class MutableCheckerContext(
         get() = mutableElements
     override val callsOrAssignments: List<CfirElement>
         get() = mutableCallsOrAssignments
+    override val annotationContainers: List<CfirAnnotationContainer>
+        get() = mutableAnnotationContainers
 
     override fun addSuppressedDiagnostics(
         diagnosticNames: Collection<String>,
@@ -103,6 +102,11 @@ class MutableCheckerContext(
             returnTypeCalculator = returnTypeCalculator,
             containingFileSymbol = containingFileSymbol,
             reporter = reporter,
+            mutableDeclarations = mutableDeclarations,
+            mutableStatements = mutableStatements,
+            mutableElements = mutableElements,
+            mutableCallsOrAssignments = mutableCallsOrAssignments,
+            mutableAnnotationContainers = mutableAnnotationContainers,
             suppressedDiagnostics = suppressedDiagnostics + diagnosticNames,
             allInfosSuppressed = this.allInfosSuppressed || allInfosSuppressed,
             allWarningsSuppressed = this.allWarningsSuppressed || allWarningsSuppressed,
@@ -143,9 +147,16 @@ class MutableCheckerContext(
         }
     }
 
-    override fun addAnnotationContainer(annotationContainer: org.cangnova.cangjie.cfir.CfirAnnotationContainer): CheckerContextForProvider = this
+    override fun addAnnotationContainer(annotationContainer: CfirAnnotationContainer): CheckerContextForProvider {
+        mutableAnnotationContainers += annotationContainer
+        return this
+    }
 
-    override fun dropAnnotationContainer() {}
+    override fun dropAnnotationContainer() {
+        if (mutableAnnotationContainers.isNotEmpty()) {
+            mutableAnnotationContainers.removeLast()
+        }
+    }
 
     override fun enterContractBody(): CheckerContextForProvider = this
 
@@ -163,27 +174,14 @@ class MutableCheckerContext(
     override fun addElement(element: CfirElement): CheckerContextForProvider {
         if (mutableElements.lastOrNull() !== element) {
             mutableElements += element
-            if (element.isCallOrAssignmentCandidate()) {
-                mutableCallsOrAssignments += element
-            }
         }
         return this
     }
 
     override fun dropElement() {
         if (mutableElements.isNotEmpty()) {
-            val removed = mutableElements.removeLast()
-            if (removed.isCallOrAssignmentCandidate()) {
-                mutableCallsOrAssignments.removeLast()
-            }
+            mutableElements.removeLast()
         }
-    }
-
-    private fun CfirElement.isCallOrAssignmentCandidate(): Boolean {
-        return this is CfirFunctionCall ||
-                this is CfirNamedAccessExpression ||
-                this is CfirQualifiedAccessExpression ||
-                this is CfirAssignment
     }
 }
 

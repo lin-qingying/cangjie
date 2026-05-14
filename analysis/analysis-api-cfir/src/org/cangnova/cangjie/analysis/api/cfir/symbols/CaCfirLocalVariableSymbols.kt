@@ -2,6 +2,10 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.findPsi
+import org.cangnova.cangjie.analysis.api.cfir.getAllowedPsi
+import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPatternBindingSymbolPointer
+import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPatternVariableSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -13,12 +17,17 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjPatternVariable
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
 
 /**
  * 局部变量族叶子实现。
@@ -27,138 +36,202 @@ import org.cangnova.cangjie.name.Name
  * 避免与属性或值参数混在一起。
  */
 internal open class CaCfirLocalVariableSymbol(
-    final override val backingSymbol: CfirCallableSymbol<*>,
+    final override val cfirSymbol: CfirCallableSymbol<*>,
     final override val analysisSession: CaCfirSession,
     final override val containingModule: CaModule,
     final override val token: CaLifetimeToken,
 ) : org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol(),
-    CaCfirLocalVariableSymbolSupport<CfirCallableSymbol<*>> {
+    CaCfirSymbol<CfirCallableSymbol<*>> {
+    override val psi: PsiElement?
+        get() = withValidityAssertion { cfirSymbol.cfir.getAllowedPsi() ?: findPsi() }
+
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(cfirSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
-        get() = localCallableIdImpl
+        get() = null
 
     override val receiverType: CaType?
-        get() = receiverTypeImpl
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
-        get() = returnTypeImpl
+        get() = cfirSymbol.returnType(builder)
 
     override val visibility: CaSymbolVisibility
-        get() = localVisibilityImpl
+        get() = CaSymbolVisibility.LOCAL
 
     override val isVisibilityExplicit: Boolean
-        get() = isVisibilityExplicitImpl
+        get() = false
 
     override val modality: CaSymbolModality?
-        get() = modalityImpl
+        get() = CaSymbolModality.FINAL
 
     override val isModalityExplicit: Boolean
-        get() = isModalityExplicitImpl
+        get() = false
 
     override val location: CaSymbolLocation
-        get() = localLocationImpl
+        get() = CaSymbolLocation.LOCAL
 
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
-        createStableCallablePointer(CaCallableSymbol::class.java)
+        error("Local variable symbol cannot create a stable pointer without source PSI")
     }
 
     override val isLet: Boolean
-        get() = when (val currentDeclaration = backingSymbol.cfir) {
+        get() = when (val currentDeclaration = cfirSymbol.cfir) {
             is CfirPatternVariable -> !currentDeclaration.isVar
             is CfirPatternBindingVariable -> !currentDeclaration.isVar
             else -> true
         }
 
     override val name: Name
-        get() = nameImpl
+        get() = cfirSymbol.name
 }
 
-internal class CaCfirPatternVariableSymbol(
-    final override val backingSymbol: CfirPatternVariableSymbol,
-    final override val analysisSession: CaCfirSession,
-    final override val containingModule: CaModule,
-    final override val token: CaLifetimeToken,
-) : CaPatternVariableSymbol(), CaCfirLocalVariableSymbolSupport<CfirPatternVariableSymbol> {
+internal class CaCfirPatternVariableSymbol private constructor(
+    override val backingPsi: CjPatternVariable?,
+    override val analysisSession: CaCfirSession,
+    override val lazyCfirSymbol: Lazy<CfirPatternVariableSymbol>,
+) : CaPatternVariableSymbol(),
+    CaCfirCjBasedSymbol<CjPatternVariable, CfirPatternVariableSymbol> {
+    constructor(declaration: CjPatternVariable, session: CaCfirSession) : this(
+        backingPsi = declaration,
+        analysisSession = session,
+        lazyCfirSymbol = lazyCfirSymbol(declaration, session),
+    )
+
+    constructor(symbol: CfirPatternVariableSymbol, session: CaCfirSession) : this(
+        backingPsi = symbol.backingPsiIfApplicable as? CjPatternVariable,
+        analysisSession = session,
+        lazyCfirSymbol = lazyOf(symbol),
+    )
+
+    override val cfirSymbol: CfirPatternVariableSymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
+    override val containingModule: CaModule
+        get() = analysisSession.useSiteModule
+
+    override val psi
+        get() = withValidityAssertion { backingPsi ?: cfirSymbol.cfir.getAllowedPsi() }
+
+    override val origin
+        get() = withValidityAssertion { psiOrSymbolOrigin() }
+
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
+        get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
-        get() = localCallableIdImpl
+        get() = null
 
     override val receiverType: CaType?
-        get() = receiverTypeImpl
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
-        get() = returnTypeImpl
+        get() = cfirSymbol.returnType(builder)
 
     override val visibility: CaSymbolVisibility
-        get() = localVisibilityImpl
+        get() = CaSymbolVisibility.LOCAL
 
     override val isVisibilityExplicit: Boolean
-        get() = isVisibilityExplicitImpl
+        get() = false
 
     override val modality: CaSymbolModality?
-        get() = modalityImpl
+        get() = CaSymbolModality.FINAL
 
     override val isModalityExplicit: Boolean
-        get() = isModalityExplicitImpl
+        get() = false
 
     override val location: CaSymbolLocation
-        get() = localLocationImpl
+        get() = CaSymbolLocation.LOCAL
 
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
-        createStableCallablePointer(CaCallableSymbol::class.java)
+        val sourcePsi = psi ?: error("Pattern variable symbol is missing PSI")
+        @Suppress("UNCHECKED_CAST")
+        CaCfirPatternVariableSymbolPointer(sourcePsi) as CaSymbolPointer<CaCallableSymbol>
     }
 
     override val isLet: Boolean
-        get() = !(backingSymbol.cfir as CfirPatternVariable).isVar
+        get() = withValidityAssertion { backingPsi?.isVar != true }
 
     override val name: Name
-        get() = nameImpl
+        get() = withValidityAssertion { backingPsi?.pattern?.let { (it as? CjBindingPattern)?.nameAsSafeName } ?: cfirSymbol.name }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }
 
-internal class CaCfirPatternBindingSymbol(
-    final override val backingSymbol: CfirPatternBindingSymbol,
-    final override val analysisSession: CaCfirSession,
-    final override val containingModule: CaModule,
-    final override val token: CaLifetimeToken,
-) : CaPatternBindingSymbol(), CaCfirLocalVariableSymbolSupport<CfirPatternBindingSymbol> {
+internal class CaCfirPatternBindingSymbol private constructor(
+    override val backingPsi: CjBindingPattern?,
+    override val analysisSession: CaCfirSession,
+    override val lazyCfirSymbol: Lazy<CfirPatternBindingSymbol>,
+) : CaPatternBindingSymbol(),
+    CaCfirCjBasedSymbol<CjBindingPattern, CfirPatternBindingSymbol> {
+    constructor(declaration: CjBindingPattern, session: CaCfirSession) : this(
+        backingPsi = declaration,
+        analysisSession = session,
+        lazyCfirSymbol = lazyCfirSymbol<CfirPatternBindingVariable, CfirPatternBindingSymbol>(
+            declaration,
+            session,
+        ) { variable -> variable.symbol },
+    )
+
+    constructor(symbol: CfirPatternBindingSymbol, session: CaCfirSession) : this(
+        backingPsi = symbol.backingPsiIfApplicable as? CjBindingPattern,
+        analysisSession = session,
+        lazyCfirSymbol = lazyOf(symbol),
+    )
+
+    override val cfirSymbol: CfirPatternBindingSymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
+    override val containingModule: CaModule
+        get() = analysisSession.useSiteModule
+
+    override val psi
+        get() = withValidityAssertion { backingPsi ?: cfirSymbol.cfir.getAllowedPsi() }
+
+    override val origin
+        get() = withValidityAssertion { psiOrSymbolOrigin() }
+
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
+        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(cfirSymbol, builder) }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
-        get() = localCallableIdImpl
+        get() = null
 
     override val receiverType: CaType?
-        get() = receiverTypeImpl
+        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
 
     override val returnType: CaType
-        get() = returnTypeImpl
+        get() = cfirSymbol.returnType(builder)
 
     override val visibility: CaSymbolVisibility
-        get() = localVisibilityImpl
+        get() = CaSymbolVisibility.LOCAL
 
     override val isVisibilityExplicit: Boolean
-        get() = isVisibilityExplicitImpl
+        get() = false
 
     override val modality: CaSymbolModality?
-        get() = modalityImpl
+        get() = CaSymbolModality.FINAL
 
     override val isModalityExplicit: Boolean
-        get() = isModalityExplicitImpl
+        get() = false
 
     override val location: CaSymbolLocation
-        get() = localLocationImpl
+        get() = CaSymbolLocation.LOCAL
 
     override fun createPointer(): CaSymbolPointer<CaCallableSymbol> = withValidityAssertion {
-        createStableCallablePointer(CaCallableSymbol::class.java)
+        val sourcePsi = psi ?: error("Pattern binding symbol is missing PSI")
+        @Suppress("UNCHECKED_CAST")
+        CaCfirPatternBindingSymbolPointer(sourcePsi) as CaSymbolPointer<CaCallableSymbol>
     }
 
     override val isLet: Boolean
-        get() = !(backingSymbol.cfir as CfirPatternBindingVariable).isVar
+        get() = withValidityAssertion { backingPsi?.variable?.isVar != true }
 
     override val name: Name
-        get() = nameImpl
+        get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

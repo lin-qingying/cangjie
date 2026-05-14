@@ -1,5 +1,5 @@
 open class Animal {
-    public operator func ()(): Unit {
+    public open operator func ()(): Unit {
         return
     }
 }

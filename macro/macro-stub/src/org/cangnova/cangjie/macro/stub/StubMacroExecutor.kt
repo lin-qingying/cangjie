@@ -13,6 +13,8 @@ package org.cangnova.cangjie.macro.stub
 import org.cangnova.cangjie.macro.MacroCallInfo
 import org.cangnova.cangjie.macro.MacroExpansionResult
 import org.cangnova.cangjie.macro.MacroExecutor
+import org.cangnova.cangjie.macro.MacroLibraryLoadFailure
+import org.cangnova.cangjie.macro.MacroLibraryLoadResult
 
 /**
  * 测试用宏执行桩实现
@@ -41,11 +43,18 @@ class StubMacroExecutor : MacroExecutor {
     /** 默认展开结果（当没有注册对应宏名称的处理器时使用） */
     var defaultResult: ((MacroCallInfo) -> MacroExpansionResult)? = null
 
-    /** 已加载的库路径 */
+    /** 已加载的库路径（按 [loadLibraries] 调用顺序累积）。测试可读取此列表以断言 lib path 流转。 */
     private val libraries = mutableListOf<String>()
+
+    /** 只读视图，供测试断言 `executor.loadLibraries` 是否带着预期的库路径调用。 */
+    val loadedLibPaths: List<String>
+        get() = libraries.toList()
 
     /** 记录所有执行过的调用 */
     val executedCalls = mutableListOf<MacroCallInfo>()
+
+    /** 测试可注入的库加载失败结果。 */
+    var loadFailure: ((List<String>) -> List<MacroLibraryLoadFailure>)? = null
 
     /**
      * 注册宏展开处理器
@@ -72,8 +81,12 @@ class StubMacroExecutor : MacroExecutor {
         }
     }
 
-    override fun loadLibraries(libPaths: List<String>) {
+    override fun loadLibraries(libPaths: List<String>): MacroLibraryLoadResult {
+        loadFailure?.invoke(libPaths)?.takeIf { it.isNotEmpty() }?.let {
+            return MacroLibraryLoadResult.Failure(it)
+        }
         libraries.addAll(libPaths)
+        return MacroLibraryLoadResult.Success(loadedLibPaths = libPaths.toList())
     }
 
     override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> {
@@ -87,13 +100,13 @@ class StubMacroExecutor : MacroExecutor {
     }
 
     override fun reset() {
+        libraries.clear()
         executedCalls.clear()
     }
 
     override fun isAvailable(): Boolean = true
 
     override fun close() {
-        libraries.clear()
-        executedCalls.clear()
+        reset()
     }
 }

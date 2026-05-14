@@ -24,9 +24,6 @@
 
 package org.cangnova.cangjie.psi
 
-import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.psi.stubs.CangJieParameterStub
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import com.intellij.navigation.ItemPresentationProviders
@@ -35,6 +32,9 @@ import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.psi.stubs.CangJieParameterStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * 参数基础接口
@@ -369,6 +369,20 @@ class CjParameter : CjNamedDeclarationStub<CangJieParameterStub>, CjParameterBas
             val parent = parentByStub as? CjParameterList ?: return null
             return parent.ownerFunction
         }
+
+    /**
+     * @see CjParameterList.getOwnerFunction
+     * @return the parameter's owner declaration or null if it is from a functional type
+     */
+    val ownerDeclaration : CjDeclaration? get(){
+        val parent: PsiElement = getParent()!!
+        if (parent is CjParameterList) {
+            return (parent as CjParameterList).ownerFunction
+        }
+
+
+        return null
+    }
 
     /**
      * 获取参数的使用范围

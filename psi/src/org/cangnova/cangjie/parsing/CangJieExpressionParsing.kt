@@ -2462,6 +2462,8 @@ open class CangJieExpressionParsing(
             reference.done(REFERENCE_EXPRESSION)
             argName.done(VALUE_ARGUMENT_NAME)
             advance()
+        } else if (at(INOUT_KEYWORD)) {
+            advance()
         }
         parseExpression()
         argument.done(VALUE_ARGUMENT)

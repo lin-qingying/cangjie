@@ -11,18 +11,7 @@ class C {
 }
 
 struct A<T> {
-    static var b: Int64 = T.b // error
+    static var b: Int64 = <!STATIC_VARIABLE_USE_GENERIC_PARAMETER!>T<!>.b // error
 }
 
 main() {}
-
-/* SCAN
-error: 'b' is not a static member of exposed generic parameter 'T'
-  ==> generic_static_field03.cj:14:27:
-   | 
-14 |     static var b: Int64 = T.b // error
-   |                           ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

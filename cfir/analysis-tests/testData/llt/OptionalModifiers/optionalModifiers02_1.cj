@@ -20,39 +20,14 @@ interface I2 <: I1 {
 }
 
 interface I3 <: I1 {
-    override func f(a: Int32) {
+    <!NOTHING_TO_OVERRIDE!>override<!> func f(a: Int32) {
         a + 1
     }
-    static redef func sf(a: Int32): Int32
+    static <!NOTHING_TO_OVERRIDE!>redef<!> func sf(a: Int32): Int32
 }
 
 interface I4 <: I1 {
-    override func f(a: Int32): Int32
+    <!NOTHING_TO_OVERRIDE!>override<!> func f(a: Int32): Int32
 }
 
 main() {}
-
-/* SCAN
-error: 'override' function 'f' does not have an overridden function in its supertype
-  ==> optionalModifiers02_1.cj:23:5:
-   | 
-23 |     override func f(a: Int32) {
-   |     ^ 
-   | 
-
-error: 'redef' function 'sf' does not have a redefined 'static' function in its supertype
-  ==> optionalModifiers02_1.cj:26:5:
-   | 
-26 |     static redef func sf(a: Int32): Int32
-   |     ^ 
-   | 
-
-error: 'override' function 'f' does not have an overridden function in its supertype
-  ==> optionalModifiers02_1.cj:30:5:
-   | 
-30 |     override func f(a: Int32): Int32
-   |     ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

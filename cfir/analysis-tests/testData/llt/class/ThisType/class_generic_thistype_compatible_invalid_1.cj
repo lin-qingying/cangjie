@@ -13,7 +13,7 @@ open class C1<T> {
 }
 
 class C2<T> <: C1<T> {
-    public override func foo(): C2<T> {
+    public override func <!INHERIT_NOT_RETURN_THIS!>foo<!>(): C2<T> {
         return this
     }
 }
@@ -21,20 +21,3 @@ class C2<T> <: C1<T> {
 main() {
     return 1
 }
-
-/* SCAN
-error: an open function that returns 'This' must keep the return type 'This' when overridden
-  ==> class_generic_thistype_compatible_invalid_1.cj:16:26:
-   | 
-16 |     public override func foo(): C2<T> {
-   |                          ^^^ 
-   | 
-note: the overriden function
-  ==> class_generic_thistype_compatible_invalid_1.cj:10:22:
-   | 
-10 |     public open func foo(): This {
-   |                      ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

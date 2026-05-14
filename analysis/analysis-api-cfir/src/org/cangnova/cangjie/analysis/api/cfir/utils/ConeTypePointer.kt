@@ -92,8 +92,10 @@ internal fun <T : ConeCangJieType> T.createPointer(
         }
 
         is ConeIntersectionType -> ConeSimpleTypePointer { session ->
+            val upperBoundPointer = upperBoundForApproximation?.createPointer(builder)
             ConeIntersectionType(
                 intersectedTypes = intersectedTypes.map { intersectedType -> intersectedType.createPointer(builder).restore(session) ?: return@ConeSimpleTypePointer null },
+                upperBoundForApproximation = upperBoundPointer?.restore(session),
                 attributes = attributes,
             )
         }
@@ -113,7 +115,6 @@ internal fun <T : ConeCangJieType> T.createPointer(
                 delegatedType = delegatedType?.createPointer(builder)?.restore(session),
                 typeArguments = typeArguments.map { projection -> projection.createPointer(builder).restore(session) ?: return@ConeSimpleTypePointer null },
                 attributes = attributes,
-                nullable = nullable,
             )
         }
 
@@ -143,7 +144,7 @@ private class ConeTypeParameterTypePointer(
 }
 
 private class ConeTypeProjectionPointer(
-    private val typePointer: ConeTypePointer<out ConeCangJieType>,
+    private val typePointer: ConeTypePointer< ConeCangJieType>,
 ) {
     fun restore(session: CaCfirSession): ConeTypeProjection? = typePointer.restore(session)
 }

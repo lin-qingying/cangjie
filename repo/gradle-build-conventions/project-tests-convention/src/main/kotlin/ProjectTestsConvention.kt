@@ -94,6 +94,9 @@ open class ProjectTestsExtension(
             group = "verification"
             description = "Generate tests using $mainClassName"
             mainClass.set(mainClassName)
+            workingDir = project.rootDir
+            systemProperty("line.separator", "\n")
+            systemProperty("idea.ignore.disabled.plugins", "true")
 
             /**
              * 生成器任务的类路径需要与“生成器类真正声明在哪个 source set”保持一致。
@@ -139,7 +142,10 @@ open class ProjectTestsExtension(
             classpath = generatorClasspath
 
             if (!generateTestsInBuildDirectory) {
-                args(project.rootDir.absolutePath)
+                /**
+                 * Kotlin 的 test generator 任务默认依赖 workingDir = rootDir 解析测试数据相对路径，
+                 * 这里不再向 main 传入仓库根目录参数，避免把无语义参数混入 generator CLI。
+                 */
             }
             body()
         }

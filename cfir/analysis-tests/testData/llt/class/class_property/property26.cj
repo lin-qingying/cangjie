@@ -24,13 +24,13 @@ abstract class Boo {
 }
 
 extend Boo {
-    public mut prop m: Int32 {
+    public mut prop <!EXTEND_MEMBER_CANNOT_SHADOW!>m<!>: Int32 {
         get() {
             return 2
         }
         set(v) {}
     }
-    public prop n: Int32 {
+    public prop <!EXTEND_MEMBER_CANNOT_SHADOW!>n<!>: Int32 {
         get() {
             return 1
         }
@@ -38,71 +38,15 @@ extend Boo {
 }
 
 class Coo <: Boo {
-    public mut prop m: Int32 {
+    public mut prop <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>m<!>: Int32 {
         get() {
             return 2
         }
         set(v) {}
     }
-    public prop n: Int32 {
+    public prop <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>n<!>: Int32 {
         get() {
             return 1
         }
     }
 }
-
-/* SCAN
-error: extend member 'm' is not allowed to shadow members of 'Class-Boo'
-  ==> property26.cj:27:21:
-   | 
-27 |     public mut prop m: Int32 {
-   |                     ^ 
-   | 
-note: shadowed definition of 'm' is here
-  ==> property26.cj:22:21:
-   | 
-22 |     public mut prop m: Int32
-   |                     ^ 
-   | 
-
-error: extend member 'n' is not allowed to shadow members of 'Class-Boo'
-  ==> property26.cj:33:17:
-   | 
-33 |     public prop n: Int32 {
-   |                 ^ 
-   | 
-note: shadowed definition of 'n' is here
-  ==> property26.cj:23:17:
-   | 
-23 |     public prop n: Int32
-   |                 ^ 
-   | 
-
-error: cannot override property 'm' in extend of supertype
-  ==> property26.cj:41:21:
-   | 
-41 |     public mut prop m: Int32 {
-   |                     ^ 
-   | 
-note: overridden definition of 'm' is here
-  ==> property26.cj:27:21:
-   | 
-27 |     public mut prop m: Int32 {
-   |                     ^ 
-   | 
-
-error: cannot override property 'n' in extend of supertype
-  ==> property26.cj:47:17:
-   | 
-47 |     public prop n: Int32 {
-   |                 ^ 
-   | 
-note: overridden definition of 'n' is here
-  ==> property26.cj:33:17:
-   | 
-33 |     public prop n: Int32 {
-   |                 ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

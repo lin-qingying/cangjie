@@ -1,0 +1,23 @@
+// FILE: macros.cj
+// MACRO_PACKAGE: true
+FILE: macros.cj
+    package macros.local
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+
+
+// FILE: main.cj
+// MACRO_PACKAGE: false
+FILE: main.cj
+    import macros.local.DeclareGenerated
+    internal? func generatedValue(): R|kotlin.Unit| {
+        RETURN {
+            INT(43)
+        }
+    }
+    internal? func useGeneratedDeclaration(): R|kotlin.Unit| {
+        RETURN {
+            FUNCTION_CALL(generatedValue) {
+            }
+        }
+    }

@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationValue
 import org.cangnova.cangjie.analysis.api.annotations.CaNamedAnnotationValue
+import org.cangnova.cangjie.analysis.api.components.containingDeclaration
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.components.evaluateCompileTimeValue
 import org.cangnova.cangjie.analysis.api.evaluation.CaCollectionCompileTimeValue
@@ -131,7 +132,7 @@ private fun CjCallExpression.resolveCallLikeAnnotationValue(
         }
 
         is CaConstructorSymbol -> {
-            val owner = resolvedSymbol.containingDeclaration as? CaClassSymbol
+            val owner = with(session) { resolvedSymbol.containingDeclaration as? CaClassSymbol }
             val namedArguments = valueArguments.mapIndexed { index, argument ->
                 (argument as CjValueArgument).asPublicNamedAnnotationValue(
                     session = session,

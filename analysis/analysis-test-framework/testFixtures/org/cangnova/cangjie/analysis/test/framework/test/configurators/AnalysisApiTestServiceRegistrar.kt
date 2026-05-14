@@ -4,6 +4,11 @@ import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.registerApplicationServices
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.registerProjectExtensionPoints
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.registerProjectServices
+import org.cangnova.cangjie.test.TestInfrastructureInternals
+import org.cangnova.cangjie.test.impl.testConfiguration
 import org.cangnova.cangjie.test.services.TestServices
 
 /**
@@ -23,43 +28,21 @@ abstract class AnalysisApiTestServiceRegistrar : AnalysisApiServiceRegistrar<Tes
     override fun registerProjectModelServices(project: MockProject, disposable: Disposable, testServices: TestServices) {}
 }
 
-fun List<AnalysisApiServiceRegistrar<TestServices>>.registerApplicationServices(
-    application: MockApplication,
-    testServices: TestServices,
-) {
-    forEach { it.registerApplicationServices(application, testServices) }
-}
-
-fun List<AnalysisApiServiceRegistrar<TestServices>>.registerProjectExtensionPoints(
-    project: MockProject,
-    testServices: TestServices,
-) {
-    forEach { it.registerProjectExtensionPoints(project, testServices) }
-}
-
-fun List<AnalysisApiServiceRegistrar<TestServices>>.registerProjectServices(
-    project: MockProject,
-    testServices: TestServices,
-) {
-    forEach { it.registerProjectServices(project, testServices) }
-}
-
+@OptIn(TestInfrastructureInternals::class)
 fun List<AnalysisApiServiceRegistrar<TestServices>>.registerProjectModelServices(
     project: MockProject,
-    disposable: Disposable,
     testServices: TestServices,
 ) {
-    forEach { it.registerProjectModelServices(project, disposable, testServices) }
+    forEach { it.registerProjectModelServices(project, testServices.testConfiguration.rootDisposable, testServices) }
 }
 
 fun List<AnalysisApiServiceRegistrar<TestServices>>.registerAllServices(
     application: MockApplication,
     project: MockProject,
-    disposable: Disposable,
     testServices: TestServices,
 ) {
     registerApplicationServices(application, testServices)
     registerProjectExtensionPoints(project, testServices)
     registerProjectServices(project, testServices)
-    registerProjectModelServices(project, disposable, testServices)
+    registerProjectModelServices(project, testServices)
 }

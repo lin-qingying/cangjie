@@ -1,36 +1,43 @@
 package org.cangnova.cangjie.analysis.stubs
 
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.services.TestServices
+import org.cangnova.cangjie.test.services.assertions
 import org.junit.jupiter.api.Test
-import kotlin.io.path.extension
-import kotlin.io.path.listDirectoryEntries
-import kotlin.io.path.name
-import kotlin.io.path.readText
 
-class CaStubSourceGoldenTest {
+class CaStubSourceGoldenTest : AbstractAnalysisApiExecutionTest(
+    "analysis/stubs/testData/source",
+) {
+    override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
+
     @Test
-    fun sourceSummaries() {
-        CaStubTestSupport.withEnvironment("CaStubSourceGoldenTest") { environment ->
-            val fixtureDir = CaStubTestSupport.locateRepositoryRoot()
-                .resolve("analysis")
-                .resolve("stubs")
-                .resolve("testData")
-                .resolve("source")
-
-            val summaryBuilder = CaStubSummaryBuilder()
-            val sourceFiles = fixtureDir.listDirectoryEntries("*.cj").sortedBy { it.name }
-            require(sourceFiles.isNotEmpty()) { "No source stub fixtures found under $fixtureDir" }
-
-            sourceFiles.forEach { sourceFile ->
-                val psiFile = CaStubTestSupport.createSourceFile(
-                    environment = environment,
-                    fileName = sourceFile.name,
-                    text = sourceFile.readText(),
-                )
-                val summary = summaryBuilder.build(psiFile)
-                val actual = CaStubTestSupport.renderSummary(summary)
-                val expectedFile = sourceFile.resolveSibling("${sourceFile.fileName.toString().removeSuffix(".${sourceFile.extension}")}.stubs.txt")
-                CaStubTestSupport.assertMatchesGolden(actual, expectedFile)
-            }
-        }
+    fun topLevelDeclarations(mainFile: CjFile, testServices: TestServices) {
+        val summary = CaStubSummaryBuilder().build(mainFile)
+        testServices.assertions.assertEqualsToTestOutputFile(
+            actual = renderSummary(summary),
+            extension = ".stubs.txt",
+        )
     }
+
+    private fun renderSummary(summary: CaStubFileSummary): String {
+        return buildString {
+            appendLine("fileKey=${summary.fileKey.substringAfterLast('/').substringAfterLast('\\')}")
+            appendLine("kind=${summary.stubKind ?: "<missing>"}")
+            appendLine("package=${summary.packageFqName?.asString() ?: "<missing>"}")
+            appendLine("topLevelClassifiers=${summary.topLevelClassifierNames.map { it.asString() }.sorted()}")
+            appendLine("topLevelCallables=${summary.topLevelCallableNames.map { it.asString() }.sorted()}")
+            appendLine("classMembers=")
+            if (summary.classMemberNames.isEmpty()) {
+                append("  <none>")
+            } else {
+                summary.classMemberNames.toSortedMap(compareBy { it.asString() }).forEach { (classId, names) ->
+                    appendLine("  ${classId.asFqNameString()}=${names.map { it.asString() }.sorted()}")
+                }
+            }
+        }.trimEnd()
+    }
+
+    private fun String.normalizeLineSeparators(): String = replace("\r\n", "\n")
 }

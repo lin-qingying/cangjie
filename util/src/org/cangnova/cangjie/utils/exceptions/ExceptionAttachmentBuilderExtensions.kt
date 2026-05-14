@@ -16,6 +16,8 @@
 
 package org.cangnova.cangjie.utils.exceptions
 
+import org.cangnova.cangjie.utils.rethrowIntellijPlatformExceptionIfNeeded
+
 fun ExceptionAttachmentBuilder.withCfirEntry(name: String, fir: Any?) {
     withEntry(name, fir) { it.toString() }
 }
@@ -26,9 +28,9 @@ inline fun rethrowExceptionWithDetails(
     attachmentName: String = "info.txt",
     buildAttachment: ExceptionAttachmentBuilder.() -> Unit = {},
 ): Nothing {
+    rethrowIntellijPlatformExceptionIfNeeded(exception)
     val error = CangJieIllegalArgumentExceptionWithAttachments(message, exception)
     error.buildAttachment(attachmentName) { buildAttachment() }
     throw error
 }
-
 

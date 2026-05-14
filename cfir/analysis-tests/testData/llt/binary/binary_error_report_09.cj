@@ -7,8 +7,8 @@
 // (CJNATIVE) EXEC: %compiler %enableO2 %cmp_opt %n.cj -o %output %diag_json 2>&1 |compare %f
 
 class Test {
-    operator func +(other: Test) {
-        return this + other  // recursive call without return type
+    operator func <!UNABLE_TO_INFER_RETURN_TYPE!>+<!>(other: Test) {
+        return this <!INVALID_BINARY_OPERATOR!>+<!> other  // recursive call without return type
     }
 }
 
@@ -17,7 +17,3 @@ main() {
     let b = Test()
     let c = a + b
 }
-
-// ASSERT: scan sema_unable_to_infer_return_type
-// ASSERT: scan with recursive usage from
-// ASSERT: scan sema_invalid_binary_expr

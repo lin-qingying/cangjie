@@ -21,7 +21,7 @@ class ConeErrorType(
     delegatedType: ConeCangJieType? = null,
     override val typeArguments: List<  ConeTypeProjection> = emptyList(),
     override val attributes: ConeAttributes = ConeAttributes.Empty,
-    val nullable: Boolean? = null,
+
     override val lookupTag: ConeClassLikeErrorLookupTag =
         ConeClassLikeErrorLookupTag(delegatedType?.classId ?: ClassId.fromString("<error>"), diagnostic, delegatedType)
 )  : ConeClassifierType() {

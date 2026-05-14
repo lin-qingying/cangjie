@@ -44,4 +44,11 @@ class CangJiePropertyAccessorStubImpl(
     override fun hasBody(): Boolean = hasBody
 
     override fun hasBlockBody(): Boolean = hasBlockBody
+
+    override fun copyInto(newParent: StubElement<*>?): CangJiePropertyAccessorStubImpl = CangJiePropertyAccessorStubImpl(
+        parent = newParent,
+        isGetter = isGetter,
+        hasBody = hasBody,
+        hasBlockBody = hasBlockBody,
+    )
 }

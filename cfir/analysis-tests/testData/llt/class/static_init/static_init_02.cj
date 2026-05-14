@@ -7,8 +7,8 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 class C {
-    static init() {}
-    static init() {
+    <!CONFLICTING_OVERLOADS!>static init()<!> {}
+    <!CONFLICTING_OVERLOADS!>static init()<!> {
         1
     }
 }
@@ -16,20 +16,3 @@ class C {
 main() {
     return 0
 }
-
-/* SCAN
-error: static constructor 'init' has overload conflicts
-  ==> static_init_02.cj:11:12:
-   | 
-11 |     static init() {
-   |            ^^^^ 
-   | 
-note: conflict with the declaration
-  ==> static_init_02.cj:10:12:
-   | 
-10 |     static init() {}
-   |            ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -22,17 +22,6 @@ class D <: I<B> & I<I2> {} // exist func foo(a: B);  func foo(a: I2)
 
 main() {
     let d = D()
-    d.foo(C())
+    d.<!AMBIGUOUS_FUNCTION_CALL!>foo<!>(C())
     return 1
 }
-
-/* SCAN
-error: ambiguous method 'foo' match for generic member access function call when searching in upper bounds
-  ==> call_generic_upper_03.cj:25:5:
-   | 
-25 |     d.foo(C())
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

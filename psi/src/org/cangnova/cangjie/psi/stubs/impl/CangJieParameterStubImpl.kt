@@ -55,4 +55,15 @@ class CangJieParameterStubImpl(
     override fun hasLetOrVar() = hasLetOrVar
     override fun hasDefaultValue() = hasDefaultValue
     override fun isNamed() = isNamed
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieParameterStubImpl = CangJieParameterStubImpl(
+        parent = newParent,
+        fqName = fqName,
+        name = name,
+        isMutable = isMutable,
+        hasLetOrVar = hasLetOrVar,
+        hasDefaultValue = hasDefaultValue,
+        isNamed = isNamed,
+        functionTypeParameterName = functionTypeParameterName,
+    )
 }

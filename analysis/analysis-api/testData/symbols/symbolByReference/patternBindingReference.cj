@@ -1,6 +1,6 @@
 // FILE: patternBindingReference.cj
 // TARGET_NAME: value
-// EXPECTED_SYMBOL_CLASS: CaCfirPatternBindingSymbolImpl
+// EXPECTED_SYMBOL_CLASS: CaCfirPatternBindingSymbol
 // EXPECTED_SYMBOL_NAME: value
 // EXPECTED_ORIGINAL_PSI_CLASS: CjBindingPattern
 package sample.symbols.reference

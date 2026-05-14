@@ -24,10 +24,16 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirErrorPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
@@ -41,6 +47,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjCodeFragment
+import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
 import org.cangnova.cangjie.psi.CjElement
 import org.jetbrains.annotations.TestOnly
 
@@ -71,7 +78,7 @@ object CfirLazyBodiesCalculator {
         val annotationPsi = annotationCall.psi as? CjAnnotation
             ?: errorWithCfirSpecificEntries(
                 "Annotation PSI is not found for lazy argument reconstruction",
-                fir = annotationCall,
+                cfir = annotationCall,
                 psi = annotationCall.psi,
             )
 
@@ -84,7 +91,7 @@ object CfirLazyBodiesCalculator {
         val rebuiltAnnotation = CfirElementFinder.findElementIn<CfirAnnotationCall>(rebuiltFile) { it.psi == annotationPsi }
             ?: errorWithCfirSpecificEntries(
                 "Rebuilt annotation call was not found",
-                fir = rebuiltFile,
+                cfir = rebuiltFile,
                 psi = annotationPsi,
             )
 
@@ -103,7 +110,7 @@ private inline fun <reified T : CfirDeclaration> revive(
     val rootNonLocalDeclaration = psi as? CjElement
         ?: errorWithCfirSpecificEntries(
             "PSI is not available for lazy body reconstruction",
-            fir = designation.target,
+            cfir = designation.target,
             psi = psi,
         )
 
@@ -135,11 +142,11 @@ private fun replaceLazyBody(target: CfirFunction, copy: CfirFunction) {
 private val CfirCallableDeclaration.originalPsi: PsiElement?
     get() = unwrapFakeOverridesOrDelegated().psi
 
-private fun calculateLazyBodiesForFunction(designation: CfirDesignation) {
-    val function = designation.target as CfirNamedFunction
+private inline fun <reified F : CfirFunction> calculateLazyBodiesForFunction(designation: CfirDesignation) {
+    val function = designation.target as F
     require(needCalculatingLazyBodyForFunction(function))
 
-    val recreatedFunction = revive<CfirNamedFunction>(designation, function.originalPsi)
+    val recreatedFunction = revive<F>(designation, function.originalPsi)
     replaceLazyBody(function, recreatedFunction)
     replaceLazyValueParameters(function, recreatedFunction)
 }
@@ -161,17 +168,25 @@ private fun calculateLazyBodyForProperty(designation: CfirDesignation) {
 
     property.getter?.let { getter ->
         val recreatedGetter = recreatedProperty.getter
-            ?: errorWithCfirSpecificEntries("Recreated getter is missing", fir = recreatedProperty, psi = recreatedProperty.psi)
+            ?: errorWithCfirSpecificEntries("Recreated getter is missing", cfir = recreatedProperty, psi = recreatedProperty.psi)
         replaceLazyBody(getter, recreatedGetter)
         replaceLazyValueParameters(getter, recreatedGetter)
     }
 
     property.setter?.let { setter ->
         val recreatedSetter = recreatedProperty.setter
-            ?: errorWithCfirSpecificEntries("Recreated setter is missing", fir = recreatedProperty, psi = recreatedProperty.psi)
+            ?: errorWithCfirSpecificEntries("Recreated setter is missing", cfir = recreatedProperty, psi = recreatedProperty.psi)
         replaceLazyBody(setter, recreatedSetter)
         replaceLazyValueParameters(setter, recreatedSetter)
     }
+}
+
+private inline fun <reified V : CfirVariable> calculateLazyInitializerForVariable(designation: CfirDesignation) {
+    val variable = designation.target as V
+    require(needCalculatingLazyInitializerForVariable(variable))
+
+    val recreatedVariable = revive<V>(designation, variable.originalPsi)
+    variable.replaceInitializer(recreatedVariable.initializer)
 }
 
 private fun needCalculatingLazyBodyForConstructor(constructor: CfirConstructor): Boolean =
@@ -183,6 +198,11 @@ private fun needCalculatingLazyBodyForFunction(function: CfirFunction): Boolean 
 private fun needCalculatingLazyBodyForProperty(property: CfirProperty): Boolean =
     property.getter?.let(::needCalculatingLazyBodyForFunction) == true ||
             property.setter?.let(::needCalculatingLazyBodyForFunction) == true
+
+private fun needCalculatingLazyInitializerForVariable(variable: CfirVariable): Boolean {
+    if (variable.initializer != null) return false
+    return (variable.originalPsi as? CjDeclarationWithInitializer)?.hasInitializer() == true
+}
 
 private fun calculateLazyBodyForCodeFragment(designation: CfirDesignation) {
     val codeFragment = designation.target as CfirCodeFragment
@@ -225,9 +245,39 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
         data: PersistentList<CfirDeclaration>,
     ): CfirNamedFunction {
         if (needCalculatingLazyBodyForFunction(namedFunction)) {
-            calculateLazyBodiesForFunction(CfirDesignation(data, namedFunction))
+            calculateLazyBodiesForFunction<CfirNamedFunction>(CfirDesignation(data, namedFunction))
         }
         return namedFunction
+    }
+
+    override fun transformMainFunction(
+        mainFunction: CfirMainFunction,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirMainFunction {
+        if (needCalculatingLazyBodyForFunction(mainFunction)) {
+            calculateLazyBodiesForFunction<CfirMainFunction>(CfirDesignation(data, mainFunction))
+        }
+        return mainFunction
+    }
+
+    override fun transformMacroDeclaration(
+        macroDeclaration: CfirMacroDeclaration,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirMacroDeclaration {
+        if (needCalculatingLazyBodyForFunction(macroDeclaration)) {
+            calculateLazyBodiesForFunction<CfirMacroDeclaration>(CfirDesignation(data, macroDeclaration))
+        }
+        return macroDeclaration
+    }
+
+    override fun transformFinalizer(
+        finalizer: CfirFinalizer,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirFinalizer {
+        if (needCalculatingLazyBodyForFunction(finalizer)) {
+            calculateLazyBodiesForFunction<CfirFinalizer>(CfirDesignation(data, finalizer))
+        }
+        return finalizer
     }
 
     override fun transformConstructor(
@@ -255,6 +305,26 @@ private sealed class CfirLazyBodiesCalculatorTransformer : CfirTransformer<Persi
             calculateLazyBodyForProperty(CfirDesignation(data, property))
         }
         return property
+    }
+
+    override fun transformFieldVariable(
+        fieldVariable: CfirFieldVariable,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirFieldVariable {
+        if (needCalculatingLazyInitializerForVariable(fieldVariable)) {
+            calculateLazyInitializerForVariable<CfirFieldVariable>(CfirDesignation(data, fieldVariable))
+        }
+        return fieldVariable
+    }
+
+    override fun transformPatternVariable(
+        patternVariable: CfirPatternVariable,
+        data: PersistentList<CfirDeclaration>,
+    ): CfirPatternVariable {
+        if (needCalculatingLazyInitializerForVariable(patternVariable)) {
+            calculateLazyInitializerForVariable<CfirPatternVariable>(CfirDesignation(data, patternVariable))
+        }
+        return patternVariable
     }
 
     override fun transformCodeFragment(

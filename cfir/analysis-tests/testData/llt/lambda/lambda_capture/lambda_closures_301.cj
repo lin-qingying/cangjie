@@ -18,7 +18,7 @@ var b = {
     =>
     var a: Int32 = 1
     let b: Int32 = 2
-    var x1 = {=> a}
+    var x1 = <!USE_FUNC_CAPTURE_VAR_ALONE!>{=> a}<!>
     var x2 = {=> b}
     var x3 = {=> a}()
     var x4 = {=> b}()
@@ -28,7 +28,7 @@ var c = {
     =>
     var a: Int32 = 1
     let b: Int32 = 2
-    var x1 = {=> a}
+    var x1 = <!USE_FUNC_CAPTURE_VAR_ALONE!>{=> a}<!>
     var x2 = {=> b}
     var x3 = {=> a}()
     var x4 = {=> b}()
@@ -37,7 +37,7 @@ var c = {
 var x = {
     =>
     var a = 1;
-    var b = {=> a}
+    var b = <!USE_FUNC_CAPTURE_VAR_ALONE!>{=> a}<!>
 }()
 
 func foo(x: () -> Int32) {
@@ -73,46 +73,3 @@ struct Roo {
         f = 6
     }
 }
-
-/* SCAN
-error: lambda capturing mutable variables needs to be called directly
-  ==> lambda_closures_301.cj:21:14:
-   | 
-21 |     var x1 = {=> a}
-   |              ^^^^^^ 
-   | 
-note: 'a' is mutable
-  ==> lambda_closures_301.cj:21:18:
-   | 
-21 |     var x1 = {=> a}
-   |                  ^ 
-   | 
-
-error: lambda capturing mutable variables needs to be called directly
-  ==> lambda_closures_301.cj:31:14:
-   | 
-31 |     var x1 = {=> a}
-   |              ^^^^^^ 
-   | 
-note: 'a' is mutable
-  ==> lambda_closures_301.cj:31:18:
-   | 
-31 |     var x1 = {=> a}
-   |                  ^ 
-   | 
-
-error: lambda capturing mutable variables needs to be called directly
-  ==> lambda_closures_301.cj:40:13:
-   | 
-40 |     var b = {=> a}
-   |             ^^^^^^ 
-   | 
-note: 'a' is mutable
-  ==> lambda_closures_301.cj:40:17:
-   | 
-40 |     var b = {=> a}
-   |                 ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

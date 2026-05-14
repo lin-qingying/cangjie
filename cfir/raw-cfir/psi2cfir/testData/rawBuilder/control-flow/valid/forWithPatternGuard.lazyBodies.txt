@@ -1,2 +1,4 @@
 FILE: forWithPatternGuard.cj
-    internal? func iterateWithGuards(scoreList: R|Array<R|Int64|>|): R|Unit|
+    internal? func iterateWithGuards(scoreList: R|Array<R|Int64|>|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

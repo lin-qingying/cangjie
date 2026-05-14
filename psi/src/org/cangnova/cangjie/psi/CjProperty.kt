@@ -71,29 +71,17 @@ open class CjProperty : CjTypeParameterListOwnerStub<CangJiePropertyStub>, CjVar
 
     override val typeReference: CjTypeReference?
         get() {
-            val stub: CangJiePropertyStub? = stub
+            val stub = stub
             if (stub != null) {
-                if (!stub.hasReturnTypeRef()) {
+                val typeReferences = getStubOrPsiChildrenAsList(CjStubElementTypes.TYPE_REFERENCE)
+                if (typeReferences.isEmpty()) {
+                    LOG.error("Invalid stub structure built for property: fqName=${stub?.getFqName()}, typeReferences=0")
                     return null
-                } else {
-                    val typeReferences: List<CjTypeReference> =
-                        getStubOrPsiChildrenAsList(CjStubElementTypes.TYPE_REFERENCE)
-                    val returnTypeRefPositionInPsi = /*if (stub.isExtension()) 1 else*/ 0
-                    if (typeReferences.size <= returnTypeRefPositionInPsi) {
-                        LOG.error(
-                            """
-                        Invalid stub structure built for property:
-                        $text
-                            """.trimIndent(),
-                        )
-                        return null
-                    }
-                    return typeReferences[returnTypeRefPositionInPsi]
                 }
+                return typeReferences[0]
             }
             return getTypeReference(this)
         }
-
     override fun setTypeReference(typeRef: CjTypeReference?): CjTypeReference? {
         return setTypeReference(this, nameIdentifier, typeRef)
     }

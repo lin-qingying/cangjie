@@ -1,7 +1,5 @@
 package org.cangnova.cangjie.analysis.api
 
-import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.components.CaAnalysisScopeProvider
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
@@ -32,6 +30,7 @@ import org.cangnova.cangjie.analysis.api.components.CaVisibilityChecker
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponentImplementationDetail
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolProvider
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
@@ -98,69 +97,56 @@ interface CaSession : CaLifetimeOwner,
         get() = this
 }
 
+/**
+ * 在当前会话中按 [pointer] 恢复单个 symbol。
+ *
+ * - 若指针所指对象在当前 session 不可见(如来自其他模块、声明已被移除)则返回 `null`;
+ * - 调用方负责持有指针并跨 analyze 块传递,实际恢复必须在 session 内完成。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaSession.restoreSymbol`。
+ */
 fun <S : CaSymbol> CaSession.restoreSymbol(pointer: CaSymbolPointer<S>): S? =
     pointer.restoreSymbol(this)
 
+/**
+ * 在当前会话中按 [pointer] 恢复单个 type。
+ *
+ * - 若指针所指类型在当前 session 不可解析则返回 `null`;
+ * - 与 [restoreSymbol] 一样,是跨 analyze 块复用类型对象的官方入口。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaSession.restoreType`。
+ */
 @OptIn(CaImplementationDetail::class)
 fun <T : CaType> CaSession.restoreType(pointer: CaTypePointer<T>): T? =
     pointer.restore(this)
 
+/**
+ * 批量恢复 symbol 指针,结果按输入顺序返回,无法恢复的位置填 `null`。
+ *
+ * 适用于补全、引用解析等需要一次性处理多个候选的场景;
+ * 调用方可据 `null` 位置剔除已失效条目。
+ */
 fun <S : CaSymbol> CaSession.restoreSymbols(
     pointers: Collection<CaSymbolPointer<S>>,
 ): List<S?> = pointers.map { pointer -> pointer.restoreSymbol(this) }
 
+/**
+ * 批量恢复 type 指针,结果按输入顺序返回,无法恢复的位置填 `null`。
+ *
+ * 语义与 [restoreSymbols] 对应,仅作用对象换成 [CaTypePointer]。
+ */
 @OptIn(CaImplementationDetail::class)
 fun <T : CaType> CaSession.restoreTypes(
     pointers: Collection<CaTypePointer<T>>,
 ): List<T?> = pointers.map { pointer -> pointer.restore(this) }
+
 /**
- * Returns a [CaModule] for a given [element] in the context of the session's use-site module.
+ * 在当前会话的 use-site 模块上下文中,查询 [element] 所属的 [CaModule]。
+ *
+ * 直接委托给 [CaModuleProvider.getModule],把 session 的 project 与 use-site 模块作为
+ * 模糊归属(如 dangling file)时的回退依据。
  *
  * @see CaModuleProvider.getModule
  */
-public fun CaSession.getModule(element: PsiElement): CaModule =
+fun CaSession.getModule(element: PsiElement): CaModule =
     CaModuleProvider.getModule(useSiteModule.project, element, useSiteModule)
-
-@SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaModuleProvider {
-    /**
-     * Returns a [CaModule] for a given [element] in the context of the [useSiteModule].
-     *
-     * The resulting [CaModule] is guaranteed to be [resolvable][CaModule.isResolvable].
-     *
-     * ### Use-site Modules
-     *
-     * The use-site module is the [CaModule] from which [getModule] is called. This concept is the same as the use-site module accepted by
-     * [analyze][org.jetbrains.kotlin.analysis.api.analyze], and closely related to the concept of a use-site element. In essence, when we
-     * are performing analysis, most of the time we do so from the point of view of a particular [CaModule] or [PsiElement]. If this module
-     * is already known, it should be passed as the [useSiteModule] to [getModule].
-     *
-     * Here, the use-site module is a way to disambiguate the [CaModule] of [element]s with whom multiple modules might be associated:
-     *
-     * 1. It allows replacing the original [CaModule] of [element] with another module, e.g. for supporting outsider files (see below).
-     * 2. It helps to distinguish between multiple possible [CaModule]s for library elements.
-     *
-     * If you have a use-site module in hand, please pass it as an argument to stay consistent. In the future, we may utilize the use-site
-     * module for additional purposes not listed above.
-     *
-     * #### Outsider Modules
-     *
-     * Normally, every Kotlin source file either belongs to some module (e.g. a source module, or a library module), or is self-contained
-     * (a script file, or a file outside content roots). However, in certain cases there might be special modules that include both
-     * existing source files, and also some additional files.
-     *
-     * An example of such a module is one that owns an 'outsider' source file. Outsiders are used in IntelliJ for displaying files that
-     * technically belong to some module, but are not included in the module's content roots (e.g. a file from a previous VCS revision).
-     * As there might be cross-references between the outsider file and other files in the module, they need to be analyzed as a single
-     * synthetic module. Inside an analysis session for such a module (which would be the [useSiteModule]), sources that originally
-     * belong to a source module should be treated rather as a part of the synthetic one.
-     */
-    public fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
-
-    public companion object {
-        public fun getInstance(project: Project): CaModuleProvider = project.service()
-
-        public fun getModule(project: Project, element: PsiElement, useSiteModule: CaModule?): CaModule =
-            getInstance(project).getModule(element, useSiteModule)
-    }
-}

@@ -238,8 +238,6 @@ interface CangJieConstantPatternStub : CangJiePatternStub<CjConstantPattern>
 interface CangJieMatchConditionStub : CangJiePatternStub<CjMatchConditionWithExpression>
 
 interface CangJiePropertyStub : CangJieCallableStubBase<CjProperty> {
-    fun hasReturnTypeRef(): Boolean
-
     override fun isTopLevel(): Boolean = false
 }
 
@@ -403,7 +401,12 @@ interface CangJieMacroStub : CangJieFunctionStub<CjMacroDeclaration>
 interface CangJieForeignDirectiveStub : StubElement<CjForeignDirective>
 
 
-interface CangJiePackageDirectiveStub : StubElement<CjPackageDirective>
+interface CangJiePackageDirectiveStub : StubElement<CjPackageDirective> {
+    /**
+     * 当前 package directive 是否使用 macro package 形式。
+     */
+    val isMacroPackage: Boolean
+}
 
 
 interface CangJieImportDirectiveStub : StubElement<CjImportDirective> {

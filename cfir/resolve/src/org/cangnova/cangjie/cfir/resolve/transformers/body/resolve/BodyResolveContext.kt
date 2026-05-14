@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
@@ -142,6 +143,11 @@ class BodyResolveContext(
     @OptIn(PrivateForInline::class)
     fun storeVariable(variable: CfirVariable, session: CfirSession) {
         replaceTowerDataContext(towerDataContext.addLocalVariable(variable, session))
+    }
+
+    @OptIn(PrivateForInline::class)
+    fun storeProperty(property: CfirProperty, session: CfirSession) {
+        replaceTowerDataContext(towerDataContext.addLocalProperty(property, session))
     }
 
     fun storeValueParameterIfNeeded(valueParameter: CfirValueParameter, session: CfirSession) {

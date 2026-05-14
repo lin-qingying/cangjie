@@ -6,37 +6,48 @@ import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.name.Name
 
+/**
+ * 作用域的轻量"名称视图"。
+ *
+ * - 仅暴露名字层面的可达性,不要求物化具体符号;
+ * - 名称集合允许出现假阳性(可能名字),但不允许漏报;
+ *   即"返回 `true` 不代表一定存在,返回 `false` 一定不存在"。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaScopeLike`。
+ */
 @CaExperimentalApi
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaScopeLike : CaLifetimeOwner {
+interface CaScopeLike : CaLifetimeOwner {
     /**
-     * Returns the set of top-level declaration names contained in the scope. The set may contain false positives, i.e. names which aren't
-     * contained in the scope.
+     * 返回作用域中"可能存在"的所有顶级声明名称集合(callable + classifier 合并)。
+     *
+     * 结果可能含假阳性,即名字实际并不对应该作用域内的声明。
      */
-    public fun getAllPossibleNames(): Set<Name> = withValidityAssertion {
+    fun getAllPossibleNames(): Set<Name> = withValidityAssertion {
         getPossibleCallableNames() + getPossibleClassifierNames()
     }
 
     /**
-     * Returns the set of top-level callable names contained in the scope. The set may contain false positives, i.e. names which aren't
-     * contained in the scope.
-     */
-    public fun getPossibleCallableNames(): Set<Name>
-
-    /**
-     * Returns the set of top-level classifier names contained in the scope. The set may contain false positives, i.e. names which aren't
-     * contained in the scope.
-     */
-    public fun getPossibleClassifierNames(): Set<Name>
-
-    /**
-     * Checks whether the scope *might* contain the given [name].
+     * 返回作用域中"可能存在"的顶级 callable 名称集合。
      *
-     * Since [getPossibleCallableNames] and [getPossibleClassifierNames] admit false positives, the result may be `true` even if the scope
-     * doesn't contain a declaration with such a name. The reverse is not so: when [mayContainName] is `false`, the scope definitely doesn't
-     * contain a declaration with that name.
+     * 结果可能含假阳性。
      */
-    public fun mayContainName(name: Name): Boolean = withValidityAssertion {
+    fun getPossibleCallableNames(): Set<Name>
+
+    /**
+     * 返回作用域中"可能存在"的顶级 classifier 名称集合。
+     *
+     * 结果可能含假阳性。
+     */
+    fun getPossibleClassifierNames(): Set<Name>
+
+    /**
+     * 判断当前作用域是否"可能"包含名为 [name] 的声明。
+     *
+     * 由于 [getPossibleCallableNames] 与 [getPossibleClassifierNames] 允许假阳性,
+     * 返回 `true` 时仍可能找不到对应声明;但返回 `false` 时则一定不存在。
+     */
+    fun mayContainName(name: Name): Boolean = withValidityAssertion {
         name in getPossibleCallableNames() || name in getPossibleClassifierNames()
     }
 }

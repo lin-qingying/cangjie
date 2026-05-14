@@ -1,0 +1,126 @@
+CangJieFileStubImpl[File[packageFqName=std.objectpool]]
+  CangJieStub$PACKAGE_DIRECTIVE
+    CangJieStub$DOT_QUALIFIED_EXPRESSION
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=objectpool]
+  CangJieStub$IMPORT_LIST
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.collection.concurrent, isAllUnder=true, aliasName=null)], packageFqName=std.objectpool]
+      CangJieStub$DOT_QUALIFIED_EXPRESSION
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.objectpool]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+  CangJieStub$CLASS[classId=std/objectpool/ObjectPool, fqName=std.objectpool.ObjectPool, name=ObjectPool, superNames=[]]
+    CangJieStub$ANNOTATIONS
+    CangJieStub$MODIFIER_LIST[]
+    CangJieStub$CLASS_BODY
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=pool]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Array]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$USER_TYPE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$USER_TYPE
+                          CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=collection]
+                      CangJieStub$REFERENCE_EXPRESSION[referencedName=concurrent]
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=ConcurrentLinkedQueue]
+                    CangJieStub$TYPE_ARGUMENT_LIST
+                      CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                        CangJieStub$TYPE_REFERENCE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=newFunc]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$FUNCTION_TYPE
+            CangJieStub$VALUE_PARAMETER_LIST
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+      CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=resetFunc]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$USER_TYPE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+              CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+            CangJieStub$TYPE_ARGUMENT_LIST
+              CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$FUNCTION_TYPE
+                    CangJieStub$VALUE_PARAMETER_LIST
+                      CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+                        CangJieStub$TYPE_REFERENCE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$USER_TYPE
+                        CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ObjectPool]
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$FUNCTION_TYPE
+                CangJieStub$VALUE_PARAMETER_LIST
+                CangJieStub$TYPE_REFERENCE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$USER_TYPE
+                  CangJieStub$USER_TYPE
+                    CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+                  CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=Option]
+                CangJieStub$TYPE_ARGUMENT_LIST
+                  CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
+                    CangJieStub$TYPE_REFERENCE
+                      CangJieStub$FUNCTION_TYPE
+                        CangJieStub$VALUE_PARAMETER_LIST
+                          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+                            CangJieStub$TYPE_REFERENCE
+                              CangJieStub$USER_TYPE
+                                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+                        CangJieStub$TYPE_REFERENCE
+                          CangJieStub$USER_TYPE
+                            CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$USER_TYPE
+            CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+      CangJieStub$FUNC
+        CangJieStub$ANNOTATIONS
+        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$VALUE_PARAMETER_LIST
+          CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
+            CangJieStub$ANNOTATIONS
+            CangJieStub$TYPE_REFERENCE
+              CangJieStub$USER_TYPE
+                CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
+        CangJieStub$TYPE_REFERENCE
+          CangJieStub$BASIC_TYPE[basicType=Unit]

@@ -8,39 +8,8 @@
 
 main(): Int64 {
     let x: Int64
-    let f = {=> x}
+    let f = <!USE_FUNC_CAPTURE_VAR_ALONE!>{=> <!CAPTURE_BEFORE_INITIALIZATION!>x<!>}<!>
     var y: Int32
-    {a: Int32, b: Int32 => a + b + y}
+    <!USE_FUNC_CAPTURE_VAR_ALONE!>{a: Int32, b: Int32 => a + b + <!CAPTURE_BEFORE_INITIALIZATION!>y<!>}<!>
     return 0
 }
-
-/* SCAN
-error: cannot capture variable 'x' before initialization
-  ==> capture_not_init_01.cj:11:17:
-   | 
-11 |     let f = {=> x}
-   |                 ^ 
-   | 
-
-error: cannot capture variable 'y' before initialization
-  ==> capture_not_init_01.cj:13:36:
-   | 
-13 |     {a: Int32, b: Int32 => a + b + y}
-   |                                    ^ 
-   | 
-
-error: lambda capturing mutable variables needs to be called directly
-  ==> capture_not_init_01.cj:13:5:
-   | 
-13 |     {a: Int32, b: Int32 => a + b + y}
-   |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-note: 'y' is mutable
-  ==> capture_not_init_01.cj:13:36:
-   | 
-13 |     {a: Int32, b: Int32 => a + b + y}
-   |                                    ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

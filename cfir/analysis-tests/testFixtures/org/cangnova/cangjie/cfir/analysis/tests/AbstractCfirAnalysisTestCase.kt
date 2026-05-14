@@ -12,6 +12,11 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
+import org.cangnova.cangjie.cfir.resolve.providers.macro.expandWithDefaultContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -67,8 +72,20 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
     ): CfirFile {
         return PsiRawCfirBuilder(session, bodyBuildingMode).buildCfirFile(this).also { cfirFile ->
-            (runCatching { session.cfirProvider }.getOrNull() as? CfirProviderImpl)?.recordFile(cfirFile)
+            session.recordRawCfirFile(cfirFile)
         }
+    }
+
+    private fun CfirSession.recordRawCfirFile(cfirFile: CfirFile) {
+        val provider = cfirProvider as CfirProviderImpl
+        val pre = buildPreMacroRawFiles(this, listOf(cfirFile))
+        val result = MacroConstructionService.Identity.expandWithDefaultContext(
+            pre = pre,
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+        val success = result as? MacroConstructionResult.Success
+            ?: error("Identity macro construction must return Success, got ${result::class.simpleName}")
+        recordExpandedRawFilesOnce(provider, success.recordableFiles, success.registry)
     }
 
     protected fun dumpCfirFile(cfirFile: CfirFile): String {
@@ -203,4 +220,3 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
         }
     }
 }
-

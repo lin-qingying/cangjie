@@ -33,4 +33,8 @@ import com.intellij.psi.stubs.StubElement
 class CangJieUserTypeStubImpl(
 
     parent: StubElement<out PsiElement>?,
-) : CangJieStubBaseImpl<CjUserType>(parent, CjStubElementTypes.USER_TYPE), CangJieUserTypeStub
+) : CangJieStubBaseImpl<CjUserType>(parent, CjStubElementTypes.USER_TYPE), CangJieUserTypeStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieUserTypeStubImpl = CangJieUserTypeStubImpl(
+        parent = newParent,
+    )
+}

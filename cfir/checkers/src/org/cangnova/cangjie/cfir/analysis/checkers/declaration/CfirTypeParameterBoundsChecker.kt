@@ -1,29 +1,27 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.renderForDebugging
 import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeKind
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -33,29 +31,27 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
 
         val uniqueBounds = linkedMapOf<String, CfirResolvedTypeRef>()
         nonErrorBounds.forEach { bound ->
-            val key = bound.stableBoundKey()
-            if (uniqueBounds.putIfAbsent(key, bound) != null) {
-                reporter.reportOn(bound.source, CfirErrors.REPEATED_BOUND)
-            }
+            uniqueBounds.putIfAbsent(bound.stableBoundKey(), bound)
         }
 
-        var seenConcreteBound = false
-        uniqueBounds.values.forEach { bound ->
-            if (!bound.hasConcreteUpperBound(context)) return@forEach
-            if (seenConcreteBound) {
-                reporter.reportOn(bound.source, CfirErrors.ONLY_ONE_CLASS_BOUND_ALLOWED)
-            } else {
-                seenConcreteBound = true
-            }
-        }
-
-        if (uniqueBounds.size > 1) {
-            val emptyIntersection = context.session.typeContext.computeEmptyIntersectionTypeKind(
-                uniqueBounds.values.map { it.coneType.fullyExpandTypeAlias() },
+        val invalidBounds = uniqueBounds.values
+            .mapNotNull { bound -> bound.takeIf { it.upperBoundKind() == UpperBoundKind.INVALID } }
+        invalidBounds.forEach { bound ->
+            reporter.reportOn(
+                source = declaration.source,
+                factory = CfirErrors.UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE,
+                a = bound.coneType.fullyExpandTypeAlias(),
+                b = declaration.name,
             )
-            if (emptyIntersection?.kind == EmptyIntersectionTypeKind.MULTIPLE_CLASSES) {
-                reporter.reportOn(declaration.source, CfirErrors.CONFLICTING_UPPER_BOUNDS)
-            }
+        }
+        if (invalidBounds.isNotEmpty()) return
+
+        val classBounds = uniqueBounds.values
+            .filter { it.upperBoundKind() == UpperBoundKind.CLASS }
+            .map { it.coneType.fullyExpandTypeAlias() }
+
+        if (classBounds.size > 1 && !classBounds.areInOneInheritanceChain()) {
+            reporter.reportOn(declaration.source, CfirErrors.CONFLICTING_UPPER_BOUNDS)
         }
     }
 }
@@ -64,21 +60,41 @@ private fun CfirResolvedTypeRef.stableBoundKey(): String = coneType
     .fullyExpandTypeAlias()
     .renderForDebugging()
 
-private fun CfirResolvedTypeRef.hasConcreteUpperBound(context: CheckerContext): Boolean {
+context(context: CheckerContext)
+private fun CfirResolvedTypeRef.upperBoundKind(): UpperBoundKind {
     val expandedType = coneType.fullyExpandTypeAlias()
     return when (expandedType) {
-        is ConePrimitiveType, is ConeStructType, is ConeEnumType -> true
-        is ConeClassLikeType -> expandedType.toResolvedClassLikeDeclaration(context) !is CfirInterface
-        else -> false
+        ConeAnyType -> UpperBoundKind.IGNORED_TOP_OR_CTYPE
+        is ConeClassLikeType -> {
+            val classId = expandedType.classId
+            when {
+                classId == StdlibClassIds.Any || CfirExtendSemantics.isCType(classId) ->
+                    UpperBoundKind.IGNORED_TOP_OR_CTYPE
+                expandedType.toResolvedClassLikeDeclaration() is CfirInterface ->
+                    UpperBoundKind.INTERFACE
+                expandedType.toResolvedClassLikeDeclaration() is CfirClass ->
+                    UpperBoundKind.CLASS
+                expandedType.isInterface ->
+                    UpperBoundKind.INTERFACE
+                else ->
+                    UpperBoundKind.CLASS
+            }
+        }
+        else -> {
+            val classId = expandedType.classIdOrPrimitiveClassId
+            if (classId == StdlibClassIds.Any || CfirExtendSemantics.isCType(classId)) {
+                UpperBoundKind.IGNORED_TOP_OR_CTYPE
+            } else {
+                UpperBoundKind.INVALID
+            }
+        }
     }
 }
 
-private fun ConeCangJieType.toResolvedClassLikeDeclaration(context: CheckerContext) =
+context(context: CheckerContext)
+private fun ConeCangJieType.toResolvedClassLikeDeclaration(): CfirClassLikeDeclaration? =
     when (this) {
-        is ConePrimitiveType -> context.session.cfirProvider.getCfirClassifierByFqName(kind.classId)
         is ConeClassLikeType -> context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
-        is ConeStructType -> context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
-        is ConeEnumType -> context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
         is ConeTypeAliasType -> context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
         else -> null
     }
@@ -91,5 +107,24 @@ private fun ConeCangJieType.fullyExpandTypeAlias(): ConeCangJieType {
     return current
 }
 
-private val org.cangnova.cangjie.cfir.types.PrimitiveTypeKind.classId
-    get() = org.cangnova.cangjie.name.ClassId.fromString(typeName)
+context(context: CheckerContext)
+private fun List<ConeCangJieType>.areInOneInheritanceChain(): Boolean {
+    for (leftIndex in indices) {
+        for (rightIndex in leftIndex + 1 until size) {
+            if (!this[leftIndex].isRelatedTo(this[rightIndex])) return false
+        }
+    }
+    return true
+}
+
+context(context: CheckerContext)
+private fun ConeCangJieType.isRelatedTo(other: ConeCangJieType): Boolean =
+    AbstractTypeChecker.isSubtypeOf(context.session.typeContext, this, other) ||
+            AbstractTypeChecker.isSubtypeOf(context.session.typeContext, other, this)
+
+private enum class UpperBoundKind {
+    IGNORED_TOP_OR_CTYPE,
+    CLASS,
+    INTERFACE,
+    INVALID,
+}

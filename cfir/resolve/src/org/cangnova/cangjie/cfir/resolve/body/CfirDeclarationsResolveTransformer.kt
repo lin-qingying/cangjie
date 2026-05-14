@@ -16,12 +16,14 @@ import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
@@ -79,14 +81,14 @@ open class CfirDeclarationsResolveTransformer(
      * 包装 file 级别的 scope / DFA 生命周期。对齐 K2 `CfirDeclarationsResolveTransformer.withFile`：
      * 进入 `context.withFile`、装配 imports、开启 file CFG，最后把 CFG 写回 file。
      */
-    protected open fun withFile(file: CfirFile, action: () -> CfirFile): CfirFile {
+    open fun withFile(file: CfirFile, action: () -> CfirFile): CfirFile {
         val savedContext = context.towerDataContext
         try {
             return context.withFile(file) {
                 val importScopes = createImportingScopes(file)
                 context.addNonLocalScopes(importScopes)
 
-                dataFlowAnalyzer.enterFile(file, buildGraph = true)
+                dataFlowAnalyzer.enterFile(file, buildGraph = transformer.buildCfgForFiles)
                 val result = action()
                 dataFlowAnalyzer.exitFile()?.let { graph ->
                     file.replaceControlFlowGraphReference(CfirControlFlowGraphReferenceImpl(graph))
@@ -165,8 +167,8 @@ open class CfirDeclarationsResolveTransformer(
     /**
      * 进入 class body 的 DFA 区间；exit 后把 CFG 写回 class。对齐 K2 `forRegularClassBody`。
      */
-    protected open fun forClassBody(klass: CfirClass, action: () -> Unit) {
-        dataFlowAnalyzer.enterClass(klass, buildGraph = true)
+    open fun forClassBody(klass: CfirClass, action: () -> Unit) {
+        dataFlowAnalyzer.enterClass(klass, buildGraph = transformer.preserveCFGForClasses)
         context.withContainingClass(klass) {
             action()
         }
@@ -303,9 +305,14 @@ open class CfirDeclarationsResolveTransformer(
                     property.typeParameters,
                 )
             )
+            if (property.isLocal) {
+                context.storeProperty(property, session)
+            }
         }
 
-        context.replaceTowerDataContext(savedContext)
+        if (!property.isLocal) {
+            context.replaceTowerDataContext(savedContext)
+        }
         bumpPhase(property)
         return property
     }
@@ -528,15 +535,15 @@ open class CfirDeclarationsResolveTransformer(
                     aliasName = importPath.alias
                     aliasSource = null
                 }
-            }
+        }
         return buildList {
-            // 声明解析阶段同样要先看到当前文件顶层声明，保证后续类型与 extend 规则建立在正确的本地符号之上。
-            add(CfirFileDeclaredTopLevelScope(file))
-            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
-            add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
-            add(CfirExplicitStarImportingScope(imports, symbolProvider))
-            add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+            // Scope 列表按低优先级到高优先级排列，声明解析阶段同样保持本地声明优先。
             add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
+            add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+            add(CfirExplicitStarImportingScope(imports, symbolProvider))
+            add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
+            add(CfirFileDeclaredTopLevelScope(file))
+            add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
         }
     }
     // ── Named function ────────────────────────────────────────────────────
@@ -639,14 +646,15 @@ open class CfirDeclarationsResolveTransformer(
     }
 
     /**
-     * 从当前函数 CFG 已确认可达的返回结果里推断函数返回类型。
+     * 从当前函数 CFG 提取到的返回结果里推断函数返回类型。
      *
      * 返回结果统一包含：
      * - 显式 `return expr`
      * - 函数体正常流出时的 block 尾表达式
      *
      * 这样可以让“最后一条表达式是返回值”与显式 return 共享同一套推断入口，
-     * 并自动排除 CFG 上不可达的块尾表达式。
+     * 仓颉官方会把显式 return 后面的 block 尾表达式也纳入隐式返回类型推断；
+     * 这种尾表达式即使在控制流上不可达，仍会让返回类型推断失败。
      */
     private fun inferFunctionReturnType(function: CfirFunction): ConeCangJieType {
         val returnExpressions = components.dataFlowAnalyzer.returnExpressionsOfFunction(function)
@@ -663,7 +671,7 @@ open class CfirDeclarationsResolveTransformer(
         }
 
         val commonType = session.typeContext.commonSuperTypeOrNull(expressionTypes)
-        if (commonType != null && commonType !is ConeErrorType) {
+        if (commonType != null && commonType !is ConeErrorType && commonType.isAcceptableInferredReturnType(expressionTypes)) {
             return commonType
         }
 
@@ -672,6 +680,21 @@ open class CfirDeclarationsResolveTransformer(
             postfix = " do not have the smallest common supertype",
         ) { "'$it'" }
         return ConeErrorType(ConeSimpleDiagnostic(message))
+    }
+
+    /**
+     * 函数隐式返回类型不能只因为所有候选都可装箱到 `Any` 就吞掉推断失败。
+     *
+     * 仓颉允许 `class` 返回值与基本类型共同推断为 `Any`；但纯基本类型/值类型候选之间
+     * 若唯一公共父类型退化到 `Any`，官方语义仍要求报告“没有最小公共父类型”。
+     */
+    private fun ConeCangJieType.isAcceptableInferredReturnType(expressionTypes: List<ConeCangJieType>): Boolean {
+        if (!isAnyType()) return true
+        return expressionTypes.any { it is ConeClassLikeType && !it.isAnyType() }
+    }
+
+    private fun ConeCangJieType.isAnyType(): Boolean {
+        return this === ConeAnyType || (this is ConeClassLikeType && classId == StdlibClassIds.Any)
     }
 
     /**

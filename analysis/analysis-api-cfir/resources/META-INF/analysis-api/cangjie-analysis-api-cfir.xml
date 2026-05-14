@@ -14,8 +14,23 @@
         serviceImplementation="org.cangnova.cangjie.analysis.api.cfir.session.CaCfirSessionProvider"
     />
     <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeService"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.cfir.resolve.CaCfirResolutionFacadeServiceImpl"
+        serviceInterface="org.cangnova.cangjie.analysis.api.platform.modification.CaSourceModificationService"
+        serviceImplementation="org.cangnova.cangjie.analysis.api.cfir.modification.CaCfirSourceModificationService"
     />
   </extensions>
+
+  <projectListeners>
+    <listener
+        class="org.cangnova.cangjie.analysis.api.cfir.session.CaCfirSessionProvider$SessionInvalidationListener"
+        topic="org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationListener"
+    />
+  </projectListeners>
+
+  <extensionPoints>
+    <extensionPoint
+        qualifiedName="org.cangnova.cangjie.cfir.extensions.cfirExtensionRegistrar"
+        interface="org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrarAdapter"
+        area="IDEA_PROJECT"
+    />
+  </extensionPoints>
 </idea-plugin>

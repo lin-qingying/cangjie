@@ -36,4 +36,8 @@ import com.intellij.psi.stubs.StubElement
  */
 class CangJieFunctionTypeStubImpl(
     parent: StubElement<out PsiElement>?,
-) : CangJieStubBaseImpl<CjFunctionType>(parent, CjStubElementTypes.FUNCTION_TYPE), CangJieFunctionTypeStub
+) : CangJieStubBaseImpl<CjFunctionType>(parent, CjStubElementTypes.FUNCTION_TYPE), CangJieFunctionTypeStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieFunctionTypeStubImpl = CangJieFunctionTypeStubImpl(
+        parent = newParent,
+    )
+}

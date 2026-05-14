@@ -3,7 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 import com.intellij.model.psi.PsiSymbolService
 import com.intellij.model.psi.impl.targetDeclarationAndReferenceSymbols
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedDeclaration

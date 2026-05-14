@@ -65,7 +65,7 @@ class CfirDesignation(
                     withCfirDesignationEntry("designation", this@CfirDesignation)
                 }
 
-                is CfirClass,
+                is CfirClassLikeDeclaration,
                 is CfirExtend,
                     -> {}
                 else -> errorWithAttachment("Unexpected declaration type: ${declaration::class.simpleName}") {
@@ -112,8 +112,6 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
         is CfirErrorFunction,
         is CfirTypeParameter,
         is CfirValueParameter,
-        is CfirPatternVariable,
-        is CfirPatternBindingVariable,
             -> null
 
         is CfirNamedFunction,
@@ -122,6 +120,8 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
         is CfirFinalizer,
         is CfirProperty,
         is CfirFieldVariable,
+        is CfirPatternBindingVariable,
+        is CfirPatternVariable,
         is CfirConstructor,
         is CfirEnumConstructor,
             -> {
@@ -209,9 +209,9 @@ private fun collectDesignationPathWithContainingClassFallback(
         }
 
         checkWithAttachment(
-            declaration is CfirClass || declaration is CfirExtend,
+            declaration is CfirClassLikeDeclaration || declaration is CfirExtend,
             {
-                "'${CfirClass::class.simpleName}' or '${CfirExtend::class.simpleName}' expected as a containing declaration, " +
+                "'${CfirClassLikeDeclaration::class.simpleName}' or '${CfirExtend::class.simpleName}' expected as a containing declaration, " +
                         "got '${declaration?.javaClass?.simpleName}'. " +
                         "Module: ${useSiteSession.caModule::class.simpleName}"
             },
@@ -230,12 +230,12 @@ private fun collectDesignationPathWithContainingClassFallback(
     val (_, containingClasses) = containingClassIds.fold(target to SmartList<CfirDeclaration>()) { (declaration, result), classId ->
         // Psi-based calculator is called explicitly to avoid `LLCfirProvider#getContainingClassSymbol`
         // since we have a fallback logic with strict checking (no dependencies in the search scope)
-        val psiBasedContainingClass = LLContainingClassCalculator.getContainingClassSymbol(declaration.symbol)?.cfir
+        val psiBasedContainingClassLike = LLContainingClassCalculator.getContainingClassSymbol(declaration.symbol)?.cfir
         checkWithAttachment(
-            psiBasedContainingClass == null || psiBasedContainingClass is CfirClass,
+            psiBasedContainingClassLike == null || psiBasedContainingClassLike is CfirClassLikeDeclaration,
             {
-                "${LLContainingClassCalculator::class.simpleName} is supposed to return '${CfirClass::class.simpleName}' " +
-                        "as a containing declaration since the class is not local (classId exists), got '${psiBasedContainingClass?.let { it::class.java.simpleName }}'. " +
+                "${LLContainingClassCalculator::class.simpleName} is supposed to return '${CfirClassLikeDeclaration::class.simpleName}' " +
+                        "as a containing declaration since the class-like declaration is not local (classId exists), got '${psiBasedContainingClassLike?.let { it::class.java.simpleName }}'. " +
                         "Module: ${useSiteSession.caModule::class.simpleName}"
             },
         ) {
@@ -244,7 +244,7 @@ private fun collectDesignationPathWithContainingClassFallback(
             withCfirEntry("declaration", declaration)
         }
 
-        if (psiBasedContainingClass == null && classId.shortClassName.isSpecial) {
+        if (psiBasedContainingClassLike == null && classId.shortClassName.isSpecial) {
             errorWithAttachment(
                 "Special classes are supposed to be covered via ${LLContainingClassCalculator::class.simpleName}. " +
                         "Module: ${useSiteSession.caModule::class.simpleName}"
@@ -255,7 +255,7 @@ private fun collectDesignationPathWithContainingClassFallback(
             }
         }
 
-        val containingDeclaration = psiBasedContainingClass ?: resolveChunk(classId)
+        val containingDeclaration = psiBasedContainingClassLike ?: resolveChunk(classId)
         result += containingDeclaration
         containingDeclaration to result
     }
@@ -275,13 +275,13 @@ private fun getTargetSession(target: CfirDeclaration): LLCfirSession {
     return target.llCfirSession
 }
 
-internal fun findInContainingFileIfApplicable(classId: ClassId, target: CfirDeclaration?): CfirClass? {
+internal fun findInContainingFileIfApplicable(classId: ClassId, target: CfirDeclaration?): CfirClassLikeDeclaration? {
     if (classId.toPrimitiveTypeKindOrNull() != null) {
         return null
     }
 
     val cfirFile = target?.getContainingFile() ?: return null
-    return CfirElementFinder.findClassifierWithClassId(cfirFile, classId) as? CfirClass
+    return CfirElementFinder.findClassifierWithClassId(cfirFile, classId)
 }
 
 /**

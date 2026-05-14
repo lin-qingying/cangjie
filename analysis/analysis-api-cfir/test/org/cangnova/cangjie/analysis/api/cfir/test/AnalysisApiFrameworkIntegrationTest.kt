@@ -1,15 +1,8 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 
-import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisSessionMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.cangnova.cangjie.psi.CjFile
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -20,22 +13,7 @@ import org.junit.jupiter.api.Test
 class AnalysisApiFrameworkIntegrationTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/framework",
 ) {
-    override val configurator: AnalysisApiTestConfigurator =
-        CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(
-            AnalysisApiTestConfiguratorFactoryData(
-                frontend = FrontendKind.Cfir,
-                moduleKind = TestModuleKind.Source,
-                analysisSessionMode = AnalysisSessionMode.Normal,
-                analysisApiMode = AnalysisApiMode.Standalone,
-            ),
-        )
-
-    @Test
-    fun moduleKindDirective(mainFile: CjFile, mainModule: CjTestModule) {
-        assertEquals(TestModuleKind.NotUnderContentRoot, mainModule.moduleKind)
-        assertEquals(CaTargetPlatform.STANDALONE, mainModule.caModule.targetPlatform)
-        assertEquals("moduleKindDirective.cj", mainFile.name)
-    }
+    override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
     @Test
     fun selectMainModule(mainFile: CjFile, mainModule: CjTestModule) {

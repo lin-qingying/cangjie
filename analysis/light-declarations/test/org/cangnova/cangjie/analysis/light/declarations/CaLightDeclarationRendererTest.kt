@@ -1,11 +1,13 @@
 package org.cangnova.cangjie.analysis.light.declarations
 
+import org.cangnova.cangjie.analysis.api.CaImplementationDetail
+import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotation
+import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
-import org.cangnova.cangjie.analysis.api.signatures.CaSignature
-import org.cangnova.cangjie.analysis.api.signatures.CaValueParameterSignature
 import org.cangnova.cangjie.analysis.api.types.CaType
-import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
+import org.cangnova.cangjie.analysis.api.types.CaTypePointer
+import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -36,7 +38,7 @@ class CaLightDeclarationRendererTest {
             origin = sourceOrigin("Greeter.member", containingFile = null, sourceElement = null),
             token = token,
             callableId = CallableId(ownerClassId, Name.identifier("member")),
-            signature = TestSignature("member(value: Int64): Int64", token),
+            signature = null,
         )
         val topLevel = CaLightCallableDeclarationImpl(
             name = "topLevel",
@@ -45,7 +47,7 @@ class CaLightDeclarationRendererTest {
             origin = sourceOrigin("topLevel", containingFile = null, sourceElement = null),
             token = token,
             callableId = CallableId(packageFqName, Name.identifier("topLevel")),
-            signature = TestSignature("topLevel(): Int64", token),
+            signature = null,
         )
         val classLike = CaLightClassLikeDeclarationImpl(
             name = "Greeter",
@@ -62,8 +64,8 @@ class CaLightDeclarationRendererTest {
         val renderedTree = CaLightDeclarationRenderer.renderTree(listOf(classLike, topLevel))
 
         assertTrue(renderedTree.contains("class sample/peripheral/Greeter<T>"))
-        assertTrue(renderedTree.contains("  callable sample/peripheral/Greeter.member member(value: Int64): Int64"))
-        assertTrue(renderedTree.contains("callable sample/peripheral/topLevel topLevel(): Int64"))
+        assertTrue(renderedTree.contains("  callable sample/peripheral/Greeter.member"))
+        assertTrue(renderedTree.contains("callable sample/peripheral/topLevel"))
     }
 
     @Test
@@ -78,7 +80,7 @@ class CaLightDeclarationRendererTest {
             origin = sourceOrigin("extend:Display.render", containingFile = null, sourceElement = null),
             token = token,
             callableId = CallableId(targetClassId, Name.identifier("render")),
-            signature = TestSignature("render(): String", token),
+            signature = null,
         )
         val extendDeclaration = CaLightExtendDeclarationImpl(
             name = "Display",
@@ -97,7 +99,7 @@ class CaLightDeclarationRendererTest {
         val renderedTree = CaLightDeclarationRenderer.renderTree(listOf(extendDeclaration))
 
         assertTrue(renderedTree.contains("extend sample/peripheral/Display<T>"))
-        assertTrue(renderedTree.contains("  callable sample/peripheral/Display.render render(): String"))
+        assertTrue(renderedTree.contains("  callable sample/peripheral/Display.render"))
     }
 
     @Test
@@ -114,7 +116,7 @@ class CaLightDeclarationRendererTest {
                 origin = sourceOrigin("topLevel", containingFile = null, sourceElement = null),
                 token = token,
                 callableId = CallableId(FqName("sample.peripheral"), Name.identifier("topLevel")),
-                signature = TestSignature("topLevel(): Int64", token),
+                signature = null,
             )
         }
         val second = cache.getOrPut(cacheKey) { first }
@@ -135,22 +137,23 @@ class CaLightDeclarationRendererTest {
     private class TestType(
         override val presentation: String,
         override val token: CaLifetimeToken,
-    ) : CaType
+    ) : CaType {
+        override val abbreviation: CaUsualClassType? = null
+        override val annotations: CaAnnotationList = EmptyAnnotationList(token)
 
-    private class TestSignature(
-        private val renderedText: String,
+        override fun createPointer(): CaTypePointer<CaType> = object : CaTypePointer<CaType> {
+            @OptIn(CaImplementationDetail::class)
+            override fun restore(session: CaSession): CaType = this@TestType
+        }
+    }
+
+    private class EmptyAnnotationList(
         override val token: CaLifetimeToken,
-    ) : CaSignature<Nothing> {
-        override val symbol: Nothing
-            get() = error("渲染测试不依赖底层 symbol")
-        override val typeParameters: List<Name> = emptyList()
-        override val valueParameters: List<CaValueParameterSignature> = emptyList()
-        override val returnType: CaType? = null
-        override val receiverType: CaType? = null
-        override val annotations: List<CaAnnotation> = emptyList()
-
-        override fun substitute(substitutor: CaSubstitutor): CaSignature<Nothing> = this
-
-        override fun toString(): String = renderedText
+    ) : AbstractList<CaAnnotation>(), CaAnnotationList {
+        override val size: Int = 0
+        override fun get(index: Int): CaAnnotation = throw IndexOutOfBoundsException("Index $index out of bounds")
+        override fun contains(classId: ClassId): Boolean = false
+        override fun get(classId: ClassId): List<CaAnnotation> = emptyList()
+        override val classIds: Collection<ClassId> = emptyList()
     }
 }

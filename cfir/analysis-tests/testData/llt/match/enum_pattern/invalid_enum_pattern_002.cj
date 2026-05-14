@@ -8,22 +8,8 @@
 
 main() {
     let a = None<Int64>
-    if (let Option<Int64>.None(v) <- a) {
+    if (let <!ENUM_PATTERN_PARAM_SIZE_ERROR!>Option<Int64>.None(v)<!> <- a) {
         return 1
     }
     return 0
 }
-
-/* SCAN
-error: enum pattern's parameters size is wrong
-  ==> invalid_enum_pattern_002.cj:11:13:
-   | 
-11 |     if (let Option<Int64>.None(v) <- a) {
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/
-
-// ASSERT: scan sema_enum_pattern_param_size_error
-// ASSERT: scan "Errors": 1

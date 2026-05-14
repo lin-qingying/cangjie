@@ -5,13 +5,14 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -89,13 +90,14 @@ class CfirClassStaticScope(
                 }
 
                 is CfirNamedFunction -> {
+                    declaration.symbol?.lazyResolveToPhase(CfirResolvePhase.STATUS)
                     if (!declaration.status.isStatic) continue
                     val symbol = declaration.symbol ?: continue
-                    val callableName = declaration.callableNameOrNull() ?: continue
-                    functions.getOrPut(callableName) { mutableListOf() }.add(symbol)
+                    functions.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
                 }
 
                 is CfirProperty -> {
+                    declaration.symbol?.lazyResolveToPhase(CfirResolvePhase.STATUS)
                     if (!declaration.status.isStatic) continue
                     val symbol = declaration.symbol as? CfirPropertySymbol ?: continue
                     properties.getOrPut(declaration.name) { mutableListOf() }.add(symbol)

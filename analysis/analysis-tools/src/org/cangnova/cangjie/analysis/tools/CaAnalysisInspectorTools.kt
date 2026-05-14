@@ -1,24 +1,26 @@
 package org.cangnova.cangjie.analysis.tools
 
 import com.intellij.openapi.project.Project
+import com.intellij.psi.PsiManager
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
-import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
-import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledTextRenderer
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightCallableDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightClassLikeDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationProvider
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightExtendDeclaration
+import org.cangnova.cangjie.analysis.api.platform.declarations.createDeclarationProvider
 import org.cangnova.cangjie.analysis.api.stubs.CaStubIndexFacade
 import org.cangnova.cangjie.analysis.light.declarations.CaLightDeclarationRenderer
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
-
+@OptIn(CaPlatformInterface::class)
 /**
  * Analysis 外围模块的统一 inspector 入口。
  *
@@ -31,14 +33,10 @@ import org.cangnova.cangjie.psi.CjFile
 class CaAnalysisInspectorTools(
     private val project: Project,
 ) {
+    private val psiManager: PsiManager = PsiManager.getInstance(project)
+
     private val decompiledBinaryIndex: CaDecompiledBinaryIndex
         get() = CaDecompiledBinaryIndex.getInstance(project)
-
-    private val decompiledTextRenderer: CaDecompiledTextRenderer
-        get() = CaDecompiledTextRenderer.getInstance(project)
-
-    private val decompiledPsiProvider: CaDecompiledPsiProvider
-        get() = CaDecompiledPsiProvider.getInstance(project)
 
     private val stubIndexFacade: CaStubIndexFacade
         get() = CaStubIndexFacade.getInstance(project)
@@ -49,14 +47,14 @@ class CaAnalysisInspectorTools(
     fun dumpDecompiledText(module: CaLibraryModule, packageFqName: FqName): String {
         val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName)
             ?: return "<missing decompiled text for ${packageFqName.asString()}>"
-        return decompiledTextRenderer.render(binaryFile)
+        return (psiManager.findFile(binaryFile) as? CjFile)?.text
             ?: "<missing decompiled text for ${packageFqName.asString()}>"
     }
 
     fun dumpDecompiledText(module: CaBuiltinsModule, packageFqName: FqName): String {
         val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName)
             ?: return "<missing decompiled text for ${packageFqName.asString()}>"
-        return decompiledTextRenderer.render(binaryFile)
+        return (psiManager.findFile(binaryFile) as? CjFile)?.text
             ?: "<missing decompiled text for ${packageFqName.asString()}>"
     }
 
@@ -89,7 +87,9 @@ class CaAnalysisInspectorTools(
     }
 
     fun dumpLightDeclarations(module: CaModule): String {
-        return CaLightDeclarationRenderer.renderTree(lightDeclarationProvider.getLightDeclarations(module))
+        val declarations = collectLightDeclarationFiles(module)
+            .flatMap { file -> lightDeclarationProvider.getLightDeclarations(file, module) }
+        return CaLightDeclarationRenderer.renderTree(declarations)
     }
 
     fun dumpLightDeclarations(file: CjFile, useSiteModule: CaModule? = null): String {
@@ -97,23 +97,23 @@ class CaAnalysisInspectorTools(
     }
 
     fun dumpDecompiledLightDeclarations(module: CaLibraryModule, packageFqName: FqName): String {
-        val file = decompiledPsiProvider.findDecompiledFile(module, packageFqName)
+        val file = findDecompiledFile(module, packageFqName)
             ?: return "<missing decompiled file for ${packageFqName.asString()}>"
         return dumpLightDeclarations(file, module)
     }
 
     fun dumpDecompiledLightDeclarations(module: CaBuiltinsModule, packageFqName: FqName): String {
-        val file = decompiledPsiProvider.findDecompiledFile(module, packageFqName)
+        val file = findDecompiledFile(module, packageFqName)
             ?: return "<missing decompiled file for ${packageFqName.asString()}>"
         return dumpLightDeclarations(file, module)
     }
 
     fun checkViewConsistency(module: CaLibraryModule, packageFqName: FqName): List<CaAnalysisViewConsistencyIssue> {
-        return checkViewConsistencyInternal(module, decompiledPsiProvider.findDecompiledFile(module, packageFqName), packageFqName)
+        return checkViewConsistencyInternal(module, findDecompiledFile(module, packageFqName), packageFqName)
     }
 
     fun checkViewConsistency(module: CaBuiltinsModule, packageFqName: FqName): List<CaAnalysisViewConsistencyIssue> {
-        return checkViewConsistencyInternal(module, decompiledPsiProvider.findDecompiledFile(module, packageFqName), packageFqName)
+        return checkViewConsistencyInternal(module, findDecompiledFile(module, packageFqName), packageFqName)
     }
 
     /**
@@ -213,6 +213,56 @@ class CaAnalysisInspectorTools(
                 )
             }
         }
+    }
+
+    private fun collectLightDeclarationFiles(module: CaModule): List<CjFile> {
+        val declarationProvider = project.createDeclarationProvider(module.contentScope, module)
+        val sourceFiles = declarationProvider.computePackageNames()
+            .orEmpty()
+            .flatMap { packageName ->
+                val packageFqName = FqName(packageName)
+                collectPackageSourceFiles(declarationProvider, packageFqName)
+            }
+        val decompiledFiles = collectDecompiledFiles(module)
+        return (sourceFiles + decompiledFiles).distinctBy { file -> file.virtualFile ?: file }
+    }
+
+    private fun collectPackageSourceFiles(
+        declarationProvider: org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProvider,
+        packageFqName: FqName,
+    ): List<CjFile> {
+        val classifierNames = declarationProvider.getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName)
+        val callableNames = declarationProvider.getTopLevelCallableNamesInPackage(packageFqName)
+
+        return buildList {
+            addAll(declarationProvider.findFilesForFacadeByPackage(packageFqName))
+            classifierNames.forEach { name ->
+                val classId = ClassId(packageFqName, name)
+                declarationProvider.getAllClassesByClassId(classId).mapTo(this) { it.containingCjFile }
+                declarationProvider.getAllTypeAliasesByClassId(classId).mapTo(this) { it.containingCjFile }
+            }
+            callableNames.forEach { name ->
+                addAll(declarationProvider.getTopLevelCallableFiles(CallableId(packageFqName, name)))
+            }
+        }.distinctBy { file -> file.virtualFile ?: file }
+    }
+
+    private fun collectDecompiledFiles(module: CaModule): List<CjFile> {
+        return when (module) {
+            is CaLibraryModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(psiManager::findFile).filterIsInstance<CjFile>()
+            is CaBuiltinsModule -> decompiledBinaryIndex.getBinaryFiles(module).mapNotNull(psiManager::findFile).filterIsInstance<CjFile>()
+            else -> emptyList()
+        }
+    }
+
+    private fun findDecompiledFile(module: CaLibraryModule, packageFqName: FqName): CjFile? {
+        val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName) ?: return null
+        return psiManager.findFile(binaryFile) as? CjFile
+    }
+
+    private fun findDecompiledFile(module: CaBuiltinsModule, packageFqName: FqName): CjFile? {
+        val binaryFile = decompiledBinaryIndex.findBinaryFile(module, packageFqName) ?: return null
+        return psiManager.findFile(binaryFile) as? CjFile
     }
 }
 

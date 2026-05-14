@@ -1,2 +1,4 @@
 FILE: forMissingIterable.cj
-    internal? func forMissingIterable(): R|Unit|
+    internal? func forMissingIterable(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

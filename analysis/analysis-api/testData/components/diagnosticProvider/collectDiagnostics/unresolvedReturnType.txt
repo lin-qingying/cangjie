@@ -1,0 +1,4 @@
+Diagnostics from file:
+  for PSI element of type CjNameReferenceExpression at (3,11-15)
+    UNRESOLVED_REFERENCE      text ranges: [(38,42)]
+      PSI: CjNameReferenceExpression at (3,11-15)

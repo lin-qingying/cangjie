@@ -15,7 +15,7 @@ interface I1 {
 struct R1 <: I1 {}
 
 extend R1 {
-    public func foo1(): Int64 {
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo1<!>(): Int64 {
         return 0
     }
 }
@@ -23,20 +23,3 @@ extend R1 {
 main() {
     return -1
 }
-
-/* SCAN
-error: extend member 'foo1' is not allowed to shadow members of 'Struct-R1'
-  ==> interface_default_implemented_func_invalid_3.cj:18:17:
-   | 
-18 |     public func foo1(): Int64 {
-   |                 ^^^^ 
-   | 
-note: shadowed definition of 'foo1' is here
-  ==> interface_default_implemented_func_invalid_3.cj:10:10:
-   | 
-10 |     func foo1(): Int64 {
-   |          ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

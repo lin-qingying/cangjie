@@ -1,3 +1,7 @@
 FILE: controlFlow.cj
-    internal? func controlFlowTest(x: R|Int64|): R|Int64|
-    internal? func loopTest(): R|Unit|
+    internal? func controlFlowTest(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func loopTest(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -167,7 +167,7 @@ internal class FileStructure private constructor(
         addStructureElementForTo(cjFile, structureElements)
 
         cjFile.accept(object : CjVisitorUnit() {
-            override fun visitCjElement(element: CjElement) {
+            override fun visitElement(element: PsiElement) {
                 element.acceptChildren(this)
             }
 

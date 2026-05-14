@@ -1,9 +1,12 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.test.framework.projectStructure
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
+import com.intellij.psi.search.ProjectScope
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
@@ -13,10 +16,9 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDepen
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 
@@ -37,16 +39,12 @@ interface CaMutableTestModule : CaModule {
 sealed class CaTestModuleBase(
     final override val project: Project,
     private val scopeRoots: List<PsiFileSystemItem>,
-    private val platform: CaTargetPlatform,
-) : CaMutableTestModule {
+) : CaModuleBase(), CaMutableTestModule {
     final override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
 
     final override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
 
     final override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
-
-    final override val targetPlatform: CaTargetPlatform
-        get() = platform
 
     override val baseContentScope: GlobalSearchScope = GlobalSearchScope.filesWithoutLibrariesScope(
         project,
@@ -59,8 +57,7 @@ class CaSourceModuleImpl(
     override val languageVersionSettings: LanguageVersionSettings,
     project: Project,
     psiRoots: List<PsiFileSystemItem>,
-    targetPlatform: CaTargetPlatform = CaTargetPlatform.STANDALONE,
-) : CaTestModuleBase(project, psiRoots, targetPlatform), CaSourceModule {
+) : CaTestModuleBase(project, psiRoots), CaSourceModule {
     override val psiRoots: List<PsiFileSystemItem> = psiRoots.toList()
 
     override fun toString(): String = name
@@ -70,8 +67,7 @@ class CaLibraryModuleImpl(
     override val libraryName: String,
     project: Project,
     binaryRoots: List<PsiFileSystemItem>,
-    targetPlatform: CaTargetPlatform = CaTargetPlatform.STANDALONE,
-) : CaTestModuleBase(project, binaryRoots, targetPlatform), CaLibraryModule {
+) : CaTestModuleBase(project, binaryRoots), CaLibraryModule {
     override val binaryRoots: List<PsiFileSystemItem> = binaryRoots.toList()
 
     override val isResolvable: Boolean
@@ -85,8 +81,7 @@ class CaLibrarySourceModuleImpl(
     override val binaryLibraryModule: CaLibraryModule,
     project: Project,
     sourceRoots: List<PsiFileSystemItem>,
-    targetPlatform: CaTargetPlatform = CaTargetPlatform.STANDALONE,
-) : CaTestModuleBase(project, sourceRoots, targetPlatform), CaLibrarySourceModule {
+) : CaTestModuleBase(project, sourceRoots), CaLibrarySourceModule {
     override val sourceRoots: List<PsiFileSystemItem> = sourceRoots.toList()
 
     override fun toString(): String = libraryName
@@ -96,25 +91,39 @@ class CaBuiltinsModuleImpl(
     project: Project,
     scopeRoots: List<PsiFileSystemItem> = emptyList(),
     override val builtinsName: String = "<test-builtins>",
-    targetPlatform: CaTargetPlatform = CaTargetPlatform.STANDALONE,
-) : CaTestModuleBase(project, scopeRoots, targetPlatform), CaBuiltinsModule {
+) : CaTestModuleBase(project, scopeRoots), CaBuiltinsModule {
     override val isResolvable: Boolean
         get() = false
 
     override val contentScope: GlobalSearchScope
-        get() = CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
+        get() = BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
 
     override fun toString(): String = builtinsName
 }
 
 class CaLibraryFallbackDependenciesModuleImpl(
-    override val dependencyOwnerName: String,
-    project: Project,
-    scopeRoots: List<PsiFileSystemItem>,
-    targetPlatform: CaTargetPlatform = CaTargetPlatform.STANDALONE,
-) : CaTestModuleBase(project, scopeRoots, targetPlatform), CaLibraryFallbackDependenciesModule {
+    private val dependentLibraryModule: CaLibraryModule,
+) : CaModuleBase(), CaLibraryFallbackDependenciesModule {
+    override val dependencyOwnerName: String
+        get() = dependentLibraryModule.libraryName
+
     override val isResolvable: Boolean
         get() = false
+
+    override val directRegularDependencies: List<CaModule>
+        get() = emptyList()
+
+    override val directDependsOnDependencies: List<CaModule>
+        get() = emptyList()
+
+    override val directFriendDependencies: List<CaModule>
+        get() = emptyList()
+
+    override val project: Project
+        get() = dependentLibraryModule.project
+
+    override val baseContentScope: GlobalSearchScope
+        get() = ProjectScope.getLibrariesScope(project).intersectWith(GlobalSearchScope.notScope(dependentLibraryModule.contentScope))
 
     override fun toString(): String = "$dependencyOwnerName.fallback"
 }
@@ -124,8 +133,7 @@ class CaDanglingFileModuleImpl(
     override val languageVersionSettings: LanguageVersionSettings,
     project: Project,
     psiRoots: List<PsiFileSystemItem>,
-    targetPlatform: CaTargetPlatform = CaTargetPlatform.STANDALONE,
-) : CaTestModuleBase(project, psiRoots, targetPlatform), CaDanglingFileModule {
+) : CaTestModuleBase(project, psiRoots), CaDanglingFileModule {
     private val filePointers: List<SmartPsiElementPointer<CjFile>> =
         psiRoots.map { psiRoot ->
             val file = psiRoot as? CjFile
@@ -162,15 +170,4 @@ class CaDanglingFileModuleImpl(
             }
             return result
         }
-}
-
-class CaNotUnderContentRootModuleImpl(
-    override val name: String,
-    project: Project,
-    scopeRoots: List<PsiFileSystemItem>,
-    targetPlatform: CaTargetPlatform = CaTargetPlatform.STANDALONE,
-) : CaTestModuleBase(project, scopeRoots, targetPlatform), CaNotUnderContentRootModule {
-    override var originalModule: CaModule? = null
-
-    override fun toString(): String = name
 }

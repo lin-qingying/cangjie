@@ -59,6 +59,14 @@ fun ConeCangJieType.renderForDebugging(): String {
     return builder.toString()
 }
 
+fun ConeIntersectionType.withUpperBound(upperBound: ConeCangJieType): ConeIntersectionType {
+    return ConeIntersectionType(
+        intersectedTypes = intersectedTypes,
+        upperBoundForApproximation = upperBound,
+        attributes = attributes,
+    )
+}
+
 fun ConeRigidType.getConstructor(): ConeTypeConstructorMarker {
     return when (this) {
         is ConeLookupTagBasedType -> this.lookupTag

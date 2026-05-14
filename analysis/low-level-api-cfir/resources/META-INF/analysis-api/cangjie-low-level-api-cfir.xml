@@ -25,6 +25,9 @@
         serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirDeclarationModificationService"
     />
     <projectService
+        serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationTracker"
+    />
+    <projectService
         serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationService"
     />
     <projectService
@@ -42,4 +45,23 @@
         serviceImplementation="org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirResolutionActivityTracker"
     />
   </extensions>
+
+  <projectListeners>
+    <listener
+        class="org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationService$LLCangJieModificationEventListener"
+        topic="org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEventListener"
+    />
+    <listener
+        class="org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationService$LLPsiModificationTrackerListener"
+        topic="com.intellij.psi.util.PsiModificationTracker$Listener"
+    />
+    <listener
+        class="org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationListenerForCodeFragments"
+        topic="org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationListener"
+    />
+    <listener
+        class="org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationTracker$Listener"
+        topic="org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirInBlockModificationListener"
+    />
+  </projectListeners>
 </idea-plugin>

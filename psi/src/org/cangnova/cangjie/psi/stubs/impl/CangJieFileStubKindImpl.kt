@@ -45,13 +45,6 @@ import kotlin.reflect.KProperty1
     }
 
     /**
-     * 脚本文件。
-     */
-    data class Script(override val packageFqName: FqName) : CangJieFileStubKindImpl(), CangJieFileStubKind.WithPackage.Script {
-        override fun toString(): String = toStringGenerator(Script::packageFqName)
-    }
-
-    /**
      * 简单的 Facade 文件。
      */
     data class Facade(
@@ -101,11 +94,6 @@ import kotlin.reflect.KProperty1
                     dataStream.writeName(kind.packageFqName.asString())
                 }
 
-                is Script -> {
-                    dataStream.writeByte(1)
-                    dataStream.writeName(kind.packageFqName.asString())
-                }
-
                 is Facade -> {
                     dataStream.writeByte(2)
                     dataStream.writeName(kind.packageFqName.asString())
@@ -138,11 +126,6 @@ import kotlin.reflect.KProperty1
                 0 -> {
                     val packageFqName = dataStream.readFqName()
                     File(packageFqName = packageFqName)
-                }
-
-                1 -> {
-                    val packageFqName = dataStream.readFqName()
-                    Script(packageFqName = packageFqName)
                 }
 
                 2 -> {

@@ -34,4 +34,9 @@ class CangJieBasicTypeStubImpl(
     parent: StubElement<out PsiElement>?,
     override val basicType: String
 ) : CangJieStubBaseImpl<CjBasicType>(parent, CjStubElementTypes.BASIC_TYPE),
-    CangJieBasicTypeStub
+    CangJieBasicTypeStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieBasicTypeStubImpl = CangJieBasicTypeStubImpl(
+        parent = newParent,
+        basicType = basicType,
+    )
+}

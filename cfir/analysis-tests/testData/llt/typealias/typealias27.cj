@@ -6,8 +6,6 @@
 
 // ERRCHECK: %compiler %cmp_opt --diagnostic-format json %f -o %output
 
-// ASSERT: scan sema_generic_type_argument_not_match_constraint
-
 struct Foo<T> where T <: ToString {}
 
 type Foobar<R> = Foo<R>
@@ -15,5 +13,5 @@ type Foobar<R> = Foo<R>
 struct S {}
 
 main() {
-    let a = Foobar<S>()
+    let a = <!GENERIC_ARGUMENT_NO_MATCH!>Foobar<S>()<!>
 }

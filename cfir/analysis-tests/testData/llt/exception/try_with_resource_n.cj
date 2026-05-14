@@ -9,33 +9,13 @@
 class A {}
 
 main() {
-    try (input = A()) {
+    try (<!TYPE_MISMATCH!>input = A()<!>) {
     } catch (e: Exception) {
         return 1
     }
-    try (aaa = ()) {
+    try (<!TYPE_MISMATCH!>aaa = ()<!>) {
         aaa;
         ()
     }
     return 0
 }
-
-/* SCAN
-error: mismatched types
-  ==> try_with_resource_n.cj:12:10:
-   | 
-12 |     try (input = A()) {
-   |          ^^^^^^^^^^^ expected 'Interface-Resource', found 'Class-A'
-   | 
-   # note: the resource specification should implement interface 'Resource'
-
-error: mismatched types
-  ==> try_with_resource_n.cj:16:10:
-   | 
-16 |     try (aaa = ()) {
-   |          ^^^^^^^^ expected 'Interface-Resource', found 'Unit'
-   | 
-   # note: the resource specification should implement interface 'Resource'
-
-2 errors generated, 2 errors printed.
-*/

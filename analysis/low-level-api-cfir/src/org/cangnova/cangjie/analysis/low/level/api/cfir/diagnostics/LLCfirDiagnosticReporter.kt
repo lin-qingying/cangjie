@@ -12,9 +12,12 @@ import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.PendingDiagnosticReporter
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakePsiSourceElement
+import org.cangnova.cangjie.source.CjPsiSourceElement
 import org.cangnova.cangjie.source.SuspiciousFakeSourceCheck
 
-internal class LLCfirDiagnosticReporter : PendingDiagnosticReporter() {
+internal class LLCfirDiagnosticReporter(
+    private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
+) : PendingDiagnosticReporter() {
     private val pendingDiagnostics = mutableMapOf<PsiElement, MutableList<CjPsiDiagnostic>>()
     private val _committedDiagnostics = mutableMapOf<PsiElement, MutableList<CjPsiDiagnostic>>()
 
@@ -33,12 +36,25 @@ internal class LLCfirDiagnosticReporter : PendingDiagnosticReporter() {
         // So as a temporary solution we filter out related diagnostics here.
         if (diagnostic.isAboutImplicitImport()) return
 
-        val psiDiagnostic = when (diagnostic) {
-            is CjPsiDiagnostic -> diagnostic
-            is CjLightDiagnostic -> diagnostic.toPsiDiagnostic()
-            else -> error("Unknown diagnostic type ${diagnostic::class.simpleName}")
-        }
+        val psiDiagnostic = diagnostic.toPsiDiagnostic()
         pendingDiagnostics.addValueFor(psiDiagnostic.psiElement, psiDiagnostic)
+    }
+
+    private fun CjDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
+        val currentElement = when (this) {
+            is CjPsiDiagnostic -> element
+            is CjDiagnosticWithSource -> element
+            else -> error("Unknown diagnostic type ${this::class.simpleName}")
+        }
+        val mappedElement = sourceMapper(currentElement) as? CjPsiSourceElement
+        if (mappedElement != null && mappedElement != currentElement) {
+            return toPsiDiagnosticAt(mappedElement)
+        }
+        return when (this) {
+            is CjPsiDiagnostic -> this
+            is CjLightDiagnostic -> this.toPsiDiagnosticFromLight()
+            else -> error("Unknown diagnostic type ${this::class.simpleName}")
+        }
     }
 
     override fun checkAndCommitReportsOn(element: AbstractCjSourceElement, context: DiagnosticContext, commitEverything: Boolean) {
@@ -72,12 +88,17 @@ private fun CjDiagnostic.isAboutImplicitImport(): Boolean {
 }
 
 
-private fun CjLightDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
+private fun CjLightDiagnostic.toPsiDiagnosticFromLight(): CjPsiDiagnostic {
     val psiSourceElement = element.unwrapToCjPsiSourceElement()
         ?: error("Diagnostic should be created from PSI in IDE")
+    return (this as CjDiagnostic).toPsiDiagnosticAt(psiSourceElement)
+}
+
+@Suppress("UNCHECKED_CAST")
+private fun CjDiagnostic.toPsiDiagnosticAt(psiSourceElement: CjPsiSourceElement): CjPsiDiagnostic {
     @Suppress("UNCHECKED_CAST")
     return when (this) {
-        is CjLightSimpleDiagnostic -> CjPsiSimpleDiagnostic(
+        is CjSimpleDiagnostic -> CjPsiSimpleDiagnostic(
             psiSourceElement,
             severity,
             factory,
@@ -85,7 +106,7 @@ private fun CjLightDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
             context,
         )
 
-        is CjLightDiagnosticWithParameters1<*> -> CjPsiDiagnosticWithParameters1(
+        is CjDiagnosticWithParameters1<*> -> CjPsiDiagnosticWithParameters1(
             psiSourceElement,
             a,
             severity,
@@ -94,7 +115,7 @@ private fun CjLightDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
             context,
         )
 
-        is CjLightDiagnosticWithParameters2<*, *> -> CjPsiDiagnosticWithParameters2(
+        is CjDiagnosticWithParameters2<*, *> -> CjPsiDiagnosticWithParameters2(
             psiSourceElement,
             a, b,
             severity,
@@ -103,7 +124,7 @@ private fun CjLightDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
             context,
         )
 
-        is CjLightDiagnosticWithParameters3<*, *, *> -> CjPsiDiagnosticWithParameters3(
+        is CjDiagnosticWithParameters3<*, *, *> -> CjPsiDiagnosticWithParameters3(
             psiSourceElement,
             a, b, c,
             severity,
@@ -112,7 +133,7 @@ private fun CjLightDiagnostic.toPsiDiagnostic(): CjPsiDiagnostic {
             context,
         )
 
-        is CjLightDiagnosticWithParameters4<*, *, *, *> -> CjPsiDiagnosticWithParameters4(
+        is CjDiagnosticWithParameters4<*, *, *, *> -> CjPsiDiagnosticWithParameters4(
             psiSourceElement,
             a, b, c, d,
             severity,

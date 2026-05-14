@@ -7,9 +7,13 @@ import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorNamedValue
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorFunction
+import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
+import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithSingleChild
@@ -20,8 +24,13 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirErrorEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirErrorNamedValueSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.resolve.calls.components.PostponedArgumentsAnalyzerContext
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
@@ -81,6 +90,66 @@ class CandidateFactory(
             callInfo = callInfo,
             originScope = originScope,
             bodyResolveContext = context.bodyResolveContext,
+        )
+    }
+
+    fun createFunctionTypeInvokeCandidate(
+        callInfo: CallInfo,
+        functionType: ConeFunctionType,
+        receiverExpression: CfirExpression,
+        explicitReceiverKind: ExplicitReceiverKind,
+        dispatchReceiver: ReceiverValue,
+    ): Candidate {
+        val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
+        val valueParameters = functionType.parameterTypes.mapIndexed { index, parameterType ->
+            val parameterName = Name.identifier("functionTypeInvokeArg$index")
+            buildValueParameter {
+                source = receiverExpression.source
+                moduleData = context.session.moduleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                origin = CfirDeclarationOrigin.Synthetic.FakeFunction
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = true
+                dispatchReceiverType = null
+                this.symbol = CfirValueParameterSymbol(CallableId(parameterName))
+                containingDeclarationSymbol = symbol
+                isNamed = false
+                status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+                returnTypeRef = buildResolvedTypeRef {
+                    source = receiverExpression.source
+                    coneType = parameterType
+                }
+                name = parameterName
+                defaultValue = null
+            }
+        }
+
+        buildNamedFunction {
+            source = callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.FakeFunction
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef {
+                source = callInfo.callSite.source
+                coneType = functionType.returnType
+            }
+            this.valueParameters.addAll(valueParameters)
+            body = null
+            this.symbol = symbol
+            name = callInfo.name
+            isMut = false
+        }
+
+        return createCandidate(
+            callInfo = callInfo,
+            symbol = symbol,
+            originScope = null,
+            explicitReceiverKind = explicitReceiverKind,
+            dispatchReceiver = dispatchReceiver,
         )
     }
 

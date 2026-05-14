@@ -1,15 +1,19 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.test.services
 
 import com.intellij.openapi.project.Project
-import com.intellij.psi.search.GlobalSearchScope
+import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.analysis.test.framework.projectStructure.CaBuiltinsModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
+import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructure
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
@@ -24,33 +28,29 @@ class CaTestPlatformState(
 ) {
     private val globalModificationCount = AtomicLong(0)
     private val moduleModificationCounts = ConcurrentHashMap<CaModule, AtomicLong>()
-
-    private val moduleStructure
-        get() = CaTestProjectStructureRegistry.get(project)
-
-    private val allModules: List<CaModule>
-        get() = moduleStructure.allCaModules
-
-    private val allSourceFiles
-        get() = moduleStructure.allCjFiles
-
-    /**
-     * 测试模块图在单个用例生命周期内视为稳定事实，因此直接缓存快照。
-     */
-    private val cachedSnapshot: CaProjectStructureSnapshot by lazy(LazyThreadSafetyMode.NONE) {
-        CaProjectStructureSnapshot(
-            allModules = allModules,
-            allResolvableModules = allModules.filter(CaModule::isResolvable),
-            allSourceLikeModules = allModules.filterIsInstance<CaSourceModule>(),
-            allSourceFiles = allSourceFiles,
-        )
-    }
+    @Volatile
+    private var installedProjectStructure: InstalledCaTestProjectStructure? = null
 
     val snapshot: CaProjectStructureSnapshot
-        get() = cachedSnapshot
+        get() = requireInstalledProjectStructure().snapshot
+
+    /**
+     * 安装当前测试用例声明的模块图。
+     *
+     * 与 IDE / Standalone 平台一样，测试宿主也必须先拥有一份稳定 project-structure，
+     * 再让 `CangJieProjectStructureProvider`、`CaModuleProvider` 等平台服务统一委托给它。
+     */
+    fun install(moduleStructure: CjTestModuleStructure) {
+        val builtinsModule = CaBuiltinsModuleImpl(project)
+        installedProjectStructure = InstalledCaTestProjectStructure(builtinsModule, moduleStructure)
+    }
 
     val modificationCount: Long
         get() = globalModificationCount.get()
+
+    fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
+        return requireInstalledProjectStructure().getModule(element, useSiteModule)
+    }
 
     fun getModuleModificationCount(module: CaModule): Long {
         return moduleModificationCounts[module]?.get() ?: modificationCount
@@ -68,6 +68,72 @@ class CaTestPlatformState(
             moduleModificationCounts.computeIfAbsent(module) { AtomicLong(0) }.incrementAndGet()
         }
     }
+
+    private fun requireInstalledProjectStructure(): InstalledCaTestProjectStructure {
+        return installedProjectStructure
+            ?: error("Analysis API test project structure has not been installed yet.")
+    }
+
+    /**
+     * 测试宿主安装完成后的稳定 project-structure 视图。
+     *
+     * Kotlin `KotlinTestProjectStructureProvider` 的核心语义在这里保持一致：
+     * 1. builtins 先按 builtins scope 命中；
+     * 2. library binary 再按 binary content scope 命中；
+     * 3. source/file 最后回落到测试模块结构；
+     * 4. 找不到模块时直接报错，而不是兜底生成额外模块。
+     */
+    private class InstalledCaTestProjectStructure(
+        private val builtinsModule: CaBuiltinsModule,
+        private val moduleStructure: CjTestModuleStructure,
+    ) {
+        private val binaryModules = moduleStructure.binaryModules
+
+        private val cachedSnapshot: CaProjectStructureSnapshot by lazy(LazyThreadSafetyMode.NONE) {
+            val allModules = listOf(builtinsModule) + moduleStructure.allCaModules
+            CaProjectStructureSnapshot(
+                allModules = allModules,
+                allResolvableModules = allModules.filter(CaModule::isResolvable),
+                allSourceLikeModules = moduleStructure.allCaModules.filterIsInstance<org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule>(),
+                allSourceFiles = moduleStructure.allCjFiles,
+            )
+        }
+
+        val snapshot: CaProjectStructureSnapshot
+            get() = cachedSnapshot
+
+        fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
+            useSiteModule?.let { return it }
+
+            val containingFile = element.containingFile
+                ?: error("Cannot resolve module for PSI element without containing file: $element")
+            val virtualFile = containingFile.virtualFile
+
+            if (virtualFile != null) {
+                if (virtualFile in builtinsModule.contentScope) {
+                    return builtinsModule
+                }
+
+                binaryModules
+                    .firstOrNull { module -> virtualFile in module.contentScope }
+                    ?.let { return it }
+            }
+
+            moduleStructure.findModuleByFile(containingFile)?.let { return it.caModule }
+
+            error(
+                buildString {
+                    append("Cannot find CjTestModule for `${containingFile.name}` in Analysis API test module structure.")
+                    if (virtualFile != null) {
+                        append(" virtualFileUrl=")
+                        append(virtualFile.url)
+                        append(" fileType=")
+                        append(virtualFile.fileType.name)
+                    }
+                },
+            )
+        }
+    }
 }
 
 /**
@@ -81,18 +147,6 @@ class CaTestModuleProvider(
 
     override fun getModuleByStableName(stableModuleName: String): CaModule? {
         return project.getService(CaTestPlatformState::class.java).getModuleByStableName(stableModuleName)
-    }
-}
-
-/**
- * 测试环境的内容范围精炼器。
- *
- * 当前测试框架显式构造出的 content scope 已经足够精确，
- * 因此这里保持恒等映射，但仍保留平台接口位置。
- */
-class CaTestContentScopeRefiner : CaContentScopeRefiner {
-    override fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope {
-        return baseContentScope
     }
 }
 

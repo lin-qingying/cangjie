@@ -7,6 +7,6 @@ func badReturn(): Int64 {
     return <!RETURN_TYPE_MISMATCH!>true<!>
 }
 
-main() {
+main(): Unit {
     takesInt(<!ARGUMENT_TYPE_MISMATCH!>true<!>)
 }

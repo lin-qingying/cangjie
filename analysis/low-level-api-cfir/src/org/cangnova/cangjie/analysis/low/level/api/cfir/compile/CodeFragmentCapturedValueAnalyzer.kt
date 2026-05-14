@@ -12,7 +12,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.LLResolutionFacade
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.containingCjFileIfAny
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -170,7 +169,7 @@ private class CodeFragmentCapturedValueVisitor(
                                 ?.let(::registerContainingClass)
                         }
                         is CfirTypeAliasSymbol, is CfirTypeParameterSymbol -> errorWithCfirSpecificEntries(
-                            message = "Unexpected CfirThisOwnerSymbol ${symbol::class.simpleName}", fir = symbol.cfir
+                            message = "Unexpected CfirThisOwnerSymbol ${symbol::class.simpleName}", cfir = symbol.cfir
                         )
                     }
                 }

@@ -14,6 +14,7 @@ import MacroMsgFormat.*
 import com.google.flatbuffers.FlatBufferBuilder
 import org.cangnova.cangjie.macro.MacroCallInfo
 import org.cangnova.cangjie.macro.MacroDiagnosticInfo
+import org.cangnova.cangjie.macro.MacroExpansionFailureKind
 import org.cangnova.cangjie.macro.MacroExpansionResult
 import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.macro.TokenInfo
@@ -34,6 +35,7 @@ object MacroMsgCodec {
     const val TYPE_EXIT_TASK: UByte = 4u
 
     // MacroEvalStatus
+    const val STATUS_EVAL: UByte = 2u
     const val STATUS_SUCCESS: UByte = 3u
     const val STATUS_FAIL: UByte = 4u
     const val STATUS_FINISH: UByte = 6u
@@ -164,6 +166,14 @@ object MacroMsgCodec {
         return MacroMsg.getRootAsMacroMsg(buf).contentType
     }
 
+    /** 解析 DefLib ack 中携带的库路径。空列表表示服务端接受本次加载。 */
+    fun parseDefLibPaths(payload: ByteArray): List<String> {
+        val buf = ByteBuffer.wrap(payload).order(ByteOrder.LITTLE_ENDIAN)
+        val msg = MacroMsg.getRootAsMacroMsg(buf)
+        val defLib = msg.content(DefLib()) as? DefLib ?: return emptyList()
+        return (0 until defLib.pathsLength).mapNotNull { index -> defLib.paths(index) }
+    }
+
     /**
      * 解析 MacroResult 消息，转换为 [MacroExpansionResult]
      */
@@ -172,7 +182,10 @@ object MacroMsgCodec {
         val msg = MacroMsg.getRootAsMacroMsg(buf)
 
         val result = msg.content(MacroResult()) as? MacroResult
-            ?: return MacroExpansionResult.Failure("无法解析 MacroResult")
+            ?: return MacroExpansionResult.Failure(
+                message = "无法解析 MacroResult",
+                kind = MacroExpansionFailureKind.PROTOCOL_ERROR,
+            )
 
         val status = result.status
         val tokens = (0 until result.tksLength).mapNotNull { i ->
@@ -201,10 +214,12 @@ object MacroMsgCodec {
                 severity = diag.diagSeverity,
                 message = diag.errorMessage ?: return@mapNotNull null,
                 hint = diag.mainHint ?: "",
+                begin = diag.begin.toSourcePosition(),
+                end = diag.end.toSourcePosition(),
             )
         }
 
-        return if (status == STATUS_SUCCESS || status == STATUS_FINISH) {
+        return if ((status == STATUS_SUCCESS || status == STATUS_FINISH || status == STATUS_EVAL) && !macroExpandFailed(tokens)) {
             MacroExpansionResult.Success(
                 tokens = tokens,
                 expandedText = rebuildExpandedText(tokens),
@@ -213,9 +228,26 @@ object MacroMsgCodec {
         } else {
             MacroExpansionResult.Failure(
                 message = diagnostics.firstOrNull()?.message ?: "宏展开失败（status=$status）",
+                kind = MacroExpansionFailureKind.EXPAND_FAILED,
                 diagnostics = diagnostics,
             )
         }
+    }
+
+    /**
+     * 对齐官方 `MacroExpandFailed` / `SetMacroCallEvalResult`：
+     * LSPMacroServer 会把 runtime 已执行但尚未由父进程归一化的结果以 EVAL 返回，
+     * 客户端必须用单个 ILLEGAL token 判定失败，否则视为成功。
+     */
+    private fun macroExpandFailed(tokens: List<TokenInfo>): Boolean =
+        tokens.size == 1 && tokens.single().kind == TOKEN_ILLEGAL
+
+    private fun Position?.toSourcePosition(): SourcePosition {
+        return SourcePosition(
+            fileId = this?.fileId?.toInt() ?: 0,
+            line = this?.line ?: 0,
+            column = this?.column ?: 0,
+        )
     }
 
     // ─── 展开文本重建 ─────────────────────────────────────────────────────────
@@ -248,6 +280,8 @@ object MacroMsgCodec {
 
     private val noSpaceAfter = setOf("(", "[", ".", "@", "#", "!")
     private val noSpaceBefore = setOf(")", "]", ",", ";", ".", "(")
+
+    private val TOKEN_ILLEGAL: UByte = 0u
 
     private fun needsSpaceBetween(prevValue: String, currValue: String): Boolean {
         if (prevValue.contains('\n') || prevValue.contains('\r')) return false

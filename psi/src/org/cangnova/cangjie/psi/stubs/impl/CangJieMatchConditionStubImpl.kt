@@ -38,4 +38,8 @@ import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 class CangJieMatchConditionStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjMatchConditionWithExpression>(parent, CjStubElementTypes.MATCH_CONDITION),
-    CangJieMatchConditionStub
+    CangJieMatchConditionStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieMatchConditionStubImpl = CangJieMatchConditionStubImpl(
+        parent = newParent,
+    )
+}

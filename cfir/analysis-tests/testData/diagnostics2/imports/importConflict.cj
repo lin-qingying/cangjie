@@ -1,7 +1,24 @@
 // RUN_PIPELINE_TILL: FRONTEND
-import <!IMPORT_CONFLICT!><!UNRESOLVED_IMPORT!>alpha<!>.one.Duplicate<!>
-import <!UNRESOLVED_IMPORT!>beta<!>.two.Duplicate
-import <!UNRESOLVED_IMPORT!>gamma<!>.three.Other
+// FILE: alpha.cj
+package alpha.one
+
+public class Duplicate {}
+
+// FILE: beta.cj
+package beta.two
+
+public class Duplicate {}
+
+// FILE: gamma.cj
+package gamma.three
+
+public class Other {}
+
+// FILE: main.cj
+import alpha.one.Duplicate
+import beta.two.<!IMPORT_CONFLICT!>Duplicate<!>
+import gamma.three.Other
 
 func importConflictSuite(): Unit {
+    let _ = Other()
 }

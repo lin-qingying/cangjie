@@ -10,11 +10,8 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecif
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.isPartialBodyResolvable
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
-import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildLazyBlock
-import org.cangnova.cangjie.cfir.expressions.builder.buildLazyExpression
 import org.cangnova.cangjie.cfir.psi
 
 /**
@@ -26,7 +23,7 @@ internal fun invalidateAfterInBlockModification(declaration: CfirDeclaration): B
     is CfirPropertyAccessor -> declaration.inBodyInvalidation()
     is CfirProperty -> declaration.inBodyInvalidation()
     is CfirCodeFragment -> declaration.inBodyInvalidation()
-    else -> errorWithCfirSpecificEntries("Unknown declaration with body", fir = declaration, psi = declaration.psi)
+    else -> errorWithCfirSpecificEntries("Unknown declaration with body", cfir = declaration, psi = declaration.psi)
 }
 
 /**

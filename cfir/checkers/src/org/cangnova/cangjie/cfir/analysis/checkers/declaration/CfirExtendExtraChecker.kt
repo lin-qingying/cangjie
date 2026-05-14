@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemanticsSupport
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -15,8 +15,6 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.source.psi
 
 /**
  * Extend 补充检查器（ExtendExtra 分组）
@@ -80,8 +78,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         val targetType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: return
         val targetDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(targetType.classId)?.cfir ?: return
-        val owner = targetDecl.source?.psi as? CjModifierListOwner ?: return
-        if (owner.annotationEntries.any { it.shortName == JAVA }) {
+        if (CfirExtendSemantics.hasAnnotation(targetDecl, JAVA)) {
             reporter.reportOn(
                 source = targetTypeRef.source ?: extend.source,
                 factory = CfirErrors.EXTEND_A_JAVA_TYPE,
@@ -100,8 +97,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         val targetType = (targetTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: return
         val targetDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(targetType.classId)?.cfir ?: return
-        val owner = targetDecl.source?.psi as? CjModifierListOwner ?: return
-        if (owner.annotationEntries.any { it.shortName == JAVA_IMPL }) {
+        if (CfirExtendSemantics.hasAnnotation(targetDecl, JAVA_IMPL)) {
             reporter.reportOn(
                 source = targetTypeRef.source ?: extend.source,
                 factory = CfirErrors.EXTEND_REF_TARGET_CANNOT_BE_JAVA_IMPL,
@@ -176,6 +172,7 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
     private fun checkExtendImportedInterface(extend: CfirExtend) {
         for (superTypeRef in extend.superTypeRefs) {
             val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
+            if (CfirExtendSemantics.isProtectedInterface(superType.classId)) continue
             val superDecl = context.session.symbolProvider
                 .getClassLikeSymbolByClassId(superType.classId)?.cfir
                 as? org.cangnova.cangjie.cfir.declarations.CfirInterface ?: continue

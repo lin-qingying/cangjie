@@ -28,6 +28,10 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.MUT_MODIFIER,
         PositioningStrategies.MUT_MODIFIER,
     )
+    val THROW_KEYWORD = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.THROW_KEYWORD,
+        PositioningStrategies.THROW_KEYWORD,
+    )
     val VARIABLE_INITIALIZER: AbstractSourceElementPositioningStrategy = DEFAULT
     val PATTERN_VARIABLE_INITIALIZER: AbstractSourceElementPositioningStrategy = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.INITIALIZER_EQ,
@@ -36,6 +40,10 @@ object SourceElementPositioningStrategies {
     val IMPORT_LAST_NAME = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.IMPORT_LAST_NAME,
         PositioningStrategies.IMPORT_LAST_NAME
+    )
+    val IMPORT_ALIAS = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.IMPORT_ALIAS,
+        PositioningStrategies.IMPORT_ALIAS
     )
     val OPERATOR = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.OPERATOR,

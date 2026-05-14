@@ -11,15 +11,19 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostics.cfir.LLCfirStructureElementDiagnosticsCollector
 import org.cangnova.cangjie.cfir.analysis.collectors.DiagnosticCollectorComponents
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
+import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 
 internal fun collectForStructureElement(
     cfirDeclaration: CfirDeclaration,
     filter: DiagnosticCheckerFilter,
     createVisitor: (components: DiagnosticCollectorComponents) -> CheckerRunningDiagnosticCollectorVisitor,
 ): FileStructureElementDiagnosticList {
-    val reporter = LLCfirDiagnosticReporter()
+    val session = cfirDeclaration.moduleData.session
+    val reporter = LLCfirDiagnosticReporter(
+        sourceMapper = { source -> session.macroExpansionRegistry?.originSourceForGeneratedSource(source) },
+    )
     val collector = LLCfirStructureElementDiagnosticsCollector(
-        cfirDeclaration.moduleData.session,
+        session,
         createVisitor,
         filter,
     )

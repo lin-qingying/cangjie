@@ -14,7 +14,18 @@ import org.cangnova.cangjie.analysis.api.types.CaType
  * 因此这里不再重复暴露第二套 component 入口。
  */
 interface CaTypeInformationProvider : CaLifetimeOwner {
+    /**
+     * 该类型是否为错误类型(无法解析或推断失败)。
+     */
     val CaType.isErrorType: Boolean
+
+    /**
+     * 该类型的完全展开形式;对 type alias 等场景递归展开到最终底层类型。
+     */
     val CaType.fullyExpandedType: CaType
+
+    /**
+     * 该类型背后的 class-like symbol;非 class-like 类型返回 `null`。
+     */
     val CaType.classLikeSymbol: CaClassLikeSymbol?
 }

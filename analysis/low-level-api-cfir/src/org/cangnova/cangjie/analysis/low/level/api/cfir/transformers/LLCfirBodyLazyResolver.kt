@@ -384,7 +384,7 @@ private class CfirPartialBodyExpressionResolveTransformer(
                         performedAnalysesCount = performedAnalysesCount,
                         analysisStateSnapshot = LLPartialBodyAnalysisSnapshot(
                             result = LLPartialBodyAnalysisResult(
-                                statements = block.statements.take(index).map { it as CfirStatement },
+                                statements = block.statements.take(index),
                                 defaultParameterValues = collectDefaultParameterValues(declaration)
                             ),
                             towerDataContext = context.towerDataContext.createSnapshot(keepMutable = true),
@@ -536,6 +536,9 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
 
         override val declarationsTransformer: CfirDeclarationsResolveTransformer =
             CfirPartialBodyDeclarationResolveTransformer(this)
+
+        override val preserveCFGForClasses: Boolean get() = false
+        override val buildCfgForFiles: Boolean get() = false
     }
 
     /**
@@ -558,6 +561,17 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
 
                 performCustomResolveUnderLock(target) {
                     calculateControlFlowGraph(target)
+                }
+
+                return true
+            }
+
+            is CfirClassLikeDeclaration -> {
+                if (checkAnalysisReadiness(target, containingDeclarations, resolverPhase)) return true
+
+                performCustomResolveUnderLock(target) {
+                    // 非 regular class 的 class-like 容器没有额外 CFG 入口；
+                    // 这里仅推进容器自身 phase，成员仍作为独立 target 按既有路径完成 BODY_RESOLVE。
                 }
 
                 return true
@@ -724,7 +738,7 @@ private class LLCfirBodyTargetResolver(target: LLCfirResolveTarget) : LLCfirAbst
         if (target is CfirCallableDeclaration && target.canHaveDeferredReturnTypeCalculation) return
 
         when (target) {
-            is CfirFile, is CfirClass, is CfirCodeFragment -> error("Should have been resolved in ${::doResolveWithoutLock.name}")
+            is CfirFile, is CfirClassLikeDeclaration, is CfirCodeFragment -> error("Should have been resolved in ${::doResolveWithoutLock.name}")
             is CfirExtend -> {
                 // extend 自身不拥有独立 body，成员会作为独立目标继续推进到 BODY_RESOLVE。
             }

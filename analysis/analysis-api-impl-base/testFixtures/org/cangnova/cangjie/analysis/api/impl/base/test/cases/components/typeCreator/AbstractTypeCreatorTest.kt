@@ -27,8 +27,8 @@ import org.junit.jupiter.api.Assertions.assertEquals
  * - union type
  * - function / c-function / closure function
  *
- * class-like 场景同时要求 `buildClassLikeType(classId, ...)` 与
- * `buildClassLikeType(symbol, ...)` 结果一致，避免两个公开入口语义漂移。
+ * class-like 场景同时要求 `buildClassType(classId, ...)` 与
+ * `buildClassType(symbol, ...)` 结果一致，避免两个公开入口语义漂移。
  */
 abstract class AbstractTypeCreatorTest : AbstractAnalysisApiComponentTest() {
     override val additionalDirectives: List<DirectivesContainer>

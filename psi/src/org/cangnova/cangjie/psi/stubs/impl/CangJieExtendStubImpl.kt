@@ -67,4 +67,15 @@ open class CangJieExtendStubImpl(
     }
 
     override fun getClassId(): ClassId? = classId
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieExtendStubImpl = CangJieExtendStubImpl(
+        type = stubType as CjExtendElementType,
+        parent = newParent,
+        qualifiedName = qualifiedName,
+        classId = classId,
+        name = name,
+        extendIdRef = extendIdRef,
+        superNames = superNames,
+        receiverTypeName = receiverTypeName,
+    )
 }

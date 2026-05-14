@@ -1,45 +1,34 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.test.services
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
-import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
+import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 
 /**
- * Analysis API 测试专用的项目结构提供器。
+ * Analysis API 测试宿主的 project-structure 服务。
  *
- * 测试平台严格依赖预先构建好的测试模块图，不做 IDE 平台那种“内容根外兜底”推断。
- * 一旦元素无法映射回测试模块，就直接报错。
+ * 测试模式下不再直接把 provider 实例塞进 Pico 容器，
+ * 而是与其它测试平台服务一样统一委托给 [CaTestPlatformState]。
+ * 这样 project service 的装配边界保持一致，后续只需要安装一次测试模块图。
  */
 class CaTestProjectStructureProvider(
     private val project: Project,
 ) : CangJieProjectStructureProvider {
-    private val moduleStructure
-        get() = CaTestProjectStructureRegistry.get(project)
-
-    /**
-     * 测试 project-structure 在单个用例生命周期内是稳定的，
-     * 因而可以直接缓存成只读快照。
-     */
-    private val cachedSnapshot: CaProjectStructureSnapshot by lazy(LazyThreadSafetyMode.NONE) {
-        CaProjectStructureSnapshot(
-            allModules = moduleStructure.allCaModules,
-            allResolvableModules = moduleStructure.allCaModules.filter(CaModule::isResolvable),
-            allSourceLikeModules = moduleStructure.allCaModules.filterIsInstance<CaSourceModule>(),
-            allSourceFiles = moduleStructure.allCjFiles,
-        )
-    }
-
-    override val snapshot: CaProjectStructureSnapshot
-        get() = cachedSnapshot
+    private val state: CaTestPlatformState
+        get() = project.getService(CaTestPlatformState::class.java)
 
     override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
-        useSiteModule?.let { return it }
-
-        val containingFile = element.containingFile
-            ?: error("Cannot resolve module for PSI element without containing file: $element")
-        return moduleStructure.requireModuleByFile(containingFile).caModule
+        return state.getModule(element, useSiteModule)
     }
+
+    override fun getImplementingModules(module: CaModule): List<CaModule> {
+        return state.snapshot.allModules.filter { module in it.directDependsOnDependencies }
+    }
+
+    override val globalLanguageVersionSettings: LanguageVersionSettings
+        get() = LanguageVersionSettings.DEFAULT
 }

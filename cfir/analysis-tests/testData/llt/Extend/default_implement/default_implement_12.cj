@@ -14,19 +14,8 @@ interface I2 <: I1 {}
 
 class A {}
 
-extend A <: I1 & I2 {} // failed
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend A <: I1 & I2 {}<!> // failed
 
 main() {
     A().foo()
 }
-
-/* SCAN
-error: interface function 'foo' must be implemented in 'extend A'
-  ==> default_implement_12.cj:17:1:
-   | 
-17 | extend A <: I1 & I2 {} // failed
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

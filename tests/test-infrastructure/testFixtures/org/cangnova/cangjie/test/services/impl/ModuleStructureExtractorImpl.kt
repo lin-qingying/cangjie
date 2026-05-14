@@ -4,6 +4,7 @@ import org.cangnova.cangjie.utils.DFS
 
 import org.cangnova.cangjie.test.Assertions
 import org.cangnova.cangjie.test.TestInfrastructureInternals
+import org.cangnova.cangjie.test.testInfo
 import org.cangnova.cangjie.test.builders.LanguageVersionSettingsBuilder
 import org.cangnova.cangjie.test.directives.AdditionalFilesDirectives
 import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
@@ -34,6 +35,7 @@ import org.cangnova.cangjie.test.services.ModuleStructureExtractor
 import org.cangnova.cangjie.test.services.ModuleStructureTransformer
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.assertions
+import org.cangnova.cangjie.test.services.defaultDirectives
 import org.cangnova.cangjie.test.services.defaultRegisteredDirectivesProvider
 import org.cangnova.cangjie.test.services.defaultsProvider
 import org.cangnova.cangjie.test.util.joinToArrayString
@@ -62,9 +64,9 @@ class ModuleStructureExtractorImpl(
         /*
          * ([^()\n]+) module name
          * \((.*?)\) module dependencies
-         * (\((.*?)\))? module friendDependencies
+         * (\((.*?)\)(\((.*?)\))?)? module friendDependencies and dependsOnDependencies
          */
-        private val moduleDirectiveRegex = """([^()\n]+)(\((.*?)\)(\((.*?)\))?)?""".toRegex()
+        private val moduleDirectiveRegex = """([^()\n]+)(\((.*?)\)(\((.*?)\)(\((.*?)\))?)?)?""".toRegex()
 
         /**
          * This method could be used by tests which are not based on the [TestServices] infrastructure,
@@ -226,7 +228,7 @@ class ModuleStructureExtractorImpl(
                         }
                         finishGlobalDirectives()
                     }
-                    val (moduleName, dependencies, friends) = splitRawModuleStringToNameAndDependencies(
+                    val (moduleName, dependencies, friends, dependsOn) = splitRawModuleStringToNameAndDependencies(
                         values.joinToString(separator = " ")
                     )
                     currentModuleName = moduleName
@@ -234,11 +236,16 @@ class ModuleStructureExtractorImpl(
 
                     fun String.toDependencyDescription(relation: DependencyRelation): DependencyDescription {
                         val dependantModule = modules.find { it.name == this } ?: error("Module $this not found")
-                        return DependencyDescription(dependantModule, kind, relation)
+                        val specificKind = when (relation) {
+                            DependencyRelation.DependsOnDependency -> DependencyKind.Source
+                            else -> kind
+                        }
+                        return DependencyDescription(dependantModule, specificKind, relation)
                     }
 
                     dependencies.mapTo(dependenciesOfCurrentModule) { it.toDependencyDescription(DependencyRelation.RegularDependency) }
                     friends.mapTo(dependenciesOfCurrentModule) { it.toDependencyDescription(DependencyRelation.FriendDependency) }
+                    dependsOn.mapTo(dependenciesOfCurrentModule) { it.toDependencyDescription(DependencyRelation.DependsOnDependency) }
                 }
                 ModuleStructureDirectives.SNIPPET -> {
                     fun snippetName() = "snippet_${"%03d".format(currentSnippetNumber)}"
@@ -272,7 +279,7 @@ class ModuleStructureExtractorImpl(
         private fun splitRawModuleStringToNameAndDependencies(moduleDirectiveString: String): ModuleNameAndDependencies {
             val matchResult = moduleDirectiveRegex.matchEntire(moduleDirectiveString)
                 ?: error("\"$moduleDirectiveString\" doesn't matches with pattern \"moduleName(dep1, dep2)\"")
-            val (name, _, dependencies, _, friends) = matchResult.destructured
+            val (name, _, dependencies, _, friends, _, dependsOn) = matchResult.destructured
             var dependenciesNames = dependencies.takeIf { it.isNotBlank() }?.split(" ") ?: emptyList()
             globalDirectives?.let { directives ->
                 /*
@@ -285,9 +292,12 @@ class ModuleStructureExtractorImpl(
                 }
             }
             val friendsNames = friends.takeIf { it.isNotBlank() }?.split(" ") ?: emptyList()
+            val dependsOnNames = dependsOn.takeIf { it.isNotBlank() }?.split(" ") ?: emptyList()
 
             val intersection = buildSet {
                 addAll(dependenciesNames intersect friendsNames)
+                addAll(dependenciesNames intersect dependsOnNames)
+                addAll(friendsNames intersect dependsOnNames)
             }
             require(intersection.isEmpty()) {
                 val m = if (intersection.size == 1) "module" else "modules"
@@ -299,6 +309,7 @@ class ModuleStructureExtractorImpl(
                 name,
                 dependenciesNames,
                 friendsNames,
+                dependsOnNames,
             )
         }
 
@@ -330,7 +341,7 @@ class ModuleStructureExtractorImpl(
             finishFile(lineNumber)
             val isImplicitModule = currentModuleName == null
 
-            val defaultDirectives = testServices.defaultRegisteredDirectivesProvider.defaultDirectives
+            val defaultDirectives = testServices.defaultDirectives
             val moduleDirectives = defaultDirectives + globalDirectives + moduleDirectivesBuilder.build()
 
             moduleDirectives.forEach { it.checkDirectiveApplicability(contextIsGlobal = isImplicitModule, contextIsModule = true) }
@@ -341,6 +352,7 @@ class ModuleStructureExtractorImpl(
                 moduleDirectives, environmentConfigurators, useK2 = frontendKind == FrontendKinds.CFIR
             )
             val moduleName = currentModuleName
+                ?.let { escapeModuleNameIfNeeded(it) }
                 ?: defaultDirectives[ModuleStructureDirectives.MODULE].firstOrNull()
                 ?: DEFAULT_MODULE_NAME
             val testModule = TestModule(
@@ -354,6 +366,13 @@ class ModuleStructureExtractorImpl(
             modules += testModule
             firstFileInModule = true
             resetModuleCaches()
+        }
+
+        private fun escapeModuleNameIfNeeded(name: String): String {
+            if (ModuleStructureDirectives.ESCAPE_MODULE_NAME !in testServices.defaultDirectives) return name
+            val (className, methodName, _) = testServices.testInfo
+            val classPart = className.substringAfter("$").replace("$", ".")
+            return "$classPart.$methodName.$name"
         }
 
         private fun finishFile(lineNumber: Int) {
@@ -452,7 +471,8 @@ class ModuleStructureExtractorImpl(
     private data class ModuleNameAndDependencies(
         val name: String,
         val dependencies: List<String>,
-        val friends: List<String>
+        val friends: List<String>,
+        val dependsOn: List<String>
     )
 }
 

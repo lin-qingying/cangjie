@@ -15,18 +15,7 @@ main() {
     let x = MyList.Cons(0, Cons(1, Cons(2, Nil)))
     match (x) {
         case Nil => 0
-        case MyList<Bool>.Cons(_, Nil) => 1
+        case <!PATTERN_NOT_MATCH!>MyList<Bool>.Cons(_, Nil)<!> => 1
         case _ => 2
     }
 }
-
-/* SCAN
-error: enum pattern is not matched
-  ==> usertype_04.cj:18:14:
-   | 
-18 |         case MyList<Bool>.Cons(_, Nil) => 1
-   |              ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -6,7 +6,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangnova.cangjie.cfir.diagnostics.SourceElementPositioningStrategies
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -55,11 +54,9 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
             val visibleOverriddenSymbols = overriddenCandidates.filter { it.isVisibleIn(declaration, context) }
             if (visibleOverriddenSymbols.isEmpty()) {
-                // 这里区分“没有候选”和“有候选但全部不可见”，避免把继承可见性语义退化成 NOTHING_TO_OVERRIDE。
                 reporter.reportOn(
                     source = callable.source,
-                    factory = CfirErrors.CANNOT_OVERRIDE_INVISIBLE_MEMBER,
-                    a = overriddenCandidates.first().name,
+                    factory = CfirErrors.NOTHING_TO_OVERRIDE,
                 )
                 continue
             }
@@ -118,11 +115,6 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             factory = CfirErrors.CANNOT_WEAKEN_ACCESS_PRIVILEGE,
             a = firstIncompatibleOverridden.name,
             b = firstIncompatibleOverridden.cfir.status.visibility,
-            positioningStrategy = if (declaration.status.isVisibilityExplicit) {
-                SourceElementPositioningStrategies.VISIBILITY_MODIFIER
-            } else {
-                null
-            },
         )
     }
 

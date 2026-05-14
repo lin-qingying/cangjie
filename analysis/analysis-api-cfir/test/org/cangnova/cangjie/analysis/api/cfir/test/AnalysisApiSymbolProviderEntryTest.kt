@@ -18,7 +18,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjEnumConstructor
@@ -64,13 +64,17 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             accessor.isSetter
         }
         val functionLiteral = PsiTreeUtil.findChildrenOfType(mainFile, CjFunctionLiteral::class.java).single()
-        val patternVariable = PsiTreeUtil.findChildrenOfType(mainFile, CjPatternVariable::class.java).single()
+        val patternVariable = PsiTreeUtil.findChildrenOfType(mainFile, CjPatternVariable::class.java).single { variable ->
+            PsiTreeUtil.findChildrenOfType(variable, CjBindingPattern::class.java).any { binding ->
+                binding.name == "left"
+            }
+        }
         val patternBinding = PsiTreeUtil.findChildrenOfType(mainFile, CjBindingPattern::class.java)
             .single { binding -> binding.name == "left" }
 
         analyzeForTest(mainFile) {
             fun assertRestoresToSamePsi(psi: PsiElement, symbol: CaSymbol) {
-                val originalPsi = symbol.getOriginalPsi()
+                val originalPsi = symbol.psi
                 assertNotNull(originalPsi, "Symbol `${symbol::class.simpleName}` should keep original PSI.")
                 assertSame(psi, originalPsi)
             }
@@ -111,7 +115,7 @@ class AnalysisApiSymbolProviderEntryTest : AbstractAnalysisApiExecutionTest(
             assertEquals("value", setterSymbol.parameter.name.asString())
             assertEquals(
                 "prettyPrint",
-                extendSymbol.declaredMemberScope.getCallableSymbols(Name.identifier("prettyPrint")).single().name?.asString(),
+                extendSymbol.declaredMemberScope.callables(Name.identifier("prettyPrint")).single().name?.asString(),
             )
         }
     }

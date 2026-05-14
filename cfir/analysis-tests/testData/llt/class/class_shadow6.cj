@@ -13,7 +13,7 @@ open class Base {
 }
 
 class Data <: Base {
-    public static func f(): Int32 {
+    public static func <!INHERIT_MEMBER_KIND_INCONSISTENT!>f<!>(): Int32 {
         return 0
     }
 }
@@ -22,27 +22,3 @@ main(): Int64 {
     var res = Data.f()
     return 0
 }
-
-/* SCAN
-error: static member 'f' cannot have the same name with non-static member in parent class or interfaces
-  ==> class_shadow6.cj:16:5:
-   | 
-16 |     public static func f(): Int32 {
-   |     ^ 
-   | 
-
-error: cannot override function 'f'
-  ==> class_shadow6.cj:16:24:
-   | 
-16 |     public static func f(): Int32 {
-   |                        ^ 
-   | 
-note: the parent function is not modified by 'open'
-  ==> class_shadow6.cj:10:17:
-   | 
-10 |     public func f(): Int32 {
-   |                 ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

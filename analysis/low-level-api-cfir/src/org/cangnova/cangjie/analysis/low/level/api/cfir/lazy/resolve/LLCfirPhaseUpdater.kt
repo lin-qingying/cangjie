@@ -73,11 +73,13 @@ internal object LLCfirPhaseUpdater {
     }
 
     private fun updatePhaseForNonLocals(element: CfirElementWithResolveState, newPhase: CfirResolvePhase, isTargetDeclaration: Boolean) {
-        if (element.resolvePhase >= newPhase) return
+        if (element.resolvePhase > newPhase) return
         if (!isTargetDeclaration) {
             // phase update for target declaration happens as a declaration publication event after resolve is finished
-            @OptIn(ResolveStateAccess::class)
-            element.resolveState = newPhase.asResolveState()
+            if (element.resolvePhase < newPhase) {
+                @OptIn(ResolveStateAccess::class)
+                element.resolveState = newPhase.asResolveState()
+            }
         }
 
         if (element is CfirTypeParameterRefsOwner) {

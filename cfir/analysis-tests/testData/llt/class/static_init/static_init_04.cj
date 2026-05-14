@@ -9,9 +9,9 @@
 class A {
     static init() {
         if (1 > 2) {
-            return
+            <!INVALID_RETURN_IN_STATIC_INIT!>return<!>
         } else {
-            return
+            <!INVALID_RETURN_IN_STATIC_INIT!>return<!>
         }
     }
 }
@@ -19,21 +19,3 @@ class A {
 main() {
     return 0
 }
-
-/* SCAN
-error: 'return' cannot be used inside the static initializer
-  ==> static_init_04.cj:14:13:
-   | 
-14 |             return
-   |             ^^^^^^ 
-   | 
-
-error: 'return' cannot be used inside the static initializer
-  ==> static_init_04.cj:12:13:
-   | 
-12 |             return
-   |             ^^^^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -8,7 +8,7 @@
 
 func doo() {}
 
-func doo(i: Int64): Int32 {
+func <!CONFLICTING_OVERLOADS!>doo<!>(i: Int64): Int32 {
     return 1
 }
 
@@ -19,20 +19,3 @@ func doo(i: Int64): Int32 {
 func doo(i: Int32) {}
 
 func doo(i: Float32) {}
-
-/* SCAN
-error: function 'doo' has overload conflicts
-  ==> redefinition1.cj:15:6:
-   | 
-15 | func doo(i: Int64): Int32 {
-   |      ^^^ 
-   | 
-note: conflict with the declaration
-  ==> redefinition1.cj:11:6:
-   | 
-11 | func doo(i: Int64): Int32 {
-   |      ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

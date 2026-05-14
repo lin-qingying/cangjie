@@ -20,6 +20,7 @@ abstract class CfirRangeExpression : CfirExpression() {
     abstract override val coneTypeOrNull: ConeCangJieType?
     abstract val start: CfirExpression
     abstract val end: CfirExpression
+    abstract val step: CfirExpression?
     abstract val isInclusive: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -38,4 +39,6 @@ abstract class CfirRangeExpression : CfirExpression() {
     abstract fun <D> transformStart(transformer: CfirTransformer<D>, data: D): CfirRangeExpression
 
     abstract fun <D> transformEnd(transformer: CfirTransformer<D>, data: D): CfirRangeExpression
+
+    abstract fun <D> transformStep(transformer: CfirTransformer<D>, data: D): CfirRangeExpression
 }

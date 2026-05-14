@@ -7,9 +7,9 @@
 
 package org.cangnova.cangjie.cfir.expressions.impl
 
-import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -22,7 +22,7 @@ class CfirLazyBlockImpl : CfirLazyBlock() {
         get() = error("CfirLazyBlock should be resolved before accessing")
     override val coneTypeOrNull: ConeCangJieType?
         get() = error("CfirLazyBlock should be resolved before accessing")
-    override val statements: List<CfirElement>
+    override val statements: List<CfirStatement>
         get() = error("CfirLazyBlock should be resolved before accessing")
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}

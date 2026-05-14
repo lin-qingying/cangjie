@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.test.framework.projectStructure
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.model.TestModuleStructure
@@ -58,6 +59,10 @@ class CjTestModuleStructure(
 
     val allCaModules: List<CaModule> by lazy(LazyThreadSafetyMode.NONE) {
         mainModules.flatMap(CjTestModule::allCaModules).distinct()
+    }
+
+    val binaryModules: List<CaLibraryModule> by lazy(LazyThreadSafetyMode.NONE) {
+        allCaModules.filterIsInstance<CaLibraryModule>()
     }
 
     fun getModule(moduleName: String): CjTestModule =

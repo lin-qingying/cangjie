@@ -18,7 +18,7 @@ func case60() {
     let scoreTuple = ("a", 90)
     var result: String = match (scoreTuple) {
         case ("a", 90) => "Yes"
-        case ("a", (50, 90)) => "No"
+        case ("a", <!TYPE_MISMATCH!>(50, 90)<!>) => "No"
         case (_, _) => "None"
     }
 }
@@ -27,7 +27,7 @@ func case60_2() {
     let scoreTuple = ("a", 90)
     var result: String = match (scoreTuple) {
         case ("a", 90) => "Yes"
-        case (50, 90) => "No"
+        case (<!TYPE_MISMATCH!>50<!>, 90) => "No"
         case (_, _) => "None"
     }
 }
@@ -36,7 +36,7 @@ func case60_2() {
 func case60_3() {
     let scoreTuple = ("a", 90)
     var result: String = match (scoreTuple) {
-        case ("a", 50, 90) => "No"
+        case <!TUPLE_PATTERN_NOT_MATCH!>("a", 50, 90)<!> => "No"
         case (_, _) => "None"
     }
 }
@@ -44,23 +44,23 @@ func case60_3() {
 func case60_4() {
     let scoreTuple = ("a", 90)
     var result: String = match (scoreTuple) {
-        case (50, 90) => "No"
+        case (<!TYPE_MISMATCH!>50<!>, 90) => "No"
         case (_, _) => "None"
     }
 }
 
 func case60_5() {
-    let a: Float32 = 90
+    let a: Float32 = <!TYPE_MISMATCH!>90<!>
     let b: Int32 = 0
     let scoreTuple = ("a", a)
     var result: String = match (scoreTuple) {
-        case ("a", 0) => "No"
+        case ("a", <!TYPE_MISMATCH!>0<!>) => "No"
         case (_, _) => "None"
     }
 }
 
 func case60_6() {
-    let a: Float32 = 90
+    let a: Float32 = <!TYPE_MISMATCH!>90<!>
     let scoreTuple = ("a", a)
     var result: String = match (scoreTuple) {
         case ("a", b) => "No"
@@ -100,56 +100,3 @@ func case60_14() {
         case (_, _) => "None"
     }
 }
-
-/* SCAN
-error: mismatched types
-  ==> tuple1.cj:21:20:
-   | 
-21 |         case ("a", (50, 90)) => "No"
-   |                    ^^^^^^^^ expected 'Int64', found 'Tuple'
-   | 
-
-error: cannot convert an integer literal to type 'Struct-String'
-  ==> tuple1.cj:30:15:
-   | 
-30 |         case (50, 90) => "No"
-   |               ^ 
-   | 
-
-error: tuple pattern with correct size expected
-  ==> tuple1.cj:39:14:
-   | 
-39 |         case ("a", 50, 90) => "No"
-   |              ^ 
-   | 
-
-error: cannot convert an integer literal to type 'Struct-String'
-  ==> tuple1.cj:47:15:
-   | 
-47 |         case (50, 90) => "No"
-   |               ^ 
-   | 
-
-error: cannot convert an integer literal to type 'Float32'
-  ==> tuple1.cj:53:22:
-   | 
-53 |     let a: Float32 = 90
-   |                      ^ 
-   | 
-
-error: cannot convert an integer literal to type 'Float32'
-  ==> tuple1.cj:57:20:
-   | 
-57 |         case ("a", 0) => "No"
-   |                    ^ 
-   | 
-
-error: cannot convert an integer literal to type 'Float32'
-  ==> tuple1.cj:63:22:
-   | 
-63 |     let a: Float32 = 90
-   |                      ^ 
-   | 
-
-7 errors generated, 7 errors printed.
-*/

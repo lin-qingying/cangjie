@@ -1,9 +1,16 @@
 ﻿package org.cangnova.cangjie
 
 import com.intellij.codeInsight.ContainerProvider
+import com.intellij.codeInsight.TargetElementUtil
+import com.intellij.codeInsight.TargetElementUtilExtender
+import com.intellij.codeInsight.lookup.LookupManager
+import com.intellij.codeInsight.lookup.impl.LookupManagerImpl
+import com.intellij.codeInsight.multiverse.EditorContextManager
 import com.intellij.core.CoreApplicationEnvironment
 import com.intellij.lang.MetaLanguage
+import com.intellij.lang.LanguageExtensionPoint
 import com.intellij.mock.MockApplication
+import com.intellij.mock.MockProject
 import com.intellij.model.psi.ImplicitReferenceProvider
 import com.intellij.model.psi.PsiSymbolDeclarationProvider
 import com.intellij.model.psi.PsiSymbolReferenceProviderBean
@@ -12,13 +19,13 @@ import com.intellij.model.psi.PsiSymbolService
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.AsyncExecutionService
 import com.intellij.openapi.application.AppUIExecutor
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.application.ExpirableExecutor
 import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.application.NonBlockingReadAction
 import com.intellij.openapi.application.TransactionGuard
 import com.intellij.openapi.application.TransactionGuardImpl
 import com.intellij.openapi.extensions.ExtensionsArea
-import com.intellij.openapi.fileTypes.BinaryFileDecompiler
 import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
@@ -36,7 +43,9 @@ import com.intellij.psi.impl.smartPointers.SmartPointerAnchorProvider
 import com.intellij.psi.impl.source.resolve.reference.PsiReferenceContributorEP
 import com.intellij.psi.meta.MetaDataContributor
 import com.intellij.psi.search.UseScopeEnlarger
+import com.intellij.psi.stubs.StubInconsistencyReporter
 import com.intellij.util.QueryExecutor
+import com.intellij.util.concurrency.TransferredWriteActionService
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
@@ -80,10 +89,13 @@ internal object CangJieHeadlessPlatformBootstrap {
         if (project.getService(com.intellij.psi.search.PsiSearchHelper::class.java) == null) {
             project.registerService(com.intellij.psi.search.PsiSearchHelper::class.java, PsiSearchHelperImpl::class.java)
         }
+        if (project.getService(LookupManager::class.java) == null) {
+            project.registerService(LookupManager::class.java, LookupManagerImpl::class.java)
+        }
+        registerEditorContextManagerIfMissing(project)
     }
 
     private fun registerApplicationExtensionPoints(area: ExtensionsArea) {
-        registerExtensionPoint(area, "com.intellij.filetype.decompiler", BinaryFileDecompiler::class.java)
         registerExtensionPoint(area, "com.intellij.fileContextProvider", FileContextProvider::class.java)
         registerExtensionPoint(area, "com.intellij.psi.metaDataContributor", MetaDataContributor::class.java)
         registerExtensionPoint(area, "com.intellij.containerProvider", ContainerProvider::class.java)
@@ -97,6 +109,8 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerExtensionPoint(area, "com.intellij.psi.declarationProvider", PsiSymbolDeclarationProvider::class.java)
         registerExtensionPoint(area, UseScopeEnlarger.EP_NAME.name, UseScopeEnlarger::class.java)
         registerExtensionPoint(area, "com.intellij.referencesSearch", QueryExecutor::class.java)
+        registerExtensionPoint(area, "com.intellij.targetElementEvaluator", LanguageExtensionPoint::class.java)
+        registerExtensionPoint(area, "com.intellij.targetElementUtilExtender", TargetElementUtilExtender::class.java)
     }
 
     private fun registerCangJiePsiInfrastructure(
@@ -126,6 +140,21 @@ internal object CangJieHeadlessPlatformBootstrap {
             VirtualFileSetFactory::class.java,
             CangJieHeadlessVirtualFileSetFactory::class.java,
         )
+        if (application.getService(TransferredWriteActionService::class.java) == null) {
+            application.registerService(
+                TransferredWriteActionService::class.java,
+                CangJieTransferredWriteActionService(),
+            )
+        }
+        if (application.getService(StubInconsistencyReporter::class.java) == null) {
+            application.registerService(
+                StubInconsistencyReporter::class.java,
+                CangJieHeadlessStubInconsistencyReporter(),
+            )
+        }
+        if (application.getService(TargetElementUtil::class.java) == null) {
+            application.registerService(TargetElementUtil::class.java)
+        }
     }
 
     private fun registerProjectExtensionPoints(area: ExtensionsArea) {
@@ -141,6 +170,23 @@ internal object CangJieHeadlessPlatformBootstrap {
         if (application.getService(serviceInterface) == null) {
             application.registerService(serviceInterface, implementationClass)
         }
+    }
+
+    /**
+     * `EditorContextManagerImpl` 是 IntelliJ 平台 internal 类，
+     * headless 宿主仍需按平台构造签名 `(Project, CoroutineScope)` 物化该 project service。
+     */
+    private fun registerEditorContextManagerIfMissing(project: MockProject) {
+        if (project.getService(EditorContextManager::class.java) != null) return
+
+        val implementationClass = Class.forName("com.intellij.codeInsight.multiverse.EditorContextManagerImpl")
+        val coroutineScopeClass = Class.forName("kotlinx.coroutines.CoroutineScope")
+        val constructor = implementationClass.getDeclaredConstructor(Project::class.java, coroutineScopeClass)
+        constructor.isAccessible = true
+        val coroutineScope = project::class.java.getMethod("getCoroutineScope").invoke(project)
+        @Suppress("UNCHECKED_CAST")
+        val serviceInstance = constructor.newInstance(project, coroutineScope) as EditorContextManager
+        project.registerService(EditorContextManager::class.java, serviceInstance)
     }
 
     private fun <T : Any> registerExtensionPoint(
@@ -209,9 +255,9 @@ private object CangJieWriteAccessSupport {
 internal class CangJieTestAsyncExecutionService : AsyncExecutionService() {
     override fun createExecutor(executor: Executor): ExpirableExecutor = CangJieImmediateExpirableExecutor(executor)
 
-    override fun createUIExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor()
+    override fun createUIExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor(runAsWriteAction = true)
 
-    override fun createWriteThreadExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor()
+    override fun createWriteThreadExecutor(modalityState: ModalityState): AppUIExecutor = CangJieImmediateAppUiExecutor(runAsWriteAction = true)
 
     override fun <T> buildNonBlockingReadAction(computation: Callable<out T>): NonBlockingReadAction<T> {
         return CangJieImmediateNonBlockingReadAction(computation)
@@ -255,7 +301,9 @@ private class CangJieImmediateExpirableExecutor(
     }
 }
 
-private class CangJieImmediateAppUiExecutor : AppUIExecutor {
+private class CangJieImmediateAppUiExecutor(
+    private val runAsWriteAction: Boolean,
+) : AppUIExecutor {
     override fun later(): AppUIExecutor = this
 
     override fun withDocumentsCommitted(project: Project): AppUIExecutor = this
@@ -265,13 +313,27 @@ private class CangJieImmediateAppUiExecutor : AppUIExecutor {
     override fun expireWith(parentDisposable: Disposable): AppUIExecutor = this
 
     override fun execute(command: Runnable) {
-        command.run()
+        if (runAsWriteAction) {
+            ApplicationManager.getApplication().runWriteAction(command)
+        } else {
+            command.run()
+        }
     }
 
     override fun <T> submit(task: Callable<T>): CancellablePromise<T> {
         val promise = AsyncPromise<T>()
         try {
-            promise.setResult(task.call())
+            if (runAsWriteAction) {
+                promise.setResult(
+                    ApplicationManager.getApplication().runWriteAction(
+                        Computable {
+                            task.call()
+                        },
+                    ),
+                )
+            } else {
+                promise.setResult(task.call())
+            }
         } catch (t: Throwable) {
             promise.setError(t)
         }
@@ -285,6 +347,41 @@ private class CangJieImmediateAppUiExecutor : AppUIExecutor {
                 null
             },
         )
+    }
+}
+
+private class CangJieTransferredWriteActionService : TransferredWriteActionService {
+    override fun runOnEdtWithTransferredWriteActionAndWait(action: Runnable) {
+        action.run()
+    }
+}
+
+private class CangJieHeadlessStubInconsistencyReporter : StubInconsistencyReporter {
+    override fun reportStubInconsistencyBetweenPsiAndText(
+        project: Project,
+        sourceOfCheck: StubInconsistencyReporter.SourceOfCheck?,
+        inconsistencyType: StubInconsistencyReporter.InconsistencyType,
+    ) {
+    }
+
+    override fun reportStubInconsistencyBetweenPsiAndText(
+        project: Project,
+        sourceOfCheck: StubInconsistencyReporter.SourceOfCheck,
+        inconsistencyType: StubInconsistencyReporter.InconsistencyType,
+        enforcedInconsistencyType: StubInconsistencyReporter.EnforcedInconsistencyType?,
+    ) {
+    }
+
+    override fun reportKotlinDescriptorNotFound(project: Project?) {
+    }
+
+    override fun reportKotlinMissingClassName(project: Project, hasClassName: Boolean, hasFacadeClassName: Boolean) {
+    }
+
+    override fun reportStubTreeAndIndexDoNotMatch(
+        project: Project,
+        source: StubInconsistencyReporter.StubTreeAndIndexDoNotMatchSource,
+    ) {
     }
 }
 

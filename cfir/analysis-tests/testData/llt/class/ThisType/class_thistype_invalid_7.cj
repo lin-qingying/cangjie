@@ -19,17 +19,6 @@ class B {
 }
 
 main(): Unit {
-    let b: B = B().b()
+    let b: B = <!TYPE_MISMATCH!>B().b()<!>
     b.b()
 }
-
-/* SCAN
-error: mismatched types
-  ==> class_thistype_invalid_7.cj:22:16:
-   | 
-22 |     let b: B = B().b()
-   |                ^^^^^^^ expected 'Class-B', found 'Class-A'
-   | 
-
-1 error generated, 1 error printed.
-*/

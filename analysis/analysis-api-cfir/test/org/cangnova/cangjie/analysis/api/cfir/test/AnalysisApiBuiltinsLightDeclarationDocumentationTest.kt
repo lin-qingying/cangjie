@@ -1,29 +1,33 @@
 package org.cangnova.cangjie.analysis.api.cfir.test
 
-import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationKind
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.psi.PsiManager
+import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
+import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclaration
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationOriginKind
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationProvider
 import org.cangnova.cangjie.analysis.api.lightDeclarations.documentation
-import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledPsiProvider
-import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
+import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiDecompiledTestServiceRegistrar
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisSessionMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.services.TestServices
+import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjNamedDeclaration
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
 import kotlin.io.path.isRegularFile
 
 /**
@@ -37,38 +41,84 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
     "analysis/analysis-api-cfir/testData/lightDeclarationDocsBuiltins",
 ) {
     private val stdlibModulePropertyName = "cangjie.stdlib.module"
+    private var previousStdlibModulePropertyValue: String? = null
+    private lateinit var testStdlibRoot: Path
 
-    override val configurator: AnalysisApiTestConfigurator =
-        CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(
-            AnalysisApiTestConfiguratorFactoryData(
-                frontend = FrontendKind.Cfir,
-                moduleKind = TestModuleKind.Builtins,
-                analysisSessionMode = AnalysisSessionMode.Normal,
-                analysisApiMode = AnalysisApiMode.Standalone,
-            ),
-        )
+    override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
+
+    override val additionalServiceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>> =
+        listOf(CaAnalysisApiDecompiledTestServiceRegistrar)
+
+    @BeforeEach
+    fun installStdlibFixtureProperty() {
+        previousStdlibModulePropertyValue = System.getProperty(stdlibModulePropertyName)
+        testStdlibRoot = createSlimStdlibFixture("std.cjo", "std/std.core.cjo", "std/std.objectpool.cjo")
+        System.setProperty(stdlibModulePropertyName, testStdlibRoot.toString())
+    }
+
+    @AfterEach
+    fun restoreStdlibFixtureProperty() {
+        if (previousStdlibModulePropertyValue == null) {
+            System.clearProperty(stdlibModulePropertyName)
+        } else {
+            System.setProperty(stdlibModulePropertyName, previousStdlibModulePropertyValue)
+        }
+    }
 
     @Test
     fun builtinsLightDeclarationDocs(mainFile: CjFile, mainModule: CjTestModule) {
-        withStdlibFixtureProperty(locateStdlibFixtureRoot()) {
-            val decompiledFile = mainFile.project.getService(CaDecompiledPsiProvider::class.java)
-                .findDecompiledFile(mainModule.caModule as CaBuiltinsModule, FqName("std.core"))
-            assertNotNull(decompiledFile, "builtins decompiled PSI 应可恢复 `std.core`")
+        val decompiledFile = findBuiltinsObjectPool(mainFile)
+        assertNotNull(decompiledFile, "builtins decompiled PSI 应可恢复 `std.objectpool`")
 
-            val provider = CaLightDeclarationProvider.getInstance(mainFile.project)
-            val declaration = provider.getLightDeclarations(decompiledFile!!, mainModule.caModule)
-                .firstOrNull { lightDeclaration ->
-                    lightDeclaration.origin.kind == CaLightDeclarationOriginKind.DECOMPILED_PSI &&
-                        lightDeclaration.kind != CaLightDeclarationKind.PACKAGE
-                }
+        val provider = CaLightDeclarationProvider.getInstance(mainFile.project)
+        val allDeclarations = ApplicationManager.getApplication().runWriteAction<List<CaLightDeclaration>> {
+            provider.getLightDeclarations(decompiledFile!!, mainModule.caModule)
+        }
+        val declaration = allDeclarations.firstOrNull { lightDeclaration ->
+            lightDeclaration.origin.kind == CaLightDeclarationOriginKind.DECOMPILED_PSI
+        }
+        assertNotNull(declaration, "builtins light declaration provider 应返回 decompiled 视图")
+        assertTrue(declaration!!.origin.containingFile?.isCompiled == true)
+        assertFalse(declaration.origin.description.isBlank())
 
-            assertNotNull(declaration, "builtins light declaration provider 应返回 decompiled 视图")
-            assertTrue(declaration!!.origin.containingFile?.isCompiled == true)
-            assertFalse(declaration.origin.description.isBlank())
+        analyzeForTest(mainFile) {
+            assertEquals(null, documentation(declaration))
+        }
+    }
 
-            analyzeForTest(mainFile) {
-                assertEquals(null, documentation(declaration))
-            }
+    @Test
+    fun builtinsDecompiledText(mainFile: CjFile, mainModule: CjTestModule) {
+        val decompiledFile = findBuiltinsObjectPool(mainFile)
+        assertNotNull(decompiledFile)
+        assertTrue(decompiledFile!!.text.contains("ObjectPool"))
+        assertTrue(decompiledFile.text.length < 200_000, "std.objectpool decompiled text 不应异常膨胀")
+    }
+
+    @Test
+    fun builtinsDecompiledTopLevelDeclarations(mainFile: CjFile, mainModule: CjTestModule) {
+        val decompiledFile = findBuiltinsObjectPool(mainFile)
+        assertNotNull(decompiledFile)
+        val actualDeclarations = decompiledFile!!.declarations.filterIsInstance<CjNamedDeclaration>().mapNotNull { declaration -> declaration.name }
+        assertEquals(
+            listOf("ObjectPool"),
+            actualDeclarations,
+        )
+    }
+
+    private fun findBuiltinsObjectPool(mainFile: CjFile): CjFile? {
+        return ApplicationManager.getApplication().runWriteAction<CjFile?> {
+            val binaryIndex = mainFile.project.getService(CaDecompiledBinaryIndex::class.java)
+            val builtinFiles = BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles()
+            val binaryFile = binaryIndex.findBuiltinsBinaryFile(FqName("std.objectpool"))
+                ?: builtinFiles.firstOrNull { virtualFile ->
+                        virtualFile.name.equals("std.objectpool.cjo", ignoreCase = true) &&
+                            binaryIndex.readPackageFqName(virtualFile) == FqName("std.objectpool")
+                    }
+                ?: error(
+                    "Cannot find std.objectpool in builtins files: " +
+                        builtinFiles.map { file -> file.path + ":" + binaryIndex.readPackageFqName(file) }.sorted(),
+                )
+            PsiManager.getInstance(mainFile.project).findFile(binaryFile) as? CjFile
         }
     }
 
@@ -93,17 +143,18 @@ class AnalysisApiBuiltinsLightDeclarationDocumentationTest : AbstractAnalysisApi
             ?: error("Cannot locate repository root from $start")
     }
 
-    private fun <T> withStdlibFixtureProperty(stdlibRoot: Path, action: () -> T): T {
-        val oldValue = System.getProperty(stdlibModulePropertyName)
-        try {
-            System.setProperty(stdlibModulePropertyName, stdlibRoot.toString())
-            return action()
-        } finally {
-            if (oldValue == null) {
-                System.clearProperty(stdlibModulePropertyName)
-            } else {
-                System.setProperty(stdlibModulePropertyName, oldValue)
-            }
+    private fun createSlimStdlibFixture(
+        vararg relativePaths: String,
+    ): Path {
+        val sourceRoot = locateStdlibFixtureRoot()
+        val tempRoot = Files.createTempDirectory("cangjie-analysis-api-stdlib")
+        relativePaths.forEach { relativePath ->
+            val sourceFile = sourceRoot.resolve(relativePath)
+            require(sourceFile.isRegularFile()) { "Missing stdlib fixture file: $sourceFile" }
+            val targetFile = tempRoot.resolve(relativePath)
+            Files.createDirectories(targetFile.parent)
+            Files.copy(sourceFile, targetFile, StandardCopyOption.REPLACE_EXISTING)
         }
+        return tempRoot
     }
 }

@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.tests.runners
 
 import org.cangnova.cangjie.cfir.analysis.tests.services.CfirInlineDiagnosticsChecker
+import org.cangnova.cangjie.cfir.analysis.tests.services.MacroConstructionEnvironmentConfigurator
 import org.cangnova.cangjie.cfir.analysis.tests.services.StructuredInlineDiagnosticsAssertionError
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.TargetBackend
@@ -10,6 +11,7 @@ import org.cangnova.cangjie.test.config.TestPhase
 import org.cangnova.cangjie.test.config.commonConfigurationForTest
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.CFIR_PARSER
 import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
+import org.cangnova.cangjie.test.directives.MacroConstructionDirectives
 import org.cangnova.cangjie.test.frontend.CfirDefaultFacade
 import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.runners.AbstractCangjieCompilerWithTargetBackendTest
@@ -29,7 +31,8 @@ abstract class AbstractCfirPhasedDiagnosticTest(
 
     override fun configure(builder: TestConfigurationBuilder) = with(builder) {
         assertions = JUnit5Assertions
-        useDirectives(LanguageSettingsDirectives, TestPhaseDirectives)
+        useDirectives(LanguageSettingsDirectives, TestPhaseDirectives, MacroConstructionDirectives)
+        useConfigurators(::MacroConstructionEnvironmentConfigurator)
 
         defaultDirectives {
             TestPhaseDirectives.LATEST_PHASE_IN_PIPELINE with TestPhase.BACKEND
@@ -54,7 +57,8 @@ abstract class AbstractCfirStructuredPhasedDiagnosticTest(
 ) : AbstractCangjieCompilerWithTargetBackendTest(TargetBackend.ANY) {
 
     override fun configure(builder: TestConfigurationBuilder) = with(builder) {
-        useDirectives(LanguageSettingsDirectives, TestPhaseDirectives)
+        useDirectives(LanguageSettingsDirectives, TestPhaseDirectives, MacroConstructionDirectives)
+        useConfigurators(::MacroConstructionEnvironmentConfigurator)
 
         defaultDirectives {
             TestPhaseDirectives.LATEST_PHASE_IN_PIPELINE with TestPhase.BACKEND

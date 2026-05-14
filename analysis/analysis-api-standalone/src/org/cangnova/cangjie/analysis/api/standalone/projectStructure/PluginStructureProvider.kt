@@ -210,9 +210,14 @@ object PluginStructureProvider {
      */
     private val allowedExtensionPointNames = listOf(
         "org.cangnova.cangjie.psiReferenceProvider",
+        "org.cangnova.cangjie.cjoFileDecompiler",
         "com.intellij.filetype.decompiler",
+        "com.intellij.fileType.fileViewProviderFactory",
         "com.intellij.referencesSearch",
         "com.intellij.lang.findUsagesProvider",
+        "com.intellij.targetElementEvaluator",
+        "com.intellij.targetElementUtilExtender",
+        "com.intellij.usageTargetProvider",
     )
 
     private val MockComponentManager.classLoader: ClassLoader

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.cfir.diagnostic.ConeHiddenCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
+import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -166,6 +167,9 @@ fun createConeDiagnosticForCandidateWithError(
     val visibilityError = candidate.diagnostics.firstOrNull { it is VisibilityError } as? VisibilityError
     if (visibilityError != null) {
         return ConeVisibilityError(visibilityError.symbol)
+    }
+    if (candidate.system.hasContradiction) {
+        return ConeConstraintSystemHasContradiction(candidate)
     }
 
     return when (applicability) {

@@ -46,4 +46,9 @@ class CangJieTypePatternStubImpl(
     CangJieTypePatternStub {
 
     override fun getName(): String? = StringRef.toString(name)
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieTypePatternStubImpl = CangJieTypePatternStubImpl(
+        parent = newParent,
+        name = name,
+    )
 }

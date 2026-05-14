@@ -5,12 +5,15 @@ class Box<T> {
     }
 }
 
-func takeBox(v: <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>): Unit {}
+func takeBox(v: <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>): Unit {
+    let _ = v
+}
 
 func useTypePosition(): Unit {
     let x: <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>
+    let _ = <!USED_BEFORE_INITIALIZATION!>x<!>
 }
 
 func useQualifier(): Int64 {
-    return <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>.create()
+    return <!UNABLE_TO_INFER_GENERIC_FUNC!>Box.create()<!>
 }

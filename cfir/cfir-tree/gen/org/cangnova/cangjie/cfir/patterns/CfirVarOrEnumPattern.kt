@@ -26,4 +26,6 @@ abstract class CfirVarOrEnumPattern : CfirPattern() {
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
         transformer.transformVarOrEnumPattern(this, data) as E
+
+    abstract fun <D> transformBindingVariable(transformer: CfirTransformer<D>, data: D): CfirVarOrEnumPattern
 }
