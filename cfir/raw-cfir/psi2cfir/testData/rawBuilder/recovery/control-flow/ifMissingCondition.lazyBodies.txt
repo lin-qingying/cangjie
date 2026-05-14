@@ -1,2 +1,4 @@
 FILE: ifMissingCondition.cj
-    internal? func ifMissingCondition(): R|Int64|
+    internal? func ifMissingCondition(): R|Int64| {
+        <element: CfirLazyBlock>
+    }

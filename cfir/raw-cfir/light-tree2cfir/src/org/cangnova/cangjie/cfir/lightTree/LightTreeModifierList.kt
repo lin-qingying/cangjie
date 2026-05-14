@@ -139,6 +139,7 @@ class LightTreeModifierList(
             node: LighterASTNode,
             result: MutableList<LighterASTNode>,
         ) {
+            val initializerBoundary = node.firstDirectChildOffset(tree, CjTokens.EQ)
             tree.forEachChildren(node) { child ->
                 when (child.tokenType) {
                     CjStubElementTypes.ANNOTATIONS -> tree.forEachChildren(child) { annotation ->
@@ -148,9 +149,21 @@ class LightTreeModifierList(
                     }
                     CjNodeTypes.ANNOTATION,
                     CjNodeTypes.MACRO_EXPRESSION,
-                    -> result.add(child)
+                    -> if (initializerBoundary == null || tree.getStartOffset(child) < initializerBoundary) {
+                        result.add(child)
+                    }
                 }
             }
+        }
+
+        private fun LighterASTNode.firstDirectChildOffset(
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+            tokenType: com.intellij.psi.tree.IElementType,
+        ): Int? {
+            tree.forEachChildren(this) { child ->
+                if (child.tokenType == tokenType) return tree.getStartOffset(child)
+            }
+            return null
         }
     }
 }

@@ -1,2 +1,4 @@
 FILE: arrayAndTupleLiterals.cj
-    internal? func testLiterals(): R|Unit|
+    internal? func testLiterals(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

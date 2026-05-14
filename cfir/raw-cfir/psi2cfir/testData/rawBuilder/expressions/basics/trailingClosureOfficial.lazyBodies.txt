@@ -1,4 +1,10 @@
 FILE: trailingClosureOfficial.cj
-    internal? func f(a: R|Int64|, fn: R|(R|Int64|) -> R|Int64||): <implicit>
-    internal? func f2(fn: R|(R|Int64|) -> R|Int64||): <implicit>
-    internal? func useClosures(): <implicit>
+    internal? func f(a: R|Int64|, fn: R|(R|Int64|) -> R|Int64||): <implicit> {
+        <element: CfirLazyBlock>
+    }
+    internal? func f2(fn: R|(R|Int64|) -> R|Int64||): <implicit> {
+        <element: CfirLazyBlock>
+    }
+    internal? func useClosures(): <implicit> {
+        <element: CfirLazyBlock>
+    }

@@ -1,9 +1,9 @@
 FILE: optionalChainAccess.cj
-    internal? func testOptionalChain(x: R|Option<R|Box|||): R|Unit| {
+    internal? func testOptionalChain(x: R|Option<R|Box|>|): R|Unit| {
         local? let a: <implicit> = ...
             initializer:
                 OPTIONAL_CHAIN_EXPRESSION {
-                    QUALIFIED_ACCESS(value) {
+                    NAMED_ACCESS(value) {
                         receiver:
                             OPTIONAL_EXPRESSION {
                                 NAMED_ACCESS(x)
@@ -15,21 +15,28 @@ FILE: optionalChainAccess.cj
                 OPTIONAL_CHAIN_EXPRESSION {
                     SUBSCRIPT {
                         receiver:
-                            QUALIFIED_ACCESS(value) {
-                                receiver:
-                                    OPTIONAL_EXPRESSION {
-                                        NAMED_ACCESS(x)
-                                    }
+                            OPTIONAL_EXPRESSION {
+                                NAMED_ACCESS(value) {
+                                    receiver:
+                                        OPTIONAL_EXPRESSION {
+                                            NAMED_ACCESS(x)
+                                        }
+                                }
                             }
                         indices:
                             INT(0)
                     }
                 }
         OPTIONAL_CHAIN_EXPRESSION {
-            FUNCTION_CALL(invoke) {
+            FUNCTION_CALL(*operator_invoke) {
                 receiver:
                     OPTIONAL_EXPRESSION {
-                        NAMED_ACCESS(x)
+                        NAMED_ACCESS(invoke) {
+                            receiver:
+                                OPTIONAL_EXPRESSION {
+                                    NAMED_ACCESS(x)
+                                }
+                        }
                     }
             }
         }

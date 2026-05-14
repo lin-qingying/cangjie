@@ -1,10 +1,15 @@
 FILE: classWithModifiers.cj
     internal? abstract class Shape {
+        init()
         internal? abstract func area(): R|Float64|
     }
     internal? sealed class Color {
+        init()
     }
     internal? class Counter {
+        init()
         internal? static var count: R|Int64|
-        internal? static func getCount(): R|Int64|
+        internal? static func getCount(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
     }

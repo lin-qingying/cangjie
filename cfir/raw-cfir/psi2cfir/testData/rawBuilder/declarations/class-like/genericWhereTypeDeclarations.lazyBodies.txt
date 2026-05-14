@@ -2,14 +2,17 @@ FILE: genericWhereTypeDeclarations.cj
     internal? interface Constraint {
     }
     internal? class GenericClass<T> {
+        init()
         internal? var value: R|T|
     }
     internal? interface GenericInterface<T> {
-        internal? var value: R|T|
+        public? var value: R|T|
     }
     internal? struct GenericStruct<T> {
+        init()
         internal? var value: R|T|
     }
     internal? enum GenericEnum<T> {
         Value(R|T|)
+        init()
     }

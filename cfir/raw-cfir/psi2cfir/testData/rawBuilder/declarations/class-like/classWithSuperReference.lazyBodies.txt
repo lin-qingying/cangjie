@@ -1,9 +1,13 @@
 FILE: classWithSuperReference.cj
     internal? open class Base {
         init()
-        internal? open func value(): R|Int64|
+        internal? open func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
     }
     internal? class Box <: R|Base| {
         init()
-        internal? override func value(): R|Int64|
+        internal? override func value(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
     }

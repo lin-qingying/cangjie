@@ -1,25 +1,26 @@
 FILE: classWithThisReference.cj
     internal? class Box {
+        init()
         internal? var value: R|Int64| = ...
             initializer:
                 INT(0)
         internal? func getValue(): R|Int64| {
             RETURN {
-                PROPERTY_ACCESS(value) {
+                NAMED_ACCESS(value) {
                     receiver:
-                        QUALIFIED_ACCESS(<this>)
+                        <element: CfirThisReceiverExpression>
                 }
             }
         }
         internal? func setValue(v: R|Int64|): R|Unit| {
             ASSIGNMENT {
                 lValue:
-                    PROPERTY_ACCESS(value) {
+                    NAMED_ACCESS(value) {
                         receiver:
-                            QUALIFIED_ACCESS(<this>)
+                            <element: CfirThisReceiverExpression>
                     }
                 rValue:
-                    QUALIFIED_ACCESS(v)
+                    NAMED_ACCESS(v)
             }
         }
     }

@@ -22,10 +22,10 @@ FILE: matchRichPatternsOfficial.cj
             MATCH {
                 subject:
                     NAMED_ACCESS(time)
-                BRANCH(Year(y) where 1 == 1) {
+                BRANCH(Year(deferred(y)) where 1 == 1) {
                     NAMED_ACCESS(y)
                 }
-                BRANCH(Year(y) | Month(y, _)) {
+                BRANCH(Year(deferred(y)) | Month(deferred(y), _)) {
                     NAMED_ACCESS(y)
                 }
             }

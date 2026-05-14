@@ -39,6 +39,7 @@ import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
@@ -583,12 +584,21 @@ class LightTreeRawCfirExpressionBuilder(
     private fun convertCallArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
         val expressionNode = findFirstExpression(valueArgumentNode) ?: return null
         val convertedExpression = convertExpression(expressionNode)
+        val isInout = tree.findChildByType(valueArgumentNode, CjTokens.INOUT_KEYWORD) != null
+        val wrapped = if (isInout) {
+            buildInoutArgumentExpression {
+                source = expressionNode.toSource()
+                expression = convertedExpression
+            }
+        } else {
+            convertedExpression
+        }
         val hasName = tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME) != null
-        if (!hasName) return convertedExpression
+        if (!hasName) return wrapped
 
         return buildBlock {
             source = valueArgumentNode.toSource()
-            statements.add(convertedExpression)
+            statements.add(wrapped)
         }
     }
 
@@ -629,7 +639,10 @@ class LightTreeRawCfirExpressionBuilder(
                 val refName = refNode?.asText() ?: "<error>"
                 recv to buildNamedReference(referenceNameFromText(refName), refNode?.toSource() ?: calleeNode.toSource())
             }
-            else -> null to buildNamedReference(referenceNameFromText(calleeNode.asText()), calleeNode.toSource())
+            else -> convertExpression(calleeNode) to buildNamedReference(
+                OperatorNameConventions.INVOKE,
+                calleeNode.toSource(),
+            )
         }
     }
 
@@ -640,7 +653,32 @@ class LightTreeRawCfirExpressionBuilder(
     private fun callOriginFor(calleeNode: LighterASTNode?): CfirFunctionCallOrigin = when (calleeNode?.tokenType) {
         CjNodeTypes.THIS_EXPRESSION -> CfirFunctionCallOrigin.ConstructorDelegationThis
         CjNodeTypes.SUPER_EXPRESSION -> CfirFunctionCallOrigin.ConstructorDelegationSuper
-        else -> CfirFunctionCallOrigin.Regular
+        else -> if (calleeNode.isMockIntrinsicCallee()) {
+            CfirFunctionCallOrigin.MockIntrinsic
+        } else {
+            CfirFunctionCallOrigin.Regular
+        }
+    }
+
+    private fun LighterASTNode?.isMockIntrinsicCallee(): Boolean {
+        val rawName = when (this?.tokenType) {
+            CjNodeTypes.REFERENCE_EXPRESSION -> asText()
+            CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
+                var selectorNode: LighterASTNode? = null
+                var afterDot = false
+                tree.forEachChildren(this) { child ->
+                    when {
+                        child.tokenType == CjTokens.DOT -> afterDot = true
+                        afterDot && selectorNode == null && isSemanticToken(child.tokenType) -> selectorNode = child
+                    }
+                }
+                selectorNode?.asText()
+            }
+            else -> null
+        } ?: return false
+
+        val name = referenceNameFromText(rawName).asString()
+        return name == "createMock" || name == "createSpy"
     }
 
     private fun convertSpawn(node: LighterASTNode): CfirExpression {
@@ -1644,7 +1682,7 @@ class LightTreeRawCfirExpressionBuilder(
             surfaceId = surfaceId,
             qualifiedName = qualifiedName,
             kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
-            hasParenthesis = inputNode != null,
+            hasParenthesis = inputNode != null || text.hasMacroInputParentheses(),
             attrTokens = MacroPayloadTokenizer.tokenize(
                 attrNode?.asText(),
                 attrNode?.startOffset ?: 0,
@@ -1676,6 +1714,11 @@ class LightTreeRawCfirExpressionBuilder(
         )
 
         return carrier
+    }
+
+    private fun String.hasMacroInputParentheses(): Boolean {
+        val open = indexOf('(')
+        return open >= 0 && indexOf(')', startIndex = open + 1) >= 0
     }
 
     // ===== 辅助方法 =====

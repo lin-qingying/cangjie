@@ -82,7 +82,7 @@ abstract class AbstractLightTree2CfirConverterTestCase : AbstractRawCfirBuilderT
 
         // LightTree 路径
         val cfirFromLightTree = buildCfirFileFromLightTree(
-            sourceText, createTestSession(), fileName = "$fileName.cj",
+            sourceText, session, fileName = "$fileName.cj",
         )
         val lightTreeDump = dumpCfirFile(cfirFromLightTree)
 

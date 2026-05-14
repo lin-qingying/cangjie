@@ -52,6 +52,7 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.CjNodeTypes.BOOLEAN_CONSTANT
@@ -244,7 +245,7 @@ class PsiRawCfirBuilder(
                     sourceFileLinesMapping = CjPsiSourceFileLinesMapping(file)
                     packageDirective = buildPackageDirective(file.packageDirective)
                     imports.addAll(this@PsiRawCfirBuilder.buildImports(file))
-                    declarations.addAll(file.declarations.map { buildDeclaration(it) })
+                    declarations.addAll(converter.convertFileDeclarations(file))
                 }
             }
         }
@@ -265,6 +266,18 @@ class PsiRawCfirBuilder(
     protected open inner class Converter {
 
         // ===== 声明转换 =====
+
+        fun convertFileDeclarations(file: CjFile): List<CfirDeclaration> {
+            return buildList {
+                for (child in file.children) {
+                    when (child) {
+                        is CjPackageDirective -> Unit
+                        is CjDeclaration -> add(convertDeclaration(child))
+                        is CjMacroExpression -> convertTopLevelMacroDeclaration(child)?.let(::add)
+                    }
+                }
+            }
+        }
 
         fun convertDeclaration(psi: CjDeclaration): CfirDeclaration {
             val declaration = when (psi) {
@@ -298,6 +311,58 @@ class PsiRawCfirBuilder(
             }
             collectMacroAnnotationSurfaces(psi, AnnotationSurfaceTarget.DECLARATION, declaration)
             return declaration
+        }
+
+        /**
+         * 文件级 `@Macro decl` 在 PSI 中是 [CjMacroExpression]，其 input
+         * 承载真实声明。这里先构造 carrier 声明，再用同一个对象身份建立
+         * declaration surface 的 stable replace handle。
+         */
+        private fun convertTopLevelMacroDeclaration(psi: CjMacroExpression): CfirDeclaration? {
+            val inputDeclaration = psi.input?.declarations ?: return null
+            val carrier = convertDeclaration(inputDeclaration)
+            val surfaceId = MacroSurfaceIdGenerator.next()
+            val text = psi.text.orEmpty()
+            val currentPackage = context.packageFqName
+            val source = psi.toCjPsiSourceElement()
+            val input = psi.input
+            collectedMacroSurfaces += MacroSurfaceDecl(
+                surfaceId = surfaceId,
+                qualifiedName = psi.shortName?.let {
+                    if (currentPackage.isRoot) FqName.topLevel(it) else currentPackage.child(it)
+                },
+                kind = if (text.startsWith("@!")) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+                hasParenthesis = input?.text?.trimStart()?.startsWith("(") == true,
+                attrTokens = MacroPayloadTokenizer.tokenize(
+                    psi.attr?.text,
+                    psi.attr?.textRange?.startOffset ?: 0,
+                ).toMacroSurfaceTokens(),
+                inputTokens = MacroPayloadTokenizer.tokenize(
+                    input?.text,
+                    input?.textRange?.startOffset ?: 0,
+                ).toMacroSurfaceTokens(),
+                sourceRange = MacroSurfaceSourceRange(
+                    source = source,
+                    startOffset = psi.textRange.startOffset,
+                    endOffset = psi.textRange.endOffset,
+                ),
+                scopeContext = MacroSurfaceScopeContext(
+                    packageFqName = currentPackage,
+                    enclosingClassFqName = null,
+                    enclosingFunctionName = null,
+                ),
+                modifiers = emptyList(),
+                carriedAnnotations = emptyList(),
+                capturedRawSyntax = text,
+                containerContext = MacroSurfaceContainerContext(
+                    outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.TOP_LEVEL,
+                    isInsidePrimaryConstructor = false,
+                    isInsideEnumBody = false,
+                    isInsideBlock = false,
+                ),
+                replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
+            )
+            return carrier
         }
 
         private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirDeclaration {
@@ -1479,9 +1544,11 @@ class PsiRawCfirBuilder(
                     recv to ref
                 }
 
-                else -> null to buildNamedReference(
-                    Name.identifier(callee?.text ?: "<error>"),
-                    callee?.toCjPsiSourceElement()
+                null -> null to buildNamedReference(Name.identifier("<error>"))
+
+                else -> convertExpression(callee) to buildNamedReference(
+                    OperatorNameConventions.INVOKE,
+                    callee.toCjPsiSourceElement(),
                 )
             }
         }
@@ -1493,6 +1560,20 @@ class PsiRawCfirBuilder(
         private fun callOriginFor(callee: CjExpression?): CfirFunctionCallOrigin = when (callee) {
             is CjThisExpression -> CfirFunctionCallOrigin.ConstructorDelegationThis
             is CjSuperExpression -> CfirFunctionCallOrigin.ConstructorDelegationSuper
+            is CjSimpleNameExpression ->
+                if (callee.referencedName in setOf("createMock", "createSpy")) {
+                    CfirFunctionCallOrigin.MockIntrinsic
+                } else {
+                    CfirFunctionCallOrigin.Regular
+                }
+            is CjQualifiedExpression -> {
+                val selector = callee.selectorExpression as? CjSimpleNameExpression
+                if (selector?.referencedName in setOf("createMock", "createSpy")) {
+                    CfirFunctionCallOrigin.MockIntrinsic
+                } else {
+                    CfirFunctionCallOrigin.Regular
+                }
+            }
             else -> CfirFunctionCallOrigin.Regular
         }
 
@@ -2044,7 +2125,7 @@ class PsiRawCfirBuilder(
                 surfaceId = surfaceId,
                 qualifiedName = qualifiedName,
                 kind = if (isForced) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
-                hasParenthesis = psi.input != null,
+                hasParenthesis = psi.input != null || text.hasMacroInputParentheses(),
                 attrTokens = MacroPayloadTokenizer.tokenize(
                     psi.attr?.text,
                     psi.attr?.textRange?.startOffset ?: 0,
@@ -2075,6 +2156,11 @@ class PsiRawCfirBuilder(
                 replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
             )
             return carrier
+        }
+
+        private fun String.hasMacroInputParentheses(): Boolean {
+            val open = indexOf('(')
+            return open >= 0 && indexOf(')', startIndex = open + 1) >= 0
         }
 
         /**
@@ -2446,6 +2532,7 @@ class PsiRawCfirBuilder(
         return buildPackageDirective {
             source = psi?.toCjPsiSourceElement()
             packageFqName = fqName
+            isMacroPackage = psi?.isMacroPackage == true
         }
     }
 

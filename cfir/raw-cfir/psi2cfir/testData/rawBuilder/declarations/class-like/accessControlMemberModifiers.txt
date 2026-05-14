@@ -1,5 +1,6 @@
 FILE: accessControlMemberModifiers.cj
     internal? class AccessControlMemberModifiers {
+        init()
         private let privateValue: R|Int64| = ...
             initializer:
                 INT(1)

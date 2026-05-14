@@ -30,8 +30,17 @@ fun convertTypeReference(
 ): CfirTypeRef {
     if (typeRefNode == null) return buildImplicitTypeRef {}
     // TYPE_REFERENCE 内部包含一个具体的类型元素子节点
+    val typeElement = findDirectTypeElement(typeRefNode, tree)
+    val element = typeElement ?: return buildImplicitTypeRef {}
+    return convertTypeElement(element, typeRefNode, tree, source, toSource)
+}
+
+private fun findDirectTypeElement(
+    node: LighterASTNode,
+    tree: FlyweightCapableTreeStructure<LighterASTNode>,
+): LighterASTNode? {
     var typeElement: LighterASTNode? = null
-    tree.forEachChildren(typeRefNode) { child ->
+    tree.forEachChildren(node) { child ->
         val tt = child.tokenType
         if (tt == CjNodeTypes.BASIC_TYPE || tt == CjNodeTypes.USER_TYPE
             || tt == CjNodeTypes.FUNCTION_TYPE || tt == CjNodeTypes.TUPLE_TYPE
@@ -41,8 +50,7 @@ fun convertTypeReference(
             typeElement = child
         }
     }
-    val element = typeElement ?: return buildImplicitTypeRef {}
-    return convertTypeElement(element, typeRefNode, tree, source, toSource)
+    return typeElement
 }
 
 /**
@@ -85,7 +93,7 @@ private fun convertOptionalType(
     source: CharSequence,
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CfirTypeRef {
-    val innerTypeRef = tree.findChildByType(typeElement, CjNodeTypes.TYPE_REFERENCE)
+    val innerTypeElement = findDirectTypeElement(typeElement, tree)
         ?: return buildErrorTypeRef {
             this.source = toSource(typeRefNode) as? CjSourceElement
             diagnostic = ConeSimpleDiagnostic("Malformed option type: missing component type")
@@ -93,7 +101,7 @@ private fun convertOptionalType(
 
     return buildOptionTypeRef {
         this.source = typeRefNode.toCjSourceElement(toSource)
-        componentTypeRef = convertTypeReference(innerTypeRef, tree, source, toSource)
+        componentTypeRef = convertTypeElement(innerTypeElement, typeRefNode, tree, source, toSource)
     }
 }
 

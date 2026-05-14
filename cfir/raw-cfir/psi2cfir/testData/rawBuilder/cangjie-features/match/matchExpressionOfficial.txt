@@ -9,7 +9,7 @@ FILE: matchExpressionOfficial.cj
                 MATCH {
                     subject:
                         NAMED_ACCESS(time)
-                    BRANCH(Year(x)) {
+                    BRANCH(Year(deferred(x))) {
                         NAMED_ACCESS(x)
                     }
                 }

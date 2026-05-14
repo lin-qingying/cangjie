@@ -8,20 +8,20 @@ FILE: opAndIfExpressions.cj
                 IF {
                     condition:
                         COMPARISON(GT) {
-                            QUALIFIED_ACCESS(a)
-                            QUALIFIED_ACCESS(b)
+                            NAMED_ACCESS(a)
+                            NAMED_ACCESS(b)
                         }
                     then:
-                        QUALIFIED_ACCESS(c)
+                        NAMED_ACCESS(c)
                     else:
-                        QUALIFIED_ACCESS(b)
+                        NAMED_ACCESS(b)
                 }
         RETURN {
-            FUNCTION_CALL(plus) {
+            FUNCTION_CALL(*operator_plus) {
                 receiver:
-                    QUALIFIED_ACCESS(d)
+                    NAMED_ACCESS(d)
                 arguments:
-                    QUALIFIED_ACCESS(e)
+                    NAMED_ACCESS(e)
             }
         }
     }
