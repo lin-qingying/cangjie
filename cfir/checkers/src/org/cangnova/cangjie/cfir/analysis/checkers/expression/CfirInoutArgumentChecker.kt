@@ -19,8 +19,6 @@ import org.cangnova.cangjie.cfir.types.ConeVArrayType
  *
  * 对齐 C++ DiagKind::sema_inout_mismatch (TypeCheckCall.cpp:2795):
  * 调用 CFunc 时 VArray 类型的实参必须通过 `inout` 传入;否则报错。
- * 同时对齐 sema_inout_can_only_used_in_cfunc_calling 的一半:非 CFunc 调用中
- * 出现 `inout` 实参,也按 INOUT_MISMATCH 提示类型。
  */
 object CfirInoutArgumentChecker : CfirFunctionCallChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -40,14 +38,6 @@ object CfirInoutArgumentChecker : CfirFunctionCallChecker() {
 
             if (isCFuncCall) {
                 if (argType is ConeVArrayType && !argIsInout) {
-                    reporter.reportOn(
-                        source = argExpr.source ?: expression.source,
-                        factory = CfirErrors.INOUT_MISMATCH,
-                        a = argType,
-                    )
-                }
-            } else {
-                if (argIsInout) {
                     reporter.reportOn(
                         source = argExpr.source ?: expression.source,
                         factory = CfirErrors.INOUT_MISMATCH,

@@ -200,12 +200,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      */
     val DECLARATION_STATUS by object : DiagnosticGroup("DeclarationStatus") {
         // static 声明不能同时使用 open/abstract/override 修饰符
-        val STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE by error<CjDeclaration> {
+        val STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name?>("declarationName")  // 声明的名称（可能为空）
         }
 
         // mut 修饰符只能用于属性声明以及 struct 体内的函数声明
-        val MUT_ONLY_ON_FUNCTION by error<CjDeclaration> {
+        val MUT_ONLY_ON_FUNCTION by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name?>("declarationName")  // 声明的名称（可能为空）
         }
 
@@ -2020,6 +2020,77 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("reason")
         }
 
+        val MACRO_DIAG_REPORT_ERROR by error<PsiElement> {
+            parameter<String>("message")
+            parameter<String>("hint")
+        }
+
+        val MACRO_DIAG_REPORT_WARNING by warning<PsiElement> {
+            parameter<String>("message")
+            parameter<String>("hint")
+        }
+
+        val MACRO_UNDEFINED_PACKAGE by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_UNDECLARED_IDENTIFIER by error<PsiElement> {
+            parameter<Name>("name")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPECT_MACRO_DEFINITION by error<PsiElement> {
+            parameter<String>("target")
+            parameter<String>("reason")
+        }
+
+        val MACRO_DEPENDENCY_COMPILE_FAILED by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("reason")
+            parameter<String>("diagnosticsRef")
+        }
+
+        val MACRO_AMBIGUOUS_MATCH by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<Collection<FqName>>("targets")
+        }
+
+        val MACRO_CANNOT_FIND_DEPENDENCY_BCHIR by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("path")
+        }
+
+        val MACRO_EXPECT_PLAIN_MACRO by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPECT_ATTRIBUTED_MACRO by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPAND_ATEXCL by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_INVALID_ATTR_TOKENS by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_INVALID_INPUT_TOKENS by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_INVALID_ESCAPE by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
         // baseline 第 4 节 "同包 macro def/call": 源包内同时存在 macro 定义和调用。
         val MACRO_SAME_PACKAGE_DEF_CALL by error<PsiElement> {
             parameter<String>("macroName")
@@ -2040,6 +2111,47 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         val MACRO_CANNOT_OPEN_LIB by error<PsiElement> {
             parameter<String>("libPath")
+            parameter<String>("reason")
+        }
+
+        val MACRO_CANNOT_FIND_METHOD by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EVALUATE_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPAND_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPAND_CODE_SHOULD_NOT_HAVE_MACROCALL by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_CALL_SAVE_FILE_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXECUTOR_PROTOCOL_ERROR by error<PsiElement> {
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXECUTOR_SERVER_DISCONNECTED by error<PsiElement> {
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXECUTOR_TIMEOUT by error<PsiElement> {
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXECUTOR_SERVER_CRASH by error<PsiElement> {
             parameter<String>("reason")
         }
 

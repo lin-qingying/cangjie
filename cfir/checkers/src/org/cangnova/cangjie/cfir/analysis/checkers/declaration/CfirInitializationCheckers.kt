@@ -45,6 +45,8 @@ import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.primaryBindingNameOrNull
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
@@ -62,6 +64,7 @@ private class CfirInitializationFlowAnalyzer(
     private val context: CheckerContext,
     private val reporter: DiagnosticReporter,
     private val reportReadDiagnostics: Boolean = true,
+    private val initializationAssignments: MutableSet<CfirAssignment>? = null,
 ) {
     fun checkFunction(function: CfirFunction) {
         val body = function.body ?: return
@@ -71,6 +74,17 @@ private class CfirInitializationFlowAnalyzer(
             null
         }
         analyzeFunctionBody(function, body, owner)
+    }
+
+    fun collectInitializationAssignments(function: CfirFunction): Set<CfirAssignment> {
+        val body = function.body ?: return emptySet()
+        val owner = if (function is CfirConstructor) {
+            context.findClosestDeclaration<CfirClassLikeDeclaration>()
+        } else {
+            null
+        }
+        analyzeFunctionBody(function, body, owner)
+        return initializationAssignments.orEmpty()
     }
 
     fun checkClassLikeMemberInitialization(classLike: CfirClassLikeDeclaration) {
@@ -251,10 +265,11 @@ private class CfirInitializationFlowAnalyzer(
         state: InitializationState,
     ): InitializationState {
         val afterRightValue = analyzeExpression(assignment.rValue, state)
-        return analyzeAssignmentTarget(assignment.lValue, afterRightValue)
+        return analyzeAssignmentTarget(assignment, assignment.lValue, afterRightValue)
     }
 
     private fun analyzeAssignmentTarget(
+        assignment: CfirAssignment,
         lValue: CfirExpression,
         state: InitializationState,
     ): InitializationState = when (lValue) {
@@ -262,17 +277,33 @@ private class CfirInitializationFlowAnalyzer(
             val afterReceiver = lValue.explicitReceiver?.let { receiver ->
                 analyzeExpression(receiver, state)
             } ?: state
-            lValue.resolvedVariableSymbolOrNull()?.let(afterReceiver::markInitialized) ?: afterReceiver
+            lValue.resolvedVariableSymbolOrNull()?.let { symbol ->
+                recordInitializationAssignmentIfNeeded(symbol, state, assignment)
+                afterReceiver.markInitialized(symbol)
+            } ?: afterReceiver
         }
 
         is CfirQualifiedAccessExpression -> {
             val afterReceiver = lValue.explicitReceiver?.let { receiver ->
                 analyzeExpression(receiver, state)
             } ?: state
-            lValue.resolvedVariableSymbolOrNull()?.let(afterReceiver::markInitialized) ?: afterReceiver
+            lValue.resolvedVariableSymbolOrNull()?.let { symbol ->
+                recordInitializationAssignmentIfNeeded(symbol, state, assignment)
+                afterReceiver.markInitialized(symbol)
+            } ?: afterReceiver
         }
 
         else -> analyzeExpression(lValue, state)
+    }
+
+    private fun recordInitializationAssignmentIfNeeded(
+        symbol: CfirVariableSymbol<*>,
+        state: InitializationState,
+        assignment: CfirAssignment,
+    ) {
+        if (initializationAssignments == null) return
+        if (!state.isTracked(symbol) || state.isInitialized(symbol)) return
+        initializationAssignments += assignment
     }
 
     private fun analyzeIfExpression(
@@ -469,6 +500,29 @@ private class CfirInitializationFlowAnalyzer(
         }
         return state
     }
+}
+
+internal object CfirInitializationAssignmentClassifier {
+    fun isInitializationAssignment(
+        assignment: CfirAssignment,
+        context: CheckerContext,
+    ): Boolean {
+        val function = context.findClosestDeclaration<CfirFunction>() ?: return false
+        val initializationAssignments = linkedSetOf<CfirAssignment>()
+        CfirInitializationFlowAnalyzer(
+            context = context,
+            reporter = EmptyDiagnosticReporter,
+            reportReadDiagnostics = false,
+            initializationAssignments = initializationAssignments,
+        ).collectInitializationAssignments(function)
+        return assignment in initializationAssignments
+    }
+}
+
+private object EmptyDiagnosticReporter : DiagnosticReporter() {
+    override fun report(diagnostic: CjDiagnostic?, context: DiagnosticContext) = Unit
+    override val hasErrors: Boolean get() = false
+    override val hasWarningsForWError: Boolean get() = false
 }
 
 private enum class InitializationAccessMode {

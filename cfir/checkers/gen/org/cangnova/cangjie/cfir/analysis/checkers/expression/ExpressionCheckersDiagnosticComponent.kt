@@ -181,6 +181,10 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allBasicExpressionCheckers.check(quoteExpression, data)
     }
 
+    override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: CheckerContext) {
+        checkers.allBasicExpressionCheckers.check(inoutArgumentExpression, data)
+    }
+
     override fun visitBreakExpression(breakExpression: CfirBreakExpression, data: CheckerContext) {
         checkers.allLoopJumpCheckers.check(breakExpression, data)
     }

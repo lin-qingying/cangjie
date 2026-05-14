@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
@@ -124,6 +125,7 @@ object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
             if (calleeReference is CfirResolvedNamedReference) {
                 val symbol = calleeReference.resolvedSymbol as? CfirCallableSymbol<*>
                 if (symbol?.resolvedReturnTypeRef is CfirErrorTypeRef) return
+                if (symbol?.resolvedReturnType?.contains { it is ConeErrorType && it.diagnostic == type.diagnostic } == true) return
             }
         }
         if (expression is CfirThisReceiverExpression && expression.calleeReference.diagnostic != null) return

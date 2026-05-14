@@ -46,6 +46,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
 import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
+import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
@@ -144,6 +145,7 @@ fun main(args: Array<String>) {
                     visitAlso<CfirSynchronizedExpression>(it)
                     visitAlso<CfirUnsafeExpression>(it)
                     visitAlso<CfirQuoteExpression>(it)
+                    visitAlso<CfirInoutArgumentExpression>(it)
                 }
                 alias<CfirLiteralExpression>("LiteralExpressionChecker")
                 alias<CfirFunctionCall>("FunctionCallChecker")

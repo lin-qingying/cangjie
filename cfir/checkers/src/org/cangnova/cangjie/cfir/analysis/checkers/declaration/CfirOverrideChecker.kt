@@ -54,11 +54,9 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
             val visibleOverriddenSymbols = overriddenCandidates.filter { it.isVisibleIn(declaration, context) }
             if (visibleOverriddenSymbols.isEmpty()) {
-                // 这里区分“没有候选”和“有候选但全部不可见”，避免把继承可见性语义退化成 NOTHING_TO_OVERRIDE。
                 reporter.reportOn(
                     source = callable.source,
-                    factory = CfirErrors.CANNOT_OVERRIDE_INVISIBLE_MEMBER,
-                    a = overriddenCandidates.first().name,
+                    factory = CfirErrors.NOTHING_TO_OVERRIDE,
                 )
                 continue
             }

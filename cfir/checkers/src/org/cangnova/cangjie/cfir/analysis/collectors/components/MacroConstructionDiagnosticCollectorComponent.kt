@@ -12,6 +12,8 @@ import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.text
 
 /**
  * 将 macro construction 阶段记录在 [MacroExpansionRegistry] 中的诊断
@@ -25,22 +27,26 @@ class MacroConstructionDiagnosticCollectorComponent(
     session: CfirSession,
     reporter: PendingDiagnosticReporter,
 ) : AbstractDiagnosticCollectorComponent(session, reporter) {
-    private var reported = false
+    private val reportedDiagnostics = mutableSetOf<MacroConstructionDiagnostic>()
 
     override fun visitFile(file: CfirFile, data: CheckerContext) {
-        if (reported) return
-        reported = true
-
         val registry = session.macroExpansionRegistry ?: return
         for (diagnostic in registry.diagnostics) {
+            if (diagnostic in reportedDiagnostics) continue
             if (!diagnostic.shouldReportToOrdinaryDiagnostics()) continue
             val surface = diagnostic.originSurfaceId?.let { registry.originSurfaceById[it] }
+            if (surface != null && surface.scopeContext.packageFqName != file.packageDirective.packageFqName) {
+                continue
+            }
             val source = surface?.sourceRange?.source
                 ?: diagnostic.originSource
                 ?: file.source as? AbstractCjSourceElement
                 ?: continue
+            if (diagnostic.isArtifactDiagnosticForOwnPackage(surface)) continue
+            if (diagnostic.isPackageLevelArtifactDiagnosticOnMacroPackageSource(source)) continue
             reportConstructionDiagnostic(diagnostic, surface, source, data)
             reporter.checkAndCommitReportsOn(source, data, commitEverything = true)
+            reportedDiagnostics += diagnostic
         }
     }
 
@@ -221,9 +227,38 @@ class MacroConstructionDiagnosticCollectorComponent(
     }
 
     private fun MacroConstructionDiagnostic.shouldReportToOrdinaryDiagnostics(): Boolean {
+        if ((diagnosticOrigin == MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER ||
+                diagnosticOrigin == MacroConstructionDiagnostic.Origin.ORCHESTRATION) &&
+            originSurfaceId == null &&
+            originSource == null
+        ) {
+            return false
+        }
         if (severity == MacroConstructionDiagnostic.Severity.ERROR) return true
         return severity == MacroConstructionDiagnostic.Severity.WARNING &&
             diagnosticOrigin == MacroConstructionDiagnostic.Origin.DIAG_REPORT
+    }
+
+    private fun MacroConstructionDiagnostic.isPackageLevelArtifactDiagnosticOnMacroPackageSource(
+        source: AbstractCjSourceElement,
+    ): Boolean {
+        if (diagnosticOrigin != MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER &&
+            diagnosticOrigin != MacroConstructionDiagnostic.Origin.ORCHESTRATION
+        ) {
+            return false
+        }
+        val text = (source as? CjSourceElement).text?.trimStart() ?: return false
+        return text.startsWith("macro package")
+    }
+
+    private fun MacroConstructionDiagnostic.isArtifactDiagnosticForOwnPackage(surface: MacroSurface?): Boolean {
+        if (surface == null) return false
+        if (diagnosticOrigin != MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER &&
+            diagnosticOrigin != MacroConstructionDiagnostic.Origin.ORCHESTRATION
+        ) {
+            return false
+        }
+        return artifactPackage != null && artifactPackage == surface.scopeContext.packageFqName
     }
 
     private fun MacroConstructionDiagnostic.extractBacktickedName(): String? {
