@@ -15,8 +15,6 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.source.psi
 
 /**
  * CJMapping（Java）语义检查器
@@ -30,8 +28,7 @@ object CfirCJMappingChecker : CfirClassLikeChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        val owner = declaration.source?.psi as? CjModifierListOwner ?: return
-        if (!owner.annotationEntries.any { it.shortName == CJ_MAPPING }) return
+        if (!declaration.hasAnnotation(CJ_MAPPING)) return
 
         if (declaration is CfirStruct) {
             if (declaration.typeParameters.isNotEmpty()) {
@@ -103,8 +100,7 @@ object CfirObjCCJMappingChecker : CfirClassLikeChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        val owner = declaration.source?.psi as? CjModifierListOwner ?: return
-        if (!owner.annotationEntries.any { it.shortName == OBJC_CJ_MAPPING }) return
+        if (!declaration.hasAnnotation(OBJC_CJ_MAPPING)) return
 
         if (declaration.superTypeRefs.isNotEmpty()) {
             reporter.reportOn(

@@ -3,145 +3,42 @@ package org.cangnova.cangjie.cfir.analysis.diagnostics
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.diagnostic.ArgumentPassedTwice
-import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
-import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
-import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
-import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
-import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
-import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
-import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
-import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
-import org.cangnova.cangjie.cfir.diagnostic.ConeEnumTypeCannotBeUsedAsConstructorError
-import org.cangnova.cangjie.cfir.diagnostic.ConeEffectsFeatureDisabledError
-import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
-import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
-import org.cangnova.cangjie.cfir.diagnostic.ConeImplicitResumeOutsideHandlerError
-import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
-import org.cangnova.cangjie.cfir.diagnostic.ConeNoConstructorError
-import org.cangnova.cangjie.cfir.diagnostic.ConeNoImplicitDefaultConstructorOnExpectClass
-import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
-import org.cangnova.cangjie.cfir.diagnostic.ConeResolutionToClassifierError
-import org.cangnova.cangjie.cfir.diagnostic.ConeResumeNoWithError
-import org.cangnova.cangjie.cfir.diagnostic.ConeResumeThrowingMismatchTypeError
-import org.cangnova.cangjie.cfir.diagnostic.ConeTypeParameterInQualifiedAccess
-import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
-import org.cangnova.cangjie.cfir.diagnostic.ConeGenericTypeInconsistentError
-import org.cangnova.cangjie.cfir.diagnostic.ConeGenericArgumentNoMatchError
-import org.cangnova.cangjie.cfir.diagnostic.ConeGenericConstraintNotLooserError
-import org.cangnova.cangjie.cfir.diagnostic.ConeGenericInstantiationCausesAmbiguousFunctionsError
-import org.cangnova.cangjie.cfir.diagnostic.ConeMeetConstraintIndirectlyError
-import org.cangnova.cangjie.cfir.diagnostic.ConeNotMemberOfError
-import org.cangnova.cangjie.cfir.diagnostic.ConeMemberNotImportedError
-import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidUnaryExprError
-import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidUnaryExprWithTargetError
-import org.cangnova.cangjie.cfir.diagnostic.ConeOptionalChainNonOptionalError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
-import org.cangnova.cangjie.cfir.diagnostic.ConeInvalidNodeAfterCheckError
-import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchedTypesBecauseError
-import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchedTypesMultipleAssignError
-import org.cangnova.cangjie.cfir.diagnostic.ConeParamCountMismatchError
-import org.cangnova.cangjie.cfir.diagnostic.ConeCaptureBeforeInitializationError
-import org.cangnova.cangjie.cfir.diagnostic.MixingNamedAndPositionalArguments
-import org.cangnova.cangjie.cfir.diagnostic.NamedArgumentsNotAllowed
-import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
-import org.cangnova.cangjie.cfir.diagnostic.NeedNamedArgument
-import org.cangnova.cangjie.cfir.diagnostic.NoValueForParameter
-import org.cangnova.cangjie.cfir.diagnostic.TooManyArguments
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
-import org.cangnova.cangjie.cfir.diagnostics.InternalDiagnosticFactoryMethod
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory0
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory1
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory2
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory3
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactory4
-import org.cangnova.cangjie.cfir.diagnostics.requireNotNull
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostic.*
+import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.inference.AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeLambdaArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeReceiverConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
+import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
-import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.cfir.types.asCone
-import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
-import org.cangnova.cangjie.psi.CjExpression
-import org.cangnova.cangjie.psi.CjCallExpression
-import org.cangnova.cangjie.psi.CjBinaryExpression
-import org.cangnova.cangjie.psi.CjPsiUtil
-import org.cangnova.cangjie.psi.CjFieldVariable
-import org.cangnova.cangjie.psi.CjExtend
-import org.cangnova.cangjie.psi.CjPatternVariable
-import org.cangnova.cangjie.psi.CjReturnExpression
+import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.getAssignmentByLHS
+import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
+import org.cangnova.cangjie.resolve.calls.inference.model.*
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
-import org.cangnova.cangjie.resolve.calls.inference.buildAbstractResultingSubstitutor
-import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintMismatch
-import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemError
-import org.cangnova.cangjie.resolve.calls.inference.model.ConstrainingTypeIsError
-import org.cangnova.cangjie.resolve.calls.inference.model.FixVariableConstraintPosition
-import org.cangnova.cangjie.resolve.calls.inference.model.InferredEmptyIntersection
-import org.cangnova.cangjie.resolve.calls.inference.model.InferredEmptyIntersectionError
-import org.cangnova.cangjie.resolve.calls.inference.model.MultiLambdaBuilderInferenceRestriction
-import org.cangnova.cangjie.resolve.calls.inference.model.NotEnoughInformationForTypeParameter
-import org.cangnova.cangjie.resolve.calls.inference.model.OnlyInputTypesDiagnostic
 import org.cangnova.cangjie.resolve.checkers.EmptyIntersectionTypeKind
-import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjLightSourceElement
-import org.cangnova.cangjie.source.CjPsiSourceElement
-import org.cangnova.cangjie.source.CjRealSourceElementKind
-import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.source.text
-import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.type.model.TypeParameterMarker
 
 fun ConeDiagnostic.toCfirDiagnostics(
@@ -182,7 +79,21 @@ private fun ConstraintSystemError.mapConstraintSystemError(
             val argument = argumentAndReportSource.first
             val reportOn = argumentAndReportSource.second
 
+            if (position is ConeArgumentConstraintPosition &&
+                argument !is CfirAnonymousFunctionExpression &&
+                candidate.symbol.let { it as? CfirCallableSymbol<*> }?.cfir?.typeParameters?.isNotEmpty() == true
+            ) {
+                ConeConstraintSystemHasContradiction(candidate)
+                    .genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session)
+                    ?.let { return it }
+            }
+
             argument?.let {
+                (it as? org.cangnova.cangjie.cfir.expressions.CfirExpression)
+                    ?.genericInferenceArgumentMismatchDiagnostic(session)
+                    ?.let { inferenceDiagnostic ->
+                    return inferenceDiagnostic
+                    }
                 return argumentTypeMismatch(
                     source = reportOn ?: it.source ?: source,
                     expectedType = upperConeType.substituteTypeVariableTypes(candidate, session),
@@ -215,12 +126,16 @@ private fun ConstraintSystemError.mapConstraintSystemError(
         }
 
         is NotEnoughInformationForTypeParameter<*> ->
-            typeVariable.asDeclaredTypeParameterSymbolOrNull()?.let {
-                CfirErrors.CANNOT_INFER_PARAMETER_TYPE.on(
-                    source ?: qualifiedAccessSource ?: candidate.callInfo.callSite.source ?: return null,
-                    it,
-                    session,
-                )
+            if (candidate.hasGenericCallNotEnoughTypeInformation()) {
+                null
+            } else {
+                typeVariable.asDeclaredTypeParameterSymbolOrNull()?.let {
+                    CfirErrors.CANNOT_INFER_PARAMETER_TYPE.on(
+                        source ?: qualifiedAccessSource ?: candidate.callInfo.callSite.source ?: return null,
+                        it,
+                        session,
+                    )
+                }
             }
 
         is InferredEmptyIntersection -> {
@@ -240,18 +155,19 @@ private fun ConstraintSystemError.mapConstraintSystemError(
                 CfirErrors.TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR.on(source ?: qualifiedAccessSource ?: return null, it, session)
             }
 
-        is MultiLambdaBuilderInferenceRestriction<*> -> {
-            val anonymousFunction = anonymous as? CfirAnonymousFunction ?: return null
+        is AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction -> {
             val typeParameterSymbol = typeParameter.asDeclaredTypeParameterSymbolOrNull() ?: return null
             val containingDeclarationName = typeParameterSymbol.containingDeclarationSymbol.memberDeclarationNameOrNull()
                 ?: error("containingDeclarationSymbol must have been a member declaration")
             CfirErrors.BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION.on(
-                anonymousFunction.source ?: source ?: qualifiedAccessSource ?: return null,
+                anonymous.source ?: source ?: qualifiedAccessSource ?: return null,
                 typeParameterSymbol.name,
                 containingDeclarationName,
                 session,
             )
         }
+
+        is MultiLambdaBuilderInferenceRestriction<*> -> error("Unexpected bare MultiLambdaBuilderInferenceRestriction")
 
         else -> null
     }
@@ -270,6 +186,9 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
                 session,
             )
         )
+    }
+    if (candidate.hasGenericCallNotEnoughTypeInformation()) {
+        return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
     }
     if (hasGenericInferenceConstraintMismatch()) {
         return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
@@ -359,6 +278,14 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
+    genericInferenceInapplicableDiagnostic(session, source, qualifiedAccessSource)
+        ?.let { return listOf(it) }
+
+    val contradictionDiagnostic = ConeConstraintSystemHasContradiction(candidate)
+    contradictionDiagnostic.multiLambdaBuilderInferenceDiagnostics(session, source, qualifiedAccessSource)
+        .takeIf { it.isNotEmpty() }
+        ?.let { return it }
+
     val noMatchingInvokeDiagnostic = mapNoMatchingInvokeOperatorDiagnostic(session, source, qualifiedAccessSource)
     val genericDiagnostic = (qualifiedAccessSource ?: source)?.let { diagnosticSource ->
         when (candidateSymbol.cfir) {
@@ -371,14 +298,31 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     }
 
     var suppressedRangeArgumentMismatch = false
+    var suppressedErrorTypeInArguments = false
     val diagnostics = candidate.diagnostics.filter { !it.isSuccess }.mapNotNull { rootCause ->
         when (rootCause) {
+            ErrorTypeInArguments -> {
+                suppressedErrorTypeInArguments = true
+                null
+            }
+
             is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
                 rootCause.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
                 session,
             )
 
             is ArgumentTypeMismatch -> {
+                candidate.multiLambdaBuilderInferenceDiagnosticFor(rootCause.argument, source, qualifiedAccessSource, session)
+                    ?.let { return@mapNotNull it }
+                rootCause.argument.genericInferenceArgumentMismatchDiagnostic(session)
+                    ?.let { return@mapNotNull it }
+                if (!candidate.usedOuterCs && rootCause.systemHadContradiction) {
+                    return@mapNotNull null
+                }
+                if (candidate.hasGenericCallNotEnoughTypeInformation() && rootCause.argument is CfirAnonymousFunctionExpression) {
+                    return@mapNotNull null
+                }
+
                 val expectedType = rootCause.expectedType.substituteTypeVariableTypes(candidate, session)
                 val actualType =
                     if (rootCause.argument is CfirAnonymousFunctionExpression && rootCause.argument.coneTypeOrNull?.isError == false) {
@@ -445,12 +389,68 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
 
     if (diagnostics.isNotEmpty()) return listOfNotNull(noMatchingInvokeDiagnostic) + diagnostics
     if (suppressedRangeArgumentMismatch) return listOfNotNull(noMatchingInvokeDiagnostic)
-    if (candidateSymbol.debugName.isMockIntrinsicName()) return listOfNotNull(noMatchingInvokeDiagnostic)
+    if (suppressedErrorTypeInArguments) return listOfNotNull(noMatchingInvokeDiagnostic)
 
     noMatchingInvokeDiagnostic?.let { return listOf(it) }
 
     val diagnosticSource = qualifiedAccessSource ?: source ?: return emptyList()
     return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session))
+}
+
+private fun ConeConstraintSystemHasContradiction.multiLambdaBuilderInferenceDiagnostics(
+    session: CfirSession,
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+): List<CjDiagnostic> {
+    return candidate.errors
+        .filterIsInstance<ConstraintSystemError>()
+        .filter {
+            it is AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction ||
+                it is MultiLambdaBuilderInferenceRestriction<*>
+        }
+        .mapNotNull { error ->
+            error.mapConstraintSystemError(
+                source = source,
+                qualifiedAccessSource = qualifiedAccessSource,
+                session = session,
+                candidate = candidate,
+            )
+        }
+}
+
+private fun AbstractCallCandidate<*>.multiLambdaBuilderInferenceDiagnosticFor(
+    argument: org.cangnova.cangjie.cfir.CfirElement,
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    val anonymousFunction = (argument as? CfirAnonymousFunctionExpression)?.anonymousFunction ?: return null
+    val restriction = errors
+        .filterIsInstance<AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction>()
+        .firstOrNull { it.anonymous == anonymousFunction }
+        ?: return null
+    return restriction.mapConstraintSystemError(
+        source = source,
+        qualifiedAccessSource = qualifiedAccessSource,
+        session = session,
+        candidate = this,
+    )
+}
+
+private fun ConeInapplicableCandidateError.genericInferenceInapplicableDiagnostic(
+    session: CfirSession,
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+): CjDiagnostic? {
+    val debugText = (qualifiedAccessSource ?: source)?.text?.toString()
+    if (debugText?.contains("builderLike") == true) {
+        System.err.println(
+            "DBG inapplicable builderLike hasArgMismatch=${candidate.hasGenericInferenceArgumentMismatch()} hasNotEnough=${candidate.hasGenericCallNotEnoughTypeInformation()} " +
+                "errors=${candidate.errors.map { it::class.simpleName }} diagnostics=${candidate.diagnostics.map { it::class.simpleName }}"
+        )
+    }
+    if (!candidate.hasGenericInferenceArgumentMismatch() && !candidate.hasGenericCallNotEnoughTypeInformation()) return null
+    return ConeConstraintSystemHasContradiction(candidate).genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session)
 }
 
 private fun ConeInapplicableCandidateError.mapNoMatchingInvokeOperatorDiagnostic(
@@ -523,21 +523,13 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
     callOrAssignmentSource: CjSourceElement?,
     session: CfirSession,
 ): List<CjDiagnostic> {
-    if (candidateSymbols.all { symbol ->
-            symbol.cfir is org.cangnova.cangjie.cfir.declarations.CfirConstructor || symbol.cfir is CfirEnumConstructor
-        }
-    ) {
-        val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
-        return listOfNotNull(CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL.on(diagnosticSource, name, session))
-    }
-
     @OptIn(ApplicabilityDetail::class)
     if (!applicability.isSuccess) {
         val candidateDiagnostics = candidatesWithErrors.values.map { coneDiagnostic ->
             coneDiagnostic?.toCfirDiagnostics(
                 session = session,
                 source = source,
-                callOrAssignmentSource = null,
+                callOrAssignmentSource = callOrAssignmentSource,
                 valueParameter = null,
             ).orEmpty()
         }
@@ -577,6 +569,14 @@ private fun ConeAmbiguityError.mapConeAmbiguityError(
 
             return diagnosticsByKey.first()
         }
+    }
+
+    if (candidateSymbols.all { symbol ->
+            symbol.cfir is org.cangnova.cangjie.cfir.declarations.CfirConstructor || symbol.cfir is CfirEnumConstructor
+        }
+    ) {
+        val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
+        return listOfNotNull(CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL.on(diagnosticSource, name, session))
     }
 
     val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
@@ -644,7 +644,6 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
     callOrAssignmentSource: CjSourceElement?,
     session: CfirSession,
 ): List<CjDiagnostic> {
-    if (name.asString().isMockIntrinsicName()) return emptyList()
     mapExtendSuperDiagnostic(source, callOrAssignmentSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
@@ -709,8 +708,6 @@ private fun ConeUnresolvedNameError.mapSubscriptOperatorDiagnostic(
         )
     }
 }
-
-private fun String.isMockIntrinsicName(): Boolean = this == "createMock" || this == "createSpy"
 
 /**
  * 当接收者是类型参数而名称解析失败时，我们优先把它归类为“upper bounds 中没有该成员/方法”，
@@ -869,8 +866,7 @@ private fun ConeVisibilityError.mapConeVisibilityError(
 }
 
 private fun CfirClassLikeSymbol<*>.visibilityDisplayName(): String {
-    val declaration = cfir
-    return when (declaration) {
+    return when (val declaration = cfir) {
         is CfirClass -> declaration.status.visibility.externalDisplayName
         is CfirInterface -> declaration.status.visibility.externalDisplayName
         is CfirStruct -> declaration.status.visibility.externalDisplayName
@@ -1005,14 +1001,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             else -> null
         } ?: mapSimpleDiagnosticByReason(this, diagnosticSource, session)
 
-        is ConeUnresolvedNameError -> if (name.asString().isMockIntrinsicName()) null else CfirErrors.UNRESOLVED_REFERENCE.on(
+        is ConeUnresolvedNameError -> CfirErrors.UNRESOLVED_REFERENCE.on(
             diagnosticSource,
             name.asString(),
             operator,
             session,
         )
 
-        is ConeUnresolvedReferenceError -> if (name.asString().isMockIntrinsicName()) null else CfirErrors.UNRESOLVED_REFERENCE.on(
+        is ConeUnresolvedReferenceError -> CfirErrors.UNRESOLVED_REFERENCE.on(
             diagnosticSource,
             name.asString(),
             null,
@@ -1190,6 +1186,20 @@ private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMi
     }
 }
 
+private fun AbstractCallCandidate<*>.hasGenericInferenceArgumentMismatch(): Boolean {
+    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
+    if (callableSymbol.cfir.typeParameters.isEmpty()) return false
+    val callSite = callInfo.callSite as? CfirQualifiedAccessExpression ?: return false
+    if (callSite.typeArguments.isNotEmpty()) return false
+
+    val declaredTypeParameters = callableSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
+    val argumentMismatches = diagnostics.filterIsInstance<ArgumentTypeMismatch>()
+        .filter { it.argument !is CfirAnonymousFunctionExpression }
+    return argumentMismatches.any { diagnostic ->
+        diagnostic.expectedType.referencesDeclaredTypeParameter(declaredTypeParameters)
+    } || argumentMismatches.size >= 2
+}
+
 private fun ConeConstraintSystemHasContradiction.genericInferenceErrorDiagnostic(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
@@ -1201,14 +1211,40 @@ private fun ConeConstraintSystemHasContradiction.genericInferenceErrorDiagnostic
         (variable as? ConeTypeParameterBasedTypeVariable)?.typeParameterSymbol in declaredTypeParameters
     }
 
+    /**
+     * 对齐官方仓颉 `DiagnoseForCallInference`：
+     * 泛型调用推断失败的主诊断锚点应优先落在被调用函数名本身，
+     * 只有拿不到 callee source 时，才退回到外围 source。
+     */
     val diagnosticSource = candidateTypeVariable
         ?.let { candidate.sourceOfCallToSymbolWith(it) }
+        ?: candidate.callInfo.callSite.genericInferenceCalleeSource()
         ?: source
         ?: qualifiedAccessSource
         ?: return null
 
     return CfirErrors.NEW_INFERENCE_ERROR.on(
         diagnosticSource,
+        "Inference error: ConstraintMismatch",
+        session,
+    )
+}
+
+private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenceArgumentMismatchDiagnostic(
+    session: CfirSession,
+): CjDiagnostic? {
+    val qualifiedAccess = unwrapWrappedExpression() as? CfirQualifiedAccessExpression ?: return null
+    if (qualifiedAccess.typeArguments.isNotEmpty()) return null
+
+    val callableSymbol = qualifiedAccess.genericInferenceCallableSymbolOrNull()
+    if (callableSymbol == null || callableSymbol.cfir.typeParameters.isEmpty()) {
+        val errorDiagnostic = (qualifiedAccess.coneTypeOrNull as? ConeErrorType)?.diagnostic
+        if (errorDiagnostic !is ConeCannotInferTypeParameterType) return null
+    }
+
+    val source = qualifiedAccess.genericInferenceCalleeSource() ?: return null
+    return CfirErrors.NEW_INFERENCE_ERROR.on(
+        source,
         "Inference error: ConstraintMismatch",
         session,
     )
@@ -1344,6 +1380,21 @@ private fun AbstractCallCandidate<*>.sourceOfCallToSymbolWith(typeVariable: org.
     return narrowedSource
 }
 
+private fun org.cangnova.cangjie.cfir.CfirElement.genericInferenceCalleeSource(): CjSourceElement? {
+    val qualifiedAccess = this as? CfirQualifiedAccessExpression ?: return source
+    return qualifiedAccess.calleeReference.source ?: qualifiedAccess.source
+}
+
+private fun CfirQualifiedAccessExpression.genericInferenceCallableSymbolOrNull(): CfirCallableSymbol<*>? {
+    return when (val reference = calleeReference) {
+        is CfirResolvedNamedReference -> reference.resolvedSymbol as? CfirCallableSymbol<*>
+        is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirCallableSymbol<*>
+        is CfirErrorNamedReference ->
+            (reference.diagnostic as? ConeDiagnosticWithSingleCandidate)?.candidateSymbol as? CfirCallableSymbol<*>
+        else -> null
+    }
+}
+
 private fun CfirAnonymousFunction.containsErrorType(): Boolean {
     return returnTypeRef is CfirErrorTypeRef ||
         valueParameters.any { it.returnTypeRef is CfirErrorTypeRef }
@@ -1363,6 +1414,40 @@ private fun CfirBasedSymbol<*>.memberDeclarationNameOrNull(): Name? = when (this
     is CfirCallableSymbol<*> -> name
     is CfirClassLikeSymbol<*> -> classId.shortClassName
     else -> null
+}
+
+private fun ConeCangJieType.referencesDeclaredTypeParameter(
+    declaredTypeParameters: Set<CfirTypeParameterSymbol>,
+): Boolean {
+    return when (this) {
+        is ConeTypeParameterType -> lookupTag.typeParameterSymbol in declaredTypeParameters
+        is ConeClassLikeType -> typeArguments.any { projection ->
+            val nestedType = projection.type
+            nestedType.referencesDeclaredTypeParameter(declaredTypeParameters)
+        }
+        is ConeTypeAliasType -> expandedType?.referencesDeclaredTypeParameter(declaredTypeParameters) == true
+        else -> false
+    }
+}
+
+private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(): Boolean {
+    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
+    if (callableSymbol.cfir.typeParameters.isEmpty()) return false
+    val callSite = callInfo.callSite as? CfirQualifiedAccessExpression ?: return false
+    if (callSite.typeArguments.isNotEmpty()) return false
+
+    val declaredTypeParameters = callableSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
+    return errors.any { error ->
+        val notEnough = error as? NotEnoughInformationForTypeParameter<*> ?: return@any false
+        val typeParameterSymbol = notEnough.typeVariable.asDeclaredTypeParameterSymbolOrNull() ?: return@any false
+        typeParameterSymbol in declaredTypeParameters
+    }
+}
+
+private tailrec fun org.cangnova.cangjie.cfir.expressions.CfirExpression.unwrapWrappedExpression():
+    org.cangnova.cangjie.cfir.expressions.CfirExpression = when (this) {
+    is CfirWrappedExpression -> expression.unwrapWrappedExpression()
+    else -> this
 }
 
 private fun CjSourceElement.toApproxTypeName(): Name {

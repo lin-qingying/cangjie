@@ -9,6 +9,8 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 
 /**
@@ -25,10 +27,15 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
         when (declaration) {
             is CfirCodeFragment -> declaration.block.accept(visitor, UsageState.Used)
             is CfirAnonymousFunction -> Unit
-            is CfirFunction -> declaration.body?.accept(visitor, UsageState.Unused)
+            is CfirFunction -> declaration.body?.accept(visitor, declaration.bodyUsageState())
             is CfirVariable -> declaration.initializer?.accept(visitor, UsageState.Used)
             else -> Unit
         }
+    }
+
+    private fun CfirFunction.bodyUsageState(): UsageState {
+        val returnType = returnTypeRef.coneTypeOrNull
+        return if (returnType == ConePrimitiveType.UNIT) UsageState.Unused else UsageState.Used
     }
 
     private enum class UsageState {
@@ -129,6 +136,8 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
                 is CfirWrappedExpression -> expression.hasSideEffect()
                 is CfirOptionalExpression -> expression.hasSideEffect()
                 is CfirSmartCastExpression -> originalExpression.hasSideEffect()
+
+                is CfirFunctionCall -> true
 
                 is CfirQualifiedAccessExpression -> {
                     val dispatchHasSideEffect = dispatchReceiver?.hasSideEffect() == true
