@@ -348,6 +348,9 @@ open class CfirExpressionsResolveTransformer(
             if (functionCall.origin.isConstructorDelegation) {
                 return@whileAnalysing transformConstructorDelegationCall(functionCall, data)
             }
+            if (functionCall.origin == CfirFunctionCallOrigin.MockIntrinsic) {
+                return@whileAnalysing transformMockIntrinsicCall(functionCall, data)
+            }
 
             val calleeReference = functionCall.calleeReference
             if (
@@ -435,6 +438,39 @@ open class CfirExpressionsResolveTransformer(
 
         functionCall.replaceConeTypeOrNull(builtinTypes.unitType)
         return functionCall
+    }
+
+    /**
+     * mock intrinsic 调用不能退化成普通 unresolved call。
+     *
+     * 官方编译器会先把这类调用识别成 intrinsic call，再由 test/mock 语义阶段处理。
+     * 本地先在 resolve 阶段保留其特殊 owner：
+     * 1. 解析类型参数和实参，保证 checker 拿到稳定的目标类型；
+     * 2. 不再让普通 call resolver 产出 `UNRESOLVED_REFERENCE` 噪声。
+     */
+    private fun transformMockIntrinsicCall(
+        functionCall: CfirFunctionCall,
+        data: ResolutionMode,
+    ): CfirFunctionCall {
+        functionCall.transformAnnotations(transformer, data)
+        resolveAccessTypeArguments(functionCall)
+
+        components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
+        val withResolvedExplicitReceiver = transformExplicitReceiverOf(functionCall).also {
+            components.dataFlowAnalyzer.exitCallExplicitReceiver()
+            it.replaceArgumentList(
+                it.argumentList.transform(transformer, ResolutionMode.ContextDependent)
+            )
+            components.dataFlowAnalyzer.exitCallArguments()
+        }
+
+        if (withResolvedExplicitReceiver.coneTypeOrNull == null) {
+            withResolvedExplicitReceiver.replaceConeTypeOrNull(
+                withResolvedExplicitReceiver.typeArguments.firstOrNull()?.coneTypeOrNull
+            )
+        }
+
+        return withResolvedExplicitReceiver
     }
 
     private fun tryResolveImplicitInvokeCall(
@@ -1109,16 +1145,6 @@ open class CfirExpressionsResolveTransformer(
         }
         typeOperator.replaceConeTypeOrNull(resultType)
         return typeOperator
-    }
-
-    // ── Error Expression ──────────────────────────────────────────────────────
-
-    override fun transformErrorExpression(
-        errorExpression: CfirErrorExpression,
-        data: ResolutionMode,
-    ): CfirExpression {
-        errorExpression.replaceConeTypeOrNull(ConeErrorType(errorExpression.diagnostic))
-        return errorExpression
     }
 
     // ── For-In / Loop ─────────────────────────────────────────────────────────

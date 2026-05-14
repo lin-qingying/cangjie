@@ -646,14 +646,15 @@ open class CfirDeclarationsResolveTransformer(
     }
 
     /**
-     * 从当前函数 CFG 已确认可达的返回结果里推断函数返回类型。
+     * 从当前函数 CFG 提取到的返回结果里推断函数返回类型。
      *
      * 返回结果统一包含：
      * - 显式 `return expr`
      * - 函数体正常流出时的 block 尾表达式
      *
      * 这样可以让“最后一条表达式是返回值”与显式 return 共享同一套推断入口，
-     * 并自动排除 CFG 上不可达的块尾表达式。
+     * 仓颉官方会把显式 return 后面的 block 尾表达式也纳入隐式返回类型推断；
+     * 这种尾表达式即使在控制流上不可达，仍会让返回类型推断失败。
      */
     private fun inferFunctionReturnType(function: CfirFunction): ConeCangJieType {
         val returnExpressions = components.dataFlowAnalyzer.returnExpressionsOfFunction(function)

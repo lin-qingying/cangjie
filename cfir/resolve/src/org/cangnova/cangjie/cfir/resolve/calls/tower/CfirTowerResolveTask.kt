@@ -140,6 +140,13 @@ internal open class CfirTowerResolveTask(
         val explicitReceiver = ExpressionReceiverValue(receiverExpression)
 
         processLevel(
+            FunctionTypeInvokeTowerLevel(receiverExpression),
+            info,
+            CfirTowerGroup.MEMBER,
+            explicitReceiverKind = ExplicitReceiverKind.DISPATCH_RECEIVER,
+        )
+
+        processLevel(
             DispatchReceiverMemberScopeTowerLevel(components, explicitReceiver),
             info,
             CfirTowerGroup.MEMBER,

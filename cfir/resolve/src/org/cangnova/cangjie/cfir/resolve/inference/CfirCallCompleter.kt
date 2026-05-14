@@ -307,11 +307,22 @@ class CfirCallCompleter(
                 )
             }
 
-            val expectedFunctionType = ConeFunctionType(
-                parameterTypes = parameters,
-                returnType = expectedReturnType ?: lambdaAtom.returnType,
-            )
-            val resolutionMode = org.cangnova.cangjie.cfir.resolve.withExpectedType(expectedFunctionType)
+            /**
+             * 只有当 lambda 返回类型已经被当前约束系统定到“可用 expected type”时，
+             * 才把整个函数类型下传给 lambda body。
+             *
+             * 若这里把尚未固定的 `lambdaAtom.returnType` 也强行塞进 expected type，
+             * builder-inference 场景会过早把 lambda body 压成
+             * `ARGUMENT_TYPE_MISMATCH` / `CANNOT_INFER_PARAMETER_TYPE`，
+             * 而不是继续让返回值约束反向流回外层调用。
+             */
+            val resolutionMode = expectedReturnType
+                ?.let { returnType ->
+                    org.cangnova.cangjie.cfir.resolve.withExpectedType(
+                        ConeFunctionType(parameterTypes = parameters, returnType = returnType),
+                    )
+                }
+                ?: ResolutionMode.ContextDependent
             var additionalConstraints: ConstraintStorage? = null
 
             transformer.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {

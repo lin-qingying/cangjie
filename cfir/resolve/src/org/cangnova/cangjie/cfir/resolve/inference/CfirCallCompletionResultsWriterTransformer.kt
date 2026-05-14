@@ -641,6 +641,9 @@ class CfirCallCompletionResultsWriterTransformer(
     private fun CfirNamedReferenceWithCandidate.toResolvedReference(): CfirNamedReference {
         val errorDiagnostic = when {
             this is CfirErrorReferenceWithCandidate -> this.diagnostic
+            candidate.system.hasContradiction ->
+                ConeConstraintSystemHasContradiction(candidate)
+
             !candidate.lowestApplicability.isSuccess ->
                 ConeInapplicableCandidateError(candidate.lowestApplicability, candidate)
 
