@@ -63,7 +63,6 @@ import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.messages.CompilerMessageLocationWithRange
 import org.cangnova.cangjie.messages.CompilerMessageSourceLocation
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
-import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
@@ -101,7 +100,7 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         val factory = CfirDefaultSessionFactory()
         val sessionFactoryContext = CfirDefaultSessionFactory.Context()
         val extensionRegistrars = emptyList<CfirExtensionRegistrar>()
-        configuration.installDefaultMacroFragmentParserFactory(environment)
+        configuration.installDefaultMacroFragmentParserFactory(environment.project)
 
         // Baseline 第 1 节"主流程"：
         //   pre → MacroConstructionService.expand → recordExpandedRawFilesOnce → resolve & check
@@ -130,13 +129,8 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         }
 
         val constructionService = FrontendMacroConstructionService(configuration)
-        val macroCompilation = compileRequiredMacroSourcePackages(configuration, sessionPreResults.map { it.pre })
-        val artifactResolver = MacroArtifactResolver()
-        val artifactResolution = artifactResolver.resolve(
-            packages = configuration.macroArtifactPackages + macroCompilation.artifactPackages,
-            expectedExecutorAbiVersion = configuration.macroExecutorAbiVersion,
-        )
-        val preConstructionDiagnostics = macroCompilation.diagnostics + artifactResolution.diagnostics
+        val preResults = sessionPreResults.map { it.pre }
+        val artifactPreparation = prepareMacroArtifactDefinitionsForExpansion(configuration, preResults)
 
         val outputs = sessionPreResults.mapNotNull { (session, pre) ->
             val (result, output) = resolveAndCheckCfirAfterConstruction(
@@ -145,8 +139,8 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
                 constructionService = constructionService,
                 constructionMode = configuration.macroConstructionMode,
                 diagnosticsCollector = configuration.diagnosticsCollector,
-                macroArtifactDefinitions = artifactResolution.definitions + configuration.macroArtifactDefinitionsOverride,
-                preConstructionDiagnostics = preConstructionDiagnostics,
+                macroArtifactDefinitions = artifactPreparation.definitions,
+                preConstructionDiagnostics = artifactPreparation.diagnostics,
             )
             if (output == null) {
                 reportConstructionFailure(configuration, result)
@@ -159,32 +153,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
             configuration = configuration,
             environment = environment,
             sourceFiles = sources.allSources,
-        )
-    }
-
-    private fun compileRequiredMacroSourcePackages(
-        configuration: CompilerConfiguration,
-        preResults: List<PreMacroRawBuildResult>,
-    ): MacroPackageCompilationResult {
-        val requests = selectMacroSourcePackageCompilationRequestsForExpansion(
-            preResults = preResults,
-            requests = configuration.macroSourcePackageCompilationRequests,
-            suppliedArtifacts = configuration.macroArtifactPackages,
-        )
-        if (requests.isEmpty()) return MacroPackageCompilationResult()
-
-        val orchestrator = configuration.macroPackageCompilationOrchestrator
-            ?: return MacroPackageCompilationResult(
-                diagnostics = unresolvedMacroPackageCompilationDiagnostics(requests),
-            )
-
-        return orchestrator.compileMacroPackages(
-            requests = requests,
-            context = MacroPackageCompilationContext(
-                configuration = configuration,
-                executorAbiVersion = configuration.macroExecutorAbiVersion,
-                cacheContext = configuration.macroCompilationCacheContext,
-            ),
         )
     }
 
@@ -342,179 +310,6 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         }
     }
 
-    /**
-     * 安装生产级 token-backed fragment parser。
-     *
-     * 用户/测试显式配置优先；默认配置只负责把 token-stage re-eval 后的
-     * fragment 交回 PSI 或 LightTree raw builder 重新构造 typed CFIR payload。
-     */
-    private fun CompilerConfiguration.installDefaultMacroFragmentParserFactory(
-        environment: VfsBasedProjectEnvironment,
-    ) {
-        if (macroFragmentParserFactory != null) return
-
-        val project = environment.project
-        val useLightTreeParser = useLightTree
-        macroFragmentParserFactory = MacroFragmentParserFactory { session ->
-            TokenBackedMacroFragmentParser(
-                reparse = { text, mode, owner ->
-                    if (useLightTreeParser) {
-                        reparseLightTreeMacroFragment(session, text, mode, owner)
-                    } else {
-                        reparsePsiMacroFragment(project, session, text, mode, owner)
-                    }
-                },
-                reTokenize = { tokens -> tokens.reTokenizeMacroSurfaceTokens() },
-            )
-        }
-    }
-
-    private fun reparsePsiMacroFragment(
-        project: Project,
-        session: CfirSession,
-        text: String,
-        mode: MacroFragmentParser.Mode,
-        owner: MacroCallNode,
-    ): Any? {
-        val surface = owner.surface
-        val packageFqName = surface.scopeContext.packageFqName
-        val sourcePsi = (surface.sourceRange?.source as? CjPsiSourceElement)?.psi
-        val psiFactory = sourcePsi?.let { CjPsiFactory.contextual(it) } ?: CjPsiFactory(project)
-        val builder = PsiRawCfirBuilder(session)
-
-        return when {
-            surface is MacroSurfaceParam -> {
-                val parameter = psiFactory.createSingleParameter(text) ?: return null
-                val original = surface.replaceHandle.carrier as? CfirValueParameter ?: return null
-                builder.buildValueParameterInPackage(
-                    parameter = parameter,
-                    containingSymbol = original.containingDeclarationSymbol,
-                    packageFqName = packageFqName,
-                )
-            }
-            mode == MacroFragmentParser.Mode.EXPRESSION -> {
-                val expression = psiFactory.createExpressionIfPossible(text) ?: return null
-                builder.buildExpressionInPackage(expression, packageFqName)
-            }
-            else -> {
-                val declaration = runCatching {
-                    psiFactory.createDeclaration<CjDeclaration>(text)
-                }.getOrNull() ?: return null
-                builder.buildDeclarationInPackage(declaration, packageFqName)
-            }
-        }
-    }
-
-    private fun reparseLightTreeMacroFragment(
-        session: CfirSession,
-        text: String,
-        mode: MacroFragmentParser.Mode,
-        owner: MacroCallNode,
-    ): Any? {
-        val surface = owner.surface
-        val packageFqName = surface.scopeContext.packageFqName
-        return when {
-            surface is MacroSurfaceParam -> {
-                val original = surface.replaceHandle.carrier as? CfirValueParameter ?: return null
-                val parsed = parseLightTreeFragment(session, "func __macro_fragment__($text) {}")
-                val parameter = parsed.tree.findFirst(CjNodeTypes.VALUE_PARAMETER) ?: return null
-                parsed.builder.buildValueParameterInPackage(
-                    parameter = parameter,
-                    containingSymbol = original.containingDeclarationSymbol,
-                    packageFqName = packageFqName,
-                )
-            }
-            mode == MacroFragmentParser.Mode.EXPRESSION -> {
-                val parsed = parseLightTreeFragment(session, "let __macro_fragment_value__ =\n$text")
-                val variable = parsed.tree.findFirst(CjNodeTypes.VARIABLE) ?: return null
-                val declaration = parsed.builder.buildDeclarationInPackage(variable, packageFqName)
-                (declaration as? CfirPatternVariable)?.initializer
-            }
-            else -> {
-                val parsed = parseLightTreeFragment(session, text)
-                val declaration = parsed.tree.findFirstDeclaration() ?: return null
-                parsed.builder.buildDeclarationInPackage(declaration, packageFqName)
-            }
-        }
-    }
-
-    private data class ParsedLightTreeFragment(
-        val tree: FlyweightCapableTreeStructure<LighterASTNode>,
-        val builder: LightTreeRawCfirDeclarationBuilder,
-    )
-
-    private fun parseLightTreeFragment(
-        session: CfirSession,
-        text: String,
-    ): ParsedLightTreeFragment {
-        val parserDefinition = CangJieParserDefinition()
-        val psiBuilder = PsiBuilderFactory.getInstance().createBuilder(
-            parserDefinition,
-            CangJieLexer(),
-            text,
-        )
-        val lightTree = CangJieLightParser.parse(psiBuilder)
-        return ParsedLightTreeFragment(
-            tree = lightTree,
-            builder = LightTreeRawCfirDeclarationBuilder(
-                session = session,
-                baseScopeProvider = session.cangjieScopeProvider,
-                tree = lightTree,
-                source = text,
-            ),
-        )
-    }
-
-    private fun CjPsiFactory.createSingleParameter(text: String): CjParameter? {
-        return runCatching {
-            createParameterList("($text)").parameters.singleOrNull()
-        }.getOrNull()
-    }
-
-    private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirstDeclaration(): LighterASTNode? {
-        return findFirst(*fragmentDeclarationTypes)
-    }
-
-    private fun FlyweightCapableTreeStructure<LighterASTNode>.findFirst(
-        vararg tokenTypes: IElementType,
-    ): LighterASTNode? {
-        val accepted = tokenTypes.toSet()
-        fun visit(node: LighterASTNode): LighterASTNode? {
-            if (node.tokenType in accepted) return node
-            val childrenRef = Ref<Array<LighterASTNode>>()
-            val count = getChildren(node, childrenRef)
-            val children = childrenRef.get() ?: LighterASTNode.EMPTY_ARRAY
-            try {
-                for (index in 0 until count) {
-                    visit(children[index])?.let { return it }
-                }
-            } finally {
-                disposeChildren(children, count)
-            }
-            return null
-        }
-        return visit(root)
-    }
-
-    private val fragmentDeclarationTypes: Array<IElementType> = arrayOf(
-        CjNodeTypes.CLASS,
-        CjNodeTypes.INTERFACE,
-        CjNodeTypes.STRUCT,
-        CjNodeTypes.ENUM,
-        CjNodeTypes.EXTEND,
-        CjNodeTypes.FUNC,
-        CjNodeTypes.MAIN_FUNC,
-        CjNodeTypes.MACRO,
-        CjNodeTypes.FINALIZER,
-        CjNodeTypes.PRIMARY_CONSTRUCTOR,
-        CjNodeTypes.SECONDARY_CONSTRUCTOR,
-        CjNodeTypes.VARIABLE,
-        CjNodeTypes.FIELD,
-        CjNodeTypes.PROPERTY,
-        CjNodeTypes.TYPEALIAS,
-        CjNodeTypes.FOREIGN,
-    )
-
     private fun reportConstructionFailure(
         configuration: CompilerConfiguration,
         result: MacroConstructionResult,
@@ -574,19 +369,5 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
                     ?.let { virtualFile -> com.intellij.psi.PsiManager.getInstance(environment.project).findFile(virtualFile) as? CjFile }
             }
         }
-    }
-}
-
-private fun List<MacroSurfaceToken>.reTokenizeMacroSurfaceTokens(): List<MacroSurfaceToken> {
-    // PLAN.md §8 token-stage re-eval：先单步 lex，再由调用方（TokenBackedMacroFragmentParser）
-    // 调用 reTokenizeUntilStable 反复 lex 至稳定。这里只承担"一次真实 lexer 复扫"。
-    val payloadTokens = MacroPayloadTokenizer.tokenize(joinToString(separator = "") { it.text }, baseOffset = 0)
-    return payloadTokens.map { token ->
-        MacroSurfaceToken(
-            text = token.text,
-            startOffset = token.startOffset,
-            endOffset = token.endOffset,
-            kindName = token.kindName,
-        )
     }
 }

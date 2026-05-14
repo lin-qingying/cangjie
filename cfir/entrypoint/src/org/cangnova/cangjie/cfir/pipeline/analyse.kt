@@ -1,35 +1,23 @@
 package org.cangnova.cangjie.cfir.pipeline
 
-import com.intellij.lang.PsiBuilderFactory
 import org.cangnova.cangjie.CjPsiSourceFile
 import org.cangnova.cangjie.CjSourceFile
-import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.analysis.collectors.components.DiagnosticComponentsFactory
+import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
+import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.impl.BaseDiagnosticsCollector
 import org.cangnova.cangjie.cfir.diagnostics.impl.PendingDiagnosticsReporterImpl
+import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
-import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
-import org.cangnova.cangjie.cfir.resolve.providers.macro.RecordableRawCfirFiles
-import org.cangnova.cangjie.cfir.resolve.providers.macro.bindMacroImports
-import org.cangnova.cangjie.cfir.resolve.providers.macro.buildMacroSymbolIndex
-import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
-import org.cangnova.cangjie.cfir.resolve.providers.macro.expandWithDefaultContext
-import org.cangnova.cangjie.cfir.resolve.providers.macro.recordExpandedRawFilesOnce
+import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
 import org.cangnova.cangjie.cfir.withFileAnalysisExceptionWrapping
-import org.cangnova.cangjie.lexer.CangJieLexer
-import org.cangnova.cangjie.parsing.CangJieLightParser
-import org.cangnova.cangjie.parsing.CangJieParserDefinition
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.source.readSourceFileWithMapping
 
@@ -242,11 +230,30 @@ fun resolveAndCheckCfirAfterConstruction(
     constructionService: MacroConstructionService,
     constructionMode: MacroConstructionService.Mode,
     diagnosticsCollector: BaseDiagnosticsCollector,
+    macroArtifactDefinitions: List<MacroDefinitionEntry> = emptyList(),
+    preConstructionDiagnostics: List<org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic> = emptyList(),
 ): Pair<MacroConstructionResult, SingleModuleFrontendOutput?> {
     // baseline 第 1 节"主流程"：先 symbol index，再 bindMacroImports，再 expand。
-    val symbolIndex = buildMacroSymbolIndex(pre)
+    val symbolIndex = buildMacroSymbolIndex(
+        pre = pre,
+        macroArtifactDefinitions = macroArtifactDefinitions,
+    )
     val context = bindMacroImports(pre, symbolIndex)
-    val result = constructionService.expand(pre, context, constructionMode)
+    if (preConstructionDiagnostics.any {
+            it.severity == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Severity.ERROR
+        } && constructionMode == MacroConstructionService.Mode.STRICT
+    ) {
+        val registry = org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry().apply {
+            addAll(preConstructionDiagnostics)
+        }
+        return MacroConstructionResult.Failed(registry) to null
+    }
+    val result = constructionService.expand(
+        pre = pre,
+        context = context,
+        mode = constructionMode,
+        preConstructionDiagnostics = preConstructionDiagnostics,
+    )
     val recordable: RecordableRawCfirFiles = when (result) {
         is MacroConstructionResult.Success -> result.recordableFiles
         is MacroConstructionResult.Degraded -> result.recordableFiles

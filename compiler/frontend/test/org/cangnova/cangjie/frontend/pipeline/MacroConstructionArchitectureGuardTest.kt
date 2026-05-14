@@ -456,8 +456,8 @@ class MacroConstructionArchitectureGuardTest {
         val artifactDefinitionsIndex = source.indexOf("macroArtifactDefinitions = macroArtifactDefinitions")
         val bindIndex = source.indexOf("val context = bindMacroImports(pre, symbolIndex)")
         val preDiagnosticsErrorGateIndex = source.indexOf("preConstructionDiagnostics.any")
-        val expandIndex = source.indexOf("val result = constructionService.expand(pre, context, constructionMode)")
-        val preDiagnosticsMergeIndex = source.indexOf("result.registry.addAll(preConstructionDiagnostics)")
+        val expandIndex = source.indexOf("val result = constructionService.expand(")
+        val preDiagnosticsPassIndex = source.indexOf("preConstructionDiagnostics = preConstructionDiagnostics")
         val recordIndex = source.indexOf("recordExpandedRawFilesOnce(provider, recordable, result.registry)")
         val resolveIndex = source.indexOf("val output = resolveAndCheckCfir(session, recordable, diagnosticsCollector)")
 
@@ -472,19 +472,19 @@ class MacroConstructionArchitectureGuardTest {
                 bindIndex,
                 preDiagnosticsErrorGateIndex,
                 expandIndex,
-                preDiagnosticsMergeIndex,
+                preDiagnosticsPassIndex,
                 recordIndex,
                 resolveIndex,
             ).all { it >= 0 },
-            "resolveAndCheckCfirAfterConstruction must spell out artifact-aware symbol-index -> bind -> error diagnostics gate -> expand -> diagnostics merge -> record -> resolve.",
+            "resolveAndCheckCfirAfterConstruction must spell out artifact-aware symbol-index -> bind -> strict error diagnostics gate -> expand with diagnostics -> record -> resolve.",
         )
         assertTrue(
             symbolIndexIndex < artifactDefinitionsIndex &&
                 artifactDefinitionsIndex < bindIndex &&
                 bindIndex < preDiagnosticsErrorGateIndex &&
                 preDiagnosticsErrorGateIndex < expandIndex &&
-                expandIndex < preDiagnosticsMergeIndex &&
-                preDiagnosticsMergeIndex < recordIndex &&
+                expandIndex < preDiagnosticsPassIndex &&
+                preDiagnosticsPassIndex < recordIndex &&
                 recordIndex < resolveIndex,
             "Macro artifact diagnostics and construction must happen before source-provider registration and ordinary resolve.",
         )
@@ -584,23 +584,52 @@ class MacroConstructionArchitectureGuardTest {
 
     @Test
     fun frontendPipelineRunsExpansionDemandedMacroPackageCompilationBeforeArtifactResolution() {
-        val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/CfirFrontendPipelinePhase.kt")
-        val preIndex = source.indexOf("val sessionPreResults = sessionsWithSources.map")
-        val compileIndex = source.indexOf("val macroCompilation = compileRequiredMacroSourcePackages(configuration, sessionPreResults.map { it.pre })")
-        val resolverIndex = source.indexOf("val artifactResolver = MacroArtifactResolver()")
-        val packagesIndex = source.indexOf("configuration.macroArtifactPackages + macroCompilation.artifactPackages")
-        val diagnosticsIndex = source.indexOf("macroCompilation.diagnostics + artifactResolution.diagnostics")
+        val pipelineSource = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/CfirFrontendPipelinePhase.kt")
+        val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpansionArtifactPreparation.kt")
+        val preIndex = pipelineSource.indexOf("val sessionPreResults = sessionsWithSources.map")
+        val preparationCallIndex = pipelineSource.indexOf("prepareMacroArtifactDefinitionsForExpansion(configuration, preResults)")
+        val demandSurfacesIndex = source.indexOf("val demandSurfacesByPackage = collectMacroExpansionPackageDemandSurfaces(preResults)")
+        val demandIndex = source.indexOf("val demandedMacroPackages = demandSurfacesByPackage.keys")
+        val locatorIndex = source.indexOf("val artifactLocator = MacroArtifactLocator(configuration.macroSdkHome)")
+        val initialLocateIndex = source.indexOf("val initialArtifacts = artifactLocator.locate")
+        val compileIndex = source.indexOf("val macroCompilation = compileRequiredMacroSourcePackages(")
+        val relocalizeIndex = source.indexOf("val locatedArtifacts = artifactLocator.locate")
+        val resolverIndex = source.indexOf("MacroArtifactResolver().resolve")
+        val outputSearchIndex = source.indexOf("searchRoots = macroArtifactSearchRoots(configuration) + macroCompilation.artifactSearchPaths")
+        val explicitArtifactsIndex = source.indexOf("explicitArtifacts = configuration.macroArtifactPackages,")
+        val diagnosticsIndex = source.indexOf("diagnostics = attachDemandSurfaceOrigins(")
+        val diagnosticSourcesIndex = source.indexOf("diagnostics = macroCompilation.diagnostics + artifactResolution.diagnostics")
 
         assertTrue(
-            listOf(preIndex, compileIndex, resolverIndex, packagesIndex, diagnosticsIndex).all { it >= 0 },
-            "Frontend phase must derive macro compilation demand from pre macro results before resolving compiled macro artifacts.",
+            listOf(
+                preIndex,
+                demandSurfacesIndex,
+                demandIndex,
+                locatorIndex,
+                initialLocateIndex,
+                compileIndex,
+                relocalizeIndex,
+                resolverIndex,
+                outputSearchIndex,
+                explicitArtifactsIndex,
+                diagnosticsIndex,
+                diagnosticSourcesIndex,
+            ).all { it >= 0 },
+            "Frontend phase must derive macro package demand, locate artifacts, compile missing same-project sources, and re-locate compiled artifacts before resolver.",
         )
         assertTrue(
-            preIndex < compileIndex &&
-                compileIndex < resolverIndex &&
-                resolverIndex < packagesIndex &&
-                packagesIndex < diagnosticsIndex,
-            "Macro package compilation must be driven by expansion demand and then merged into artifact resolution.",
+            preIndex < preparationCallIndex &&
+                demandSurfacesIndex < demandIndex &&
+                demandIndex < locatorIndex &&
+                locatorIndex < initialLocateIndex &&
+                initialLocateIndex < compileIndex &&
+                compileIndex < relocalizeIndex &&
+                relocalizeIndex < resolverIndex &&
+                outputSearchIndex < resolverIndex &&
+                explicitArtifactsIndex < resolverIndex &&
+                resolverIndex < diagnosticsIndex &&
+                diagnosticsIndex < diagnosticSourcesIndex,
+            "Macro package compilation must be driven by expansion demand; compiled outputs must be re-discovered by the locator before resolver validation.",
         )
     }
 

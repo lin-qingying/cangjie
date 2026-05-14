@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorFunction
@@ -47,6 +48,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultTransformer
 import org.cangnova.cangjie.config.CompilerConfiguration
@@ -64,6 +66,7 @@ import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
 import org.cangnova.cangjie.macro.MacroLibraryLoadResult
 import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.macro.TokenInfo
+import org.cangnova.cangjie.macro.protocol.MacroMsgCodec
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import java.util.IdentityHashMap
@@ -112,15 +115,16 @@ object FrontendMacroConfigurationKeys {
     val MACRO_COMPILATION_CACHE_CONTEXT =
         CompilerConfigurationKey.create<MacroCompilationCacheContext>("MACRO_COMPILATION_CACHE_CONTEXT")
 
-    /**
-     * 测试专用：直接注入额外的 [MacroDefinitionEntry] 列表，不经
-     * `MacroArtifactResolver` 加载。生产路径不写此 key（始终为 `emptyList()`）。
-     * 由 `cfir/analysis-tests` 的 `MacroConstructionEnvironmentConfigurator` 在
-     * 读取 `MACRO_DEFINITION` directive 后写入，让 testdata 能描述自己的 macro 入口。
-     */
     @JvmField
-    val MACRO_ARTIFACT_DEFINITIONS_OVERRIDE =
-        CompilerConfigurationKey.create<List<MacroDefinitionEntry>>("MACRO_ARTIFACT_DEFINITIONS_OVERRIDE")
+    val MACRO_BACKGROUND_AUTO_COMPILATION_ENABLED =
+        CompilerConfigurationKey.create<Boolean>("MACRO_BACKGROUND_AUTO_COMPILATION_ENABLED")
+
+    @JvmField
+    val MACRO_EXPANSION_DEMAND_AUTO_COMPILATION_ENABLED =
+        CompilerConfigurationKey.create<Boolean>("MACRO_EXPANSION_DEMAND_AUTO_COMPILATION_ENABLED")
+
+    @JvmField
+    val MACRO_SDK_HOME = CompilerConfigurationKey.create<String>("MACRO_SDK_HOME")
 
     /**
      * Macro construction 模式。CLI 生产路径恒为 `STRICT`；
@@ -157,12 +161,6 @@ var CompilerConfiguration.macroArtifactPackages: List<MacroArtifactPackage>
         put(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_PACKAGES, value)
     }
 
-var CompilerConfiguration.macroArtifactDefinitionsOverride: List<MacroDefinitionEntry>
-    get() = get(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_DEFINITIONS_OVERRIDE, emptyList())
-    set(value) {
-        put(FrontendMacroConfigurationKeys.MACRO_ARTIFACT_DEFINITIONS_OVERRIDE, value)
-    }
-
 var CompilerConfiguration.macroConstructionMode: MacroConstructionService.Mode
     get() = get(FrontendMacroConfigurationKeys.MACRO_CONSTRUCTION_MODE, MacroConstructionService.Mode.STRICT)
     set(value) {
@@ -193,6 +191,26 @@ var CompilerConfiguration.macroCompilationCacheContext: MacroCompilationCacheCon
         put(FrontendMacroConfigurationKeys.MACRO_COMPILATION_CACHE_CONTEXT, value)
     }
 
+var CompilerConfiguration.macroBackgroundAutoCompilationEnabled: Boolean
+    get() = get(FrontendMacroConfigurationKeys.MACRO_BACKGROUND_AUTO_COMPILATION_ENABLED, false)
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_BACKGROUND_AUTO_COMPILATION_ENABLED, value)
+    }
+
+var CompilerConfiguration.macroExpansionDemandAutoCompilationEnabled: Boolean
+    get() = get(FrontendMacroConfigurationKeys.MACRO_EXPANSION_DEMAND_AUTO_COMPILATION_ENABLED, true)
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_EXPANSION_DEMAND_AUTO_COMPILATION_ENABLED, value)
+    }
+
+var CompilerConfiguration.macroSdkHome: String
+    get() = get(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, DEFAULT_MACRO_SDK_HOME)
+    set(value) {
+        put(FrontendMacroConfigurationKeys.MACRO_SDK_HOME, value)
+    }
+
+const val DEFAULT_MACRO_SDK_HOME: String = "C:\\Users\\lin17\\.cangjie\\sdks\\cangjie-1.0.5"
+
 /**
  * Compiler frontend 的 macro construction 实现。
  *
@@ -209,6 +227,7 @@ class FrontendMacroConstructionService(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
         mode: MacroConstructionService.Mode,
+        preConstructionDiagnostics: List<MacroConstructionDiagnostic>,
     ): MacroConstructionResult {
         val session = pre.session
         val registry = MacroExpansionRegistry()
@@ -220,6 +239,7 @@ class FrontendMacroConstructionService(
         for (surface in pre.allSurfaces) {
             registry.registerOriginSurface(surface)
         }
+        registry.addAll(preConstructionDiagnostics)
 
         // baseline 第 12 节 Batch 5："alias conflict / macro package / ..."。
         reportAliasConflicts(context, registry)
@@ -263,11 +283,17 @@ class FrontendMacroConstructionService(
         context: MacroResolutionContext,
         registry: MacroExpansionRegistry,
     ): List<CfirFile>? {
-        if (pre.allSurfaces.isEmpty()) return pre.files.map { it.cfirFile }
+        val expansionSurfaces = pre.files.flatMap { preFile ->
+            preFile.surfaces.filter { surface ->
+                (!preFile.isMacroPackage || surface is MacroSurfaceExpr) &&
+                    !surface.isMacroDefinitionSignatureSurface()
+            }
+        }
+        if (expansionSurfaces.isEmpty()) return pre.files.map { it.cfirFile }
 
         val parserFactory = configuration.macroFragmentParserFactory
         if (parserFactory == null) {
-            for (surface in pre.allSurfaces) {
+            for (surface in expansionSurfaces) {
                 reportError(
                     registry = registry,
                     message = "Macro surface `${surface.capturedRawSyntax.orEmpty()}` cannot be expanded: fragment parser is not configured.",
@@ -282,9 +308,14 @@ class FrontendMacroConstructionService(
         val executor = configuration.macroExecutorFactory?.create(pre.session)
         val slots = mutableListOf<MacroReplaceSlot>()
         val evaluator = MacroForestEvaluator(configuration.macroExpandMaxIterations)
-        val forest = MacroCallForestBuilder.build(pre.allSurfaces)
+        val forest = MacroCallForestBuilder.build(expansionSurfaces)
+        val expansionSurfaceIds = expansionSurfaces.mapTo(mutableSetOf()) { it.surfaceId }
         val surfaceFiles = pre.files
-            .flatMap { preFile -> preFile.surfaces.map { surface -> surface.surfaceId to preFile } }
+            .flatMap { preFile ->
+                preFile.surfaces
+                    .filter { surface -> surface.surfaceId in expansionSurfaceIds }
+                    .map { surface -> surface.surfaceId to preFile }
+            }
             .toMap()
 
         evaluator.evaluate(
@@ -292,6 +323,9 @@ class FrontendMacroConstructionService(
             expand = { node, childResults ->
                 val surface = node.surface
                 val name = surface.qualifiedName?.shortName()
+                if (surface.hasBlockingPreConstructionDiagnostic(registry)) {
+                    return@evaluate null
+                }
                 if (name == null) {
                     reportError(
                         registry = registry,
@@ -308,6 +342,7 @@ class FrontendMacroConstructionService(
                     name = name,
                     kind = surface.kind,
                     hasParenthesis = surface.hasParenthesis,
+                    allowsDeclarationInputParenthesisOmission = surface is MacroSurfaceDecl,
                 )
                 if (node.hasUnresolvedChildPayloadChannel(childResults)) {
                     reportError(
@@ -691,12 +726,24 @@ class FrontendMacroConstructionService(
             MacroConstructionDiagnostic.Kind.MACRO_NOT_EXPANDED,
             MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED,
             MacroConstructionDiagnostic.Kind.MACRO_EXECUTOR_UNAVAILABLE,
+            MacroConstructionDiagnostic.Kind.MACRO_DEPENDENCY_COMPILE_FAILED,
             MacroConstructionDiagnostic.Kind.MACRO_REEVALUATION_FAILED,
             MacroConstructionDiagnostic.Kind.MACRO_UNRESOLVED -> true
             // 由 baseline §9 / artifact-resolver 引入的新增 kind 默认保守归类为不可降级，
             // 避免在 STRICT 模式下因新增诊断悄悄走 DEGRADED 占位路径。
             // 后续按需把可降级的 kind 显式列入上面的白名单。
             else -> false
+        }
+    }
+
+    private fun MacroSurface.hasBlockingPreConstructionDiagnostic(registry: MacroExpansionRegistry): Boolean {
+        return registry.diagnostics.any { diagnostic ->
+            diagnostic.originSurfaceId == surfaceId &&
+                diagnostic.severity == MacroConstructionDiagnostic.Severity.ERROR &&
+                diagnostic.diagnosticOrigin in setOf(
+                    MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER,
+                    MacroConstructionDiagnostic.Origin.ORCHESTRATION,
+                )
         }
     }
 
@@ -713,7 +760,11 @@ class FrontendMacroConstructionService(
     ) {
         val declarationPlaceholders = IdentityHashMap<CfirDeclaration, CfirDeclaration>()
         val parameterPlaceholders = IdentityHashMap<CfirValueParameter, CfirValueParameter>()
+        val expressionPlaceholders = IdentityHashMap<CfirExpression, CfirExpression>()
+        val diagnosticSurfaceIds = registry.diagnostics
+            .mapNotNullTo(linkedSetOf()) { it.originSurfaceId }
         for (surface in pre.allSurfaces) {
+            if (surface.surfaceId !in diagnosticSurfaceIds) continue
             registry.registerPlaceholder(
                 placeholderId = surface.surfaceId,
                 originSurfaceId = surface.surfaceId,
@@ -721,10 +772,12 @@ class FrontendMacroConstructionService(
             when (val carrier = surface.replaceHandle.carrier) {
                 is CfirValueParameter -> parameterPlaceholders[carrier] = buildParameterMacroErrorPlaceholder(surface, carrier)
                 is CfirDeclaration -> declarationPlaceholders[carrier] = buildDeclarationMacroErrorPlaceholder(surface, carrier)
+                is CfirExpression -> expressionPlaceholders[carrier] = buildExpressionMacroErrorPlaceholder(surface, carrier)
             }
         }
         for (file in files) {
             replaceDegradedDeclarationPlaceholders(file.declarations, declarationPlaceholders, parameterPlaceholders)
+            replaceDegradedExpressionPlaceholders(file, expressionPlaceholders)
         }
     }
 
@@ -798,6 +851,32 @@ class FrontendMacroConstructionService(
             origin = declaration.origin
             attributes = declaration.attributes
             reason = diagnostic.reason
+        }
+    }
+
+    private fun replaceDegradedExpressionPlaceholders(
+        file: CfirFile,
+        expressionPlaceholders: IdentityHashMap<CfirExpression, CfirExpression>,
+    ) {
+        if (expressionPlaceholders.isEmpty()) return
+        val transformer = object : CfirDefaultTransformer<Unit>() {
+            override fun transformErrorExpression(errorExpression: CfirErrorExpression, data: Unit): CfirExpression {
+                expressionPlaceholders.remove(errorExpression)?.let { return it }
+                return super.transformErrorExpression(errorExpression, data)
+            }
+        }
+        file.transform<CfirFile, Unit>(transformer, Unit)
+    }
+
+    private fun buildExpressionMacroErrorPlaceholder(
+        surface: MacroSurface,
+        expression: CfirExpression,
+    ): CfirExpression {
+        val diagnostic = macroPlaceholderDiagnostic(surface)
+        val source = surface.macroOriginSource(expression.source)
+        return buildErrorExpression {
+            this.source = source
+            this.diagnostic = diagnostic
         }
     }
 
@@ -1208,18 +1287,48 @@ private fun MacroSurface.toMacroCallInfo(
     val start = sourceRange?.startOffset.toSourcePosition(linesMapping)
     val endOffset = sourceRange?.endOffset?.minus(1)?.coerceAtLeast(sourceRange?.startOffset ?: 0)
     val end = endOffset.toSourcePosition(linesMapping)
+    val hasAttrs = refreshedTokens.attrTokens.isNotEmpty()
+    val packageName = entry.packageFqName.asString().takeUnless { it == "<root>" }.orEmpty()
     return MacroCallInfo(
         idName = entry.name.asString(),
-        methodName = entry.name.asString(),
-        packageName = entry.packageFqName.asString().takeUnless { it == "<root>" }.orEmpty(),
+        methodName = macroWrapperFunctionName(packageName, hasAttrs, entry.name.asString()),
+        packageName = packageName,
         libPath = entry.libPath.orEmpty(),
-        hasAttrs = refreshedTokens.attrTokens.isNotEmpty(),
+        hasAttrs = hasAttrs,
         argTokens = refreshedTokens.inputTokens.toTokenInfo(start, end, linesMapping),
         attrTokens = refreshedTokens.attrTokens.toTokenInfo(start, end, linesMapping),
         parentNames = parentNames,
         position = start,
         endPosition = end,
     )
+}
+
+/**
+ * `macro package` 中的 `public macro` 定义是 artifact 发现/编译的输入，
+ * 不是本轮 macro construction 要送 executor 的调用 surface。
+ *
+ * 这里仅排除宏定义自身以及宏定义形参上由 raw builder 暂存的 surface；
+ * 宏定义体或同包源码中真实的 `@Macro(...)` 表达式仍会进入后续解析，并按
+ * same-package def/call 规则报错。
+ */
+private fun MacroSurface.isMacroDefinitionSignatureSurface(): Boolean {
+    val carrier = replaceHandle.carrier
+    if (carrier is CfirMacroDeclaration) return true
+    return carrier is CfirValueParameter &&
+        carrier.containingDeclarationSymbol is CfirMacroDeclarationSymbol
+}
+
+/**
+ * 对齐官方 `Utils::GetMacroFuncName`：宏定义编译后导出的 wrapper 名称不是源码宏名，
+ * 而是按 plain/attr 前缀、宏名和完整包名组成，并将包名中的 `.` 替换为 `_`。
+ */
+private fun macroWrapperFunctionName(
+    packageName: String,
+    hasAttrs: Boolean,
+    macroName: String,
+): String {
+    val prefix = if (hasAttrs) "macroCall_a_" else "macroCall_c_"
+    return (prefix + macroName + "_" + packageName).replace('.', '_')
 }
 
 private data class RefreshedMacroSurfaceTokens(
@@ -1308,12 +1417,15 @@ private fun Int?.toSourcePosition(linesMapping: CjSourceFileLinesMapping?): Sour
     return SourcePosition(line = line + 1, column = column + 1)
 }
 
-private fun List<TokenInfo>.toMacroSurfaceTokens(): List<MacroSurfaceToken> = map { token ->
-    MacroSurfaceToken(
-        text = token.value,
-        startOffset = token.begin.line,
-        endOffset = token.end.line,
-        kindName = token.kind.toString(),
+private fun List<TokenInfo>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {
+    if (isEmpty()) return emptyList()
+    val text = MacroMsgCodec.rebuildExpandedText(this)
+    return listOf(
+        MacroSurfaceToken(
+            text = text,
+            startOffset = 0,
+            endOffset = text.length,
+        )
     )
 }
 
