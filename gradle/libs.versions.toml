@@ -12,6 +12,7 @@ junit-platform-launcher = "1.10.2"
 vavr = "0.10.4"
 jansi = "2.4.1"
 flatbuffers = "25.2.10"
+jna = "5.17.0"
 junit5 = "5.12.2"
 kotlinx-collections-immutable = "0.4.0"
 kotlinx-serialization-json = "1.7.3"
@@ -30,6 +31,8 @@ vavr = { module = "io.vavr:vavr", version.ref = "vavr" }
 jansi = { module = "org.fusesource.jansi:jansi", version.ref = "jansi" }
 guava = { module = "com.google.guava:guava", version.ref = "guava" }
 flatbuffers-java = { module = "com.google.flatbuffers:flatbuffers-java", version.ref = "flatbuffers" }
+jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
+jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit5" }
 junit-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
 junit-bom = { module = "org.junit:junit-bom", version.ref = "junit5" }
