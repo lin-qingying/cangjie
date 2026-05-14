@@ -29,12 +29,15 @@ import org.cangnova.cangjie.psi.stubs.CangJiePackageDirectiveStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.psi.stubs.StubElement
 
-class CangJiePackageDirectiveStubImpl
-(parent: StubElement<*>) :
+class CangJiePackageDirectiveStubImpl(
+    parent: StubElement<*>,
+    override val isMacroPackage: Boolean,
+) :
 
     CangJieStubBaseImpl<CjPackageDirective>(parent, CjStubElementTypes.PACKAGE_DIRECTIVE),
     CangJiePackageDirectiveStub {
     override fun copyInto(newParent: StubElement<*>?): CangJiePackageDirectiveStubImpl = CangJiePackageDirectiveStubImpl(
         parent = requireNotNull(newParent),
+        isMacroPackage = isMacroPackage,
     )
 }
