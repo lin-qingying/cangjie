@@ -101,6 +101,7 @@ class FrontendMacroConstructionServiceTest {
             this.name = "sample.cj"
             packageDirective = buildPackageDirective {
                 this.packageFqName = packageFqName
+                isMacroPackage = false
             }
             declarations += function
         }

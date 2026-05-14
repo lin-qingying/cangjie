@@ -11,6 +11,9 @@ dependencies {
 
     compileOnly(intellijCore())
     testImplementation(intellijCore())
+    testImplementation(project(":cfir:cfir-serialization"))
+    testImplementation(project(":macro:macro-stub"))
+    testImplementation(libs.flatbuffers.java)
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

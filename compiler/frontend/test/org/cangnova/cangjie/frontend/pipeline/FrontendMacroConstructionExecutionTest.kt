@@ -9,17 +9,22 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.EmptyDeprecationsProvider
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
+import org.cangnova.cangjie.cfir.declarations.builder.buildPatternVariable
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
+import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroDesugarer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
@@ -45,6 +50,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.source.toSourceLinesMapping
@@ -192,6 +198,99 @@ class FrontendMacroConstructionExecutionTest {
 
         assertTrue(result is MacroConstructionResult.Success)
         assertSame(replacement, function.valueParameters.single())
+    }
+
+    @Test
+    fun defaultStableSplicerReplacesExpressionCarrierInsideLocalVariableInitializer() {
+        val session = object : CfirSession(CfirSession.Kind.Source) {}
+        val moduleData = TestModuleData(session)
+        session.register(CfirModuleData::class, moduleData)
+        val packageFqName = FqName("sample")
+        val carrier = buildErrorExpression {
+            diagnostic = ConeSimpleDiagnostic("macro construction carrier")
+        }
+        val replacement = buildErrorExpression {
+            diagnostic = ConeSimpleDiagnostic("expanded macro payload")
+        }
+        val local = patternVariable(
+            moduleData = moduleData,
+            packageFqName = packageFqName,
+            name = "value",
+            initializer = carrier,
+        )
+        val function = namedFunction(moduleData, packageFqName, "useMacro").apply {
+            replaceBody(buildBlock { statements += local })
+        }
+        val file = fileWithDeclarations(moduleData, packageFqName, function)
+        val surface = expressionSurface(
+            surfaceId = 3102L,
+            qualifiedName = FqName("macros").child(Name.identifier("Generated")),
+            packageFqName = packageFqName,
+        ).copy(
+            replaceHandle = CfirReplaceHandle(3102L, carrier),
+        )
+        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory {
+                RecordingExecutor(MacroExpansionResult.Success(listOf(tokenInfo("expanded")), "expanded"))
+            }
+            macroFragmentParserFactory = MacroFragmentParserFactory {
+                StaticPayloadParser(replacement)
+            }
+        }
+
+        val result = FrontendMacroConstructionService(configuration).expand(
+            pre = pre,
+            context = contextWithArtifact(pre, "Generated"),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertTrue(result is MacroConstructionResult.Success)
+        assertSame(replacement, local.initializer)
+    }
+
+    @Test
+    fun degradedModeBuildsTypedExpressionPlaceholderInsideLocalVariableInitializer() {
+        val session = object : CfirSession(CfirSession.Kind.Source) {}
+        val moduleData = TestModuleData(session)
+        session.register(CfirModuleData::class, moduleData)
+        val packageFqName = FqName("sample")
+        val carrier = buildErrorExpression {
+            diagnostic = ConeSimpleDiagnostic("macro construction carrier")
+        }
+        val local = patternVariable(
+            moduleData = moduleData,
+            packageFqName = packageFqName,
+            name = "value",
+            initializer = carrier,
+        )
+        val function = namedFunction(moduleData, packageFqName, "useMacro").apply {
+            replaceBody(buildBlock { statements += local })
+        }
+        val file = fileWithDeclarations(moduleData, packageFqName, function)
+        val surface = expressionSurface(
+            surfaceId = 3103L,
+            qualifiedName = FqName("macros").child(Name.identifier("Generated")),
+            packageFqName = packageFqName,
+        ).copy(
+            replaceHandle = CfirReplaceHandle(3103L, carrier),
+        )
+        val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
+
+        val result = FrontendMacroConstructionService(CompilerConfiguration()).expand(
+            pre = pre,
+            context = bindMacroImports(pre, buildMacroSymbolIndex(pre)),
+            mode = MacroConstructionService.Mode.DEGRADED,
+        )
+
+        assertTrue(result is MacroConstructionResult.Degraded)
+        val initializer = local.initializer
+        assertInstanceOf(CfirErrorExpression::class.java, initializer)
+        assertTrue(initializer !== carrier)
+        assertEquals(
+            "Macro call `@macros.Generated(arg)` was not expanded during macro construction.",
+            (initializer as CfirErrorExpression).diagnostic.reason,
+        )
     }
 
     @Test
@@ -743,6 +842,7 @@ class FrontendMacroConstructionExecutionTest {
             name = "alias.cj"
             packageDirective = buildPackageDirective {
                 this.packageFqName = packageFqName
+                isMacroPackage = false
             }
             imports += firstImport
             imports += secondImport
@@ -871,6 +971,7 @@ class FrontendMacroConstructionExecutionTest {
             name = "sample.cj"
             packageDirective = buildPackageDirective {
                 this.packageFqName = packageFqName
+                isMacroPackage = false
             }
             declarations += function
         }
@@ -988,6 +1089,7 @@ class FrontendMacroConstructionExecutionTest {
             this.sourceFileLinesMapping = sourceText.toSourceLinesMapping()
             packageDirective = buildPackageDirective {
                 packageFqName = surfaces.firstOrNull()?.scopeContext?.packageFqName ?: FqName.ROOT
+                isMacroPackage = false
             }
         }
         return MacroSurfaceFixture(
@@ -1032,6 +1134,7 @@ class FrontendMacroConstructionExecutionTest {
         name = "sample.cj"
         packageDirective = buildPackageDirective {
             this.packageFqName = packageFqName
+            isMacroPackage = false
         }
         this.declarations += declarations
     }
@@ -1074,6 +1177,27 @@ class FrontendMacroConstructionExecutionTest {
         symbol = CfirValueParameterSymbol(CallableId(packageFqName, Name.identifier(name)))
         this.name = Name.identifier(name)
         containingDeclarationSymbol = containingSymbol
+    }
+
+    private fun patternVariable(
+        moduleData: CfirModuleData,
+        packageFqName: FqName,
+        name: String,
+        initializer: CfirExpression?,
+    ): CfirPatternVariable = buildPatternVariable {
+        this.moduleData = moduleData
+        resolvePhase = CfirResolvePhase.RAW_CFIR
+        origin = CfirDeclarationOrigin.Synthetic.Error
+        attributes = CfirDeclarationAttributes.EMPTY
+        isLocal = true
+        dispatchReceiverType = null
+        deprecationsProvider = EmptyDeprecationsProvider
+        status = CfirDeclarationStatusImpl.DEFAULT
+        this.initializer = initializer
+        isVar = false
+        symbol = CfirPatternVariableSymbol(CallableId(packageFqName, Name.identifier(name)))
+        returnTypeRef = buildImplicitTypeRef()
+        pattern = buildWildcardPattern()
     }
 
     private fun expressionSurface(
