@@ -16,7 +16,10 @@ import MacroMsgFormat.Position
 import MacroMsgFormat.Token
 import com.google.flatbuffers.FlatBufferBuilder
 import org.cangnova.cangjie.macro.MacroCallInfo
+import org.cangnova.cangjie.macro.MacroExpansionFailureKind
 import org.cangnova.cangjie.macro.MacroExpansionResult
+import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
+import org.cangnova.cangjie.macro.MacroLibraryLoadResult
 import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.macro.TokenInfo
 import org.cangnova.cangjie.macro.protocol.MacroMsgCodec
@@ -24,15 +27,39 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
 import java.lang.reflect.Modifier
+import java.nio.file.Files
+import java.nio.file.Path
 import java.util.ArrayDeque
 import java.util.logging.Logger
 
 class ProcessMacroExecutorTest {
+    @TempDir
+    lateinit var tempDir: Path
+
     @Test
     fun processMacroExecutorIsAbstractAndLspMacroServerExecutorInheritsIt() {
         assertTrue(Modifier.isAbstract(ProcessMacroExecutor::class.java.modifiers))
         assertTrue(ProcessMacroExecutor::class.java.isAssignableFrom(LspMacroServerMacroExecutor::class.java))
+    }
+
+    @Test
+    fun lspMacroServerExecutorAvailabilityFollowsExecutableFileState() {
+        val missing = LspMacroServerMacroExecutor(tempDir.resolve("missing-LSPMacroServer").toString())
+        assertFalse(missing.isAvailable())
+
+        val executableName = if (System.getProperty("os.name").contains("Windows", ignoreCase = true)) {
+            "LSPMacroServer.exe"
+        } else {
+            "LSPMacroServer"
+        }
+        val executable = tempDir.resolve(executableName)
+        Files.write(executable, byteArrayOf(1, 2, 3))
+        executable.toFile().setExecutable(true)
+
+        val available = LspMacroServerMacroExecutor(executable.toString())
+        assertEquals(executable.toFile().canExecute(), available.isAvailable())
     }
 
     @Test
@@ -70,6 +97,105 @@ class ProcessMacroExecutorTest {
         assertEquals(listOf("expanded"), result.tokens.map { it.value })
         assertEquals(
             listOf(MacroMsgCodec.TYPE_DEF_LIB, MacroMsgCodec.TYPE_MULTI_CALLS),
+            executor.transport.sent.map(MacroMsgCodec::getMsgType),
+        )
+    }
+
+    @Test
+    fun loadLibrariesDeduplicatesRequestsAndCachesLoadedLibraries() {
+        val executor = TestProcessMacroExecutor(
+            responses = ArrayDeque(listOf(ackPayload())),
+        )
+
+        val first = executor.loadLibraries(listOf("macro.so", "macro.so", "", "other.so"))
+        val second = executor.loadLibraries(listOf("macro.so", "other.so"))
+
+        assertTrue(first is MacroLibraryLoadResult.Success)
+        first as MacroLibraryLoadResult.Success
+        assertEquals(listOf("macro.so", "other.so"), first.loadedLibPaths)
+        assertTrue(second is MacroLibraryLoadResult.Success)
+        second as MacroLibraryLoadResult.Success
+        assertEquals(listOf("macro.so", "other.so"), second.loadedLibPaths)
+        assertEquals(1, executor.transport.sent.size)
+        assertEquals(MacroMsgCodec.TYPE_DEF_LIB, MacroMsgCodec.getMsgType(executor.transport.sent.single()))
+    }
+
+    @Test
+    fun loadLibrariesMapsDefLibAckFailedPathsToCannotOpenLibFailures() {
+        val executor = TestProcessMacroExecutor(
+            responses = ArrayDeque(listOf(MacroMsgCodec.buildDefLib(listOf("missing.so")))),
+        )
+
+        val result = executor.loadLibraries(listOf("missing.so"))
+
+        assertTrue(result is MacroLibraryLoadResult.Failure)
+        result as MacroLibraryLoadResult.Failure
+        val failure = result.failures.single()
+        assertEquals("missing.so", failure.libPath)
+        assertEquals(MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB, failure.kind)
+    }
+
+    @Test
+    fun loadLibrariesAcceptsOfficialTextDefLibAck() {
+        val executor = TestProcessMacroExecutor(
+            responses = ArrayDeque(listOf("RespondFindDef broken.dll".toByteArray())),
+        )
+
+        val result = executor.loadLibraries(listOf("broken.dll"))
+
+        assertTrue(result is MacroLibraryLoadResult.Failure)
+        result as MacroLibraryLoadResult.Failure
+        val failure = result.failures.single()
+        assertEquals("broken.dll", failure.libPath)
+        assertEquals(MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB, failure.kind)
+    }
+
+    @Test
+    fun loadLibrariesReportsProtocolErrorForUnexpectedAckType() {
+        val executor = TestProcessMacroExecutor(
+            responses = ArrayDeque(listOf(macroResultPayload(TokenInfo(kind = 1u, value = "not-deflib")))),
+        )
+
+        val result = executor.loadLibraries(listOf("macro.so"))
+
+        assertTrue(result is MacroLibraryLoadResult.Failure)
+        result as MacroLibraryLoadResult.Failure
+        val failure = result.failures.single()
+        assertEquals("macro.so", failure.libPath)
+        assertEquals(MacroLibraryLoadFailureKind.PROTOCOL_ERROR, failure.kind)
+    }
+
+    @Test
+    fun executeReportsProtocolErrorForUnexpectedResponseType() {
+        val executor = TestProcessMacroExecutor(
+            responses = ArrayDeque(listOf(ackPayload())),
+        )
+
+        val result = executor.execute(
+            listOf(MacroCallInfo(idName = "demo", methodName = "demo")),
+        ).single()
+
+        assertTrue(result is MacroExpansionResult.Failure)
+        result as MacroExpansionResult.Failure
+        assertEquals(MacroExpansionFailureKind.PROTOCOL_ERROR, result.kind)
+    }
+
+    @Test
+    fun resetClearsLoadedLibraryCacheAndSendsResetStageTask() {
+        val executor = TestProcessMacroExecutor(
+            responses = ArrayDeque(listOf(ackPayload(), ackPayload())),
+        )
+
+        executor.loadLibraries(listOf("macro.so"))
+        executor.reset()
+        executor.loadLibraries(listOf("macro.so"))
+
+        assertEquals(
+            listOf(
+                MacroMsgCodec.TYPE_DEF_LIB,
+                MacroMsgCodec.TYPE_EXIT_TASK,
+                MacroMsgCodec.TYPE_DEF_LIB,
+            ),
             executor.transport.sent.map(MacroMsgCodec::getMsgType),
         )
     }
