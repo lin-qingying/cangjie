@@ -23,7 +23,11 @@ import org.cangnova.cangjie.source.CjSourceElement
 class PreMacroCfirFile internal constructor(
     val cfirFile: CfirFile,
     val surfaces: List<MacroSurface> = emptyList(),
-)
+) {
+    /** 当前文件是否声明为 `macro package`。 */
+    val isMacroPackage: Boolean
+        get() = cfirFile.packageDirective.isMacroPackage
+}
 
 /**
  * `buildPreMacroRawFilesNoRecord(...)` 的产物。
@@ -380,6 +384,7 @@ interface MacroConstructionService {
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
         mode: Mode,
+        preConstructionDiagnostics: List<MacroConstructionDiagnostic> = emptyList(),
     ): MacroConstructionResult
 
     enum class Mode {
@@ -474,8 +479,17 @@ private object IdentityMacroConstructionService : MacroConstructionService {
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
         mode: MacroConstructionService.Mode,
+        preConstructionDiagnostics: List<MacroConstructionDiagnostic>,
     ): MacroConstructionResult {
         val files = pre.files.map(PreMacroCfirFile::cfirFile)
+        if (preConstructionDiagnostics.isNotEmpty()) {
+            val registry = MacroExpansionRegistry().apply { addAll(preConstructionDiagnostics) }
+            return if (registry.hasErrors && mode == MacroConstructionService.Mode.STRICT) {
+                MacroConstructionResult.Failed(registry)
+            } else {
+                MacroConstructionService.degradedOf(pre, files, registry)
+            }
+        }
         return MacroConstructionService.successOf(
             pre = pre,
             files = files,

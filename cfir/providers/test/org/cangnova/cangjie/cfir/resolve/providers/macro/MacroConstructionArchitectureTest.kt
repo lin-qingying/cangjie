@@ -240,6 +240,7 @@ class MacroConstructionArchitectureTest {
             packageDirective = buildPackageDirective {
                 source = null
                 packageFqName = FqName(packageName)
+                isMacroPackage = false
             }
             this.imports += imports
             sourceFileLinesMapping = null
