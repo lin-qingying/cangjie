@@ -18,7 +18,7 @@ dependencies {
     testFixturesApi(project(":psi"))
     testFixturesApi(project(":compiler:frontend"))
     testFixturesApi(project(":macro:macro-common"))
-    testFixturesApi(project(":macro:macro-stub"))
+    testFixturesApi(project(":macro:macro-process"))
     testFixturesApi(testFixtures(project(":tests:test-infrastructure")))
     testFixturesImplementation(libs.kotlinx.serialization.json)
 

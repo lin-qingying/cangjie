@@ -11,7 +11,7 @@ func takeBox(v: <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>): Unit 
 
 func useTypePosition(): Unit {
     let x: <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>Box<!>
-    let _ = x
+    let _ = <!USED_BEFORE_INITIALIZATION!>x<!>
 }
 
 func useQualifier(): Int64 {

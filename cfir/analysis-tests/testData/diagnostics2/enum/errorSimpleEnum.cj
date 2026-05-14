@@ -32,7 +32,7 @@ func name(): Unit {
     <!CANNOT_INFER_PARAMETER_TYPE!>name1<!>(1)
     let a = A1(1)
 
-    let b = <!ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR!>A<!>(1)
+    let b = <!NO_MATCHING_OPERATOR_INVOKE!>A<!>(1)
     let c: A = <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None1<!>
     let d: A = <!TYPE_MISMATCH!>None1<Int64><!>
 

@@ -49,7 +49,7 @@ func declaredBoolMismatch(): Bool {
 }
 
 func declaredUnitTailExpression(): Unit {
-    1
+    <!UNUSED_EXPRESSION!>1<!>
 }
 
 main(): Unit {

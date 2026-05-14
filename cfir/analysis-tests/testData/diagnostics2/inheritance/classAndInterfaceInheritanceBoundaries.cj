@@ -7,6 +7,6 @@ class OpenChild <: OpenBase {}
 
 class FinalChild <: <!CLASS_NOT_OPEN_FOR_INHERITANCE!>FinalBase<!> {}
 
-<!INTERFACE_CANNOT_INHERIT_CLASS!>interface BadInterface<!> <: FinalBase {}
+interface <!INTERFACE_CANNOT_INHERIT_CLASS!>BadInterface<!> <: FinalBase {}
 
-<!INTERFACE_CANNOT_INHERIT_CLASS!>interface MixedInterface<!> <: Marker & FinalBase {}
+interface <!INTERFACE_CANNOT_INHERIT_CLASS!>MixedInterface<!> <: Marker & FinalBase {}

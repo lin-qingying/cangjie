@@ -24,6 +24,13 @@ object TestGeneratorForCfirAnalysisTests {
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt",
             generatedClassName = "CfirAnalysisDiagnostics2TestGenerated",
         )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/macro",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroTestGenerated.kt",
+            generatedClassName = "CfirAnalysisMacroTestGenerated",
+            baseClassName = "AbstractCfirLightTreeMacroDiagnosticsTest",
+        )
     }
 
     private fun generateDiagnosticsSuite(
@@ -31,6 +38,7 @@ object TestGeneratorForCfirAnalysisTests {
         relativeTestDataRoot: String,
         outputRelativePath: String,
         generatedClassName: String,
+        baseClassName: String = "AbstractCfirLightTreeDiagnosticsTest",
     ) {
         val testDataRoot = projectRoot.resolve(relativeTestDataRoot)
         require(testDataRoot.exists()) { "testData root not found: ${testDataRoot.path}" }
@@ -54,6 +62,7 @@ object TestGeneratorForCfirAnalysisTests {
                 subDirs = subDirs,
                 projectRoot = projectRoot,
                 generatedClassName = generatedClassName,
+                baseClassName = baseClassName,
             ),
             Charsets.UTF_8,
         )
@@ -66,12 +75,13 @@ object TestGeneratorForCfirAnalysisTests {
         subDirs: List<File>,
         projectRoot: File,
         generatedClassName: String,
+        baseClassName: String,
     ): String = buildString {
         appendLine("package org.cangnova.cangjie.cfir.analysis.tests")
         appendLine()
         appendLine("import com.intellij.testFramework.TestDataPath")
         appendLine("import org.cangnova.cangjie.ObsoleteTestInfrastructure")
-        appendLine("import org.cangnova.cangjie.cfir.analysis.tests.runners.AbstractCfirLightTreeDiagnosticsTest")
+        appendLine("import org.cangnova.cangjie.cfir.analysis.tests.runners.$baseClassName")
         appendLine("import org.cangnova.cangjie.test.TestMetadata")
         appendLine("import org.junit.jupiter.api.Nested")
         appendLine("import org.junit.jupiter.api.Test")
@@ -82,7 +92,7 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("@TestDataPath(\"\\${'$'}PROJECT_ROOT\")")
         appendLine("@OptIn(ObsoleteTestInfrastructure::class)")
         appendLine("@ObsoleteTestInfrastructure")
-        appendLine("class $generatedClassName : AbstractCfirLightTreeDiagnosticsTest() {")
+        appendLine("class $generatedClassName : $baseClassName() {")
         appendLine("    @Test")
         appendLine("    fun testAllFilesPresent() {")
         appendLine("        assertAllFilesPresentByMetadata(this, \"$rootRel\")")
@@ -100,6 +110,7 @@ object TestGeneratorForCfirAnalysisTests {
                 projectRoot = projectRoot,
                 indent = "    ",
                 relativePathFromRoot = dir.name,
+                baseClassName = baseClassName,
             )
         }
 
@@ -204,6 +215,7 @@ object TestGeneratorForCfirAnalysisTests {
         projectRoot: File,
         indent: String,
         relativePathFromRoot: String,
+        baseClassName: String,
     ) {
         val files = dir.listFiles().orEmpty()
             .filter { it.isFile && it.extension == "cj" }
@@ -221,7 +233,7 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("${indent}@TestMetadata(\"${dir.name}\")")
         appendLine("${indent}@TestDataPath(\"\\${'$'}PROJECT_ROOT\")")
         appendLine("${indent}@Nested")
-        appendLine("${indent}inner class $className : AbstractCfirLightTreeDiagnosticsTest() {")
+        appendLine("${indent}inner class $className : $baseClassName() {")
         appendLine("${indent}    @Test")
         appendLine("${indent}    fun testAllFilesPresent() {")
         appendLine("${indent}        assertAllFilesPresentByMetadata(this, \"$rootRel/$relativePathFromRoot\")")
@@ -239,6 +251,7 @@ object TestGeneratorForCfirAnalysisTests {
                 projectRoot = projectRoot,
                 indent = "$indent    ",
                 relativePathFromRoot = "$relativePathFromRoot/${nestedDir.name}",
+                baseClassName = baseClassName,
             )
         }
 
