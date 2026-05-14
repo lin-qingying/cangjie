@@ -501,14 +501,15 @@ class ControlFlowGraphBuilder private constructor(
     // ----------------------------------- Return expressions -----------------------------------
 
     /**
-     * 从函数 CFG 中提取真实返回结果集合。
+     * 从函数 CFG 中提取返回类型推断使用的结果集合。
      *
      * 收集来源统一为：
      * - 直接连到函数 exit 的 block 尾表达式；
      * - 通过 non-direct jump 连到函数 exit 的显式 `return expr`。
      *
-     * 这样既能覆盖“最后一条表达式即返回值”，也能覆盖显式 return，
-     * 并且天然排除 CFG 上不可达的块尾表达式。
+     * 这样既能覆盖“最后一条表达式即返回值”，也能覆盖显式 return。
+     * 仓颉语义下，显式 return 后面的 block 尾表达式仍参与隐式返回类型推断，
+     * 因而不能只按 CFG 可达性丢弃该尾表达式。
      */
     fun returnExpressionsOfFunction(function: CfirFunction): Collection<CfirExpression>? {
         val exitNode = function.controlFlowGraphReference?.controlFlowGraph?.exitNode ?: return null
@@ -519,12 +520,7 @@ class ControlFlowGraphBuilder private constructor(
                 if (previousNodes.all { it is StubNode }) {
                     null
                 } else {
-                    val statements = fir.statements
-                    if (statements.dropLast(1).any { it is CfirReturnExpression }) {
-                        null
-                    } else {
-                        (statements.lastOrNull() as? CfirExpression)?.takeUnless { it is CfirReturnExpression }
-                    }
+                    (fir.statements.lastOrNull() as? CfirExpression)?.takeUnless { it is CfirReturnExpression }
                 }
             }
             is JumpNode -> (fir as? CfirReturnExpression)?.result

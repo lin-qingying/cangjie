@@ -22,7 +22,9 @@ import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.resolvedType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 
@@ -201,7 +203,7 @@ internal class TowerLevelProcessor(
 ) {
     fun consumeCandidate(
         symbol: CfirCallableSymbol<*>,
-        scope: CfirScope,
+        scope: CfirScope?,
         dispatchReceiver: ReceiverValue? = null,
         givenExtensionReceiver: ReceiverValue? = null,
     ): CandidateApplicability {
@@ -217,6 +219,43 @@ internal class TowerLevelProcessor(
             ),
             context,
         )
+    }
+
+    fun consumeFunctionTypeInvokeCandidate(
+        receiverExpression: org.cangnova.cangjie.cfir.expressions.CfirExpression,
+        dispatchReceiver: ReceiverValue,
+    ): CandidateApplicability {
+        val functionType = receiverExpression.resolvedType as ConeFunctionType
+
+        return resultCollector.consumeCandidate(
+            group,
+            candidateFactory.createFunctionTypeInvokeCandidate(
+                callInfo = callInfo,
+                functionType = functionType,
+                receiverExpression = receiverExpression,
+                explicitReceiverKind = explicitReceiverKind,
+                dispatchReceiver = dispatchReceiver,
+            ),
+            context,
+        )
+    }
+}
+
+internal class FunctionTypeInvokeTowerLevel(
+    private val receiverExpression: org.cangnova.cangjie.cfir.expressions.CfirExpression,
+) : CfirTowerLevel {
+    override fun processCallablesByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult =
+        processFunctionsByName(info, processor)
+
+    override fun processFunctionsByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
+        if (info.callKind != CallKind.Function || info.name != OperatorNameConventions.INVOKE) {
+            return ProcessResult.SCOPE_EMPTY
+        }
+        if (receiverExpression.resolvedType !is ConeFunctionType) return ProcessResult.SCOPE_EMPTY
+
+        val functionTypeReceiver = ExpressionReceiverValue(receiverExpression)
+        processor.consumeFunctionTypeInvokeCandidate(receiverExpression, functionTypeReceiver)
+        return ProcessResult.FOUND
     }
 }
 
