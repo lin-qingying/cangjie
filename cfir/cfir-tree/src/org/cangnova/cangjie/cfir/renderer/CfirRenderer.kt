@@ -61,7 +61,7 @@ abstract class CfirErrorExpressionRenderer {
     protected val printer: CfirPrinter get() = components.printer
 
     fun renderDiagnostic(diagnostic: ConeDiagnostic) {
-        printer.print("ERROR_EXPR(${diagnostic.reason})")
+        printer.println("ERROR_EXPR(${diagnostic.reason})")
     }
 
     abstract fun renderErrorExpression(errorExpression: CfirErrorExpression)
@@ -194,69 +194,9 @@ class CfirRenderer(
      * 因此这里必须优先按 CfirTypeRef 结构直接渲染，不能只看 coneTypeOrNull。
      */
     private fun renderType(typeRef: CfirTypeRef?) {
-        when (typeRef) {
-            null -> return
-            is CfirImplicitTypeRef -> return
-            is CfirResolvedTypeRef -> renderType(typeRef.coneType)
-            is CfirBasicTypeRef -> {
-                print("R|")
-                print(typeRef.name.asString())
-                print("|")
-            }
-            is CfirUserTypeRef -> {
-                print("R|")
-                typeRef.qualifier.forEachIndexed { index, qualifier ->
-                    if (index > 0) {
-                        print(".")
-                    }
-                    print(qualifier.name.asString())
-                    if (qualifier.typeArguments.isNotEmpty()) {
-                        print("<")
-                        qualifier.typeArguments.forEachIndexed { argumentIndex, argument ->
-                            if (argumentIndex > 0) print(", ")
-                            renderType(argument)
-                        }
-                        print(">")
-                    }
-                }
-                print("|")
-            }
-            is CfirFunctionTypeRef -> {
-                print("R|(")
-                typeRef.parameterTypeRefs.forEachIndexed { index, parameterTypeRef ->
-                    if (index > 0) print(", ")
-                    renderType(parameterTypeRef)
-                }
-                print(") -> ")
-                renderType(typeRef.returnTypeRef)
-                print("|")
-            }
-            is CfirOptionTypeRef -> {
-                print("R|Option<")
-                renderType(typeRef.componentTypeRef)
-                print(">|")
-            }
-            is CfirTupleTypeRef -> {
-                print("R|(")
-                typeRef.elementTypeRefs.forEachIndexed { index, elementTypeRef ->
-                    if (index > 0) print(", ")
-                    renderType(elementTypeRef)
-                }
-                print(")|")
-            }
-            is CfirVArrayTypeRef -> {
-                print("R|VArray<")
-                renderType(typeRef.elementTypeRef)
-                print(", ")
-                print(typeRef.sizeLiteral)
-                print(">|")
-            }
-            is CfirErrorTypeRef -> {
-                print("R|<ERROR:")
-                print(typeRef.diagnostic.reason)
-                print(">|")
-            }
-            else -> renderType(typeRef.coneTypeOrNull)
+        val rendered = renderTypeRefForDebug(typeRef, typeRenderer)
+        if (rendered.isNotEmpty()) {
+            print(rendered)
         }
     }
 
@@ -411,7 +351,7 @@ class CfirRenderer(
             print("extend")
             printTypeParams(extend.typeParameters)
             print(" ")
-            renderType(extend.extendedTypeRef.coneTypeOrNull)
+            renderType(extend.extendedTypeRef)
             printSuperTypes(extend.superTypeRefs)
             println(" {")
             printer.pushIndent()
@@ -451,10 +391,10 @@ class CfirRenderer(
                 print(param.name.asString())
                 if (param.isNamed) print("!")
                 print(": ")
-                renderType(param.returnTypeRef.coneTypeOrNull)
+                renderType(param.returnTypeRef)
             }
             print("): ")
-            renderType(function.returnTypeRef.coneTypeOrNull)
+            renderType(function.returnTypeRef)
 
             if (function.body != null) {
                 println(" {")
@@ -573,7 +513,7 @@ class CfirRenderer(
                 print("(")
                 enumConstructor.valueParameters.forEachIndexed { index, param ->
                     if (index > 0) print(", ")
-                    renderType(param.returnTypeRef.coneType)
+                    renderType(param.returnTypeRef)
                 }
                 print(")")
             }
@@ -727,7 +667,7 @@ class CfirRenderer(
 
         override fun visitTypeOperator(typeOperator: CfirTypeOperator) {
             print("TYPE_OP(${typeOperator.operation.name}, ")
-            renderType(typeOperator.typeRef.coneType)
+            renderType(typeOperator.typeRef)
             println(") {")
             printer.pushIndent()
             typeOperator.argument.accept(this)
@@ -800,7 +740,7 @@ class CfirRenderer(
         override fun visitForInExpression(forIn: CfirForInExpression) {
             val variableName = renderPatternVariableName(forIn.variable)
             print("FOR_IN($variableName: ")
-            renderType(forIn.variable.returnTypeRef.coneType)
+            renderType(forIn.variable.returnTypeRef)
             println(") {")
             printer.pushIndent()
             println("iterable:")
