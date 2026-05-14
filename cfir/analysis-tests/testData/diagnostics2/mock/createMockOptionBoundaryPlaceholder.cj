@@ -4,6 +4,6 @@ enum Option<T> {
 }
 
 func mockEnumUnsupported(): Unit {
-    let value = <!MOCK_UNSUPPORTED_TYPE!>createMock<!><Option<Int64>>()
+    let value = <!MOCK_UNSUPPORTED_TYPE!>createMock<Option<Int64>>()<!>
     let _ = value
 }

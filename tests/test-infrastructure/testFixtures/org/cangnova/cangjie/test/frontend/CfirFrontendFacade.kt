@@ -9,7 +9,6 @@ import org.cangnova.cangjie.cfir.entrypoint.checkers.registerExperimentalChecker
 import org.cangnova.cangjie.cfir.entrypoint.checkers.registerExtraCommonCheckers
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
-import org.cangnova.cangjie.cfir.entrypoint.configuration.initializeCfirFrontendConfiguration
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirSessionConfigurator
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
@@ -20,6 +19,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
 import org.cangnova.cangjie.config.languageVersionSettings
+import org.cangnova.cangjie.frontend.pipeline.initializeCfirFrontendMacroCompilationConfiguration
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.CfirParser
@@ -72,7 +72,7 @@ open class CfirFrontendFacade(
         val (moduleDataMap, moduleDataProvider) = initializeModuleData(sortedModules)
 
         val configuration = testServices.compilerConfigurationProvider.getCompilerConfiguration(module)
-        configuration.initializeCfirFrontendConfiguration()
+        configuration.initializeCfirFrontendMacroCompilationConfiguration()
         val extensionRegistrars = emptyList<CfirExtensionRegistrar>()
         val sessionFactoryContext = createSessionFactoryContext(configuration)
         val librarySession = createLibrarySession(
@@ -153,7 +153,7 @@ open class CfirFrontendFacade(
         sessionFactoryContext: CfirDefaultSessionFactory.Context,
     ): CfirSession {
         val languageVersionSettings = module.languageVersionSettings ?: configuration.languageVersionSettings
-        configuration.initializeCfirFrontendConfiguration()
+        configuration.initializeCfirFrontendMacroCompilationConfiguration()
         val factory = CfirDefaultSessionFactory()
         val sharedLibrarySession = factory.createSharedLibrarySession(
             mainModuleName = moduleName,
@@ -210,6 +210,7 @@ open class CfirFrontendFacade(
 
         val firAnalyzerFacade = CfirAnalyzerFacade(
             session = moduleBasedSession,
+            configuration = testServices.compilerConfigurationProvider.getCompilerConfiguration(module),
             cjFiles = cjFiles.values,
             lightTreeFiles = lightTreeFiles.values,
             parser = parser,
@@ -245,7 +246,7 @@ open class CfirFrontendFacade(
     ): CfirSession {
         val configuration = testServices.compilerConfigurationProvider.getCompilerConfiguration(module)
         module.languageVersionSettings?.let { configuration.languageVersionSettings = it }
-        configuration.initializeCfirFrontendConfiguration()
+        configuration.initializeCfirFrontendMacroCompilationConfiguration()
         val factory = CfirDefaultSessionFactory()
         return factory.createSourceSession(
             moduleData = moduleData,

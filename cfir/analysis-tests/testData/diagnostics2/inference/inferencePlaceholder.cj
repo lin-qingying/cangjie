@@ -10,7 +10,7 @@ func builderLike<T>(block1: () -> T, block2: () -> T): T {
 func placeholders(): Unit {
     let _ = <!NEW_INFERENCE_ERROR!>chooseGeneric<!>(1, true)
 
-    let _ = builderLike({ => 1 }, <!BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION!>{ => true }<!>)
+    let _ = <!NEW_INFERENCE_ERROR!>builderLike<!>({ => 1 }, { => true })
 
     let _ = <!NEW_INFERENCE_ERROR!>chooseGeneric<!>(1, 1.0)
 

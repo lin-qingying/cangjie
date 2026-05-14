@@ -12,7 +12,7 @@ class <!CLASSIFIER_REDECLARATION!>abc<!> {
 class <!CLASSIFIER_REDECLARATION!>abc<!> {
     prop a: Int {
         get() {
-            <!UNUSED_EXPRESSION!>1<!>
+            1
         }
     }
 

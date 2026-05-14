@@ -6,214 +6,112 @@
 
 package org.cangnova.cangjie.cfir.analysis.tests.services
 
-import PackageFormat.PackageKind
-import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageDeclaration
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageMetadata
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageWriter
 import org.cangnova.cangjie.config.CompilerConfiguration
-import org.cangnova.cangjie.frontend.pipeline.MacroArtifactPackage
-import org.cangnova.cangjie.frontend.pipeline.MacroExecutorFactory
-import org.cangnova.cangjie.frontend.pipeline.MacroPackageCompilationOrchestrator
-import org.cangnova.cangjie.frontend.pipeline.MacroPackageCompilationResult
+import org.cangnova.cangjie.config.classpathRoots
 import org.cangnova.cangjie.frontend.pipeline.MacroSourcePackageCompilationRequest
-import org.cangnova.cangjie.frontend.pipeline.macroArtifactPackages
-import org.cangnova.cangjie.frontend.pipeline.macroArtifactDefinitionsOverride
-import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
+import org.cangnova.cangjie.frontend.pipeline.MacroExecutorFactory
 import org.cangnova.cangjie.frontend.pipeline.macroExecutorFactory
-import org.cangnova.cangjie.frontend.pipeline.macroPackageCompilationOrchestrator
+import org.cangnova.cangjie.frontend.pipeline.macroBackgroundAutoCompilationEnabled
+import org.cangnova.cangjie.frontend.pipeline.macroConstructionMode
+import org.cangnova.cangjie.frontend.pipeline.macroExpansionDemandAutoCompilationEnabled
+import org.cangnova.cangjie.frontend.pipeline.macroSdkHome
 import org.cangnova.cangjie.frontend.pipeline.macroSourcePackageCompilationRequests
-import org.cangnova.cangjie.macro.MacroCallInfo
-import org.cangnova.cangjie.macro.MacroExpansionResult
-import org.cangnova.cangjie.macro.MacroExecutor
-import org.cangnova.cangjie.macro.SourcePosition
-import org.cangnova.cangjie.macro.TokenInfo
-import org.cangnova.cangjie.macro.stub.StubMacroExecutor
+import org.cangnova.cangjie.macro.process.LspMacroServerMacroExecutor
 import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.test.directives.MacroArtifactPackageSpec
 import org.cangnova.cangjie.test.directives.MacroConstructionDirectives
-import org.cangnova.cangjie.test.directives.MacroConstructionDirectives.MacroExecutorMode
-import org.cangnova.cangjie.test.directives.MacroDefinitionSpec
-import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
+import org.cangnova.cangjie.test.model.TestFile
 import org.cangnova.cangjie.test.model.TestModule
 import org.cangnova.cangjie.test.services.EnvironmentConfigurator
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.getOrCreateTempDirectory
+import org.cangnova.cangjie.test.services.moduleStructure
 import java.io.File
-import java.nio.file.Path
+import java.nio.charset.StandardCharsets
 
 /**
- * 把 [MacroConstructionDirectives] 翻译成 `CompilerConfiguration` 上的
- * macro construction 入口：
+ * 为 macro 端到端测试提供真实同项目 macro source root。
  *
- * - `MACRO_EXECUTOR` 决定 `macroExecutorFactory`：
- *   - `none` —— 不注入；construction step 在 STRICT 模式产 `MACRO_EXECUTOR_UNAVAILABLE`。
- *   - `stub` —— 注入 [StubMacroExecutor]，按每条 [MacroDefinitionSpec.expand] 注册展开文本；
- *               未声明 expand 的宏使用占位 `MacroExpansionResult.Success(emptyList(), "")`，
- *               以便测试 plain-attr / forced-kind 等不依赖具体展开结果的语义。
- *   - `real` —— 暂未接 `:macro:macro-process`，保留 stub 行为并打 stderr warning。
- *
- * - `MACRO_DEFINITION` 解析为 [MacroDefinitionEntry] 列表并写入
- *   `CompilerConfiguration.testMacroArtifactDefinitions`，由 macro construction
- *   主流程通过 `MacroArtifactResolver` 之外的另一条入口（cfir/analysis-tests
- *   桥接代码）注入到 `buildMacroSymbolIndex`。
- *
- * 该 configurator 故意保持小而克制：它只翻译 directive，不复用生产侧
- * `MacroArtifactResolver`，避免引入 testdata 不需要的 `.bchir/.cjo` 解析机制。
+ * 本配置器不解析 `public macro` 生成假 `.cjo/.dll`，也不注入
+ * `MacroDefinitionEntry` 或 stub executor。测试里的 `macro package` 文件只会
+ * 被复制到临时源码根，后续由 production orchestrator 调用
+ * `cjc -p <root> --compile-macro -o <dir>` 生成真实 artifact。
  */
 class MacroConstructionEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
-        val executorMode = module.directives.singleOrZeroValue(MacroConstructionDirectives.MACRO_EXECUTOR)
-            ?: MacroExecutorMode.none
-        val specs = module.directives[MacroConstructionDirectives.MACRO_DEFINITION]
-        val artifactSpecs = module.directives[MacroConstructionDirectives.MACRO_ARTIFACT_PACKAGE]
-        val sourcePackageSpecs = module.directives[MacroConstructionDirectives.MACRO_SOURCE_PACKAGE]
-        val expectDegraded = MacroConstructionDirectives.EXPECT_DEGRADED in module.directives
+        configuration.macroBackgroundAutoCompilationEnabled = false
+        configuration.macroExpansionDemandAutoCompilationEnabled =
+            MacroConstructionDirectives.DISABLE_EXPANSION_DEMAND_AUTO_COMPILE_MACRO_PACKAGES !in module.directives
 
-        if (specs.isNotEmpty()) {
-            configuration.macroArtifactDefinitionsOverride = specs.map(::toDefinitionEntry)
-        }
-        if (artifactSpecs.isNotEmpty()) {
-            configuration.macroArtifactPackages = configuration.macroArtifactPackages +
-                artifactSpecs.map { createArtifactPackage(it, MacroArtifactPackage.Origin.EXTERNAL_PATH) }
-        }
-        if (sourcePackageSpecs.isNotEmpty()) {
-            val artifactsByPackage = sourcePackageSpecs.associate { spec ->
-                FqName(spec.packageFqName) to createArtifactPackage(spec, MacroArtifactPackage.Origin.ORCHESTRATION)
-            }
-            configuration.macroSourcePackageCompilationRequests = configuration.macroSourcePackageCompilationRequests +
-                sourcePackageSpecs.map { spec ->
+        val sourcePackages = collectSourceMacroPackages(module)
+        if (sourcePackages.isNotEmpty()) {
+            val testCaseId = testServices.moduleStructure.originalTestDataFiles
+                .singleOrNull()
+                ?.nameWithoutExtension
+                ?.sanitizeFileName()
+                ?: module.name.sanitizeFileName()
+            configuration.macroSourcePackageCompilationRequests =
+                configuration.macroSourcePackageCompilationRequests + sourcePackages.map { sourcePackage ->
+                    val sourceRoot = materializeSourcePackage(testCaseId, sourcePackage)
+                    val outputDirectory = testServices.getOrCreateTempDirectory(
+                        "macro-out-$testCaseId-${sourcePackage.packageFqName.asString().sanitizeFileName()}",
+                    )
                     MacroSourcePackageCompilationRequest(
-                        packageFqName = FqName(spec.packageFqName),
-                        sourceRoots = listOf(testServices.getOrCreateTempDirectory("macro-source-${spec.packageFqName}").path),
-                        outputDirectory = testServices.getOrCreateTempDirectory("macro-out-${spec.packageFqName}").path,
-                        compileInvocationId = "test-macro-source-${spec.packageFqName}",
+                        packageFqName = sourcePackage.packageFqName,
+                        sourceRoots = listOf(sourceRoot.path),
+                        importPaths = configuration.classpathRoots.map { it.path },
+                        classpath = configuration.classpathRoots.map { it.path },
+                        outputDirectory = outputDirectory.path,
+                        compileInvocationId = "test-macro-source-$testCaseId-${sourcePackage.packageFqName.asString()}",
                     )
                 }
-            configuration.macroPackageCompilationOrchestrator = MacroPackageCompilationOrchestrator { requests, _ ->
-                MacroPackageCompilationResult(
-                    artifactPackages = requests.mapNotNull { artifactsByPackage[it.packageFqName] },
-                )
-            }
         }
 
-        // 测试 runner 默认走 DEGRADED 模式，让 macro 构造期诊断也能通过
-        // MacroConstructionDiagnosticCollectorComponent 流到 CjDiagnostic 流，
-        // 配合 diagnostics2 inline-marker 框架。当 testdata 显式声明 STRICT 行为
-        // （未来扩展）时再切回 STRICT。
-        configuration.macroConstructionMode =
-            if (expectDegraded) MacroConstructionService.Mode.DEGRADED
-            else MacroConstructionService.Mode.DEGRADED
-
-        when (executorMode) {
-            MacroExecutorMode.none -> Unit
-            MacroExecutorMode.stub, MacroExecutorMode.real -> {
-                val executor = createStubExecutor(specs, artifactSpecs + sourcePackageSpecs)
-                configuration.macroExecutorFactory = MacroExecutorFactory { executor }
-            }
+        if (configuration.macroExecutorFactory == null) {
+            val executable = File(
+                configuration.macroSdkHome,
+                "tools/bin/${if (isWindows()) "LSPMacroServer.exe" else "LSPMacroServer"}",
+            ).path
+            configuration.macroExecutorFactory = MacroExecutorFactory { LspMacroServerMacroExecutor(executable) }
         }
+
+        configuration.macroConstructionMode = MacroConstructionService.Mode.DEGRADED
     }
 
-    private fun createStubExecutor(
-        specs: List<MacroDefinitionSpec>,
-        packageSpecs: List<MacroArtifactPackageSpec>,
-    ): MacroExecutor {
-        val stub = StubMacroExecutor()
-        for (spec in specs) {
-            val text = spec.expand ?: continue
-            stub.registerTokenExpansion(spec.fqName.substringAfterLast('.'), text)
-        }
-        for (packageSpec in packageSpecs) {
-            for ((name, text) in packageSpec.expands) {
-                stub.registerTokenExpansion(name, text)
-            }
-        }
-        // 默认 fallback：未指定 expand 的宏给出空 token 流，避免 stub 默认 Failure
-        // 干扰非展开语义的 testdata（plain-attr / forced-kind 等）。
-        stub.defaultResult = { _: MacroCallInfo ->
-            MacroExpansionResult.Success(emptyList(), "")
-        }
-        return stub
-    }
-
-    private fun createArtifactPackage(
-        spec: MacroArtifactPackageSpec,
-        defaultOrigin: MacroArtifactPackage.Origin,
-    ): MacroArtifactPackage {
-        val packageFqName = FqName(spec.packageFqName)
-        val directory = testServices.getOrCreateTempDirectory("macro-artifact-${spec.packageFqName}")
-        val cjoPath = File(directory, "${spec.packageFqName}.cjo").toPath()
-        CjoPackageWriter.write(
-            cjoPath,
-            CjoPackageMetadata(
-                fullPackageName = spec.packageFqName,
-                moduleName = "macro-test",
-                kind = PackageKind.Macro,
-                declarations = spec.declarations.map(::CjoPackageDeclaration),
-            ),
+    private fun materializeSourcePackage(testCaseId: String, sourcePackage: SourceMacroPackage): File {
+        val root = testServices.getOrCreateTempDirectory(
+            "macro-source-$testCaseId-${sourcePackage.packageFqName.asString().sanitizeFileName()}",
         )
-        val dylibPath = File(directory, "lib-macro_${spec.packageFqName.replace('.', '_')}.dll").toPath()
-        if (!dylibPath.toFile().exists()) {
-            dylibPath.toFile().writeBytes(byteArrayOf(1, 2, 3))
+        for (file in sourcePackage.files) {
+            val target = File(root, file.relativePath)
+            target.parentFile?.mkdirs()
+            target.writeText(file.originalContent, StandardCharsets.UTF_8)
         }
-        return MacroArtifactPackage(
-            packageFqName = packageFqName,
-            kind = MacroArtifactPackage.Kind.MACRO,
-            cjoPath = cjoPath.toString(),
-            dynamicLibPath = dylibPath.toString(),
-            dependenciesBchirPaths = emptyList(),
-            origin = parseOrigin(spec.origin) ?: defaultOrigin,
-            compileInvocationId = "test-macro-artifact-${spec.packageFqName}",
-        )
+        return root
     }
 
-    private fun parseOrigin(raw: String): MacroArtifactPackage.Origin? {
-        return MacroArtifactPackage.Origin.values()
-            .firstOrNull { it.name.equals(raw, ignoreCase = true) }
-    }
-
-    private fun StubMacroExecutor.registerTokenExpansion(macroName: String, expandedText: String) {
-        registerExpansion(macroName) {
-            MacroExpansionResult.Success(
-                tokens = expandedText.toTokenInfos(),
-                expandedText = expandedText,
-            )
+    private fun collectSourceMacroPackages(module: TestModule): List<SourceMacroPackage> {
+        val result = linkedMapOf<FqName, MutableList<TestFile>>()
+        for (file in module.files) {
+            val packageName = macroPackageRegex.find(file.originalContent)?.groupValues?.get(1) ?: continue
+            result.getOrPut(FqName(packageName)) { mutableListOf() } += file
+        }
+        return result.map { (packageFqName, files) ->
+            SourceMacroPackage(packageFqName, files)
         }
     }
 
-    private fun String.toTokenInfos(): List<TokenInfo> {
-        return MacroPayloadTokenizer.tokenize(this).map { token ->
-            TokenInfo(
-                kind = 0u.toUByte(),
-                value = token.text,
-                begin = SourcePosition(line = token.startOffset),
-                end = SourcePosition(line = token.endOffset),
-            )
-        }
-    }
+    private data class SourceMacroPackage(
+        val packageFqName: FqName,
+        val files: List<TestFile>,
+    )
 
-    private fun toDefinitionEntry(spec: MacroDefinitionSpec): MacroDefinitionEntry {
-        val parts = spec.fqName.split('.').filter(String::isNotEmpty)
-        require(parts.isNotEmpty()) { "MACRO_DEFINITION fqName must not be empty" }
-        val name = Name.identifier(parts.last())
-        val packageFqName = if (parts.size == 1) FqName.ROOT else FqName(parts.dropLast(1).joinToString("."))
-        val source = parseSource(spec.source)
-        return MacroDefinitionEntry(
-            packageFqName = packageFqName,
-            name = name,
-            source = source,
-            libPath = spec.libPath,
-            supportsForcedKind = spec.supportsForcedKind,
-            supportsPlainAttrOverload = spec.supportsPlainAttrOverload,
-        )
-    }
-
-    private fun parseSource(raw: String): MacroDefinitionEntry.Source {
-        return MacroDefinitionEntry.Source.values()
-            .firstOrNull { it.name.equals(raw, ignoreCase = true) }
-            ?: error("Unknown macro source `$raw`; expected one of: ${MacroDefinitionEntry.Source.values().toList()}")
+    private companion object {
+        val macroPackageRegex = Regex("""(?m)^\s*macro\s+package\s+([A-Za-z_][A-Za-z0-9_.]*)\s*$""")
     }
 }
+
+private fun String.sanitizeFileName(): String =
+    replace(Regex("""[^A-Za-z0-9_.-]"""), "_")
+
+private fun isWindows(): Boolean = System.getProperty("os.name").contains("Windows", ignoreCase = true)

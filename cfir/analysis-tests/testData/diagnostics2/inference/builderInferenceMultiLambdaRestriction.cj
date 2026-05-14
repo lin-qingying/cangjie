@@ -4,11 +4,11 @@ func builderLike<T>(block1: () -> T, block2: () -> T): T {
 }
 
 func conflictingLambdaReturns(): Unit {
-    let value = builderLike({ => 1 }, <!BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION!>{ => true }<!>)
+    let value = <!NEW_INFERENCE_ERROR!>builderLike<!>({ => 1 }, { => true })
     let _ = value
 }
 
 func conflictingLambdaFamilies(): Unit {
-    let value = builderLike({ => "x" }, <!BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION!>{ => 1 }<!>)
+    let value = <!NEW_INFERENCE_ERROR!>builderLike<!>({ => "x" }, { => 1 })
     let _ = value
 }
