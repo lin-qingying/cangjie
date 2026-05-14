@@ -5,14 +5,12 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // ERRCHECK: %compiler %cmp_opt %diag_json %f -o %output
-// ASSERT: scan-2 sema_generic_type_without_type_argument
-
 func foo(a: Int64): Unit {}
 
 func foo(a: Bool): Unit {}
 
 main(): Int64 {
-    foo(None is Int)
-    println(None is Int)
+    foo(<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None<!> is Int)
+    println(<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None<!> is Int)
     return 0
 }

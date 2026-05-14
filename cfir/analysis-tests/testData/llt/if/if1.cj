@@ -8,12 +8,10 @@
 
 func foo(): Int32 {
     if (false) {
-        return 2.6
+        return <!RETURN_TYPE_MISMATCH!>2.6<!>
     } else {
         var a: Int32 = 1
         return a
     }
     return 0
 }
-
-// ASSERT: scan cannot convert a floating-point literal to type 'Int32'

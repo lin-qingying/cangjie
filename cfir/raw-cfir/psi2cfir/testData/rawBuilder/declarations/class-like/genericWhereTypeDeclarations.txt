@@ -2,18 +2,21 @@ FILE: genericWhereTypeDeclarations.cj
     internal? interface Constraint {
     }
     internal? class GenericClass<T> {
+        init()
         internal? var value: R|T| = ...
             initializer:
-                QUALIFIED_ACCESS(seed)
+                NAMED_ACCESS(seed)
     }
     internal? interface GenericInterface<T> {
-        internal? var value: R|T|
+        public? var value: R|T|
     }
     internal? struct GenericStruct<T> {
+        init()
         internal? var value: R|T| = ...
             initializer:
-                QUALIFIED_ACCESS(seed)
+                NAMED_ACCESS(seed)
     }
     internal? enum GenericEnum<T> {
         Value(R|T|)
+        init()
     }

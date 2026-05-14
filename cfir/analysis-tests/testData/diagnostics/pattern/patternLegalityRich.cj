@@ -5,7 +5,7 @@ enum Option<T> {
 
 func tuplePatternOnInt(v: Int64): Int64 {
     return match (v) {
-        case <!TUPLE_PATTERN_NOT_MATCH!>(a, b)<!> => 0
+        case <!TYPE_MISMATCH!>(a, b)<!> => 0
     }
 }
 
@@ -19,7 +19,7 @@ func constPatternOnEnum(v: Option<Int64>): Int64 {
 
 func enumPatternWrongArity(v: Option<Int64>): Int64 {
     return match (v) {
-        case <!ENUM_PATTERN_PARAM_SIZE_ERROR!>Some()<!> => 0
+        case <!ENUM_PATTERN_PARAM_SIZE_ERROR!>Some(value, extra)<!> => 0
         case Some(value) => value
         case None => 1
     }

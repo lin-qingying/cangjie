@@ -9,10 +9,6 @@
 main() {
     do {
         println("outer")
-    } while (break)
+    } while (<!INVALID_LOOP_CONTROL!>break<!>)
     0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-// ASSERT: scan 'break' or 'continue' must be used inside a loop

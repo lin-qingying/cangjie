@@ -1,4 +1,4 @@
 package sample
 
-func main() {
+ main() {
 }

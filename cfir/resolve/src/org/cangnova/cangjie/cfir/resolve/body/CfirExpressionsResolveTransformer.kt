@@ -348,6 +348,9 @@ open class CfirExpressionsResolveTransformer(
             if (functionCall.origin.isConstructorDelegation) {
                 return@whileAnalysing transformConstructorDelegationCall(functionCall, data)
             }
+            if (functionCall.origin == CfirFunctionCallOrigin.MockIntrinsic) {
+                return@whileAnalysing transformMockIntrinsicCall(functionCall, data)
+            }
 
             val calleeReference = functionCall.calleeReference
             if (
@@ -435,6 +438,39 @@ open class CfirExpressionsResolveTransformer(
 
         functionCall.replaceConeTypeOrNull(builtinTypes.unitType)
         return functionCall
+    }
+
+    /**
+     * mock intrinsic 调用不能退化成普通 unresolved call。
+     *
+     * 官方编译器会先把这类调用识别成 intrinsic call，再由 test/mock 语义阶段处理。
+     * 本地先在 resolve 阶段保留其特殊 owner：
+     * 1. 解析类型参数和实参，保证 checker 拿到稳定的目标类型；
+     * 2. 不再让普通 call resolver 产出 `UNRESOLVED_REFERENCE` 噪声。
+     */
+    private fun transformMockIntrinsicCall(
+        functionCall: CfirFunctionCall,
+        data: ResolutionMode,
+    ): CfirFunctionCall {
+        functionCall.transformAnnotations(transformer, data)
+        resolveAccessTypeArguments(functionCall)
+
+        components.dataFlowAnalyzer.enterCallArguments(functionCall, functionCall.argumentList.arguments)
+        val withResolvedExplicitReceiver = transformExplicitReceiverOf(functionCall).also {
+            components.dataFlowAnalyzer.exitCallExplicitReceiver()
+            it.replaceArgumentList(
+                it.argumentList.transform(transformer, ResolutionMode.ContextDependent)
+            )
+            components.dataFlowAnalyzer.exitCallArguments()
+        }
+
+        if (withResolvedExplicitReceiver.coneTypeOrNull == null) {
+            withResolvedExplicitReceiver.replaceConeTypeOrNull(
+                withResolvedExplicitReceiver.typeArguments.firstOrNull()?.coneTypeOrNull
+            )
+        }
+
+        return withResolvedExplicitReceiver
     }
 
     private fun tryResolveImplicitInvokeCall(
@@ -573,7 +609,28 @@ open class CfirExpressionsResolveTransformer(
 
     override fun transformBlock(block: CfirBlock, data: ResolutionMode): CfirExpression {
         components.dataFlowAnalyzer.enterBlock(block)
-        block.transformChildren(transformer, ResolutionMode.ContextIndependent)
+        val statements = block.statements as? MutableList<CfirStatement>
+            ?: error("CfirBlock statements must be mutable during body resolve")
+        val lastIndex = statements.lastIndex
+
+        /**
+         * 对齐 Kotlin `FirExpressionsResolveTransformer.transformBlockInCurrentScope`：
+         * - 非尾语句始终按 `ContextIndependent` 解析；
+         * - 尾语句继承外层 `ResolutionMode`；
+         * - 若外层带 expected type，则显式标记 `lastStatementInBlock`。
+         *
+         * 这样 try/catch/if/match 等通过 block 承载结果值的路径，才能把 expected
+         * type 准确传到尾表达式，而不是被 block 这一层截断。
+         */
+        for (index in statements.indices) {
+            val statementMode = when {
+                index != lastIndex -> ResolutionMode.ContextIndependent
+                data is ResolutionMode.WithExpectedType -> data.copy(lastStatementInBlock = true)
+                else -> data
+            }
+            statements[index] = statements[index].transform(transformer, statementMode)
+        }
+        block.transformOtherChildren(transformer, data)
         val lastExpr = block.statements.lastOrNull()
         block.replaceConeTypeOrNull(
             if (lastExpr is CfirExpression) lastExpr.coneTypeOrNull ?: builtinTypes.unitType
@@ -610,7 +667,8 @@ open class CfirExpressionsResolveTransformer(
     /**
      * BODY_RESOLVE 阶段将 shared semantics 的穷尽性结论正式回写到 tree。
      *
-     * CFG 之后只读取 `CfirMatchExpression.exhaustiveness`，不再复算，也不允许语法兜底。
+     * 若 shared analyzer 暂时无法给出稳定结论，则保持 `Unknown`，
+     * 让 CFG 走“保守地补 synthetic else”而不是把内部分析失败固化成 tree-level Error。
      */
     private fun resolveMatchExhaustiveness(matchExpression: CfirMatchExpression): CfirMatchExhaustivenessStatus {
         return when (val result = ExhaustivenessAnalyzer.checkMatch(matchExpression, session)) {
@@ -623,15 +681,9 @@ open class CfirExpressionsResolveTransformer(
                 source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
             )
 
-            is ExhaustivenessResult.Error -> CfirMatchExhaustivenessStatus.Error(
-                reason = result.reason,
-                source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
-            )
-
-            ExhaustivenessResult.Skipped -> CfirMatchExhaustivenessStatus.Error(
-                reason = "shared match exhaustiveness analyzer returned Skipped during BODY_RESOLVE",
-                source = CfirMatchExhaustivenessStatus.Source.BodyResolve,
-            )
+            is ExhaustivenessResult.Error,
+            ExhaustivenessResult.Skipped,
+            -> CfirMatchExhaustivenessStatus.Unknown
         }
     }
 
@@ -815,7 +867,10 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         components.dataFlowAnalyzer.enterJump(returnExpression)
-        returnExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
+        val expectedReturnTypeRef = returnExpression.target.labeledElement.returnTypeRef as? CfirResolvedTypeRef
+        val resultResolutionMode = expectedReturnTypeRef?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent
+        returnExpression.transformResult(transformer, resultResolutionMode)
+        returnExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)
         returnExpression.replaceConeTypeOrNull(ConePrimitiveType.NOTHING)
         components.dataFlowAnalyzer.exitJump(returnExpression)
         return returnExpression
@@ -1092,16 +1147,6 @@ open class CfirExpressionsResolveTransformer(
         return typeOperator
     }
 
-    // ── Error Expression ──────────────────────────────────────────────────────
-
-    override fun transformErrorExpression(
-        errorExpression: CfirErrorExpression,
-        data: ResolutionMode,
-    ): CfirExpression {
-        errorExpression.replaceConeTypeOrNull(ConeErrorType(errorExpression.diagnostic))
-        return errorExpression
-    }
-
     // ── For-In / Loop ─────────────────────────────────────────────────────────
 
     override fun transformForInExpression(
@@ -1238,15 +1283,25 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         tryExpression.transformAnnotations(transformer, data)
         components.dataFlowAnalyzer.enterTryExpression(tryExpression)
-        tryExpression.transformTryBlock(transformer, ResolutionMode.ContextIndependent)
-        components.dataFlowAnalyzer.exitTryMainBlock()
+        val expectedType = data.expectedTypeOrNull
+        val branchResolutionMode = (data as? ResolutionMode.WithExpectedType)
+            ?.takeUnless { it.fromCast }
+            ?.copy(forceFullCompletion = false)
+            ?: ResolutionMode.ContextDependent
+        context.forBlock(session) {
+            tryExpression.transformResources(transformer, ResolutionMode.ContextIndependent)
+            tryExpression.transformTryBlock(transformer, branchResolutionMode)
+            components.dataFlowAnalyzer.exitTryMainBlock()
+        }
         for (catchClause in tryExpression.catches) {
             components.dataFlowAnalyzer.enterCatchClause(catchClause)
-            catchClause.transform<CfirElement, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
+            catchClause.transform<CfirElement, ResolutionMode>(transformer, branchResolutionMode)
             components.dataFlowAnalyzer.exitCatchClause(catchClause)
         }
         for (handleClause in tryExpression.handlers) {
-            handleClause.transform<CfirElement, ResolutionMode>(transformer, ResolutionMode.ContextIndependent)
+            components.dataFlowAnalyzer.enterHandleClause(handleClause)
+            handleClause.transform<CfirElement, ResolutionMode>(transformer, branchResolutionMode)
+            components.dataFlowAnalyzer.exitHandleClause(handleClause)
         }
         if (tryExpression.finallyBlock != null) {
             components.dataFlowAnalyzer.enterFinallyBlock()
@@ -1281,16 +1336,45 @@ open class CfirExpressionsResolveTransformer(
         }
 
         tryExpression.replaceConeTypeOrNull(
-            if (handleMismatchDiagnostic != null) {
-                ConeErrorType(
+            when {
+                handleMismatchDiagnostic != null -> ConeErrorType(
                     handleMismatchDiagnostic!!,
                     delegatedType = currentJoinType,
                 )
-            } else {
-                currentJoinType
+
+                /**
+                 * 官方仓颉 `ChkTryExpr` 在存在外层 target type 时，以 target type
+                 * 逐个检查 try/catch block，并把整个 try 视为该 target type。
+                 * 这样分支上的类型错误会定位到尾表达式，而不会再向外层 `return try`
+                 * 额外扩散一个 `RETURN_TYPE_MISMATCH`。
+                 */
+                expectedType != null && tryExpression.handlers.isEmpty() -> expectedType
+                else -> currentJoinType
             }
         )
         return tryExpression
+    }
+
+    override fun transformCatch(
+        catch: CfirCatch,
+        data: ResolutionMode,
+    ): CfirExpression {
+        catch.transformAnnotations(transformer, data)
+        /**
+         * 对齐 Kotlin try/catch 解析顺序：
+         * 先在 catch block 作用域里解析参数本身，再在同一作用域里解析 catch body。
+         *
+         * 这样参数名字和类型都走统一的声明解析链路，避免手工塞局部变量后遗漏
+         * local-property 自身的 phase / scope 侧效果。
+         */
+        catch.parameter.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+        context.forBlock(session) {
+            catch.transformParameter(transformer, ResolutionMode.ContextIndependent)
+            catch.transformBody(transformer, data)
+        }
+
+        catch.replaceConeTypeOrNull(catch.body.coneTypeOrNull ?: builtinTypes.unitType)
+        return catch
     }
 
     // ── Subscript ─────────────────────────────────────────────────────────────
@@ -1468,13 +1552,9 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         rangeExpression.transformChildren(transformer, ResolutionMode.ContextIndependent)
-        val startType = rangeExpression.start.coneTypeOrNull
-        val endType   = rangeExpression.end.coneTypeOrNull
-        val elementType = when {
-            startType != null && startType == endType -> IdealTypeResolver.resolveIfIdeal(startType, null)
-            startType != null                         -> IdealTypeResolver.resolveIfIdeal(startType, null)
-            else                                      -> ConePrimitiveType.INT64
-        }
+        val expectedRangeType = data.expectedTypeOrNull?.rangeTypeOrNull()
+        val elementType = expectedRangeType?.typeArguments?.singleOrNull()?.type
+            ?: inferRangeElementType(rangeExpression)
         rangeExpression.replaceConeTypeOrNull(
             constructNamedType(
                 classId = StdlibClassIds.Range,
@@ -1768,6 +1848,44 @@ open class CfirExpressionsResolveTransformer(
 
     private val ResolutionMode.expectedTypeOrNull: ConeCangJieType?
         get() = (this as? ResolutionMode.WithExpectedType)?.expectedTypeRef?.coneType
+
+    /**
+     * 对齐官方 `SynRangeExprInferElemTy` 的推断顺序。
+     */
+    private fun inferRangeElementType(rangeExpression: CfirRangeExpression): ConeCangJieType {
+        val startType = rangeExpression.start.coneTypeOrNull
+        val useStartType = rangeExpression.start !is CfirLiteralExpression || rangeExpression.end is CfirLiteralExpression
+        if (startType != null && startType !is ConeErrorType && !startType.isNothing && useStartType) {
+            return normalizeRangeElementType(startType)
+        }
+
+        val endType = rangeExpression.end.coneTypeOrNull
+        if (endType != null && endType !is ConeErrorType && !endType.isNothing) {
+            return normalizeRangeElementType(endType)
+        }
+
+        if (startType != null && startType !is ConeErrorType) {
+            return normalizeRangeElementType(startType)
+        }
+
+        return ConePrimitiveType.INT64
+    }
+
+    private fun normalizeRangeElementType(type: ConeCangJieType): ConeCangJieType {
+        val normalized = IdealTypeResolver.resolveIfIdeal(type, null)
+        return if (normalized is ConePrimitiveType && normalized.kind == PrimitiveTypeKind.IDEAL_INT) {
+            ConePrimitiveType.INT64
+        } else {
+            normalized
+        }
+    }
+
+    private fun ConeCangJieType.rangeTypeOrNull(): ConeClassifierType? = when (this) {
+        is ConeClassLikeType -> takeIf { classId == StdlibClassIds.Range }
+        is ConeStructType -> takeIf { classId == StdlibClassIds.Range }
+        is ConeTypeAliasType -> expandedType?.rangeTypeOrNull()
+        else -> null
+    }
 
     private fun <T : CfirQualifiedAccessExpression> resolveAccessTypeArguments(access: T): T {
         if (access.typeArguments.isEmpty()) return access

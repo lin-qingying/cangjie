@@ -1,6 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemanticsSupport
+import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -36,7 +36,7 @@ object CfirAnnotationDeclarationChecker : CfirClassLikeChecker() {
 
 private fun CfirClassLikeDeclaration.hasBuiltInAnnotation(annotationName: Name): Boolean {
     return annotations.any { annotation ->
-        val annotationClassId = CfirExtendSemanticsSupport.run { annotation.typeRef.toClassIdOrNull() }
+        val annotationClassId = CfirExtendSemantics.run { annotation.typeRef.toClassIdOrNull() }
         annotationClassId?.shortClassName == annotationName ||
                 annotation.source?.text?.toString()?.contains("@${annotationName.asString()}") == true
     } || source?.text?.toString()?.contains("@${annotationName.asString()}") == true

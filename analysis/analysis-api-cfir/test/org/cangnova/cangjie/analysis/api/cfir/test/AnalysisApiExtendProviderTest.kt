@@ -2,11 +2,12 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightDeclarationProvider
 import org.cangnova.cangjie.analysis.api.lightDeclarations.CaLightExtendDeclaration
+import org.cangnova.cangjie.analysis.api.components.declaredMemberScope
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
@@ -54,11 +55,11 @@ class AnalysisApiExtendProviderTest : AbstractAnalysisApiExecutionTest(
 
             assertEquals(
                 "prettyPrint",
-                packageExtend.declaredMemberScope.getCallableSymbols(Name.identifier("prettyPrint")).first().name?.asString(),
+                packageExtend.declaredMemberScope.callables(Name.identifier("prettyPrint")).first().name?.asString(),
             )
             assertEquals(
                 "prettyPrint",
-                classExtend.declaredMemberScope.getCallableSymbols(Name.identifier("prettyPrint")).first().name?.asString(),
+                classExtend.declaredMemberScope.callables(Name.identifier("prettyPrint")).first().name?.asString(),
             )
 
             val restoredByPsi = extendDeclaration.symbol as CaExtendSymbol
@@ -66,10 +67,9 @@ class AnalysisApiExtendProviderTest : AbstractAnalysisApiExecutionTest(
             assertEquals(restoredByPsi.extendId, packageExtend.extendId)
             assertEquals(restoredByPsi.extendId, classExtend.extendId)
 
-            val extendLightDeclaration = lightDeclarationProvider.findLightDeclarations(
-                packageFqName = mainFile.packageFqName,
-                name = Name.identifier("Document"),
-                useSiteModule = restoredByPsi.containingModule,
+            val extendLightDeclaration = lightDeclarationProvider.getLightDeclarations(
+                mainFile,
+                restoredByPsi.containingModule,
             ).filterIsInstance<CaLightExtendDeclaration>().singleOrNull()
 
             assertNotNull(extendLightDeclaration)

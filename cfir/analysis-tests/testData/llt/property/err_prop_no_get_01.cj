@@ -11,25 +11,11 @@ interface I {
 }
 
 struct A <: I {
-    public mut override prop x: Int64 {
+    <!PROPERTY_MUST_IMPLEMENT_BOTH!>public mut override prop x: Int64 {
         set(_) {}
-    }
+    }<!>
 }
 
 main() {
     println(A().x)
 }
-
-/* SCAN
-error: property must implement both getter/setter of interface property 'x'
-  ==> err_prop_no_get_01.cj:14:5:
-   | 
-14 |       public mut override prop x: Int64 {
-   |  _____^
-15 | |         set(_) {}
-16 | |     }
-   | |_____^
-   | 
-
-1 error generated, 1 error printed.
-*/

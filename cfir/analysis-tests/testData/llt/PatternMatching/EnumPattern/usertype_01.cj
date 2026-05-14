@@ -20,17 +20,6 @@ main() {
     let x = E.A
     match (x) {
         case A => 0
-        case F.B => 1
+        case <!PATTERN_NOT_MATCH!>F.B<!> => 1
     }
 }
-
-/* SCAN
-error: enum pattern is not matched
-  ==> usertype_01.cj:23:14:
-   | 
-23 |         case F.B => 1
-   |              ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

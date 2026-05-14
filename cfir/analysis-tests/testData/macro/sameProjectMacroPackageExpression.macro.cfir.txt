@@ -1,0 +1,20 @@
+// FILE: macros.cj
+// MACRO_PACKAGE: true
+FILE: macros.cj
+    package macros.local
+    import std.ast.*
+    <element: CfirMacroDeclaration>
+
+
+// FILE: main.cj
+// MACRO_PACKAGE: false
+FILE: main.cj
+    import macros.local.MakeInt64
+    internal? func useSameProjectMacroPackage(): R|kotlin.Unit| {
+        local? let value: R|kotlin.Unit| = ...
+            initializer:
+                INT(41)
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }

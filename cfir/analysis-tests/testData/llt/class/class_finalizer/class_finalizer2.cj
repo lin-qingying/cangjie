@@ -9,10 +9,10 @@
 class A {
     public var x = 1
     ~init() {
-        f(this)
+        f(<!INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER!>this<!>)
         let a = {=> this.x}
         {=> x}
-        this
+        <!INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER!>this<!>
         func g() {
             x
         }
@@ -26,21 +26,3 @@ func f(a: A) {
 main() {
     0
 }
-
-/* SCAN
-error: 'this' cannot be used as an expression in the finalizer
-  ==> class_finalizer2.cj:12:11:
-   | 
-12 |         f(this)
-   |           ^ 
-   | 
-
-error: 'this' cannot be used as an expression in the finalizer
-  ==> class_finalizer2.cj:15:9:
-   | 
-15 |         this
-   |         ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -1,5 +1,6 @@
 // FILE: memberCallInfo.cj
-// TARGET_CALL: counter.add(42)
+// TARGET_CALL: add(42)
+// TARGET_NAME: add
 // EXPECTED_CALLABLE_NAME: add
 // EXPECTED_EXPLICIT_RECEIVER_TYPE: sample.Counter
 // EXPECTED_ARGUMENT_TYPE: Int64

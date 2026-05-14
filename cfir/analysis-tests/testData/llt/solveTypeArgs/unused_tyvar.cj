@@ -14,7 +14,7 @@ interface M6_<T> {}
 
 interface M7_<T> {}
 
-func test<T0_, T1_>(i: ((T0_) -> T1_)) where T0_ <: M0_<T1_>, T1_ <: M6_<T3_>, T3_ <: M1_<T3_> {
+func test<T0_, T1_>(i: ((T0_) -> T1_)) where T0_ <: M0_<T1_>, T1_ <: M6_<<!UNRESOLVED_REFERENCE!>T3_<!>>, <!UNRESOLVED_REFERENCE!>T3_<!> <: M1_<<!UNRESOLVED_REFERENCE!>T3_<!>> {
     0
 }
 
@@ -27,9 +27,5 @@ interface I3_ <: M1_<I3_> {}
 open class G1_ <: I1_ {}
 
 main() {
-    test({i: M0_<I1_> => G1_()})
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>test({i: M0_<I1_> => G1_()})<!>
 }
-
-// ASSERT: scan-1 sema_unable_to_infer_generic_func
-// ASSERT: scan-3 sema_undeclared_type_name
-// ASSERT: scan "Errors": 4

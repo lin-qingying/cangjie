@@ -20,7 +20,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -44,12 +46,12 @@ import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
 import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
+import org.cangnova.cangjie.cfir.expressions.CfirInoutArgumentExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLazyBlock
 import org.cangnova.cangjie.cfir.expressions.CfirLazyExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
 import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMacroExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
@@ -143,7 +145,7 @@ fun main(args: Array<String>) {
                     visitAlso<CfirSynchronizedExpression>(it)
                     visitAlso<CfirUnsafeExpression>(it)
                     visitAlso<CfirQuoteExpression>(it)
-                    visitAlso<CfirMacroExpression>(it)
+                    visitAlso<CfirInoutArgumentExpression>(it)
                 }
                 alias<CfirLiteralExpression>("LiteralExpressionChecker")
                 alias<CfirFunctionCall>("FunctionCallChecker")
@@ -178,8 +180,7 @@ fun main(args: Array<String>) {
                 alias<CfirDeclaration>("BasicDeclarationChecker")
                 alias<CfirMemberDeclaration>("MemberDeclarationChecker", false)
                 alias<CfirCallableDeclaration>("CallableDeclarationChecker", false).let {
-
-
+                    visitAlso<CfirPatternBindingVariable>(it)
                 }
                 alias<CfirFunction>("FunctionChecker", false).let {
                     visitAlso<CfirMacroDeclaration>(it)
@@ -199,6 +200,7 @@ fun main(args: Array<String>) {
 
                 }
                 alias<CfirAnonymousFunction>("AnonymousFunctionChecker")
+                alias<CfirPropertyAccessor>("PropertyAccessorChecker")
 
                 alias<CfirConstructor>("ConstructorChecker")
                 alias<CfirFile>("FileChecker")

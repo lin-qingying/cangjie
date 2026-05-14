@@ -5,6 +5,7 @@ package generics
 
 public interface Comparable<T> {
     func compareTo(other: T): Int64 {
+        let _ = other
         return 0
     }
 }
@@ -15,10 +16,10 @@ public class Pair<A, B> {}
 extend<A, B> Pair<A, B> <: Comparable<Pair<A, B>> {}
 
 // FILE: main.cj
-package main
+package localmain
 
 import generics.*
 
 func compareGenericExtend(p1: Pair<Int64, Int64>, p2: Pair<Int64, Int64>): Int64 {
-    return p1.compareTo(p2)  // 泛型 extend 类型参数替换尚未完全支持
+    return p1.compareTo(p2)
 }

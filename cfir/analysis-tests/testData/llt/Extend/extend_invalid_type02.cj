@@ -6,28 +6,10 @@
 
 // ERRCHECK: %compiler %overflowOpt %cmp_opt %f -o %output 
 
-public interface Strbase <: Collection<Byte> & Equatable<String> & Comparable<String> & Hashable & T & String {}
+public interface <!INTERFACE_CANNOT_INHERIT_CLASS!>Strbase<!> <: Collection<Byte> & Equatable<String> & Comparable<String> & Hashable & <!UNRESOLVED_REFERENCE!>T<!> & String {}
 
 extend String <: Strbase {}
 
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: undeclared type name 'T'
- ==> extend_invalid_type02.cj:9:100:
-  | 
-9 | public interface Strbase <: Collection<Byte> & Equatable<String> & Comparable<String> & Hashable & T & String {}
-  |                                                                                                    ^ 
-  | 
-
-error: interface 'Strbase' can only inherit interface
- ==> extend_invalid_type02.cj:9:1:
-  | 
-9 | public interface Strbase <: Collection<Byte> & Equatable<String> & Comparable<String> & Hashable & T & String {}
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

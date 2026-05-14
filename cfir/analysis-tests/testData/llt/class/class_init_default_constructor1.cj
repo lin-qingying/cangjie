@@ -7,19 +7,8 @@
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 class A {
-    public var a: Int64 = c
+    public var a: Int64 = <!USED_BEFORE_INITIALIZATION!>c<!>
     public var b: Int64 = 1
 }
 
 let c: Int64 = 1
-
-/* SCAN
-error: variable 'c' is used before being defined
-  ==> class_init_default_constructor1.cj:10:27:
-   | 
-10 |     public var a: Int64 = c
-   |                           ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

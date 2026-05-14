@@ -6,9 +6,6 @@
 
 // ERRCHECK: %compiler %cmp_opt --diagnostic-format json %f -o %output
 
-// ASSERT: scan sema_unable_to_infer_generic_func
-// ASSERT: scan Generics-T <: Interface-Comparable<Generics-T>
-
 // ensure no temporary type var names like 'T-0' exist in constraints
 func f<T>(x: T) where T <: Comparable<T> {
 }
@@ -16,5 +13,5 @@ func f<T>(x: T) where T <: Comparable<T> {
 class C {}
 
 main() {
-    f(C())
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f(C())<!>
 }

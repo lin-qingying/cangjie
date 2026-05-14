@@ -1,10 +1,17 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// IGNORE_ERRORS
 class GoodResourceA <: Resource {
+    public func isClosed(): Bool {
+        return false
+    }
+
     public func close(): Unit {}
 }
 
 class GoodResourceB <: Resource {
+    public func isClosed(): Bool {
+        return false
+    }
+
     public func close(): Unit {}
 }
 
@@ -12,20 +19,20 @@ class BadResource {}
 
 func mixedResources(): Unit {
     try (
-        let a = GoodResourceA(),
-        <!TRY_RESOURCE_MUST_IMPLEMENT_RESOURCE!>/* suggested message: every try-with-resources specification must implement Resource. source: external/cangjie_compiler/src/Sema/TypeCheckExpr/TryExpr.cpp */let b = BadResource()<!>,
+        a = GoodResourceA(),
+        <!MISMATCHED_TYPES_BECAUSE!>b = BadResource()<!>
     ) {
-        println(a)
-        println(b)
+        let _ = a
+        let _ = b
     }
 }
 
 func allGoodResources(): Unit {
     try (
-        let a = GoodResourceA(),
-        let b = GoodResourceB(),
+        a = GoodResourceA(),
+        b = GoodResourceB()
     ) {
-        println(a)
-        println(b)
+        let _ = a
+        let _ = b
     }
 }

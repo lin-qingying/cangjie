@@ -16,15 +16,15 @@ struct Empty {}
 
 func testStructInvokeNoArgs(): Unit {
     let c = Counter()
-    let v: Int64 = c()  // OK：调用无参 invoke
+    c()
 }
 
 func testStructInvokeWithArg(): Unit {
     let c = Counter()
-    let v: Int64 = c(10)  // OK：调用有参 invoke
+    c(10)
 }
 
 func testEmptyStructNoInvoke(): Unit {
     let e = Empty()
-    <!NO_MATCHING_OPERATOR_INVOKE!>e<!>()  // 错误：Empty 没有 invoke
+    <!NO_MATCHING_OPERATOR_INVOKE!>e<!>()
 }

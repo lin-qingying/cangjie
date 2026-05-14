@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    id("generated-sources")
 }
 //不能依赖resolve模块，如果需要resolve模块的东西，应该将其声明移动到providers或semantics
 dependencies {
@@ -25,7 +26,7 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile>().configureEach 
 val generateCfirErrors by tasks.registering {
     group = "generation"
     description = "Generate Cfir diagnostics artifacts from Cangjie diagnostics list."
-    dependsOn(":cfir:checkers:checkers-component-generator:generateCfirDiagnostics")
+    dependsOn("generateCheckersComponents")
 }
 
 sourceSets {
@@ -35,3 +36,5 @@ sourceSets {
     }
     "test" { none() }
 }
+
+generatedDiagnosticContainersAndCheckerComponents()

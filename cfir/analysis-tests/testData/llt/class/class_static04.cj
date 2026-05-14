@@ -16,17 +16,6 @@ class A {
 }
 
 main() {
-    let f: () -> Int64 = A.f
+    let f: () -> Int64 = A.<!INVISIBLE_MEMBER!>f<!>
     f()
 }
-
-/* SCAN
-error: can not access function 'f'
-  ==> class_static04.cj:19:26:
-   | 
-19 |     let f: () -> Int64 = A.f
-   |                          ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

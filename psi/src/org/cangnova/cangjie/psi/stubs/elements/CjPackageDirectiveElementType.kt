@@ -43,15 +43,22 @@ class CjPackageDirectiveElementType(debugName: String) :
         psi: CjPackageDirective,
         parentStub: StubElement<out PsiElement?>,
     ): CangJiePackageDirectiveStub {
-        return CangJiePackageDirectiveStubImpl(parentStub)
+        return CangJiePackageDirectiveStubImpl(
+            parent = parentStub,
+            isMacroPackage = psi.isMacroPackage,
+        )
     }
 
     @Throws(IOException::class)
     override fun serialize(stub: CangJiePackageDirectiveStub, dataStream: StubOutputStream) {
+        dataStream.writeBoolean(stub.isMacroPackage)
     }
 
     @Throws(IOException::class)
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>): CangJiePackageDirectiveStub {
-        return CangJiePackageDirectiveStubImpl(parentStub)
+        return CangJiePackageDirectiveStubImpl(
+            parent = parentStub,
+            isMacroPackage = dataStream.readBoolean(),
+        )
     }
 }

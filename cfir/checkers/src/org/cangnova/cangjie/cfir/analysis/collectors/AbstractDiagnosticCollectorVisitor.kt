@@ -16,10 +16,18 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
+import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.util.PrivateForInline
@@ -51,6 +59,30 @@ abstract class AbstractDiagnosticCollectorVisitor(
                 visitNestedElements(element)
             }
         }
+    }
+
+    override fun visitAnnotationContainer(annotationContainer: CfirAnnotationContainer, data: Nothing?) {
+        withAnnotationContainer(annotationContainer) {
+            checkElement(annotationContainer)
+            visitNestedElements(annotationContainer)
+        }
+    }
+
+    private fun visitJump(loopJump: CfirLoopJump) {
+        withAnnotationContainer(loopJump) {
+            checkElement(loopJump)
+            // 对齐 Kotlin：loop jump 只在 target 是错误 loop 节点时才回访 target。
+            // 当前仓颉 raw CFIR 没有独立的 CfirErrorLoop，错误 jump 诊断直接挂在 jump 自身，
+            // 因此这里不能像普通节点那样重新进入 target loop，否则会把 loop body 递归回收一遍。
+        }
+    }
+
+    override fun visitBreakExpression(breakExpression: CfirBreakExpression, data: Nothing?) {
+        visitJump(breakExpression)
+    }
+
+    override fun visitContinueExpression(continueExpression: CfirContinueExpression, data: Nothing?) {
+        visitJump(continueExpression)
     }
 
     override fun visitFile(file: CfirFile, data: Nothing?) {
@@ -100,19 +132,52 @@ abstract class AbstractDiagnosticCollectorVisitor(
         }
     }
 
-    // --- Call/Assignment 栈管理（对齐 K2 AbstractDiagnosticCollectorVisitor）---
-    // 将 function call / assignment 推入 callsOrAssignments 栈，
-    // 使 ErrorNodeDiagnosticCollectorComponent 能通过接收者错误检查抑制级联诊断。
-
-    override fun visitFunctionCall(functionCall: CfirFunctionCall, data: Nothing?) {
-        withCallOrAssignment(functionCall) {
-            super.visitFunctionCall(functionCall, data)
+    override fun visitTypeRef(typeRef: CfirTypeRef, data: Nothing?) {
+        if (typeRef.source?.kind?.shouldSkipErrorTypeReporting == false) {
+            withTypeRefAnnotationContainer(typeRef) {
+                checkElement(typeRef)
+                visitNestedElements(typeRef)
+            }
         }
     }
 
+    override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: Nothing?) {
+        visitResolvedTypeRef(errorTypeRef, data)
+    }
+
+    override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef, data: Nothing?) {
+        val resolvedTypeRefType = resolvedTypeRef.coneType
+        if (resolvedTypeRefType is ConeErrorType) {
+            visitTypeRef(resolvedTypeRef, data)
+        }
+        if (resolvedTypeRef.source?.kind?.shouldSkipErrorTypeReporting == true) return
+        withTypeRefAnnotationContainer(resolvedTypeRef) {
+            if (resolvedTypeRefType !is ConeErrorType) {
+                checkElement(resolvedTypeRef)
+            }
+            resolvedTypeRef.delegatedTypeRef?.accept(this, data)
+        }
+    }
+
+    override fun visitFunctionCall(functionCall: CfirFunctionCall, data: Nothing?) {
+        visitWithCallOrAssignment(functionCall)
+    }
+
+    override fun visitQualifiedAccessExpression(qualifiedAccessExpression: CfirQualifiedAccessExpression, data: Nothing?) {
+        visitWithCallOrAssignment(qualifiedAccessExpression)
+    }
+
+    override fun visitNamedAccessExpression(namedAccessExpression: CfirNamedAccessExpression, data: Nothing?) {
+        visitWithCallOrAssignment(namedAccessExpression)
+    }
+
     override fun visitAssignment(assignment: CfirAssignment, data: Nothing?) {
-        withCallOrAssignment(assignment) {
-            super.visitAssignment(assignment, data)
+        visitWithCallOrAssignment(assignment)
+    }
+
+    private fun visitWithCallOrAssignment(callOrAssignment: CfirStatement) {
+        withCallOrAssignment(callOrAssignment) {
+            visitElement(callOrAssignment, null)
         }
     }
 
@@ -214,6 +279,19 @@ abstract class AbstractDiagnosticCollectorVisitor(
             context.dropStatement()
         }
     }
+
+    private inline fun <R> withTypeRefAnnotationContainer(annotationContainer: CfirTypeRef, block: () -> R): R {
+        var containingTypeRef = context.annotationContainers.lastOrNull() as? CfirResolvedTypeRef
+        while (containingTypeRef != null && containingTypeRef.delegatedTypeRef != annotationContainer) {
+            containingTypeRef = containingTypeRef.delegatedTypeRef as? CfirResolvedTypeRef
+        }
+        return if (containingTypeRef != null) {
+            block()
+        } else {
+            withAnnotationContainer(annotationContainer, block)
+        }
+    }
+
     protected open fun visitNestedElements(element: CfirElement) {
         element.acceptChildren(this, null)
     }

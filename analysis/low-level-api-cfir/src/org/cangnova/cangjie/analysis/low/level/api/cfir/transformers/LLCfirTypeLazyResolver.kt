@@ -11,6 +11,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefI
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkTypeRefIsResolved
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
+import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
@@ -18,6 +19,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirTypeResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitStarImportingScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirFileDeclaredTopLevelScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
@@ -61,14 +69,14 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
         transformer.withFileScope(cfirFile, action)
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
-        cfirClass.lazyResolveToPhase(resolverPhase.previous)
-        transformer.withClassDeclarationCleanup(cfirClass) {
-            performCustomResolveUnderLock(cfirClass) {
-                transformer.resolveClassTypes(cfirClass)
+    @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
+    override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
+        cfirClassLike.lazyResolveToPhase(resolverPhase.previous)
+        transformer.withClassDeclarationCleanup(cfirClassLike) {
+            performCustomResolveUnderLock(cfirClassLike) {
+                transformer.resolveClassTypes(cfirClassLike)
             }
-            transformer.withClassScopes(cfirClass, action)
+            transformer.withClassScopes(cfirClassLike, action)
         }
     }
 
@@ -136,7 +144,9 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
 
         var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)
         if (containingFile != null) {
-            configuration = configuration.withUseSiteFile(containingFile)
+            configuration = configuration
+                .withUseSiteFile(containingFile)
+                .withScopes(createImportingScopes(containingFile))
         }
         if (containingClasses.isNotEmpty()) {
             configuration = configuration.withContainingClassDeclarations(containingClasses)
@@ -145,6 +155,33 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
             }
         }
         return configuration
+    }
+
+    private fun createImportingScopes(file: CfirFile): List<CfirScope> {
+        val symbolProvider = resolveTargetSession.symbolProvider
+        val imports = file.imports
+        val defaultImports = resolveTargetSession.defaultImportsProvider
+            .getDefaultImports(includeLowPriorityImports = true)
+            .filter { it.fqName !in resolveTargetSession.defaultImportsProvider.excludedImports }
+            .map { importPath ->
+                buildImport {
+                    source = null
+                    importedFqName = importPath.fqName
+                    isAllUnder = importPath.isAllUnder
+                    aliasName = importPath.alias
+                    aliasSource = null
+                }
+            }
+
+        return buildList {
+            // CfirTypeResolver 按顺序查找 scope；lazy type resolve 与普通类型解析保持一致。
+            add(CfirFileDeclaredTopLevelScope(file))
+            add(CfirPackageMemberScope(file.packageDirective.packageFqName, resolveTargetSession))
+            add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
+            add(CfirExplicitStarImportingScope(imports, symbolProvider))
+            add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
+            add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
+        }
     }
 }
 

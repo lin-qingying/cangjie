@@ -26,9 +26,9 @@ func test1<T>() where T <: I<T> {
 func test2<T>(): Unit where T <: I<T> {
     // test for error report for join of return type and check
     if (true) {
-        return B<Int64>()
+        return <!RETURN_TYPE_MISMATCH!>B<Int64>()<!>
     } else if (false) {
-        return 1
+        return <!RETURN_TYPE_MISMATCH!>1<!>
     } else {
         return ()
     }
@@ -40,21 +40,3 @@ main() {
     test1<Int64>()
     return 0
 }
-
-/* SCAN
-error: mismatched types
-  ==> infer_multiple_return.cj:29:16:
-   | 
-29 |         return B<Int64>()
-   |                ^^^^^^^^^^ expected 'Unit', found 'Struct-B<Int64>'
-   | 
-
-error: cannot convert an integer literal to type 'Unit'
-  ==> infer_multiple_return.cj:31:16:
-   | 
-31 |         return 1
-   |                ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -1,8 +1,6 @@
-// FILE: unresolvedReferenceElement.cj
-// TARGET_ELEMENT_TEXT: missingCall
-// EXPECTED_ELEMENT_DIAGNOSTIC: UNRESOLVED_REFERENCE
+// LOOK_UP_FOR_ELEMENT_OF_TYPE: CjCallExpression
 package sample.diagnostics
 
 func main() {
-    missingCall()
+    <caret>missingCall()
 }

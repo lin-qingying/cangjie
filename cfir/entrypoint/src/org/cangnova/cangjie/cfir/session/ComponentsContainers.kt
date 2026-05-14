@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.cfir.session
 
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirPhaseResolverRegistry
-import org.cangnova.cangjie.cfir.resolve.transformers.MacroExpandAction
 import org.cangnova.cangjie.cfir.resolve.transformers.registerResolveProcessors
 import org.cangnova.cangjie.cfir.CfirEnumMatchTrackerComponent
 import org.cangnova.cangjie.cfir.CfirImportTrackerComponent
@@ -125,7 +124,6 @@ fun CfirSession.registerCommonComponentsAfterExtensionsAreConfigured() {
 @OptIn(SessionConfiguration::class)
 fun CfirSession.registerResolveComponents(
     diagnosticFactoriesStorage: CjRegisteredDiagnosticFactoriesStorage,
-    macroExpandAction: MacroExpandAction? = null,
     lookupTracker: LookupTracker? = null,
     enumMatchTracker: EnumMatchTracker? = null,
     importTracker: ImportTracker? = null,
@@ -195,7 +193,7 @@ fun CfirSession.registerResolveComponents(
     // ── Step 6：将各 resolve 阶段的 Processor 注册到 registry ─────────────
     // registerResolveProcessors 会依次注册 IMPORTS、SUPER_TYPES、TYPES 等
     // 各阶段对应的 Processor，完成 resolve 流水线的装配
-    registerResolveProcessors(registry, diagnosticReporter, this, ScopeSession(), macroExpandAction)
+    registerResolveProcessors(registry, diagnosticReporter, this, ScopeSession())
 }
 
 /**

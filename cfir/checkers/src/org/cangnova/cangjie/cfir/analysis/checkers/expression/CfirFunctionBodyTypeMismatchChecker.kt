@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
@@ -17,14 +18,13 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.typeContext
-import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 函数体尾表达式返回类型检查器。
  *
- * 仓颉函数允许“block 最后一条表达式即返回值”，
- * 因此当函数显式声明了返回类型时，需要把最外层 body block 的尾表达式
- * 也按返回值参与 `RETURN_TYPE_MISMATCH` 检查。
+ * 对齐官方 `TypeChecker::CheckFuncBody`：显式非 Unit 返回类型才将最外层
+ * body block 按返回值检查；显式 Unit 返回类型只综合分析函数体，后续插入
+ * `return ()`，不把普通尾表达式强制当作 Unit 返回值。
  */
 object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -33,6 +33,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         val containingFunction = context.findClosestDeclaration<CfirFunction> { it.body === block } ?: return
         if (containingFunction.returnTypeRef is CfirImplicitTypeRef) return
 
+        if (block.statements.dropLast(1).any { it is CfirReturnExpression }) return
         val tailExpression = block.statements.lastOrNull() as? CfirExpression ?: return
         if (tailExpression is CfirReturnExpression) return
 
@@ -44,6 +45,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
             else -> (containingFunction.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         }
         if (expectedType is ConeErrorType) return
+        if (expectedType.isUnit) return
 
         specificTypeMismatchDiagnostic(
             source = tailExpression.source ?: return,
@@ -55,7 +57,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
             return
         }
 
-        if (!AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, expectedType)) {
+        if (!isSubtypeForTypeMismatch(context.session, context.session.typeContext, actualType, expectedType)) {
             reporter.reportOn(
                 source = tailExpression.source,
                 factory = CfirErrors.RETURN_TYPE_MISMATCH,

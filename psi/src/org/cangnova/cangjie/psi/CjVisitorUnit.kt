@@ -78,6 +78,10 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitProperty(property, Unit)
     }
 
+    open fun visitPropertyAccessor(accessor: CjPropertyAccessor) {
+        super.visitPropertyAccessor(accessor, Unit)
+    }
+
     open fun visitPatternVariable(variable: CjPatternVariable) {
         super.visitPatternVariable(variable, Unit)
     }
@@ -185,7 +189,7 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
         super.visitConstructorCalleeExpression(constructorCalleeExpression, Unit)
     }
 
-    fun visitTypeParameterList(list: CjTypeParameterList) {
+    open fun visitTypeParameterList(list: CjTypeParameterList) {
         super.visitTypeParameterList(list, Unit)
     }
 
@@ -384,11 +388,11 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
     }
 
 
-    fun visitTypeConstraintList(list: CjTypeConstraintList) {
+    open fun visitTypeConstraintList(list: CjTypeConstraintList) {
         super.visitTypeConstraintList(list, Unit)
     }
 
-    fun visitTypeConstraint(constraint: CjTypeConstraint) {
+    open   fun visitTypeConstraint(constraint: CjTypeConstraint) {
         super.visitTypeConstraint(constraint, Unit)
     }
 
@@ -473,6 +477,11 @@ open class CjVisitorUnit : CjVisitor<Unit, Unit?>() {
 
     override fun visitProperty(property: CjProperty, data: Unit?): Unit {
         visitProperty(property)
+
+    }
+
+    override fun visitPropertyAccessor(accessor: CjPropertyAccessor, data: Unit?): Unit {
+        visitPropertyAccessor(accessor)
 
     }
 

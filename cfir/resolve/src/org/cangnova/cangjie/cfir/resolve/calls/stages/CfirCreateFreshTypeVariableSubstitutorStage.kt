@@ -1,9 +1,13 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
@@ -123,8 +127,17 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         candidate: Candidate,
         declaration: Any?,
     ): List<CfirTypeParameterRef> {
-        if (declaration !is CfirTypeParameterRefsOwner) return emptyList()
-        if (declaration.typeParameters.isNotEmpty()) return declaration.typeParameters
+        val ownTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        val ownerTypeParameters = collectBareStaticQualifierOwnerTypeParameters(session, candidate, declaration)
+        if (ownerTypeParameters.isNotEmpty()) {
+            if (candidate.callInfo.typeArguments.isEmpty()) {
+                return ownerTypeParameters + ownTypeParameters
+            }
+            if (ownTypeParameters.isEmpty()) {
+                return ownerTypeParameters
+            }
+        }
+        if (ownTypeParameters.isNotEmpty()) return ownTypeParameters
         if (declaration !is org.cangnova.cangjie.cfir.declarations.CfirConstructor &&
             declaration !is CfirEnumConstructor
         ) {
@@ -141,6 +154,29 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
             is CfirTypeParameterRefsOwner -> ownerDeclaration.typeParameters
             else -> emptyList()
         }
+    }
+
+    /**
+     * 泛型类型的静态成员可通过裸类名参与调用推断，例如 `Box.create()`。
+     *
+     * 官方 Cangjie 在调用路径为 owner class 的类型参数创建待推断变量；如果没有
+     * 实参、返回类型或期望类型能约束这些变量，后续约束系统会报告“无法推断泛型实参”，
+     * 而不是把 `Box` 当作类型位置的裸泛型类型诊断。
+     */
+    private fun collectBareStaticQualifierOwnerTypeParameters(
+        session: CfirSession,
+        candidate: Candidate,
+        declaration: Any?,
+    ): List<CfirTypeParameterRef> {
+        val callable = declaration as? CfirCallableDeclaration ?: return emptyList()
+        if (!callable.status.isStatic) return emptyList()
+
+        val receiver = candidate.callInfo.explicitReceiver as? CfirQualifiedAccessExpression ?: return emptyList()
+        if (receiver.typeArguments.isNotEmpty()) return emptyList()
+
+        val ownerSymbol = receiver.resolvedQualifierClassifier(session) ?: return emptyList()
+        val ownerDeclaration = ownerSymbol.cfir as? CfirClassLikeDeclaration ?: return emptyList()
+        return ownerDeclaration.typeParameters
     }
 
     /**

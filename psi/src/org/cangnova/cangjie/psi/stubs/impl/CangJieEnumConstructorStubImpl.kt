@@ -55,4 +55,12 @@ import com.intellij.util.io.StringRef
         val fqNameStr = StringRef.toString(enumFqName) ?: return null
         return FqName(fqNameStr)
     }
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieEnumConstructorStubImpl = CangJieEnumConstructorStubImpl(
+        type = stubType as CjEnumConstructorElementType,
+        parent = newParent,
+        name = name,
+        typeCount = typeCount,
+        enumFqName = enumFqName,
+    )
 }

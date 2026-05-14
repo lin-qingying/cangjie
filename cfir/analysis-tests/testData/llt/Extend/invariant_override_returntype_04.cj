@@ -14,7 +14,7 @@ public interface Cloneable {
 }
 
 public interface LiteralValue <: Cloneable {
-    func clone(): LiteralValue // Compiler error: return type of 'clone' can only be class/interface type which implements or inherits the interface type 'Interface-LiteralValue'
+    func <!OVERRIDING_RETURN_TYPE_MISMATCH!>clone<!>(): LiteralValue
 }
 
 extend String <: LiteralValue {}

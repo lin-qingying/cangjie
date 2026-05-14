@@ -1,25 +1,53 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferType
+import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
+import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
+import org.cangnova.cangjie.cfir.expressions.CfirPerformExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.expressions.CfirSmartCastExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
+import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 浮点字面量范围检查器
@@ -72,29 +100,67 @@ object CfirFloatLiteralRangeChecker : CfirLiteralExpressionChecker() {
 }
 
 /**
- * 表达式类型推断失败检查器
+ * 错误类型表达式检查器。
  *
- * 通过 BasicExpressionChecker 分发，检查所有表达式的推断类型是否为 ConeErrorType。
- * 对齐 C++ DiagKind::sema_unable_to_infer_expr
+ * 对齐 Kotlin FIR `FirExpressionWithErrorTypeChecker`：只在错误没有被子节点、
+ * 引用或显式错误类型引用报告时，才把表达式携带的 Cone diagnostic 交给统一
+ * 的 ErrorNode collector 映射。仓颉的 `UNABLE_TO_INFER_EXPR` 仍由既有
+ * Cone diagnostic -> CFIR diagnostic 映射产生。
  */
-object CfirExpressionTypeInferenceChecker : CfirBasicExpressionChecker() {
+object CfirExpressionWithErrorTypeChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
-        // 只检查有 source 的真实表达式
-        val source = expression.source ?: return
-        if (source.kind !is org.cangnova.cangjie.source.CjRealSourceElementKind) return
+        if (expression !is CfirExpression) return
+        val type = expression.coneTypeOrNull
+        if (type !is ConeErrorType) return
+        if (expression is CfirBlock) return
+        if (expression is CfirMatchBranch && expression.body.coneTypeOrNull is ConeErrorType) return
+        if (expression is CfirSmartCastExpression) return
 
-        val exprType = (expression as? org.cangnova.cangjie.cfir.expressions.CfirExpression)?.coneTypeOrNull ?: return
-        if (exprType !is ConeErrorType) return
+        if (expression is CfirDiagnosticHolder) return
+        if (expression is CfirResolvable) {
+            val calleeReference = expression.calleeReference
+            if (calleeReference is CfirDiagnosticHolder) return
+            if (calleeReference is CfirSuperReference && calleeReference.superTypeRef is CfirErrorTypeRef) return
+            if (calleeReference is CfirResolvedNamedReference) {
+                val symbol = calleeReference.resolvedSymbol as? CfirCallableSymbol<*>
+                if (symbol?.resolvedReturnTypeRef is CfirErrorTypeRef) return
+                if (symbol?.resolvedReturnType?.contains { it is ConeErrorType && it.diagnostic == type.diagnostic } == true) return
+            }
+        }
+        if (expression is CfirThisReceiverExpression && expression.calleeReference.diagnostic != null) return
+        if (expression is CfirAnnotationCall && expression.typeRef is CfirErrorTypeRef) return
+        if (expression is CfirTypeOperator && expression.typeRef is CfirErrorTypeRef) return
 
-        // 避免对函数调用等已有更具体诊断的节点重复报告
-        if (expression is CfirFunctionCall) return
-        if (expression is CfirQualifiedAccessExpression) return
-
-        reporter.reportOn(
-            source = source,
-            factory = CfirErrors.UNABLE_TO_INFER_EXPR,
-        )
+        val source = expression.source
+        if (source != null) {
+            val diagnostic = type.diagnostic
+            if (diagnostic is ConeMismatchingHandleBlockError &&
+                (expression is CfirTryExpression || expression is CfirHandleClause)
+            ) {
+                return
+            }
+            if (diagnostic is ConeCannotInferType) return
+            if (diagnostic is ConeSimpleDiagnostic) {
+                when (diagnostic.kind) {
+                    DiagnosticKind.RecursionInImplicitTypes -> return
+                    else -> {}
+                }
+            }
+            val diagnosticSource = when {
+                expression is CfirPerformExpression && diagnostic is ConeCommandIncompatibleTypeError ->
+                    expression.expression.source ?: source
+                expression is CfirHandleClause && diagnostic is ConeCommandHandleTypeError ->
+                    expression.commandPattern.typeRefs.firstOrNull()?.source ?: expression.commandPattern.source ?: source
+                else -> source
+            }
+            ErrorNodeDiagnosticCollectorComponent.reportCfirDiagnostic(
+                diagnostic,
+                diagnosticSource,
+                context,
+                reporter = reporter,
+            )
+        }
     }
 }
 
@@ -159,23 +225,12 @@ object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
  * subscript 表达式检查器
  *
  * 对齐 C++ TypeCheckExpr/SubscriptExpr.cpp:
- * - CANNOT_ASSIGN_TO_SUBSCRIPT: subscript 不可赋值（无 operator set）
+ * - resolve 阶段产生的 subscript operator 错误由 Cone 诊断统一映射；
+ * - 这里只检查不依赖 operator resolve 的 subscript 语义。
  */
 object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSubscriptExpression) {
-        val exprType = expression.coneTypeOrNull
-        if (exprType is ConeErrorType) {
-            val receiverType = expression.receiver.coneTypeOrNull ?: return
-            if (receiverType is ConeErrorType) return
-            reporter.reportOn(
-                source = expression.source,
-                factory = CfirErrors.INVALID_SUBSCRIPT_EXPR,
-                a = receiverType,
-                b = "subscript",
-            )
-        }
-
         // VArray subscript 下标数量检查
         val receiverType = expression.receiver.coneTypeOrNull
         if (receiverType is org.cangnova.cangjie.cfir.types.ConeVArrayType) {
@@ -188,3 +243,104 @@ object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
         }
     }
 }
+
+/**
+ * throw 表达式类型检查。
+ *
+ * 对齐官方 C++ `TypeCheckExpr/ThrowExpr.cpp`：
+ * - 被抛表达式必须是 `std.core.Exception` 或 `std.core.Error` 的子类型；
+ * - `throw` 表达式本身在 resolve 阶段保持 `Nothing`，这里只负责诊断。
+ */
+object CfirThrowExpressionTypeChecker : CfirThrowExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirThrowExpression) {
+        val thrownType = expression.exception.coneTypeOrNull ?: return
+        if (thrownType is ConeErrorType) return
+        if (thrownType == ConePrimitiveType.NOTHING) return
+        if (thrownType.isSubtypeOfExceptionOrError(context)) return
+
+        reporter.reportOn(
+            source = expression.source,
+            factory = CfirErrors.THROW_EXPR_WITH_WRONG_TYPE,
+        )
+    }
+}
+
+/**
+ * try/catch 异常类型检查。
+ *
+ * 对齐官方 C++ `TypeCheckPattern.cpp#ChkExceptTypePattern`：
+ * - catch 参数属性类型必须是 `std.core.Exception` 或 `std.core.Error` 的子类型；
+ * - 后续 catch 类型若已被前面的 catch 类型覆盖，报告 `USELESS_EXCEPTION_TYPE`。
+ */
+object CfirCatchTypeChecker : CfirTryExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirTryExpression) {
+        val includedTypes = mutableListOf<ConeCangJieType>()
+
+        for (catchClause in expression.catches) {
+            val typeRef = catchClause.parameter.returnTypeRef as? CfirResolvedTypeRef ?: continue
+            val catchType = typeRef.coneType
+            if (catchType is ConeErrorType) continue
+
+            if (!catchType.isSubtypeOfExceptionOrError(context)) {
+                reporter.reportOn(
+                    source = typeRef.source ?: catchClause.parameter.source,
+                    factory = CfirErrors.CATCH_TYPE_MUST_EXTEND_EXCEPTION,
+                )
+                continue
+            }
+
+            if (includedTypes.any { previous -> catchType.isSubtypeOf(previous, context) }) {
+                reporter.reportOn(
+                    source = typeRef.source ?: catchClause.parameter.source,
+                    factory = CfirErrors.USELESS_EXCEPTION_TYPE,
+                )
+            } else {
+                includedTypes += catchType
+            }
+        }
+    }
+}
+
+/**
+ * try-with-resources 资源类型检查。
+ *
+ * 对齐官方 `TypeCheckExpr/TryExpr.cpp`：资源说明表达式的结果类型必须实现 `std.core.Resource`，
+ * 但即使类型不匹配，资源绑定名和 try body 仍继续分析。
+ */
+object CfirTryResourceTypeChecker : CfirTryExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirTryExpression) {
+        if (expression.resources.isEmpty()) return
+
+        val resourceType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Resource.toLookupTag())
+        for (resource in expression.resources) {
+            val actualType = (resource.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+            if (actualType is ConeErrorType) continue
+            if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, resourceType) == true) continue
+
+            reporter.reportOn(
+                source = resource.source,
+                factory = CfirErrors.MISMATCHED_TYPES_BECAUSE,
+                a = resourceType,
+                b = actualType,
+                c = "try-with-resources requires std.core.Resource",
+            )
+        }
+    }
+}
+
+private fun ConeCangJieType.isSubtypeOfExceptionOrError(
+    context: CheckerContext,
+): Boolean {
+    val exceptionType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Exception.toLookupTag())
+    val errorType = org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Error.toLookupTag())
+    return isSubtypeOf(exceptionType, context) || isSubtypeOf(errorType, context)
+}
+
+private fun ConeCangJieType.isSubtypeOf(
+    superType: ConeCangJieType,
+    context: CheckerContext,
+): Boolean =
+    AbstractTypeChecker.isSubtypeOf(context.session.typeContext, this, superType) == true

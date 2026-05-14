@@ -1,7 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
-// IGNORE_ERRORS
-<!OBJC_CJ_MAPPING_MUST_BE_CLASS!>/* suggested message: Objective-C CJMapping declarations must satisfy dedicated mapping type restrictions and cannot use unsupported declaration kinds. source: external/cangjie_compiler/src/Sema/NativeFFI/ObjC/AfterTypeCheck/Interop/CheckCJMappingTypes.cpp */@ObjCImpl
-interface BadMapping {}<!>
+@ObjCCJMapping
+class <!OBJC_CJMAPPING_GENERIC_NOT_SUPPORTED!>GenericMapping<T><!> {}
 
-<!OBJC_CJ_MAPPING_MUST_BE_CLASS!>/* suggested message: Objective-C CJMapping declarations must satisfy dedicated mapping type restrictions and cannot use unsupported declaration kinds. source: external/cangjie_compiler/src/Sema/NativeFFI/ObjC/AfterTypeCheck/Interop/CheckCJMappingTypes.cpp */@ObjCImpl
-interface AnotherBadMapping {}<!>
+@ObjCCJMapping
+class <!OBJC_CJMAPPING_INHERITANCE_INTERFACE_NOT_SUPPORTED!>InheritingMapping<!> <: ToString {}

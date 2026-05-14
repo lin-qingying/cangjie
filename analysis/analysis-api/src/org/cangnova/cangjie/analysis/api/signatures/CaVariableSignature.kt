@@ -8,34 +8,40 @@ import org.cangnova.cangjie.name.Name
 
 
 /**
- * A [callable signature][CaCallableSignature] of a [variable symbol][CaVariableSymbol].
+ * 变量符号的 use-site 签名视图,同时实现 [CaValueParameterSignature]。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaVariableSignature`。
+ *
+ * @param S 实际变量符号类型(协变)。
  */
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaVariableSignature<out S : CaVariableSymbol> : CaCallableSignature<S>, CaValueParameterSignature {
+interface CaVariableSignature<out S : CaVariableSymbol> : CaCallableSignature<S>, CaValueParameterSignature {
     /**
-     * The name of the variable with respect to a [ParameterName] annotation. It can be different from [CaVariableSymbol.name].
+     * 考虑了 `@ParameterName` 注解的参数名,可能与 [CaVariableSymbol.name] 不同。
      *
-     * Some variables can have their names changed by special annotations like `@ParameterName(name = "newName")`. This is used to preserve
-     * the names of the lambda parameters in situations like this:
+     * 某些变量名会被 `@ParameterName(name = "newName")` 等特殊注解改写,
+     * 用以保留 lambda 参数名等信息。例如:
      *
      * ```
-     * // compiled library
+     * // 已编译库
      * fun foo(): (bar: String) -> Unit { ... }
      *
-     * // source code
+     * // 源码
      * fun test() {
      *   val action = foo()
-     *   action("") // this call
+     *   action("") // 此处调用
      * }
      * ```
      *
-     * Unfortunately, the [symbol] for the `action("")` call will be pointing to `Function1<P1, R>.invoke(p1: P1): R`, because we
-     * intentionally unwrap use-site substitution overrides. Because of this, `symbol.name` will yield `"p1"`, and not `"bar"`.
-     *
-     * To overcome this problem, [name] allows to get the intended name of the parameter, with respect to the `@ParameterName` annotation.
+     * `action("")` 的符号会指向 `Function1<P1, R>.invoke(p1: P1): R`,
+     * 因为 use-site 替换被刻意 unwrap,这样 `symbol.name` 会得到 `"p1"` 而非 `"bar"`。
+     * 通过 [name] 即可拿到结合 `@ParameterName` 之后的预期参数名 `"bar"`。
      */
-    public override val name: Name
+    override val name: Name
 
+    /**
+     * 变量签名特化的替换入口,返回 [CaVariableSignature] 以保留精确类型。
+     */
     @CaExperimentalApi
     abstract override fun substitute(substitutor: CaSubstitutor): CaVariableSignature<S>
 }

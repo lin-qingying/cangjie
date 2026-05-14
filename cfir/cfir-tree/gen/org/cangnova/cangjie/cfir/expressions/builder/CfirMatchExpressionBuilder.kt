@@ -23,7 +23,7 @@ class CfirMatchExpressionBuilder {
     var coneTypeOrNull: ConeCangJieType? = null
     var subject: CfirExpression? = null
     val branches: MutableList<CfirMatchBranch> = mutableListOf()
-    lateinit var exhaustiveness: CfirMatchExhaustivenessStatus
+    var exhaustiveness: CfirMatchExhaustivenessStatus = CfirMatchExhaustivenessStatus.Unknown
 
     @OptIn(CfirImplementationDetail::class)
     fun build(): CfirMatchExpression {
@@ -40,7 +40,7 @@ class CfirMatchExpressionBuilder {
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit): CfirMatchExpression {
+inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit = {}): CfirMatchExpression {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
@@ -48,7 +48,7 @@ inline fun buildMatchExpression(init: CfirMatchExpressionBuilder.() -> Unit): Cf
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMatchExpressionBuilder.() -> Unit): CfirMatchExpression {
+inline fun buildMatchExpressionCopy(original: CfirMatchExpression, init: CfirMatchExpressionBuilder.() -> Unit = {}): CfirMatchExpression {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }

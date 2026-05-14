@@ -11,7 +11,7 @@ open class C {
 }
 
 func Foo<U>(a: U) where U <: C {
-    var b = U.a
+    var b = U.<!INVISIBLE_MEMBER!>a<!>
     return b
 }
 
@@ -20,14 +20,3 @@ class C1 <: C {}
 main() {
     return Foo<C1>(C1())
 }
-
-/* SCAN
-error: can not access field 'a'
-  ==> access_by_parameter_class_6.cj:14:13:
-   | 
-14 |     var b = U.a
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

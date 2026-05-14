@@ -9,8 +9,7 @@ func badReturn(): Int64 {
 
 
 
-main() {
+main(): Unit {
 
     takesInt(<!ARGUMENT_TYPE_MISMATCH!>true<!>)
 }
-

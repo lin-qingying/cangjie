@@ -1,6 +1,6 @@
 // FILE: functionReference.cj
 // TARGET_NAME: greet
-// EXPECTED_SYMBOL_CLASS: CaCfirNamedFunctionSymbolImpl
+// EXPECTED_SYMBOL_CLASS: CaCfirNamedFunctionSymbol
 // EXPECTED_SYMBOL_NAME: greet
 // EXPECTED_ORIGINAL_PSI_CLASS: CjNamedFunction
 package sample.symbols.reference

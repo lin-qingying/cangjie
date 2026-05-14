@@ -5,6 +5,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.transformers
 
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirGlobalResolveComponents
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTarget
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.targets.LLCfirResolveTargetVisitor
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.withCfirDesignationE
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.builder.LLCfirLockProvider
 import org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve.LLCfirPhaseUpdater
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.LLFlightRecorder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkPhase
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
@@ -23,12 +25,17 @@ import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.originalIfFakeOverrideOrDelegated
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.psi
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.checkWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
+import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjPatternVariable
 
 /**
  * This class represents the resolver for each [CfirResolvePhase].
@@ -41,7 +48,7 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * we cannot transform class member declaration under the class lock – we have to take the corresponding declaration lock
  * to avoid concurrent issues.
  *
- * So, at least we have a different implementation for transformations of such declarations as [CfirFile], [CfirScript] and [CfirClass].
+ * So, at least we have a different implementation for transformations of such declarations as [CfirFile] and [CfirClass].
  *
  * Due to lazy resolution, we have to maintain the resolution order explicitly in some cases as we are not guaranteed by default that all
  * dependencies or outer declarations are resolved before the target one.
@@ -49,7 +56,6 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
  * Also, each [LLCfirResolveTarget] can define phase-specific rules.
  *
  * Implementations:
- * - [MACRO_EXPAND][CfirResolvePhase.MACRO_EXPAND] – [LLCfirMacroExpandLazyResolver]
  * - [SUPER_TYPES][CfirResolvePhase.SUPER_TYPES] – [LLCfirSuperTypeTargetResolver]
  * - [TYPES][CfirResolvePhase.TYPES] – [LLCfirTypeTargetResolver]
  * - [STATUS][CfirResolvePhase.STATUS] – [LLCfirStatusTargetResolver]
@@ -74,9 +80,9 @@ internal sealed class LLCfirTargetResolver(
 
     /**
      * @param context used as a context in the case of exception
-     * @return the last class from [containingDeclarations]
+     * @return the last class-like declaration from [containingDeclarations]
      */
-    fun containingClass(context: CfirDeclaration): CfirClass {
+    fun containingClassLike(context: CfirDeclaration): CfirClassLikeDeclaration {
         val containingDeclaration = containingDeclarations.lastOrNull() ?: errorWithAttachment("Containing declaration is not found") {
             withCfirEntry("context", context)
             withCfirDesignationEntry("designation", resolveTarget.designation)
@@ -85,8 +91,8 @@ internal sealed class LLCfirTargetResolver(
         }
 
         requireWithAttachment(
-            containingDeclaration is CfirClass,
-            { "${CfirClass::class.simpleName} expected, but ${containingDeclaration::class.simpleName} found" },
+            containingDeclaration is CfirClassLikeDeclaration,
+            { "${CfirClassLikeDeclaration::class.simpleName} expected, but ${containingDeclaration::class.simpleName} found" },
         ) {
             withCfirEntry("context", context)
             withCfirDesignationEntry("designation", resolveTarget.designation)
@@ -98,14 +104,14 @@ internal sealed class LLCfirTargetResolver(
     }
 
     /**
-     * 基于当前解析栈查找最近的外围 class。
+     * 基于当前解析栈查找最近的外围 class-like 声明。
      *
-     * LL 解析路径总会先压入 file，再按需压入外层 class。
-     * 对于非法源码或文件级错误恢复产物，constructor 可能并不真正位于 class 内。
-     * 此时不能把 file 误当成 class 并强行报框架错误，而应仅在确有外围 class 时建立该依赖。
+     * LL 解析路径总会先压入 file，再按需压入外层 class-like。
+     * 对于非法源码或文件级错误恢复产物，constructor 可能并不真正位于 class-like 内。
+     * 此时不能把 file 误当成 class-like 并强行报框架错误，而应仅在确有外围容器时建立该依赖。
      */
-    fun containingClassOrNull(): CfirClass? {
-        return containingDeclarations.lastOrNull { it is CfirClass } as? CfirClass
+    fun containingClassLikeOrNull(): CfirClassLikeDeclaration? {
+        return containingDeclarations.lastOrNull { it is CfirClassLikeDeclaration } as? CfirClassLikeDeclaration
     }
 
     protected inline fun withContainingDeclaration(declaration: CfirDeclaration, action: () -> Unit) {
@@ -153,9 +159,14 @@ internal sealed class LLCfirTargetResolver(
                 target.correspondingValueParameterFromPrimaryConstructor?.lazyResolveToPhase(resolverPhase)
             }
 
+            target is CfirPatternBindingVariable -> {
+                // Pattern binding variables share implicit type resolution with the owning pattern variable.
+                target.owningPatternVariable?.lazyResolveToPhase(resolverPhase)
+            }
+
             // constructor shares types inside delegation call with the containing class
             target is CfirConstructor -> {
-                containingClassOrNull()?.lazyResolveToPhase(resolverPhase)
+                containingClassLikeOrNull()?.lazyResolveToPhase(resolverPhase)
             }
 
         }
@@ -173,8 +184,8 @@ internal sealed class LLCfirTargetResolver(
         action()
     }
 
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    protected open fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
+    @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
+    protected open fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
         action()
     }
 
@@ -184,9 +195,21 @@ internal sealed class LLCfirTargetResolver(
     }
 
     final override fun withClass(cfirClass: CfirClass, action: () -> Unit) {
+        withClassLike(cfirClass, action)
+    }
+
+    final override fun withClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
+        withContainingDeclaration(cfirClassLike) {
+            @Suppress("DEPRECATION_ERROR")
+            withContainingClassLike(cfirClassLike, action)
+        }
+    }
+
+    @Deprecated("Use withClassLike instead", level = DeprecationLevel.HIDDEN)
+    protected fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
         withContainingDeclaration(cfirClass) {
             @Suppress("DEPRECATION_ERROR")
-            withContainingClass(cfirClass, action)
+            withContainingClassLike(cfirClass, action)
         }
     }
 
@@ -289,7 +312,7 @@ internal sealed class LLCfirTargetResolver(
      * @see LLCfirLockProvider.withJumpingLock
      */
     protected open fun handleCycleInResolution(target: CfirElementWithResolveState) {
-        errorWithCfirSpecificEntries("Resolution cycle is detected", fir = target)
+        errorWithCfirSpecificEntries("Resolution cycle is detected", cfir = target)
     }
 
     /**
@@ -340,9 +363,17 @@ internal sealed class LLCfirTargetResolver(
 
 private val CfirProperty.correspondingValueParameterFromPrimaryConstructor: CfirValueParameter?
     get() {
-        val ownerClass = symbol.callableId.classId?.let(moduleData.session.symbolProvider::getClassLikeSymbolByClassId)?.cfir as? CfirClass
+        val ownerClassLike = symbol.callableId.classId?.let(moduleData.session.symbolProvider::getClassLikeSymbolByClassId)?.cfir as? CfirClassLikeDeclaration
             ?: return null
-        val primaryConstructor = ownerClass.declarations.firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
+        val primaryConstructor = ownerClassLike.declarations.firstOrNull { it is CfirConstructor && it.isPrimary } as? CfirConstructor
             ?: return null
         return primaryConstructor.valueParameters.firstOrNull { it.correspondingProperty === this }
+    }
+
+private val CfirPatternBindingVariable.owningPatternVariable: CfirPatternVariable?
+    get() {
+        val containingFile = moduleData.session.cfirProvider.getContainingFile(symbol) ?: return null
+        val bindingPsi = psi as? CjBindingPattern ?: return null
+        val ownerPsi = PsiTreeUtil.getParentOfType(bindingPsi, CjPatternVariable::class.java, false) ?: return null
+        return CfirElementFinder.findDeclaration(containingFile, ownerPsi) as? CfirPatternVariable
     }

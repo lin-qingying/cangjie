@@ -15,7 +15,8 @@ import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
-import org.cangnova.cangjie.analysis.api.decompiled.CaBuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaGlobalSearchScopeMerger
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
@@ -63,11 +64,11 @@ class CaBaseResolutionScopeProvider : CaResolutionScopeProvider {
             }
         }
 
-        return scopes.reduce(GlobalSearchScope::uniteWith)
+        return CaGlobalSearchScopeMerger.getInstance(module.project).union(scopes)
     }
 
     private fun createBuiltinsScope(project: Project): GlobalSearchScope {
-        return CaBuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
+        return BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
     }
 
     private val resolutionScopeCache: Cache<CaModule, CaResolutionScope> =
@@ -101,6 +102,10 @@ class CaBaseResolutionScope(
             return cachedSearchScopeContains(element.virtualFile)
         }
 
+        /*
+         * 与 Kotlin `KaBaseResolutionScope` 一致，这里必须检查 view provider 的 VirtualFile。
+         * dangling / in-memory PSI 的模块边界依赖该文件，不能回退到 original physical file。
+         */
         val psiFile = element.containingFile
         val virtualFile = psiFile.viewProvider.virtualFile
         return cachedSearchScopeContains(virtualFile)

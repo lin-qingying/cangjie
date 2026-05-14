@@ -18,6 +18,10 @@ dependencies {
     testImplementation(project(":analysis:analysis-api-standalone"))
     testImplementation(project(":analysis:cj-references"))
     testImplementation(project(":analysis:decompiled"))
+    testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
+    testImplementation(testFixtures(project(":analysis:analysis-api-impl-base")))
+    testImplementation(testFixtures(project(":analysis:analysis-api-cfir")))
+    testImplementation(testFixtures(project(":analysis:analysis-api-standalone")))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

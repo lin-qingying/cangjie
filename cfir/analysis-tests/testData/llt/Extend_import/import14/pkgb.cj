@@ -18,4 +18,4 @@ public interface ValueType {
     }
 }
 
-extend Int64 <: ValueType {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>extend Int64 <: ValueType {}<!>

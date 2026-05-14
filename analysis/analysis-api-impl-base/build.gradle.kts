@@ -10,6 +10,7 @@ import org.gradle.api.tasks.OutputFile
 import org.gradle.api.tasks.PathSensitive
 import org.gradle.api.tasks.PathSensitivity
 import org.gradle.api.tasks.TaskAction
+import org.jetbrains.kotlin.gradle.tasks.KotlinJvmCompile
 
 plugins {
     kotlin("jvm")
@@ -27,16 +28,31 @@ dependencies {
 
     api(project(":analysis:analysis-api"))
     api(project(":analysis:analysis-api-platform-interface"))
+    implementation(project(":analysis:decompiled:decompiler-to-psi"))
     implementation(project(":common"))
     implementation(project(":psi"))
     compileOnly(intellijCore())
 
     testFixturesApi(project(":analysis:analysis-api"))
+    testFixturesApi(project(":analysis:analysis-api-standalone"))
     testFixturesApi(project(":psi"))
     testFixturesApi(testFixtures(project(":analysis:analysis-test-framework")))
     testFixturesImplementation(project(":analysis:cj-references"))
     testFixturesApi(libs.junit.jupiter)
     testFixturesRuntimeOnly(libs.junit.platform.launcher)
+}
+
+tasks.withType<KotlinJvmCompile>().configureEach {
+    compilerOptions.optIn.addAll(
+        listOf(
+            "org.cangnova.cangjie.analysis.api.CaImplementationDetail",
+            "org.cangnova.cangjie.analysis.api.CaExperimentalApi",
+            "org.cangnova.cangjie.analysis.api.CaNonPublicApi",
+            "org.cangnova.cangjie.analysis.api.CaIdeApi",
+            "org.cangnova.cangjie.analysis.api.CaPlatformInterface",
+            "org.cangnova.cangjie.analysis.api.lifetime.CaSessionComponentImplementationDetail",
+        )
+    )
 }
 
 /**

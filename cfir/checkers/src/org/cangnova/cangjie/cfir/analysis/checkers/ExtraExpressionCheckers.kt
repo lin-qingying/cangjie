@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirBasicExpressionChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirEffectsBasicChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirTryHandleReturnChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckers
@@ -13,9 +12,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.ExpressionCheckers
  * 因此先按现有主干 checker 归位到 extra 分组。
  */
 object ExtraExpressionCheckers : ExpressionCheckers() {
-    override val basicExpressionCheckers: Set<CfirBasicExpressionChecker> = setOf(
-        CfirEffectsBasicChecker,
-    )
+    override val basicExpressionCheckers: Set<CfirBasicExpressionChecker> = emptySet()
 
     override val tryExpressionCheckers: Set<CfirTryExpressionChecker> = setOf(
         CfirTryHandleReturnChecker,

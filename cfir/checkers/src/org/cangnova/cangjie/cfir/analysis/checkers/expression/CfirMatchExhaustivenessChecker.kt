@@ -17,14 +17,19 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirMatchExpression) {
         val source = expression.source as? AbstractCjSourceElement ?: return
-        val subjectType = expression.subject?.coneTypeOrNull ?: return
+        val subject = expression.subject ?: return
+        val subjectType = subject.coneTypeOrNull ?: return
         if (expression.hasPatternLegalityProblem(context)) return
 
         context.session.enumMatchTracker?.reportEnumUsageInMatch(context.containingFilePath, subjectType)
 
         val exhaustiveness = checkerExhaustivenessStatus(expression, context)
         if (exhaustiveness !is CfirMatchExhaustivenessStatus.NonExhaustive) return
-        reporter.reportOn(source, CfirErrors.NON_EXHAUSTIVE_MATCH, exhaustiveness.missingCaseTexts)
+        reporter.reportOn(
+            subject.source as? AbstractCjSourceElement ?: source,
+            CfirErrors.NON_EXHAUSTIVE_MATCH,
+            exhaustiveness.missingCaseTexts,
+        )
     }
 
     private fun checkerExhaustivenessStatus(
@@ -46,15 +51,9 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
                 source = CfirMatchExhaustivenessStatus.Source.Checker,
             )
 
-            is ExhaustivenessResult.Error -> CfirMatchExhaustivenessStatus.Error(
-                reason = result.reason,
-                source = CfirMatchExhaustivenessStatus.Source.Checker,
-            )
-
-            ExhaustivenessResult.Skipped -> CfirMatchExhaustivenessStatus.Error(
-                reason = "shared match exhaustiveness analyzer returned Skipped during CHECKERS",
-                source = CfirMatchExhaustivenessStatus.Source.Checker,
-            )
+            is ExhaustivenessResult.Error,
+            ExhaustivenessResult.Skipped,
+            -> CfirMatchExhaustivenessStatus.Unknown
         }
         expression.replaceExhaustiveness(resolved)
         return resolved

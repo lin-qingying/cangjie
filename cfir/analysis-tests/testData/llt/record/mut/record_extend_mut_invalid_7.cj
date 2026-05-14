@@ -18,54 +18,11 @@ extend R1 {
 
 func goo() {
     var obj = R1()
-    var fn = obj.foo
-    obj.foo
-    return obj.foo
+    var fn = <!USE_MUTABLE_FUNC_ALONE!>obj.foo<!>
+    <!USE_MUTABLE_FUNC_ALONE!>obj.foo<!>
+    return <!USE_MUTABLE_FUNC_ALONE!>obj.foo<!>
 }
 
 main() {
     return 1
 }
-
-/* SCAN
-error: mutable function 'foo' cannot be used alone as reference
-  ==> record_extend_mut_invalid_7.cj:21:18:
-   | 
-21 |     var fn = obj.foo
-   |                  ^^^ 
-   | 
-note: 'foo' is a mutable funciton
-  ==> record_extend_mut_invalid_7.cj:14:21:
-   | 
-14 |     public mut func foo(): Unit {
-   |                     ^^^ 
-   | 
-
-error: mutable function 'foo' cannot be used alone as reference
-  ==> record_extend_mut_invalid_7.cj:22:9:
-   | 
-22 |     obj.foo
-   |         ^^^ 
-   | 
-note: 'foo' is a mutable funciton
-  ==> record_extend_mut_invalid_7.cj:14:21:
-   | 
-14 |     public mut func foo(): Unit {
-   |                     ^^^ 
-   | 
-
-error: mutable function 'foo' cannot be used alone as reference
-  ==> record_extend_mut_invalid_7.cj:23:16:
-   | 
-23 |     return obj.foo
-   |                ^^^ 
-   | 
-note: 'foo' is a mutable funciton
-  ==> record_extend_mut_invalid_7.cj:14:21:
-   | 
-14 |     public mut func foo(): Unit {
-   |                     ^^^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

@@ -286,10 +286,6 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformExpression(quoteExpression, data)
     }
 
-    override fun transformMacroExpression(macroExpression: CfirMacroExpression, data: D): CfirExpression {
-        return transformExpression(macroExpression, data)
-    }
-
     override fun transformSubscriptExpression(subscriptExpression: CfirSubscriptExpression, data: D): CfirExpression {
         return transformExpression(subscriptExpression, data)
     }

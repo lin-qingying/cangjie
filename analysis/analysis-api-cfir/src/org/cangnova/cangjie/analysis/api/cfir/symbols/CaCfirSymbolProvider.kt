@@ -1,188 +1,162 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
-import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.components.CaCfirSessionComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSymbolProvider
+import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
+import org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirExtendSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFinalizerSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjBindingPattern
+import org.cangnova.cangjie.psi.CjConstructor
+import org.cangnova.cangjie.psi.CjEnumConstructor
+import org.cangnova.cangjie.psi.CjExtend
+import org.cangnova.cangjie.psi.CjFieldVariable
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjFinalizer
+import org.cangnova.cangjie.psi.CjFunctionLiteral
+import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjPatternVariable
 import org.cangnova.cangjie.psi.CjProperty
+import org.cangnova.cangjie.psi.CjPropertyAccessor
 import org.cangnova.cangjie.psi.CjTypeAlias
 import org.cangnova.cangjie.psi.CjTypeParameter
 import org.cangnova.cangjie.psi.CjTypeStatement
-import org.cangnova.cangjie.psi.CjDeclaration
-import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbolOfTypeSafe
 
 /**
  * CFIR 符号查询入口。
  *
- * 该组件负责两类稳定入口：
- * 1. `PSI -> public symbol`；
- * 2. 基于稳定语义标识的直接查询。
- *
- * 这里对齐 Kotlin `KaFirSymbolProvider` 的做法：
- * PSI 入口先解析到具体 CFIR 叶子符号，再走对应的 `create*` 公开构造入口，
- * 而不是把 provider 退化成一个泛型 `getPublicSymbolByPsi` 转发层。
+ * 该类按 Kotlin `KaFirSymbolProvider` 的形状组织：
+ * PSI 入口直接构造对应 public symbol；只有基于 provider 的语义查询入口
+ * 才从 CFIR symbol provider 取符号后交给 public symbol builder。
  */
 internal class CaCfirSymbolProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
 ) : CaBaseSymbolProvider<CaCfirSession>(), CaCfirSessionComponent {
+    override val CjParameter.symbol: CaVariableSymbol
+        get() = withPsiValidityAssertion {
+            when {
+                isFunctionTypeParameter() -> errorWithCfirSpecificEntries(
+                    "Creating ${CaVariableSymbol::class.simpleName} for function type parameter is not possible. " +
+                        "Please see the KDoc of `symbol`",
+                    psi = this,
+                )
+
+                else -> CaCfirValueParameterSymbol(this@symbol, analysisSession)
+            }
+        }
+
     override val CjFile.symbol: CaFileSymbol
-        get() = withValidityAssertion {
+        get() = withPsiValidityAssertion {
             CaCfirFileSymbol(this@symbol, analysisSession)
         }
 
-
-
     override val CjTypeStatement.classSymbol: CaClassSymbol
-        get() = withValidityAssertion {
+        get() = withPsiValidityAssertion {
             CaCfirClassSymbol(this@classSymbol, analysisSession)
         }
 
-    override val org.cangnova.cangjie.psi.CjExtend.symbol: CaExtendSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirExtendSymbol, CaExtendSymbol>(this@symbol) {
-                analysisSession.cfirSymbolBuilder.buildExtendSymbol(it)
-            }
-                ?: error("Cannot build extend symbol for ${this@symbol::class}")
-        }
-
     override val CjTypeAlias.symbol: CaTypeAliasSymbol
-        get() = withValidityAssertion {
+        get() = withPsiValidityAssertion {
             CaCfirTypeAliasSymbol(this@symbol, analysisSession)
         }
 
     override val CjNamedFunction.symbol: CaNamedFunctionSymbol
-        get() = withValidityAssertion {
+        get() = withPsiValidityAssertion {
             CaCfirNamedFunctionSymbol(this@symbol, analysisSession)
         }
 
-    override val org.cangnova.cangjie.psi.CjFunctionLiteral.symbol: org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirAnonymousFunctionSymbol, org.cangnova.cangjie.analysis.api.symbols.CaAnonymousFunctionSymbol>(
-                this@symbol,
-            ) { analysisSession.cfirSymbolBuilder.buildSymbol(it) }
-                ?: error("Cannot build anonymous-function symbol for ${this@symbol::class}")
+    override val CjFunctionLiteral.symbol: CaAnonymousFunctionSymbol
+        get() = withPsiValidityAssertion {
+            CaCfirAnonymousFunctionSymbol(this@symbol, analysisSession)
         }
 
-    override val org.cangnova.cangjie.psi.CjConstructor<*>.symbol: org.cangnova.cangjie.analysis.api.symbols.CaConstructorSymbol
-        get() = withValidityAssertion {
+    override val CjConstructor<*>.symbol: CaConstructorSymbol
+        get() = withPsiValidityAssertion {
             CaCfirConstructorSymbol(this@symbol, analysisSession)
         }
 
-    override val org.cangnova.cangjie.psi.CjMacroDeclaration.symbol: org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirMacroDeclarationSymbol, org.cangnova.cangjie.analysis.api.symbols.CaMacroSymbol>(
-                this@symbol,
-            ) { analysisSession.cfirSymbolBuilder.buildSymbol(it) }
-                ?: error("Cannot build macro symbol for ${this@symbol::class}")
+    override val CjMacroDeclaration.symbol: CaMacroSymbol
+        get() = withPsiValidityAssertion {
+            CaCfirMacroSymbol(this@symbol, analysisSession)
         }
 
-    override val org.cangnova.cangjie.psi.CjFinalizer.symbol: org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirFinalizerSymbol, org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol>(
-                this@symbol,
-            ) { analysisSession.cfirSymbolBuilder.buildSymbol(it) }
-                ?: error("Cannot build finalizer symbol for ${this@symbol::class}")
+    override val CjFinalizer.symbol: CaFinalizerSymbol
+        get() = withPsiValidityAssertion {
+            CaCfirFinalizerSymbol(this@symbol, analysisSession)
         }
 
     override val CjProperty.symbol: CaPropertySymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirPropertySymbol, CaPropertySymbol>(this@symbol) {
-                analysisSession.cfirSymbolBuilder.buildSymbol(it)
+        get() = withPsiValidityAssertion {
+            CaCfirPropertySymbol(this@symbol, analysisSession)
+        }
+
+    override val CjPropertyAccessor.symbol: CaPropertyAccessorSymbol
+        get() = withPsiValidityAssertion {
+            val propertySymbol = property.symbol
+            if (isGetter) {
+                propertySymbol.getter ?: error("Cannot build getter symbol for ${this@symbol::class}")
+            } else {
+                propertySymbol.setter ?: error("Cannot build setter symbol for ${this@symbol::class}")
             }
-                ?: error("Cannot build property symbol for ${this@symbol::class}")
         }
 
-    override val org.cangnova.cangjie.psi.CjPropertyAccessor.symbol: org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirBasedSymbol<*>, org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol>(
-                this@symbol,
-                analysisSession::getPublicSymbol,
-            )
-                ?: error("Cannot build property-accessor symbol for ${this@symbol::class}")
+    override val CjFieldVariable.symbol: CaFieldSymbol
+        get() = withPsiValidityAssertion {
+            CaCfirFieldSymbol(this@symbol, analysisSession)
         }
 
-    override val org.cangnova.cangjie.psi.CjFieldVariable.symbol: org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirFieldVariableSymbol, org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol>(
-                this@symbol,
-            ) { analysisSession.cfirSymbolBuilder.buildSymbol(it) }
-                ?: error("Cannot build field symbol for ${this@symbol::class}")
+    override val CjEnumConstructor.symbol: CaEnumConstructorSymbol
+        get() = withPsiValidityAssertion {
+            CaCfirEnumConstructorSymbol(this@symbol, analysisSession)
         }
 
-    override val org.cangnova.cangjie.psi.CjEnumConstructor.symbol: org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirEnumConstructorSymbol, org.cangnova.cangjie.analysis.api.symbols.CaEnumConstructorSymbol>(
-                this@symbol,
-            ) { analysisSession.cfirSymbolBuilder.buildSymbol(it) }
-                ?: error("Cannot build enum-constructor symbol for ${this@symbol::class}")
+    override val CjPatternVariable.symbol: CaPatternVariableSymbol
+        get() = withPsiValidityAssertion {
+            CaCfirPatternVariableSymbol(this@symbol, analysisSession)
         }
 
-    override val CjPatternVariable.symbol: org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirPatternVariableSymbol, org.cangnova.cangjie.analysis.api.symbols.CaPatternVariableSymbol>(
-                this@symbol,
-            ) { analysisSession.cfirSymbolBuilder.buildSymbol(it) }
-                ?: error("Cannot build pattern-variable symbol for ${this@symbol::class}")
+    override val CjBindingPattern.symbol: CaPatternBindingSymbol
+        get() = withPsiValidityAssertion {
+            CaCfirPatternBindingSymbol(this@symbol, analysisSession)
         }
 
-    override val org.cangnova.cangjie.psi.CjBindingPattern.symbol: org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirPatternBindingSymbol, org.cangnova.cangjie.analysis.api.symbols.CaPatternBindingSymbol>(
-                this@symbol,
-            ) { analysisSession.cfirSymbolBuilder.buildSymbol(it) }
-                ?: error("Cannot build pattern-binding symbol for ${this@symbol::class}")
-        }
-
-    override val CjParameter.symbol: CaVariableSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirValueParameterSymbol, CaVariableSymbol>(this@symbol) {
-                analysisSession.cfirSymbolBuilder.variableBuilder.buildValueParameterSymbol(it)
-            }
-                ?: error("Cannot build variable symbol for ${this@symbol::class}")
+    override val CjExtend.symbol: CaExtendSymbol
+        get() = withPsiValidityAssertion {
+            CaCfirExtendSymbol(this@symbol, analysisSession)
         }
 
     override val CjTypeParameter.symbol: CaTypeParameterSymbol
-        get() = withValidityAssertion {
-            analysisSession.resolvePsiSymbol<CfirTypeParameterSymbol, CaTypeParameterSymbol>(this@symbol) {
-                analysisSession.cfirSymbolBuilder.classifierBuilder.buildTypeParameterSymbol(it)
-            }
-                ?: error("Cannot build type-parameter symbol for ${this@symbol::class}")
+        get() = withPsiValidityAssertion {
+            CaCfirTypeParameterSymbol(this@symbol, analysisSession)
         }
 
     override fun getPackageSymbol(fqName: FqName): CaPackageSymbol? = withValidityAssertion {
@@ -194,12 +168,14 @@ internal class CaCfirSymbolProvider(
     }
 
     override fun getClassSymbol(classId: ClassId): CaClassSymbol? = withValidityAssertion {
-        val symbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirClassSymbol ?: return@withValidityAssertion null
+        val symbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirClassSymbol
+            ?: return@withValidityAssertion null
         analysisSession.cfirSymbolBuilder.classifierBuilder.buildClassSymbol(symbol)
     }
 
     override fun getTypeAliasSymbol(classId: ClassId): CaTypeAliasSymbol? = withValidityAssertion {
-        val symbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirTypeAliasSymbol ?: return@withValidityAssertion null
+        val symbol = analysisSession.cfirSession.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirTypeAliasSymbol
+            ?: return@withValidityAssertion null
         analysisSession.cfirSymbolBuilder.classifierBuilder.buildTypeAliasSymbol(symbol)
     }
 
@@ -228,21 +204,4 @@ internal class CaCfirSymbolProvider(
             ?.map { extend -> analysisSession.cfirSymbolBuilder.buildExtendSymbol(extend.symbol) }
             .orEmpty()
     }
-}
-
-/**
- * 对单个 declaration PSI 做“CFIR 叶子符号 -> public symbol”恢复。
- *
- * 这层是 `CaCfirSymbolProvider` 的私有实现细节：
- * - 先通过 low-level 查询拿到与 PSI 精确关联的 CFIR 符号；
- * - 再走对应的 `create*` 入口恢复 public symbol；
- * - 最后要求结果在该 PSI 叶子上唯一，避免宽松兜底。
- */
-private inline fun <reified C : CfirBasedSymbol<*>, reified S : org.cangnova.cangjie.analysis.api.symbols.CaSymbol> CaCfirSession.resolvePsiSymbol(
-    psi: PsiElement,
-    noinline create: (C) -> org.cangnova.cangjie.analysis.api.symbols.CaSymbol,
-): S? {
-    val declaration = psi as? CjDeclaration ?: return null
-    val symbol = declaration.resolveToCfirSymbolOfTypeSafe<C>(resolutionFacade) ?: return null
-    return create(symbol) as? S
 }

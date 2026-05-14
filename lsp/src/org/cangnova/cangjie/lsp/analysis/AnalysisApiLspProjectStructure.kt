@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.lsp.analysis
 
 import com.intellij.openapi.components.service
@@ -19,16 +21,15 @@ import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.api.projectStructure.CaTargetPlatform
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.state.LspWorkspaceModuleDefinition
@@ -193,8 +194,6 @@ class AnalysisApiLspProjectStructureState(
             ?: error("LSP Analysis API 未能为 `${containingFile.name}` 恢复所属模块，项目结构与快照状态不一致。")
     }
 
-    internal fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope = baseContentScope
-
     internal fun getModuleModificationCount(module: CaModule): Long {
         return moduleModificationCounts[module]?.get() ?: modificationCount
     }
@@ -335,8 +334,9 @@ class AnalysisApiLspProjectStructureState(
     private fun buildDanglingSnapshotEntries(
         openSnapshots: List<OpenDocumentSnapshotEntry>,
     ): List<DanglingSnapshotEntry> {
-        return openSnapshots.map { snapshot ->
+        return openSnapshots.mapNotNull { snapshot ->
             val contextModule = snapshot.normalizedPath?.let(::findWorkspaceModuleForPath)
+                ?: return@mapNotNull null
             DanglingSnapshotEntry(
                 document = snapshot.document,
                 module = CaLspDanglingFileModule(
@@ -462,7 +462,7 @@ internal class CaLspSourceModule(
     override val name: String,
     psiRoots: List<PsiFileSystemItem>,
     private val sourceRootPaths: List<Path>,
-) : CaSourceModule {
+) : CaModuleBase(), CaSourceModule {
     override val languageVersionSettings: LanguageVersionSettings
         get() = LanguageVersionSettings.DEFAULT
 
@@ -470,9 +470,6 @@ internal class CaLspSourceModule(
     override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
     override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
     override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
-
-    override val targetPlatform: CaTargetPlatform
-        get() = CaTargetPlatform.LSP
 
     override val baseContentScope: GlobalSearchScope =
         buildSourceModuleContentScope(project, sourceRootPaths)
@@ -494,9 +491,9 @@ internal class CaLspDanglingFileModule(
     override val project: Project,
     val documentUri: String,
     private val psiFile: CjFile,
-    override val contextModule: CaModule?,
+    override val contextModule: CaModule,
     private val contentVirtualFile: VirtualFile?,
-) : CaDanglingFileModule {
+) : CaModuleBase(), CaDanglingFileModule {
     private val filePointers: List<SmartPsiElementPointer<CjFile>> =
         listOf(SmartPointerManager.getInstance(project).createSmartPsiElementPointer(psiFile))
 
@@ -524,9 +521,6 @@ internal class CaLspDanglingFileModule(
     override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
     override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
     override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
-
-    override val targetPlatform: CaTargetPlatform
-        get() = CaTargetPlatform.LSP
 
     override val baseContentScope: GlobalSearchScope
         get() = GlobalSearchScope.filesWithoutLibrariesScope(
@@ -621,17 +615,6 @@ internal class AnalysisApiLspModuleProvider(
 
     override fun getModuleByStableName(stableModuleName: String): CaModule? {
         return state.getModuleByStableName(stableModuleName)
-    }
-}
-
-internal class AnalysisApiLspContentScopeRefiner(
-    private val project: Project,
-) : CaContentScopeRefiner {
-    private val state: AnalysisApiLspProjectStructureState
-        get() = AnalysisApiLspProjectStructureState.getInstance(project)
-
-    override fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope {
-        return state.getRefinedContentScope(module, baseContentScope)
     }
 }
 

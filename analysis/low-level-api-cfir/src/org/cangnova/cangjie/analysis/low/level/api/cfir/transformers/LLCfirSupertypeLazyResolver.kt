@@ -17,6 +17,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
 import org.cangnova.cangjie.cfir.declarations.resolvePhase
 import org.cangnova.cangjie.cfir.resolve.transformers.runSupertypeResolvePhaseForNonLocalClassLikeDeclaration
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
 internal object LLCfirSupertypeLazyResolver : LLCfirLazyResolver(CfirResolvePhase.SUPER_TYPES) {
     override fun createTargetResolver(target: LLCfirResolveTarget): LLCfirTargetResolver = LLCfirSuperTypeTargetResolver(target)
@@ -43,10 +44,10 @@ internal object LLCfirSupertypeLazyResolver : LLCfirLazyResolver(CfirResolvePhas
 private class LLCfirSuperTypeTargetResolver(
     target: LLCfirResolveTarget,
 ) : LLCfirTargetResolver(target, CfirResolvePhase.SUPER_TYPES) {
-    @Deprecated("Should never be called directly, only for override purposes, please use withClass", level = DeprecationLevel.ERROR)
-    override fun withContainingClass(cfirClass: CfirClass, action: () -> Unit) {
-        if (cfirClass.resolvePhase < resolverPhase) {
-            performResolve(cfirClass)
+    @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
+    override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
+        if (cfirClassLike.resolvePhase < resolverPhase) {
+            doResolveWithoutLock(cfirClassLike)
         }
         action()
     }
@@ -54,30 +55,51 @@ private class LLCfirSuperTypeTargetResolver(
     @Deprecated("Should never be called directly, only for override purposes, please use withExtend", level = DeprecationLevel.ERROR)
     override fun withContainingExtend(cfirExtend: CfirExtend, action: () -> Unit) {
         if (cfirExtend.resolvePhase < resolverPhase) {
-            performResolve(cfirExtend)
+            doResolveWithoutLock(cfirExtend)
         }
         action()
     }
 
-    override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
+    override fun doResolveWithoutLock(target: CfirElementWithResolveState): Boolean {
         when (target) {
             is CfirClassLikeDeclaration -> {
-                target.runSupertypeResolvePhaseForNonLocalClassLikeDeclaration(
-                    session = resolveTargetSession,
-                    scopeSession = resolveTargetScopeSession,
-                    useSiteFile = containingFile(),
-                    containingDeclarations = containingDeclarations,
-                )
+                target.lazyResolveToPhase(resolverPhase.previous)
+                performCustomResolveUnderLock(target) {
+                    target.runSupertypeResolvePhaseForNonLocalClassLikeDeclaration(
+                        session = resolveTargetSession,
+                        scopeSession = resolveTargetScopeSession,
+                        useSiteFile = containingFile(),
+                        containingDeclarations = containingDeclarations,
+                    )
+                }
             }
 
             is CfirExtend -> {
-                target.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
+                target.lazyResolveToPhase(resolverPhase.previous)
+                performCustomResolveUnderLock(target) {
+                    target.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
+                }
             }
 
             is CfirFile -> {
-                // file 自身没有可应用的 supertype 结果，目标声明会单独推进
+                target.lazyResolveToPhase(resolverPhase.previous)
+                performCustomResolveUnderLock(target) {
+                    // file 自身没有可应用的 supertype 结果，目标声明会单独推进
+                }
+            }
+
+            else -> {
+                performCustomResolveUnderLock(target) {
+                    // 对齐 Kotlin：非 class-like target 在 SUPER_TYPES 阶段只需要推进相位。
+                }
             }
         }
+
+        return true
+    }
+
+    override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
+        error("Should be resolved without lock in ${::doResolveWithoutLock.name}")
     }
 
     private fun containingFile(): CfirFile? {

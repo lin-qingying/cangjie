@@ -33,4 +33,8 @@ import com.intellij.psi.stubs.StubElement
 class CangJieCollectionLiteralExpressionStubImpl(
     parent: StubElement<out PsiElement>?,
 ) : CangJieStubBaseImpl<CjCollectionLiteralExpression>(parent, CjStubElementTypes.COLLECTION_LITERAL_EXPRESSION),
-    CangJieCollectionLiteralExpressionStub
+    CangJieCollectionLiteralExpressionStub {
+    override fun copyInto(newParent: StubElement<*>?): CangJieCollectionLiteralExpressionStubImpl = CangJieCollectionLiteralExpressionStubImpl(
+        parent = newParent,
+    )
+}

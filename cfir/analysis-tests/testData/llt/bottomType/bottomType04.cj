@@ -9,20 +9,9 @@
 main(): Int64 {
     while ({
             =>
-            break;
+            <!INVALID_LOOP_CONTROL!>break<!>;
             false
         }()) {
     }
     return 0;
 }
-
-/* SCAN
-error: 'break' or 'continue' must be used inside a loop
-  ==> bottomType04.cj:12:13:
-   | 
-12 |             break;
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

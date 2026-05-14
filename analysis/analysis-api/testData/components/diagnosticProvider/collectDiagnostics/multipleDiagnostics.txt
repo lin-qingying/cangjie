@@ -1,0 +1,7 @@
+Diagnostics from file:
+  for PSI element of type CjNameReferenceExpression at (3,8-13)
+    UNRESOLVED_IMPORT      text ranges: [(35,40)]
+      PSI: CjNameReferenceExpression at (3,8-13)
+  for PSI element of type CjCallExpression at (6,5-18)
+    UNRESOLVED_REFERENCE      text ranges: [(78,89)]
+      PSI: CjCallExpression at (6,5-18)

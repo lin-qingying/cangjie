@@ -12,7 +12,7 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.util.checkReturnTypeRefI
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
+import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -25,6 +25,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitAwareBodyResolveTransformer
 import org.cangnova.cangjie.cfir.resolve.body.CfirImplicitBodyResolveComputationSession
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
+import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 
 /**
  * low-level 的隐式类型阶段解析器。
@@ -48,7 +50,7 @@ internal object LLCfirImplicitTypesLazyResolver : LLCfirLazyResolver(CfirResolve
  */
 internal typealias LLImplicitBodyResolveComputationSession = CfirImplicitBodyResolveComputationSession
 
-private class LLCfirImplicitBodyTargetResolver(
+internal class LLCfirImplicitBodyTargetResolver(
     target: LLCfirResolveTarget,
     llImplicitBodyResolveComputationSessionParameter: LLImplicitBodyResolveComputationSession? = null,
 ) : LLCfirAbstractBodyTargetResolver(
@@ -57,14 +59,29 @@ private class LLCfirImplicitBodyTargetResolver(
     llImplicitBodyResolveComputationSession =
         llImplicitBodyResolveComputationSessionParameter ?: LLImplicitBodyResolveComputationSession(),
 ) {
-    override val transformer = CfirImplicitAwareBodyResolveTransformer(
+    override val transformer = object : CfirImplicitAwareBodyResolveTransformer(
         session = resolveTargetSession,
         scopeSession = resolveTargetScopeSession,
         implicitBodyResolveComputationSession = llImplicitBodyResolveComputationSession,
         phase = resolverPhase,
         implicitTypeOnly = true,
         returnTypeCalculator = createReturnTypeCalculator(),
-    )
+    ) {
+        override val preserveCFGForClasses: Boolean get() = false
+        override val buildCfgForFiles: Boolean get() = false
+    }
+
+    /**
+     * 与 [LLCfirReturnTypeCalculatorWithJump.resolveDeclaration] 保持同步：
+     * jumping resolve 检测到递归时先记录符号，随后由返回类型计算器统一产出递归错误类型。
+     */
+    override fun handleCycleInResolution(target: CfirElementWithResolveState) {
+        requireWithAttachment(target is CfirCallableDeclaration, { "Resolution cycle is supposed to be only for callable declaration" }) {
+            withCfirEntry("target", target)
+        }
+
+        llImplicitBodyResolveComputationSession.pushCycledSymbol((target as CfirCallableDeclaration).symbol)
+    }
 
     override fun doLazyResolveUnderLock(target: CfirElementWithResolveState) {
         when (target) {
@@ -90,7 +107,7 @@ private class LLCfirImplicitBodyTargetResolver(
                 }
             }
 
-            is CfirClass, is CfirExtend, is CfirTypeAlias, is CfirFile, is CfirCodeFragment -> {
+            is CfirClassLikeDeclaration, is CfirExtend, is CfirTypeAlias, is CfirFile, is CfirCodeFragment -> {
                 // 这些声明在仓颉 IMPLICIT_TYPES 阶段无 body 级隐式类型求解入口
             }
 

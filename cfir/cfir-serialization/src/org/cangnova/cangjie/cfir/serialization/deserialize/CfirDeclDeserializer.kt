@@ -4,6 +4,8 @@ import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
+import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.*
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
@@ -17,12 +19,14 @@ import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
@@ -32,6 +36,7 @@ import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.SpecialNames
 
 /**
  * 声明反序列化器：Decl → CfirDeclaration。
@@ -50,9 +55,15 @@ class CfirDeclDeserializer(
         val isRefEnum: Boolean,
     )
 
+    private data class ClassLikeOwnerContext(
+        val classId: ClassId,
+        val typeParameters: List<CfirTypeParameter>,
+    )
+
     private val packageFqName: FqName = FqName(context.header.fullPkgName)
     private val declsUnderDeserialization = HashSet<Int>()
     private val enumOwnerStack = mutableListOf<EnumOwnerContext>()
+    private val classLikeOwnerStack = mutableListOf<ClassLikeOwnerContext>()
     /**
      * 记录“当前正在为哪个声明反序列化子声明”。
      *
@@ -106,26 +117,29 @@ class CfirDeclDeserializer(
     // ---- 属性位域解析 ----
 
     /**
-     * C++ Attribute 枚举位位置（与 AttributePack.h 对应）。
-     * attributes 是 [uint64] 数组，bit N 在 attributes[N/64] 的第 N%64 位。
+     * common-part `.cjo` 的 Decl.attributes 直接序列化自 AST AttributePack。
+     *
+     * 官方 ASTWriter 直接写 `AttributePack.GetRawAttrs()`，
+     * ASTLoader 也按同一组 bitset 原样恢复，因此这里必须使用 AST Attribute 的枚举位，
+     * 不能套用 CHIR 的 `Attribute::VIRTUAL` 等另一套位布局。
      */
     private object AttrBit {
-        const val STATIC = 9
-        const val PUBLIC = 10
-        const val PRIVATE = 11
-        const val PROTECTED = 12
-
-        // EXTERNAL = 13 (不映射到 CFIR)
-        const val INTERNAL = 14
-        const val OVERRIDE = 15
-        const val REDEF = 16
-        const val ABSTRACT = 17
-        const val SEALED = 18
-        const val OPEN = 19
-        const val OPERATOR = 20
-        const val FOREIGN = 21
-        const val UNSAFE = 22
-        const val MUT = 23
+        val STATIC = Attribute.STATIC.ordinal
+        val PUBLIC = Attribute.PUBLIC.ordinal
+        val PRIVATE = Attribute.PRIVATE.ordinal
+        val PROTECTED = Attribute.PROTECTED.ordinal
+        val INTERNAL = Attribute.INTERNAL.ordinal
+        val OVERRIDE = Attribute.OVERRIDE.ordinal
+        val REDEF = Attribute.REDEF.ordinal
+        val ABSTRACT = Attribute.ABSTRACT.ordinal
+        val SEALED = Attribute.SEALED.ordinal
+        val OPEN = Attribute.OPEN.ordinal
+        val OPERATOR = Attribute.OPERATOR.ordinal
+        val FOREIGN = Attribute.FOREIGN.ordinal
+        val UNSAFE = Attribute.UNSAFE.ordinal
+        val MUT = Attribute.MUT.ordinal
+        val PRIMARY_CONSTRUCTOR = Attribute.PRIMARY_CONSTRUCTOR.ordinal
+        val CONSTRUCTOR = Attribute.CONSTRUCTOR.ordinal
         val ENUM_CONSTRUCTOR = Attribute.ENUM_CONSTRUCTOR.ordinal
     }
 
@@ -175,10 +189,17 @@ class CfirDeclDeserializer(
 
     /** 构建 CfirDeclarationStatus */
     private fun buildStatus(decl: Decl): CfirDeclarationStatus {
+        val visibility = resolveVisibility(decl)
+        val modality = resolveModality(decl)
         val status = CfirDeclarationStatusImpl(
-            visibility = resolveVisibility(decl),
-            modality = resolveModality(decl),
+            visibility = visibility,
+            modality = modality,
         )
+        status.isVisibilityExplicit = visibility != Visibilities.Public
+        status.isModalityExplicit = modality != Modality.FINAL
+        status.isAbstract = testAttr(decl, AttrBit.ABSTRACT)
+        status.isOpen = testAttr(decl, AttrBit.OPEN)
+        status.isSealed = testAttr(decl, AttrBit.SEALED)
         status.isStatic = testAttr(decl, AttrBit.STATIC)
         status.isOverride = testAttr(decl, AttrBit.OVERRIDE)
         status.isOperator = testAttr(decl, AttrBit.OPERATOR)
@@ -246,6 +267,18 @@ class CfirDeclDeserializer(
     private val currentEnumOwner: EnumOwnerContext?
         get() = enumOwnerStack.lastOrNull()
 
+    private inline fun <R> withClassLikeOwner(owner: ClassLikeOwnerContext, block: () -> R): R {
+        classLikeOwnerStack += owner
+        return try {
+            block()
+        } finally {
+            classLikeOwnerStack.removeAt(classLikeOwnerStack.lastIndex)
+        }
+    }
+
+    private val currentClassLikeOwner: ClassLikeOwnerContext?
+        get() = classLikeOwnerStack.lastOrNull()
+
     private inline fun <R> withContainingDeclarationSymbol(
         symbol: CfirBasedSymbol<*>,
         block: () -> R,
@@ -271,7 +304,8 @@ class CfirDeclDeserializer(
     /** ClassDecl → CfirClass */
     private fun convertClass(decl: Decl): CfirClass {
         val name = decl.classLikeName()
-        val symbol = CfirClassSymbol(resolveClassId(decl, name))
+        val classId = resolveClassId(decl, name)
+        val symbol = CfirClassSymbol(classId)
         val status = buildStatus(decl).resolvedForStatuslessDeclaration()
         val typeParams = withContainingDeclarationSymbol(symbol) {
             deserializeTypeParameters(decl)
@@ -280,8 +314,10 @@ class CfirDeclDeserializer(
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
         val members = info?.let {
-            withContainingDeclarationSymbol(symbol) {
-                deserializeBody(it::body, it.bodyLength)
+            withClassLikeOwner(ClassLikeOwnerContext(classId, typeParams)) {
+                withContainingDeclarationSymbol(symbol) {
+                    deserializeBody(it::body, it.bodyLength)
+                }
             }
         } ?: mutableListOf()
 
@@ -322,8 +358,10 @@ class CfirDeclDeserializer(
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
         val members = info?.let {
-            withContainingDeclarationSymbol(symbol) {
-                deserializeBody(it::body, it.bodyLength)
+            withClassLikeOwner(ClassLikeOwnerContext(classId, typeParams)) {
+                withContainingDeclarationSymbol(symbol) {
+                    deserializeBody(it::body, it.bodyLength)
+                }
             }
         } ?: mutableListOf()
 
@@ -351,7 +389,8 @@ class CfirDeclDeserializer(
     /** StructDecl → CfirStruct */
     private fun convertStruct(decl: Decl): CfirStruct {
         val name = decl.classLikeName()
-        val symbol = CfirStructSymbol(resolveClassId(decl, name))
+        val classId = resolveClassId(decl, name)
+        val symbol = CfirStructSymbol(classId)
         val status = buildStatus(decl)
         val typeParams = withContainingDeclarationSymbol(symbol) {
             deserializeTypeParameters(decl)
@@ -360,8 +399,10 @@ class CfirDeclDeserializer(
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
         val members = info?.let {
-            withContainingDeclarationSymbol(symbol) {
-                deserializeBody(it::body, it.bodyLength)
+            withClassLikeOwner(ClassLikeOwnerContext(classId, typeParams)) {
+                withContainingDeclarationSymbol(symbol) {
+                    deserializeBody(it::body, it.bodyLength)
+                }
             }
         } ?: mutableListOf()
 
@@ -400,9 +441,11 @@ class CfirDeclDeserializer(
         val superTypeRefs =
             info?.let { deserializeInheritedTypes(it::inheritedTypes, it.inheritedTypesLength) } ?: mutableListOf()
         val members = info?.let {
-            withEnumOwner(EnumOwnerContext(classId, typeParams, isRefEnum)) {
-                withContainingDeclarationSymbol(symbol) {
-                    deserializeBody(it::body, it.bodyLength)
+            withClassLikeOwner(ClassLikeOwnerContext(classId, typeParams)) {
+                withEnumOwner(EnumOwnerContext(classId, typeParams, isRefEnum)) {
+                    withContainingDeclarationSymbol(symbol) {
+                        deserializeBody(it::body, it.bodyLength)
+                    }
                 }
             }
         } ?: mutableListOf()
@@ -431,6 +474,7 @@ class CfirDeclDeserializer(
 
     /** FuncDecl → CfirFunction */
     private fun convertFunctionOrEnumConstructor(decl: Decl): CfirDeclaration {
+        convertConstructorIfNeeded(decl)?.let { return it }
         if (isEnumConstructorDecl(decl)) {
             return convertEnumConstructorFromFunctionDecl(decl)
         }
@@ -482,6 +526,66 @@ class CfirDeclDeserializer(
         symbol.bind(cfirFunc)
         cfirFunc.markResolved()
         return cfirFunc
+    }
+
+    /**
+     * common-part `.cjo` 会把普通构造器序列化成 `FuncDecl`，
+     * 但语义身份仍由 `Attribute.CONSTRUCTOR` / `Attribute.PRIMARY_CONSTRUCTOR` 标注。
+     * 这里必须把 primary/secondary 形态一并恢复，后续作用域、检查器、analysis API 才能看到真实 constructor shape。
+     */
+    private fun convertConstructorIfNeeded(decl: Decl): CfirConstructor? {
+        if (!testAttr(decl, AttrBit.CONSTRUCTOR)) return null
+        val containingClass = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*> ?: return null
+        val isPrimary = testAttr(decl, AttrBit.PRIMARY_CONSTRUCTOR)
+
+        val symbol = CfirConstructorSymbol(CallableId(containingClass.classId, SpecialNames.INIT))
+        val status = buildStatus(decl)
+        val typeParams = withContainingDeclarationSymbol(symbol) {
+            deserializeTypeParameters(decl)
+        }
+        val valueParams = withContainingDeclarationSymbol(symbol) {
+            deserializeFunctionParameters(decl)
+        }
+        val returnTypeRef = buildClassConstructorReturnTypeRef(currentClassLikeOwner)
+
+        val constructor = if (isPrimary) {
+            buildPrimaryConstructor {
+                source = null
+                moduleData = context.moduleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                origin = CfirDeclarationOrigin.Library
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = false
+                deprecationsProvider = EmptyDeprecationsProvider
+                dispatchReceiverType = null
+                this.status = status
+                this.typeParameters.addAll(typeParams)
+                this.returnTypeRef = returnTypeRef
+                this.valueParameters.addAll(valueParams)
+                body = null
+                this.symbol = symbol
+            }
+        } else {
+            buildConstructor {
+                source = null
+                moduleData = context.moduleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                origin = CfirDeclarationOrigin.Library
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = false
+                deprecationsProvider = EmptyDeprecationsProvider
+                dispatchReceiverType = null
+                this.status = status
+                this.typeParameters.addAll(typeParams)
+                this.returnTypeRef = returnTypeRef
+                this.valueParameters.addAll(valueParams)
+                body = null
+                this.symbol = symbol
+            }
+        }
+        symbol.bind(constructor)
+        constructor.markResolved()
+        return constructor
     }
 
     /** PropDecl → CfirProperty */
@@ -996,6 +1100,23 @@ class CfirDeclDeserializer(
                 lookupTag = owner.classId.toLookupTag(),
                 typeArguments = typeArguments,
                 isRefEnum = owner.isRefEnum,
+            )
+        }
+    }
+
+    private fun buildClassConstructorReturnTypeRef(owner: ClassLikeOwnerContext?): CfirTypeRef {
+        owner ?: return buildImplicitTypeRef {
+            customRenderer = false
+        }
+
+        val typeArguments = owner.typeParameters.map { parameter ->
+            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
+        }
+        return buildResolvedTypeRef {
+            customRenderer = false
+            coneType = ConeClassLikeType(
+                lookupTag = owner.classId.toLookupTag(),
+                typeArguments = typeArguments,
             )
         }
     }

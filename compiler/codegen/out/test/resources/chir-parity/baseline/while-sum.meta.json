@@ -1,0 +1,11 @@
+﻿{
+    "source":  "source/while-sum.cj",
+    "sample":  "while-sum",
+    "note":  "while loop with mutable variables",
+    "category":  "loop",
+    "generatedAt":  "2026-03-13T21:36:31+08:00",
+    "baseline":  "baseline/while-sum.chir.json",
+    "target":  "x86_64-w64-mingw32",
+    "compiler":  "Cangjie Compiler 1.0.0 (cjnative)",
+    "officialOutput":  "cpp-baseline/while-sum.llvmir.txt"
+}

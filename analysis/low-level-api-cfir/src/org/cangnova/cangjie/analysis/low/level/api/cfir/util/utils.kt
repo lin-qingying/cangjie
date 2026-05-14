@@ -42,12 +42,12 @@ internal val CfirElement.isErrorElement
 internal val CfirDeclaration.cjDeclaration: CjDeclaration
     get() {
         val psi = psi
-            ?: errorWithCfirSpecificEntries("PSI element was not found", fir = this)
+            ?: errorWithCfirSpecificEntries("PSI element was not found", cfir = this)
         return when (psi) {
             is CjDeclaration -> psi
             else -> errorWithCfirSpecificEntries(
                 "CfirDeclaration.psi (${this::class.simpleName}) should be CjDeclaration but was ${psi::class.simpleName}",
-                fir = this,
+                cfir = this,
                 psi = psi,
             )
         }

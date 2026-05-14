@@ -3,7 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 import org.cangnova.cangjie.analysis.api.cfir.*
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.cfir.symbols.backingPsiIfApplicable
 import org.cangnova.cangjie.analysis.api.components.CaCInteropComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
@@ -65,7 +65,7 @@ internal fun CaCfirSession.getInteropInfo(element: CjElement): CaInteropInfo? {
 
 internal fun CaCfirSession.getInteropInfo(symbol: CaSymbol): CaInteropInfo? {
     val sourcePsi = when (symbol) {
-        is CaCfirBackedSymbol<*> -> symbol.backingSymbol.backingPsiIfApplicable
+        is CaCfirSymbol<*> -> symbol.cfirSymbol.backingPsiIfApplicable
         else -> null
     } ?: return null
     val owner = resolveInteropOwner(sourcePsi as? CjElement ?: return null)

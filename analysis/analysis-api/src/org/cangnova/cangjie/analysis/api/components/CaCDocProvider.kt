@@ -39,6 +39,9 @@ interface CaCDocProvider : CaSessionComponent {
     fun CaDeclarationSymbol.findCDoc(): CDocCommentDescriptor?
 }
 
+/**
+ * 顶层桥接:在当前 [CaSession] 上下文中查找声明对应的 CDoc。
+ */
 @CaNonPublicApi
 @CjNonPublicApi
 context(session: CaSession)
@@ -48,6 +51,9 @@ fun CjDeclaration.findCDoc(): CDocCommentDescriptor? {
     }
 }
 
+/**
+ * 顶层桥接:在当前 [CaSession] 上下文中查找声明 symbol 对应的 CDoc。
+ */
 @CaNonPublicApi
 @CjNonPublicApi
 context(session: CaSession)

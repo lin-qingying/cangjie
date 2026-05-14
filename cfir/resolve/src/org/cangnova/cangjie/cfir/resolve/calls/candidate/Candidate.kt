@@ -430,6 +430,7 @@ class Candidate(
                 isNamed = false
                 dispatchReceiverType = null
                 symbol = parameterSymbol
+                containingDeclarationSymbol = symbol
                 status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
                 returnTypeRef = buildResolvedTypeRef {
                     source = declaration.returnTypeRef.source

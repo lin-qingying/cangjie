@@ -18,7 +18,7 @@ abstract class CfirLazyBlock : CfirBlock() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
-    abstract override val statements: List<CfirElement>
+    abstract override val statements: List<CfirStatement>
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitLazyBlock(this, data)

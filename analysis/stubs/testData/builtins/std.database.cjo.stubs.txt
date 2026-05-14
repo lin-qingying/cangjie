@@ -1,0 +1,9 @@
+CangJieFileStubImpl[File[packageFqName=std.database]]
+  CangJieStub$PACKAGE_DIRECTIVE
+    CangJieStub$DOT_QUALIFIED_EXPRESSION
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=database]
+  CangJieStub$IMPORT_LIST
+    CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std.database]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
+      CangJieStub$REFERENCE_EXPRESSION[referencedName=core]

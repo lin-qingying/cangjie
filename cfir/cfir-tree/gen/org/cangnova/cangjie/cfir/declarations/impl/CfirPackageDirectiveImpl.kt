@@ -17,6 +17,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 class CfirPackageDirectiveImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override val packageFqName: FqName,
+    override val isMacroPackage: Boolean,
 ) : CfirPackageDirective() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {}

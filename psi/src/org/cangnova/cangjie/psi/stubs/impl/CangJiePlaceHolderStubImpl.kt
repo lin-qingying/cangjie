@@ -32,4 +32,9 @@ open class CangJiePlaceHolderStubImpl<T : CjElementImplStub<out StubElement<*>>>
     parent: StubElement<*>?,
     elementType: IStubElementType<*, *>,
 ) :
-    CangJieStubBaseImpl<T>(parent, elementType), CangJiePlaceHolderStub<T>
+    CangJieStubBaseImpl<T>(parent, elementType), CangJiePlaceHolderStub<T> {
+    override fun copyInto(newParent: StubElement<*>?): CangJiePlaceHolderStubImpl<T> = CangJiePlaceHolderStubImpl(
+        parent = newParent,
+        elementType = stubType,
+    )
+}

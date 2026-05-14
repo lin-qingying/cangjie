@@ -1,6 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
 open class Parent {
-    open func present(): Int64 {
+    public open func present(): Int64 {
         return 1
     }
 }

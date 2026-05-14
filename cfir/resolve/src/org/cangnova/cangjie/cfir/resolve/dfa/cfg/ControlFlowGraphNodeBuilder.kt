@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirCatch
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
 import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
 import org.cangnova.cangjie.cfir.expressions.CfirJump
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
@@ -201,6 +202,12 @@ fun ControlFlowGraphBuilder.createCatchClauseEnterNode(fir: CfirCatch): CatchCla
 
 fun ControlFlowGraphBuilder.createCatchClauseExitNode(fir: CfirCatch): CatchClauseExitNode =
     CatchClauseExitNode(currentGraph, fir, levelCounter)
+
+fun ControlFlowGraphBuilder.createHandleClauseEnterNode(fir: CfirHandleClause): HandleClauseEnterNode =
+    HandleClauseEnterNode(currentGraph, fir, levelCounter)
+
+fun ControlFlowGraphBuilder.createHandleClauseExitNode(fir: CfirHandleClause): HandleClauseExitNode =
+    HandleClauseExitNode(currentGraph, fir, levelCounter)
 
 fun ControlFlowGraphBuilder.createFinallyBlockEnterNode(fir: CfirTryExpression): FinallyBlockEnterNode =
     FinallyBlockEnterNode(currentGraph, fir, levelCounter)

@@ -15,7 +15,7 @@ interface I1<T> {
 struct R1<T> <: I1<T> {}
 
 extend<T> R1<T> {
-    public func foo1(a: T): Int64 {
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>foo1<!>(a: T): Int64 {
         return 0
     }
 }
@@ -23,20 +23,3 @@ extend<T> R1<T> {
 main() {
     return -1
 }
-
-/* SCAN
-error: extend member 'foo1' is not allowed to shadow members of 'Struct-R1<Generics-T>'
-  ==> interface_default_implemented_func_generic_invalid_2.cj:18:17:
-   | 
-18 |     public func foo1(a: T): Int64 {
-   |                 ^^^^ 
-   | 
-note: shadowed definition of 'foo1' is here
-  ==> interface_default_implemented_func_generic_invalid_2.cj:10:10:
-   | 
-10 |     func foo1(a: T): Int64 {
-   |          ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

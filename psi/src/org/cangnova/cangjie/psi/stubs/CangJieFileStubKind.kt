@@ -45,11 +45,6 @@ sealed interface CangJieFileStubKind {
         interface File : WithPackage
 
         /**
-         * 脚本文件。
-         */
-        interface Script : WithPackage
-
-        /**
          * Facade 文件类型。
          */
         sealed interface Facade : WithPackage {

@@ -1,2 +1,4 @@
 FILE: subscriptAccess.cj
-    internal? func testSubscript(arr: R|Array<R|Int64|>|): R|Int64|
+    internal? func testSubscript(arr: R|Array<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

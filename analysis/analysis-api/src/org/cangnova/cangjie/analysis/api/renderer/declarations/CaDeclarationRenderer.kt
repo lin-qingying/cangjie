@@ -24,8 +24,9 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callabl
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaFunctionLikeKeywordRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaLocalVariableSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaNamedFunctionSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertyGetterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySymbolRenderer
-import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaScriptSymbolRenderer
+import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaPropertySetterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.callables.CaValueParameterSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaClassLikeSymbolRenderer
 import org.cangnova.cangjie.analysis.api.renderer.declarations.renderers.classifiers.CaExtendSymbolRenderer
@@ -49,14 +50,26 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFieldSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFinalizerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaScriptSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeAliasSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.name
 
+/**
+ * 声明渲染器配置入口。
+ *
+ * - 控制声明(类、函数、属性、字段等)被序列化为字符串时的整体策略;
+ * - 通过子组件(`modifiersRenderer`、`bodyRenderer`、`typeRenderer` 等)实现细粒度定制,
+ *   每种声明 kind 对应一个专属子 renderer;
+ * - 通过 [CaDeclarationRendererForSource] / [CaDeclarationRendererForDebug] 等 object 预设直接复用常用配置;
+ * - 通过 [Builder] / [with] 在已有 preset 基础上派生新的配置。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaDeclarationRenderer`。
+ */
 class CaDeclarationRenderer private constructor(
     val nameRenderer: CaDeclarationNameRenderer,
     val keywordsRenderer: CaKeywordsRenderer,
@@ -90,13 +103,15 @@ class CaDeclarationRenderer private constructor(
     val namedFunctionRenderer: CaNamedFunctionSymbolRenderer,
     val constructorRenderer: CaConstructorSymbolRenderer,
     val propertyRenderer: CaPropertySymbolRenderer,
+    val getterRenderer: CaPropertyGetterSymbolRenderer,
+    val setterRenderer: CaPropertySetterSymbolRenderer,
     val fieldRenderer: CaFieldSymbolRenderer,
     val localVariableRenderer: CaLocalVariableSymbolRenderer,
     val enumConstructorRenderer: CaEnumConstructorSymbolRenderer,
     val valueParameterRenderer: CaValueParameterSymbolRenderer,
     val typeParameterRenderer: CaTypeParameterSymbolRenderer,
-    val scriptRenderer: CaScriptSymbolRenderer,
 ) {
+    /** 将声明 [symbol] 渲染为字符串。 */
     fun renderDeclaration(
         analysisSession: CaSession,
         symbol: CaDeclarationSymbol,
@@ -104,6 +119,11 @@ class CaDeclarationRenderer private constructor(
         renderDeclaration(analysisSession, symbol, this)
     }
 
+    /**
+     * 将声明 [symbol] 渲染到给定的 [printer]。
+     *
+     * 实际渲染按 symbol 的具体 kind 分发到对应的子 renderer。
+     */
     fun renderDeclaration(
         analysisSession: CaSession,
         symbol: CaDeclarationSymbol,
@@ -126,11 +146,12 @@ class CaDeclarationRenderer private constructor(
             is CaAnonymousFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this, printer)
             is CaEnumConstructorSymbol -> enumConstructorRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaPropertySymbol -> propertyRenderer.renderSymbol(analysisSession, symbol, this, printer)
+            is CaPropertyGetterSymbol -> getterRenderer.renderSymbol(analysisSession, symbol, this, printer)
+            is CaPropertySetterSymbol -> setterRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaFieldSymbol -> fieldRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaValueParameterSymbol -> valueParameterRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaVariableSymbol -> localVariableRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaTypeParameterSymbol -> typeParameterRenderer.renderSymbol(analysisSession, symbol, this, printer)
-            is CaScriptSymbol -> scriptRenderer.renderSymbol(analysisSession, symbol, this, printer)
             is CaFunctionSymbol -> functionLikeKeywordRenderer.renderFunctionLike(analysisSession, symbol, "func", this, printer)
             else -> {
                 modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, printer)
@@ -141,6 +162,11 @@ class CaDeclarationRenderer private constructor(
         }
     }
 
+    /**
+     * 基于当前 renderer 派生一个新配置。
+     *
+     * 未在 [action] 中显式覆盖的字段沿用当前实例的设置, 便于在 preset 基础上局部定制。
+     */
     fun with(action: Builder.() -> Unit): CaDeclarationRenderer {
         val current = this
         return Builder().apply {
@@ -176,56 +202,103 @@ class CaDeclarationRenderer private constructor(
             namedFunctionRenderer = current.namedFunctionRenderer
             constructorRenderer = current.constructorRenderer
             propertyRenderer = current.propertyRenderer
+            getterRenderer = current.getterRenderer
+            setterRenderer = current.setterRenderer
             fieldRenderer = current.fieldRenderer
             localVariableRenderer = current.localVariableRenderer
             enumConstructorRenderer = current.enumConstructorRenderer
             valueParameterRenderer = current.valueParameterRenderer
             typeParameterRenderer = current.typeParameterRenderer
-            scriptRenderer = current.scriptRenderer
             action()
         }.build()
     }
 
+    /**
+     * 声明 renderer 构建器, 以 DSL 方式装配各种子组件。
+     *
+     * 所有字段必须在调用 [build] 前赋值, 否则会在使用时抛出 lateinit 异常。
+     */
     class Builder {
+        /** 声明名称渲染策略。 */
         lateinit var nameRenderer: CaDeclarationNameRenderer
+        /** 关键字渲染策略(含过滤)。 */
         lateinit var keywordsRenderer: CaKeywordsRenderer
+        /** 代码风格(缩进、分隔符等)。 */
         lateinit var codeStyle: CaRendererCodeStyle
+        /** 类型渲染策略。 */
         lateinit var typeRenderer: CaTypeRenderer
+        /** 注解渲染策略。 */
         lateinit var annotationRenderer: CaAnnotationRenderer
+        /** 声明修饰符渲染策略。 */
         lateinit var modifiersRenderer: CaDeclarationModifiersRenderer
+        /** 类型近似化策略(用于隐藏内部类型)。 */
         lateinit var declarationTypeApproximator: CaRendererTypeApproximator
+        /** 类/接口/struct/enum 主体(成员)渲染策略。 */
         lateinit var classifierBodyRenderer: CaClassifierBodyRenderer
+        /** 单个超类型渲染策略。 */
         lateinit var superTypeRenderer: CaSuperTypeRenderer
+        /** 超类型列表(继承/实现部分)渲染策略。 */
         lateinit var superTypeListRenderer: CaSuperTypeListRenderer
+        /** 超类型过滤策略(决定哪些需要写出)。 */
         lateinit var superTypesFilter: CaSuperTypesFilter
+        /** 成员作用域提供者(决定渲染哪些成员)。 */
         lateinit var bodyMemberScopeProvider: CaRendererBodyMemberScopeProvider
+        /** 成员排序策略。 */
         lateinit var bodyMemberScopeSorter: CaRendererBodyMemberScopeSorter
+        /** 函数体渲染策略。 */
         lateinit var functionLikeBodyRenderer: CaFunctionLikeBodyRenderer
+        /** 变量初始化器渲染策略。 */
         lateinit var variableInitializerRenderer: CaVariableInitializerRenderer
+        /** 函数参数默认值渲染策略。 */
         lateinit var parameterDefaultValueRenderer: CaParameterDefaultValueRenderer
+        /** 属性 get/set 访问器整体渲染策略。 */
         lateinit var propertyAccessorsRenderer: CaPropertyAccessorsRenderer
+        /** 单个访问器函数体渲染策略。 */
         lateinit var accessorBodyRenderer: CaPropertyAccessorBodyRenderer
+        /** callable 返回类型渲染策略。 */
         lateinit var returnTypeRenderer: CaCallableReturnTypeRenderer
+        /** callable 接收者(`this`/扩展前缀)渲染策略。 */
         lateinit var callableReceiverRenderer: CaCallableReceiverRenderer
+        /** callable 形参列表渲染策略。 */
         lateinit var valueParametersRenderer: CaCallableParameterRenderer
+        /** 类型形参列表渲染策略。 */
         lateinit var typeParametersRenderer: CaTypeParametersRenderer
+        /** 类型形参过滤策略。 */
         lateinit var typeParametersFilter: CaTypeParametersFilter
+        /** callable 整体签名渲染策略。 */
         lateinit var callableSignatureRenderer: CaCallableSignatureRenderer
+        /** callable 返回类型是否输出的过滤策略。 */
         lateinit var returnTypeFilter: CaCallableReturnTypeFilter
+        /** 函数关键字(func/init/finalizer 等)渲染策略。 */
         lateinit var functionLikeKeywordRenderer: CaFunctionLikeKeywordRenderer
+        /** class-like(类/接口/struct/enum)符号渲染策略。 */
         lateinit var classLikeRenderer: CaClassLikeSymbolRenderer
+        /** typealias 符号渲染策略。 */
         lateinit var typeAliasRenderer: CaTypeAliasSymbolRenderer
+        /** extend 块符号渲染策略。 */
         lateinit var extendRenderer: CaExtendSymbolRenderer
+        /** 顶层/成员函数符号渲染策略。 */
         lateinit var namedFunctionRenderer: CaNamedFunctionSymbolRenderer
+        /** 构造器符号渲染策略。 */
         lateinit var constructorRenderer: CaConstructorSymbolRenderer
+        /** 属性符号渲染策略。 */
         lateinit var propertyRenderer: CaPropertySymbolRenderer
+        /** 属性 getter 渲染策略。 */
+        lateinit var getterRenderer: CaPropertyGetterSymbolRenderer
+        /** 属性 setter 渲染策略。 */
+        lateinit var setterRenderer: CaPropertySetterSymbolRenderer
+        /** 字段符号渲染策略。 */
         lateinit var fieldRenderer: CaFieldSymbolRenderer
+        /** 局部变量符号渲染策略。 */
         lateinit var localVariableRenderer: CaLocalVariableSymbolRenderer
+        /** enum 构造子符号渲染策略。 */
         lateinit var enumConstructorRenderer: CaEnumConstructorSymbolRenderer
+        /** 形参符号渲染策略。 */
         lateinit var valueParameterRenderer: CaValueParameterSymbolRenderer
+        /** 类型形参符号渲染策略。 */
         lateinit var typeParameterRenderer: CaTypeParameterSymbolRenderer
-        lateinit var scriptRenderer: CaScriptSymbolRenderer
 
+        /** 构建最终的声明渲染器。 */
         fun build(): CaDeclarationRenderer = CaDeclarationRenderer(
             nameRenderer = nameRenderer,
             keywordsRenderer = keywordsRenderer,
@@ -259,21 +332,24 @@ class CaDeclarationRenderer private constructor(
             namedFunctionRenderer = namedFunctionRenderer,
             constructorRenderer = constructorRenderer,
             propertyRenderer = propertyRenderer,
+            getterRenderer = getterRenderer,
+            setterRenderer = setterRenderer,
             fieldRenderer = fieldRenderer,
             localVariableRenderer = localVariableRenderer,
             enumConstructorRenderer = enumConstructorRenderer,
             valueParameterRenderer = valueParameterRenderer,
             typeParameterRenderer = typeParameterRenderer,
-            scriptRenderer = scriptRenderer,
         )
     }
 
     companion object {
+        /** DSL 入口, 等价于 `Builder().apply(action).build()`。 */
         operator fun invoke(action: Builder.() -> Unit): CaDeclarationRenderer =
             Builder().apply(action).build()
     }
 }
 
+/** 把 [CaClassKind] 映射为仓颉源码中的对应关键字。 */
 private fun CaClassKind.keyword(): String = when (this) {
     CaClassKind.CLASS -> "class"
     CaClassKind.INTERFACE -> "interface"

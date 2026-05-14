@@ -2,15 +2,15 @@ FILE: forWithPatternGuard.cj
     internal? func iterateWithGuards(scoreList: R|Array<R|Int64|>|): R|Unit| {
         FOR_IN(<anonymous>: <implicit>) {
             iterable:
-                QUALIFIED_ACCESS(scoreList)
+                NAMED_ACCESS(scoreList)
             body:
                 local? let high: <implicit> = ...
                     initializer:
-                        QUALIFIED_ACCESS(item)
+                        NAMED_ACCESS(item)
         }
         FOR_IN(<anonymous>: <implicit>) {
             iterable:
-                QUALIFIED_ACCESS(scoreList)
+                NAMED_ACCESS(scoreList)
             body:
                 local? let seen: <implicit> = ...
                     initializer:

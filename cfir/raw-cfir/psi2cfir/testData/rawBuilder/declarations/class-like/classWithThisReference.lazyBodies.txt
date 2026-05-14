@@ -1,6 +1,11 @@
 FILE: classWithThisReference.cj
     internal? class Box {
+        init()
         internal? var value: R|Int64|
-        internal? func getValue(): R|Int64|
-        internal? func setValue(v: R|Int64|): R|Unit|
+        internal? func getValue(): R|Int64| {
+            <element: CfirLazyBlock>
+        }
+        internal? func setValue(v: R|Int64|): R|Unit| {
+            <element: CfirLazyBlock>
+        }
     }

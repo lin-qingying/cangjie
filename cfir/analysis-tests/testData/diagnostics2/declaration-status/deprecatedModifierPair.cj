@@ -1,6 +1,6 @@
 // RUN_PIPELINE_TILL: FRONTEND
-<!DEPRECATED_MODIFIER_PAIR!>abstract<!> <!DEPRECATED_MODIFIER_PAIR!>open<!> class AbstractOpen
+abstract <!REDUNDANT_MODIFIER!>open<!> class AbstractOpen {}
 
-<!DEPRECATED_MODIFIER_PAIR!>sealed<!> <!DEPRECATED_MODIFIER_PAIR!>public<!> class PublicSealed
+sealed <!REDUNDANT_MODIFIER!>public<!> class <!NON_ABSTRACT_CLASS_CANNOT_BE_SEALED!>PublicSealed<!> {}
 
-<!DEPRECATED_MODIFIER_PAIR!>sealed<!> <!DEPRECATED_MODIFIER_PAIR!>open<!> class OpenSealed
+sealed <!REDUNDANT_MODIFIER!>open<!> class <!NON_ABSTRACT_CLASS_CANNOT_BE_SEALED!>OpenSealed<!> {}

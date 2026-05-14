@@ -1,3 +1,5 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 /*
  * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
  * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
@@ -105,7 +107,7 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         val cfirTypeParameterRefOwner = cfirDeclaration as? CfirTypeParameterRefsOwner ?: errorWithCfirSpecificEntries(
             "No cfir found by $owner",
             psi = owner,
-            fir = cfirDeclaration,
+            cfir = cfirDeclaration,
         )
 
         return cfirTypeParameterRefOwner.typeParameters.find { typeParameterRef ->
@@ -119,11 +121,11 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         val cfirFunction = cfirDeclaration as? CfirFunction ?: errorWithCfirSpecificEntries(
             "${CfirFunction::class.simpleName} expected but ${cfirDeclaration::class.simpleName} found",
             psi = ownerDeclaration,
-            fir = cfirDeclaration,
+            cfir = cfirDeclaration,
         )
 
         return cfirFunction.valueParameters.find { cfirElementByPsiElementChooser.isMatchingValueParameter(param, it) }
-            ?: errorWithCfirSpecificEntries("No cfir value parameter found", psi = param, fir = cfirFunction)
+            ?: errorWithCfirSpecificEntries("No cfir value parameter found", psi = param, cfir = cfirFunction)
     }
 
     private fun findNonLocalClassLikeDeclaration(declaration: CjClassLikeDeclaration): CfirClassLikeDeclaration {
@@ -171,7 +173,7 @@ internal class CfirDeclarationForCompiledElementSearcher(private val session: LL
         val constructorCandidate = containingCfirClass.declarations
             .filterIsInstance<CfirConstructor>()
             .singleOrNull { cfirElementByPsiElementChooser.isMatchingCallableDeclaration(declaration, it) }
-            ?: errorWithCfirSpecificEntries("We should be able to find a constructor", psi = declaration, fir = containingCfirClass)
+            ?: errorWithCfirSpecificEntries("We should be able to find a constructor", psi = declaration, cfir = containingCfirClass)
 
         return constructorCandidate
     }

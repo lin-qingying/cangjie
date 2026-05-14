@@ -7,6 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
 
 
 import org.cangnova.cangjie.psi.*
+import org.cangnova.cangjie.psi.psiUtil.containingClass
 import org.cangnova.cangjie.psi.psiUtil.parentOfType
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
@@ -19,13 +20,13 @@ internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (el
     is CjFunctionLiteral -> false
     is CjTypeParameter -> elementCanBeLazilyResolved(element.parentOfType<CjNamedDeclaration>(withSelf = false))
     is CjFile -> element !is CjCodeFragment
-    is CjParameter -> elementCanBeLazilyResolved(element.ownerFunction)
+    is CjParameter -> elementCanBeLazilyResolved(element.ownerDeclaration)
     // 仓颉 low-level 主干不承载 Kotlin FIR 的 enum entry / dangling modifier list 形态。
     // 这里仅保留真实存在的可调用声明入口，避免把不存在的 declaration shape 带入 designation/file-structure 主流程。
     is CjCallableDeclaration -> {
         val parentToCheck = when (val parent = element.parent) {
             is CjTypeStatement, is CjFile -> parent
-            is CjClassBody -> parent.parent as? CjTypeStatement
+            is CjAbstractClassBody -> parent.containingClass
             else -> null
         }
 

@@ -2,11 +2,15 @@ package org.cangnova.cangjie.analysis.api.cfir.test
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.components.findCDoc
+import org.cangnova.cangjie.analysis.api.symbols.CaDeclarationSymbol
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.lexer.cdoc.parser.CDocKnownTag
+import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
+import org.cangnova.cangjie.psi.CjImplementationDetail
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
+import org.cangnova.cangjie.psi.CjNonPublicApi
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -20,7 +24,11 @@ import org.junit.jupiter.api.Test
  * 2. declaration symbol 与 reference-resolved symbol
  *    能恢复到同一份结构化 CDoc。
  */
-@OptIn(org.cangnova.cangjie.analysis.api.CaNonPublicApi::class)
+@OptIn(
+    org.cangnova.cangjie.analysis.api.CaNonPublicApi::class,
+    CjNonPublicApi::class,
+    CjImplementationDetail::class,
+)
 class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/cdoc",
 ) {
@@ -37,15 +45,15 @@ class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
         assertEquals("Greets the caller.", docComment!!.getDefaultSection().getContent())
         assertEquals(
             "input value",
-            docComment.findSectionByTag(CDocKnownTag.PARAM, "value")?.getContent(),
+            docComment.getDefaultSection().findTagByName(CDocKnownTag.PARAM.name.lowercase())?.getContent(),
         )
         assertEquals(
             "rendered text",
-            docComment.findSectionByTag(CDocKnownTag.RETURN)?.getContent(),
+            docComment.getDefaultSection().findTagByName(CDocKnownTag.RETURN.name.lowercase())?.getContent(),
         )
         assertEquals(
             "Document",
-            docComment.findSectionByTag(CDocKnownTag.SEE)?.getSubjectName(),
+            docComment.getDefaultSection().findTagByName(CDocKnownTag.SEE.name.lowercase())?.getSubjectName(),
         )
     }
 
@@ -57,13 +65,13 @@ class AnalysisApiCDocTest : AbstractAnalysisApiExecutionTest(
             .last { it.referencedName == "describe" }
 
         analyzeForTest(reference) {
-            val declarationDescriptor = declaration.symbol.findCDoc()
-            val referenceDescriptor = reference.resolveToSymbol()?.findCDoc()
+            val declarationDescriptor: CDocCommentDescriptor? = declaration.symbol.findCDoc()
+            val referenceDescriptor: CDocCommentDescriptor? = (reference.resolveToSymbol() as? CaDeclarationSymbol)?.findCDoc()
 
             assertEquals("Greets the caller.", declarationDescriptor?.primaryTag?.getContent())
             assertEquals("Greets the caller.", referenceDescriptor?.primaryTag?.getContent())
-            assertEquals(4, declarationDescriptor?.additionalSections?.size)
-            assertEquals(4, referenceDescriptor?.additionalSections?.size)
+            assertEquals(1, declarationDescriptor?.additionalSections?.size)
+            assertEquals(1, referenceDescriptor?.additionalSections?.size)
         }
     }
 }

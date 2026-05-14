@@ -10,6 +10,7 @@ package org.cangnova.cangjie.cfir.expressions.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
@@ -21,6 +22,7 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
+    override val resources: MutableList<CfirFieldVariable>,
     override var tryBlock: CfirBlock,
     override val handlers: MutableList<CfirHandleClause>,
     override val catches: MutableList<CfirCatch>,
@@ -29,6 +31,7 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
+        resources.forEach { it.accept(visitor, data) }
         tryBlock.accept(visitor, data)
         handlers.forEach { it.accept(visitor, data) }
         catches.forEach { it.accept(visitor, data) }
@@ -37,6 +40,7 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
         transformAnnotations(transformer, data)
+        transformResources(transformer, data)
         transformTryBlock(transformer, data)
         transformHandlers(transformer, data)
         transformCatches(transformer, data)
@@ -46,6 +50,11 @@ class CfirTryExpressionImpl @CfirImplementationDetail constructor(
 
     override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
         annotations.transformInplace(transformer, data)
+        return this
+    }
+
+    override fun <D> transformResources(transformer: CfirTransformer<D>, data: D): CfirTryExpressionImpl {
+        resources.transformInplace(transformer, data)
         return this
     }
 

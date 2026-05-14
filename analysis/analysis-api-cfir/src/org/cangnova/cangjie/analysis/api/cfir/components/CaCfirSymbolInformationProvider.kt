@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.components.CaSymbolInformationProvider
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 
 /**
  * CFIR symbol 元信息组件。

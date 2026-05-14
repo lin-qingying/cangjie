@@ -1,6 +1,27 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 /*
- * Copyright 2010-2024 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
  */
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.api
@@ -27,6 +48,7 @@ import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
@@ -128,49 +150,57 @@ class LLResolutionFacade internal constructor(
     }
 
     private fun findSourceCfirSymbol(cjDeclaration: CjDeclaration): CfirBasedSymbol<*> {
-        val targetDeclaration = cjDeclaration.originalDeclaration ?: cjDeclaration
-        val targetModule = getModule(targetDeclaration)
+        val targetModule = getModule(cjDeclaration)
 
         require(getModuleResolutionStrategy(targetModule) == LLModuleResolutionStrategy.LAZY) {
             "Declaration should be resolvable module, instead it had ${targetModule::class}"
         }
 
         // All elements inside a code fragment are local
-        val nonLocalContainer = targetDeclaration.containingCjFile as? CjCodeFragment
-            ?: targetDeclaration.getNonLocalContainingOrThisElement()
+        val nonLocalContainer = cjDeclaration.containingCjFile as? CjCodeFragment
+            ?: cjDeclaration.getNonLocalContainingOrThisElement()
             ?: errorWithAttachment("Declaration should have non-local container") {
-                withPsiEntry("cjDeclaration", targetDeclaration, ::getModule)
+                withPsiEntry("ktDeclaration", cjDeclaration, ::getModule)
                 withEntry("module", targetModule) { it.moduleDescription }
             }
 
-        val cfirDeclaration = if ((nonLocalContainer as? CjDeclaration) == targetDeclaration) {
+        val cfirDeclaration = if ((nonLocalContainer as? CjDeclaration) == cjDeclaration) {
             val session = sessionProvider.getResolvableSession(targetModule)
             nonLocalContainer.findSourceNonLocalCfirDeclaration(
                 cfirFileBuilder = session.moduleComponents.cfirFileBuilder,
                 provider = session.cfirProvider,
             )
         } else {
-            findSourceCfirDeclarationViaResolve(targetDeclaration)
+            findSourceCfirDeclarationViaResolve(cjDeclaration)
         }
 
         return cfirDeclaration.symbol
     }
 
-    /**
-     * 对齐 Kotlin LL FIR：局部声明统一先经 `getOrBuildCfirFor()` 恢复。
-     *
-     * 对匿名函数字面量，CFIR 暴露的是表达式壳节点，因此需要回到其中承载的
-     * `CfirAnonymousFunction` 声明；其余普通声明则直接接受 `CfirDeclaration`。
-     */
-    private fun findSourceCfirDeclarationViaResolve(cjDeclaration: CjDeclaration): CfirDeclaration {
-        return when (val cfir = getOrBuildCfirFor(cjDeclaration)) {
+    private fun findSourceCfirDeclarationViaResolve(cjDeclaration: CjExpression): CfirDeclaration {
+        val targetExpression = cjDeclaration.unwrapForCfirLookup()
+        return when (val cfir = getOrBuildCfirFor(targetExpression)) {
             is CfirDeclaration -> cfir
             is CfirAnonymousFunctionExpression -> cfir.anonymousFunction
             else -> errorWithCfirSpecificEntries(
                 "CfirDeclaration was not found for declaration ${cjDeclaration::class}, cfir is ${cfir?.let { it::class }}",
-                fir = cfir,
+                cfir = cfir,
                 psi = cjDeclaration,
             )
+        }
+    }
+
+    /**
+     * 仓颉 lambda 的语法节点是 `CjFunctionLiteral`，但对应 CFIR 锚点是外层 `CjLambdaExpression`。
+     *
+     * 因此在“声明经由表达式回找 CFIR”这条 low-level 路径上，需要先把 function-literal 提升到
+     * 真正承载 `CfirAnonymousFunctionExpression` 的 PSI，再复用和 Kotlin 相同的
+     * `AnonymousFunctionExpression -> anonymousFunction` 恢复链。
+     */
+    private fun CjExpression.unwrapForCfirLookup(): CjExpression {
+        return when (this) {
+            is CjFunctionLiteral -> (parent as? CjLambdaExpression)?.unwrapForCfirLookup() ?: this
+            else -> this
         }
     }
 

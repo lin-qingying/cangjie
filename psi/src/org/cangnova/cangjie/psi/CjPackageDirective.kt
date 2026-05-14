@@ -124,12 +124,7 @@ class CjPackageDirective : CjDeclarationStub<CangJiePackageDirectiveStub> {
     }
 
     val isMacroPackage: Boolean
-        get() = //        try {
-
-            findChildByType<PsiElement>(CjTokens.MACRO_KEYWORD) != null
-    //        } catch (Exception e) {
-//            return false;
-//        }
+        get() = stub?.isMacroPackage ?: (findChildByType<PsiElement>(CjTokens.MACRO_KEYWORD) != null)
 
     val nameAsName: Name
         get() {

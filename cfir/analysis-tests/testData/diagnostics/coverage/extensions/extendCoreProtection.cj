@@ -2,4 +2,4 @@
 class Host {}
 
 extend Host <: <!EXTEND_INTERFACE_NOT_EXTENDABLE!>Any<!> {}
-extend Host <: <!EXTEND_INTERFACE_NOT_EXTENDABLE!>CType<!> {}
+extend Host <: <!CANNOT_INHERIT_SEALED, EXTEND_INTERFACE_NOT_EXTENDABLE!>CType<!> {}

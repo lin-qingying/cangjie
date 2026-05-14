@@ -1,2 +1,2 @@
 // RUN_PIPELINE_TILL: FRONTEND
-<!DEPRECATED_MODIFIER_FOR_TARGET!>open<!> interface Marker {}
+<!REDUNDANT_MODIFIER_FOR_TARGET!>open<!> interface Marker {}

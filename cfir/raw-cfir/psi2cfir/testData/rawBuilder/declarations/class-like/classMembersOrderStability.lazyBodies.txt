@@ -1,8 +1,14 @@
 FILE: classMembersOrderStability.cj
     internal? class MembersOrder {
-        internal? func before(): R|Unit|
+        internal? func before(): R|Unit| {
+            <element: CfirLazyBlock>
+        }
         internal? var x: R|Int64|
-        init()
+        init() {
+            <element: CfirLazyBlock>
+        }
         internal? let name: R|String|
-        internal? func after(): R|Unit|
+        internal? func after(): R|Unit| {
+            <element: CfirLazyBlock>
+        }
     }

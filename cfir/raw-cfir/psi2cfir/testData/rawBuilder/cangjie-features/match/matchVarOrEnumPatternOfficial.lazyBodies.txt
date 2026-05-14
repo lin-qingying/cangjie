@@ -3,4 +3,6 @@ FILE: matchVarOrEnumPatternOfficial.cj
         Some(R|T|)
         init()
     }
-    internal? func matchOption(value: R|Option<R|Int64|>|): R|Int64|
+    internal? func matchOption(value: R|Option<R|Int64|>|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

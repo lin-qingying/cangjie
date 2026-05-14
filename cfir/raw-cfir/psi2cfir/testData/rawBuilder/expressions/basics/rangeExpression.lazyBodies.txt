@@ -1,2 +1,4 @@
 FILE: rangeExpression.cj
-    internal? func testRange(): R|Unit|
+    internal? func testRange(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

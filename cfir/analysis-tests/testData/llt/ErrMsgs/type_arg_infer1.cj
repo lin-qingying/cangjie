@@ -6,12 +6,9 @@
 
 // ERRCHECK: %compiler %cmp_opt --diagnostic-format json %f -o %output
 
-// ASSERT: scan sema_unable_to_infer_generic_func
-// ASSERT: scan no information known for type variable 'Generics-T'
-
 // test err msg for no info
 func f<T>() {}
 
 main() {
-    f()
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f()<!>
 }

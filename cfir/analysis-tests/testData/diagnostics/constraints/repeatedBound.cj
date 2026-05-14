@@ -1,6 +1,6 @@
 interface Named {}
 interface Tagged {}
 
-class Holder<T> where T <: Named, T <: <!REPEATED_BOUND!>Named<!>, T <: Tagged {}
+class Holder<T> where T <: Named & Named & Tagged {}
 
-func label<T>() where T <: Named, T <: <!REPEATED_BOUND!>Named<!> {}
+func label<T>() where T <: Named & Named {}

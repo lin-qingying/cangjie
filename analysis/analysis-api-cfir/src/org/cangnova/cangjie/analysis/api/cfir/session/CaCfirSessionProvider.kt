@@ -1,16 +1,22 @@
 package org.cangnova.cangjie.analysis.api.cfir.session
 
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.impl.base.sessions.CaBaseSessionProvider
+import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
+import org.cangnova.cangjie.analysis.api.platform.KotlinAnalysisInWriteActionListener
+import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.LLCfirDeclarationModificationService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLResolutionFacadeService
+import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSessionInvalidationListener
 import org.cangnova.cangjie.psi.CjElement
 import java.util.concurrent.ConcurrentHashMap
 
@@ -45,6 +51,7 @@ class CaCfirSessionProvider(
 
     override fun getAnalysisSession(useSiteModule: CaModule): CaSession {
         ProgressManager.checkCanceled()
+        flushDeferredModificationsIfInsideWriteAction()
 
         val session = cache.getOrPut(useSiteModule) {
             createAnalysisSession(useSiteModule)
@@ -52,6 +59,32 @@ class CaCfirSessionProvider(
 
         checkSessionValidity(session)
         return session
+    }
+
+    override fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement) {
+        super.beforeEnteringAnalysis(session, useSiteElement)
+        publishEnteringAnalysisInWriteActionIfNeeded()
+    }
+
+    override fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule) {
+        super.beforeEnteringAnalysis(session, useSiteModule)
+        publishEnteringAnalysisInWriteActionIfNeeded()
+    }
+
+    override fun afterLeavingAnalysis(session: CaSession, useSiteElement: CjElement) {
+        try {
+            super.afterLeavingAnalysis(session, useSiteElement)
+        } finally {
+            publishAfterLeavingAnalysisInWriteActionIfNeeded()
+        }
+    }
+
+    override fun afterLeavingAnalysis(session: CaSession, useSiteModule: CaModule) {
+        try {
+            super.afterLeavingAnalysis(session, useSiteModule)
+        } finally {
+            publishAfterLeavingAnalysisInWriteActionIfNeeded()
+        }
     }
 
     override fun invalidate(modules: Set<CaModule>) {
@@ -117,10 +150,57 @@ class CaCfirSessionProvider(
     }
 
     /**
+     * 对齐 Kotlin `KaFirSessionProvider`：
+     * 当分析发生在写动作中时，必须先把 low-level CFIR 延迟失效队列冲刷到当前时刻，
+     * 否则本轮分析仍会读取编辑前的 file-structure / diagnostics 快照。
+     */
+    @OptIn(LLCfirInternals::class)
+    private fun flushDeferredModificationsIfInsideWriteAction() {
+        if (!ApplicationManager.getApplication().isWriteAccessAllowed) return
+        LLCfirDeclarationModificationService.getInstance(project).flushDeferredModifications()
+    }
+
+    @OptIn(CaPlatformInterface::class)
+    private fun publishEnteringAnalysisInWriteActionIfNeeded() {
+        if (!isAnalysisInWriteAction()) return
+        project.analysisMessageBus.syncPublisher(KotlinAnalysisInWriteActionListener.TOPIC).onEnteringAnalysisInWriteAction()
+    }
+
+    @OptIn(CaPlatformInterface::class)
+    private fun publishAfterLeavingAnalysisInWriteActionIfNeeded() {
+        if (!isAnalysisInWriteAction()) return
+        project.analysisMessageBus.syncPublisher(KotlinAnalysisInWriteActionListener.TOPIC).afterLeavingAnalysisInWriteAction()
+    }
+
+    private fun isAnalysisInWriteAction(): Boolean {
+        return ApplicationManager.getApplication().isWriteAccessAllowed &&
+                CaAnalysisPermissionRegistry.getInstance().isAnalysisAllowedInWriteAction
+    }
+
+    /**
      * 元素到 use-site module 的恢复必须始终走平台 project-structure 服务，
      * 保证 CFIR session provider 与平台模块图使用同一份结构事实。
      */
     private fun resolveUseSiteModule(useSiteElement: CjElement): CaModule {
         return projectStructureProvider.getModule(useSiteElement, useSiteModule = null)
+    }
+
+    /**
+     * 与 Kotlin `KaFirSessionProvider.SessionInvalidationListener` 对齐：
+     * low-level CFIR session 失效后，analysis session cache 必须同步逐出对应条目，
+     * 否则下一次 analysis 仍可能从 provider cache 取回已失效 token 的旧 session。
+     */
+    internal class SessionInvalidationListener(private val project: Project) : LLCfirSessionInvalidationListener {
+        private val analysisSessionProvider: CaCfirSessionProvider
+            get() = getInstance(project) as? CaCfirSessionProvider
+                ?: error("Expected the analysis session provider to be a `${CaCfirSessionProvider::class.simpleName}`.")
+
+        override fun afterInvalidation(modules: Set<CaModule>) {
+            analysisSessionProvider.invalidate(modules)
+        }
+
+        override fun afterGlobalInvalidation() {
+            analysisSessionProvider.clearCaches()
+        }
     }
 }

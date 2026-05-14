@@ -13,9 +13,9 @@ import stdx.effect.Command
 class GoodCommand <: Command<Int64> {}
 
 func mismatchHandleBlock(): (Int64, Bool) {
-    return <!MISMATCHING_HANDLE_BLOCK!>try {
+    return try {
         (1, true)
-    } <!MISMATCHING_HANDLE_BLOCK!>handle (cmd: GoodCommand) {
+    } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         1
-    }<!><!>
+    }<!>
 }

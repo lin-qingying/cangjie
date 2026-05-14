@@ -14,7 +14,7 @@ internal func dependencyInternalGreeting(): Int64 {
 // VISIBILITY_TARGET_KIND: TOP_LEVEL_FUNCTION
 // EXPECTED_SYMBOL_VISIBILITY: INTERNAL
 // EXPECTED_VISIBILITY_EXPLICIT: true
-// EXPECTED_IS_VISIBLE: false
+// EXPECTED_IS_VISIBLE: true
 package sample.visibility.multimodule
 
 func consume(): Int64 {

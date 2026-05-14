@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.containingDeclarationProvider
 
-import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.analysis.api.components.containingDeclaration
+import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceTestUtils.findUsageSimpleName
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiContainingDeclarationTestDirectives
@@ -47,6 +48,7 @@ abstract class AbstractContainingDeclarationProviderByReferenceTest : AbstractAn
         }
     }
 
+    context(_: CaSession)
     private fun render(symbol: CaSymbol): String {
         val rendered = when (symbol) {
             is CaCallableSymbol -> {

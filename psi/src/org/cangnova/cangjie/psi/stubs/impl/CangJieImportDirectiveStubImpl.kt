@@ -44,4 +44,10 @@ class CangJieImportDirectiveStubImpl(
     override fun getImportItems(): List<CangJieImportDirectiveStub.ImportItemInfo> {
         return importItems
     }
+
+    override fun copyInto(newParent: StubElement<*>?): CangJieImportDirectiveStubImpl = CangJieImportDirectiveStubImpl(
+        parent = requireNotNull(newParent),
+        packageFqName = packageFqName,
+        importItems = importItems,
+    )
 }

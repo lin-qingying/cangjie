@@ -4,4 +4,4 @@ package=std.objectpool
 topLevelClassifiers=[ObjectPool]
 topLevelCallables=[]
 classMembers=
-  std.objectpool.ObjectPool=[get, init, newFunc, pool, put, resetFunc]
+  std.objectpool.ObjectPool=[ObjectPool, get, newFunc, pool, put, resetFunc]

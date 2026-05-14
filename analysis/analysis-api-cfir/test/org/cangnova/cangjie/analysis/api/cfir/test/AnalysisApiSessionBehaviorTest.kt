@@ -14,7 +14,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjBindingPattern
 import org.cangnova.cangjie.psi.CjExtend
@@ -63,7 +63,7 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertNotNull(restoredSymbol, "Symbol pointer restore across analyze boundary failed.")
             assertEquals("greet", restoredSymbol!!.name?.asString())
 
-            val restoredPsi = restoredSymbol.getOriginalPsi() as? CjNamedDeclaration
+            val restoredPsi = restoredSymbol.psi as? CjNamedDeclaration
             assertNotNull(restoredPsi, "Restored symbol should point back to original PSI.")
             assertEquals("greet", restoredPsi!!.name)
         }
@@ -82,7 +82,7 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertNotNull(resolvedSymbol, "Top-level pattern binding should resolve to an independent symbol.")
             pointer = resolvedSymbol!!.createPointer()
 
-            val originalPsi = resolvedSymbol.getOriginalPsi() as? CjBindingPattern
+            val originalPsi = resolvedSymbol.psi as? CjBindingPattern
             assertNotNull(originalPsi, "Top-level pattern binding should point back to binding pattern PSI.")
             assertEquals("topLeft", originalPsi!!.name)
         }
@@ -91,7 +91,7 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             val restoredSymbol = restoreSymbol(pointer)
             assertNotNull(restoredSymbol, "Top-level pattern binding pointer restore failed.")
 
-            val restoredPsi = restoredSymbol!!.getOriginalPsi() as? CjBindingPattern
+            val restoredPsi = restoredSymbol!!.psi as? CjBindingPattern
             assertNotNull(restoredPsi, "Restored top-level pattern binding should point back to binding pattern PSI.")
             assertEquals("topLeft", restoredPsi!!.name)
         }
@@ -111,8 +111,8 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertNotNull(rightSymbol, "Destructuring right should resolve to an independent binding symbol.")
             assertNotSame(leftSymbol, rightSymbol, "Different bindings should not share the same symbol.")
 
-            val leftPsi = leftSymbol!!.getOriginalPsi() as? CjBindingPattern
-            val rightPsi = rightSymbol!!.getOriginalPsi() as? CjBindingPattern
+            val leftPsi = leftSymbol!!.psi as? CjBindingPattern
+            val rightPsi = rightSymbol!!.psi as? CjBindingPattern
             assertNotNull(leftPsi, "Left binding should point back to binding pattern PSI.")
             assertNotNull(rightPsi, "Right binding should point back to binding pattern PSI.")
             assertEquals("left", leftPsi!!.name)
@@ -136,8 +136,8 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertNotNull(secondSymbol, "Second match-branch reference should resolve to a binding symbol.")
             assertNotSame(firstSymbol, secondSymbol, "Bindings from different match branches must stay distinct.")
 
-            val firstPsi = firstSymbol!!.getOriginalPsi().asPatternBindingDeclarationPsi()
-            val secondPsi = secondSymbol!!.getOriginalPsi().asPatternBindingDeclarationPsi()
+            val firstPsi = firstSymbol!!.psi.asPatternBindingDeclarationPsi()
+            val secondPsi = secondSymbol!!.psi.asPatternBindingDeclarationPsi()
             assertNotNull(firstPsi, "First match-branch binding should point back to pattern declaration PSI.")
             assertNotNull(secondPsi, "Second match-branch binding should point back to pattern declaration PSI.")
             assertNotSame(firstPsi, secondPsi, "Different branches must point to different pattern declaration PSI.")
@@ -159,7 +159,7 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertEquals(CaSymbolOrigin.SOURCE, extendSymbol.origin)
             assertEquals(CaSymbolLocation.TOP_LEVEL, extendSymbol.location)
 
-            val originalPsi = extendSymbol.getOriginalPsi() as? CjExtend
+            val originalPsi = extendSymbol.psi as? CjExtend
             assertNotNull(originalPsi, "Extend symbol should restore to extend PSI.")
             assertEquals(extendDeclaration.getExtendId(), originalPsi!!.getExtendId())
 
@@ -176,7 +176,7 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertEquals(CaSymbolOrigin.SOURCE, restoredSymbol!!.origin)
             assertEquals(CaSymbolLocation.TOP_LEVEL, restoredSymbol.location)
 
-            val restoredPsi = restoredSymbol.getOriginalPsi() as? CjExtend
+            val restoredPsi = restoredSymbol.psi as? CjExtend
             assertNotNull(restoredPsi, "Restored extend symbol should point to extend PSI.")
             assertEquals(extendDeclaration.getExtendId(), restoredPsi!!.getExtendId())
         }
@@ -208,8 +208,8 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertEquals("value", setterSymbol.parameter.name.asString())
             assertEquals(setterSymbol, setterSymbol.parameter.containingDeclaration)
 
-            val originalGetterPsi = getterSymbol.getOriginalPsi() as? CjPropertyAccessor
-            val originalSetterPsi = setterSymbol.getOriginalPsi() as? CjPropertyAccessor
+            val originalGetterPsi = getterSymbol.psi as? CjPropertyAccessor
+            val originalSetterPsi = setterSymbol.psi as? CjPropertyAccessor
             assertNotNull(originalGetterPsi, "Getter symbol should restore to getter accessor PSI.")
             assertNotNull(originalSetterPsi, "Setter symbol should restore to setter accessor PSI.")
             assertTrue(originalGetterPsi!!.isGetter)
@@ -224,8 +224,8 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertEquals("state", restoredGetter!!.owningProperty.name.asString())
             assertEquals("state", restoredSetter!!.owningProperty.name.asString())
             assertEquals("value", restoredSetter.parameter.name.asString())
-            assertTrue((restoredGetter.getOriginalPsi() as? CjPropertyAccessor)?.isGetter == true)
-            assertTrue((restoredSetter.getOriginalPsi() as? CjPropertyAccessor)?.isSetter == true)
+            assertTrue((restoredGetter.psi as? CjPropertyAccessor)?.isGetter == true)
+            assertTrue((restoredSetter.psi as? CjPropertyAccessor)?.isSetter == true)
         }
     }
 
@@ -248,7 +248,7 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertNotNull(containingDeclaration, "Anonymous function should belong to the outer named function.")
             assertEquals("runLambda", containingDeclaration!!.name.asString())
 
-            val originalPsi = anonymousSymbol.getOriginalPsi() as? CjFunctionLiteral
+            val originalPsi = anonymousSymbol.psi as? CjFunctionLiteral
             assertNotNull(originalPsi, "Anonymous function symbol should restore to function literal PSI.")
             assertEquals(functionLiteral.text, originalPsi!!.text)
         }
@@ -259,7 +259,7 @@ class AnalysisApiSessionBehaviorTest : AbstractAnalysisApiExecutionTest(
             assertEquals(CaSymbolLocation.LOCAL, restoredSymbol!!.location)
             assertEquals("input", restoredSymbol.valueParameters.single().name.asString())
 
-            val restoredPsi = restoredSymbol.getOriginalPsi() as? CjFunctionLiteral
+            val restoredPsi = restoredSymbol.psi as? CjFunctionLiteral
             assertNotNull(restoredPsi, "Restored anonymous function symbol should point to function literal PSI.")
             assertEquals(functionLiteral.text, restoredPsi!!.text)
         }
@@ -293,5 +293,5 @@ private fun Any?.asPatternBindingDeclarationPsi(): PsiNameIdentifierOwner? {
 }
 
 private fun org.cangnova.cangjie.analysis.api.scopes.CaScope.callableSymbol(name: String): CaSymbol {
-    return getCallableSymbols(Name.identifier(name)).single()
+    return callables(Name.identifier(name)).single()
 }

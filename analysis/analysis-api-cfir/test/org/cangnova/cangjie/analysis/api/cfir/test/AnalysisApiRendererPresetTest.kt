@@ -5,21 +5,16 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclaratio
 import org.cangnova.cangjie.analysis.api.renderer.declarations.impl.CaDeclarationRendererForSource
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForDebug
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
+import org.cangnova.cangjie.analysis.api.standalone.cfir.test.configurators.CaCfirStandaloneAnalysisApiTestConfigurator
 import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.types.CaPrimitiveType
 import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfigurator
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestConfiguratorFactoryData
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisSessionMode
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.CaCfirAnalysisApiTestConfiguratorFactory
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.FrontendKind
-import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
@@ -41,15 +36,7 @@ import org.junit.jupiter.api.Test
 class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
     "analysis/analysis-api-cfir/testData/rendererPresets",
 ) {
-    override val configurator: AnalysisApiTestConfigurator =
-        CaCfirAnalysisApiTestConfiguratorFactory.createConfigurator(
-            AnalysisApiTestConfiguratorFactoryData(
-                frontend = FrontendKind.Cfir,
-                moduleKind = TestModuleKind.Source,
-                analysisSessionMode = AnalysisSessionMode.Normal,
-                analysisApiMode = AnalysisApiMode.Standalone,
-            ),
-        )
+    override val configurator = CaCfirStandaloneAnalysisApiTestConfigurator
 
     @Test
     fun presetRendering(mainFile: CjFile, mainModule: CjTestModule) {
@@ -94,7 +81,7 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
             assertTrue(enumWithMembers.startsWith("enum Result {"))
             assertTrue(enumWithMembers.contains("Error(String)"))
             assertTrue(enumWithMembers.contains("Ok(Int64)"))
-            assertTrue(enumWithMembers.contains("func code(): Int64"))
+            assertTrue(enumWithMembers.contains("func code(): Int64"), enumWithMembers)
             assertTrue(
                 enumWithMembers.indexOf("Error(String)") < enumWithMembers.indexOf("func code(): Int64"),
                 "枚举构造器应排在普通成员之前。actual=$enumWithMembers",
@@ -181,9 +168,11 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
                 "property accessor placeholder preset 应输出 setter 占位体。",
             )
 
-            val userType = buildClassLikeType(userSymbol)
-            val baseType = buildClassLikeType(baseSymbol)
-            val boxOfUserType = buildClassLikeType(boxSymbol, listOf(userType))
+            val userType = buildClassType(userSymbol)
+            val baseType = buildClassType(baseSymbol)
+            val boxOfUserType = buildClassType(boxSymbol) {
+                argument(userType)
+            }
             val tupleType = buildTupleType(listOf(userType, baseType))
             val intersectionType = buildIntersectionType(listOf(userType, baseType))
             val unionType = buildUnionType(listOf(userType, baseType))
@@ -230,7 +219,7 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
             )
 
             val unitType = sideEffectSymbol.returnType
-            val boolType = sideEffectSymbol.valueParameters.single().returnType
+            val boolType = (sideEffectSymbol as CaFunctionSymbol).valueParameters.single().returnType
             val intType = intValueSymbol.returnType
             val floatType = floatValueSymbol.returnType
 
@@ -252,17 +241,17 @@ class AnalysisApiRendererPresetTest : AbstractAnalysisApiExecutionTest(
     }
 
     private fun org.cangnova.cangjie.analysis.api.scopes.CaScope.classifierSymbol(name: String): CaClassLikeSymbol {
-        return getClassifierSymbols(Name.identifier(name))
+        return classifiers(Name.identifier(name))
             .filterIsInstance<CaClassLikeSymbol>()
             .single()
     }
 
     private fun org.cangnova.cangjie.analysis.api.scopes.CaScope.callableSymbol(name: String): CaCallableSymbol {
-        return getCallableSymbols(Name.identifier(name)).single()
+        return callables(Name.identifier(name)).single()
     }
 
     private fun org.cangnova.cangjie.analysis.api.scopes.CaScope.propertySymbol(name: String): CaPropertySymbol {
-        return getCallableSymbols(Name.identifier(name))
+        return callables(Name.identifier(name))
             .filterIsInstance<CaPropertySymbol>()
             .single()
     }

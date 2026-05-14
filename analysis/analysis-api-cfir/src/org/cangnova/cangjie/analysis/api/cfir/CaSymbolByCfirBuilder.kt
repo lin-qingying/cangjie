@@ -50,6 +50,7 @@ import org.cangnova.cangjie.analysis.api.symbols.CaFileSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPackageSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaPropertyAccessorSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
@@ -89,6 +90,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirMainFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
@@ -128,6 +130,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
+import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
 /**
  * 对齐 Kotlin `CaSymbolByCfirBuilder` 的 CFIR public symbol builder。
@@ -187,11 +190,11 @@ companion object{
 
     fun buildExtendSymbol(symbol: CfirExtendSymbol): CaExtendSymbol {
         val identity = analysisSession.resolveExtendIdentity(symbol)
-        return CaCfirExtendSymbol(
-            backingSymbol = symbol,
-            extendPsi = identity.extendPsi,
-            stableIdentity = identity.stableIdentity,
-            stableExtendId = identity.extendId,
+            return CaCfirExtendSymbol(
+                backingSymbol = symbol,
+                extendPsi = identity.extendPsi,
+                stableIdentity = identity.stableIdentity,
+                stableExtendId = identity.extendId,
             extendPackageFqName = identity.packageFqName,
             analysisSession = analysisSession,
         )
@@ -241,7 +244,7 @@ companion object{
             if (cfirSymbol.dispatchReceiverType?.contains { it is ConeStubType } == true) {
                 return buildNamedFunctionSymbol(
                     cfirSymbol.originalIfFakeOverride()
-                        ?: errorWithCfirSpecificEntries("Stub type in real declaration", fir = cfirSymbol.cfir)
+                        ?: errorWithCfirSpecificEntries("Stub type in real declaration", cfir = cfirSymbol.cfir)
                 )
             }
 
@@ -250,23 +253,48 @@ companion object{
             return CaCfirNamedFunctionSymbol(cfirSymbol, analysisSession)
         }
 
+        fun buildPropertyAccessorSymbol(cfirSymbol: CfirPropertyAccessorSymbol): CaPropertyAccessorSymbol {
+            val propertySymbol = variableBuilder.buildVariableSymbol(cfirSymbol.propertySymbol)
+            requireWithAttachment(
+                propertySymbol is CaPropertySymbol,
+                { "Unexpected property symbol type: ${propertySymbol::class.simpleName}" },
+            ) {
+                withCfirSymbolEntry("propertySymbol", cfirSymbol.propertySymbol)
+            }
+
+            val accessorSymbol = if (cfirSymbol.isGetter) {
+                propertySymbol.getter
+            } else {
+                propertySymbol.setter
+            }
+            requireWithAttachment(
+                accessorSymbol != null,
+                { "Inconsistent state: property accessor is null while property symbol is not null" },
+            ) {
+                withCfirSymbolEntry("propertySymbol", cfirSymbol.propertySymbol)
+            }
+
+            return accessorSymbol
+        }
+
         fun buildPropertyAccessorSymbol(
             backingSymbol: CfirCallableSymbol<*>,
             ownerSymbol: CaPropertySymbol,
             kind: CaCfirPropertyAccessorKind,
         ): CaSymbol = when (kind) {
             CaCfirPropertyAccessorKind.GETTER ->
-                CaCfirPropertyGetterSymbol(backingSymbol, analysisSession, useSiteModule, analysisSession.token)
+                CaCfirPropertyGetterSymbol(ownerSymbol)
 
             CaCfirPropertyAccessorKind.SETTER ->
-                CaCfirPropertySetterSymbol(backingSymbol, analysisSession, useSiteModule, analysisSession.token)
+                CaCfirPropertySetterSymbol(ownerSymbol)
         }
 
         fun buildFunctionSymbol(symbol: CfirCallableSymbol<*>): CaFunctionSymbol = when (symbol) {
-            is CfirAnonymousFunctionSymbol -> CaCfirAnonymousFunctionSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirAnonymousFunctionSymbol -> CaCfirAnonymousFunctionSymbol(symbol, analysisSession)
             is CfirMainFunctionSymbol -> CaCfirMainFunctionSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirMacroDeclarationSymbol -> CaCfirMacroSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirFinalizerSymbol -> CaCfirFinalizerSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirMacroDeclarationSymbol -> CaCfirMacroSymbol(symbol, analysisSession)
+            is CfirFinalizerSymbol -> CaCfirFinalizerSymbol(symbol, analysisSession)
+            is CfirPropertyAccessorSymbol -> buildPropertyAccessorSymbol(symbol)
             is CfirConstructorSymbol -> CaCfirConstructorSymbol(symbol, analysisSession)
             is CfirNamedFunctionSymbol -> CaCfirNamedFunctionSymbol(symbol, analysisSession)
             else -> error("Unsupported function public symbol mapping for `${symbol::class.simpleName}`")
@@ -348,9 +376,9 @@ companion object{
     inner class VariableSymbolBuilder {
         fun buildVariableSymbol(symbol: CfirCallableSymbol<*>): CaVariableSymbol = when (symbol) {
             is CfirPropertySymbol -> CaCfirPropertySymbol(symbol, analysisSession)
-            is CfirFieldVariableSymbol -> CaCfirFieldSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirPatternVariableSymbol -> CaCfirPatternVariableSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
-            is CfirPatternBindingSymbol -> CaCfirPatternBindingSymbol(symbol, analysisSession, useSiteModule, analysisSession.token)
+            is CfirFieldVariableSymbol -> CaCfirFieldSymbol(symbol, analysisSession)
+            is CfirPatternVariableSymbol -> CaCfirPatternVariableSymbol(symbol, analysisSession)
+            is CfirPatternBindingSymbol -> CaCfirPatternBindingSymbol(symbol, analysisSession)
             is CfirValueParameterSymbol -> buildValueParameterSymbol(symbol)
             else -> error("Unsupported variable public symbol mapping for `${symbol::class.simpleName}`")
         }
@@ -412,6 +440,8 @@ companion object{
     inner class CallableSymbolBuilder {
         fun buildCallableSymbol(cfirSymbol: CfirCallableSymbol<*>): CaCallableSymbol = when (cfirSymbol) {
             is CfirFunctionSymbol<*> -> functionBuilder.buildFunctionSymbol(cfirSymbol)
+            is CfirEnumConstructorSymbol -> CaCfirEnumConstructorSymbol(cfirSymbol, analysisSession)
+            is CfirPropertySymbol -> variableBuilder.buildVariableSymbol(cfirSymbol)
             is CfirVariableSymbol<*> -> variableBuilder.buildVariableSymbol(cfirSymbol)
             else -> throwUnexpectedElementError(cfirSymbol)
         }

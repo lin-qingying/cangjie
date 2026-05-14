@@ -1,12 +1,24 @@
+@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+
 package org.cangnova.cangjie.analysis.api.standalone.session
 
+import com.intellij.mock.MockApplication
+import com.intellij.mock.MockProject
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
+import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
+import org.cangnova.cangjie.analysis.api.platform.lifetime.CaAlwaysAccessibleLifetimeTokenFactory
+import org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory
+import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionOptions
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
+import org.cangnova.cangjie.analysis.api.standalone.base.permissions.CaStandaloneAnalysisPermissionOptions
 import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformState
+import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatformSettings
+import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiSimpleServiceRegistrar
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneProjectStructure
 import org.cangnova.cangjie.analysis.internal.projectStructure.collectReachableModules
 import org.cangnova.cangjie.psi.CjElement
@@ -201,5 +213,28 @@ class CaStandaloneAnalysisContext(
      */
     fun invalidateAll() {
         projectStructure.invalidate(allModules.toSet())
+    }
+}
+
+/**
+ * 注册 standalone 生产态与 standalone 测试共用的宿主服务。
+ *
+ * 对齐 Kotlin `StandaloneSessionServiceRegistrar` 的文件内归属：
+ * - 应用级注册 standalone 权限选项；
+ * - 项目级注册 always-accessible lifetime token factory 与 standalone platform settings。
+ */
+internal object CaStandaloneSessionServiceRegistrar : AnalysisApiSimpleServiceRegistrar() {
+    override fun registerApplicationServices(application: MockApplication) {
+        application.apply {
+            registerService(CaAnalysisPermissionOptions::class.java, CaStandaloneAnalysisPermissionOptions::class.java)
+        }
+    }
+
+    @OptIn(CaPlatformInterface::class)
+    override fun registerProjectServices(project: MockProject) {
+        project.apply {
+            registerService(CaLifetimeTokenFactory::class.java, CaAlwaysAccessibleLifetimeTokenFactory::class.java)
+            registerService(CaPlatformSettings::class.java, CaStandalonePlatformSettings::class.java)
+        }
     }
 }

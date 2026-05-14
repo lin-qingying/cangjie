@@ -1,12 +1,12 @@
 package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.findPsi
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirExtendSymbolPointer
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.symbols.CaAnnotatedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaExtendSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolOrigin
@@ -22,25 +22,65 @@ import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.psi.CjExtend
 
 /**
  * extend 叶子实现。
  *
  * 这是仓颉特有公开语义，保留该差异，但组织方式改为 Kotlin 风格的单叶子单文件。
  */
-internal class CaCfirExtendSymbol(
-    override val backingSymbol: CfirExtendSymbol,
-    internal val extendPsi: org.cangnova.cangjie.psi.CjExtend?,
-    internal val stableIdentity: CaCfirExtendSymbolIdentity,
-    private val stableExtendId: String,
-    internal val extendPackageFqName: FqName,
+internal class CaCfirExtendSymbol private constructor(
+    override val backingPsi: CjExtend?,
     override val analysisSession: CaCfirSession,
-) : CaCfirSymbol<CfirExtendSymbol>,
-    CaCfirBackedSymbol<CfirExtendSymbol>,
+    override val lazyCfirSymbol: Lazy<CfirExtendSymbol>,
+    private val explicitIdentity: CaCfirExtendSymbolIdentity?,
+    private val explicitExtendId: String?,
+    private val explicitPackageFqName: FqName?,
+) : CaCfirCjBasedSymbol<CjExtend, CfirExtendSymbol>,
     CaExtendSymbol,
     CaTypeParameterOwnerSymbol {
+    constructor(declaration: CjExtend, session: CaCfirSession) : this(
+        backingPsi = declaration,
+        analysisSession = session,
+        lazyCfirSymbol = lazyCfirSymbol(declaration, session),
+        explicitIdentity = null,
+        explicitExtendId = null,
+        explicitPackageFqName = null,
+    )
+
+    constructor(
+        backingSymbol: CfirExtendSymbol,
+        extendPsi: CjExtend?,
+        stableIdentity: CaCfirExtendSymbolIdentity,
+        stableExtendId: String,
+        extendPackageFqName: FqName,
+        analysisSession: CaCfirSession,
+    ) : this(
+        backingPsi = extendPsi ?: backingSymbol.backingPsiIfApplicable as? CjExtend,
+        analysisSession = analysisSession,
+        lazyCfirSymbol = lazyOf(backingSymbol),
+        explicitIdentity = stableIdentity,
+        explicitExtendId = stableExtendId,
+        explicitPackageFqName = extendPackageFqName,
+    )
+
+    override val cfirSymbol: CfirExtendSymbol
+        get() = super<CaCfirCjBasedSymbol>.cfirSymbol
+
+    private val resolvedIdentity: CaCfirResolvedExtendIdentity
+        get() = analysisSession.resolveExtendIdentity(cfirSymbol)
+
+    internal val stableIdentity: CaCfirExtendSymbolIdentity
+        get() = explicitIdentity ?: resolvedIdentity.stableIdentity
+
+    private val stableExtendId: String
+        get() = explicitExtendId ?: resolvedIdentity.extendId
+
+    internal val extendPackageFqName: FqName
+        get() = explicitPackageFqName ?: resolvedIdentity.packageFqName
+
     private val extendDeclaration: CfirExtend
-        get() = backingSymbol.cfir
+        get() = cfirSymbol.cfir
 
     private val status
         get() = (extendDeclaration as? CfirMemberDeclaration)?.status
@@ -50,14 +90,14 @@ internal class CaCfirExtendSymbol(
 
     override val annotations: CaAnnotationList
         get() = withValidityAssertion {
-            CaCfirAnnotationListForDeclaration.create(backingSymbol, builder)
+            psiOrSymbolAnnotationList()
         }
 
     override val psi
-        get() = extendPsi ?: backingSymbol.backingPsiIfApplicable
+        get() = withValidityAssertion { backingPsi ?: findPsi() }
 
     override val origin: CaSymbolOrigin
-        get() = backingSymbol.origin.asPublicOrigin()
+        get() = withValidityAssertion { psiOrSymbolOrigin() }
 
     override val extendId: String
         get() = stableExtendId
@@ -90,10 +130,10 @@ internal class CaCfirExtendSymbol(
     override val location: CaSymbolLocation
         get() = CaSymbolLocation.TOP_LEVEL
 
-    override val containingDeclaration: CaSymbol?
-        get() = analysisSession.findContainingDeclarationSymbol(extendPsi ?: psi)
-
     override fun createPointer(): CaSymbolPointer<CaAnnotatedSymbol> = withValidityAssertion {
         CaCfirExtendSymbolPointer(CaCfirExtendSymbolCacheKey(stableIdentity))
     }
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }

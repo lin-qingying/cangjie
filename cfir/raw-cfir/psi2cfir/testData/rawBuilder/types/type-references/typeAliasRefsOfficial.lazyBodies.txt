@@ -1,6 +1,9 @@
 FILE: typeAliasRefsOfficial.cj
     internal? typealias AA = R|Int64|
+    internal? typealias MaybeInt = R|Option<R|Int64|>|
+    internal? typealias NestedMaybeInt = R|Option<R|Option<R|Int64|>|>|
     internal? typealias HH = R|() -> R|Unit||
     internal? typealias JJ = R|(R|Int64|, R|Int64|)|
     internal? typealias KK = R|(R|Array<R|Int64|>|) -> R|Unit||
-    internal? typealias Fixed = R|VArray<R|String|, $4>|
+    internal? typealias OptionalMapper = R|(R|Option<R|Int64|>|) -> R|Option<R|String|>||
+    internal? typealias Fixed = R|VArray<R|String|, 4>|

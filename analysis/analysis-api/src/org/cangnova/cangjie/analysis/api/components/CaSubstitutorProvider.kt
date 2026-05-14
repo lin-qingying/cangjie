@@ -20,6 +20,11 @@ import org.cangnova.cangjie.analysis.api.types.CaType
  * 3. builder 负责聚合 substitutions，provider 负责把公开映射解释成真正的 substitutor。
  */
 interface CaSubstitutorProvider : CaLifetimeOwner {
+    /**
+     * 根据 "类型参数 symbol -> 类型实参" 的映射创建一个 [CaSubstitutor]。
+     *
+     * 推荐使用 [buildSubstitutor] DSL 构造,而非直接组装 map。
+     */
     fun createSubstitutor(mappings: Map<CaTypeParameterSymbol, CaType>): CaSubstitutor
 }
 
@@ -70,6 +75,9 @@ inline fun CaSession.buildSubstitutor(
     return createSubstitutor(CaSubstitutorBuilder(token).apply(build).mappings)
 }
 
+/**
+ * 顶层桥接:在 context [CaSession] 下基于 builder DSL 构造 substitutor。
+ */
 context(session: CaSession)
 @OptIn(ExperimentalContracts::class)
 inline fun buildSubstitutor(
@@ -81,6 +89,9 @@ inline fun buildSubstitutor(
     return session.buildSubstitutor(build)
 }
 
+/**
+ * 顶层桥接:在 context [CaSession] 下,根据已组装好的 [mappings] 直接创建 substitutor。
+ */
 context(session: CaSession)
 fun createSubstitutor(mappings: Map<CaTypeParameterSymbol, CaType>): CaSubstitutor {
     return with(session) {

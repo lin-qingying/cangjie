@@ -1,8 +1,13 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentClassifier
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
@@ -12,6 +17,7 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
@@ -36,7 +42,7 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
         val access = lValue as? CfirQualifiedAccessExpression ?: return
         val source = access.calleeReference.source ?: access.source ?: expression.source ?: return
 
-        when (val target = access.assignmentTarget()) {
+        when (val target = access.assignmentTarget(expression)) {
             is AssignmentTarget.ImmutableValue -> {
                 reporter.reportOn(
                     source = source,
@@ -58,12 +64,26 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
         }
     }
 
-    private fun CfirQualifiedAccessExpression.assignmentTarget(): AssignmentTarget? {
+    context(context: CheckerContext)
+    private fun CfirQualifiedAccessExpression.assignmentTarget(assignment: CfirAssignment): AssignmentTarget? {
         val resolvedSymbol = resolvedAssignableSymbolOrNull()
         return when (resolvedSymbol) {
+            is CfirFieldVariableSymbol -> {
+                val field = resolvedSymbol.takeIf { it.isBound }?.cfir
+                if (field != null && isImmutableFieldAssignmentForbidden(field)) {
+                    AssignmentTarget.ImmutableValue
+                } else {
+                    AssignmentTarget.Assignable
+                }
+            }
+
             is CfirVariableSymbol<*> -> {
                 val variable = resolvedSymbol.takeIf { it.isBound }?.cfir
-                if (variable != null && !variable.isVar) AssignmentTarget.ImmutableValue else AssignmentTarget.Assignable
+                if (variable != null && isImmutableVariableAssignmentForbidden(variable, assignment)) {
+                    AssignmentTarget.ImmutableValue
+                } else {
+                    AssignmentTarget.Assignable
+                }
             }
 
             is CfirPropertySymbol -> {
@@ -88,6 +108,26 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
 
     private fun CfirQualifiedAccessExpression.referenceNameOrFallback(): Name {
         return (calleeReference as? CfirNamedReference)?.name ?: Name.ERROR_NAME
+    }
+
+    context(context: CheckerContext)
+    private fun CfirQualifiedAccessExpression.isImmutableFieldAssignmentForbidden(field: CfirFieldVariable): Boolean {
+        if (field.isVar) return false
+        val inConstructor = context.findClosestDeclaration<CfirConstructor>() != null
+        if (!inConstructor) return true
+        return field.initializer != null
+    }
+
+    context(context: CheckerContext)
+    private fun isImmutableVariableAssignmentForbidden(
+        variable: CfirVariable,
+        assignment: CfirAssignment,
+    ): Boolean {
+        if (variable.isVar) return false
+        if (variable.isLocal && variable.initializer == null) {
+            return !CfirInitializationAssignmentClassifier.isInitializationAssignment(assignment, context)
+        }
+        return true
     }
 
     private sealed interface AssignmentTarget {

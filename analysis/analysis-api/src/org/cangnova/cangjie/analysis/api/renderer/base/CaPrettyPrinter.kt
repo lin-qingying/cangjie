@@ -181,7 +181,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * // }
      * ```
      */
-    public inline fun withIndentInBraces(block: PrettyPrinter.() -> Unit) {
+    inline fun withIndentInBraces(block: PrettyPrinter.() -> Unit) {
         withIndentWrapped(before = "{", after = "}", block)
     }
 
@@ -205,7 +205,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * // ]
      * ```
      */
-    public inline fun withIndentInSquareBrackets(block: PrettyPrinter.() -> Unit) {
+    inline fun withIndentInSquareBrackets(block: PrettyPrinter.() -> Unit) {
         withIndentWrapped(before = "[", after = "]", block)
     }
 
@@ -216,7 +216,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * @param before 包裹开始符号，如 `"{"`、`"("`
      * @param after  包裹结束符号，如 `"}"`、`")"`
      */
-    public inline fun withIndentWrapped(before: String, after: String, block: PrettyPrinter.() -> Unit) {
+    inline fun withIndentWrapped(before: String, after: String, block: PrettyPrinter.() -> Unit) {
         append(before)
         appendLine()
         withIndent(block)
@@ -246,7 +246,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * @param postfix    整体后缀，默认空字符串
      * @param renderItem 单个元素的渲染逻辑
      */
-    public inline fun <T> printCollection(
+    inline fun <T> printCollection(
         collection: Iterable<T>,
         separator: String = ", ",
         prefix: String = "",
@@ -280,7 +280,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * // 无参数时输出：List
      * ```
      */
-    public inline fun <T> printCollectionIfNotEmpty(
+    inline fun <T> printCollectionIfNotEmpty(
         collection: Iterable<T>,
         separator: String = ", ",
         prefix: String = "",
@@ -304,7 +304,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * }
      * ```
      */
-    public fun printCharIfNotThere(char: Char) {
+    fun printCharIfNotThere(char: Char) {
         if (builder.lastOrNull() != char) {
             append(char)
         }
@@ -341,7 +341,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * @return `true` 表示 [render] 有输出；`false` 表示无任何输出
      */
     @OptIn(ExperimentalContracts::class)
-    public inline fun checkIfPrinted(render: () -> Unit): Boolean {
+    inline fun checkIfPrinted(render: () -> Unit): Boolean {
         contract { callsInPlace(render, InvocationKind.EXACTLY_ONCE) }
         val initialSize = builder.length
         render()
@@ -359,7 +359,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * }
      * ```
      */
-    public inline operator fun invoke(print: PrettyPrinter.() -> Unit) {
+    inline operator fun invoke(print: PrettyPrinter.() -> Unit) {
         this.print()
     }
 
@@ -381,7 +381,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * ```
      */
     @OptIn(ExperimentalContracts::class)
-    public inline fun String.separated(p1: () -> Unit, p2: () -> Unit) {
+    inline fun String.separated(p1: () -> Unit, p2: () -> Unit) {
         contract {
             callsInPlace(p1, InvocationKind.EXACTLY_ONCE)
             callsInPlace(p2, InvocationKind.EXACTLY_ONCE)
@@ -396,7 +396,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
 
     /** [String.separated] 的三元素版本，依次渲染 [p1]、[p2]、[p3]，各部分间按需插入分隔符 */
     @OptIn(ExperimentalContracts::class)
-    public inline fun String.separated(p1: () -> Unit, p2: () -> Unit, p3: () -> Unit) {
+    inline fun String.separated(p1: () -> Unit, p2: () -> Unit, p3: () -> Unit) {
         contract {
             callsInPlace(p1, InvocationKind.EXACTLY_ONCE)
             callsInPlace(p2, InvocationKind.EXACTLY_ONCE)
@@ -407,7 +407,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
 
     /** [String.separated] 的四元素版本 */
     @OptIn(ExperimentalContracts::class)
-    public inline fun String.separated(p1: () -> Unit, p2: () -> Unit, p3: () -> Unit, p4: () -> Unit) {
+    inline fun String.separated(p1: () -> Unit, p2: () -> Unit, p3: () -> Unit, p4: () -> Unit) {
         contract {
             callsInPlace(p1, InvocationKind.EXACTLY_ONCE)
             callsInPlace(p2, InvocationKind.EXACTLY_ONCE)
@@ -419,7 +419,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
 
     /** [String.separated] 的五元素版本 */
     @OptIn(ExperimentalContracts::class)
-    public inline fun String.separated(p1: () -> Unit, p2: () -> Unit, p3: () -> Unit, p4: () -> Unit, p5: () -> Unit) {
+    inline fun String.separated(p1: () -> Unit, p2: () -> Unit, p3: () -> Unit, p4: () -> Unit, p5: () -> Unit) {
         contract {
             callsInPlace(p1, InvocationKind.EXACTLY_ONCE)
             callsInPlace(p2, InvocationKind.EXACTLY_ONCE)
@@ -448,7 +448,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * @param print  实际打印内容的 lambda
      */
     @OptIn(ExperimentalContracts::class)
-    public inline fun withPrefix(prefix: String, print: () -> Unit) {
+    inline fun withPrefix(prefix: String, print: () -> Unit) {
         contract {
             callsInPlace(print, InvocationKind.EXACTLY_ONCE)
         }
@@ -477,7 +477,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
      * }
      * ```
      */
-    public inline fun withSuffix(suffix: String, p1: () -> Unit) {
+    inline fun withSuffix(suffix: String, p1: () -> Unit) {
         checkIfPrinted { p1() }.ifTrue { append(suffix) }
     }
 }
@@ -498,7 +498,7 @@ class PrettyPrinter(val indentSize: Int = 2) : Appendable {
  * }
  * ```
  */
-public inline fun prettyPrint(body: PrettyPrinter.() -> Unit): String =
+inline fun prettyPrint(body: PrettyPrinter.() -> Unit): String =
     PrettyPrinter().apply(body).toString()
 
 /**
@@ -516,7 +516,7 @@ public inline fun prettyPrint(body: PrettyPrinter.() -> Unit): String =
  * ```
  */
 @OptIn(ExperimentalContracts::class)
-public inline fun prettyPrintWithSettingsFrom(other: PrettyPrinter, body: PrettyPrinter.() -> Unit): String {
+inline fun prettyPrintWithSettingsFrom(other: PrettyPrinter, body: PrettyPrinter.() -> Unit): String {
     contract {
         callsInPlace(body, InvocationKind.EXACTLY_ONCE)
     }

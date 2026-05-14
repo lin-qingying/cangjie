@@ -14,42 +14,46 @@ import org.cangnova.cangjie.name.FqName
  */
 interface CaDefaultImports  {
     /**
-     * A list of [ImportPath] with [CaDefaultImportPriority] that represents a list of imports which are implicitly present
-     * by default in every file.
+     * 当前会话所适用的默认 import 列表(每项携带优先级)。
      *
-     * Some of these imports are star imports, and from them, we exclude some specific paths. This information is present in [excludedFromDefaultImports].
+     * 其中部分可能是 star import,需结合 [excludedFromDefaultImports] 排除特定路径。
      */
-    public val defaultImports: List<CaDefaultImport>
+    val defaultImports: List<CaDefaultImport>
 
     /**
-     * A list of non-star import paths that are excluded from some star default imports provided by [defaultImports].
+     * 应从 [defaultImports] 中的 star import 内排除的具体路径(非 star import 路径)。
      */
-    public val excludedFromDefaultImports: List<ImportPath>
+    val excludedFromDefaultImports: List<ImportPath>
 }
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaDefaultImport {
+interface CaDefaultImport {
     /**
-     * The path that is imported by default.
+     * 该默认 import 实际指向的导入路径。
      *
-     * It may be a star import if [ImportPath.isAllUnder] is `true`, or a non-star import if `false`.
+     * 当 [ImportPath.isAllUnder] 为 `true` 时表示 star import,否则为单符号 import。
      */
-    public val importPath: ImportPath
+    val importPath: ImportPath
 
     /**
-     * Represents the priority of the current default import.
+     * 当前默认 import 的优先级。
+     *
+     * 命名冲突时,优先级高的胜出。
      *
      * @see [CaDefaultImportPriority]
      */
     @OptIn(CaIdeApi::class)
-    public val priority: CaDefaultImportPriority
+    val priority: CaDefaultImportPriority
 }
 /**
- * Represents the priority of a default import.
+ * 默认 import 的优先级。
  *
- * In the case of name conflicts, higher priority wins during resolution.
+ * 命名冲突时优先级高的胜出;主要用于区分 builtins 默认 import 与项目自定义默认 import。
  */
 @CaIdeApi
-public enum class CaDefaultImportPriority {
+enum class CaDefaultImportPriority {
+    /** 低优先级,通常用于框架/扩展提供的默认 import。 */
     LOW,
+
+    /** 高优先级,通常用于语言内置默认 import(builtins)。 */
     HIGH,
 }

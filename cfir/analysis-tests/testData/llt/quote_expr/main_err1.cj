@@ -8,30 +8,10 @@
 // EXEC: %compiler %cmp_macro testa.cj
 // ERRCHECK: %compiler %f %noColor -o %output
 
-import define_10004.*
+import <!UNUSED_IMPORT!>define_10004.*<!>
 
 main() {
-    var a = quote(1+1) // empty lambda
+    var a = <!USE_EXPR_WITHOUT_IMPORT!>quote(1+1)<!> // empty lambda
     a.dump()
     return 0
 }
-
-/* SCAN
-error: import 'std.ast' to use the 'quote' expression
-  ==> main_err1.cj:14:13:
-   | 
-14 |     var a = quote(1+1) // empty lambda
-   |             ^^^^^^^^^^ 
-   | 
-
-warning: unused import 'define_10004.*'
-  ==> main_err1.cj:11:1:
-   | 
-11 | import define_10004.*
-   | ^^^^^^^^^^^^^^^^^^^^^ unused import
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-1 error generated, 1 error printed.
-1 warning generated, 1 warning printed.
-*/

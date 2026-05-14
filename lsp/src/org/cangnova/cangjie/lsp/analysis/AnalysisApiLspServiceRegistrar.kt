@@ -7,7 +7,6 @@ import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTra
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
 import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestrictedAnalysisService
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaContentScopeRefiner
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
@@ -54,10 +53,6 @@ internal object AnalysisApiLspServiceRegistrar {
         project.registerService(
             CaModuleProvider::class.java,
             AnalysisApiLspModuleProvider::class.java,
-        )
-        project.registerService(
-            CaContentScopeRefiner::class.java,
-            AnalysisApiLspContentScopeRefiner::class.java,
         )
         project.registerService(
             CaModificationTracker::class.java,

@@ -33,7 +33,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.llCfirResolvabl
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.codeFragment
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.analysis.utils.printer.parentOfType
-import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -254,7 +253,7 @@ class LLCfirDeclarationModificationService(val project: Project) : Disposable {
 
         val moduleSession = cfirDeclaration.llCfirResolvableSession ?: errorWithCfirSpecificEntries(
             "${LLCfirResolvableModuleSession::class.simpleName} is not found",
-            fir = cfirDeclaration,
+            cfir = cfirDeclaration,
             psi = declaration,
         ) {
             withEntry("session", resolutionFacade) { it.toString() }

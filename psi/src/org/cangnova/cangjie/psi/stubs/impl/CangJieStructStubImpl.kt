@@ -61,5 +61,12 @@ open class CangJieStructStubImpl(
 
     override fun getClassId(): ClassId? = classId
 
-//    override fun isTopLevel() = isTopLevel
+    override fun copyInto(newParent: StubElement<*>?): CangJieStructStubImpl = CangJieStructStubImpl(
+        type = stubType as CjStructElementType,
+        parent = newParent,
+        qualifiedName = qualifiedName,
+        classId = classId,
+        name = name,
+        superNames = superNames,
+    )
 }

@@ -146,7 +146,11 @@ private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeC
         is ConeTupleType -> ConeTupleType(elementTypes, newAttributes)
         is ConeVArrayType -> ConeVArrayType(elementType, size, newAttributes)
         is ConePointerType -> ConePointerType(pointeeType, newAttributes)
-        is ConeIntersectionType -> ConeIntersectionType(intersectedTypes, newAttributes)
+        is ConeIntersectionType -> ConeIntersectionType(
+            intersectedTypes = intersectedTypes,
+            upperBoundForApproximation = upperBoundForApproximation,
+            attributes = newAttributes,
+        )
         is ConeUnionType -> ConeUnionType(unionTypes, newAttributes)
         is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, typeArguments, newAttributes)
         is ConeErrorType -> ConeErrorType(
@@ -154,8 +158,7 @@ private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeC
             isUninferredParameter,
             delegatedType,
             typeArguments,
-            newAttributes,
-            nullable
+            newAttributes
         )
         is ConeQuestType -> ConeQuestType(newAttributes)
         is ConeTypeVariableType -> ConeTypeVariableType(typeConstructor, newAttributes)
@@ -177,7 +180,11 @@ private fun ConeCangJieType.withReplacedArguments(newArguments: List<ConeTypePro
         is ConeTupleType -> ConeTupleType(newArguments.map { it.type }, attributes)
         is ConeVArrayType -> ConeVArrayType(newArguments.first().type, size, attributes)
         is ConePointerType -> ConePointerType(newArguments.first().type, attributes)
-        is ConeIntersectionType -> ConeIntersectionType(newArguments.map { it.type }, attributes)
+        is ConeIntersectionType -> ConeIntersectionType(
+            intersectedTypes = newArguments.map { it.type },
+            upperBoundForApproximation = upperBoundForApproximation,
+            attributes = attributes,
+        )
         is ConeUnionType -> ConeUnionType(newArguments.map { it.type }.toSet(), attributes)
         is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, newArguments, attributes)
         is ConeErrorType -> ConeErrorType(
@@ -185,8 +192,7 @@ private fun ConeCangJieType.withReplacedArguments(newArguments: List<ConeTypePro
             isUninferredParameter,
             delegatedType,
             newArguments,
-            attributes,
-            nullable
+            attributes
         )
         else -> this
     }

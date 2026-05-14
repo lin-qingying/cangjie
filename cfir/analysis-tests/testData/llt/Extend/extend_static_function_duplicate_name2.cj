@@ -14,13 +14,13 @@ class A {
 }
 
 extend A {
-    public static func foo1() {
+    public static func <!INHERIT_MEMBER_KIND_INCONSISTENT, EXTEND_MEMBER_CANNOT_SHADOW!>foo1<!>() {
         return 0
     }
 }
 
 extend A {
-    public static func foo1(a: Int32) {
+    public static func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo1<!>(a: Int32) {
         return 0
     }
 }
@@ -28,34 +28,3 @@ extend A {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: static member 'foo1' cannot have the same name with non-static member in extended type
-  ==> extend_static_function_duplicate_name2.cj:17:5:
-   | 
-17 |     public static func foo1() {
-   |     ^ 
-   | 
-
-error: extend member 'foo1' is not allowed to shadow members of 'Class-A'
-  ==> extend_static_function_duplicate_name2.cj:17:24:
-   | 
-17 |     public static func foo1() {
-   |                        ^^^^ 
-   | 
-note: shadowed definition of 'foo1' is here
-  ==> extend_static_function_duplicate_name2.cj:11:17:
-   | 
-11 |     public func foo1() {
-   |                 ^^^^ 
-   | 
-
-error: static member 'foo1' cannot have the same name with non-static member in extended type
-  ==> extend_static_function_duplicate_name2.cj:23:5:
-   | 
-23 |     public static func foo1(a: Int32) {
-   |     ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

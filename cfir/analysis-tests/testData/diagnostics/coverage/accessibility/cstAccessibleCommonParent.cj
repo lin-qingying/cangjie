@@ -11,7 +11,7 @@ public class TextWidget <: Displayable {}
 public class ImageWidget <: Displayable {}
 
 // FILE: main.cj
-package main
+package localmain
 
 import common.*
 

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.resolv
 
 import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiReferenceTestUtils.findUsageSimpleName
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedCallableName
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetCallText
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetNameText
@@ -26,8 +27,7 @@ abstract class AbstractResolveSymbolTest : AbstractAnalysisApiComponentTest() {
         val directives = directivesForMainFile(mainFile, mainModule)
         val callExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)
             .single { it.text == directives.targetCallText }
-        val nameReference = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
-            .single { it.referencedName == directives.targetNameText }
+        val nameReference = findUsageSimpleName(mainFile, directives.targetNameText)
 
         analyzeForTest(callExpression) {
             val resolvedFromCall = callExpression.resolveToSymbol()

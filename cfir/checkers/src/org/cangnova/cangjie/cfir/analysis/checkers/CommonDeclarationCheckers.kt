@@ -20,12 +20,12 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendTargetL
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFieldVariableChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFieldVariableInitializerTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFileChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirForeignFunctionParameterTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirForeignFunctionReturnTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionInitializationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirImportsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInvalidDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirModifierChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMutModifierApplicabilityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirNotImplementedOverrideChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirOperatorDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirOverrideChecker
@@ -34,9 +34,9 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirClassLikeInit
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPatternVariableInitializerTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertyChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirSimpleFunctionChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirStaticModifierCompatibilityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirSupertypesChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeConstraintsChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeAliasCFuncLegalityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeParameterChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeParameterBoundsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstructorInitializationChecker
@@ -48,12 +48,12 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirConstFunction
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDefaultParameterChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirDeprecatedDeclarationChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirExtendExtraChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionDeclarationStatusChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionOverloadChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionReturnTypeInferenceChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGeneralSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGenericDeepChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInheritanceDeepChecker
-import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInterfaceSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirLambdaParameterTypeChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMockSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirGenericJavaInteropChecker
@@ -61,6 +61,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInheritanceTh
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirCJMappingChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirObjCCJMappingChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirPropertySemanticsChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirUnusedExpressionChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirVArrayExtraChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.DeclarationCheckers
 
@@ -71,6 +72,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirConflictsDeclarationChecker,
             CfirModifierChecker,
             CfirTypeConstraintsChecker,
+            CfirUnusedExpressionChecker,
         )
 
     override val invalidDeclarationCheckers: Set<CfirInvalidDeclarationChecker>
@@ -91,6 +93,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val functionCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirFunctionChecker>
         get() = setOf(
             CfirFunctionInitializationChecker,
+            CfirForeignFunctionParameterTypeChecker,
             CfirForeignFunctionReturnTypeChecker,
             CfirFunctionReturnTypeInferenceChecker,
             CfirConstFunctionVarChecker,
@@ -105,6 +108,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val simpleFunctionCheckers: Set<CfirSimpleFunctionChecker>
         get() = setOf(
             CfirOperatorDeclarationChecker,
+            CfirFunctionDeclarationStatusChecker,
             CfirFunctionOverloadChecker,
             CfirDefaultParameterChecker,
         )
@@ -141,8 +145,11 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
 
     override val memberDeclarationCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirMemberDeclarationChecker>
         get() = setOf(
-            CfirStaticModifierCompatibilityChecker,
-            CfirMutModifierApplicabilityChecker,
+        )
+
+    override val typeAliasCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeAliasChecker>
+        get() = setOf(
+            CfirTypeAliasCFuncLegalityChecker,
         )
 
     override val classLikeCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirClassLikeChecker>
@@ -156,7 +163,6 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirClassStructSemanticsChecker,
             CfirConstDeclarationChecker,
             CfirInheritanceDeepChecker,
-            CfirInterfaceSemanticsChecker,
             CfirCommonSpecificChecker,
             CfirMockSemanticsChecker,
             CfirGenericJavaInteropChecker,

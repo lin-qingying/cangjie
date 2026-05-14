@@ -16,7 +16,6 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.transformers.MacroExpandAction
 import org.cangnova.cangjie.cfir.session.registerCliCompilerOnlyResolveComponents
 import org.cangnova.cangjie.cfir.session.registerResolveComponents
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
@@ -196,7 +195,6 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
         context: CONTEXT,
         extensionRegistrars: List<CfirExtensionRegistrar>,
         configuration: CompilerConfiguration,
-        macroExpandAction: MacroExpandAction? = null,
         init: CfirSessionConfigurator.() -> Unit,
         createProviders: (
             CfirSession, CfirCangJieScopeProvider, CfirSymbolProvider,
@@ -212,7 +210,6 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             register(CfirPreludeSettingsComponent::class, CfirPreludeSettingsComponent(configuration.noPrelude))
             registerResolveComponents(
                 configuration.diagnosticFactoriesStorage ?: error("diagnosticFactoriesStorage is not registered in the configuration"),
-                macroExpandAction,
                 configuration.lookupTracker,
                 configuration.enumMatchTracker,
                 configuration.importTracker,

@@ -16,6 +16,6 @@ func returnFromHandle(): Int64 {
     return try {
         1
     } handle (cmd: IntCommand) {
-        <!RETURN_IN_HANDLE_BLOCK!>/* suggested message: return is not allowed directly from a handle block in this semantic context. source: external/cangjie_compiler/src/Sema/TypeCheckExpr/TryExpr.cpp */return 2<!>
+        <!RETURN_IN_TRY_HANDLE_BLOCK!>return 2<!>
     }
 }

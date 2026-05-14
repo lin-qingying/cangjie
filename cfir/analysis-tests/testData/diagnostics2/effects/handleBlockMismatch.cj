@@ -15,7 +15,7 @@ class GoodCommand <: Command<Int64> {}
 func mismatchHandleBlockInIntTry(): Unit {
     try {
         1
-    } <!MISMATCHING_HANDLE_BLOCK!>handle (cmd: GoodCommand) {
+    } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         false
     }<!>
 }
@@ -23,7 +23,7 @@ func mismatchHandleBlockInIntTry(): Unit {
 func mismatchHandleBlockInBoolTry(): Unit {
     try {
         true
-    } <!MISMATCHING_HANDLE_BLOCK!>handle (cmd: GoodCommand) {
+    } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         1
     }<!>
 }

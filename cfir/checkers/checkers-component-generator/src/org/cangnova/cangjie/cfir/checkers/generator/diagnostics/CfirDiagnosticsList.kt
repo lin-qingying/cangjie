@@ -76,12 +76,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 导入名称冲突：导入的符号与本地已有符号重名
-        val IMPORT_CONFLICT by error<CjImportItem> {
+        val IMPORT_CONFLICT by error<CjImportItem>(PositioningStrategy.IMPORT_LAST_NAME) {
             parameter<Name>("name")  // 发生冲突的名称
         }
 
         // 导入别名冲突：使用as关键字定义的别名与已有符号重名
-        val IMPORT_ALIAS_CONFLICT by error<CjImportItem> {
+        val IMPORT_ALIAS_CONFLICT by error<CjImportItem>(PositioningStrategy.IMPORT_ALIAS) {
             parameter<Name>("alias")  // 发生冲突的别名
         }
     }
@@ -97,12 +97,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 超类型重复：同一类型在继承列表中出现多次
-        val SUPER_TYPES_DUPLICATE by error<CjTypeReference> {
+        val SUPER_TYPES_DUPLICATE by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("typeName")  // 重复出现的类型名
         }
 
         // 接口不能继承类：接口试图继承一个具体的类（违反接口规范）
-        val INTERFACE_CANNOT_INHERIT_CLASS by error<CjTypeReference> {
+        val INTERFACE_CANNOT_INHERIT_CLASS by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("interfaceName")  // 试图继承的接口名
             parameter<Name>("superTypeName")  // 被继承的类型名
         }
@@ -200,12 +200,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      */
     val DECLARATION_STATUS by object : DiagnosticGroup("DeclarationStatus") {
         // static 声明不能同时使用 open/abstract/override 修饰符
-        val STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE by error<CjDeclaration> {
+        val STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name?>("declarationName")  // 声明的名称（可能为空）
         }
 
         // mut 修饰符只能用于属性声明以及 struct 体内的函数声明
-        val MUT_ONLY_ON_FUNCTION by error<CjDeclaration> {
+        val MUT_ONLY_ON_FUNCTION by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name?>("declarationName")  // 声明的名称（可能为空）
         }
 
@@ -330,7 +330,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 构造器委托调用形成递归
-        val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
+        val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
         // this/super 构造器委托调用出现在非法位置
         val ILLEGAL_THIS_OR_SUPER_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
@@ -338,7 +338,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 父类不存在可隐式调用的无参构造器，要求显式 super(...)
-        val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>()
+        val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
         // break/continue 必须位于循环体内
         val INVALID_LOOP_CONTROL by error<PsiElement>()
@@ -356,7 +356,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("variableName")
         }
 
-        val CLASS_UNINITIALIZED_FIELD by error<PsiElement> {
+        val CLASS_UNINITIALIZED_FIELD by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name>("fieldName")
         }
     }
@@ -411,6 +411,39 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val INVALID_CFUNC_RETURN_TYPE by error<CjTypeReference> {
             parameter<ConeCangJieType>("actualType")
         }
+
+        val INVALID_CFUNC_PARAMETER_TYPE by error<CjTypeReference> {
+            parameter<ConeCangJieType>("actualType")
+        }
+
+        val ONLY_CFUNC_CAN_USE_ANNOTATION by error<PsiElement> {
+            parameter<String>("annotationName")
+        }
+
+        val ILLEGAL_SCOPE_USE_OF_ANNOTATION by error<PsiElement> {
+            parameter<String>("annotationName")
+        }
+    }
+
+    /**
+     * throw / try / catch 相关诊断。
+     *
+     * 当前这一组先提供 diagnostics2 期望面所需的诊断定义，
+     * 真实检测逻辑后续按对应 checker 接入。
+     */
+    val EXCEPTION by object : DiagnosticGroup("Exception") {
+        val THROW_EXPR_WITH_WRONG_TYPE by error<PsiElement>(PositioningStrategy.THROW_KEYWORD)
+
+        val CATCH_TYPE_MUST_EXTEND_EXCEPTION by error<CjTypeReference>()
+
+        val USELESS_EXCEPTION_TYPE by warning<CjTypeReference>()
+    }
+
+    /**
+     * range 表达式相关诊断。
+     */
+    val RANGE by object : DiagnosticGroup("Range") {
+        val RANGE_STEP_CANNOT_BE_ZERO by error<PsiElement>()
     }
 
     /**
@@ -586,7 +619,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // override 返回类型不协变
-        val OVERRIDING_RETURN_TYPE_MISMATCH by error<PsiElement> {
+        val OVERRIDING_RETURN_TYPE_MISMATCH by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<ConeCangJieType>("actualType")
             parameter<ConeCangJieType>("expectedType")
             parameter<Name>("overriddenName")
@@ -1922,6 +1955,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         val UNUSED_IMPORT by warning<CjImportItem> {
             parameter<FqName>("importPath")
         }
+
+        // 未使用的表达式
+        val UNUSED_EXPRESSION by warning<CjExpression>()
     }
 
     /**
@@ -1959,6 +1995,180 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // createMock/createSpy 的泛型包装函数需要 @Frozen 注解
         val MOCK_FROZEN_REQUIRED by error<PsiElement> {
             parameter<Name>("functionName")
+        }
+    }
+
+    /**
+     * Macro construction step 相关诊断（baseline 第 9-10 节）。
+     *
+     * 这些 factory 都对应 `MacroExpansionRegistry` 的
+     * `MacroConstructionDiagnostic.Kind` 枚举值；
+     * ordinary checker 只看 final CFIR，渲染时通过
+     * `originSurfaceId` 反查 registry 找到原 macro 位点。
+     */
+    val MACRO by object : DiagnosticGroup("Macro") {
+        // baseline 第 9 节 "MACRO_NOT_EXPANDED": IDE degraded 模式产物
+        // —— typed error placeholder 替代了 macro call，原 macro 调用未展开。
+        val MACRO_NOT_EXPANDED by error<PsiElement> {
+            parameter<String>("macroName")
+        }
+
+        // baseline 第 9 节 "MACRO_EXPANSION_FAILED": construction step 中
+        // executor 调用或 fragment parse 失败、且未降级。
+        val MACRO_EXPANSION_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_DIAG_REPORT_ERROR by error<PsiElement> {
+            parameter<String>("message")
+            parameter<String>("hint")
+        }
+
+        val MACRO_DIAG_REPORT_WARNING by warning<PsiElement> {
+            parameter<String>("message")
+            parameter<String>("hint")
+        }
+
+        val MACRO_UNDEFINED_PACKAGE by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_UNDECLARED_IDENTIFIER by error<PsiElement> {
+            parameter<Name>("name")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPECT_MACRO_DEFINITION by error<PsiElement> {
+            parameter<String>("target")
+            parameter<String>("reason")
+        }
+
+        val MACRO_DEPENDENCY_COMPILE_FAILED by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("reason")
+            parameter<String>("diagnosticsRef")
+        }
+
+        val MACRO_AMBIGUOUS_MATCH by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<Collection<FqName>>("targets")
+        }
+
+        val MACRO_CANNOT_FIND_DEPENDENCY_BCHIR by error<PsiElement> {
+            parameter<String>("packageName")
+            parameter<String>("path")
+        }
+
+        val MACRO_EXPECT_PLAIN_MACRO by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPECT_ATTRIBUTED_MACRO by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPAND_ATEXCL by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_INVALID_ATTR_TOKENS by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_INVALID_INPUT_TOKENS by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_INVALID_ESCAPE by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        // baseline 第 4 节 "同包 macro def/call": 源包内同时存在 macro 定义和调用。
+        val MACRO_SAME_PACKAGE_DEF_CALL by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<FqName>("packageName")
+        }
+
+        // baseline Batch 5 "alias conflict": 同一 alias 短名绑到多个 fqn。
+        val MACRO_ALIAS_CONFLICT by error<PsiElement> {
+            parameter<Name>("alias")
+            parameter<Collection<FqName>>("targets")
+        }
+
+        // baseline 第 4 节 "no executor / unresolved / cannot-open-lib /
+        // REEVALFAILED" 诊断 typed factory。
+        val MACRO_EXECUTOR_UNAVAILABLE by error<PsiElement> {
+            parameter<String>("hint")
+        }
+
+        val MACRO_CANNOT_OPEN_LIB by error<PsiElement> {
+            parameter<String>("libPath")
+            parameter<String>("reason")
+        }
+
+        val MACRO_CANNOT_FIND_METHOD by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EVALUATE_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPAND_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXPAND_CODE_SHOULD_NOT_HAVE_MACROCALL by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_CALL_SAVE_FILE_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXECUTOR_PROTOCOL_ERROR by error<PsiElement> {
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXECUTOR_SERVER_DISCONNECTED by error<PsiElement> {
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXECUTOR_TIMEOUT by error<PsiElement> {
+            parameter<String>("reason")
+        }
+
+        val MACRO_EXECUTOR_SERVER_CRASH by error<PsiElement> {
+            parameter<String>("reason")
+        }
+
+        val MACRO_REEVALUATION_FAILED by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<String>("reason")
+        }
+
+        val MACRO_UNRESOLVED by error<PsiElement> {
+            parameter<Name>("macroName")
+        }
+
+        // baseline Batch 7 cycle detection: 同 fingerprint 在 forest evaluator
+        // 多次出现，超出 iteration limit。
+        val MACRO_CYCLE by error<PsiElement> {
+            parameter<String>("macroName")
+            parameter<Collection<String>>("cycleChain")
         }
     }
 }

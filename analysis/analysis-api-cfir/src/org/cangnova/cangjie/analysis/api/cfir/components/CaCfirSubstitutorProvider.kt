@@ -2,9 +2,10 @@ package org.cangnova.cangjie.analysis.api.cfir.components
 
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.components.CaSubstitutorProvider
-import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirBackedSymbol
+import org.cangnova.cangjie.analysis.api.cfir.symbols.CaCfirSymbol
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirMapBackedSubstitutor
 import org.cangnova.cangjie.analysis.api.cfir.types.CaCfirType
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
@@ -24,7 +25,7 @@ internal class CaCfirSubstitutorProvider(
 
         val cfirMappings = buildMap<String, org.cangnova.cangjie.cfir.types.ConeCangJieType> {
             mappings.forEach { (typeParameterSymbol, type) ->
-                val cfirSymbol = (typeParameterSymbol as? CaCfirBackedSymbol<*>)?.backingSymbol as? CfirTypeParameterSymbol
+                val cfirSymbol = (typeParameterSymbol as? CaCfirSymbol<*>)?.cfirSymbol as? CfirTypeParameterSymbol
                     ?: error("Only CFIR type parameter symbols can be used to build a CFIR substitutor")
                 val cfirType = (type as? CaCfirType)?.coneType
                     ?: error("Only CFIR types can be used to build a CFIR substitutor")

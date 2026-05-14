@@ -200,7 +200,7 @@ internal class LLPartialBodyElementMapper(
     private val bodyBlock: CfirBlock
         get() = declaration.body ?: errorWithCfirSpecificEntries(
             "Partial body element provider supports only declarations with bodies",
-            fir = declaration,
+            cfir = declaration,
             psi = psiDeclaration,
         )
 

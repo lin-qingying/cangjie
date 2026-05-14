@@ -47,7 +47,7 @@ sealed class CfirDeclarationOrigin(
  * 对齐 Kotlin FIR `FirDeclarationOrigin.isLazyResolvable`：
  * 只有可能以“未完全解析”状态存在于 lazy resolve 主流程中的声明 origin 才返回 `true`。
  *
- * 仓颉没有 Kotlin 的 Java/Script/ImportedFromObjectOrStatic 等分支，
+ * 仓颉没有 Kotlin 的 Java/ImportedFromObjectOrStatic 等分支，
  * 因此这里只保留本地主干真实存在、并参与 lazy CFIR 的 origin 集合。
  */
 val CfirDeclarationOrigin.isLazyResolvable: Boolean

@@ -10,7 +10,7 @@ struct Foo {
     public var ccc: Int32 = 2
     public prop ddd: Int32 {
         get() {
-            ccc = 1
+            <!CANNOT_MODIFY_VAR!>ccc<!> = 1
             return ccc
         }
     }
@@ -21,14 +21,3 @@ main(): Int32 {
     let t = f.ddd
     return t
 }
-
-/* SCAN
-error: instance member variable 'ccc' cannot be modified in immutable function
-  ==> property_callee_33_1.cj:13:13:
-   | 
-13 |             ccc = 1
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

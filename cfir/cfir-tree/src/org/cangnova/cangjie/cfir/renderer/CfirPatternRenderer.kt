@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.renderer
 
 import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.render.ConeTypeRenderer
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 
 open class CfirPatternRenderer(
     protected val typeRenderer: ConeTypeRenderer,
@@ -17,7 +16,12 @@ open class CfirPatternRenderer(
         is CfirVarOrEnumPattern -> "deferred(${pattern.name.asString()})"
         is CfirBindingPattern -> buildString {
             append(pattern.name.asString())
-            pattern.typeRef?.let { it.coneTypeOrNull?.let { type -> append(": ${typeRenderer.render(type)}") } }
+            pattern.typeRef?.let {
+                val renderedTypeRef = renderTypeRefForDebug(it, typeRenderer)
+                if (renderedTypeRef.isNotEmpty()) {
+                    append(": $renderedTypeRef")
+                }
+            }
             pattern.nestedPattern?.let { append(" @ ${render(it)}") }
         }
         is CfirTuplePattern -> "(${pattern.elements.joinToString { render(it) }})"
@@ -25,7 +29,7 @@ open class CfirPatternRenderer(
             pattern.arguments.joinToString { render(it) }
         })"
         is CfirTypePattern -> buildString {
-            pattern.typeRef.coneTypeOrNull?.let { append("is ${typeRenderer.render(it)}") }
+            append("is ${renderTypeRefForDebug(pattern.typeRef, typeRenderer)}")
             pattern.bindingName?.let { append(" ${it.asString()}") }
         }
         else -> "<unknown-pattern>"

@@ -2,10 +2,19 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.caSymbolModalityByModifiers
 import org.cangnova.cangjie.analysis.api.cfir.findPsi
+import org.cangnova.cangjie.analysis.api.cfir.getCallableSymbolLocation
+import org.cangnova.cangjie.analysis.api.cfir.getExplicitCallableReceiverType
+import org.cangnova.cangjie.analysis.api.cfir.isOpenFromInterface
 import org.cangnova.cangjie.analysis.api.cfir.location
+import org.cangnova.cangjie.analysis.api.cfir.psiBasedDefaultCaModality
+import org.cangnova.cangjie.analysis.api.cfir.psiBasedVisibility
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPropertyGetterSymbolPointer
 import org.cangnova.cangjie.analysis.api.cfir.symbols.pointers.CaCfirPropertySetterSymbolPointer
+import org.cangnova.cangjie.analysis.api.cfir.visibilityByModifiers
+import org.cangnova.cangjie.analysis.api.impl.base.util.callableId
+import org.cangnova.cangjie.analysis.api.impl.base.util.callableIdForName
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -14,15 +23,21 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbolLocation
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolModality
+import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaTypeParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjProperty
 
@@ -33,16 +48,19 @@ import org.cangnova.cangjie.psi.CjProperty
  * 让属性族不再和局部变量、值参数等完全不同的语义揉在一个文件里。
  */
 internal class CaCfirPropertyGetterSymbol(
-    final override val backingSymbol: CfirCallableSymbol<*>,
-    final override val analysisSession: CaCfirSession,
-    final override val containingModule: CaModule,
-    final override val token: CaLifetimeToken,
-) : CaPropertyGetterSymbol(), CaCfirPropertyAccessorSymbolSupport<CfirCallableSymbol<*>> {
+    override val owningCaProperty: CaPropertySymbol,
+) : CaPropertyGetterSymbol(), CaCfirBasePropertyGetterSymbol {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
+        get() = annotationsImpl
+
+    override val psi
+        get() = psiImpl
+
+    override val origin
+        get() = originImpl
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
-        get() = accessorCallableIdImpl
+        get() = callableIdImpl
 
     override val receiverType: CaType?
         get() = receiverTypeImpl
@@ -53,9 +71,19 @@ internal class CaCfirPropertyGetterSymbol(
     override val location: CaSymbolLocation
         get() = locationImpl
 
-    override fun createPointer(): CaSymbolPointer<CaFunctionSymbol> = withValidityAssertion {
-        CaCfirPropertyGetterSymbolPointer(owningProperty.createPointer())
-    }
+    override val visibility: CaSymbolVisibility
+        get() = visibilityImpl
+
+    override val isVisibilityExplicit: Boolean
+        get() = isVisibilityExplicitImpl
+
+    override val modality: CaSymbolModality?
+        get() = modalityImpl
+
+    override val isModalityExplicit: Boolean
+        get() = isModalityExplicitImpl
+
+    override fun createPointer(): CaSymbolPointer<CaFunctionSymbol> = createGetterPointer()
 
     override val isStatic: Boolean
         get() = isStaticImpl
@@ -92,19 +120,26 @@ internal class CaCfirPropertyGetterSymbol(
 
     override val isGetter: Boolean
         get() = true
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }
 
 internal class CaCfirPropertySetterSymbol(
-    final override val backingSymbol: CfirCallableSymbol<*>,
-    final override val analysisSession: CaCfirSession,
-    final override val containingModule: CaModule,
-    final override val token: CaLifetimeToken,
-) : CaPropertySetterSymbol(), CaCfirPropertyAccessorSymbolSupport<CfirCallableSymbol<*>> {
+    override val owningCaProperty: CaPropertySymbol,
+) : CaPropertySetterSymbol(), CaCfirBasePropertySetterSymbol {
     override val annotations: CaAnnotationList
-        get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(backingSymbol, builder) }
+        get() = annotationsImpl
+
+    override val psi
+        get() = psiImpl
+
+    override val origin
+        get() = originImpl
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
-        get() = accessorCallableIdImpl
+        get() = callableIdImpl
 
     override val receiverType: CaType?
         get() = receiverTypeImpl
@@ -115,9 +150,19 @@ internal class CaCfirPropertySetterSymbol(
     override val location: CaSymbolLocation
         get() = locationImpl
 
-    override fun createPointer(): CaSymbolPointer<CaFunctionSymbol> = withValidityAssertion {
-        CaCfirPropertySetterSymbolPointer(owningProperty.createPointer())
-    }
+    override val visibility: CaSymbolVisibility
+        get() = visibilityImpl
+
+    override val isVisibilityExplicit: Boolean
+        get() = isVisibilityExplicitImpl
+
+    override val modality: CaSymbolModality?
+        get() = modalityImpl
+
+    override val isModalityExplicit: Boolean
+        get() = isModalityExplicitImpl
+
+    override fun createPointer(): CaSymbolPointer<CaFunctionSymbol> = createSetterPointer()
 
     override val isStatic: Boolean
         get() = isStaticImpl
@@ -156,7 +201,11 @@ internal class CaCfirPropertySetterSymbol(
         get() = false
 
     override val parameter: CaValueParameterSymbol
-        get() = valueParameters.single()
+        get() = parameterImpl
+
+    override fun equals(other: Any?): Boolean = psiOrSymbolEquals(other)
+
+    override fun hashCode(): Int = psiOrSymbolHashCode()
 }
 
 internal class CaCfirPropertySymbol private constructor(
@@ -165,8 +214,6 @@ internal class CaCfirPropertySymbol private constructor(
     override val lazyCfirSymbol: Lazy<CfirPropertySymbol>,
 ) : CaPropertySymbol(),
     CaCfirCjBasedSymbol<CjProperty, CfirPropertySymbol>,
-    CaCfirBackedSymbol<CfirPropertySymbol>,
-    CaCfirVariableSymbolSupport<CfirPropertySymbol>,
     CaTypeParameterOwnerSymbol,
     CaDeclarationContainerSymbol {
     override val cfirSymbol: CfirPropertySymbol
@@ -184,11 +231,11 @@ internal class CaCfirPropertySymbol private constructor(
         lazyCfirSymbol = lazyOf(symbol),
     )
 
-    override val backingSymbol: CfirPropertySymbol
-        get() = cfirSymbol
-
     override val containingModule: CaModule
         get() = analysisSession.useSiteModule
+
+    private val status
+        get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
     override val annotations: CaAnnotationList
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
@@ -200,60 +247,101 @@ internal class CaCfirPropertySymbol private constructor(
         get() = withValidityAssertion { psiOrSymbolOrigin() }
 
     override val callableId: org.cangnova.cangjie.name.CallableId?
-        get() = withValidityAssertion { callableIdImpl }
+        get() = withValidityAssertion { if (backingPsi != null) backingPsi.callableIdForName(backingPsi.nameAsSafeName) else cfirSymbol.getCallableId() }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { receiverTypeImpl }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
 
     override val returnType: CaType
-        get() = withValidityAssertion { returnTypeImpl }
+        get() = withValidityAssertion { cfirSymbol.returnType(builder) }
 
     override val location: CaSymbolLocation
-        get() = withValidityAssertion { backingPsi?.location ?: locationImpl }
+        get() = withValidityAssertion {
+            analysisSession.getCallableSymbolLocation(cfirSymbol, backingPsi)
+        }
+
+    override val visibility: CaSymbolVisibility
+        get() = withValidityAssertion {
+            backingPsi?.psiBasedVisibility(::isOverride)?.asPublicVisibility()
+                ?: status?.visibility?.asPublicVisibility()
+                ?: CaSymbolVisibility.PUBLIC
+        }
+
+    override val isVisibilityExplicit: Boolean
+        get() = withValidityAssertion {
+            backingPsi?.let { it.visibilityByModifiers != null }
+                ?: (status?.isVisibilityExplicit == true)
+        }
+
+    override val modality: CaSymbolModality?
+        get() = withValidityAssertion {
+            val psiBasedModality = backingPsi?.run {
+                val modalityByModifiers = caSymbolModalityByModifiers
+                when {
+                    modalityByModifiers != null -> when {
+                        modalityByModifiers.isOpenFromInterface && !hasBody() -> CaSymbolModality.ABSTRACT
+                        else -> modalityByModifiers
+                    }
+
+                    hasModifier(CjTokens.CONST_KEYWORD) -> CaSymbolModality.FINAL
+                    else -> psiBasedDefaultCaModality(::isOverride)
+                }
+            }
+
+            psiBasedModality ?: status?.modality?.asPublicModality()
+        }
+
+    override val isModalityExplicit: Boolean
+        get() = withValidityAssertion {
+            backingPsi?.let { it.caSymbolModalityByModifiers != null }
+                ?: (status?.isModalityExplicit == true)
+        }
 
     override fun createPointer(): CaSymbolPointer<CaPropertySymbol> = withValidityAssertion {
-        createStableCallablePointer(CaPropertySymbol::class.java)
+        psiBasedSymbolPointerOfTypeIfSource<CaPropertySymbol> { psi ->
+            (psi as? CjProperty)?.symbol
+        } ?: error("Property symbol `${name}` cannot create a stable pointer")
     }
 
     override val isLet: Boolean
         get() = withValidityAssertion { backingPsi?.isVar != true }
 
     override val isStatic: Boolean
-        get() = withValidityAssertion { status?.isStatic == true }
+        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.STATIC_KEYWORD) ?: (status?.isStatic == true) }
 
     override val isConst: Boolean
-        get() = withValidityAssertion { status?.isConst == true }
+        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.CONST_KEYWORD) ?: (status?.isConst == true) }
 
     override val isMutating: Boolean
-        get() = withValidityAssertion { status?.isMut == true }
+        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.MUT_KEYWORD) ?: (status?.isMut == true) }
 
     override val isOverride: Boolean
-        get() = withValidityAssertion { status?.isOverride == true }
+        get() = withValidityAssertion { isOverrideWithWorkaround }
 
     override val isUnsafe: Boolean
-        get() = withValidityAssertion { status?.isUnsafe == true }
+        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.UNSAFE_KEYWORD) ?: (status?.isUnsafe == true) }
 
     override val isForeign: Boolean
-        get() = withValidityAssertion { status?.isForeign == true }
+        get() = withValidityAssertion { backingPsi?.hasModifier(CjTokens.FOREIGN_KEYWORD) ?: (status?.isForeign == true) }
 
     override val typeParameters: List<CaTypeParameterSymbol>
         get() = withValidityAssertion {
-            createCaTypeParameters() ?: (backingSymbol.cfir as? CfirProperty)
+            createCaTypeParameters() ?: (cfirSymbol.cfir as? CfirProperty)
                 ?.typeParameters
                 ?.map { builder.classifierBuilder.buildTypeParameterSymbol(it.symbol) }
                 .orEmpty()
         }
 
     override val getter: CaPropertyGetterSymbol?
-        get() = (backingSymbol.cfir as? CfirProperty)?.getter?.symbol?.let { getterSymbol ->
+        get() = (cfirSymbol.cfir as? CfirProperty)?.getter?.symbol?.let { getterSymbol ->
             builder.functionBuilder.buildPropertyAccessorSymbol(getterSymbol, this, CaCfirPropertyAccessorKind.GETTER) as CaPropertyGetterSymbol
         }
 
     override val setter: CaPropertySetterSymbol?
-        get() = (backingSymbol.cfir as? CfirProperty)?.setter?.symbol?.let { setterSymbol ->
+        get() = (cfirSymbol.cfir as? CfirProperty)?.setter?.symbol?.let { setterSymbol ->
             builder.functionBuilder.buildPropertyAccessorSymbol(setterSymbol, this, CaCfirPropertyAccessorKind.SETTER) as CaPropertySetterSymbol
         }
 
     override val name: Name
-        get() = nameImpl
+        get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
 }

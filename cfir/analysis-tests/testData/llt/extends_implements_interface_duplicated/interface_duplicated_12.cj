@@ -8,19 +8,8 @@
 
 interface I<T> {}
 
-class A <: I<Bool> & I<Bool> {}
+<!SUPER_TYPES_DUPLICATE!>class A<!> <: I<Bool> & I<Bool> {}
 
 main(): Int64 {
     return 0;
 }
-
-/* SCAN
-error: class 'A' inherits or implements duplicate interface 'I'
-  ==> interface_duplicated_12.cj:11:1:
-   | 
-11 | class A <: I<Bool> & I<Bool> {}
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -20,7 +20,7 @@ interface I4<Y1, R1, R2> <: I & I3<Y1, R1> & I0<Int64> {}
 
 interface I5<R1, R2> <: I2<Int64> & I0<R2> & I {}
 
-class A<Q> <: I0<Q> & I0<Int64> {
+<!SUPER_TYPES_DUPLICATE!>class A<Q><!> <: I0<Q> & I0<Int64> {
     public func doit(): Int64 {
         return 5
     }
@@ -35,21 +35,3 @@ main() {
     var i5: I5<Rune, Int32>
     return 0
 }
-
-/* SCAN
-error: class 'A' inherits or implements duplicate interface 'I0'
-  ==> interface_duplicated_08.cj:30:12:
-   | 
-30 |     var a: A<Int64>
-   |            ^ 
-   | 
-
-error: class 'A' inherits or implements duplicate interface 'I0'
-  ==> interface_duplicated_08.cj:31:13:
-   | 
-31 |     var b = A<Int64>()
-   |             ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

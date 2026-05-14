@@ -5,6 +5,7 @@ import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.PsiReference
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocName
 import org.cangnova.cangjie.psi.CjBasicType
+import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjReferenceExpression
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
@@ -23,7 +24,11 @@ val CjSimpleNameExpression.mainReference: CjSimpleNameReference
     get() = references.firstIsInstance()
 
 val CjReferenceExpression.mainReference: CjReference?
-    get() = if (this is CjSimpleNameExpression) mainReference else references.firstIsInstance()
+    get() = when (this) {
+        is CjSimpleNameExpression -> mainReference
+        is CjCallExpression -> (calleeExpression as? CjReferenceExpression)?.mainReference
+        else -> references.firstIsInstance()
+    }
 
 val CjBasicType.mainReference: PsiReference?
     get() = references.firstOrNull()

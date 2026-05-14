@@ -29,7 +29,10 @@ data class AnalysisApiTestConfiguratorFactoryData(
     val analysisApiMode: AnalysisApiMode,
 )
 
-fun AnalysisApiTestConfiguratorFactoryData.defaultExtension(): String = "cj"
+fun AnalysisApiTestConfiguratorFactoryData.defaultExtension(): String = when (this.moduleKind) {
+    TestModuleKind.ScriptSource -> "cjs"
+    else -> "cj"
+}
 
 enum class AnalysisSessionMode(val suffix: String) {
     Normal("Normal"),
@@ -39,7 +42,6 @@ enum class AnalysisSessionMode(val suffix: String) {
 enum class AnalysisApiMode(val suffix: String) {
     Ide("Ide"),
     Standalone("Standalone"),
-    LspCompatible("LspCompatible"),
 }
 
 enum class FrontendKind(val suffix: String) {

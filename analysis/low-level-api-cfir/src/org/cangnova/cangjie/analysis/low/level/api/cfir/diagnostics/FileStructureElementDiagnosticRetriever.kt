@@ -64,7 +64,7 @@ internal sealed class FileStructureElementDiagnosticRetriever(
         declaration.lazyResolveToPhase(CfirResolvePhase.BODY_RESOLVE)
 
         val declarationContainer = when (declaration) {
-            is CfirFile, is CfirClass, is CfirExtend -> declaration
+            is CfirFile, is CfirClassLikeDeclaration, is CfirExtend -> declaration
             else -> return
         }
 
@@ -90,16 +90,16 @@ private abstract class LLCfirContainerDiagnosticVisitor(
 }
 
 internal class ClassDiagnosticRetriever(
-    declaration: CfirClass,
+    declaration: CfirClassLikeDeclaration,
     file: CfirFile,
     moduleComponents: LLCfirModuleResolveComponents,
 ) : FileStructureElementDiagnosticRetriever(declaration, file, moduleComponents) {
     override fun createVisitor(context: CheckerContextForProvider, components: DiagnosticCollectorComponents): LLCfirDiagnosticVisitor {
-        return Visitor(declaration as CfirClass, context, components)
+        return Visitor(declaration as CfirClassLikeDeclaration, context, components)
     }
 
     private class Visitor(
-        regularClass: CfirClass,
+        regularClass: CfirClassLikeDeclaration,
         context: CheckerContextForProvider,
         components: DiagnosticCollectorComponents,
     ) : LLCfirContainerDiagnosticVisitor(

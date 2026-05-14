@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.cfir
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationDataRegistry
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -43,18 +42,9 @@ private object SubstitutedOverrideOriginalKey : CfirDeclarationDataKey()
 var <D : CfirCallableDeclaration>
         D.originalForSubstitutionOverrideAttr: D? by CfirDeclarationDataRegistry.data(SubstitutedOverrideOriginalKey)
 
-var CfirDeclarationAttributes.originalForSubstitutionOverrideSymbolAttr: CfirCallableSymbol<*>?
-        by CfirDeclarationDataRegistry.attributesAccessor(SubstitutedOverrideOriginalKey)
-
-var CfirCallableDeclaration.originalForSubstitutionOverrideSymbolAttr: CfirCallableSymbol<*>?
-    get() = attributes.originalForSubstitutionOverrideSymbolAttr
-    set(value) {
-        attributes.originalForSubstitutionOverrideSymbolAttr = value
-    }
-
 inline val <reified D : CfirCallableDeclaration> D.originalForSubstitutionOverride: D?
     get() = if (isSubstitutionOverride) {
-        originalForSubstitutionOverrideAttr ?: (originalForSubstitutionOverrideSymbolAttr?.cfir as? D)
+        originalForSubstitutionOverrideAttr
     } else {
         null
     }
@@ -99,6 +89,14 @@ private object CorrespondingPropertyKey : CfirDeclarationDataKey()
  * 主构造参数提升为属性时，记录它在声明树中的对应属性。
  */
 var CfirValueParameter.correspondingProperty: CfirProperty? by CfirDeclarationDataRegistry.data(CorrespondingPropertyKey)
+
+private object IsCatchParameterPropertyKey : CfirDeclarationDataKey()
+
+/**
+ * catch 参数在 CFIR 中按 local property 建模，但语义上不是普通属性声明。
+ * 用这个标记把它和常规 `prop` 区分开，供 checker / renderer / CFA 精确识别。
+ */
+var CfirProperty.isCatchParameter: Boolean? by CfirDeclarationDataRegistry.data(IsCatchParameterPropertyKey)
 
 private object ContainingClassKey : CfirDeclarationDataKey()
 fun CfirCallableSymbol<*>.dispatchReceiverClassLookupTagOrNull(): ConeClassLikeLookupTag? =

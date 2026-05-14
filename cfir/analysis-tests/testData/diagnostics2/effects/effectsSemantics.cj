@@ -14,15 +14,15 @@ class GoodCommand <: Command<Int64> {}
 class BadCommand {}
 
 func performBad(): Int64 {
-    return <!COMMAND_INCOMPATIBLE_TYPE!>perform BadCommand()<!>
+    return perform <!COMMAND_INCOMPATIBLE_TYPE!>BadCommand()<!>
 }
 
 func handleTypeError(): Int64 {
     return try {
         1
-    } <!COMMAND_HANDLE_TYPE_ERROR!>handle (bad: BadCommand) {
+    } handle (bad: <!COMMAND_HANDLE_TYPE_ERROR!>BadCommand<!>) {
         1
-    }<!>
+    }
 }
 
 func resumeNoWith(): Int64 {

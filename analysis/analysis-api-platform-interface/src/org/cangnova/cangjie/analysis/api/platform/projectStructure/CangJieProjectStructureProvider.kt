@@ -1,22 +1,15 @@
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 
+import org.cangnova.cangjie.LanguageVersionSettings
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 
-/**
- * 平台 project-structure 的一致性快照。
- *
- * Analysis API 在同一轮分析中通常会同时读取：
- * 1. 全部模块图；
- * 2. 可解析模块集合；
- * 3. source-like 模块集合；
- * 4. 源文件视图。
- *
- * 这些信息必须来自同一份结构事实，而不是由调用方分别访问多个属性后再自行拼装。
- */
+@CaPlatformInterface
 data class CaProjectStructureSnapshot(
     val allModules: List<CaModule>,
     val allResolvableModules: List<CaModule>,
@@ -80,37 +73,29 @@ data class CaProjectStructureSnapshot(
 /**
  * 平台 project-structure 服务。
  *
- * 该服务负责把 PSI 元素和文件系统项映射到 Analysis API 模块，
- * 同时暴露当前平台的统一模块图快照。
+ * 对齐 Kotlin `KotlinProjectStructureProvider`：
+ * 1. 把 PSI 元素映射为 Analysis API use-site module；
+ * 2. 提供平台侧的 implementing-modules 查询；
+ * 3. 提供 project-global language version settings。
  */
+@CaPlatformInterface
 interface CangJieProjectStructureProvider {
     fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
 
-    /**
-     * 直接按文件系统项查询 use-site module。
-     *
-     * 平台实现可以覆写该入口以复用本地缓存；
-     * 默认行为退化为元素查询。
-     */
-    fun getModule(item: PsiFileSystemItem, useSiteModule: CaModule? = null): CaModule =
-        getModule(item as PsiElement, useSiteModule)
+    fun getImplementingModules(module: CaModule): List<CaModule>
 
     /**
-     * 当前平台 project-structure 的一致性快照。
+     * Project-global [LanguageVersionSettings] for source modules lacking explicit settings
+     * such as [CaNotUnderContentRootModule].
      */
-    val snapshot: CaProjectStructureSnapshot
+    val globalLanguageVersionSettings: LanguageVersionSettings
+        get() = LanguageVersionSettings.DEFAULT
 
-    val allModules: List<CaModule>
-        get() = snapshot.allModules
-
-    val allResolvableModules: List<CaModule>
-        get() = snapshot.allResolvableModules
-
-    val allSourceLikeModules: List<CaModule>
-        get() = snapshot.allSourceLikeModules
-
-    val allSourceFiles: List<PsiFileSystemItem>
-        get() = snapshot.allSourceFiles
+    /**
+     * Project-global [LanguageVersionSettings] for library-related modules.
+     */
+    val libraryLanguageVersionSettings: LanguageVersionSettings
+        get() = globalLanguageVersionSettings
 
     companion object {
         fun getInstance(project: Project): CangJieProjectStructureProvider = project.service()

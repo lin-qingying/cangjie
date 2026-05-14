@@ -3,14 +3,14 @@ FILE: tryExpression.cj
         TRY {
             try:
                 RETURN {
-                    FUNCTION_CALL(div) {
+                    FUNCTION_CALL(*operator_div) {
                         receiver:
-                            QUALIFIED_ACCESS(a)
+                            NAMED_ACCESS(a)
                         arguments:
-                            QUALIFIED_ACCESS(b)
+                            NAMED_ACCESS(b)
                     }
                 }
-            catch(e: <implicit>):
+            catch(e: R|Exception|):
                 RETURN {
                     INT(0)
                 }
@@ -24,9 +24,9 @@ FILE: tryExpression.cj
         TRY {
             try:
                 RETURN {
-                    QUALIFIED_ACCESS(x)
+                    NAMED_ACCESS(x)
                 }
-            catch(e: <implicit>):
+            catch(e: R|Exception|):
                 RETURN {
                     INT(0)
                 }

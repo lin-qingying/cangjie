@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.imports
 
+import org.cangnova.cangjie.analysis.api.imports.CaDefaultImportPriority
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTestDirectives
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
@@ -22,10 +23,14 @@ abstract class AbstractDefaultImportsTest : AbstractAnalysisApiComponentTest() {
 
         analyzeForTest(mainFile) {
             val imports = defaultImports
-            val actualRegularImports = imports.regularImports.map { it.toString() }
-            val actualLowPriorityImports = imports.lowPriorityImports.map { it.toString() }
-            val actualExcludedImports = imports.excludedImports.map { it.asString() }
-            val actualAllImports = imports.allImports.map { it.toString() }
+            val actualRegularImports = imports.defaultImports
+                .filter { it.priority == CaDefaultImportPriority.HIGH }
+                .map { it.importPath.toString() }
+            val actualLowPriorityImports = imports.defaultImports
+                .filter { it.priority == CaDefaultImportPriority.LOW }
+                .map { it.importPath.toString() }
+            val actualExcludedImports = imports.excludedFromDefaultImports.map { it.fqName.asString() }
+            val actualAllImports = imports.defaultImports.map { it.importPath.toString() }
 
             assertEquals(expectedRegularImports, actualRegularImports)
             assertEquals(expectedLowPriorityImports, actualLowPriorityImports)

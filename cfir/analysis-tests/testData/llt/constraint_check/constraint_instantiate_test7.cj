@@ -14,12 +14,9 @@ enum R<T> where T <: X & Y {
     e
 }
 
-var a = R<X>.e
-var b = R<Y>.e
+var a = <!GENERIC_ARGUMENT_NO_MATCH!>R<X><!>.e
+var b = <!GENERIC_ARGUMENT_NO_MATCH!>R<Y><!>.e
 
 main(): Int64 {
     return 0
 }
-
-// ASSERT: scan-2 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan "Errors": 2

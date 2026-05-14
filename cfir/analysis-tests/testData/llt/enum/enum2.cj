@@ -12,25 +12,7 @@ enum TimeUnit {
 
 func codegenUnitTest(): Int32 {
     var time1 = TimeUnit.Year
-    time1.Year
-    time1.Year()
+    time1.<!NOT_MEMBER_OF!>Year<!>
+    time1.<!NO_MATCHING_OPERATOR_INVOKE!>Year<!>()
     return 0
 }
-
-/* SCAN
-error: no matching function for operator '()' function call
-  ==> enum2.cj:16:5:
-   | 
-16 |     time1.Year()
-   |     ^ 
-   | 
-
-error: base of member access can not be enum variable
-  ==> enum2.cj:15:5:
-   | 
-15 |     time1.Year
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -1,2 +1,4 @@
 FILE: isTypeCheckExpression.cj
-    internal? func checkType(obj: R|Object|): R|Bool|
+    internal? func checkType(obj: R|Object|): R|Bool| {
+        <element: CfirLazyBlock>
+    }

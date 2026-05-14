@@ -4,15 +4,15 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.impl.base.test.AbstractAnalysisApiComponentTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTestDirectives
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedCallableName
-import org.cangnova.cangjie.analysis.api.impl.base.test.expectedExplicitReceiverType
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetCallText
-import org.cangnova.cangjie.analysis.api.resolution.CaCallKind
-import org.cangnova.cangjie.analysis.api.resolution.CaCallOrigin
+import org.cangnova.cangjie.analysis.api.resolution.calls
 import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
+import org.cangnova.cangjie.analysis.api.resolution.symbol
 import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -29,6 +29,9 @@ abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
         val memberCall = PsiTreeUtil.findChildrenOfType(mainFile, CjCallExpression::class.java)
             .single { call -> matchesTargetCall(call, directives.targetCallText) }
         val expectedArgumentTypes = directives[AnalysisApiComponentTestDirectives.EXPECTED_ARGUMENT_TYPE]
+        val expectedExplicitReceiverType = directives.singleOrZeroValue(
+            AnalysisApiComponentTestDirectives.EXPECTED_EXPLICIT_RECEIVER_TYPE,
+        )
 
         analyzeForTest(memberCall) {
             val callInfo = memberCall.resolveToCall()
@@ -37,19 +40,18 @@ abstract class AbstractResolveCallTest : AbstractAnalysisApiComponentTest() {
             assertNotNull(callInfo, "成员调用应产生调用解析结果。")
             assertNotNull(successfulCall, "成员调用应成功解析为函数调用。")
             assertEquals(1, callInfo!!.calls.size, "当前成功调用主链应只暴露唯一调用。")
-            assertEquals(CaCallKind.FUNCTION, successfulCall!!.kind)
-            assertEquals(CaCallOrigin.REGULAR, successfulCall.origin)
-            assertEquals(directives.expectedCallableName, successfulCall.calleeName?.asString())
-            assertEquals(directives.expectedCallableName, successfulCall.target?.name?.asString())
+            assertEquals(directives.expectedCallableName, successfulCall!!.symbol.name?.asString())
             assertEquals(
-                directives.expectedExplicitReceiverType,
-                successfulCall.explicitReceiverType?.render()?.let(::normalizeTypeRendering),
+                expectedExplicitReceiverType,
+                successfulCall.dispatchReceiver?.type?.render()?.let(::normalizeTypeRendering),
             )
             assertEquals(
                 expectedArgumentTypes,
-                successfulCall.argumentTypes.map { it?.render()?.let(::normalizeTypeRendering) },
+                successfulCall.valueArgumentMapping.keys.map { argument ->
+                    argument.expressionType?.render()?.let(::normalizeTypeRendering)
+                },
             )
-            assertEquals(0, successfulCall.typeArgumentCount)
+            assertEquals(0, successfulCall.typeArgumentsMapping.size)
         }
     }
 

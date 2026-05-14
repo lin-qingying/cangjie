@@ -17,7 +17,7 @@ open class E {}
 extend E <: C {} // inherit 'f' for class E
 
 class F <: E {
-    public func f() {
+    public func <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>f<!>() {
         1
     } // conflic with E's extend function 'f'
 }
@@ -25,14 +25,3 @@ class F <: E {
 main() {
     return 0
 }
-
-/* SCAN
-error: cannot override function 'f' in extend of supertype
-  ==> class16.cj:20:17:
-   | 
-20 |     public func f() {
-   |                 ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

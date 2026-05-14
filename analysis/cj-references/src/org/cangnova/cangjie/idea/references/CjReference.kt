@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.idea.references
 
 import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiPolyVariantReference
 import com.intellij.psi.PsiPolyVariantReferenceBase
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.psiUtil.startOffset
 
 /**
  * 对齐 Kotlin `KtReference` 的仓颉引用基础设施。
@@ -108,6 +110,12 @@ abstract class CjMultiReference<T : CjElement>(expression: T) : AbstractCjRefere
 abstract class CjSimpleNameReference(
     expression: CjSimpleNameExpression,
 ) : CjSimpleReference<CjSimpleNameExpression>(expression) {
+    override fun getRangeInElement(): TextRange {
+        val element = element.referencedNameElement
+        val startOffset = getElement().startOffset
+        return element.textRange.shiftRight(-startOffset)
+    }
+
     enum class ShorteningMode {
         NO_SHORTENING,
         DELAYED_SHORTENING,

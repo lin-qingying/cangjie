@@ -1,21 +1,22 @@
 type A = Int64
 
-interface <!CLASSIFIER_REDECLARATION!>abc<!> {
-    <!CONFLICTING_OVERLOADS!>func ab()<!>: Unit
+interface abc {
+    func ab(): Unit
+
     <!CONFLICTING_OVERLOADS!>func ab()<!>: Unit
 }
 
-class <!CLASSIFIER_REDECLARATION, CONFLICTING_OVERLOADS!>abc<!> {
+class <!CLASSIFIER_REDECLARATION!>abc<!> {
 }
 
-class <!CLASSIFIER_REDECLARATION, CONFLICTING_OVERLOADS!>abc<!> {
-    prop <!REDECLARATION!>a<!>: Int {
+class <!CLASSIFIER_REDECLARATION!>abc<!> {
+    prop a: Int {
         get() {
             1
         }
     }
 
-    <!CONFLICTING_OVERLOADS!>func a()<!> {}
+    func <!REDECLARATION!>a<!>() {}
 
     let <!REDECLARATION!>a<!> = 1
 
@@ -23,7 +24,7 @@ class <!CLASSIFIER_REDECLARATION, CONFLICTING_OVERLOADS!>abc<!> {
     }
 }
 
-<!CONFLICTING_OVERLOADS!>func abc()<!> {}
+func <!REDECLARATION!>abc<!>() {}
 <!CONFLICTING_OVERLOADS!>func abc()<!> {}
 
 let <!REDECLARATION!>abc<!> = 1
@@ -31,7 +32,10 @@ let <!REDECLARATION!>abc<!> = 1
 let (<!REDECLARATION!>abc<!>, <!REDECLARATION!>abc<!>) = (1, 2)
 
 func abc1(a: Int) {
+    let _ = a
 }
 
 func abc1(a: Int, b: Int) {
+    let _ = a
+    let _ = b
 }

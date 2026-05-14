@@ -6,7 +6,7 @@ import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.create
 
 /**
- * Creates a compiler configuration with the default services required by the
+ * Creates a compiler configuration with the base services required by the
  * CFIR frontend pipeline.
  */
 @JvmOverloads
@@ -19,8 +19,8 @@ fun CompilerConfiguration.Companion.createForCfirFrontend(
 }
 
 /**
- * Ensures CFIR frontend-specific configuration services are available on an
- * existing configuration instance.
+ * Ensures the base CFIR entrypoint services are available on an existing
+ * configuration instance.
  */
 fun CompilerConfiguration.initializeCfirFrontendConfiguration() {
     if (diagnosticFactoriesStorage == null) {

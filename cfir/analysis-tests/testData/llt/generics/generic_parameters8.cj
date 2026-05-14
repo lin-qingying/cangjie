@@ -19,7 +19,7 @@ interface I<T> {
     }
 }
 
-interface J<T, Y> <: I<T> & I<V> where T <: String, V <: Int64 {
+interface <!INTERFACE_CANNOT_INHERIT_CLASS!>J<!><<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, Y> <: I<T> & I<<!UNRESOLVED_REFERENCE!>V<!>> where T <: String, <!UNRESOLVED_REFERENCE!>V<!> <: Int64 {
     prop m: Int64 {
         get() {
             return foo()
@@ -27,57 +27,4 @@ interface J<T, Y> <: I<T> & I<V> where T <: String, V <: Int64 {
     }
 }
 
-class B<T, V> <: J<T> where T <: String, V <: Int64 {}
-
-/* SCAN
-error: undeclared type name 'V'
-  ==> generic_parameters8.cj:22:31:
-   | 
-22 | interface J<T, Y> <: I<T> & I<V> where T <: String, V <: Int64 {
-   |                               ^ 
-   | 
-
-error: undeclared type name 'V'
-  ==> generic_parameters8.cj:22:53:
-   | 
-22 | interface J<T, Y> <: I<T> & I<V> where T <: String, V <: Int64 {
-   |                                                     ^ 
-   | 
-
-error: the upper bound 'Struct-String' of generic parameter 'Generics-T' must be class or interface
-  ==> generic_parameters8.cj:22:13:
-   | 
-22 | interface J<T, Y> <: I<T> & I<V> where T <: String, V <: Int64 {
-   |             ^ 
-   | 
-
-error: the upper bound 'Struct-String' of generic parameter 'Generics-T' must be class or interface
-  ==> generic_parameters8.cj:30:9:
-   | 
-30 | class B<T, V> <: J<T> where T <: String, V <: Int64 {}
-   |         ^ 
-   | 
-
-error: the upper bound 'Int64' of generic parameter 'Generics-V' must be class or interface
-  ==> generic_parameters8.cj:30:12:
-   | 
-30 | class B<T, V> <: J<T> where T <: String, V <: Int64 {}
-   |            ^ 
-   | 
-
-error: interface 'J' can only inherit interface
-  ==> generic_parameters8.cj:22:1:
-   | 
-22 | interface J<T, Y> <: I<T> & I<V> where T <: String, V <: Int64 {
-   | ^ 
-   | 
-
-error: type argument's number does not match type parameter's number
-  ==> generic_parameters8.cj:30:18:
-   | 
-30 | class B<T, V> <: J<T> where T <: String, V <: Int64 {}
-   |                  ^^^^ 
-   | 
-
-7 errors generated, 7 errors printed.
-*/
+class B<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>> <: <!GENERIC_ARGUMENT_NO_MATCH!>J<T><!> where T <: String, V <: Int64 {}

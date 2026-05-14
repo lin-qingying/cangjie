@@ -160,12 +160,6 @@ interface TypeSystemCommonBackendContextForTypeMapping : TypeSystemCommonBackend
     fun TypeConstructorMarker.defaultType(): CangJieTypeMarker
 
     /**
-     * 判断类型构造器是否是脚本类型
-     * 仓颉支持脚本模式，脚本顶层代码被包装为特殊类型
-     */
-    fun TypeConstructorMarker.isScript(): Boolean
-
-    /**
      * 用给定实参列表实例化类型构造器，得到具体类型
      * 如：将 List 和 [Int] 组合为 List<Int>
      */
