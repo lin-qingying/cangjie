@@ -9,17 +9,25 @@ import org.cangnova.cangjie.analysis.api.types.CaSubstitutor
 /**
  * 函数族 use-site 签名。
  *
- * 该层对齐 Kotlin `CaFunctionSignature`：
- * 它不新增额外状态，只是把底层 symbol 族约束收窄到 `CaFunctionSymbol`，
- * 以便 `asSignature()` / `substitute()` 在公开 API 上保留精确返回类型。
+ * - 在 [CaCallableSignature] 的基础上,把符号族约束收窄到 [CaFunctionSymbol];
+ * - 暴露值参数列表的 use-site 视图([valueParameters]);
+ * - `substitute()` 在公开 API 上返回精确的 [CaFunctionSignature] 类型,
+ *   而不是退回到通用 [CaCallableSignature]。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaFunctionSignature`。
+ *
+ * @param S 实际函数符号类型(协变)。
  */
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaFunctionSignature<out S : CaFunctionSymbol> : CaCallableSignature<S> {
+interface CaFunctionSignature<out S : CaFunctionSymbol> : CaCallableSignature<S> {
     /**
-     * The use-site-substituted [value parameters][CaFunctionSymbol.valueParameters].
+     * 经过 use-site 替换的值参数签名列表,对齐 [CaFunctionSymbol.valueParameters]。
      */
-    public val valueParameters: List<CaVariableSignature<CaValueParameterSymbol>>
+    val valueParameters: List<CaVariableSignature<CaValueParameterSymbol>>
 
+    /**
+     * 函数签名特化的替换入口,返回 [CaFunctionSignature] 以保留精确类型。
+     */
     @CaExperimentalApi
     abstract override fun substitute(substitutor: CaSubstitutor): CaFunctionSignature<S>
 }

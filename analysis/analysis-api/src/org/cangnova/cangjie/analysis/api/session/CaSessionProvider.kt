@@ -13,8 +13,10 @@ import org.cangnova.cangjie.psi.CjElement
  * `analyze()` 本身不负责额外同步；真正的并发约束应由 token、生命周期追踪器和平台层服务承担。
  */
 abstract class CaSessionProvider(val project: Project) : Disposable {
+    /** 为指定的源码元素构造或复用一个 [CaSession]。 */
     abstract fun getAnalysisSession(useSiteElement: CjElement): CaSession
 
+    /** 为指定的 [CaModule] 构造或复用一个 [CaSession]。 */
     abstract fun getAnalysisSession(useSiteModule: CaModule): CaSession
 
     /**
@@ -35,6 +37,11 @@ abstract class CaSessionProvider(val project: Project) : Disposable {
         }
     }
 
+    /**
+     * 在 [CaSession] 上下文中按模块视角执行分析动作。
+     *
+     * 与按元素入口配套,适用于"目标模块明确、入口元素无关"的批量场景。
+     */
     inline fun <R> analyze(
         useSiteModule: CaModule,
         action: CaSession.() -> R,
@@ -79,21 +86,33 @@ abstract class CaSessionProvider(val project: Project) : Disposable {
         }
     }
 
+    /** 在进入 analyze 块前调用,平台层可在此挂入计时、断点、读锁请求等。 */
     abstract fun beforeEnteringAnalysis(session: CaSession, useSiteElement: CjElement)
 
+    /** 按模块入口的进入钩子,与按元素的版本语义对齐。 */
     abstract fun beforeEnteringAnalysis(session: CaSession, useSiteModule: CaModule)
 
+    /**
+     * 在 [action] 抛出异常时统一处理。
+     *
+     * 平台实现必须重抛或包装异常,不允许吞掉(返回 `Nothing`)。
+     */
     abstract fun handleAnalysisException(throwable: Throwable, session: CaSession, useSiteElement: CjElement): Nothing
 
+    /** 按模块入口的异常处理器,与按元素的版本语义对齐。 */
     abstract fun handleAnalysisException(throwable: Throwable, session: CaSession, useSiteModule: CaModule): Nothing
 
+    /** 在 analyze 块正常或异常退出后调用,平台层可在此回收 token、释放读锁等。 */
     abstract fun afterLeavingAnalysis(session: CaSession, useSiteElement: CjElement)
 
+    /** 按模块入口的离开钩子。 */
     abstract fun afterLeavingAnalysis(session: CaSession, useSiteModule: CaModule)
 
+    /** 清空所有缓存的 session 与派生数据,通常在文档大量变更或工程重载时调用。 */
     abstract fun clearCaches()
 
     companion object {
+        /** 获取当前 [Project] 上的 session provider 服务。 */
         fun getInstance(project: Project): CaSessionProvider =
             project.getService(CaSessionProvider::class.java)
     }

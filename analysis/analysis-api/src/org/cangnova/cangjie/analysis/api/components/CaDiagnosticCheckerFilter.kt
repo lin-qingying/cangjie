@@ -1,7 +1,11 @@
 package org.cangnova.cangjie.analysis.api.components
 
 /**
- * [CaDiagnosticCheckerFilter] 用于控制诊断收集结果中包含哪些类型的诊断。
+ * 诊断收集过滤维度。
+ *
+ * 设计要点/职责:
+ * - 用于在调用诊断协议时声明应该纳入哪些检查器层级,避免实现层暴露内部 checker 注册细节。
+ * - 与 Kotlin Analysis API 的 `KaDiagnosticCheckerFilter` 同义,分层粒度保持一致。
  */
 enum class CaDiagnosticCheckerFilter {
     /**

@@ -30,6 +30,8 @@ abstract class CaEnumConstructorSymbol : CaCallableSymbol(), CaNamedSymbol {
 
     /**
      * 是否显式携带 payload。
+     *
+     * 直接由 [payloadTypes] 推导，无须实现者各自重写。
      */
     val hasPayload: Boolean
         get() = payloadTypes.isNotEmpty()

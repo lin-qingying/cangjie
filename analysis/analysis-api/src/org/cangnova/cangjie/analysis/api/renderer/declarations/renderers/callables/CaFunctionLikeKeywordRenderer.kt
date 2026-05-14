@@ -9,7 +9,16 @@ import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
 
+/**
+ * 函数关键字 renderer。
+ *
+ * 用于在 `CaDeclarationRenderer` 中作为"兜底"路径渲染函数类(`CaFunctionSymbol`)符号:
+ * 当没有更具体的子 renderer 时, 通过这一层统一输出"修饰符 + 关键字 + 名字 + 形参 + 返回类型 + body"。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaFunctionLikeKeywordRenderer`。
+ */
 fun interface CaFunctionLikeKeywordRenderer {
+    /** 用关键字 [keyword](例如 `func` / `finalizer`) 渲染 [symbol]。 */
     fun renderFunctionLike(
         analysisSession: CaSession,
         symbol: CaFunctionSymbol,
@@ -19,6 +28,10 @@ fun interface CaFunctionLikeKeywordRenderer {
     )
 
     companion object {
+        /**
+         * 预设: 按源码顺序写出 modifiers / mut / const / keyword / receiver / name /
+         * 类型参数 / 形参 / 返回类型 / 函数体。
+         */
         val AS_SOURCE: CaFunctionLikeKeywordRenderer = CaFunctionLikeKeywordRenderer { analysisSession, symbol, keyword, declarationRenderer, printer ->
             printer {
                 declarationRenderer.modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, this)

@@ -20,16 +20,32 @@ interface CaSymbol : CaLifetimeOwner {
      * 当前符号所属的 use-site 模块。
      */
     val containingModule: CaModule
-    public val psi: PsiElement?
 
     /**
-     * 当前符号的来源。
+     * 与当前符号对应的 PSI 元素。
+     *
+     * - 对源码符号必然非空；
+     * - 对库符号、合成符号等其他 origin，可能为 `null`，由实现方按约定决定是否提供回链。
+     */
+    val psi: PsiElement?
+
+    /**
+     * 当前符号的来源（源码 / 库 / 合成 / 扩展等）。
+     *
+     * 与 [location] 正交：[origin] 关心"从哪里来"，[location] 关心"写在哪"。
      */
     val origin: CaSymbolOrigin
-    public fun createPointer(): CaSymbolPointer<CaSymbol>
 
     /**
-     * 当前符号在源码结构中的声明位置。
+     * 创建当前符号的指针。
+     *
+     * 指针是跨 `analyze {}` 生命周期边界安全持有符号的唯一方式：
+     * 跨 Session 时必须先序列化为指针、在新 Session 中再恢复。
+     */
+    fun createPointer(): CaSymbolPointer<CaSymbol>
+
+    /**
+     * 当前符号在源码结构中的声明位置（顶层 / class 体内 / extend 体内 / property 内 / 局部）。
      */
     val location: CaSymbolLocation
 }
@@ -47,7 +63,7 @@ val CaSymbol.name: Name?
  *
  * 对齐 Kotlin Analysis API 的 `KaSymbol.psi()`。
  */
-public inline fun <reified PSI : PsiElement> CaSymbol.psi(): PSI =
+inline fun <reified PSI : PsiElement> CaSymbol.psi(): PSI =
     psi as PSI
 
 /**
@@ -55,7 +71,7 @@ public inline fun <reified PSI : PsiElement> CaSymbol.psi(): PSI =
  *
  * 对齐 Kotlin Analysis API 的 `KaSymbol.psiSafe()`。
  */
-public inline fun <reified PSI : PsiElement> CaSymbol.psiSafe(): PSI? =
+inline fun <reified PSI : PsiElement> CaSymbol.psiSafe(): PSI? =
     psi as? PSI
 
 /**
@@ -63,7 +79,7 @@ public inline fun <reified PSI : PsiElement> CaSymbol.psiSafe(): PSI? =
  *
  * 对齐 Kotlin Analysis API 的 `KaSymbol.sourcePsi()`。
  */
-public inline fun <reified PSI : PsiElement> CaSymbol.sourcePsi(): PSI? {
+inline fun <reified PSI : PsiElement> CaSymbol.sourcePsi(): PSI? {
     if (origin != CaSymbolOrigin.SOURCE) return null
 
     return psi as PSI
@@ -74,7 +90,7 @@ public inline fun <reified PSI : PsiElement> CaSymbol.sourcePsi(): PSI? {
  *
  * 对齐 Kotlin Analysis API 的 `KaSymbol.sourcePsiSafe()`。
  */
-public inline fun <reified PSI : PsiElement> CaSymbol.sourcePsiSafe(): PSI? {
+inline fun <reified PSI : PsiElement> CaSymbol.sourcePsiSafe(): PSI? {
     if (origin != CaSymbolOrigin.SOURCE) return null
 
     return psi as? PSI

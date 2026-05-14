@@ -25,9 +25,12 @@ interface CaScope : CaScopeLike {
 
 
     /**
-     * A sequence of all [CaDeclarationSymbol]s contained in the scope.
+     * 当前作用域内的全部声明序列(`callables`、`classifiers`、`constructors` 的合并)。
+     *
+     * 调用方应按需选择更具体的 `callables` / `classifiers` 入口,
+     * 直接使用此属性时会触发底层一次性遍历所有种类。
      */
-    public val declarations: Sequence<CaDeclarationSymbol>
+    val declarations: Sequence<CaDeclarationSymbol>
         get() = withValidityAssertion {
             sequence {
                 yieldAll(callables)
@@ -37,110 +40,91 @@ interface CaScope : CaScopeLike {
         }
 
     /**
-     * A sequence of [CaCallableSymbol]s contained in the scope.
+     * 当前作用域内的全部 [CaCallableSymbol] 序列。
      *
-     * The implementation of this property needs to retrieve a set of all possible names before processing callables. The overload with
-     * `Collection<Name>` should be used when the candidate name set is known.
+     * 实现需先获取所有可能名字再处理 callable;
+     * 已知候选名字集合时,应使用 `Collection<Name>` 版本以减少扫描成本。
      */
-    public val callables: Sequence<CaCallableSymbol>
+    val callables: Sequence<CaCallableSymbol>
         get() = callables { true }
 
     /**
-     * Returns a sequence of [CaCallableSymbol]s contained in the scope which match the [nameFilter].
+     * 返回作用域中名字满足 [nameFilter] 的 callable 序列。
      *
-     * The implementation of this function needs to retrieve a set of all possible names before processing callables. The overload with
-     * `Collection<Name>` should be used when the candidate name set is known.
+     * 实现需先获取所有可能名字再处理 callable;
+     * 已知候选名字集合时,应使用 `Collection<Name>` 版本以减少扫描成本。
      */
-    public fun callables(nameFilter: (Name) -> Boolean): Sequence<CaCallableSymbol>
+    fun callables(nameFilter: (Name) -> Boolean): Sequence<CaCallableSymbol>
 
     /**
-     * Returns a sequence of [CaCallableSymbol]s contained in the scope which match the given [names].
+     * 返回作用域中名字位于 [names] 中的 callable 序列。
      *
-     * The implementation of this function is optimized compared to using a name filter and should be used when the candidate name set is
-     * known.
+     * 已知候选名字集合时优于 nameFilter 版本,实现可直接定向查询。
      */
-    public fun callables(names: Collection<Name>): Sequence<CaCallableSymbol>
+    fun callables(names: Collection<Name>): Sequence<CaCallableSymbol>
 
     /**
-     * Returns a sequence of [CaCallableSymbol]s contained in the scope which match the given [names].
+     * 返回作用域中名字位于 [names] 中的 callable 序列(vararg 便捷形式)。
      *
-     * The implementation of this function is optimized compared to using a name filter and should be used when the candidate name set is
-     * known.
+     * 已知候选名字集合时优于 nameFilter 版本,实现可直接定向查询。
      */
-    public fun callables(vararg names: Name): Sequence<CaCallableSymbol> =
+    fun callables(vararg names: Name): Sequence<CaCallableSymbol> =
         callables(names.toList())
 
     /**
-     * A sequence of [CaClassifierSymbol]s contained in the scope.
+     * 当前作用域内的全部 [CaClassifierSymbol] 序列。
      *
-     * The result includes:
+     * 包含:
+     * - 嵌套类、内部类;
+     * - 类作用域中的嵌套 type alias;
+     * - 文件作用域中的顶级类与顶级 type alias。
      *
-     * - Nested classes
-     * - Inner classes
-     * - Nested type aliases for a class scope
-     * - Top-level classes and top-level type aliases for a file scope
-     *
-     * The implementation of this property needs to retrieve a set of all possible names before processing classifiers. The overload with
-     * `Collection<Name>` should be used when the candidate name set is known.
+     * 实现需先获取所有可能名字再处理 classifier;已知候选名字集合时,应使用 `Collection<Name>` 版本。
      */
-    public val classifiers: Sequence<CaClassifierSymbol>
+    val classifiers: Sequence<CaClassifierSymbol>
         get() = classifiers { true }
 
     /**
-     * Returns a sequence of [CaClassifierSymbol]s contained in the scope which match the [nameFilter].
+     * 返回作用域中名字满足 [nameFilter] 的 classifier 序列。
      *
-     * The result includes:
+     * 包含:
+     * - 嵌套类、内部类;
+     * - 类作用域中的嵌套 type alias;
+     * - 文件作用域中的顶级类与顶级 type alias。
      *
-     * - Nested classes
-     * - Inner classes
-     * - Nested type aliases for a class scope
-     * - Top-level classes and top-level type aliases for a file scope
-     *
-     * The implementation of this function needs to retrieve a set of all possible names before processing classifiers. The overload with
-     * `Collection<Name>` should be used when the candidate name set is known.
+     * 实现需先获取所有可能名字再处理 classifier;已知候选名字集合时,应使用 `Collection<Name>` 版本。
      */
-    public fun classifiers(nameFilter: (Name) -> Boolean): Sequence<CaClassifierSymbol>
+    fun classifiers(nameFilter: (Name) -> Boolean): Sequence<CaClassifierSymbol>
 
     /**
-     * Returns a sequence of [CaClassifierSymbol]s contained in the scope which match the given [names].
+     * 返回作用域中名字位于 [names] 中的 classifier 序列。
      *
-     * The result includes:
+     * 包含:
+     * - 嵌套类、内部类;
+     * - 类作用域中的嵌套 type alias;
+     * - 文件作用域中的顶级类与顶级 type alias。
      *
-     * - Nested classes
-     * - Inner classes
-     * - Nested type aliases for a class scope
-     * - Top-level classes and top-level type aliases for a file scope
-     *
-     * The implementation of this function is optimized compared to using a name filter and should be used when the candidate name set is
-     * known.
+     * 已知候选名字集合时优于 nameFilter 版本,实现可直接定向查询。
      */
-    public fun classifiers(names: Collection<Name>): Sequence<CaClassifierSymbol>
+    fun classifiers(names: Collection<Name>): Sequence<CaClassifierSymbol>
 
     /**
-     * Returns a sequence of [CaClassifierSymbol]s contained in the scope which match the given [names].
+     * 返回作用域中名字位于 [names] 中的 classifier 序列(vararg 便捷形式)。
      *
-     * The result includes:
-     *
-     * - Nested classes
-     * - Inner classes
-     * - Nested type aliases for a class scope
-     * - Top-level classes and top-level type aliases for a file scope
-     *
-     * The implementation of this function is optimized compared to using a name filter and should be used when the candidate name set is
-     * known.
+     * 已知候选名字集合时优于 nameFilter 版本,实现可直接定向查询。
      */
-    public fun classifiers(vararg names: Name): Sequence<CaClassifierSymbol> =
+    fun classifiers(vararg names: Name): Sequence<CaClassifierSymbol> =
         classifiers(names.toList())
 
     /**
-     * A sequence of [CaConstructorSymbol] contained in the scope.
+     * 当前作用域内的全部 [CaConstructorSymbol] 序列。
      */
-    public val constructors: Sequence<CaConstructorSymbol>
+    val constructors: Sequence<CaConstructorSymbol>
 
     /**
-     * Returns a sequence of [CaPackageSymbol]s matching [nameFilter] which are a direct subpackage of the scope's package.
+     * 返回与 [nameFilter] 匹配、作为当前作用域包直接子包的 [CaPackageSymbol] 序列。
      */
     @CaExperimentalApi
-    public fun getPackageSymbols(nameFilter: (Name) -> Boolean = { true }): Sequence<CaPackageSymbol>
+    fun getPackageSymbols(nameFilter: (Name) -> Boolean = { true }): Sequence<CaPackageSymbol>
 
 }

@@ -13,8 +13,11 @@ import org.cangnova.cangjie.psi.CjExpression
  *
  * Kotlin 只提供 `NO_BODY`，仓颉在同一 slot 上补充 source / placeholder
  * 两种明细渲染能力，仍由 preset 组合决定是否启用。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaFunctionLikeBodyRenderer`。
  */
 fun interface CaFunctionLikeBodyRenderer {
+    /** 渲染 [symbol] 的函数体到 [printer]。 */
     fun renderBody(
         analysisSession: CaSession,
         symbol: CaFunctionSymbol,
@@ -23,6 +26,7 @@ fun interface CaFunctionLikeBodyRenderer {
     )
 
     companion object {
+        /** 预设: 不输出函数体, 仅渲染签名。 */
         val NO_BODY: CaFunctionLikeBodyRenderer = CaFunctionLikeBodyRenderer { _, _, _, _ -> }
 
         /**
@@ -53,6 +57,12 @@ fun interface CaFunctionLikeBodyRenderer {
     }
 }
 
+/**
+ * 写出 callable 的源码 body。
+ *
+ * - 含块状 body: 直接输出 `{ ... }` 文本;
+ * - 有初始化器或表达式 body: 输出 `= xxx` 形式。
+ */
 internal fun renderCallableSourceBody(
     printer: PrettyPrinter,
     bodyExpression: CjExpression?,
@@ -69,6 +79,12 @@ internal fun renderCallableSourceBody(
     }
 }
 
+/**
+ * 写出 callable 的 placeholder body, 用 `...` 屏蔽具体细节。
+ *
+ * - 块状 body 输出 `{ ... }`;
+ * - 表达式 body / 初始化器输出 `= ...`。
+ */
 internal fun renderCallablePlaceholderBody(
     printer: PrettyPrinter,
     bodyExpression: CjExpression?,

@@ -1,8 +1,3 @@
-/*
- * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
-
 package org.cangnova.cangjie.analysis.api.signatures
 
 import org.cangnova.cangjie.analysis.api.CaExperimentalApi
@@ -16,53 +11,60 @@ import org.cangnova.cangjie.name.CallableId
 
 
 /**
- * A use-site signature for a [callable symbol][CaCallableSymbol]. Compared to the symbol, the signature carries additional use-site type
- * information.
+ * 可调用符号的 use-site 签名视图。
  *
- * The equality of [CaCallableSignature] is derived from its content.
+ * 与符号本身([CaCallableSymbol])相比,签名记录的是"在使用现场"经过类型替换后的形态:
  *
- * #### Example
+ * - 例如对 `fun foo(list: List<String>) = list.get(1)`,`get` 的符号侧返回类型是 `T`,
+ *   而签名侧返回类型已经实例化为 `String`。
  *
- * ```kotlin
- * fun test(l: List<String>) {
- *   l.get(1)
- * }
- * ```
+ * 签名的相等性由其内容(符号 + 已替换的类型集合)决定,
+ * 而不是引用相等;具体子接口应给出 `equals/hashCode` 的稳定实现。
  *
- * The [callable symbol][CaCallableSymbol] for `get` has the type `(Int) -> T` where `T` is the type parameter declared in `List`. On the
- * other hand, a [CaCallableSignature] for `l.get` carries the instantiated type information `(Int) -> String`.
+ * 对齐 Kotlin Analysis API 的 `KaCallableSignature`。
+ *
+ * @param S 实际可调用符号类型(协变)。
  */
 @OptIn(CaImplementationDetail::class)
-public sealed interface CaCallableSignature<out S : CaCallableSymbol> : CaLifetimeOwner {
+sealed interface CaCallableSignature<out S : CaCallableSymbol> : CaLifetimeOwner {
     /**
-     * The underlying symbol which the signature carries use-site information about.
+     * 与签名关联的可调用符号,签名携带其 use-site 信息。
      */
-    public val symbol: S
+    val symbol: S
 
     /**
-     * The use-site-substituted [return type][CaCallableSymbol.returnType].
+     * 经过 use-site 替换的返回类型,对齐 [CaCallableSymbol.returnType]。
      */
-    public val returnType: CaType
+    val returnType: CaType
 
     /**
-     * The use-site-substituted [extension receiver type][CaCallableSymbol.receiverParameter].
+     * 经过 use-site 替换的扩展 receiver 类型,对齐 [CaCallableSymbol.receiverParameter]。
+     *
+     * 非扩展声明返回 `null`。
      */
-    public val receiverType: CaType?
+    val receiverType: CaType?
 
     /**
-     * The [CallableId] of the signature, corresponding to the symbol's callable ID.
+     * 签名对应的 [CallableId],默认沿用符号自身的 [CaCallableSymbol.callableId]。
      */
-    public val callableId: CallableId? get() = withValidityAssertion { symbol.callableId }
+    val callableId: CallableId? get() = withValidityAssertion { symbol.callableId }
 
 
     /**
-     * Applies the given [substitutor] to the signature, returning a new signature with substituted types.
+     * 在当前签名上应用 [substitutor],返回经过类型替换的新签名。
      *
      * @see CaSubstitutor.substitute
      */
     @CaExperimentalApi
-    public fun substitute(substitutor: CaSubstitutor): CaCallableSignature<S>
+    fun substitute(substitutor: CaSubstitutor): CaCallableSignature<S>
 
+    /**
+     * 基于内容的相等性,具体实现必须提供稳定的 `equals`。
+     */
     abstract override fun equals(other: Any?): Boolean
+
+    /**
+     * 基于内容的哈希,需与 [equals] 保持一致。
+     */
     abstract override fun hashCode(): Int
 }

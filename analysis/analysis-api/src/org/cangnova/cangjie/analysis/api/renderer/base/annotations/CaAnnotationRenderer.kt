@@ -30,6 +30,8 @@ class CaAnnotationRenderer internal constructor(
 ) {
     /**
      * 渲染附着在 [owner] 上的全部注解。
+     *
+     * 实际写出顺序与排版交由 [annotationListRenderer] 决定。
      */
     fun renderAnnotations(analysisSession: CaSession, owner: CaAnnotated, printer: PrettyPrinter) {
         annotationListRenderer.renderAnnotations(analysisSession, owner, this, printer)
@@ -37,6 +39,8 @@ class CaAnnotationRenderer internal constructor(
 
     /**
      * 基于当前 renderer 派生一个新配置。
+     *
+     * 未在 [action] 中显式覆盖的字段沿用当前实例的设置。
      */
     fun with(action: Builder.() -> Unit): CaAnnotationRenderer {
         val current = this
@@ -49,13 +53,19 @@ class CaAnnotationRenderer internal constructor(
     }
 
     /**
-     * 注解 renderer 构建器。
+     * 注解 renderer 构建器, 用于以 DSL 方式装配 [CaAnnotationRenderer]。
      */
     class Builder {
+        /** 注解列表组织策略(顺序、分隔、换行)。 */
         lateinit var annotationListRenderer: CaAnnotationListRenderer
+
+        /** 注解名(短名/全限定名)渲染策略。 */
         lateinit var annotationQualifierRenderer: CaAnnotationQualifierRenderer
+
+        /** 注解参数渲染策略。 */
         lateinit var annotationArgumentsRenderer: CaAnnotationArgumentsRenderer
 
+        /** 构建最终的注解渲染器。 */
         fun build(): CaAnnotationRenderer = CaAnnotationRenderer(
             annotationListRenderer = annotationListRenderer,
             annotationQualifierRenderer = annotationQualifierRenderer,
@@ -64,6 +74,7 @@ class CaAnnotationRenderer internal constructor(
     }
 
     companion object {
+        /** DSL 入口, 等价于 `Builder().apply(action).build()`。 */
         operator fun invoke(action: Builder.() -> Unit): CaAnnotationRenderer =
             Builder().apply(action).build()
     }

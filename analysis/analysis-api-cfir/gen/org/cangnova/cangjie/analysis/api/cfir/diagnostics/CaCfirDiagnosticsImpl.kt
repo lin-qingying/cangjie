@@ -84,14 +84,14 @@ internal class SuperTypesDuplicateImpl(
     override val typeName: Name,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.SuperTypesDuplicate
+) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.SuperTypesDuplicate
 
 internal class InterfaceCannotInheritClassImpl(
     override val interfaceName: Name,
     override val superTypeName: Name,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.InterfaceCannotInheritClass
+) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.InterfaceCannotInheritClass
 
 internal class MultipleClassSuperTypesImpl(
     override val className: Name,
@@ -198,13 +198,13 @@ internal class StaticCannotBeOpenAbstractOverrideImpl(
     override val declarationName: Name?,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.StaticCannotBeOpenAbstractOverride
+) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.StaticCannotBeOpenAbstractOverride
 
 internal class MutOnlyOnFunctionImpl(
     override val declarationName: Name?,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.MutOnlyOnFunction
+) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.MutOnlyOnFunction
 
 internal class NothingToOverrideImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -2205,4 +2205,222 @@ internal class MockFrozenRequiredImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MockFrozenRequired
+
+internal class MacroNotExpandedImpl(
+    override val macroName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroNotExpanded
+
+internal class MacroExpansionFailedImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExpansionFailed
+
+internal class MacroDiagReportErrorImpl(
+    override val message: String,
+    override val hint: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroDiagReportError
+
+internal class MacroDiagReportWarningImpl(
+    override val message: String,
+    override val hint: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroDiagReportWarning
+
+internal class MacroUndefinedPackageImpl(
+    override val packageName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroUndefinedPackage
+
+internal class MacroUndeclaredIdentifierImpl(
+    override val name: Name,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroUndeclaredIdentifier
+
+internal class MacroExpectMacroDefinitionImpl(
+    override val target: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExpectMacroDefinition
+
+internal class MacroDependencyCompileFailedImpl(
+    override val packageName: String,
+    override val reason: String,
+    override val diagnosticsRef: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroDependencyCompileFailed
+
+internal class MacroAmbiguousMatchImpl(
+    override val macroName: String,
+    override val targets: List<FqName>,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroAmbiguousMatch
+
+internal class MacroCannotFindDependencyBchirImpl(
+    override val packageName: String,
+    override val path: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroCannotFindDependencyBchir
+
+internal class MacroExpectPlainMacroImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExpectPlainMacro
+
+internal class MacroExpectAttributedMacroImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExpectAttributedMacro
+
+internal class MacroExpandAtexclImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExpandAtexcl
+
+internal class MacroInvalidAttrTokensImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroInvalidAttrTokens
+
+internal class MacroInvalidInputTokensImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroInvalidInputTokens
+
+internal class MacroInvalidEscapeImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroInvalidEscape
+
+internal class MacroSamePackageDefCallImpl(
+    override val macroName: String,
+    override val packageName: FqName,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroSamePackageDefCall
+
+internal class MacroAliasConflictImpl(
+    override val alias: Name,
+    override val targets: List<FqName>,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroAliasConflict
+
+internal class MacroExecutorUnavailableImpl(
+    override val hint: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExecutorUnavailable
+
+internal class MacroCannotOpenLibImpl(
+    override val libPath: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroCannotOpenLib
+
+internal class MacroCannotFindMethodImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroCannotFindMethod
+
+internal class MacroEvaluateFailedImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroEvaluateFailed
+
+internal class MacroExpandFailedImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExpandFailed
+
+internal class MacroExpandCodeShouldNotHaveMacrocallImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExpandCodeShouldNotHaveMacrocall
+
+internal class MacroCallSaveFileFailedImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroCallSaveFileFailed
+
+internal class MacroExecutorProtocolErrorImpl(
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExecutorProtocolError
+
+internal class MacroExecutorServerDisconnectedImpl(
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExecutorServerDisconnected
+
+internal class MacroExecutorTimeoutImpl(
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExecutorTimeout
+
+internal class MacroExecutorServerCrashImpl(
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroExecutorServerCrash
+
+internal class MacroReevaluationFailedImpl(
+    override val macroName: String,
+    override val reason: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroReevaluationFailed
+
+internal class MacroUnresolvedImpl(
+    override val macroName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroUnresolved
+
+internal class MacroCycleImpl(
+    override val macroName: String,
+    override val cycleChain: List<String>,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroCycle
 

@@ -15,164 +15,188 @@ import org.cangnova.cangjie.psi.CjExpression
 /**
  * 调用解析结果。
  *
- * Analysis API 需要对外暴露“调用点最终看到了哪些候选、最终选择了哪个候选”，
+ * Analysis API 需要对外暴露"调用点最终看到了哪些候选、最终选择了哪个候选",
  * 但不能把底层 CFIR 的候选对象直接泄漏到上层。
  *
- * 因此这里稳定公开两层信息：
- * 1. [successfulCall] 表示无错误的最终选中调用。
- * 2. [calls] 表示当前调用点可观察到的调用视图集合，允许包含带错误的已选候选。
+ * 因此这里稳定公开两层信息:
+ * 1. [CaSuccessCallInfo]:无错误的最终选中调用;
+ * 2. [CaErrorCallInfo]:错误解析下可观察到的全部候选 + 诊断。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaCallInfo`。
  */
 @OptIn(CaImplementationDetail::class)
-public sealed interface CaCallInfo : CaLifetimeOwner
+sealed interface CaCallInfo : CaLifetimeOwner
+
+/**
+ * 成功的调用解析结果。
+ */
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaSuccessCallInfo : CaCallInfo {
+interface CaSuccessCallInfo : CaCallInfo {
     /**
-     * The successfully resolved [CaCall].
+     * 成功解析得到的 [CaCall]。
      */
-    public val call: CaCall
+    val call: CaCall
 }
-public interface CaErrorCallInfo : CaCallInfo {
+
+/**
+ * 错误的调用解析结果,携带候选集合与诊断信息。
+ */
+interface CaErrorCallInfo : CaCallInfo {
     /**
-     * A list of [CaCall]s to candidates that were considered during the call resolution process, but ultimately not selected. This may be
-     * due to various errors. For example, an ambiguity results in an error call with multiple candidates.
+     * 解析过程中考虑过、但最终未被选中的候选调用列表。
      *
-     * An error call is not guaranteed to have any candidates.
+     * 例如出现重载歧义时,会以多候选错误形式返回。错误解析不保证一定有候选。
      */
-    public val candidateCalls: List<CaCall>
+    val candidateCalls: List<CaCall>
 
     /**
-     * The [CaDiagnostic] describing the error.
+     * 描述错误的 [CaDiagnostic]。
      */
-    public val diagnostic: CaDiagnostic
+    val diagnostic: CaDiagnostic
 }
 
-public val CaCallInfo.calls: List<CaCall>
+/**
+ * 当前 [CaCallInfo] 对外可见的调用列表。
+ *
+ * - 成功结果只暴露最终选中的调用;
+ * - 错误结果暴露所有候选。
+ */
+val CaCallInfo.calls: List<CaCall>
     get() = when (this) {
         is  CaErrorCallInfo -> candidateCalls
         is CaSuccessCallInfo -> listOf(call)
     }
 
 /**
- * Returns the single [CaCall] of type [T] associated with the [CaCallInfo], or `null` if there is no such exact single call.
+ * 如果只有唯一一个类型为 [T] 的调用,返回之;否则返回 `null`。
  *
- * In the case of an [error call][CaErrorCallInfo], returns a single [candidate call][CaErrorCallInfo.candidateCalls] of type [T].
+ * 错误调用时同样适用:在所有候选中查找单一类型匹配。
  */
-public inline fun <reified T : CaCall> CaCallInfo.singleCallOrNull(): T? {
+inline fun <reified T : CaCall> CaCallInfo.singleCallOrNull(): T? {
     return calls.singleOrNull { it is T } as T?
 }
 
 /**
- * Returns the single [CaFunctionCall] associated with the [CaCallInfo], or `null` if there is no such exact single call.
+ * 如果只有唯一一个 [CaFunctionCall],返回之;否则返回 `null`。
  *
  * @see singleCallOrNull
  */
-public fun CaCallInfo.singleFunctionCallOrNull(): CaFunctionCall<*>? = singleCallOrNull()
+fun CaCallInfo.singleFunctionCallOrNull(): CaFunctionCall<*>? = singleCallOrNull()
 
 /**
- * Returns the single [CaVariableAccessCall] associated with the [CaCallInfo], or `null` if there is no such exact single call.
+ * 如果只有唯一一个 [CaVariableAccessCall],返回之;否则返回 `null`。
  *
  * @see singleCallOrNull
  */
-public fun CaCallInfo.singleVariableAccessCall(): CaVariableAccessCall? = singleCallOrNull()
+fun CaCallInfo.singleVariableAccessCall(): CaVariableAccessCall? = singleCallOrNull()
 
 /**
- * Returns the single [CaFunctionCall] with a [CaConstructorSymbol] associated with the [CaCallInfo], or `null` if there is no such exact
- * single call.
+ * 如果只有唯一一个目标为构造器的 [CaFunctionCall],返回之;否则返回 `null`。
  *
  * @see singleCallOrNull
  */
 @Suppress("UNCHECKED_CAST")
-public fun CaCallInfo.singleConstructorCallOrNull(): CaFunctionCall<CaConstructorSymbol>? =
+fun CaCallInfo.singleConstructorCallOrNull(): CaFunctionCall<CaConstructorSymbol>? =
     singleCallOrNull<CaFunctionCall<*>>()?.takeIf { it.symbol is CaConstructorSymbol } as CaFunctionCall<CaConstructorSymbol>?
 
 /**
- * Returns the successful [CaCall] of type [T] associated with the [CaCallInfo], or `null` if there is no such exact call (either the call
- * is not successful, or the successful call is of another type).
+ * 返回类型为 [T] 的成功调用;若调用本身不成功,或类型不匹配,则返回 `null`。
  */
-public inline fun <reified T : CaCall> CaCallInfo.successfulCallOrNull(): T? {
+inline fun <reified T : CaCall> CaCallInfo.successfulCallOrNull(): T? {
     return (this as? CaSuccessCallInfo)?.call as? T
 }
 
 /**
- * Returns the successful [CaFunctionCall] associated with the [CaCallInfo], or `null` if there is no such exact call.
+ * 返回成功的 [CaFunctionCall];若不存在则返回 `null`。
  *
  * @see successfulCallOrNull
  */
-public fun CaCallInfo.successfulFunctionCallOrNull(): CaFunctionCall<*>? = successfulCallOrNull()
+fun CaCallInfo.successfulFunctionCallOrNull(): CaFunctionCall<*>? = successfulCallOrNull()
 
 /**
- * Returns the successful [CaVariableAccessCall] associated with the [CaCallInfo], or `null` if there is no such exact call.
+ * 返回成功的 [CaVariableAccessCall];若不存在则返回 `null`。
  *
  * @see successfulCallOrNull
  */
-public fun CaCallInfo.successfulVariableAccessCall(): CaVariableAccessCall? = successfulCallOrNull()
+fun CaCallInfo.successfulVariableAccessCall(): CaVariableAccessCall? = successfulCallOrNull()
 
 /**
- * Returns the successful [CaFunctionCall] with a [CaConstructorSymbol] associated with the [CaCallInfo], or `null` if there is no such
- * exact call.
+ * 返回成功的、目标为构造器的 [CaFunctionCall];若不存在则返回 `null`。
  *
  * @see successfulCallOrNull
  */
 @Suppress("UNCHECKED_CAST")
-public fun CaCallInfo.successfulConstructorCallOrNull(): CaFunctionCall<CaConstructorSymbol>? =
+fun CaCallInfo.successfulConstructorCallOrNull(): CaFunctionCall<CaConstructorSymbol>? =
     successfulCallOrNull<CaFunctionCall<*>>()?.takeIf { it.symbol is CaConstructorSymbol } as CaFunctionCall<CaConstructorSymbol>?
 
 /**
- * The [callable symbol][CaCallableSymbol] which the [CaPartiallyAppliedSymbol] represents. While the information contained in a partially
- * applied symbol is not exhaustive (e.g. applied functions are missing value arguments), the symbol of the callable which is called is
- * definite.
+ * [CaPartiallyAppliedSymbol] 所代表的可调用符号。
+ *
+ * 部分应用符号虽然缺少完整运行时信息(实参等),但被调用的具体声明是确定的。
  */
-public val <S : CaCallableSymbol, C : CaCallableSignature<S>> CaPartiallyAppliedSymbol<S, C>.symbol: S get() = signature.symbol
+val <S : CaCallableSymbol, C : CaCallableSignature<S>> CaPartiallyAppliedSymbol<S, C>.symbol: S get() = signature.symbol
 
 /**
- * The [CaCallableSymbol] of the [CaCallableMemberCall]'s callee.
+ * [CaCallableMemberCall] 的被调用符号。
  */
-public val <S : CaCallableSymbol, C : CaCallableSignature<S>> CaCallableMemberCall<S, C>.symbol: S
+val <S : CaCallableSymbol, C : CaCallableSignature<S>> CaCallableMemberCall<S, C>.symbol: S
     get() = partiallyAppliedSymbol.symbol
+
 /**
- * Access to variables (including properties).
+ * 对变量(含属性)的访问调用。
+ *
+ * 与函数调用相对应:目标是变量/属性,需要额外区分访问模式(读 / 写)。
  */
 @OptIn(CaImplementationDetail::class, CaExperimentalApi::class)
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaVariableAccessCall : CaSingleCall<CaVariableSymbol, CaVariableSignature<CaVariableSymbol>>,
+interface CaVariableAccessCall : CaSingleCall<CaVariableSymbol, CaVariableSignature<CaVariableSymbol>>,
     CaCallableMemberCall<CaVariableSymbol, CaVariableSignature<CaVariableSymbol>> {
 
+    /**
+     * 部分应用符号(变量族特化)。
+     *
+     * 已 deprecated,建议直接访问 partiallyAppliedSymbol 内部组件。
+     */
     @Deprecated("Use the content of the `partiallyAppliedSymbol` directly instead")
     override val partiallyAppliedSymbol: CaPartiallyAppliedSymbol<CaVariableSymbol, CaVariableSignature<CaVariableSymbol>>
 
     /**
-     * Whether the call was resolved using the [context-sensitive resolution](https://github.com/Kotlin/KEEP/issues/379) feature
+     * 该调用是否经由
+     * [context-sensitive resolution](https://github.com/Kotlin/KEEP/issues/379) 解析得到。
      */
     @CaExperimentalApi
-    public val isContextSensitive: Boolean
+    val isContextSensitive: Boolean
 
     /**
-     * The kind of access to the variable (read or write), alongside additional information
+     * 对变量的访问类型(读 / 写),以及伴随的附加信息。
      */
-    public val kind: Kind
+    val kind: Kind
 
     /**
-     * Determines the kind of access to the [variable][CaVariableAccessCall] (read or write), alongside additional information
+     * 访问模式分类。
+     *
+     * 当前提供两个直接子接口:[Read] 与 [Write]。
      *
      * @see CaVariableAccessCall
      */
-    public sealed interface Kind {
+    sealed interface Kind {
         /**
-         * The [variable access][CaVariableAccessCall] reads the variable.
+         * 读取变量。
          */
         @SubclassOptInRequired(CaImplementationDetail::class)
-        public interface Read : Kind
+        interface Read : Kind
 
         /**
-         * The [variable access][CaVariableAccessCall] writes to the variable.
+         * 写入变量。
          */
         @SubclassOptInRequired(CaImplementationDetail::class)
-        public interface Write : Kind {
+        interface Write : Kind {
             /**
-             * A [CjExpression] that represents the new value which is assigned to this variable, or `null` if the assignment is incomplete and
-             * lacks the new value.
+             * 赋值表达式右侧的新值。
+             *
+             * 当赋值不完整(缺少右值)时为 `null`。
              */
-            public val value: CjExpression?
+            val value: CjExpression?
         }
     }
 }

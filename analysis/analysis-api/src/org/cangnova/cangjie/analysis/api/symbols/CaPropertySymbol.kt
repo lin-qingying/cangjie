@@ -22,19 +22,45 @@ abstract class CaPropertySymbol : CaVariableSymbol(), CaTypeParameterOwnerSymbol
      */
     abstract override fun createPointer(): CaSymbolPointer<CaPropertySymbol>
 
-  abstract  val isStatic: Boolean
+    /**
+     * 是否为静态属性。
+     */
+    abstract  val isStatic: Boolean
 
+    /**
+     * 是否为编译期常量属性。
+     */
     abstract val isConst: Boolean
 
+    /**
+     * `mut` 修饰符语义，参见 [CaFunctionSymbol.isMutating]。
+     *
+     * 用于区分"允许修改 receiver"与"绑定本身可变（var）"两种语义。
+     */
     abstract val isMutating: Boolean
 
+    /**
+     * 是否为 `override` 声明，重写父类型的同名属性。
+     */
     abstract   val isOverride: Boolean
 
+    /**
+     * 是否为 `unsafe` 属性。
+     */
     abstract  val isUnsafe: Boolean
 
+    /**
+     * 是否为 `foreign` 属性。
+     */
     abstract val isForeign: Boolean
 
+    /**
+     * getter 子符号；只读属性可能在某些场景下为 `null`，依实现而定。
+     */
     abstract   val getter: CaPropertyGetterSymbol?
 
+    /**
+     * setter 子符号；只读属性为 `null`。
+     */
     abstract   val setter: CaPropertySetterSymbol?
 }

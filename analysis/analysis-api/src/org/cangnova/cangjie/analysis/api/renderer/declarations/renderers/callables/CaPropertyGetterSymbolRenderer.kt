@@ -10,6 +10,7 @@ import org.cangnova.cangjie.lexer.CjTokens
  * 对齐 Kotlin `KaPropertyGetterSymbolRenderer` 的 getter 叶子 renderer。
  */
 fun interface CaPropertyGetterSymbolRenderer {
+    /** 渲染 getter [symbol] 到 [printer]。 */
     fun renderSymbol(
         analysisSession: CaSession,
         symbol: CaPropertyGetterSymbol,
@@ -18,6 +19,11 @@ fun interface CaPropertyGetterSymbolRenderer {
     )
 
     companion object {
+        /**
+         * 预设: 输出 `get()` 头部, 后跟 accessor body renderer 写出的 body。
+         *
+         * 修饰符与头部以空格分隔; 形参始终为空, 但仍走 valueParametersRenderer 以保持 hook。
+         */
         val AS_SOURCE: CaPropertyGetterSymbolRenderer = CaPropertyGetterSymbolRenderer {
                 analysisSession,
                 symbol,
