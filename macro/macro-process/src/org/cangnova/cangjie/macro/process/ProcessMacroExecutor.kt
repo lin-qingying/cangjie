@@ -12,10 +12,15 @@ package org.cangnova.cangjie.macro.process
 
 import org.cangnova.cangjie.macro.MacroCallInfo
 import org.cangnova.cangjie.macro.MacroExecutor
+import org.cangnova.cangjie.macro.MacroExpansionFailureKind
 import org.cangnova.cangjie.macro.MacroExpansionResult
+import org.cangnova.cangjie.macro.MacroLibraryLoadFailure
+import org.cangnova.cangjie.macro.MacroLibraryLoadFailureKind
+import org.cangnova.cangjie.macro.MacroLibraryLoadResult
 import org.cangnova.cangjie.macro.protocol.MacroMsgCodec
 import org.cangnova.cangjie.macro.protocol.PipeTransport
 import java.io.IOException
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Level
 import kotlin.concurrent.withLock
@@ -40,18 +45,37 @@ abstract class ProcessMacroExecutor : MacroExecutor {
 
     override fun isAvailable(): Boolean = isBackendAvailable()
 
-    override fun loadLibraries(libPaths: List<String>) = lock.withLock {
-        if (libPaths.isEmpty()) return@withLock
-        val newPaths = libPaths.toSet()
-        if (newPaths == loadedLibPaths) return@withLock
+    override fun loadLibraries(libPaths: List<String>): MacroLibraryLoadResult = lock.withLock {
+        val requested = libPaths.filter(String::isNotBlank).distinct()
+        if (requested.isEmpty()) return@withLock MacroLibraryLoadResult.Success(emptyList())
+        val unloaded = requested.filterNot { it in loadedLibPaths }
+        if (unloaded.isEmpty()) return@withLock MacroLibraryLoadResult.Success(requested)
 
-        ensureStarted()
+        try {
+            ensureStarted()
 
-        val t = connection?.transport ?: error("传输层未就绪")
-        t.send(MacroMsgCodec.buildDefLib(libPaths))
-        t.receive() // 等待确认
-        loadedLibPaths = newPaths
-        logger.fine("加载宏动态库: $libPaths")
+            val t = connection?.transport ?: return@withLock MacroLibraryLoadResult.Failure(
+                listOf(unloaded.protocolFailure("宏执行器传输层未就绪")),
+            )
+            t.send(MacroMsgCodec.buildDefLib(unloaded))
+            val ack = parseDefLibAck(t.receive(), unloaded)
+            if (ack is MacroLibraryLoadResult.Success) {
+                loadedLibPaths = loadedLibPaths + unloaded
+                logger.fine("加载宏动态库: $unloaded")
+            }
+            ack
+        } catch (e: IOException) {
+            logger.log(Level.WARNING, "宏动态库加载通信失败", e)
+            MacroLibraryLoadResult.Failure(
+                listOf(
+                    MacroLibraryLoadFailure(
+                        libPath = unloaded.joinToString(";"),
+                        kind = MacroLibraryLoadFailureKind.SERVER_DISCONNECTED,
+                        message = e.message ?: "宏执行器连接已断开",
+                    )
+                )
+            )
+        }
     }
 
     override fun execute(calls: List<MacroCallInfo>): List<MacroExpansionResult> = lock.withLock {
@@ -67,16 +91,29 @@ abstract class ProcessMacroExecutor : MacroExecutor {
                 t.send(payload)
 
                 val response = t.receive()
-                val msgType = MacroMsgCodec.getMsgType(response)
+                val msgType = runCatching { MacroMsgCodec.getMsgType(response) }.getOrElse { error ->
+                    return@map MacroExpansionResult.Failure(
+                        message = error.message ?: "宏执行器返回了无法解析的协议消息。",
+                        kind = MacroExpansionFailureKind.PROTOCOL_ERROR,
+                    )
+                }
                 if (msgType != MacroMsgCodec.TYPE_MACRO_RESULT) {
-                    MacroExpansionResult.Failure("意外的消息类型: $msgType")
+                    MacroExpansionResult.Failure(
+                        message = "意外的消息类型: $msgType",
+                        kind = MacroExpansionFailureKind.PROTOCOL_ERROR,
+                    )
                 } else {
                     MacroMsgCodec.parseMacroResult(response)
                 }
             }
         } catch (e: IOException) {
             logger.log(Level.WARNING, "宏展开通信失败", e)
-            calls.map { MacroExpansionResult.Failure(e.message ?: "通信失败") }
+            calls.map {
+                MacroExpansionResult.Failure(
+                    message = e.message ?: "通信失败",
+                    kind = MacroExpansionFailureKind.SERVER_DISCONNECTED,
+                )
+            }
         }
     }
 
@@ -87,6 +124,7 @@ abstract class ProcessMacroExecutor : MacroExecutor {
         }.onFailure { e ->
             logger.log(Level.WARNING, "发送 ResetStage 失败", e)
         }
+        loadedLibPaths = emptySet()
     }
 
     override fun close() {
@@ -112,6 +150,67 @@ abstract class ProcessMacroExecutor : MacroExecutor {
     private fun ensureStarted() {
         if (connection?.isAlive() == true) return
         connection = startConnection()
+    }
+
+    private fun parseDefLibAck(response: ByteArray, requested: List<String>): MacroLibraryLoadResult {
+        parseTextDefLibAck(response, requested)?.let { return it }
+
+        val msgType = runCatching { MacroMsgCodec.getMsgType(response) }.getOrElse { error ->
+            return MacroLibraryLoadResult.Failure(
+                listOf(requested.protocolFailure(error.message ?: "无法解析 DefLib ack。")),
+            )
+        }
+        if (msgType != MacroMsgCodec.TYPE_DEF_LIB) {
+            return MacroLibraryLoadResult.Failure(
+                listOf(requested.protocolFailure("DefLib ack 消息类型错误: $msgType")),
+            )
+        }
+
+        val failedPaths = runCatching { MacroMsgCodec.parseDefLibPaths(response) }.getOrElse { error ->
+            return MacroLibraryLoadResult.Failure(
+                listOf(requested.protocolFailure(error.message ?: "无法解析 DefLib ack 内容。")),
+            )
+        }
+        if (failedPaths.isEmpty()) return MacroLibraryLoadResult.Success(requested)
+        return MacroLibraryLoadResult.Failure(
+            failedPaths.map { path ->
+                MacroLibraryLoadFailure(
+                    libPath = path,
+                    kind = MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB,
+                    message = "宏执行器无法打开动态库: $path",
+                )
+            }
+        )
+    }
+
+    private fun parseTextDefLibAck(response: ByteArray, requested: List<String>): MacroLibraryLoadResult? {
+        val text = response.toString(StandardCharsets.UTF_8).trimEnd('\u0000', '\r', '\n')
+        if (!text.startsWith(RESPOND_FIND_DEF)) return null
+        val failedPath = text.removePrefix(RESPOND_FIND_DEF).trim()
+        return if (failedPath.isBlank()) {
+            MacroLibraryLoadResult.Success(requested)
+        } else {
+            MacroLibraryLoadResult.Failure(
+                listOf(
+                    MacroLibraryLoadFailure(
+                        libPath = failedPath,
+                        kind = MacroLibraryLoadFailureKind.CANNOT_OPEN_LIB,
+                        message = "宏执行器无法打开动态库: $failedPath",
+                    )
+                )
+            )
+        }
+    }
+
+    private fun List<String>.protocolFailure(message: String): MacroLibraryLoadFailure =
+        MacroLibraryLoadFailure(
+            libPath = joinToString(";"),
+            kind = MacroLibraryLoadFailureKind.PROTOCOL_ERROR,
+            message = message,
+        )
+
+    companion object {
+        private const val RESPOND_FIND_DEF: String = "RespondFindDef "
     }
 
     /**
