@@ -18,6 +18,7 @@ import org.cangnova.cangjie.source.CjSourceElement
 abstract class CfirPackageDirective : CfirPureAbstractElement(), CfirElement {
     abstract override val source: CjSourceElement?
     abstract val packageFqName: FqName
+    abstract val isMacroPackage: Boolean
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
         visitor.visitPackageDirective(this, data)

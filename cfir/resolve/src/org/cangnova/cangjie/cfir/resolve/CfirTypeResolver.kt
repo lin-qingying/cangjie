@@ -85,6 +85,7 @@ fun interface SupertypeSupplier {
 class CfirTypeResolverImpl(
     private val session: CfirSession,
 ) : CfirTypeResolver() {
+    private val cFuncName = Name.identifier("CFunc")
 
     override fun resolveType(
         typeRef: CfirTypeRef,
@@ -169,6 +170,9 @@ class CfirTypeResolverImpl(
 
         if (typeRef.qualifier.size == 1) {
             val qualifierPart = typeRef.qualifier.single()
+            if (qualifierPart.name == cFuncName) {
+                return resolveCFuncUserType(qualifierPart, configuration, expandTypeAliases)
+            }
             val typeParameterName = qualifierPart.name.asString()
             val typeParameter = configuration.scopeTypeParameters[typeParameterName]
             if (typeParameter != null && qualifierPart.typeArguments.isEmpty()) {
@@ -225,6 +229,37 @@ class CfirTypeResolverImpl(
             resolvedArguments = resolvedArguments,
             expandTypeAliases = expandTypeAliases,
             configuration = configuration,
+        )
+    }
+
+    private fun resolveCFuncUserType(
+        qualifierPart: CfirQualifierPart,
+        configuration: TypeResolutionConfiguration,
+        expandTypeAliases: Boolean,
+    ): ConeCangJieType {
+        if (qualifierPart.typeArguments.size != 1) {
+            return ConeErrorType(ConeSimpleDiagnostic("CFunc expects exactly one function type argument"))
+        }
+
+        val functionType = resolveType(
+            qualifierPart.typeArguments.single(),
+            configuration,
+            areBareTypesAllowed = false,
+            isOperandOfIsOperator = false,
+            resolveDeprecations = true,
+            supertypeSupplier = SupertypeSupplier.Default,
+            expandTypeAliases = expandTypeAliases,
+        ).type as? ConeFunctionType ?: return ConeErrorType(
+            ConeSimpleDiagnostic("CFunc expects a function type argument")
+        )
+
+        return ConeFunctionType(
+            parameterTypes = functionType.parameterTypes,
+            returnType = functionType.returnType,
+            isCFunc = true,
+            isClosureType = functionType.isClosureType,
+            hasVariableLenArg = functionType.hasVariableLenArg,
+            attributes = functionType.attributes,
         )
     }
 
