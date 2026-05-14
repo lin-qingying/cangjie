@@ -346,6 +346,7 @@ private fun LighterASTNode.isExpressionLike(): Boolean {
 
 private fun FlyweightCapableTreeStructure<LighterASTNode>.nameIdentifier(node: LighterASTNode): LighterASTNode? =
     findChildByType(node, CjTokens.IDENTIFIER)
+        ?: findChildByType(node, CjNodeTypes.OPERATION_NAME)
         ?: findChildByType(node, CjTokens.INIT_KEYWORD)
 
 fun FlyweightCapableTreeStructure<LighterASTNode>.collectDescendantsOfType(
