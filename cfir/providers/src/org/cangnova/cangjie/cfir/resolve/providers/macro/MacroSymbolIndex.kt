@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 
@@ -36,6 +37,16 @@ data class MacroDefinitionEntry(
     val libPath: String? = null,
     /** 该 entry 对应的 executor ABI 版本（baseline 第 11 节 cache key 之一）。 */
     val executorAbi: String? = null,
+    /** 该 entry 所属宏 artifact 的稳定签名；由 resolver/orchestration 提供或由路径内容 hash 合成。 */
+    val artifactSignature: String? = null,
+    /** `.cjo` 内容 hash；宏定义元数据变化必须触发 cache 失效。 */
+    val cjoHash: String? = null,
+    /** 动态库内容 hash；运行产物变化必须触发 cache 失效。 */
+    val dynamicLibHash: String? = null,
+    /** 依赖 BCHIR 内容 hash 聚合；宏依赖变化必须触发 cache 失效。 */
+    val dependenciesBchirHash: String? = null,
+    /** 产生该 entry 的 artifact resolver 算法版本。 */
+    val resolverAlgorithmVersion: Int? = null,
     /** 若该宏支持 `@!` 强制形式则为 true（baseline 第 8 节 / 第 12 节 Batch 5）。 */
     val supportsForcedKind: Boolean = false,
     /** 若该宏支持 `plain-attr overload`（无括号 attr 形式），则为 true。 */
@@ -166,6 +177,7 @@ fun buildMacroSymbolIndex(
 private fun collectSourceMacroDefinitions(pre: PreMacroRawBuildResult): List<MacroDefinitionEntry> {
     val result = mutableListOf<MacroDefinitionEntry>()
     for (preFile in pre.files) {
+        if (!preFile.isMacroPackage) continue
         val file = preFile.cfirFile
         val packageFqName = file.packageDirective.packageFqName
         collectMacroDeclarationsInto(file.declarations, packageFqName, result)
@@ -180,12 +192,16 @@ private fun collectMacroDeclarationsInto(
 ) {
     for (declaration in declarations) {
         when (declaration) {
-            is CfirMacroDeclaration -> out += MacroDefinitionEntry(
-                packageFqName = packageFqName,
-                name = declaration.name,
-                source = MacroDefinitionEntry.Source.SOURCE_PACKAGE,
-                declaration = declaration,
-            )
+            is CfirMacroDeclaration -> {
+                if (declaration.status.visibility == Visibilities.Public) {
+                    out += MacroDefinitionEntry(
+                        packageFqName = packageFqName,
+                        name = declaration.name,
+                        source = MacroDefinitionEntry.Source.SOURCE_PACKAGE,
+                        declaration = declaration,
+                    )
+                }
+            }
             is CfirClassLikeDeclaration -> {
                 val nested: List<CfirDeclaration> = when (declaration) {
                     is CfirClass -> declaration.declarations

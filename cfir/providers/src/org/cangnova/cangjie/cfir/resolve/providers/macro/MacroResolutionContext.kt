@@ -125,7 +125,9 @@ class MacroResolutionContext internal constructor(
      *
      * 当 [kind] 为 [MacroSurface.Kind.FORCED]（`@!`）时，
      * 仅返回支持强制形式的宏（[MacroDefinitionEntry.supportsForcedKind]）。
-     * 当 [hasParenthesis] 为 false 时，仅返回显式支持 plain-attr overload 的宏。
+     * 当 [hasParenthesis] 为 false 时，表达式等普通调用仍要求目标显式支持
+     * plain-attr overload；声明宏输入按仓颉语义允许省略小括号，由
+     * [allowsDeclarationInputParenthesisOmission] 显式标记。
      */
     fun resolveMacroCall(
         callPackage: FqName,
@@ -133,6 +135,7 @@ class MacroResolutionContext internal constructor(
         name: Name,
         kind: MacroSurface.Kind = MacroSurface.Kind.PLAIN,
         hasParenthesis: Boolean = true,
+        allowsDeclarationInputParenthesisOmission: Boolean = false,
     ): MacroResolution {
         // 1. builtin non-macro：先于一切 macro lookup
         if (name in builtinRegistries.nonMacros) {
@@ -143,7 +146,12 @@ class MacroResolutionContext internal constructor(
         if (name in builtinRegistries.macros) {
             val builtin = symbolIndex.lookupByFqName(FqName.topLevel(name))
             if (builtin != null && builtin.source == MacroDefinitionEntry.Source.BUILTIN_MACRO) {
-                return verifyCallShapeOrMismatch(builtin, kind, hasParenthesis) ?: MacroResolution.Builtin(builtin)
+                return verifyCallShapeOrMismatch(
+                    builtin,
+                    kind,
+                    hasParenthesis,
+                    allowsDeclarationInputParenthesisOmission,
+                ) ?: MacroResolution.Builtin(builtin)
             }
         }
 
@@ -157,7 +165,12 @@ class MacroResolutionContext internal constructor(
         if (qualifier != null) {
             val resolved = symbolIndex.lookupByFqName(qualifier.child(name))
             if (resolved != null) {
-                return verifyCallShapeOrMismatch(resolved, kind, hasParenthesis) ?: MacroResolution.Resolved(resolved)
+                return verifyCallShapeOrMismatch(
+                    resolved,
+                    kind,
+                    hasParenthesis,
+                    allowsDeclarationInputParenthesisOmission,
+                ) ?: MacroResolution.Resolved(resolved)
             }
         }
 
@@ -165,7 +178,12 @@ class MacroResolutionContext internal constructor(
         for (binding in importBindings) {
             if (binding.aliasName == name || (!binding.isAllUnder && binding.importedFqName.shortName() == name)) {
                 val target = binding.resolvedTargets.firstOrNull() ?: continue
-                return verifyCallShapeOrMismatch(target, kind, hasParenthesis) ?: MacroResolution.Resolved(target)
+                return verifyCallShapeOrMismatch(
+                    target,
+                    kind,
+                    hasParenthesis,
+                    allowsDeclarationInputParenthesisOmission,
+                ) ?: MacroResolution.Resolved(target)
             }
         }
 
@@ -174,7 +192,12 @@ class MacroResolutionContext internal constructor(
             if (binding.isAllUnder) {
                 val candidate = symbolIndex.lookupByFqName(binding.importedFqName.child(name))
                 if (candidate != null) {
-                    return verifyCallShapeOrMismatch(candidate, kind, hasParenthesis) ?: MacroResolution.Resolved(candidate)
+                    return verifyCallShapeOrMismatch(
+                        candidate,
+                        kind,
+                        hasParenthesis,
+                        allowsDeclarationInputParenthesisOmission,
+                    ) ?: MacroResolution.Resolved(candidate)
                 }
             }
         }
@@ -183,7 +206,12 @@ class MacroResolutionContext internal constructor(
         for (defaultPkg in defaultMacroImports) {
             val candidate = symbolIndex.lookupByFqName(defaultPkg.child(name))
             if (candidate != null) {
-                return verifyCallShapeOrMismatch(candidate, kind, hasParenthesis) ?: MacroResolution.Resolved(candidate)
+                return verifyCallShapeOrMismatch(
+                    candidate,
+                    kind,
+                    hasParenthesis,
+                    allowsDeclarationInputParenthesisOmission,
+                ) ?: MacroResolution.Resolved(candidate)
             }
         }
 
@@ -203,11 +231,12 @@ class MacroResolutionContext internal constructor(
         target: MacroDefinitionEntry,
         kind: MacroSurface.Kind,
         hasParenthesis: Boolean,
+        allowsDeclarationInputParenthesisOmission: Boolean,
     ): MacroResolution? {
         if (kind == MacroSurface.Kind.FORCED && !target.supportsForcedKind) {
             return MacroResolution.KindMismatch(target, MacroResolution.KindMismatch.Reason.FORCED_KIND_NOT_SUPPORTED)
         }
-        if (!hasParenthesis && !target.supportsPlainAttrOverload) {
+        if (!hasParenthesis && !allowsDeclarationInputParenthesisOmission && !target.supportsPlainAttrOverload) {
             return MacroResolution.KindMismatch(target, MacroResolution.KindMismatch.Reason.PLAIN_ATTR_OVERLOAD_NOT_SUPPORTED)
         }
         return null
