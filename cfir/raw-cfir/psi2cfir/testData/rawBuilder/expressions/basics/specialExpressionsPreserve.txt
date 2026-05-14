@@ -19,7 +19,5 @@ FILE: specialExpressionsPreserve.cj
                 }
         local? let m: <implicit> = ...
             initializer:
-                MACRO_EXPR(demo) {
-                    input: "(foo)"
-                }
+                ERROR_EXPR(Macro expression `@demo(foo)` is a construction-only surface and must be replaced before final provider registration.)
     }

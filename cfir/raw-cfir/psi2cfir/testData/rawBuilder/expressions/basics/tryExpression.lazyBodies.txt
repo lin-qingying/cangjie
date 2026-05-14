@@ -1,3 +1,7 @@
 FILE: tryExpression.cj
-    internal? func safeDivide(a: R|Int64|, b: R|Int64|): R|Int64|
-    internal? func tryCatchOnly(x: R|Int64|): R|Int64|
+    internal? func safeDivide(a: R|Int64|, b: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }
+    internal? func tryCatchOnly(x: R|Int64|): R|Int64| {
+        <element: CfirLazyBlock>
+    }

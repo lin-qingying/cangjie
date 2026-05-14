@@ -1,4 +1,4 @@
 FILE: optionalTypeRefs.cj
-    internal? typealias MaybeInt = R|Option<R|Int64|||
-    internal? typealias NestedMaybeInt = R|Option<R|Option<R|Int64|||||
-    internal? typealias OptionalMapper = R|(R|Option<R|Int64|||) -> R|Option<R|String|||| 
+    internal? typealias MaybeInt = R|Option<R|Int64|>|
+    internal? typealias NestedMaybeInt = R|Option<R|Option<R|Int64|>|>|
+    internal? typealias OptionalMapper = R|(R|Option<R|Int64|>|) -> R|Option<R|String|>||

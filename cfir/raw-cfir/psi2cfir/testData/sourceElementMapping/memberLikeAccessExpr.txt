@@ -1,4 +1,4 @@
-PROPERTY_ACCESS(v) {
+NAMED_ACCESS(v) {
     receiver:
-        QUALIFIED_ACCESS(b)
+        NAMED_ACCESS(b)
 }

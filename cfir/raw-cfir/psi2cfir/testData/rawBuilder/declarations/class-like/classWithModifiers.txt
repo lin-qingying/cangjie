@@ -1,16 +1,19 @@
 FILE: classWithModifiers.cj
     internal? abstract class Shape {
+        init()
         internal? abstract func area(): R|Float64|
     }
     internal? sealed class Color {
+        init()
     }
     internal? class Counter {
+        init()
         internal? static var count: R|Int64| = ...
             initializer:
                 INT(0)
         internal? static func getCount(): R|Int64| {
             RETURN {
-                QUALIFIED_ACCESS(count)
+                NAMED_ACCESS(count)
             }
         }
     }

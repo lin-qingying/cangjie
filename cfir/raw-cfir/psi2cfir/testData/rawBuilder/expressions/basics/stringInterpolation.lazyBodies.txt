@@ -1,2 +1,4 @@
 FILE: stringInterpolation.cj
-    internal? func greet(name: R|String|): R|String|
+    internal? func greet(name: R|String|): R|String| {
+        <element: CfirLazyBlock>
+    }

@@ -1,5 +1,9 @@
 FILE: varrayTypeRef.cj
-    internal? typealias FixedStrings = R|VArray<R|String|, $4>|
-    internal? typealias HandlerTable = R|VArray<R|(R|Int64|) -> R|Bool||, $2>|
-    internal? func copy(src: R|VArray<R|String|, $4>|): R|VArray<R|String|, $4>|
-    internal? func useHandlers(handlers: R|VArray<R|(R|Int64|) -> R|Bool||, $2>|): R|HandlerTable|
+    internal? typealias FixedStrings = R|VArray<R|String|, 4>|
+    internal? typealias HandlerTable = R|VArray<R|(R|Int64|) -> R|Bool||, 2>|
+    internal? func copy(src: R|VArray<R|String|, 4>|): R|VArray<R|String|, 4>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func useHandlers(handlers: R|VArray<R|(R|Int64|) -> R|Bool||, 2>|): R|HandlerTable| {
+        <element: CfirLazyBlock>
+    }

@@ -1,8 +1,10 @@
 FILE: classWithTypeParameters.cj
     internal? class Container<T> {
+        init()
         internal? var value: R|T|
     }
     internal? class Pair<A, B> {
+        init()
         internal? var first: R|A|
         internal? var second: R|B|
     }

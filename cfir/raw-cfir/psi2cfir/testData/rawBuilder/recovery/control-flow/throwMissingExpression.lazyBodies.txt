@@ -1,2 +1,4 @@
 FILE: throwMissingExpression.cj
-    internal? func throwMissingExpression(): R|Unit|
+    internal? func throwMissingExpression(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

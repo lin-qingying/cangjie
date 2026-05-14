@@ -1,2 +1,4 @@
 FILE: dotQualifiedAccess.cj
-    internal? func testAccess(obj: R|MyClass|): R|Unit|
+    internal? func testAccess(obj: R|MyClass|): R|Unit| {
+        <element: CfirLazyBlock>
+    }

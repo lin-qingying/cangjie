@@ -1,2 +1,4 @@
 FILE: doWhileLoop.cj
-    internal? func countdown(): R|Unit|
+    internal? func countdown(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

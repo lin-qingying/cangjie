@@ -1120,7 +1120,15 @@ class LightTreeRawCfirDeclarationBuilder(
         return buildPackageDirective {
             source = packageNode?.toSource()
             packageFqName = fqName
+            isMacroPackage = packageNode?.let { containsChildByType(it, CjTokens.MACRO_KEYWORD) } == true
         }
+    }
+
+    private fun containsChildByType(node: LighterASTNode, type: com.intellij.psi.tree.IElementType): Boolean {
+        tree.forEachChildren(node) { child ->
+            if (child.tokenType == type || containsChildByType(child, type)) return true
+        }
+        return false
     }
 
     private fun buildImportsFromFile(file: LighterASTNode): List<CfirImport> {
@@ -1183,11 +1191,66 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun buildFileDeclarations(file: LighterASTNode): List<CfirDeclaration> {
         val declarations = mutableListOf<CfirDeclaration>()
         tree.forEachChildren(file) { child ->
-            if (LightTreeRawCfirExpressionBuilder.isDeclarationToken(child.tokenType)) {
-                declarations.add(convertDeclaration(child))
+            when {
+                LightTreeRawCfirExpressionBuilder.isDeclarationToken(child.tokenType) ->
+                    declarations.add(convertDeclaration(child))
+                child.tokenType == CjNodeTypes.MACRO_EXPRESSION ->
+                    convertTopLevelMacroDeclaration(child)?.let(declarations::add)
             }
         }
         return declarations
+    }
+
+    /**
+     * 文件级 `@Macro decl` 的 LightTree 形态是 MACRO_EXPRESSION，input
+     * 内部才包含 carrier 声明。声明宏 surface 必须绑定这个 carrier，
+     * 后续 stable splice 才能按对象身份替换最终 CFIR 声明。
+     */
+    private fun convertTopLevelMacroDeclaration(node: LighterASTNode): CfirDeclaration? {
+        val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT) ?: return null
+        val declarationNode = findFirstDeclarationDescendant(inputNode) ?: return null
+        val carrier = convertDeclaration(declarationNode)
+        val rawName = extractMacroExpressionNameText(node) ?: return carrier
+        val surfaceId = MacroSurfaceIdGenerator.next()
+        val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
+        collectedMacroSurfaces += MacroSurfaceDecl(
+            surfaceId = surfaceId,
+            qualifiedName = macroSurfaceQualifiedName(rawName),
+            kind = if (node.asText().trimStart().startsWith("@!")) MacroSurface.Kind.FORCED else MacroSurface.Kind.PLAIN,
+            hasParenthesis = inputNode.asText().trimStart().startsWith("("),
+            attrTokens = tokenizeSurfacePayload(attrNode),
+            inputTokens = tokenizeSurfacePayload(inputNode),
+            sourceRange = MacroSurfaceSourceRange(
+                source = node.toSource(),
+                startOffset = node.startOffset,
+                endOffset = node.endOffset,
+            ),
+            scopeContext = macroSurfaceScopeContext(),
+            modifiers = emptyList(),
+            carriedAnnotations = emptyList(),
+            capturedRawSyntax = node.asText(),
+            containerContext = MacroSurfaceContainerContext(
+                outerDeclarationKind = MacroSurfaceContainerContext.OuterDeclarationKind.TOP_LEVEL,
+                isInsidePrimaryConstructor = false,
+                isInsideEnumBody = false,
+                isInsideBlock = false,
+            ),
+            replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
+        )
+        return carrier
+    }
+
+    private fun findFirstDeclarationDescendant(node: LighterASTNode): LighterASTNode? {
+        if (LightTreeRawCfirExpressionBuilder.isDeclarationToken(node.tokenType)) return node
+        tree.forEachChildren(node) { child ->
+            findFirstDeclarationDescendant(child)?.let { return it }
+        }
+        return null
+    }
+
+    private fun extractMacroExpressionNameText(node: LighterASTNode): String? {
+        val reference = tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION) ?: return null
+        return reference.asText().trim().takeIf { it.isNotEmpty() }
     }
 
     // ===== 通用提取辅助 =====

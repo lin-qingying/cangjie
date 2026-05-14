@@ -1,2 +1,4 @@
 FILE: localScopeVisibility.cj
-    internal? func localScopeVisibility(): R|Unit|
+    internal? func localScopeVisibility(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

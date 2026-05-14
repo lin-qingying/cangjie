@@ -1,3 +1,7 @@
 FILE: matchRichPatternsOfficial.cj
-    internal? func classifyScore(score: R|Int64|): R|String|
-    internal? func extractYear(time: R|TimeUnit|): R|Int32|
+    internal? func classifyScore(score: R|Int64|): R|String| {
+        <element: CfirLazyBlock>
+    }
+    internal? func extractYear(time: R|TimeUnit|): R|Int32| {
+        <element: CfirLazyBlock>
+    }

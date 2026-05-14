@@ -1,2 +1,4 @@
 FILE: localScopeInNestedBlock.cj
-    internal? func localScopeInNestedBlock(): R|Unit|
+    internal? func localScopeInNestedBlock(): R|Unit| {
+        <element: CfirLazyBlock>
+    }

@@ -3,4 +3,6 @@ FILE: matchExpressionOfficial.cj
         Year(R|Int32|)
         init()
     }
-    internal? func extractYear(time: R|TimeUnit|): R|Int32|
+    internal? func extractYear(time: R|TimeUnit|): R|Int32| {
+        <element: CfirLazyBlock>
+    }
