@@ -11,8 +11,11 @@ import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
  *
  * Kotlin 只有 `NO_INITIALIZER` / 常量初始化器；仓颉 source preset 在同一 slot
  * 上补充真实源码与占位文本两种输出。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaVariableInitializerRenderer`。
  */
 fun interface CaVariableInitializerRenderer {
+    /** 渲染变量 [symbol] 的初始化器到 [printer]。 */
     fun renderInitializer(
         analysisSession: CaSession,
         symbol: CaVariableSymbol,
@@ -20,8 +23,10 @@ fun interface CaVariableInitializerRenderer {
     )
 
     companion object {
+        /** 预设: 不渲染初始化器。 */
         val NO_INITIALIZER: CaVariableInitializerRenderer = CaVariableInitializerRenderer { _, _, _ -> }
 
+        /** 预设: 渲染源码中真实的初始化器文本, 形如 ` = expr`。 */
         val AS_SOURCE: CaVariableInitializerRenderer = CaVariableInitializerRenderer { _, symbol, printer ->
             val declaration = symbol.findDeclarationWithInitializer() ?: return@CaVariableInitializerRenderer
             declaration.initializer?.let { initializer ->
@@ -29,6 +34,7 @@ fun interface CaVariableInitializerRenderer {
             }
         }
 
+        /** 预设: 存在初始化器时输出 ` = ...`, 屏蔽具体表达式细节。 */
         val AS_PLACEHOLDER: CaVariableInitializerRenderer = CaVariableInitializerRenderer { _, symbol, printer ->
             val declaration = symbol.findDeclarationWithInitializer() ?: return@CaVariableInitializerRenderer
             if (declaration.initializer != null) {

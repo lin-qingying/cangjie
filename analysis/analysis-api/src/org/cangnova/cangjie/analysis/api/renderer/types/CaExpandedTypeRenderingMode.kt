@@ -1,23 +1,32 @@
 package org.cangnova.cangjie.analysis.api.renderer.types
 
-public enum class CaExpandedTypeRenderingMode {
+/**
+ * 类型别名(typealias)展开渲染模式。
+ *
+ * 控制 [CaTypeRenderer] 遇到类型别名时, 是按"原名"还是"展开后类型"输出, 以及是否附带注释。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaExpandedTypeRenderingMode`。
+ */
+enum class CaExpandedTypeRenderingMode {
     /**
-     * Renders only the abbreviated type as-is, e.g. `foo.bar.StringAlias`.
+     * 仅按原名渲染缩写类型, 例如 `foo.bar.StringAlias`。
      */
     RENDER_ABBREVIATED_TYPE,
 
     /**
-     * Renders the abbreviated type as-is and its expansion in a comment, e.g. `foo.bar.StringAlias /* = kotlin.String */`.
+     * 按原名渲染缩写类型, 并把展开类型放在注释里;
+     * 例如 `foo.bar.StringAlias /* = kotlin.String */`。
      */
     RENDER_ABBREVIATED_TYPE_WITH_EXPANDED_TYPE_COMMENT,
 
     /**
-     * Renders the expanded type as-is, e.g. `kotlin.String`.
+     * 直接渲染展开后的类型, 例如 `kotlin.String`。
      */
     RENDER_EXPANDED_TYPE,
 
     /**
-     * Renders the expanded type as-is and its abbreviated type in a comment, e.g. `kotlin.String /* from: foo.bar.StringAlias */`.
+     * 渲染展开类型, 并把原始缩写名放在注释里;
+     * 例如 `kotlin.String /* from: foo.bar.StringAlias */`。
      */
     RENDER_EXPANDED_TYPE_WITH_ABBREVIATED_TYPE_COMMENT,
 }

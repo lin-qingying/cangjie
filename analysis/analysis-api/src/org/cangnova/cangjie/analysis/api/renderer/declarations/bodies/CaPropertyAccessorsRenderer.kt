@@ -7,7 +7,16 @@ import org.cangnova.cangjie.analysis.api.symbols.CaPropertyGetterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySymbol
 import org.cangnova.cangjie.analysis.api.symbols.CaPropertySetterSymbol
 
+/**
+ * 属性 getter/setter 集合 renderer。
+ *
+ * 决定属性下方是否、以何种方式输出访问器列表; 单个访问器的具体渲染
+ * 由 [CaDeclarationRenderer.getterRenderer] / [CaDeclarationRenderer.setterRenderer] 负责。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaPropertyAccessorsRenderer`。
+ */
 fun interface CaPropertyAccessorsRenderer {
+    /** 渲染 [symbol] 的所有访问器到 [printer]。 */
     fun renderAccessors(
         analysisSession: CaSession,
         symbol: CaPropertySymbol,
@@ -66,6 +75,7 @@ fun interface CaPropertyAccessorsRenderer {
             }
         }
 
+        /** 预设: 不渲染任何访问器, 适合纯签名展示。 */
         val NONE: CaPropertyAccessorsRenderer = CaPropertyAccessorsRenderer { _, _, _, _ -> }
     }
 }

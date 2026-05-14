@@ -63,6 +63,12 @@ annotation class CaIdeApi
 @RequiresOptIn("Experimental API with no compatibility guarantees")
 annotation class CaExperimentalApi
 
+/**
+ * 标记 Analysis API 实现和平台 SPI 的契约。
+ *
+ * 对齐 Kotlin `KaPlatformInterface`,用于声明仅供 Analysis API 实现模块和平台层
+ * 协作使用的扩展点;调用方需要显式 opt-in,且不享有跨版本兼容承诺。
+ */
 @Target(
     AnnotationTarget.CLASS,
     AnnotationTarget.PROPERTY,
@@ -72,8 +78,21 @@ annotation class CaExperimentalApi
 )
 @RequiresOptIn("An API intended for Analysis API implementations and platforms. The API is neither stable nor intended for user consumption.")
 annotation class CaPlatformInterface
-@RequiresOptIn("Analysis should not be allowed to be run from a write action, as otherwise it may cause incorrect behavior and IDE freezes.")
-public annotation class CaAllowAnalysisFromWriteAction
 
+/**
+ * 显式声明允许在 write action 中执行 analyze 块。
+ *
+ * 默认禁止在 write action 中分析,以避免在写入期间触发 resolve 导致 IDE 卡顿或状态不一致;
+ * 仅当确认调用上下文已经持有合适的解析快照、不会引发递归读写时使用。
+ */
+@RequiresOptIn("Analysis should not be allowed to be run from a write action, as otherwise it may cause incorrect behavior and IDE freezes.")
+annotation class CaAllowAnalysisFromWriteAction
+
+/**
+ * 显式声明允许在 EDT 上执行 analyze 块。
+ *
+ * 默认禁止在 EDT 中分析,以避免阻塞 UI 线程;
+ * 仅当确认调用上下文已被严格限速(例如 read action + 超时控制)时使用。
+ */
 @RequiresOptIn("Analysis should not be allowed to be run from the EDT, as otherwise it may cause IDE freezes.")
-public annotation class CaAllowAnalysisOnEdt
+annotation class CaAllowAnalysisOnEdt

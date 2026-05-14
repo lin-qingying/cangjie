@@ -8,19 +8,21 @@ import org.cangnova.cangjie.name.Name
 /**
  * 值参数签名的公开语义快照。
  *
- * 这里只保留稳定语义信息，不再缓存源码文本。
- * 需要源码级呈现时，应由 renderer 直接基于 PSI 或 source snapshot 取值。
+ * 该接口只保留稳定的语义信息,不再缓存源码文本。
+ * 需要源码级呈现时,应由 renderer 直接基于 PSI 或 source snapshot 取值。
+ *
+ * 对齐 Kotlin Analysis API 的"值参数签名"层。
  */
 interface CaValueParameterSignature : CaLifetimeOwner {
     /**
-     * 参数名。
+     * 参数名,匿名 / 缺失场景为 `null`。
      */
     val name: Name?
 
     /**
      * 参数的语义类型。
      *
-     * 当后端当前无法稳定恢复该参数类型时返回 `null`，
+     * 当后端当前无法稳定恢复该参数类型时返回 `null`,
      * 但不会再退化为原始文本字段。
      */
     val type: CaType?

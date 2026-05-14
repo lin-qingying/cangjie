@@ -32,6 +32,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions9()
     addConversions10()
     addConversions11()
+    addConversions14()
     addConversions16()
     addConversions17()
     addConversions18()
@@ -72,6 +73,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions56()
     addConversions57()
     addConversions58()
+    addConversions59()
     addConversions60()
     addConversions61()
     addConversions62()
@@ -87,6 +89,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions76()
     addConversions77()
     addConversions78()
+    addConversions79()
     addConversions80()
     addConversions81()
     addConversions83()
@@ -138,6 +141,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions136()
     addConversions137()
     addConversions138()
+    addConversions140()
     addConversions141()
     addConversions142()
     addConversions143()
@@ -163,6 +167,7 @@ internal val CJ_DIAGNOSTIC_CONVERTER: CaDiagnosticConverter = CaDiagnosticConver
     addConversions166()
     addConversions167()
     addConversions168()
+    addConversions169()
     addConversions170()
     addConversions171()
     addConversions172()
@@ -237,6 +242,13 @@ private fun CaDiagnosticConverterBuilder.addConversions3() {
             token,
         )
     }
+    add(CfirErrors.MACRO_UNRESOLVED) { cfirDiagnostic ->
+        MacroUnresolvedImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions4() {
@@ -260,6 +272,22 @@ private fun CaDiagnosticConverterBuilder.addConversions4() {
 private fun CaDiagnosticConverterBuilder.addConversions5() {
     add(CfirErrors.MOCK_FROZEN_UNSUPPORTED) { cfirDiagnostic ->
         MockFrozenUnsupportedImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_CANNOT_FIND_DEPENDENCY_BCHIR) { cfirDiagnostic ->
+        MacroCannotFindDependencyBchirImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_EXPAND_ATEXCL) { cfirDiagnostic ->
+        MacroExpandAtexclImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -312,6 +340,14 @@ private fun CaDiagnosticConverterBuilder.addConversions6() {
     }
     add(CfirErrors.UNUSED_EXPRESSION) { cfirDiagnostic ->
         UnusedExpressionImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_EVALUATE_FAILED) { cfirDiagnostic ->
+        MacroEvaluateFailedImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -422,6 +458,16 @@ private fun CaDiagnosticConverterBuilder.addConversions11() {
             cfirDiagnostic.a,
             cfirDiagnostic.b,
             cfirDiagnostic.c,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
+private fun CaDiagnosticConverterBuilder.addConversions14() {
+    add(CfirErrors.MACRO_EXECUTOR_TIMEOUT) { cfirDiagnostic ->
+        MacroExecutorTimeoutImpl(
+            cfirDiagnostic.a,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -557,6 +603,13 @@ private fun CaDiagnosticConverterBuilder.addConversions23() {
     }
     add(CfirErrors.ONLY_CFUNC_CAN_USE_ANNOTATION) { cfirDiagnostic ->
         OnlyCfuncCanUseAnnotationImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_EXECUTOR_PROTOCOL_ERROR) { cfirDiagnostic ->
+        MacroExecutorProtocolErrorImpl(
             cfirDiagnostic.a,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
@@ -714,6 +767,22 @@ private fun CaDiagnosticConverterBuilder.addConversions32() {
             token,
         )
     }
+    add(CfirErrors.MACRO_EXPANSION_FAILED) { cfirDiagnostic ->
+        MacroExpansionFailedImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_UNDECLARED_IDENTIFIER) { cfirDiagnostic ->
+        MacroUndeclaredIdentifierImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions33() {
@@ -852,6 +921,14 @@ private fun CaDiagnosticConverterBuilder.addConversions39() {
             token,
         )
     }
+    add(CfirErrors.MACRO_DIAG_REPORT_WARNING) { cfirDiagnostic ->
+        MacroDiagReportWarningImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions41() {
@@ -897,6 +974,16 @@ private fun CaDiagnosticConverterBuilder.addConversions42() {
             token,
         )
     }
+    add(CfirErrors.MACRO_ALIAS_CONFLICT) { cfirDiagnostic ->
+        MacroAliasConflictImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b.map { fqName ->
+                fqName
+            },
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions43() {
@@ -921,6 +1008,14 @@ private fun CaDiagnosticConverterBuilder.addConversions44() {
     add(CfirErrors.COMMON_OPEN_CLASS_NO_INIT) { cfirDiagnostic ->
         CommonOpenClassNoInitImpl(
             cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_INVALID_ESCAPE) { cfirDiagnostic ->
+        MacroInvalidEscapeImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -1003,6 +1098,24 @@ private fun CaDiagnosticConverterBuilder.addConversions50() {
         AnnotationNotApplicableJffiImpl(
             cfirDiagnostic.a,
             cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_EXPECT_MACRO_DEFINITION) { cfirDiagnostic ->
+        MacroExpectMacroDefinitionImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_CYCLE) { cfirDiagnostic ->
+        MacroCycleImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b.map { string ->
+                string
+            },
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -1107,6 +1220,14 @@ private fun CaDiagnosticConverterBuilder.addConversions54() {
             token,
         )
     }
+    add(CfirErrors.MACRO_UNDEFINED_PACKAGE) { cfirDiagnostic ->
+        MacroUndefinedPackageImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions55() {
@@ -1129,6 +1250,13 @@ private fun CaDiagnosticConverterBuilder.addConversions56() {
             token,
         )
     }
+    add(CfirErrors.MACRO_NOT_EXPANDED) { cfirDiagnostic ->
+        MacroNotExpandedImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions57() {
@@ -1143,6 +1271,16 @@ private fun CaDiagnosticConverterBuilder.addConversions57() {
 private fun CaDiagnosticConverterBuilder.addConversions58() {
     add(CfirErrors.INVALID_SUBSCRIPT_ASSIGN_PARAMETER) { cfirDiagnostic ->
         InvalidSubscriptAssignParameterImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
+private fun CaDiagnosticConverterBuilder.addConversions59() {
+    add(CfirErrors.MACRO_EXECUTOR_SERVER_DISCONNECTED) { cfirDiagnostic ->
+        MacroExecutorServerDisconnectedImpl(
+            cfirDiagnostic.a,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -1354,6 +1492,13 @@ private fun CaDiagnosticConverterBuilder.addConversions73() {
             token,
         )
     }
+    add(CfirErrors.MACRO_EXECUTOR_UNAVAILABLE) { cfirDiagnostic ->
+        MacroExecutorUnavailableImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions74() {
@@ -1444,6 +1589,17 @@ private fun CaDiagnosticConverterBuilder.addConversions78() {
     }
     add(CfirErrors.INTERPOLATION_IN_CONST_PATTERN) { cfirDiagnostic ->
         InterpolationInConstPatternImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
+private fun CaDiagnosticConverterBuilder.addConversions79() {
+    add(CfirErrors.MACRO_EXPECT_ATTRIBUTED_MACRO) { cfirDiagnostic ->
+        MacroExpectAttributedMacroImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -1565,6 +1721,14 @@ private fun CaDiagnosticConverterBuilder.addConversions88() {
             token,
         )
     }
+    add(CfirErrors.MACRO_REEVALUATION_FAILED) { cfirDiagnostic ->
+        MacroReevaluationFailedImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions89() {
@@ -1639,6 +1803,14 @@ private fun CaDiagnosticConverterBuilder.addConversions92() {
 private fun CaDiagnosticConverterBuilder.addConversions93() {
     add(CfirErrors.SPECIFIC_HAS_DIFFERENT_KIND) { cfirDiagnostic ->
         SpecificHasDifferentKindImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_EXPAND_CODE_SHOULD_NOT_HAVE_MACROCALL) { cfirDiagnostic ->
+        MacroExpandCodeShouldNotHaveMacrocallImpl(
             cfirDiagnostic.a,
             cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
@@ -2287,6 +2459,22 @@ private fun CaDiagnosticConverterBuilder.addConversions135() {
             token,
         )
     }
+    add(CfirErrors.MACRO_INVALID_INPUT_TOKENS) { cfirDiagnostic ->
+        MacroInvalidInputTokensImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_SAME_PACKAGE_DEF_CALL) { cfirDiagnostic ->
+        MacroSamePackageDefCallImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions136() {
@@ -2306,6 +2494,14 @@ private fun CaDiagnosticConverterBuilder.addConversions137() {
             cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.a),
             cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.b),
             cfirDiagnostic.c,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_EXPECT_PLAIN_MACRO) { cfirDiagnostic ->
+        MacroExpectPlainMacroImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -2349,6 +2545,17 @@ private fun CaDiagnosticConverterBuilder.addConversions138() {
     }
     add(CfirErrors.HIDE_MISSING_HIDE) { cfirDiagnostic ->
         HideMissingHideImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
+private fun CaDiagnosticConverterBuilder.addConversions140() {
+    add(CfirErrors.MACRO_CANNOT_OPEN_LIB) { cfirDiagnostic ->
+        MacroCannotOpenLibImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -2464,6 +2671,14 @@ private fun CaDiagnosticConverterBuilder.addConversions147() {
             token,
         )
     }
+    add(CfirErrors.MACRO_EXPAND_FAILED) { cfirDiagnostic ->
+        MacroExpandFailedImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions148() {
@@ -2559,6 +2774,14 @@ private fun CaDiagnosticConverterBuilder.addConversions153() {
             token,
         )
     }
+    add(CfirErrors.MACRO_CANNOT_FIND_METHOD) { cfirDiagnostic ->
+        MacroCannotFindMethodImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions155() {
@@ -2584,6 +2807,24 @@ private fun CaDiagnosticConverterBuilder.addConversions155() {
     add(CfirErrors.CJ_MAPPING_GENERIC_METHOD_NOT_GET_INSTANCE_CONFIG) { cfirDiagnostic ->
         CjMappingGenericMethodNotGetInstanceConfigImpl(
             cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_DIAG_REPORT_ERROR) { cfirDiagnostic ->
+        MacroDiagReportErrorImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_AMBIGUOUS_MATCH) { cfirDiagnostic ->
+        MacroAmbiguousMatchImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b.map { fqName ->
+                fqName
+            },
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -2653,6 +2894,14 @@ private fun CaDiagnosticConverterBuilder.addConversions162() {
     }
     add(CfirErrors.JAVA_MIRROR_SUBTYPE_ANNO_MUST_INHERIT_MIRROR) { cfirDiagnostic ->
         JavaMirrorSubtypeAnnoMustInheritMirrorImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_INVALID_ATTR_TOKENS) { cfirDiagnostic ->
+        MacroInvalidAttrTokensImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -2789,6 +3038,18 @@ private fun CaDiagnosticConverterBuilder.addConversions168() {
     }
 }
 
+private fun CaDiagnosticConverterBuilder.addConversions169() {
+    add(CfirErrors.MACRO_DEPENDENCY_COMPILE_FAILED) { cfirDiagnostic ->
+        MacroDependencyCompileFailedImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
+            cfirDiagnostic.c,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+}
+
 private fun CaDiagnosticConverterBuilder.addConversions170() {
     add(CfirErrors.NAME_IN_CONSTRAINT_IS_NOT_A_TYPE_PARAMETER) { cfirDiagnostic ->
         NameInConstraintIsNotATypeParameterImpl(
@@ -2836,6 +3097,13 @@ private fun CaDiagnosticConverterBuilder.addConversions173() {
         GenericParameterOfJavaTypeImpl(
             cfirDiagnostic.a,
             cfirSymbolBuilder.typeBuilder.buildType(cfirDiagnostic.b),
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_EXECUTOR_SERVER_CRASH) { cfirDiagnostic ->
+        MacroExecutorServerCrashImpl(
+            cfirDiagnostic.a,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )
@@ -3001,6 +3269,14 @@ private fun CaDiagnosticConverterBuilder.addConversions184() {
     add(CfirErrors.SPECIFIC_HAS_DIFFERENT_MODIFIER) { cfirDiagnostic ->
         SpecificHasDifferentModifierImpl(
             cfirDiagnostic.a,
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
+    add(CfirErrors.MACRO_CALL_SAVE_FILE_FAILED) { cfirDiagnostic ->
+        MacroCallSaveFileFailedImpl(
+            cfirDiagnostic.a,
+            cfirDiagnostic.b,
             cfirDiagnostic as CjPsiDiagnostic,
             token,
         )

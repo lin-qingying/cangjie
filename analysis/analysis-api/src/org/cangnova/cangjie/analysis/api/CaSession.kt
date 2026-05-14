@@ -97,25 +97,56 @@ interface CaSession : CaLifetimeOwner,
         get() = this
 }
 
+/**
+ * 在当前会话中按 [pointer] 恢复单个 symbol。
+ *
+ * - 若指针所指对象在当前 session 不可见(如来自其他模块、声明已被移除)则返回 `null`;
+ * - 调用方负责持有指针并跨 analyze 块传递,实际恢复必须在 session 内完成。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaSession.restoreSymbol`。
+ */
 fun <S : CaSymbol> CaSession.restoreSymbol(pointer: CaSymbolPointer<S>): S? =
     pointer.restoreSymbol(this)
 
+/**
+ * 在当前会话中按 [pointer] 恢复单个 type。
+ *
+ * - 若指针所指类型在当前 session 不可解析则返回 `null`;
+ * - 与 [restoreSymbol] 一样,是跨 analyze 块复用类型对象的官方入口。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaSession.restoreType`。
+ */
 @OptIn(CaImplementationDetail::class)
 fun <T : CaType> CaSession.restoreType(pointer: CaTypePointer<T>): T? =
     pointer.restore(this)
 
+/**
+ * 批量恢复 symbol 指针,结果按输入顺序返回,无法恢复的位置填 `null`。
+ *
+ * 适用于补全、引用解析等需要一次性处理多个候选的场景;
+ * 调用方可据 `null` 位置剔除已失效条目。
+ */
 fun <S : CaSymbol> CaSession.restoreSymbols(
     pointers: Collection<CaSymbolPointer<S>>,
 ): List<S?> = pointers.map { pointer -> pointer.restoreSymbol(this) }
 
+/**
+ * 批量恢复 type 指针,结果按输入顺序返回,无法恢复的位置填 `null`。
+ *
+ * 语义与 [restoreSymbols] 对应,仅作用对象换成 [CaTypePointer]。
+ */
 @OptIn(CaImplementationDetail::class)
 fun <T : CaType> CaSession.restoreTypes(
     pointers: Collection<CaTypePointer<T>>,
 ): List<T?> = pointers.map { pointer -> pointer.restore(this) }
+
 /**
- * Returns a [CaModule] for a given [element] in the context of the session's use-site module.
+ * 在当前会话的 use-site 模块上下文中,查询 [element] 所属的 [CaModule]。
+ *
+ * 直接委托给 [CaModuleProvider.getModule],把 session 的 project 与 use-site 模块作为
+ * 模糊归属(如 dangling file)时的回退依据。
  *
  * @see CaModuleProvider.getModule
  */
-public fun CaSession.getModule(element: PsiElement): CaModule =
+fun CaSession.getModule(element: PsiElement): CaModule =
     CaModuleProvider.getModule(useSiteModule.project, element, useSiteModule)

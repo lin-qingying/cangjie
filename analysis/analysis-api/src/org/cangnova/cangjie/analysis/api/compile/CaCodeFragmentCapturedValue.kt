@@ -4,6 +4,18 @@ import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
+/**
+ * 代码片段(code fragment)分析时捕获的值。
+ *
+ * 用于在调试器、表达式求值等场景把外层作用域的变量、`this`、`super` 等
+ * 显式表示为一组可被序列化的捕获项;
+ * 与 Kotlin Analysis API 的 `KaCodeFragmentCapturedValue` 对齐。
+ *
+ * - [name] 用于显示和符号引用;
+ * - [isMutated] 标识值在片段中是否被写;
+ * - [isCrossingInlineBounds] 标识捕获是否跨越内联边界;
+ * - [depthRelativeToCurrentFrame] 表示相对当前栈帧的嵌套层数。
+ */
 @CaExperimentalApi
 sealed class CaCodeFragmentCapturedValue(
     val name: String,
@@ -11,6 +23,7 @@ sealed class CaCodeFragmentCapturedValue(
     val isCrossingInlineBounds: Boolean,
     val depthRelativeToCurrentFrame: Int,
 ) {
+    /** 用于在 UI/求值器中展示捕获值的文本形式。 */
     open val displayText: String
         get() = name
 

@@ -71,12 +71,12 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val className: Name
     }
 
-    interface SuperTypesDuplicate : CaCfirDiagnostic<CjTypeReference> {
+    interface SuperTypesDuplicate : CaCfirDiagnostic<CjNamedDeclaration> {
         override val diagnosticClass get() = SuperTypesDuplicate::class
         val typeName: Name
     }
 
-    interface InterfaceCannotInheritClass : CaCfirDiagnostic<CjTypeReference> {
+    interface InterfaceCannotInheritClass : CaCfirDiagnostic<CjNamedDeclaration> {
         override val diagnosticClass get() = InterfaceCannotInheritClass::class
         val interfaceName: Name
         val superTypeName: Name
@@ -166,12 +166,12 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         override val diagnosticClass get() = InterfaceSuperNotAllowed::class
     }
 
-    interface StaticCannotBeOpenAbstractOverride : CaCfirDiagnostic<CjDeclaration> {
+    interface StaticCannotBeOpenAbstractOverride : CaCfirDiagnostic<CjNamedDeclaration> {
         override val diagnosticClass get() = StaticCannotBeOpenAbstractOverride::class
         val declarationName: Name?
     }
 
-    interface MutOnlyOnFunction : CaCfirDiagnostic<CjDeclaration> {
+    interface MutOnlyOnFunction : CaCfirDiagnostic<CjNamedDeclaration> {
         override val diagnosticClass get() = MutOnlyOnFunction::class
         val declarationName: Name?
     }
@@ -1841,6 +1841,192 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
     interface MockFrozenRequired : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = MockFrozenRequired::class
         val functionName: Name
+    }
+
+    interface MacroNotExpanded : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroNotExpanded::class
+        val macroName: String
+    }
+
+    interface MacroExpansionFailed : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExpansionFailed::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroDiagReportError : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroDiagReportError::class
+        val message: String
+        val hint: String
+    }
+
+    interface MacroDiagReportWarning : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroDiagReportWarning::class
+        val message: String
+        val hint: String
+    }
+
+    interface MacroUndefinedPackage : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroUndefinedPackage::class
+        val packageName: String
+        val reason: String
+    }
+
+    interface MacroUndeclaredIdentifier : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroUndeclaredIdentifier::class
+        val name: Name
+        val reason: String
+    }
+
+    interface MacroExpectMacroDefinition : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExpectMacroDefinition::class
+        val target: String
+        val reason: String
+    }
+
+    interface MacroDependencyCompileFailed : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroDependencyCompileFailed::class
+        val packageName: String
+        val reason: String
+        val diagnosticsRef: String
+    }
+
+    interface MacroAmbiguousMatch : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroAmbiguousMatch::class
+        val macroName: String
+        val targets: List<FqName>
+    }
+
+    interface MacroCannotFindDependencyBchir : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroCannotFindDependencyBchir::class
+        val packageName: String
+        val path: String
+    }
+
+    interface MacroExpectPlainMacro : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExpectPlainMacro::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroExpectAttributedMacro : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExpectAttributedMacro::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroExpandAtexcl : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExpandAtexcl::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroInvalidAttrTokens : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroInvalidAttrTokens::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroInvalidInputTokens : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroInvalidInputTokens::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroInvalidEscape : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroInvalidEscape::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroSamePackageDefCall : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroSamePackageDefCall::class
+        val macroName: String
+        val packageName: FqName
+    }
+
+    interface MacroAliasConflict : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroAliasConflict::class
+        val alias: Name
+        val targets: List<FqName>
+    }
+
+    interface MacroExecutorUnavailable : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExecutorUnavailable::class
+        val hint: String
+    }
+
+    interface MacroCannotOpenLib : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroCannotOpenLib::class
+        val libPath: String
+        val reason: String
+    }
+
+    interface MacroCannotFindMethod : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroCannotFindMethod::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroEvaluateFailed : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroEvaluateFailed::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroExpandFailed : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExpandFailed::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroExpandCodeShouldNotHaveMacrocall : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExpandCodeShouldNotHaveMacrocall::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroCallSaveFileFailed : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroCallSaveFileFailed::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroExecutorProtocolError : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExecutorProtocolError::class
+        val reason: String
+    }
+
+    interface MacroExecutorServerDisconnected : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExecutorServerDisconnected::class
+        val reason: String
+    }
+
+    interface MacroExecutorTimeout : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExecutorTimeout::class
+        val reason: String
+    }
+
+    interface MacroExecutorServerCrash : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroExecutorServerCrash::class
+        val reason: String
+    }
+
+    interface MacroReevaluationFailed : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroReevaluationFailed::class
+        val macroName: String
+        val reason: String
+    }
+
+    interface MacroUnresolved : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroUnresolved::class
+        val macroName: Name
+    }
+
+    interface MacroCycle : CaCfirDiagnostic<PsiElement> {
+        override val diagnosticClass get() = MacroCycle::class
+        val macroName: String
+        val cycleChain: List<String>
     }
 
 }

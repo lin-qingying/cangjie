@@ -66,11 +66,14 @@ interface CaVisibilityChecker : CaLifetimeOwner {
  */
 @CaExperimentalApi
 interface CaUseSiteVisibilityChecker : CaLifetimeOwner {
+    /**
+     * 判定 [candidateSymbol] 在该 checker 绑定的 use-site 下是否可见。
+     */
     fun isVisible(candidateSymbol: CaDeclarationSymbol): Boolean
 }
 
 /**
- * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ * 自动生成的 context 桥接。请勿手工修改。
  */
 @CaExperimentalApi
 context(session: CaSession)
@@ -89,7 +92,7 @@ fun createUseSiteVisibilityChecker(
 }
 
 /**
- * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ * 自动生成的 context 桥接。请勿手工修改。
  */
 @CaExperimentalApi
 context(session: CaSession)
@@ -100,7 +103,7 @@ fun CaCallableSymbol.isVisibleInClass(classSymbol: CaClassSymbol): Boolean {
 }
 
 /**
- * Auto-generated bridge. DO NOT EDIT MANUALLY!
+ * 自动生成的 context 桥接。请勿手工修改。
  */
 context(session: CaSession)
 fun isPublicApi(symbol: CaDeclarationSymbol): Boolean {

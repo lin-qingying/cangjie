@@ -11,6 +11,7 @@ import org.cangnova.cangjie.psi.CjParameter
  * 对齐 Kotlin `KaPropertySetterSymbolRenderer` 的 setter 叶子 renderer。
  */
 fun interface CaPropertySetterSymbolRenderer {
+    /** 渲染 setter [symbol] 到 [printer]。 */
     fun renderSymbol(
         analysisSession: CaSession,
         symbol: CaPropertySetterSymbol,
@@ -69,6 +70,7 @@ fun interface CaPropertySetterSymbolRenderer {
             declarationRenderer.accessorBodyRenderer.renderBody(analysisSession, symbol, printer)
         }
 
+        /** 仅输出 setter 形参名(贴近仓颉语法), 不输出类型。 */
         private fun PrettyPrinter.renderSourceParameterList(symbol: CaPropertySetterSymbol) {
             val parameterText = (symbol.parameter.psi as? CjParameter)?.text ?: symbol.parameter.name.asString()
             printCollection(listOf(parameterText), prefix = "(", postfix = ")") { text ->

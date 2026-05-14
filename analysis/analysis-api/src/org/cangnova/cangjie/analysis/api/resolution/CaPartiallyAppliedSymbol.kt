@@ -10,29 +10,44 @@ import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
 
 
 /**
- * A callable symbol partially applied with receivers and type arguments. Essentially, this is a call that misses some information. For
- * properties, the missing information is the type of access (read, write, or compound access) to this property. For functions, the missing
- * information is the value arguments for the call.
+ * 已经"部分应用"的可调用符号:绑定了 receiver 与类型实参,但还未携带完整的实参或访问模式。
+ *
+ * - 对函数,缺失的部分是值实参与上下文实参;
+ * - 对属性 / 变量,缺失的部分是访问模式(读 / 写 / 复合访问)。
+ *
+ * 该接口是 [CaCallableMemberCall.partiallyAppliedSymbol] 的载体,
+ * 也可单独使用,用于"得到候选符号但暂不真正发出调用"的场景。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaPartiallyAppliedSymbol`。
+ *
+ * @param S 实际可调用符号类型(协变)。
+ * @param C 与符号匹配的签名类型(协变)。
  */
 @SubclassOptInRequired(CaImplementationDetail::class)
-public interface CaPartiallyAppliedSymbol<out S : CaCallableSymbol, out C : CaCallableSignature<S>> : CaLifetimeOwner {
+interface CaPartiallyAppliedSymbol<out S : CaCallableSymbol, out C : CaCallableSignature<S>> : CaLifetimeOwner {
     /**
-     * The function or variable declaration.
+     * 函数或变量声明的 use-site 签名。
      */
-    public val signature: C
+    val signature: C
 
     /**
-     * The [dispatch receiver](https://kotlin.github.io/analysis-api/receivers.html#types-of-receivers) for this symbol access. A dispatch
-     * receiver is available if the callable is declared inside a class or object.
+     * 该符号访问对应的 [dispatch receiver](https://kotlin.github.io/analysis-api/receivers.html#types-of-receivers)。
+     *
+     * 仅当目标声明位于某个类型内部时存在。
      */
-    public val dispatchReceiver: CaReceiverValue?
+    val dispatchReceiver: CaReceiverValue?
 
 
 
 
 }
 
+/**
+ * 针对函数族的 [CaPartiallyAppliedSymbol] 别名。
+ */
+typealias CaPartiallyAppliedFunctionSymbol<S> = CaPartiallyAppliedSymbol<S, CaFunctionSignature<S>>
 
-public typealias CaPartiallyAppliedFunctionSymbol<S> = CaPartiallyAppliedSymbol<S, CaFunctionSignature<S>>
-
-public typealias CaPartiallyAppliedVariableSymbol<S> = CaPartiallyAppliedSymbol<S, CaVariableSignature<S>>
+/**
+ * 针对变量族的 [CaPartiallyAppliedSymbol] 别名。
+ */
+typealias CaPartiallyAppliedVariableSymbol<S> = CaPartiallyAppliedSymbol<S, CaVariableSignature<S>>

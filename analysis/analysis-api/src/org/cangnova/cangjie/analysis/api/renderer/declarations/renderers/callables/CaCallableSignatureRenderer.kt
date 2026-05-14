@@ -9,7 +9,16 @@ import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 
+/**
+ * callable 整体签名 renderer。
+ *
+ * 集中安排 callable 头部各组件的输出顺序: 修饰符、关键字、接收者、名称、类型参数、
+ * 形参列表、返回类型。具体每段的细节交给对应子 renderer。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaCallableSignatureRenderer`。
+ */
 fun interface CaCallableSignatureRenderer {
+    /** 写出 [symbol] 的完整签名, [keyword] 为可选的函数关键字。 */
     fun renderCallableSignature(
         analysisSession: CaSession,
         symbol: CaCallableSymbol,

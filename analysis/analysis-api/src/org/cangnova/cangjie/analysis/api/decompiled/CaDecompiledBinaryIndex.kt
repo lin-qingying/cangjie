@@ -8,9 +8,20 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.name.FqName
 
+/**
+ * `.cjo` 反编译产物的项目级索引。
+ *
+ * 把"module ↔ binary file ↔ package"三角的查询能力集中暴露:
+ * - 给 IDE 的 Go-to-Class、Find Symbol、引用解析提供快速反查;
+ * - 隔离上层不直接接触虚拟文件系统中的 `.cjo` 物理布局。
+ *
+ * 通过 [getInstance] 取得当前 [Project] 上的实例。
+ */
 interface CaDecompiledBinaryIndex {
+    /** 枚举指定库模块中的所有反编译 binary 文件。 */
     fun getBinaryFiles(module: CaLibraryModule): List<VirtualFile>
 
+    /** 枚举 builtins 模块中的所有反编译 binary 文件。 */
     fun getBinaryFiles(module: CaBuiltinsModule): List<VirtualFile>
 
     /**
@@ -21,8 +32,10 @@ interface CaDecompiledBinaryIndex {
      */
     fun readPackageFqName(binaryFile: VirtualFile): FqName?
 
+    /** 按模块 + 包名定位库中的 binary 文件,找不到时返回 `null`。 */
     fun findBinaryFile(module: CaLibraryModule, packageFqName: FqName): VirtualFile?
 
+    /** 按模块 + 包名定位 builtins 中的 binary 文件,找不到时返回 `null`。 */
     fun findBinaryFile(module: CaBuiltinsModule, packageFqName: FqName): VirtualFile?
 
     /**
@@ -33,9 +46,11 @@ interface CaDecompiledBinaryIndex {
      */
     fun findBuiltinsBinaryFile(packageFqName: FqName): VirtualFile?
 
+    /** 反向定位:给定 binary 文件,找出它所属的 [CaModule]。 */
     fun findOwningModule(binaryFile: VirtualFile): CaModule?
 
     companion object {
+        /** 获取当前 [Project] 上的索引实例(application service)。 */
         fun getInstance(project: Project): CaDecompiledBinaryIndex = project.service()
     }
 }

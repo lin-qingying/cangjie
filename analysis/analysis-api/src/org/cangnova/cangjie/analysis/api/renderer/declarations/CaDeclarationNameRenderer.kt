@@ -10,9 +10,12 @@ import org.cangnova.cangjie.name.Name
  *
  * 这一层只负责“名字本身如何输出”，不承载关键字、修饰符、签名等更高层格式决策，
  * 以便 hover、signature help、文档渲染共享同一套声明结构。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaDeclarationNameRenderer`。
  */
 fun interface CaDeclarationNameRenderer {
-    public fun renderName(
+    /** 用 symbol 自身的 [CaNamedSymbol.name] 进行渲染。 */
+    fun renderName(
         analysisSession: CaSession,
         symbol: CaNamedSymbol,
         declarationRenderer: CaDeclarationRenderer,
@@ -21,7 +24,12 @@ fun interface CaDeclarationNameRenderer {
         renderName(analysisSession, symbol.name, symbol, declarationRenderer, printer)
     }
 
-    public fun renderName(
+    /**
+     * 渲染给定的 [name]。
+     *
+     * 当存在归属 symbol 时一并传入, 便于实现根据 symbol 元信息做特殊处理(如反引号转义)。
+     */
+    fun renderName(
         analysisSession: CaSession,
         name: Name,
         symbol: CaNamedSymbol?,
@@ -30,6 +38,11 @@ fun interface CaDeclarationNameRenderer {
     )
 
     companion object {
+        /**
+         * 预设: 直接输出名字字符串。
+         *
+         * 不做任何转义/反引号处理, 适合不需要消歧义的场景。
+         */
         val QUOTED: CaDeclarationNameRenderer = CaDeclarationNameRenderer { _, name, _, _, printer ->
             printer.append(name.asString())
         }

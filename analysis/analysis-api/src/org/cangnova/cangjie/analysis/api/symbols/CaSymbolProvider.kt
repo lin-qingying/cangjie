@@ -56,32 +56,76 @@ interface CaSymbolProvider : CaLifetimeOwner {
      */
     val CjExtend.symbol: CaExtendSymbol
 
+    /**
+     * 从 typealias 声明 PSI 恢复 typealias 符号。
+     */
     val CjTypeAlias.symbol: CaTypeAliasSymbol
 
+    /**
+     * 从命名函数 PSI 恢复命名函数符号。
+     */
     val CjNamedFunction.symbol: CaNamedFunctionSymbol
 
+    /**
+     * 从函数字面量 PSI 恢复匿名函数符号。
+     */
     val CjFunctionLiteral.symbol: CaAnonymousFunctionSymbol
 
+    /**
+     * 从构造器 PSI 恢复构造器符号（同时覆盖主、次构造器）。
+     */
     val CjConstructor<*>.symbol: CaConstructorSymbol
 
+    /**
+     * 从宏声明 PSI 恢复宏符号。
+     */
     val CjMacroDeclaration.symbol: CaMacroSymbol
 
+    /**
+     * 从 finalizer PSI 恢复 finalizer 符号。
+     */
     val CjFinalizer.symbol: CaFinalizerSymbol
 
+    /**
+     * 从属性声明 PSI 恢复属性符号。
+     */
     val CjProperty.symbol: CaPropertySymbol
 
+    /**
+     * 从属性访问器 PSI 恢复访问器符号（getter / setter 公共父类型）。
+     */
     val CjPropertyAccessor.symbol: CaPropertyAccessorSymbol
 
+    /**
+     * 从字段变量 PSI 恢复字段符号。
+     */
     val CjFieldVariable.symbol: CaFieldSymbol
 
+    /**
+     * 从枚举构造器 PSI 恢复枚举构造器符号。
+     */
     val CjEnumConstructor.symbol: CaEnumConstructorSymbol
 
+    /**
+     * 从模式变量 PSI 恢复模式变量符号。
+     */
     val CjPatternVariable.symbol: CaPatternVariableSymbol
 
+    /**
+     * 从绑定模式 PSI 恢复模式绑定符号。
+     */
     val CjBindingPattern.symbol: CaPatternBindingSymbol
 
+    /**
+     * 从形参 PSI 恢复对应的变量符号。
+     *
+     * 形参在符号体系中以 [CaVariableSymbol] 的子族（[CaValueParameterSymbol]）表达。
+     */
     val CjParameter.symbol: CaVariableSymbol
 
+    /**
+     * 从类型参数 PSI 恢复类型参数符号。
+     */
     val CjTypeParameter.symbol: CaTypeParameterSymbol
 
     /**
@@ -124,6 +168,12 @@ interface CaSymbolProvider : CaLifetimeOwner {
      */
     fun getExtendSymbols(targetClassId: ClassId): List<CaExtendSymbol>
 }
+/**
+ * 在 [CaSession] 上下文中从任意声明 PSI 恢复其公开声明符号。
+ *
+ * 这是 [CaSymbolProvider.symbol] 的 context-receiver 形式入口，便于不显式构造
+ * provider 的调用方使用：`analyze { someDeclaration.symbol }`。
+ */
 context(session: CaSession)
-public val CjDeclaration.symbol: CaDeclarationSymbol
+val CjDeclaration.symbol: CaDeclarationSymbol
     get() = with(session) { symbol }

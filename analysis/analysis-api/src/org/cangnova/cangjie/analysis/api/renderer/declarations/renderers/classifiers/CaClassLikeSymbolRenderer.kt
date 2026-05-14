@@ -6,7 +6,15 @@ import org.cangnova.cangjie.analysis.api.renderer.declarations.CaDeclarationRend
 import org.cangnova.cangjie.analysis.api.renderer.types.renderers.renderClassIdQualifier
 import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
 
+/**
+ * class-like(类/接口/struct/enum) 渲染器。
+ *
+ * 关键字由调用方传入(如 `class`/`interface`), 因此一个 renderer 即可服务所有 class-like kind。
+ *
+ * 对齐 Kotlin Analysis API 的 `KaClassLikeSymbolRenderer`。
+ */
 fun interface CaClassLikeSymbolRenderer {
+    /** 用 [keyword](如 `class`、`interface`)渲染 [symbol] 到 [printer]。 */
     fun renderSymbol(
         analysisSession: CaSession,
         symbol: CaClassSymbol,
@@ -16,6 +24,11 @@ fun interface CaClassLikeSymbolRenderer {
     )
 
     companion object {
+        /**
+         * 预设: 按源码顺序输出修饰符、关键字、可选父限定名、类型参数、超类型列表、主体。
+         *
+         * 主体渲染交给 [CaDeclarationRenderer.classifierBodyRenderer]。
+         */
         val AS_SOURCE: CaClassLikeSymbolRenderer = CaClassLikeSymbolRenderer { analysisSession, symbol, keyword, declarationRenderer, printer ->
             printer {
                 declarationRenderer.modifiersRenderer.renderDeclarationModifiers(analysisSession, symbol, this)
