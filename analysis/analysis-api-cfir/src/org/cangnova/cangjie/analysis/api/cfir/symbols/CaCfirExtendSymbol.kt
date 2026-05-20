@@ -103,7 +103,15 @@ internal class CaCfirExtendSymbol private constructor(
         get() = stableExtendId
 
     override val targetClassId: ClassId?
-        get() = extendDeclaration.extendedTypeRef.coneTypeOrNull?.classIdOrPrimitiveClassId
+        get() = withValidityAssertion {
+            /**
+             * `extend` 的可寻址目标类身份已经在统一的 stable identity 中固化。
+             *
+             * 公开 symbol 也必须复用这一路径，避免 source PSI 入口与
+             * symbol-provider / pointer-restore 入口对同一 extend 给出不同 targetClassId。
+             */
+            stableIdentity.targetClassId
+        }
 
     override val extendedType: CaType
         get() = extendDeclaration.extendedTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType)
