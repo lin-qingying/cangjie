@@ -46,7 +46,16 @@ interface CjSimpleNameExpression : CjReferenceExpression {
 fun CjSimpleNameExpression.getTypeArguments(): List<CjTypeProjection> {
     return when (this) {
         is CjNameReferenceExpression -> typeArguments
+        is CjNameBasicReferenceExpression -> typeArguments
         else -> emptyList()
+    }
+}
+
+fun CjSimpleNameExpression.getTypeArgumentList(): CjTypeArgumentList? {
+    return when (this) {
+        is CjNameReferenceExpression -> typeArgumentList
+        is CjNameBasicReferenceExpression -> typeArgumentList
+        else -> null
     }
 }
 

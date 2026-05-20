@@ -1,0 +1,4 @@
+target: func greet(): Int64 {
+    return 0
+}
+canBeAnalysed: true

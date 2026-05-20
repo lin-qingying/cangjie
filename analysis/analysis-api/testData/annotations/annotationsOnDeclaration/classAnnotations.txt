@@ -1,0 +1,5 @@
+CjDeclaration: CjClass User
+annotations: [
+  @sample.annotations.First
+  @sample.annotations.Second[value = 2i64]
+]

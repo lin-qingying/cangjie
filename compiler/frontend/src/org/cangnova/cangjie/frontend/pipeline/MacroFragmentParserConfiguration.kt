@@ -10,9 +10,11 @@ import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.lightTree.LightTreeRawCfirExpressionBuilder
 import org.cangnova.cangjie.cfir.lightTree.LightTreeRawCfirDeclarationBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
@@ -48,11 +50,11 @@ fun CompilerConfiguration.installDefaultMacroFragmentParserFactory(project: Proj
 
     macroFragmentParserFactory = MacroFragmentParserFactory { session ->
         TokenBackedMacroFragmentParser(
-            reparse = { text, mode, owner ->
+            reparse = { text, input ->
                 if (useLightTreeParser) {
-                    reparseLightTreeMacroFragment(session, text, mode, owner)
+                    reparseLightTreeMacroFragment(session, text, input)
                 } else {
-                    reparsePsiMacroFragment(project!!, session, text, mode, owner)
+                    reparsePsiMacroFragment(project!!, session, text, input)
                 }
             },
             reTokenize = { tokens -> tokens.reTokenizeMacroSurfaceTokens() },
@@ -64,9 +66,10 @@ private fun reparsePsiMacroFragment(
     project: Project,
     session: CfirSession,
     text: String,
-    mode: MacroFragmentParser.Mode,
-    owner: MacroCallNode,
+    input: MacroFragmentInput,
 ): Any? {
+    val mode = input.mode
+    val owner = input.node
     val surface = owner.surface
     val packageFqName = surface.scopeContext.packageFqName
     val sourcePsi = (surface.sourceRange?.source as? CjPsiSourceElement)?.psi
@@ -74,6 +77,19 @@ private fun reparsePsiMacroFragment(
     val builder = PsiRawCfirBuilder(session)
 
     return when {
+        mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {
+            val original = surface.replaceHandle.annotationCarrier?.owner as? CfirValueParameter
+            val containingSymbol = original?.containingDeclarationSymbol ?: surface.replaceHandle.annotationCarrier?.owner?.symbol
+                ?: return null
+            val annotation = psiFactory.createAnnotations(text).entries.singleOrNull() ?: return null
+            builder.buildAnnotationCallInPackage(
+                annotation = annotation,
+                containingSymbol = containingSymbol,
+                packageFqName = packageFqName,
+                sourceOverride = input.annotationSnapshot?.originalAnnotation?.source,
+                argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source,
+            )
+        }
         surface is MacroSurfaceParam -> {
             val parameter = psiFactory.createSingleParameter(text) ?: return null
             val original = surface.replaceHandle.carrier as? CfirValueParameter ?: return null
@@ -99,12 +115,40 @@ private fun reparsePsiMacroFragment(
 private fun reparseLightTreeMacroFragment(
     session: CfirSession,
     text: String,
-    mode: MacroFragmentParser.Mode,
-    owner: MacroCallNode,
+    input: MacroFragmentInput,
 ): Any? {
+    val mode = input.mode
+    val owner = input.node
     val surface = owner.surface
     val packageFqName = surface.scopeContext.packageFqName
     return when {
+        mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {
+            val ownerDeclaration = surface.replaceHandle.annotationCarrier?.owner ?: return null
+            val containingSymbol = (ownerDeclaration as? CfirValueParameter)?.containingDeclarationSymbol
+                ?: ownerDeclaration.symbol
+            val parsed = parseLightTreeFragment(session, "$text func __macro_annotation__() {}")
+            val sourceOverride = input.annotationSnapshot?.originalAnnotation?.source
+            val argumentListSourceOverride = input.annotationSnapshot?.originalAnnotation?.argumentList?.source
+            val annotation = parsed.tree.findFirst(CjNodeTypes.ANNOTATION)
+            if (annotation != null) {
+                parsed.builder.buildAnnotationCallInPackage(
+                    annotation = annotation,
+                    containingSymbol = containingSymbol,
+                    packageFqName = packageFqName,
+                    sourceOverride = sourceOverride,
+                    argumentListSourceOverride = argumentListSourceOverride,
+                )
+            } else {
+                val macroExpression = parsed.tree.findFirst(CjNodeTypes.MACRO_EXPRESSION) ?: return null
+                parsed.builder.buildMacroExpressionAnnotationCallInPackage(
+                    macroExpression = macroExpression,
+                    containingSymbol = containingSymbol,
+                    packageFqName = packageFqName,
+                    sourceOverride = sourceOverride,
+                    argumentListSourceOverride = argumentListSourceOverride,
+                )
+            }
+        }
         surface is MacroSurfaceParam -> {
             val original = surface.replaceHandle.carrier as? CfirValueParameter ?: return null
             val parsed = parseLightTreeFragment(session, "func __macro_fragment__($text) {}")

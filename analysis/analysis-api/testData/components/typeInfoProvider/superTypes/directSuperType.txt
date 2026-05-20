@@ -1,0 +1,3 @@
+class: User
+superTypes:
+sample.typeprovider.Base

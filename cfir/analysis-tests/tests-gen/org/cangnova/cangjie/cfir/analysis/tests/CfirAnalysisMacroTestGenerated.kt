@@ -54,6 +54,142 @@ class CfirAnalysisMacroTestGenerated : AbstractCfirLightTreeMacroDiagnosticsTest
     fun testSameProjectMacroPackageExpressionAutoCompileDisabled() {
         runTest("cfir/analysis-tests/testData/macro/sameProjectMacroPackageExpressionAutoCompileDisabled.cj")
     }
+
+    @TestMetadata("diagnostics")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Diagnostics : AbstractCfirLightTreeMacroDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/diagnostics")
+        }
+
+        @TestMetadata("annotation")
+        @TestDataPath("\$PROJECT_ROOT")
+        @Nested
+        inner class Annotation : AbstractCfirLightTreeMacroDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/diagnostics/annotation")
+            }
+
+            @TestMetadata("annotationNoConstInitRich.cj")
+            @Test
+            fun testAnnotationNoConstInitRich() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics/annotation/annotationNoConstInitRich.cj")
+            }
+        }
+
+        @TestMetadata("coverage")
+        @TestDataPath("\$PROJECT_ROOT")
+        @Nested
+        inner class Coverage : AbstractCfirLightTreeMacroDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/diagnostics/coverage")
+            }
+
+            @TestMetadata("extensions")
+            @TestDataPath("\$PROJECT_ROOT")
+            @Nested
+            inner class Extensions : AbstractCfirLightTreeMacroDiagnosticsTest() {
+                @Test
+                fun testAllFilesPresent() {
+                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/diagnostics/coverage/extensions")
+                }
+
+                @TestMetadata("extendCTypeNotAllowed.cj")
+                @Test
+                fun testExtendCTypeNotAllowed() {
+                    runTest("cfir/analysis-tests/testData/macro/diagnostics/coverage/extensions/extendCTypeNotAllowed.cj")
+                }
+            }
+        }
+    }
+
+    @TestMetadata("diagnostics2")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Diagnostics2 : AbstractCfirLightTreeMacroDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/diagnostics2")
+        }
+
+        @TestMetadata("annotation")
+        @TestDataPath("\$PROJECT_ROOT")
+        @Nested
+        inner class Annotation : AbstractCfirLightTreeMacroDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/diagnostics2/annotation")
+            }
+
+            @TestMetadata("annotationNoConstInit.cj")
+            @Test
+            fun testAnnotationNoConstInit() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/annotation/annotationNoConstInit.cj")
+            }
+        }
+
+        @TestMetadata("interop")
+        @TestDataPath("\$PROJECT_ROOT")
+        @Nested
+        inner class Interop : AbstractCfirLightTreeMacroDiagnosticsTest() {
+            @Test
+            fun testAllFilesPresent() {
+                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/macro/diagnostics2/interop")
+            }
+
+            @TestMetadata("callingConventionBoundaryPlaceholder.cj")
+            @Test
+            fun testCallingConventionBoundaryPlaceholder() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/interop/callingConventionBoundaryPlaceholder.cj")
+            }
+
+            @TestMetadata("callingConventionOnClassPlaceholder.cj")
+            @Test
+            fun testCallingConventionOnClassPlaceholder() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/interop/callingConventionOnClassPlaceholder.cj")
+            }
+
+            @TestMetadata("callingConventionOnPropertyPlaceholder.cj")
+            @Test
+            fun testCallingConventionOnPropertyPlaceholder() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/interop/callingConventionOnPropertyPlaceholder.cj")
+            }
+
+            @TestMetadata("callingConventionPlacementPlaceholder.cj")
+            @Test
+            fun testCallingConventionPlacementPlaceholder() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/interop/callingConventionPlacementPlaceholder.cj")
+            }
+
+            @TestMetadata("foreignNameLegalityPlaceholder.cj")
+            @Test
+            fun testForeignNameLegalityPlaceholder() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/interop/foreignNameLegalityPlaceholder.cj")
+            }
+
+            @TestMetadata("objcCJMappingBoundaryPlaceholder.cj")
+            @Test
+            fun testObjcCJMappingBoundaryPlaceholder() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/interop/objcCJMappingBoundaryPlaceholder.cj")
+            }
+
+            @TestMetadata("objcInitMethodBoundaryPlaceholder.cj")
+            @Test
+            fun testObjcInitMethodBoundaryPlaceholder() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/interop/objcInitMethodBoundaryPlaceholder.cj")
+            }
+
+            @TestMetadata("objcMirrorImplTypeBoundaryPlaceholder.cj")
+            @Test
+            fun testObjcMirrorImplTypeBoundaryPlaceholder() {
+                runTest("cfir/analysis-tests/testData/macro/diagnostics2/interop/objcMirrorImplTypeBoundaryPlaceholder.cj")
+            }
+        }
+    }
 }
 
 private fun assertAllFilesPresentByMetadata(testInstance: Any, testDataRootRelativePath: String) {
@@ -61,7 +197,7 @@ private fun assertAllFilesPresentByMetadata(testInstance: Any, testDataRootRelat
     require(testDataDir.isDirectory) { "testData dir not found: ${testDataDir.path}" }
 
     val currentDir = currentClassTestDataDir(testInstance::class.java, testDataDir)
-    val expected = currentDir.walkTopDown()
+    val expected = currentDir.listFiles().orEmpty().asSequence()
         .filter { it.isFile && it.extension == "cj" }
         .map { it.relativeTo(currentDir).invariantSeparatorsPath }
         .toSet()

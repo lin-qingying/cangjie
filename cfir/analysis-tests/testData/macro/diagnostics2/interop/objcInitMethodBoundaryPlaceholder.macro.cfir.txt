@@ -1,0 +1,17 @@
+// FILE: objcInitMethodBoundaryPlaceholder.cj
+// MACRO_PACKAGE: false
+FILE: objcInitMethodBoundaryPlaceholder.cj
+    @R|ObjCMirror|() internal? open class WidgetMirror {
+        public? init()
+        @R|ObjCInit|() public static func buildOk(): R|kotlin.Unit| {
+            RETURN {
+                FUNCTION_CALL(WidgetMirror) {
+                }
+            }
+        }
+        @R|ObjCInit|() public static func buildBad(): R|kotlin.Unit| {
+            RETURN {
+                INT(0)
+            }
+        }
+    }

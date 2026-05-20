@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.math.numeric, facadeFqName=std.math.numeric, facadePartSimpleNames=[big_int, big_int_extension, decimal, decimal_context, decimal_extension]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$DOT_QUALIFIED_EXPRESSION
         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]

@@ -1,5 +1,7 @@
 package org.cangnova.cangjie.lsp.capabilities
 
+import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenModifier
+import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenType
 import org.eclipse.lsp4j.CodeActionKind
 import org.eclipse.lsp4j.PositionEncodingKind
 import org.eclipse.lsp4j.TextDocumentSyncKind
@@ -36,36 +38,8 @@ data class CangjieLanguageServerDescriptor(
      * 避免在端到端验证尚未完成前过早声明 `diagnosticProvider`。
      */
     val pullDiagnosticsEnabled: Boolean = false,
-    val semanticTokenTypes: List<String> = listOf(
-        "namespace",
-        "type",
-        "class",
-        "enum",
-        "interface",
-        "struct",
-        "typeParameter",
-        "parameter",
-        "variable",
-        "property",
-        "enumMember",
-        "function",
-        "method",
-        "macro",
-        "keyword",
-        "comment",
-        "string",
-        "number",
-        "operator",
-    ),
-    val semanticTokenModifiers: List<String> = listOf(
-        "declaration",
-        "definition",
-        "readonly",
-        "static",
-        "deprecated",
-        "abstract",
-        "defaultLibrary",
-    ),
+    val semanticTokenTypes: List<String> = CangJieSemanticTokenType.lspValues,
+    val semanticTokenModifiers: List<String> = CangJieSemanticTokenModifier.lspValues,
     val executeCommands: List<String> = emptyList(),
     val features: CangjieLspFeatureSet = CangjieLspFeatureSet.frameworkDefaults(),
 )

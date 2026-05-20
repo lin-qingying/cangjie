@@ -276,6 +276,7 @@ package org.cangnova.cangjie.analysis.api.components
 public interface CaTypeCreator : CaLifetimeOwner
 CaTypeCreator.public fun buildClassType(classId: ClassId, init: CaClassTypeBuilder.() -> Unit =
 CaTypeCreator.public fun buildClassType(symbol: CaClassLikeSymbol, init: CaClassTypeBuilder.() -> Unit =
+CaTypeCreator.public fun buildVarargArrayType(elementType: CaType): CaType
 CaTypeCreator.public fun buildTypeParameterType(symbol: CaTypeParameterSymbol, init: CaTypeParameterTypeBuilder.() -> Unit =
 CaTypeCreator.public fun buildFunctionType( parameterTypes: List<CaType>, returnType: CaType, isCFunction: Boolean = false, isClosureType: Boolean = false, hasVariableLengthArgument: Boolean = false, ): CaFunctionType
 CaTypeCreator.public fun buildTupleType( elementTypes: List<CaType>, ): CaTupleType
@@ -1414,7 +1415,7 @@ public interface CaTypePointer<out T : CaType>
 CaTypePointer.public fun restore(session: CaSession): T?
 ## org/cangnova/cangjie/analysis/api/types/CaTypeProjection.kt
 package org.cangnova.cangjie.analysis.api.types
-public class CaTypeProjection( public val type: CaType?, override val token: CaLifetimeToken, ) : CaLifetimeOwner
+public class CaTypeProjection( val type: CaType?, override val token: CaLifetimeToken, ) : CaLifetimeOwner
 ## org/cangnova/cangjie/analysis/api/types/CaUnionType.kt
 package org.cangnova.cangjie.analysis.api.types
 public interface CaUnionType : CaType

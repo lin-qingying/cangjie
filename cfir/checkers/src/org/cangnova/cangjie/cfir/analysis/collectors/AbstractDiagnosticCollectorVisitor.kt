@@ -16,6 +16,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
 import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -129,6 +130,12 @@ abstract class AbstractDiagnosticCollectorVisitor(
         withStatement(expression) {
             checkElement(expression)
             expression.acceptChildren(this, null)
+        }
+    }
+
+    override fun visitAnnotationCall(annotationCall: CfirAnnotationCall, data: Nothing?) {
+        withElement(annotationCall) {
+            visitNestedElements(annotationCall)
         }
     }
 

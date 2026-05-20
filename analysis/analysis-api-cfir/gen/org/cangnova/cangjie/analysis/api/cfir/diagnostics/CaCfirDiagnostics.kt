@@ -10,14 +10,12 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjCommandTypePattern
+import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
-import org.cangnova.cangjie.psi.CjHandleClause
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjNamedDeclaration
-import org.cangnova.cangjie.psi.CjPerformExpression
 import org.cangnova.cangjie.psi.CjResumeExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 
@@ -41,7 +39,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val conflictingSymbols: List<String>
     }
 
-    interface Redeclaration : CaCfirDiagnostic<CjNamedDeclaration> {
+    interface Redeclaration : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = Redeclaration::class
         val conflictingSymbols: List<String>
     }
@@ -108,7 +106,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val targetTypeName: Name
     }
 
-    interface ExtendGenericUsage : CaCfirDiagnostic<CjDeclaration> {
+    interface ExtendGenericUsage : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = ExtendGenericUsage::class
         val typeParameterName: Name
     }
@@ -399,12 +397,12 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val constructName: String
     }
 
-    interface CommandIncompatibleType : CaCfirDiagnostic<CjPerformExpression> {
+    interface CommandIncompatibleType : CaCfirDiagnostic<CjExpression> {
         override val diagnosticClass get() = CommandIncompatibleType::class
         val actualType: CaType
     }
 
-    interface CommandHandleTypeError : CaCfirDiagnostic<CjCommandTypePattern> {
+    interface CommandHandleTypeError : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = CommandHandleTypeError::class
         val actualType: CaType
     }
@@ -423,7 +421,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val actualType: CaType
     }
 
-    interface MismatchingHandleBlock : CaCfirDiagnostic<CjHandleClause> {
+    interface MismatchingHandleBlock : CaCfirDiagnostic<CjBlockExpression> {
         override val diagnosticClass get() = MismatchingHandleBlock::class
         val actualType: CaType
         val expectedType: CaType
@@ -688,7 +686,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val actual: Int
     }
 
-    interface UnableToInferReturnType : CaCfirDiagnostic<CjDeclaration> {
+    interface UnableToInferReturnType : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = UnableToInferReturnType::class
     }
 
@@ -1044,7 +1042,7 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val functionNames: List<Name>
     }
 
-    interface ExtendAJavaType : CaCfirDiagnostic<PsiElement> {
+    interface ExtendAJavaType : CaCfirDiagnostic<CjTypeReference> {
         override val diagnosticClass get() = ExtendAJavaType::class
     }
 

@@ -21,41 +21,27 @@ import std.io.InputStream
 import std.math.numeric.Decimal
 
 interface ColumnInfo {
-    prop name: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop name: std.core.String
 
-    prop typeName: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop typeName: std.core.String
 
-    prop length: Int64 {
-        get() { /* compiled code */ }
-    }
+    abstract prop length: Int64
 
-    prop scale: Int64 {
-        get() { /* compiled code */ }
-    }
+    abstract prop scale: Int64
 
-    prop nullable: Bool {
-        get() { /* compiled code */ }
-    }
+    abstract prop nullable: Bool
 
-    prop displaySize: Int64 {
-        get() { /* compiled code */ }
-    }
+    abstract prop displaySize: Int64
 }
 
 interface Connection <: std.core.Resource {
-    prop state: std.database.sql.ConnectionState {
-        get() { /* compiled code */ }
-    }
+    abstract prop state: std.database.sql.ConnectionState
 
-    func getMetaData(): std.collection.Map<std.core.String, std.core.String> { /* compiled code */ }
+    abstract func getMetaData(): std.collection.Map<std.core.String, std.core.String>
 
-    func prepareStatement(sql: std.core.String): std.database.sql.Statement { /* compiled code */ }
+    abstract func prepareStatement(sql: std.core.String): std.database.sql.Statement
 
-    func createTransaction(): std.database.sql.Transaction { /* compiled code */ }
+    abstract func createTransaction(): std.database.sql.Transaction
 }
 
 enum ConnectionState <: std.core.Equatable<std.database.sql.ConnectionState> {
@@ -73,74 +59,57 @@ enum ConnectionState <: std.core.Equatable<std.database.sql.ConnectionState> {
 }
 
 interface Statement <: std.core.Resource {
-    prop parameterColumnInfos: std.core.Array<std.database.sql.ColumnInfo> {
-        get() { /* compiled code */ }
-    }
+    abstract prop parameterColumnInfos: std.core.Array<std.database.sql.ColumnInfo>
 
-    func setOption(key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
+    abstract func setOption(key: std.core.String, value: std.core.String): Unit
 
-    func update(params: std.core.Array<std.database.sql.SqlDbType>): std.database.sql.UpdateResult { /* compiled code */ }
+    abstract func update(params: std.core.Array<std.database.sql.SqlDbType>): std.database.sql.UpdateResult
 
-    func query(params: std.core.Array<std.database.sql.SqlDbType>): std.database.sql.QueryResult { /* compiled code */ }
+    abstract func query(params: std.core.Array<std.database.sql.SqlDbType>): std.database.sql.QueryResult
 
-    func `set`(index: Int64, value: T): Unit { /* compiled code */ }
+    abstract func `set`(index: Int64, value: T): Unit
 
-    func setNull(index: Int64): Unit { /* compiled code */ }
+    abstract func setNull(index: Int64): Unit
 
-    func update(): std.database.sql.UpdateResult { /* compiled code */ }
+    abstract func update(): std.database.sql.UpdateResult
 
-    func query(): std.database.sql.QueryResult { /* compiled code */ }
+    abstract func query(): std.database.sql.QueryResult
 }
 
 interface Transaction {
-    mut prop isoLevel: std.database.sql.TransactionIsoLevel {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop isoLevel: std.database.sql.TransactionIsoLevel
 
-    mut prop accessMode: std.database.sql.TransactionAccessMode {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop accessMode: std.database.sql.TransactionAccessMode
 
-    mut prop deferrableMode: std.database.sql.TransactionDeferrableMode {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop deferrableMode: std.database.sql.TransactionDeferrableMode
 
-    func begin(): Unit { /* compiled code */ }
+    abstract func begin(): Unit
 
-    func commit(): Unit { /* compiled code */ }
+    abstract func commit(): Unit
 
-    func rollback(): Unit { /* compiled code */ }
+    abstract func rollback(): Unit
 
-    func rollback(savePointName: std.core.String): Unit { /* compiled code */ }
+    abstract func rollback(savePointName: std.core.String): Unit
 
-    func save(savePointName: std.core.String): Unit { /* compiled code */ }
+    abstract func save(savePointName: std.core.String): Unit
 
-    func release(savePointName: std.core.String): Unit { /* compiled code */ }
+    abstract func release(savePointName: std.core.String): Unit
 }
 
 interface Datasource <: std.core.Resource {
-    func setOption(key: std.core.String, value: std.core.String): Unit { /* compiled code */ }
+    abstract func setOption(key: std.core.String, value: std.core.String): Unit
 
-    func connect(): std.database.sql.Connection { /* compiled code */ }
+    abstract func connect(): std.database.sql.Connection
 }
 
 interface Driver {
-    prop name: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop name: std.core.String
 
-    prop version: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop version: std.core.String
 
-    prop preferredPooling: Bool {
-        get() { /* compiled code */ }
-    }
+    abstract prop preferredPooling: Bool
 
-    func `open`(connectionString: std.core.String, opts: std.core.Array<(std.core.String, std.core.String)>): std.database.sql.Datasource { /* compiled code */ }
+    abstract func `open`(connectionString: std.core.String, opts: std.core.Array<(std.core.String, std.core.String)>): std.database.sql.Datasource
 }
 
 class DriverManager {
@@ -160,11 +129,11 @@ class DriverManager {
 }
 
 interface Pool <: std.core.Resource {
-    func acquire(timeout: std.core.Duration): std.core.Option<std.database.sql.Entry<T>> { /* compiled code */ }
+    abstract func acquire(timeout: std.core.Duration): std.core.Option<std.database.sql.Entry<T>>
 
-    func release(entry: std.database.sql.Entry<T>): std.core.Option<Unit> { /* compiled code */ }
+    abstract func release(entry: std.database.sql.Entry<T>): std.core.Option<Unit>
 
-    func discard(entry: std.database.sql.Entry<T>): std.core.Option<Unit> { /* compiled code */ }
+    abstract func discard(entry: std.database.sql.Entry<T>): std.core.Option<Unit>
 }
 
 class Entry {
@@ -340,23 +309,19 @@ class ProxyConnection <: std.core.Object & std.database.sql.Connection {
 }
 
 interface QueryResult <: std.core.Resource {
-    prop columnInfos: std.core.Array<std.database.sql.ColumnInfo> {
-        get() { /* compiled code */ }
-    }
+    abstract prop columnInfos: std.core.Array<std.database.sql.ColumnInfo>
 
-    func next(values: std.core.Array<std.database.sql.SqlDbType>): Bool { /* compiled code */ }
+    abstract func next(values: std.core.Array<std.database.sql.SqlDbType>): Bool
 
-    func next(): Bool { /* compiled code */ }
+    abstract func next(): Bool
 
-    func `get`(index: Int64): T { /* compiled code */ }
+    abstract func `get`(index: Int64): T
 
-    func getOrNull(index: Int64): std.core.Option<T> { /* compiled code */ }
+    abstract func getOrNull(index: Int64): std.core.Option<T>
 }
 
 interface SqlDbType {
-    prop name: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop name: std.core.String
 }
 
 interface SqlNullableDbType <: std.database.sql.SqlDbType {
@@ -1013,13 +978,9 @@ class SqlOption {
 }
 
 interface UpdateResult {
-    prop rowCount: Int64 {
-        get() { /* compiled code */ }
-    }
+    abstract prop rowCount: Int64
 
-    prop lastInsertId: Int64 {
-        get() { /* compiled code */ }
-    }
+    abstract prop lastInsertId: Int64
 }
 
 enum TransactionIsoLevel <: std.core.ToString & std.core.Hashable & std.core.Equatable<std.database.sql.TransactionIsoLevel> {

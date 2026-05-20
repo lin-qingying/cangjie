@@ -112,7 +112,7 @@ class CangJieParser(project: Project) : PsiParser {
                 )
 
 
-            if (psiFile is CjMacroCallFile) {
+            if (psiFile is CjMacroCallFile || psiFile.name.endsWith(".cj.macrocall")) {
                 cjParsing.parseOnlyAnnotationFile()
             } else {
                 cjParsing.parseFile()

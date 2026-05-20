@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.test.frontend
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.renderer.CfirModifierRenderer
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
 import org.cangnova.cangjie.test.directives.MacroConstructionDirectives
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
@@ -84,7 +86,13 @@ private data class RenderedMacroExpandedCfirFile(
 )
 
 private fun CfirFile.renderForMacroExpandedDump(): String {
-    return CfirRenderer.withGoldenCompat().renderElementAsString(this)
+    return CfirRenderer(
+        modifierRenderer = object : CfirModifierRenderer() {
+            override fun renderModifiers(constructor: CfirConstructor) {
+                renderVisibility(constructor.status, constructor.source)
+            }
+        },
+    ).renderElementAsString(this)
 }
 
 private fun File.macroExpandedCfirSideFile(): File {

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.lsp.analysis
 import com.intellij.model.psi.PsiSymbolService
 import com.intellij.model.psi.impl.targetDeclarationAndReferenceSymbols
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
@@ -237,6 +238,7 @@ internal class AnalysisApiLspSemanticSupport(
      * 这里直接以项目结构快照为事实来源，不再由 LSP 层单独遍历 workspaceFolders。
      * 这样打开文档快照、工作区磁盘文件和模块可见性边界都与 Analysis API 平台状态保持一致。
      */
+    @OptIn(CaPlatformInterface::class)
     fun workspaceFiles(@Suppress("UNUSED_PARAMETER") context: CangjieAnalysisRequestContext): List<WorkspaceFileContext> {
         return projectStructureState.snapshot.allSourceFiles
             .asSequence()
@@ -252,12 +254,14 @@ internal class AnalysisApiLspSemanticSupport(
      * 将公开符号或源码声明规约成可跨文档比较的稳定语义键。
      */
     fun CaSession.targetKeyFor(reference: CjReferenceExpression): AnalysisApiLspTargetKey? {
-        val resolvedSymbol = reference.resolveToSymbol()
+        val resolvedSymbol = runCatching { reference.resolveToSymbol() }.getOrNull()
         if (resolvedSymbol != null) {
             return resolvedSymbol.toTargetKey(this)
         }
 
-        val resolvedPsi = reference.references.asSequence().mapNotNull { it.resolve() }.firstOrNull()
+        val resolvedPsi = runCatching {
+            reference.references.asSequence().mapNotNull { it.resolve() }.firstOrNull()
+        }.getOrNull()
         return targetKeyFor(resolvedPsi)
     }
 
@@ -358,8 +362,8 @@ internal class AnalysisApiLspSemanticSupport(
         session: CaSession,
         stableName: String? = null,
     ): AnalysisApiLspTargetKey.Local? {
-        val originalPsi = session.run { getOriginalPsi() } ?: return null
-        val containingFile = session.run { getContainingFile() } ?: return null
+        val originalPsi = psi ?: return null
+        val containingFile = originalPsi.containingFile as? CjFile ?: return null
         val uri = documentUriOf(containingFile) ?: return null
         val range = originalPsi.textRange ?: return null
         return AnalysisApiLspTargetKey.Local(uri, range.startOffset, range.endOffset, stableName)

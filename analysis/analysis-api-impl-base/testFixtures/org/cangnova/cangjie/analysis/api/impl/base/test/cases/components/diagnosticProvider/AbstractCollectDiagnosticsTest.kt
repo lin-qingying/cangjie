@@ -37,7 +37,10 @@ abstract class AbstractCollectDiagnosticsTest : AbstractAnalysisApiComponentTest
     /**
      * @param name 原始测试文件名。多文件测试输出需要稳定打印该名称。
      */
-    protected class PreparedFile(val cjFile: CjFile, val name: String)
+    protected class PreparedFile(
+        val cjFile: CjFile,
+        val name: String,
+    )
 
     protected open fun prepareCjFile(cjFile: CjFile, testServices: TestServices): PreparedFile =
         PreparedFile(cjFile, cjFile.name)

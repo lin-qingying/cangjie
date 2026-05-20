@@ -1,0 +1,2 @@
+CjTypeReference: User
+CaType: sample.typeprovider.User

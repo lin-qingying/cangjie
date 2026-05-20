@@ -9,6 +9,32 @@ open class CfirCallArgumentsRenderer {
     internal lateinit var components: CfirRendererComponents
     protected val visitor: CfirRenderer.Visitor get() = components.visitor
     protected val printer: CfirPrinter get() = components.printer
+    private val inlineExpressionRenderer: CfirInlineExpressionRenderer? get() = components.inlineExpressionRenderer
+
+    open fun renderArgumentMapping(argumentMapping: LinkedHashMap<CfirExpression, CfirValueParameter>) {
+        printer.print("(")
+        argumentMapping.renderResolvedSeparated()
+        printer.print(")")
+    }
+
+    open fun renderArguments(arguments: List<CfirExpression>) {
+        printer.print("(")
+        printer.print(arguments.joinToString { renderElementInline(it) })
+        printer.print(")")
+    }
+
+    open fun renderArguments(argumentList: CfirArgumentList) {
+        when (argumentList) {
+            is CfirResolvedArgumentList -> renderArgumentMapping(argumentList.mapping)
+            else -> renderArguments(argumentList.arguments)
+        }
+    }
+
+    open fun renderArgumentElements(arguments: List<CfirElement>) {
+        printer.print("(")
+        printer.print(arguments.joinToString { renderElementInline(it) })
+        printer.print(")")
+    }
 
 
 
@@ -20,6 +46,17 @@ open class CfirCallArgumentsRenderer {
             }
             printer.print("$name = ")
             argument.accept(visitor)
+        }
+    }
+
+    private fun Map<CfirExpression, CfirValueParameter>.renderResolvedSeparated() {
+        for ((index, element) in this.entries.withIndex()) {
+            val (expression, parameter) = element
+            if (index > 0) {
+                printer.print(", ")
+            }
+            printer.print("${parameter.name} = ")
+            printer.print(renderElementInline(expression))
         }
     }
 
@@ -38,5 +75,10 @@ open class CfirCallArgumentsRenderer {
                 printer.print("]")
             }
         }
+    }
+
+    private fun renderElementInline(element: CfirElement): String {
+        val expression = element as? CfirExpression ?: return "<expr>"
+        return inlineExpressionRenderer?.render(expression) ?: "<expr>"
     }
 }

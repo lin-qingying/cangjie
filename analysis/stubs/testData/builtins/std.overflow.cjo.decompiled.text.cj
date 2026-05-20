@@ -8,32 +8,32 @@ import std.core.*
 let isNative64: Bool
 
 interface CarryingOp {
-    func carryingAdd(y: T): (Bool, T) { /* compiled code */ }
+    abstract func carryingAdd(y: T): (Bool, T)
 
-    func carryingSub(y: T): (Bool, T) { /* compiled code */ }
+    abstract func carryingSub(y: T): (Bool, T)
 
-    func carryingMul(y: T): (Bool, T) { /* compiled code */ }
+    abstract func carryingMul(y: T): (Bool, T)
 
-    func carryingDiv(y: T): (Bool, T) { /* compiled code */ }
+    abstract func carryingDiv(y: T): (Bool, T)
 
-    func carryingMod(y: T): (Bool, T) { /* compiled code */ }
+    abstract func carryingMod(y: T): (Bool, T)
 
-    func carryingInc(): (Bool, T) { /* compiled code */ }
+    abstract func carryingInc(): (Bool, T)
 
-    func carryingDec(): (Bool, T) { /* compiled code */ }
+    abstract func carryingDec(): (Bool, T)
 
-    func carryingNeg(): (Bool, T) { /* compiled code */ }
+    abstract func carryingNeg(): (Bool, T)
 
-    func carryingShl(y: UInt64): (Bool, T) { /* compiled code */ }
+    abstract func carryingShl(y: UInt64): (Bool, T)
 
-    func carryingShr(y: UInt64): (Bool, T) { /* compiled code */ }
+    abstract func carryingShr(y: UInt64): (Bool, T)
 }
 
 interface CarryingPow {
-    func carryingPow(y: UInt64): (Bool, Int64) { /* compiled code */ }
+    abstract func carryingPow(y: UInt64): (Bool, Int64)
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: Int8): (Bool, Int8) { /* compiled code */ }
 
     func carryingSub(y: Int8): (Bool, Int8) { /* compiled code */ }
@@ -55,7 +55,7 @@ extend Extend <: CarryingOp {
     func carryingShr(y: UInt64): (Bool, Int8) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: Int16): (Bool, Int16) { /* compiled code */ }
 
     func carryingSub(y: Int16): (Bool, Int16) { /* compiled code */ }
@@ -77,7 +77,7 @@ extend Extend <: CarryingOp {
     func carryingShr(y: UInt64): (Bool, Int16) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: Int32): (Bool, Int32) { /* compiled code */ }
 
     func carryingSub(y: Int32): (Bool, Int32) { /* compiled code */ }
@@ -99,7 +99,7 @@ extend Extend <: CarryingOp {
     func carryingShr(y: UInt64): (Bool, Int32) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp & CarryingPow {
+extend `Unit` <: CarryingOp & CarryingPow {
     func carryingAdd(y: Int64): (Bool, Int64) { /* compiled code */ }
 
     func carryingSub(y: Int64): (Bool, Int64) { /* compiled code */ }
@@ -123,7 +123,7 @@ extend Extend <: CarryingOp & CarryingPow {
     func carryingPow(y: UInt64): (Bool, Int64) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: IntNative): (Bool, IntNative) { /* compiled code */ }
 
     func carryingSub(y: IntNative): (Bool, IntNative) { /* compiled code */ }
@@ -145,7 +145,7 @@ extend Extend <: CarryingOp {
     func carryingShr(y: UInt64): (Bool, IntNative) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: UInt8): (Bool, UInt8) { /* compiled code */ }
 
     func carryingSub(y: UInt8): (Bool, UInt8) { /* compiled code */ }
@@ -167,7 +167,7 @@ extend Extend <: CarryingOp {
     func carryingShr(y: UInt64): (Bool, UInt8) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: UInt16): (Bool, UInt16) { /* compiled code */ }
 
     func carryingSub(y: UInt16): (Bool, UInt16) { /* compiled code */ }
@@ -189,7 +189,7 @@ extend Extend <: CarryingOp {
     func carryingShr(y: UInt64): (Bool, UInt16) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: UInt32): (Bool, UInt32) { /* compiled code */ }
 
     func carryingSub(y: UInt32): (Bool, UInt32) { /* compiled code */ }
@@ -211,7 +211,7 @@ extend Extend <: CarryingOp {
     func carryingShr(y: UInt64): (Bool, UInt32) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: UInt64): (Bool, UInt64) { /* compiled code */ }
 
     func carryingSub(y: UInt64): (Bool, UInt64) { /* compiled code */ }
@@ -233,7 +233,7 @@ extend Extend <: CarryingOp {
     func carryingShr(y: UInt64): (Bool, UInt64) { /* compiled code */ }
 }
 
-extend Extend <: CarryingOp {
+extend `Unit` <: CarryingOp {
     func carryingAdd(y: UIntNative): (Bool, UIntNative) { /* compiled code */ }
 
     func carryingSub(y: UIntNative): (Bool, UIntNative) { /* compiled code */ }
@@ -256,29 +256,29 @@ extend Extend <: CarryingOp {
 }
 
 interface CheckedOp {
-    func checkedAdd(y: T): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedAdd(y: T): std.core.Option<T>
 
-    func checkedSub(y: T): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedSub(y: T): std.core.Option<T>
 
-    func checkedMul(y: T): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedMul(y: T): std.core.Option<T>
 
-    func checkedDiv(y: T): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedDiv(y: T): std.core.Option<T>
 
-    func checkedMod(y: T): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedMod(y: T): std.core.Option<T>
 
-    func checkedInc(): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedInc(): std.core.Option<T>
 
-    func checkedDec(): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedDec(): std.core.Option<T>
 
-    func checkedNeg(): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedNeg(): std.core.Option<T>
 
-    func checkedShl(y: UInt64): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedShl(y: UInt64): std.core.Option<T>
 
-    func checkedShr(y: UInt64): std.core.Option<T> { /* compiled code */ }
+    abstract func checkedShr(y: UInt64): std.core.Option<T>
 }
 
 interface CheckedPow {
-    func checkedPow(y: UInt64): std.core.Option<Int64> { /* compiled code */ }
+    abstract func checkedPow(y: UInt64): std.core.Option<Int64>
 }
 
 func checkedShl(x: Int8, y: UInt64): std.core.Option<Int8> { /* compiled code */ }
@@ -339,7 +339,7 @@ func checkedDec(x: T): std.core.Option<T> { /* compiled code */ }
 
 func checkedNeg(x: T): std.core.Option<T> { /* compiled code */ }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: Int8): std.core.Option<Int8> { /* compiled code */ }
 
     func checkedSub(y: Int8): std.core.Option<Int8> { /* compiled code */ }
@@ -361,7 +361,7 @@ extend Extend <: CheckedOp {
     func checkedShr(y: UInt64): std.core.Option<Int8> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: Int16): std.core.Option<Int16> { /* compiled code */ }
 
     func checkedSub(y: Int16): std.core.Option<Int16> { /* compiled code */ }
@@ -383,7 +383,7 @@ extend Extend <: CheckedOp {
     func checkedShr(y: UInt64): std.core.Option<Int16> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: Int32): std.core.Option<Int32> { /* compiled code */ }
 
     func checkedSub(y: Int32): std.core.Option<Int32> { /* compiled code */ }
@@ -405,7 +405,7 @@ extend Extend <: CheckedOp {
     func checkedShr(y: UInt64): std.core.Option<Int32> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp & CheckedPow {
+extend `Unit` <: CheckedOp & CheckedPow {
     func checkedAdd(y: Int64): std.core.Option<Int64> { /* compiled code */ }
 
     func checkedSub(y: Int64): std.core.Option<Int64> { /* compiled code */ }
@@ -429,7 +429,7 @@ extend Extend <: CheckedOp & CheckedPow {
     func checkedShr(y: UInt64): std.core.Option<Int64> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: UInt8): std.core.Option<UInt8> { /* compiled code */ }
 
     func checkedSub(y: UInt8): std.core.Option<UInt8> { /* compiled code */ }
@@ -451,7 +451,7 @@ extend Extend <: CheckedOp {
     func checkedShr(y: UInt64): std.core.Option<UInt8> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: UInt16): std.core.Option<UInt16> { /* compiled code */ }
 
     func checkedSub(y: UInt16): std.core.Option<UInt16> { /* compiled code */ }
@@ -473,7 +473,7 @@ extend Extend <: CheckedOp {
     func checkedShr(y: UInt64): std.core.Option<UInt16> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: UInt32): std.core.Option<UInt32> { /* compiled code */ }
 
     func checkedSub(y: UInt32): std.core.Option<UInt32> { /* compiled code */ }
@@ -495,7 +495,7 @@ extend Extend <: CheckedOp {
     func checkedShr(y: UInt64): std.core.Option<UInt32> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: UInt64): std.core.Option<UInt64> { /* compiled code */ }
 
     func checkedSub(y: UInt64): std.core.Option<UInt64> { /* compiled code */ }
@@ -517,7 +517,7 @@ extend Extend <: CheckedOp {
     func checkedShr(y: UInt64): std.core.Option<UInt64> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: IntNative): std.core.Option<IntNative> { /* compiled code */ }
 
     func checkedSub(y: IntNative): std.core.Option<IntNative> { /* compiled code */ }
@@ -539,7 +539,7 @@ extend Extend <: CheckedOp {
     func checkedShr(y: UInt64): std.core.Option<IntNative> { /* compiled code */ }
 }
 
-extend Extend <: CheckedOp {
+extend `Unit` <: CheckedOp {
     func checkedAdd(y: UIntNative): std.core.Option<UIntNative> { /* compiled code */ }
 
     func checkedSub(y: UIntNative): std.core.Option<UIntNative> { /* compiled code */ }
@@ -580,32 +580,32 @@ func saturatingNeg(x: T): T { /* compiled code */ }
 func saturatingDec(x: T): T { /* compiled code */ }
 
 interface SaturatingOp {
-    func saturatingAdd(y: T): T { /* compiled code */ }
+    abstract func saturatingAdd(y: T): T
 
-    func saturatingSub(y: T): T { /* compiled code */ }
+    abstract func saturatingSub(y: T): T
 
-    func saturatingMul(y: T): T { /* compiled code */ }
+    abstract func saturatingMul(y: T): T
 
-    func saturatingDiv(y: T): T { /* compiled code */ }
+    abstract func saturatingDiv(y: T): T
 
-    func saturatingMod(y: T): T { /* compiled code */ }
+    abstract func saturatingMod(y: T): T
 
-    func saturatingInc(): T { /* compiled code */ }
+    abstract func saturatingInc(): T
 
-    func saturatingDec(): T { /* compiled code */ }
+    abstract func saturatingDec(): T
 
-    func saturatingNeg(): T { /* compiled code */ }
+    abstract func saturatingNeg(): T
 
-    func saturatingShl(y: UInt64): T { /* compiled code */ }
+    abstract func saturatingShl(y: UInt64): T
 
-    func saturatingShr(y: UInt64): T { /* compiled code */ }
+    abstract func saturatingShr(y: UInt64): T
 }
 
 interface SaturatingPow {
-    func saturatingPow(y: UInt64): Int64 { /* compiled code */ }
+    abstract func saturatingPow(y: UInt64): Int64
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: Int8): Int8 { /* compiled code */ }
 
     func saturatingSub(y: Int8): Int8 { /* compiled code */ }
@@ -627,7 +627,7 @@ extend Extend <: SaturatingOp {
     func saturatingShr(y: UInt64): Int8 { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: Int16): Int16 { /* compiled code */ }
 
     func saturatingSub(y: Int16): Int16 { /* compiled code */ }
@@ -649,7 +649,7 @@ extend Extend <: SaturatingOp {
     func saturatingShr(y: UInt64): Int16 { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: Int32): Int32 { /* compiled code */ }
 
     func saturatingSub(y: Int32): Int32 { /* compiled code */ }
@@ -671,7 +671,7 @@ extend Extend <: SaturatingOp {
     func saturatingShr(y: UInt64): Int32 { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp & SaturatingPow {
+extend `Unit` <: SaturatingOp & SaturatingPow {
     func saturatingAdd(y: Int64): Int64 { /* compiled code */ }
 
     func saturatingSub(y: Int64): Int64 { /* compiled code */ }
@@ -695,7 +695,7 @@ extend Extend <: SaturatingOp & SaturatingPow {
     func saturatingShr(y: UInt64): Int64 { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: UInt8): UInt8 { /* compiled code */ }
 
     func saturatingSub(y: UInt8): UInt8 { /* compiled code */ }
@@ -717,7 +717,7 @@ extend Extend <: SaturatingOp {
     func saturatingShr(y: UInt64): UInt8 { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: UInt16): UInt16 { /* compiled code */ }
 
     func saturatingSub(y: UInt16): UInt16 { /* compiled code */ }
@@ -739,7 +739,7 @@ extend Extend <: SaturatingOp {
     func saturatingShr(y: UInt64): UInt16 { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: UInt32): UInt32 { /* compiled code */ }
 
     func saturatingSub(y: UInt32): UInt32 { /* compiled code */ }
@@ -761,7 +761,7 @@ extend Extend <: SaturatingOp {
     func saturatingShr(y: UInt64): UInt32 { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: UInt64): UInt64 { /* compiled code */ }
 
     func saturatingSub(y: UInt64): UInt64 { /* compiled code */ }
@@ -783,7 +783,7 @@ extend Extend <: SaturatingOp {
     func saturatingShr(y: UInt64): UInt64 { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: IntNative): IntNative { /* compiled code */ }
 
     func saturatingSub(y: IntNative): IntNative { /* compiled code */ }
@@ -805,7 +805,7 @@ extend Extend <: SaturatingOp {
     func saturatingShr(y: UInt64): IntNative { /* compiled code */ }
 }
 
-extend Extend <: SaturatingOp {
+extend `Unit` <: SaturatingOp {
     func saturatingAdd(y: UIntNative): UIntNative { /* compiled code */ }
 
     func saturatingSub(y: UIntNative): UIntNative { /* compiled code */ }
@@ -846,32 +846,32 @@ func throwingDec(x: T): T { /* compiled code */ }
 func throwingNeg(x: T): T { /* compiled code */ }
 
 interface ThrowingOp {
-    func throwingAdd(y: T): T { /* compiled code */ }
+    abstract func throwingAdd(y: T): T
 
-    func throwingSub(y: T): T { /* compiled code */ }
+    abstract func throwingSub(y: T): T
 
-    func throwingMul(y: T): T { /* compiled code */ }
+    abstract func throwingMul(y: T): T
 
-    func throwingDiv(y: T): T { /* compiled code */ }
+    abstract func throwingDiv(y: T): T
 
-    func throwingMod(y: T): T { /* compiled code */ }
+    abstract func throwingMod(y: T): T
 
-    func throwingInc(): T { /* compiled code */ }
+    abstract func throwingInc(): T
 
-    func throwingDec(): T { /* compiled code */ }
+    abstract func throwingDec(): T
 
-    func throwingNeg(): T { /* compiled code */ }
+    abstract func throwingNeg(): T
 
-    func throwingShl(y: UInt64): T { /* compiled code */ }
+    abstract func throwingShl(y: UInt64): T
 
-    func throwingShr(y: UInt64): T { /* compiled code */ }
+    abstract func throwingShr(y: UInt64): T
 }
 
 interface ThrowingPow {
-    func throwingPow(y: UInt64): Int64 { /* compiled code */ }
+    abstract func throwingPow(y: UInt64): Int64
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: Int8): Int8 { /* compiled code */ }
 
     func throwingSub(y: Int8): Int8 { /* compiled code */ }
@@ -893,7 +893,7 @@ extend Extend <: ThrowingOp {
     func throwingShr(y: UInt64): Int8 { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: Int16): Int16 { /* compiled code */ }
 
     func throwingSub(y: Int16): Int16 { /* compiled code */ }
@@ -915,7 +915,7 @@ extend Extend <: ThrowingOp {
     func throwingShr(y: UInt64): Int16 { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: Int32): Int32 { /* compiled code */ }
 
     func throwingSub(y: Int32): Int32 { /* compiled code */ }
@@ -937,7 +937,7 @@ extend Extend <: ThrowingOp {
     func throwingShr(y: UInt64): Int32 { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp & ThrowingPow {
+extend `Unit` <: ThrowingOp & ThrowingPow {
     func throwingAdd(y: Int64): Int64 { /* compiled code */ }
 
     func throwingSub(y: Int64): Int64 { /* compiled code */ }
@@ -961,7 +961,7 @@ extend Extend <: ThrowingOp & ThrowingPow {
     func throwingShr(y: UInt64): Int64 { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: UInt8): UInt8 { /* compiled code */ }
 
     func throwingSub(y: UInt8): UInt8 { /* compiled code */ }
@@ -983,7 +983,7 @@ extend Extend <: ThrowingOp {
     func throwingShr(y: UInt64): UInt8 { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: UInt16): UInt16 { /* compiled code */ }
 
     func throwingSub(y: UInt16): UInt16 { /* compiled code */ }
@@ -1005,7 +1005,7 @@ extend Extend <: ThrowingOp {
     func throwingShr(y: UInt64): UInt16 { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: UInt32): UInt32 { /* compiled code */ }
 
     func throwingSub(y: UInt32): UInt32 { /* compiled code */ }
@@ -1027,7 +1027,7 @@ extend Extend <: ThrowingOp {
     func throwingShr(y: UInt64): UInt32 { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: UInt64): UInt64 { /* compiled code */ }
 
     func throwingSub(y: UInt64): UInt64 { /* compiled code */ }
@@ -1049,7 +1049,7 @@ extend Extend <: ThrowingOp {
     func throwingShr(y: UInt64): UInt64 { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: IntNative): IntNative { /* compiled code */ }
 
     func throwingSub(y: IntNative): IntNative { /* compiled code */ }
@@ -1071,7 +1071,7 @@ extend Extend <: ThrowingOp {
     func throwingShr(y: UInt64): IntNative { /* compiled code */ }
 }
 
-extend Extend <: ThrowingOp {
+extend `Unit` <: ThrowingOp {
     func throwingAdd(y: UIntNative): UIntNative { /* compiled code */ }
 
     func throwingSub(y: UIntNative): UIntNative { /* compiled code */ }
@@ -1128,32 +1128,32 @@ func wrappingDec(x: T): T { /* compiled code */ }
 func wrappingNeg(x: T): T { /* compiled code */ }
 
 interface WrappingOp {
-    func wrappingAdd(y: T): T { /* compiled code */ }
+    abstract func wrappingAdd(y: T): T
 
-    func wrappingSub(y: T): T { /* compiled code */ }
+    abstract func wrappingSub(y: T): T
 
-    func wrappingMul(y: T): T { /* compiled code */ }
+    abstract func wrappingMul(y: T): T
 
-    func wrappingDiv(y: T): T { /* compiled code */ }
+    abstract func wrappingDiv(y: T): T
 
-    func wrappingMod(y: T): T { /* compiled code */ }
+    abstract func wrappingMod(y: T): T
 
-    func wrappingInc(): T { /* compiled code */ }
+    abstract func wrappingInc(): T
 
-    func wrappingDec(): T { /* compiled code */ }
+    abstract func wrappingDec(): T
 
-    func wrappingNeg(): T { /* compiled code */ }
+    abstract func wrappingNeg(): T
 
-    func wrappingShl(y: UInt64): T { /* compiled code */ }
+    abstract func wrappingShl(y: UInt64): T
 
-    func wrappingShr(y: UInt64): T { /* compiled code */ }
+    abstract func wrappingShr(y: UInt64): T
 }
 
 interface WrappingPow {
-    func wrappingPow(y: UInt64): Int64 { /* compiled code */ }
+    abstract func wrappingPow(y: UInt64): Int64
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: Int8): Int8 { /* compiled code */ }
 
     func wrappingSub(y: Int8): Int8 { /* compiled code */ }
@@ -1175,7 +1175,7 @@ extend Extend <: WrappingOp {
     func wrappingShr(y: UInt64): Int8 { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: Int16): Int16 { /* compiled code */ }
 
     func wrappingSub(y: Int16): Int16 { /* compiled code */ }
@@ -1197,7 +1197,7 @@ extend Extend <: WrappingOp {
     func wrappingShr(y: UInt64): Int16 { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: Int32): Int32 { /* compiled code */ }
 
     func wrappingSub(y: Int32): Int32 { /* compiled code */ }
@@ -1219,7 +1219,7 @@ extend Extend <: WrappingOp {
     func wrappingShr(y: UInt64): Int32 { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp & WrappingPow {
+extend `Unit` <: WrappingOp & WrappingPow {
     func wrappingAdd(y: Int64): Int64 { /* compiled code */ }
 
     func wrappingSub(y: Int64): Int64 { /* compiled code */ }
@@ -1243,7 +1243,7 @@ extend Extend <: WrappingOp & WrappingPow {
     func wrappingShr(y: UInt64): Int64 { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: UInt8): UInt8 { /* compiled code */ }
 
     func wrappingSub(y: UInt8): UInt8 { /* compiled code */ }
@@ -1265,7 +1265,7 @@ extend Extend <: WrappingOp {
     func wrappingShr(y: UInt64): UInt8 { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: UInt16): UInt16 { /* compiled code */ }
 
     func wrappingSub(y: UInt16): UInt16 { /* compiled code */ }
@@ -1287,7 +1287,7 @@ extend Extend <: WrappingOp {
     func wrappingShr(y: UInt64): UInt16 { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: UInt32): UInt32 { /* compiled code */ }
 
     func wrappingSub(y: UInt32): UInt32 { /* compiled code */ }
@@ -1309,7 +1309,7 @@ extend Extend <: WrappingOp {
     func wrappingShr(y: UInt64): UInt32 { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: UInt64): UInt64 { /* compiled code */ }
 
     func wrappingSub(y: UInt64): UInt64 { /* compiled code */ }
@@ -1331,7 +1331,7 @@ extend Extend <: WrappingOp {
     func wrappingShr(y: UInt64): UInt64 { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: IntNative): IntNative { /* compiled code */ }
 
     func wrappingSub(y: IntNative): IntNative { /* compiled code */ }
@@ -1353,7 +1353,7 @@ extend Extend <: WrappingOp {
     func wrappingShr(y: UInt64): IntNative { /* compiled code */ }
 }
 
-extend Extend <: WrappingOp {
+extend `Unit` <: WrappingOp {
     func wrappingAdd(y: UIntNative): UIntNative { /* compiled code */ }
 
     func wrappingSub(y: UIntNative): UIntNative { /* compiled code */ }

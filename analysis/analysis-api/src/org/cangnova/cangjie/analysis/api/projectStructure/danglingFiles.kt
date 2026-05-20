@@ -1,5 +1,12 @@
 package org.cangnova.cangjie.analysis.api.projectStructure
 
+import com.intellij.openapi.util.Key
+import com.intellij.testFramework.LightVirtualFile
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
+import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.UserDataProperty
+
 /**
  * 控制游离文件中**非局部声明**引用的解析策略。
  *
@@ -19,3 +26,25 @@ enum class CaDanglingFileResolutionMode {
      */
     IGNORE_SELF,
 }
+
+private val EXPLICIT_MODULE_KEY = Key.create<CaModule>("EXPLICIT_MODULE")
+
+/**
+ * 显式指定当前内存文件使用的 Analysis API 模块。
+ *
+ * 对齐 Kotlin `KtFile.explicitModule`：当前只允许显式绑定 [CaDanglingFileModule]，
+ * 用于测试或调用方手动构造由 PSI 文件承载的 dangling file module。
+ */
+@CaExperimentalApi
+var CjFile.explicitModule: CaModule?
+    get() = getUserData(EXPLICIT_MODULE_KEY)
+    set(value) {
+        @OptIn(CaPlatformInterface::class)
+        require(value is CaDanglingFileModule?) { "Only dangling file modules can be set as explicit modules" }
+
+        val virtualFile = virtualFile
+        if (virtualFile != null) {
+            require(virtualFile is LightVirtualFile) { "'explicitModule' is only available for in-memory files" }
+        }
+        putUserData(EXPLICIT_MODULE_KEY, value)
+    }

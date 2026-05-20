@@ -4,3 +4,11 @@ name = "cangjie"
 
 [setup]
 script = ""
+
+[[actions]]
+name = "运行ide 插件"
+icon = "run"
+command = '''
+cd D:\code\intellij\cangjie\intellij-ide
+.\gradlew.bat :product:idea-plugin:runIde
+'''

@@ -13,11 +13,11 @@ import stdx.effect.Command
 class IntCommand <: Command<Int64> {}
 
 func breakFromHandle(): Int64 {
-    while (true) {
+    <!RETURN_TYPE_MISMATCH!>while (true) {
         return try {
             1
         } handle (cmd: IntCommand) {
             <!INVALID_LOOP_CONTROL!>break<!>
         }
-    }
+    }<!>
 }

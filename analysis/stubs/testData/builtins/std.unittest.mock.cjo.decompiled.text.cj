@@ -40,7 +40,7 @@ class CallHandlerImpl <: std.core.Object & std.unittest.mock.`internal`.CallHand
 
     let objectCreatedAtSessionName: std.core.Option<std.core.String>
 
-    init(objId: UInt64, objectCreatedAtSessionName: std.core.Option<std.core.String>) { /* compiled code */ }
+    CallHandlerImpl(objId: UInt64, objectCreatedAtSessionName: std.core.Option<std.core.String>) { /* compiled code */ }
 }
 
 func create(kind: std.unittest.mock.MockKind, modes: std.core.Array<std.unittest.mock.StubMode>, constructor: (std.unittest.mock.CallHandlerImpl) -> T): T { /* compiled code */ }
@@ -50,11 +50,11 @@ func mock(modes: std.core.Array<std.unittest.mock.StubMode>): T { /* compiled co
 func spy(objectToSpyOn: T): T { /* compiled code */ }
 
 interface ValueListener {
-    func lastValue(): std.core.Option<T> { /* compiled code */ }
+    abstract func lastValue(): std.core.Option<T>
 
-    func allValues(): std.core.Array<T> { /* compiled code */ }
+    abstract func allValues(): std.core.Array<T>
 
-    func addCallback(callback: (T) -> Unit): Unit { /* compiled code */ }
+    abstract func addCallback(callback: (T) -> Unit): Unit
 
     static func new(): std.unittest.mock.ValueListener<T> { /* compiled code */ }
 
@@ -76,7 +76,7 @@ class ValueListenerImpl <: std.core.Object & std.unittest.mock.ValueListener<T> 
 
     override func supplyValue(value: std.core.Any): Unit { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    ValueListenerImpl() { /* compiled code */ }
 }
 
 class ActionSelector {
@@ -96,7 +96,7 @@ class ActionSelector {
 
     let sc: std.unittest.mock.Scenario
 
-    init(sc: std.unittest.mock.Scenario) { /* compiled code */ }
+    ActionSelector(sc: std.unittest.mock.Scenario) { /* compiled code */ }
 }
 
 class Scenario {
@@ -124,7 +124,7 @@ class Scenario {
 
     let parentChain: std.unittest.mock.StubChain
 
-    init(parentChain: std.unittest.mock.StubChain) { /* compiled code */ }
+    Scenario(parentChain: std.unittest.mock.StubChain) { /* compiled code */ }
 }
 
 class MethodActionSelector <: std.unittest.mock.ActionSelector {
@@ -146,7 +146,7 @@ class MethodActionSelector <: std.unittest.mock.ActionSelector {
 
     func callsOriginal(): std.unittest.mock.CardinalitySelector<std.unittest.mock.MethodActionSelector<TRet>> { /* compiled code */ }
 
-    init(sc: std.unittest.mock.Scenario) { /* compiled code */ }
+    MethodActionSelector(sc: std.unittest.mock.Scenario) { /* compiled code */ }
 }
 
 class CardinalitySelector {
@@ -166,7 +166,7 @@ class CardinalitySelector {
 
     let factory: (std.unittest.mock.Scenario) -> A
 
-    init(sc: std.unittest.mock.Scenario, factory: (std.unittest.mock.Scenario) -> A) { /* compiled code */ }
+    CardinalitySelector(sc: std.unittest.mock.Scenario, factory: (std.unittest.mock.Scenario) -> A) { /* compiled code */ }
 }
 
 class Continuation {
@@ -176,7 +176,7 @@ class Continuation {
 
     let factory: (std.unittest.mock.Scenario) -> A
 
-    init(previousSc: std.unittest.mock.Scenario, factory: (std.unittest.mock.Scenario) -> A) { /* compiled code */ }
+    Continuation(previousSc: std.unittest.mock.Scenario, factory: (std.unittest.mock.Scenario) -> A) { /* compiled code */ }
 }
 
 class GetterActionSelector <: std.unittest.mock.ActionSelector {
@@ -200,7 +200,7 @@ class GetterActionSelector <: std.unittest.mock.ActionSelector {
 
     func getsField(field: std.unittest.mock.SyntheticField<TRet>): std.unittest.mock.CardinalitySelector<std.unittest.mock.GetterActionSelector<TRet>> { /* compiled code */ }
 
-    init(sc: std.unittest.mock.Scenario) { /* compiled code */ }
+    GetterActionSelector(sc: std.unittest.mock.Scenario) { /* compiled code */ }
 }
 
 class SyntheticField {
@@ -208,7 +208,7 @@ class SyntheticField {
 
     let description: std.unittest.mock.SyntheticFieldDescription
 
-    init(description: std.unittest.mock.SyntheticFieldDescription) { /* compiled code */ }
+    SyntheticField(description: std.unittest.mock.SyntheticFieldDescription) { /* compiled code */ }
 }
 
 class SetterActionSelector <: std.unittest.mock.ActionSelector {
@@ -224,7 +224,7 @@ class SetterActionSelector <: std.unittest.mock.ActionSelector {
 
     func setsField(field: std.unittest.mock.SyntheticField<TArg>): std.unittest.mock.CardinalitySelector<std.unittest.mock.SetterActionSelector<TArg>> { /* compiled code */ }
 
-    init(sc: std.unittest.mock.Scenario) { /* compiled code */ }
+    SetterActionSelector(sc: std.unittest.mock.Scenario) { /* compiled code */ }
 }
 
 extend MethodActionSelector {
@@ -248,7 +248,7 @@ class StubMisconfiguration <: std.unittest.mock.FailureReport {
 
     func stubConfigurationHint(reason: std.unittest.mock.StubMisconfigurationReason): Unit { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    StubMisconfiguration() { /* compiled code */ }
 }
 
 class StubChain {
@@ -268,7 +268,7 @@ class StubChain {
 
     let parentSession: std.unittest.mock.MockSession
 
-    init(invocationMatcher: std.unittest.mock.InvocationMatcher, objectKind: std.unittest.mock.MockKind, parentSession: std.unittest.mock.MockSession) { /* compiled code */ }
+    StubChain(invocationMatcher: std.unittest.mock.InvocationMatcher, objectKind: std.unittest.mock.MockKind, parentSession: std.unittest.mock.MockSession) { /* compiled code */ }
 }
 
 class FailureReport {
@@ -342,7 +342,7 @@ class FailureReport {
 
     let nameRegistry: std.unittest.mock.MockNameRegistry
 
-    init(invocationLog: std.unittest.mock.LogSnapshot, nameRegistry: std.unittest.mock.MockNameRegistry) { /* compiled code */ }
+    FailureReport(invocationLog: std.unittest.mock.LogSnapshot, nameRegistry: std.unittest.mock.MockNameRegistry) { /* compiled code */ }
 }
 
 class StubModeViolation <: std.unittest.mock.FailureReport {
@@ -352,7 +352,7 @@ class StubModeViolation <: std.unittest.mock.FailureReport {
 
     func cardinalitySpecifierNotAllowed(stubChain: std.unittest.mock.StubChain): Nothing { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    StubModeViolation() { /* compiled code */ }
 }
 
 struct StubDescription {
@@ -362,7 +362,7 @@ struct StubDescription {
 
     let location: std.unittest.mock.Location
 
-    init(fullCall: std.core.String, prefixRefName: std.core.Option<std.core.String>, location: std.unittest.mock.Location) { /* compiled code */ }
+    StubDescription(fullCall: std.core.String, prefixRefName: std.core.Option<std.core.String>, location: std.unittest.mock.Location) { /* compiled code */ }
 }
 
 enum VerifyMisconfigurationReason {
@@ -406,7 +406,7 @@ class VerifyStatement {
 
     let invocationMatcher: std.unittest.mock.InvocationMatcher
 
-    init(invocationMatcher: std.unittest.mock.InvocationMatcher) { /* compiled code */ }
+    VerifyStatement(invocationMatcher: std.unittest.mock.InvocationMatcher) { /* compiled code */ }
 }
 
 class ArgumentMatcher {
@@ -422,9 +422,9 @@ class ArgumentMatcher {
 
     func forParameter(name: std.core.String): std.unittest.mock.ArgumentMatcher { /* compiled code */ }
 
-    func matchesAny(arg: std.core.Any): Bool { /* compiled code */ }
+    abstract func matchesAny(arg: std.core.Any): Bool
 
-    init() { /* compiled code */ }
+    ArgumentMatcher() { /* compiled code */ }
 }
 
 class VerifyMisconfiguration <: std.unittest.mock.FailureReport {
@@ -434,23 +434,21 @@ class VerifyMisconfiguration <: std.unittest.mock.FailureReport {
 }
 
 interface ListeningMatcher {
-    prop valueListener: std.core.Option<std.unittest.mock.ListenerInternal> {
-        get() { /* compiled code */ }
-    }
+    abstract prop valueListener: std.core.Option<std.unittest.mock.ListenerInternal>
 }
 
 interface ListenerInternal {
-    func supplyValue(value: std.core.Any): Unit { /* compiled code */ }
+    abstract func supplyValue(value: std.core.Any): Unit
 }
 
 class TypedMatcher <: std.unittest.mock.ArgumentMatcher {
-    func matches(arg: T): Bool { /* compiled code */ }
+    abstract func matches(arg: T): Bool
 
     override func matchesAny(arg: std.core.Any): Bool { /* compiled code */ }
 
     let expectedBooleanValue: Bool
 
-    init(expectedBooleanValue: Bool) { /* compiled code */ }
+    TypedMatcher(expectedBooleanValue: Bool) { /* compiled code */ }
 }
 
 class PredicateMatcher <: std.unittest.mock.TypedMatcher<T> & std.unittest.mock.ListeningMatcher {
@@ -466,7 +464,7 @@ class PredicateMatcher <: std.unittest.mock.TypedMatcher<T> & std.unittest.mock.
 
     let listener: std.core.Option<std.unittest.mock.ListenerInternal>
 
-    init(predicate: (T) -> Bool, expectedBooleanValue: Bool, listener: std.core.Option<std.unittest.mock.ListenerInternal>) { /* compiled code */ }
+    PredicateMatcher(predicate: (T) -> Bool, expectedBooleanValue: Bool, listener: std.core.Option<std.unittest.mock.ListenerInternal>) { /* compiled code */ }
 }
 
 class AnyMatcher <: std.unittest.mock.ArgumentMatcher {
@@ -522,7 +520,7 @@ class Cardinality {
 
     let max: std.core.Option<Int64>
 
-    init(min: Int64, max: std.core.Option<Int64>) { /* compiled code */ }
+    Cardinality(min: Int64, max: std.core.Option<Int64>) { /* compiled code */ }
 }
 
 enum CardinalityCheck {
@@ -552,35 +550,35 @@ class PrettyException <: std.core.Exception & std.unittest.common.PrettyPrintabl
 
     let text: std.unittest.common.PrettyText
 
-    init(text: std.unittest.common.PrettyText) { /* compiled code */ }
+    PrettyException(text: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class MockFrameworkInternalError <: std.unittest.mock.PrettyException {
-    init(text: std.unittest.common.PrettyText) { /* compiled code */ }
+    MockFrameworkInternalError(text: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class MockFrameworkException <: std.unittest.mock.PrettyException {
-    init(text: std.unittest.common.PrettyText) { /* compiled code */ }
+    MockFrameworkException(text: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class ExpectationFailedException <: std.unittest.mock.PrettyException {
-    init(text: std.unittest.common.PrettyText) { /* compiled code */ }
+    ExpectationFailedException(text: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class UnnecessaryStubbingException <: std.unittest.mock.PrettyException {
-    init(text: std.unittest.common.PrettyText) { /* compiled code */ }
+    UnnecessaryStubbingException(text: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class UnstubbedInvocationException <: std.unittest.mock.PrettyException {
-    init(text: std.unittest.common.PrettyText) { /* compiled code */ }
+    UnstubbedInvocationException(text: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class UnhandledCallException <: std.unittest.mock.PrettyException {
-    init(text: std.unittest.common.PrettyText) { /* compiled code */ }
+    UnhandledCallException(text: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class VerificationFailedException <: std.unittest.mock.PrettyException {
-    init(text: std.unittest.common.PrettyText) { /* compiled code */ }
+    VerificationFailedException(text: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 extend MockSession {
@@ -604,7 +602,7 @@ class MockSession {
 
     let sessionKind: std.unittest.mock.MockSessionKind
 
-    init(name: std.core.String, sessionKind: std.unittest.mock.MockSessionKind) { /* compiled code */ }
+    MockSession(name: std.core.String, sessionKind: std.unittest.mock.MockSessionKind) { /* compiled code */ }
 }
 
 extend StubChain {
@@ -630,7 +628,7 @@ class ExpectationFailedReport <: std.unittest.mock.FailureReport {
 
     func findEntriesByStubId(stubId: std.unittest.mock.StubId): std.collection.ArrayList<std.unittest.mock.LogEntry> { /* compiled code */ }
 
-    init(log: std.unittest.mock.LogSnapshot, nameRegistry: std.unittest.mock.MockNameRegistry) { /* compiled code */ }
+    ExpectationFailedReport(log: std.unittest.mock.LogSnapshot, nameRegistry: std.unittest.mock.MockNameRegistry) { /* compiled code */ }
 }
 
 class LogSnapshot {
@@ -640,7 +638,7 @@ class LogSnapshot {
 
     let entries: std.core.Array<std.unittest.mock.LogEntry>
 
-    init(entries: std.core.Array<std.unittest.mock.LogEntry>) { /* compiled code */ }
+    LogSnapshot(entries: std.core.Array<std.unittest.mock.LogEntry>) { /* compiled code */ }
 }
 
 struct LogEntry {
@@ -650,7 +648,7 @@ struct LogEntry {
 
     let origin: std.unittest.mock.BehaviourSource
 
-    init(invocation: std.unittest.mock.Invocation, origin: std.unittest.mock.BehaviourSource) { /* compiled code */ }
+    LogEntry(invocation: std.unittest.mock.Invocation, origin: std.unittest.mock.BehaviourSource) { /* compiled code */ }
 }
 
 class StubId <: std.core.Object & std.core.Hashable & std.core.Equatable<std.unittest.mock.StubId> {
@@ -664,7 +662,7 @@ class StubId <: std.core.Object & std.core.Hashable & std.core.Equatable<std.uni
 
     let receiverId: UInt64
 
-    init(funcInfo: std.unittest.mock.`internal`.FuncInfo, receiverId: UInt64) { /* compiled code */ }
+    StubId(funcInfo: std.unittest.mock.`internal`.FuncInfo, receiverId: UInt64) { /* compiled code */ }
 }
 
 class MockNameRegistry {
@@ -676,7 +674,7 @@ class MockNameRegistry {
 
     let EMPTY: std.unittest.mock.MockNameRegistry
 
-    init(matchers: std.core.Array<std.unittest.mock.InvocationMatcher>) { /* compiled code */ }
+    MockNameRegistry(matchers: std.core.Array<std.unittest.mock.InvocationMatcher>) { /* compiled code */ }
 }
 
 class InvocationMatcher {
@@ -692,7 +690,7 @@ class InvocationMatcher {
 
     let description: std.unittest.mock.StubDescription
 
-    init(argumentMatchers: std.core.Array<std.unittest.mock.ArgumentMatcher>, typeParameters: std.core.Array<std.core.String>, stubId: std.unittest.mock.StubId, description: std.unittest.mock.StubDescription) { /* compiled code */ }
+    InvocationMatcher(argumentMatchers: std.core.Array<std.unittest.mock.ArgumentMatcher>, typeParameters: std.core.Array<std.core.String>, stubId: std.unittest.mock.StubId, description: std.unittest.mock.StubDescription) { /* compiled code */ }
 }
 
 class Invocation {
@@ -704,11 +702,11 @@ class Invocation {
 
     let location: std.unittest.mock.Location
 
-    init(mockObject: std.core.Option<std.unittest.mock.MockObject>, call: std.unittest.mock.`internal`.Call, location: std.unittest.mock.Location) { /* compiled code */ }
+    Invocation(mockObject: std.core.Option<std.unittest.mock.MockObject>, call: std.unittest.mock.`internal`.Call, location: std.unittest.mock.Location) { /* compiled code */ }
 }
 
 class Location {
-    func getEntries(): std.core.Array<std.unittest.mock.TraceEntry> { /* compiled code */ }
+    abstract func getEntries(): std.core.Array<std.unittest.mock.TraceEntry>
 
     init() { /* compiled code */ }
 }
@@ -718,7 +716,7 @@ class SyntheticFieldDescription {
 
     let initialValue: std.core.Any
 
-    init(initialValue: std.core.Any) { /* compiled code */ }
+    SyntheticFieldDescription(initialValue: std.core.Any) { /* compiled code */ }
 }
 
 class FieldStorage {
@@ -750,7 +748,7 @@ struct AutoFieldId <: std.core.Hashable & std.core.Equatable<std.unittest.mock.A
 
     let memberName: std.core.String
 
-    init(mockObjectId: UInt64, memberName: std.core.String) { /* compiled code */ }
+    AutoFieldId(mockObjectId: UInt64, memberName: std.core.String) { /* compiled code */ }
 }
 
 class MockObject {
@@ -764,7 +762,7 @@ class MockObject {
 
     let sessionName: std.core.Option<std.core.String>
 
-    init(id: UInt64, ref: std.core.Object, kind: std.unittest.mock.MockKind, modes: std.core.Array<std.unittest.mock.StubMode>, sessionName: std.core.Option<std.core.String>) { /* compiled code */ }
+    MockObject(id: UInt64, ref: std.core.Object, kind: std.unittest.mock.MockKind, modes: std.core.Array<std.unittest.mock.StubMode>, sessionName: std.core.Option<std.core.String>) { /* compiled code */ }
 }
 
 class FieldsErrorReport <: std.unittest.mock.FailureReport {
@@ -832,7 +830,7 @@ class RecordingHandler {
 
     let info: std.unittest.mock.RecordingInfo
 
-    init(info: std.unittest.mock.RecordingInfo) { /* compiled code */ }
+    RecordingHandler(info: std.unittest.mock.RecordingInfo) { /* compiled code */ }
 }
 
 enum MockSessionKind {
@@ -850,7 +848,7 @@ struct RecordingInfo {
 
     let declarationName: std.core.String
 
-    init(target: std.unittest.mock.RecordingTarget, prefixRefName: std.core.Option<std.core.String>, declarationName: std.core.String) { /* compiled code */ }
+    RecordingInfo(target: std.unittest.mock.RecordingTarget, prefixRefName: std.core.Option<std.core.String>, declarationName: std.core.String) { /* compiled code */ }
 }
 
 struct RecordedCall {
@@ -862,7 +860,7 @@ struct RecordedCall {
 
     let typeArgs: std.core.Array<std.core.String>
 
-    init(object: std.core.Option<std.unittest.mock.MockObject>, stubId: std.unittest.mock.StubId, location: std.unittest.mock.Location, typeArgs: std.core.Array<std.core.String>) { /* compiled code */ }
+    RecordedCall(object: std.core.Option<std.unittest.mock.MockObject>, stubId: std.unittest.mock.StubId, location: std.unittest.mock.Location, typeArgs: std.core.Array<std.core.String>) { /* compiled code */ }
 }
 
 extend MockObject {
@@ -954,7 +952,7 @@ struct TraceEntry {
 
     let lineNumber: Int64
 
-    init(filePath: std.core.String, lineNumber: Int64) { /* compiled code */ }
+    TraceEntry(filePath: std.core.String, lineNumber: Int64) { /* compiled code */ }
 }
 
 let UNKNOWN_LOCATION: std.unittest.mock.LocationImpl
@@ -964,7 +962,7 @@ class LocationImpl <: std.unittest.mock.Location {
 
     let entries: std.core.Array<std.unittest.mock.TraceEntry>
 
-    init(entries: std.core.Array<std.unittest.mock.TraceEntry>) { /* compiled code */ }
+    LocationImpl(entries: std.core.Array<std.unittest.mock.TraceEntry>) { /* compiled code */ }
 }
 
 let UNKNOWN_LOCATION_STRING: std.core.String
@@ -976,7 +974,7 @@ class SimpleLocation <: std.unittest.mock.Location {
 
     let lineNumber: Int64
 
-    init(filePath: std.core.String, lineNumber: Int64) { /* compiled code */ }
+    SimpleLocation(filePath: std.core.String, lineNumber: Int64) { /* compiled code */ }
 }
 
 let MOCKED_CLASS_NAME_FRAGMENT: std.core.String
@@ -992,7 +990,7 @@ extend Location {
 class NoneMatcher <: std.unittest.mock.ArgumentMatcher {
     override func matchesAny(arg: std.core.Any): Bool { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    NoneMatcher() { /* compiled code */ }
 }
 
 extend Matchers {
@@ -1042,7 +1040,7 @@ class RuntimeFailureReport <: std.unittest.mock.FailureReport {
 
     func findInvocationsHandledByChain(stubChain: std.unittest.mock.StubChain): std.core.Array<std.unittest.mock.Invocation> { /* compiled code */ }
 
-    init(invocationLog: std.unittest.mock.LogSnapshot, nameRegistry: std.unittest.mock.MockNameRegistry) { /* compiled code */ }
+    RuntimeFailureReport(invocationLog: std.unittest.mock.LogSnapshot, nameRegistry: std.unittest.mock.MockNameRegistry) { /* compiled code */ }
 }
 
 enum Action {
@@ -1064,7 +1062,7 @@ struct ScenarioConfiguration {
 
     let cardinality: std.unittest.mock.Cardinality
 
-    init(action: std.unittest.mock.Action, cardinality: std.unittest.mock.Cardinality) { /* compiled code */ }
+    ScenarioConfiguration(action: std.unittest.mock.Action, cardinality: std.unittest.mock.Cardinality) { /* compiled code */ }
 }
 
 enum ScenarioStatus {
@@ -1074,7 +1072,7 @@ enum ScenarioStatus {
 }
 
 interface UntypedOption {
-    func value(): std.core.Option<std.core.Any> { /* compiled code */ }
+    abstract func value(): std.core.Option<std.core.Any>
 }
 
 extend Option <: UntypedOption {
@@ -1130,7 +1128,7 @@ func checkMatchersConsistency(statement: std.unittest.mock.VerifyStatement): Uni
 class VerificationFailureReport <: std.unittest.mock.FailureReport {
     func fail(reason: std.unittest.mock.VerificationFailedReason): Nothing { /* compiled code */ }
 
-    init(logSnapshot: std.unittest.mock.LogSnapshot, nameRegistry: std.unittest.mock.MockNameRegistry) { /* compiled code */ }
+    VerificationFailureReport(logSnapshot: std.unittest.mock.LogSnapshot, nameRegistry: std.unittest.mock.MockNameRegistry) { /* compiled code */ }
 }
 
 class Verify {
@@ -1160,7 +1158,7 @@ class UnorderedVerifier {
 
     func checkThat(statement: std.unittest.mock.VerifyStatement): std.unittest.mock.UnorderedVerifier { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    UnorderedVerifier() { /* compiled code */ }
 }
 
 class OrderedVerifier {
@@ -1168,7 +1166,7 @@ class OrderedVerifier {
 
     func checkThat(statement: std.unittest.mock.VerifyStatement): std.unittest.mock.OrderedVerifier { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    OrderedVerifier() { /* compiled code */ }
 }
 
 class VerifyIterator {
@@ -1198,7 +1196,7 @@ class VerifyIterator {
 
     let invocations: std.core.Array<std.unittest.mock.Invocation>
 
-    init(statements: std.core.Iterable<std.unittest.mock.VerifyStatement>, invocations: std.core.Array<std.unittest.mock.Invocation>) { /* compiled code */ }
+    VerifyIterator(statements: std.core.Iterable<std.unittest.mock.VerifyStatement>, invocations: std.core.Array<std.unittest.mock.Invocation>) { /* compiled code */ }
 }
 
 func verifyExhaustiveOrderedIteration(iterator: std.unittest.mock.VerifyIterator): std.core.Option<std.unittest.mock.VerificationResult> { /* compiled code */ }

@@ -8,14 +8,12 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.source.psi
 
 /**
  * @Deprecated 声明级语义检查器
@@ -56,7 +54,6 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
             else -> "declaration"
         }
 
-        val owner = declaration.source?.psi as? CjModifierListOwner ?: return
         val parentDecl = findOverriddenDeclaration(declaration)
         val parentHasDeprecated = parentDecl?.let { hasDeprecatedAnnotation(it) } ?: false
         val parentIsError = parentDecl?.let { isDeprecatedErrorLevel(it) } ?: false
@@ -129,10 +126,7 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
     }
 
     private fun hasDeprecatedAnnotation(declaration: CfirDeclaration): Boolean {
-        return declaration.annotations.any { ann ->
-            val annType = (ann.typeRef as? CfirResolvedTypeRef)?.coneType
-            annType is ConeClassLikeType && annType.classId.shortClassName == DEPRECATED
-        }
+        return declaration.hasAnnotation(DEPRECATED)
     }
 
     /**
@@ -140,16 +134,7 @@ object CfirDeprecatedDeclarationChecker : CfirCallableDeclarationChecker() {
      * `@Deprecated(strict: true)` 为 ERROR 级别,否则为 WARNING。
      */
     private fun isDeprecatedErrorLevel(declaration: CfirDeclaration): Boolean {
-        val ann = declaration.annotations.firstOrNull { a ->
-            val t = (a.typeRef as? CfirResolvedTypeRef)?.coneType
-            t is ConeClassLikeType && t.classId.shortClassName == DEPRECATED
-        } ?: return false
-        for (arg in ann.arguments) {
-            val psi = arg.source?.psi as? org.cangnova.cangjie.psi.CjValueArgument ?: continue
-            if (psi.getArgumentName()?.asName?.asString() != "strict") continue
-            val exprText = psi.getArgumentExpression()?.text?.trim() ?: continue
-            if (exprText == "true") return true
-        }
-        return false
+        val ann = declaration.findAnnotations(DEPRECATED).firstOrNull() as? CfirAnnotationCall ?: return false
+        return ann.booleanArgument("strict") == true
     }
 }

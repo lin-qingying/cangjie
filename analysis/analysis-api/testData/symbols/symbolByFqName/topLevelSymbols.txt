@@ -1,0 +1,13 @@
+CaCfirClassSymbol
+name: Target
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjClass
+classId: sample.symbols.fqname.Target
+
+CaCfirNamedFunctionSymbol
+name: targetFunction
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjNamedFunction
+callableId: sample.symbols.fqname.targetFunction

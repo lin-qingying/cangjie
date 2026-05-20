@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.testmacro, facadeFqName=std.unittest.testmacro, facadePartSimpleNames=[assertion_macro, bench_macro, configure_macro, data_test_macro, delta_macro_expander, dsl_parser, exception, fail_macro, instrumentation, lifecycle, lifecycle_macros, macro_keys, macro_state, macro_util, measure_macro, parallel_macro, power_assert, skip_macro, strategy_macro, tag_macro, test_builder_macro, test_case_macro, test_macro, test_template, throws_macro, timeout_macro, top_level, types_macro, unittest_option_macro, util]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=true]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$DOT_QUALIFIED_EXPRESSION
         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]

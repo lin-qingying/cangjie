@@ -1,0 +1,11 @@
+CjSimpleNameExpression: makeUser
+  referenceClass: CaCfirSimpleNameReference
+  expression: makeUser
+  resolvesByNames: [makeUser]
+  resolvedSymbols:
+    [0]
+      symbolClass: CaCfirNamedFunctionSymbol
+      name: makeUser
+      callableId: sample.makeUser
+      receiverType: null
+      returnType: Int64

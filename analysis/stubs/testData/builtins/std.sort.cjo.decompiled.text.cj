@@ -40,19 +40,19 @@ func sort(data: std.collection.ArrayList<T>, lessThan: (T, T) -> Bool, stable: B
 func sort(data: std.collection.ArrayList<T>, key: (T) -> K, stable: Bool, descending: Bool): Unit { /* compiled code */ }
 
 interface SortByExtension {
-    func sortBy(comparator: (T, T) -> std.core.Ordering): Unit { /* compiled code */ }
+    abstract func sortBy(comparator: (T, T) -> std.core.Ordering): Unit
 
-    func sortBy(stable: Bool, comparator: (T, T) -> std.core.Ordering): Unit { /* compiled code */ }
+    abstract func sortBy(stable: Bool, comparator: (T, T) -> std.core.Ordering): Unit
 }
 
 interface SortExtension {
-    func sort(): Unit { /* compiled code */ }
+    abstract func sort(): Unit
 
-    func sort(stable: Bool): Unit { /* compiled code */ }
+    abstract func sort(stable: Bool): Unit
 
-    func sortDescending(): Unit { /* compiled code */ }
+    abstract func sortDescending(): Unit
 
-    func sortDescending(stable: Bool): Unit { /* compiled code */ }
+    abstract func sortDescending(stable: Bool): Unit
 }
 
 extend Array <: SortByExtension {

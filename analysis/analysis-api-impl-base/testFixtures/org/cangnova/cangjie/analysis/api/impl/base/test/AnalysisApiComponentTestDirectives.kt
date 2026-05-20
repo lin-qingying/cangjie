@@ -165,6 +165,11 @@ object AnalysisApiComponentTestDirectives : SimpleDirectivesContainer() {
         applicability = DirectiveApplicability.File,
     )
 
+    val FILE_SCOPE_ABSENT_NAME by stringDirective(
+        description = "文件作用域中不应出现的名字。",
+        applicability = DirectiveApplicability.File,
+    )
+
     val PACKAGE_SCOPE_CLASSIFIER by stringDirective(
         description = "包作用域中应能按名查询到的 classifier。",
         applicability = DirectiveApplicability.File,

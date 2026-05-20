@@ -1,45 +1,43 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.components.scopeProvider
 
+import org.cangnova.cangjie.analysis.api.CaSession
+import org.cangnova.cangjie.analysis.api.components.getFileScope
 import org.cangnova.cangjie.analysis.api.impl.base.test.AnalysisApiComponentTestDirectives
+import org.cangnova.cangjie.analysis.api.scopes.CaScope
+import org.cangnova.cangjie.analysis.api.symbols.symbol
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.services.TestServices
-import org.junit.jupiter.api.Assertions.assertNotNull
+import org.cangnova.cangjie.test.services.assertions
+import org.junit.jupiter.api.Assertions.assertFalse
 
 /**
  * `scopeProvider.fileScope` 的抽象测试。
  *
- * 文件作用域通过统一的 `CaScope` 协议暴露当前文件上下文中按名字可查询到的公开声明。
+ * 对齐 Kotlin `AbstractFileScopeTest` 的职责边界：
+ * 基座负责 file scope 内容渲染；这里额外校验 file symbol 输出。
  */
-abstract class AbstractFileScopeTest : AbstractScopeProviderTest() {
-    override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
-        val directives = directivesForMainFile(mainFile, mainModule)
-        val expectedAvailableNames = directives[AnalysisApiComponentTestDirectives.FILE_SCOPE_AVAILABLE_NAME]
-        val expectedFileClassifiers = directives[AnalysisApiComponentTestDirectives.FILE_SCOPE_CLASSIFIER]
-        val expectedFileCallables = directives[AnalysisApiComponentTestDirectives.FILE_SCOPE_CALLABLE]
-        val expectedPackageClassifiers = directives[AnalysisApiComponentTestDirectives.PACKAGE_SCOPE_CLASSIFIER]
-        val expectedPackageCallables = directives[AnalysisApiComponentTestDirectives.PACKAGE_SCOPE_CALLABLE]
+abstract class AbstractFileScopeTest : AbstractScopeTestBase() {
+    context(_: CaSession)
+    override fun getScope(mainFile: CjFile, testServices: TestServices): CaScope = mainFile.getFileScope()
 
+    override fun doTestByMainFile(mainFile: CjFile, mainModule: CjTestModule, testServices: TestServices) {
+        super.doTestByMainFile(mainFile, mainModule, testServices)
+
+        val directives = directivesForMainFile(mainFile, mainModule)
+        val expectedAbsentNames = directives[AnalysisApiComponentTestDirectives.FILE_SCOPE_ABSENT_NAME]
         analyzeForTest(mainFile) {
             val fileScope = mainFile.getFileScope()
-            val packageScope = getPackageScope(mainFile.packageFqName)
+            val renderedFileSymbol = renderSymbolForComparison(mainFile.symbol)
+            testServices.assertions.assertEqualsToTestOutputFile(renderedFileSymbol, extension = ".file_symbol.txt")
 
-            assertScopeContents(
-                scope = fileScope,
-                expectedAvailableNames = expectedAvailableNames,
-                expectedClassifiers = expectedFileClassifiers,
-                expectedCallables = expectedFileCallables,
-                scopeLabel = "文件作用域",
-            )
-
-            assertNotNull(packageScope, "包作用域应可以直接从 Analysis API 获取。")
-            assertScopeContents(
-                scope = packageScope!!,
-                expectedAvailableNames = emptyList(),
-                expectedClassifiers = expectedPackageClassifiers,
-                expectedCallables = expectedPackageCallables,
-                scopeLabel = "包作用域",
-            )
+            expectedAbsentNames.forEach { absentName ->
+                assertFalse(
+                    fileScope.mayContainName(Name.identifier(absentName)),
+                    "文件作用域不应暴露名字 `$absentName`。",
+                )
+            }
         }
     }
 }

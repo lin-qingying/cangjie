@@ -47,6 +47,12 @@ public class CfirIdeNormalAnalysisSourceModuleCollectDiagnosticsTestGenerated ex
   }
 
   @Test
+  @TestMetadata("danglingUnresolvedReference.cj")
+  public void testDanglingUnresolvedReference() {
+    run("danglingUnresolvedReference.cj");
+  }
+
+  @Test
   @TestMetadata("interfaceMember.cj")
   public void testInterfaceMember() {
     run("interfaceMember.cj");

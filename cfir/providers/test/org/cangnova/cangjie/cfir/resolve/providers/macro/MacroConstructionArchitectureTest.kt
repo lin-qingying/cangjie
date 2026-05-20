@@ -35,7 +35,7 @@ class MacroConstructionArchitectureTest {
     fun `symbol index records same-package source macro but excludes it from legal lookup`() {
         val fixture = Fixture()
         val macro = fixture.macroDeclaration("LocalMacro", "test.pkg")
-        val file = fixture.file(packageName = "test.pkg", declarations = listOf(macro))
+        val file = fixture.file(packageName = "test.pkg", declarations = listOf(macro), isMacroPackage = true)
         val provider = CfirProviderImpl(fixture.session)
         val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
 
@@ -101,6 +101,7 @@ class MacroConstructionArchitectureTest {
         val file = fixture.file(
             packageName = "test.pkg",
             declarations = listOf(fixture.macroDeclaration("Conflict", "test.pkg")),
+            isMacroPackage = true,
         )
         val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
         val index = buildMacroSymbolIndex(
@@ -153,6 +154,23 @@ class MacroConstructionArchitectureTest {
             setOf(FqName("lib.one.Trace"), FqName("lib.two.Trace")),
             context.aliasConflicts.single().targets.toSet(),
         )
+    }
+
+    @Test
+    fun `ordinary import aliases do not become macro alias conflicts`() {
+        val fixture = Fixture()
+        val file = fixture.file(
+            packageName = "test.pkg",
+            imports = listOf(
+                fixture.import("lib.one.Left", alias = "Clash"),
+                fixture.import("lib.two.Right", alias = "Clash"),
+            ),
+        )
+        val pre = buildPreMacroRawFiles(fixture.session, listOf(file))
+        val context = bindMacroImports(pre, buildMacroSymbolIndex(pre))
+
+        assertTrue(context.aliasConflicts.isEmpty())
+        assertTrue(context.importBindings.all { it.resolvedTargets.isEmpty() })
     }
 
     @Test
@@ -228,6 +246,7 @@ class MacroConstructionArchitectureTest {
             packageName: String,
             imports: List<org.cangnova.cangjie.cfir.declarations.CfirImport> = emptyList(),
             declarations: List<CfirDeclaration> = emptyList(),
+            isMacroPackage: Boolean = false,
         ): CfirFile = buildFile {
             source = null
             moduleData = this@Fixture.moduleData
@@ -240,7 +259,7 @@ class MacroConstructionArchitectureTest {
             packageDirective = buildPackageDirective {
                 source = null
                 packageFqName = FqName(packageName)
-                isMacroPackage = false
+                this.isMacroPackage = isMacroPackage
             }
             this.imports += imports
             sourceFileLinesMapping = null

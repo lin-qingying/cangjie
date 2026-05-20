@@ -21,7 +21,7 @@ func testCorrectOverloads(): Unit {
 
 func testOverloadArgMismatch(): Unit {
     let h = Handler()
-    <!NO_MATCHING_OPERATOR_INVOKE!>h<!>(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)
+    h(<!ARGUMENT_TYPE_MISMATCH!>1.0<!>)
 }
 
 func testInvokeReturnInContext(): Unit {

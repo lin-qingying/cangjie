@@ -5,7 +5,7 @@ class MutHolder {
     <!WRONG_MODIFIER_TARGET!>mut<!> var value: Int64 = 0
     <!WRONG_MODIFIER_TARGET!>mut<!> let fixed: Int64 = 1
     mut prop state: Int64 { get(){1} set(value){ let _ = value } }
-    <!WRONG_MODIFIER_TARGET!>mut<!> func <!MUT_ONLY_ON_FUNCTION!>denied<!>(): Unit {}
+    <!WRONG_MODIFIER_TARGET!>mut<!> func denied(): Unit {}
 }
 
 struct MutStructHolder {

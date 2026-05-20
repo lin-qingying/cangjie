@@ -14,6 +14,7 @@ abstract class ContextByDesignationCollector<C : Any>(private val designation: C
     private val designationState = CfirDesignationState(designation)
 
     protected abstract fun getCurrentContext(): C
+    protected open fun getCurrentContextForTarget(target: CfirElementWithResolveState): C = getCurrentContext()
     protected abstract fun goToNestedDeclaration(target: CfirElementWithResolveState)
 
     fun getCollectedContext(): C {
@@ -24,13 +25,12 @@ abstract class ContextByDesignationCollector<C : Any>(private val designation: C
     fun nextStep() {
         if (designationState.canGoNext()) {
             designationState.goNext()
-            if (designationState.currentDeclarationIfPresent == designation.target) {
-                check(context == null)
-                context = getCurrentContext()
-            }
-            goToNestedDeclaration(designationState.currentDeclaration)
+            val currentDeclaration = designationState.currentDeclaration
+            goToNestedDeclaration(currentDeclaration)
         } else {
             if (designationState.currentDeclarationIfPresent == designation.target) {
+                check(context == null)
+                context = getCurrentContextForTarget(designation.target)
                 designationState.goToInnerDeclaration()
             }
         }

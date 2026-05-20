@@ -31,8 +31,6 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.source.psi
 
 /**
  * 通用语义检查器（General 分组）
@@ -146,30 +144,31 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     }
 
     /**
-     * 使用 Java 互操作注解时必须导入 interoplib.interop。
+     * 使用 JavaMirror / JavaImpl / CJMapping 互操作入口时必须导入 interoplib.interop。
      *
-     * 对齐 C++ sema_java_mirror_interoplib_must_be_imported
+     * 对齐 C++ CheckJavaInteropLibImport：诊断挂在触发互操作入口的声明上，
+     * 普通 @Java 类型约束不在该入口中报 interoplib 导入错误。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkJavaInteropImports(file: CfirFile) {
-        val javaAnnNames = setOf(
-            Name.identifier("Java"),
+        val javaInteropEntryAnnotations = setOf(
             Name.identifier("JavaMirror"),
             Name.identifier("JavaImpl"),
+            Name.identifier("CJMapping"),
         )
-        val usesJavaInterop = file.declarations.any { decl ->
-            val owner = decl.source?.psi as? CjModifierListOwner ?: return@any false
-            owner.annotationEntries.any { it.shortName in javaAnnNames }
+        val javaInteropDeclarations = file.declarations.filter { decl ->
+            decl is CfirClassLikeDeclaration && javaInteropEntryAnnotations.any(decl::hasAnnotation)
         }
-        if (!usesJavaInterop) return
+        if (javaInteropDeclarations.isEmpty()) return
+
         val interopFq = org.cangnova.cangjie.name.FqName("interoplib.interop")
         val imported = file.imports.any { imp ->
             val fq = imp.importedFqName ?: return@any false
             fq == interopFq || fq.parent() == interopFq
         }
-        if (!imported) {
+        if (!imported) javaInteropDeclarations.forEach { declaration ->
             reporter.reportOn(
-                source = file.source,
+                source = declaration.source,
                 factory = CfirErrors.JAVA_MIRROR_INTEROPLIB_MUST_BE_IMPORTED,
             )
         }
@@ -185,14 +184,12 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         val javaImplName = Name.identifier("JavaImpl")
         val byName = mutableMapOf<Name, Int>()
         for (decl in file.declarations) {
-            val owner = decl.source?.psi as? CjModifierListOwner ?: continue
-            if (owner.annotationEntries.none { it.shortName == javaImplName }) continue
+            if (!decl.hasAnnotation(javaImplName)) continue
             val declName = decl.declarationName() ?: continue
             byName.merge(declName, 1) { a, b -> a + b }
         }
         for (decl in file.declarations) {
-            val owner = decl.source?.psi as? CjModifierListOwner ?: continue
-            if (owner.annotationEntries.none { it.shortName == javaImplName }) continue
+            if (!decl.hasAnnotation(javaImplName)) continue
             val declName = decl.declarationName() ?: continue
             if ((byName[declName] ?: 0) > 1) {
                 reporter.reportOn(
@@ -400,8 +397,7 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkCStructCannotImplInterfaces(structDecl: CfirStruct) {
-        val owner = structDecl.source?.psi as? CjModifierListOwner ?: return
-        if (!owner.annotationEntries.any { it.shortName == C_ANNOTATION }) return
+        if (!structDecl.hasAnnotation(C_ANNOTATION)) return
         if (structDecl.superTypeRefs.isNotEmpty()) {
             reporter.reportOn(
                 source = structDecl.source,

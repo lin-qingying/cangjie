@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.decompiler.stub
 
+import PackageFormat.PackageKind
 import com.intellij.psi.stubs.StubElement
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -71,7 +72,10 @@ internal fun createDecompiledFileStub(
             hasTopLevelCallables = hasTopLevelCallables,
         ),
     )
-    val packageDirectiveStub = CangJiePackageDirectiveStubImpl(fileStub)
+    val packageDirectiveStub = CangJiePackageDirectiveStubImpl(
+        parent = fileStub,
+        isMacroPackage = loadedPackage.header.kind == PackageKind.Macro,
+    )
     createPackageNameExpressionStubs(packageDirectiveStub, loadedPackage.packageFqName.pathSegments())
     val importListStub = CangJiePlaceHolderStubImpl<CjImportList>(fileStub, CjStubElementTypes.IMPORT_LIST)
     createImportDirectiveStubs(importListStub, fileStub.getPackageFqName(), loadedPackage)

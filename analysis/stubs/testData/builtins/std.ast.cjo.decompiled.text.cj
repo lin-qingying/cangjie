@@ -3077,13 +3077,13 @@ class Node <: std.core.Object & std.ast.ToTokens {
         set(value) { /* compiled code */ }
     }
 
-    func toTokens(): std.ast.Tokens { /* compiled code */ }
+    abstract func toTokens(): std.ast.Tokens
 
-    func traverse(v: std.ast.Visitor): Unit { /* compiled code */ }
+    abstract func traverse(v: std.ast.Visitor): Unit
 
     func dump(): Unit { /* compiled code */ }
 
-    func dump(indent: UInt16): std.core.String { /* compiled code */ }
+    abstract func dump(indent: UInt16): std.core.String
 }
 
 func compareTokens(tokens1: std.ast.Tokens, tokens2: std.ast.Tokens): Bool { /* compiled code */ }
@@ -6893,7 +6893,7 @@ struct Position <: std.ast.ToBytes {
 }
 
 interface ToTokens {
-    func toTokens(): std.ast.Tokens { /* compiled code */ }
+    abstract func toTokens(): std.ast.Tokens
 }
 
 class Program <: std.ast.Node {
@@ -7586,7 +7586,7 @@ func createVArrayType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFor
 func createPrefixType(tyNode: std.ast.NodeFormat_Type, nodeBase: std.ast.NodeFormat_NodeBase): std.ast.TypeNode { /* compiled code */ }
 
 interface ToBytes {
-    func toBytes(): std.core.Array<UInt8> { /* compiled code */ }
+    abstract func toBytes(): std.core.Array<UInt8>
 }
 
 func getMacroPosition(macroObjPtr: CPointer<Unit>): (UInt32, Int32, Int32) { /* compiled code */ }
@@ -7691,55 +7691,55 @@ extend Tokens <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 
-extend Extend <: ToTokens {
+extend `Unit` <: ToTokens {
     func toTokens(): std.ast.Tokens { /* compiled code */ }
 }
 

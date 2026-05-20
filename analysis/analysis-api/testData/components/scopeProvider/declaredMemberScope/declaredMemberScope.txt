@@ -1,0 +1,6 @@
+CaCfirNamedFunctionSymbol
+name: rename
+origin: SOURCE
+location: CLASS
+psi: CjNamedFunction
+callableId: sample.scope.User.rename

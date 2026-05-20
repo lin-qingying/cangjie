@@ -17,12 +17,14 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageDeclaration
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageMetadata
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageWriter
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.buildPreMacroRawFiles
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -268,7 +270,7 @@ class MacroPackageCompilationOrchestrationTest {
             }
         }
 
-        val result = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(fixture.pre))
+        val result = prepareMacroArtifactDefinitionsForPreResults(configuration, listOf(fixture.pre))
 
         assertEquals(
             MacroConstructionDiagnostic.Kind.MACRO_DEPENDENCY_COMPILE_FAILED,
@@ -299,7 +301,7 @@ class MacroPackageCompilationOrchestrationTest {
             }
         }
 
-        val result = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(fixture.pre))
+        val result = prepareMacroArtifactDefinitionsForPreResults(configuration, listOf(fixture.pre))
 
         assertEquals(1, compileCalls)
         assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
@@ -329,7 +331,7 @@ class MacroPackageCompilationOrchestrationTest {
             }
         }
 
-        val result = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(fixture.pre))
+        val result = prepareMacroArtifactDefinitionsForPreResults(configuration, listOf(fixture.pre))
 
         assertEquals(0, compileCalls)
         assertTrue(result.definitions.isEmpty())
@@ -353,7 +355,7 @@ class MacroPackageCompilationOrchestrationTest {
             }
         }
 
-        val result = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(fixture.pre))
+        val result = prepareMacroArtifactDefinitionsForPreResults(configuration, listOf(fixture.pre))
 
         assertEquals(0, compileCalls)
         assertTrue(result.definitions.isEmpty())
@@ -387,7 +389,7 @@ class MacroPackageCompilationOrchestrationTest {
             }
         }
 
-        val result = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(fixture.pre))
+        val result = prepareMacroArtifactDefinitionsForPreResults(configuration, listOf(fixture.pre))
 
         assertEquals(0, compileCalls)
         assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
@@ -422,7 +424,7 @@ class MacroPackageCompilationOrchestrationTest {
             }
         }
 
-        val result = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(fixture.pre))
+        val result = prepareMacroArtifactDefinitionsForPreResults(configuration, listOf(fixture.pre))
 
         assertEquals(0, compileCalls)
         assertTrue(result.definitions.isEmpty())
@@ -458,7 +460,7 @@ class MacroPackageCompilationOrchestrationTest {
             }
         }
 
-        val result = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(fixture.pre))
+        val result = prepareMacroArtifactDefinitionsForPreResults(configuration, listOf(fixture.pre))
 
         assertEquals(0, compileCalls)
         assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
@@ -934,4 +936,13 @@ class MacroPackageCompilationOrchestrationTest {
         Files.write(cjc, byteArrayOf(1, 2, 3))
         return cjc
     }
+
+    private fun prepareMacroArtifactDefinitionsForPreResults(
+        configuration: CompilerConfiguration,
+        preResults: List<PreMacroRawBuildResult>,
+    ): MacroExpansionArtifactPreparationResult =
+        prepareMacroArtifactDefinitionsForExpansion(
+            configuration,
+            preResults.map(MacroDemandClassification::create),
+        )
 }

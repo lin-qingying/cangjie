@@ -1,0 +1,5 @@
+CjDeclaration: CjClass User
+annotations: [
+  @Marker
+    <unknown meta-annotation>
+]

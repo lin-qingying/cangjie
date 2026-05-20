@@ -47,6 +47,12 @@ public class CfirIdeDependentAnalysisCodeFragmentModuleCollectDiagnosticsTestGen
   }
 
   @Test
+  @TestMetadata("danglingUnresolvedReference.cj")
+  public void testDanglingUnresolvedReference() {
+    run("danglingUnresolvedReference.cj");
+  }
+
+  @Test
   @TestMetadata("multipleDiagnostics.cj")
   public void testMultipleDiagnostics() {
     run("multipleDiagnostics.cj");

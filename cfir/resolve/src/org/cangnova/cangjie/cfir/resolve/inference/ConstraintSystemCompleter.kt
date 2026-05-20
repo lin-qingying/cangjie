@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.inference
 import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferTypeParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferGenericFunctionTypeParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
@@ -158,7 +159,7 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
                     val nextVariable = postponedArgumentsInputTypesResolver.findNextReadyVariableForParameterType(
                         argument, postponedArguments, topLevelType, dependencyProvider,
                     )
-                    if (nextVariable != null && fixVariableIfReady(nextVariable))
+                    if (nextVariable != null && fixVariableIfReady(nextVariable, completionMode, topLevelAtoms))
                         continue@completion
                 }
 
@@ -178,7 +179,7 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
             ) continue
 
             // Stage 6：固定下一个约束充分的类型变量
-            if (variableForFixation != null && fixVariableIfReady(variableForFixation)) continue
+            if (variableForFixation != null && fixVariableIfReady(variableForFixation, completionMode, topLevelAtoms)) continue
 
             // Stage 7：尝试通过 PCLA 完成调用（带 lambda 参数的延迟调用推断，特性开关控制）
             val areThereAppearedProperConstraintsForSomeVariable = tryToCompleteWithPCLA(
@@ -324,10 +325,23 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
 
     private fun ConstraintSystemCompletionContext.fixVariableIfReady(
         variableForFixation: VariableFixationFinder.VariableForFixation,
+        completionMode: ConstraintSystemCompletionMode,
+        topLevelAtoms: List<ConeResolutionAtom>,
     ): Boolean {
         val variableWithConstraints = notFixedTypeVariables.getValue(variableForFixation.variable)
         if (!variableForFixation.isReady) return false
-        fixVariable(this, variableWithConstraints)
+        val resultType = with(this) {
+            inferenceComponents.resultTypeResolver.findResultTypeOrNull(
+                variableWithConstraints,
+                TypeVariableDirectionCalculator.ResolveDirection.UNKNOWN,
+            )
+        } as? ConeCangJieType
+        if (resultType == null) {
+            if (!completionMode.fixNotInferredTypeVariablesToErrorType) return false
+            processVariableWhenNotEnoughInformation(variableWithConstraints, topLevelAtoms)
+            return true
+        }
+        fixResolvedVariable(this, variableWithConstraints, resultType)
         return true
     }
 
@@ -382,6 +396,7 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
                     typeVariable.typeParameterSymbol,
                     "Cannot infer argument for type parameter ${typeVariable.typeParameterSymbol.name}",
                     isUninferredParameter = true,
+                    isGenericFunctionCallInferenceFailure = true,
                 )
             is ConeTypeVariableForLambdaParameterType -> createCannotInferErrorType(
                 typeParameterSymbol = null,
@@ -467,16 +482,11 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
      * 固定类型变量为推断结果类型。
      * 使用 UNKNOWN 方向让结果类型解析器根据约束自行决定固定方向。
      */
-    private fun fixVariable(
+    private fun fixResolvedVariable(
         c: ConstraintSystemCompletionContext,
         variableWithConstraints: VariableWithConstraints,
+        resultType: ConeCangJieType,
     ) {
-        val resultType = with(c) {
-            inferenceComponents.resultTypeResolver.findResultType(
-                variableWithConstraints,
-                TypeVariableDirectionCalculator.ResolveDirection.UNKNOWN,
-            )
-        }
         val variable = variableWithConstraints.typeVariable
         c.fixVariable(variable, resultType, ConeFixVariableConstraintPosition(variable))
     }
@@ -581,16 +591,24 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
             typeParameterSymbol: CfirTypeParameterSymbol?,
             message: String,
             isUninferredParameter: Boolean = false,
+            isGenericFunctionCallInferenceFailure: Boolean = false,
         ): ConeErrorType {
             val diagnostic = when (typeParameterSymbol) {
                 null -> ConeCannotInferValueParameterType(
                     valueParameter = null,
                     reason = message,
                 )
-                else -> ConeCannotInferTypeParameterType(
-                    typeParameter = typeParameterSymbol,
-                    reason = message,
-                )
+                else -> if (isGenericFunctionCallInferenceFailure) {
+                    ConeCannotInferGenericFunctionTypeParameterType(
+                        typeParameter = typeParameterSymbol,
+                        reason = message,
+                    )
+                } else {
+                    ConeCannotInferTypeParameterType(
+                        typeParameter = typeParameterSymbol,
+                        reason = message,
+                    )
+                }
             }
             return ConeErrorType(diagnostic, isUninferredParameter)
         }

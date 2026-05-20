@@ -1,35 +1,54 @@
 package org.cangnova.cangjie.analysis.api.cfir.components
 
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.utils.unwrap
-import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.components.CaExpressionTypeProvider
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
 import org.cangnova.cangjie.analysis.api.impl.base.components.withPsiValidityAssertion
+import org.cangnova.cangjie.analysis.api.resolution.successfulFunctionCallOrNull
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.resolveToCfirSymbol
 import org.cangnova.cangjie.analysis.utils.errors.unexpectedElementError
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirImport
+import org.cangnova.cangjie.cfir.declarations.CfirPackageDirective
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRef
+import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirOptionalChainExpression
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
+import org.cangnova.cangjie.cfir.psi
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.resolvedType
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.psi
-import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.psi.CjBinaryExpression
 import org.cangnova.cangjie.psi.CjCallableDeclaration
+import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjConstantExpression
 import org.cangnova.cangjie.psi.CjDeclarationWithBody
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
 import org.cangnova.cangjie.psi.CjNamedFunction
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
+import org.cangnova.cangjie.psi.CjOperationExpression
+import org.cangnova.cangjie.psi.CjParenthesizedExpression
+import org.cangnova.cangjie.psi.CjPrefixExpression
+import org.cangnova.cangjie.psi.CjReturnExpression
 import org.cangnova.cangjie.psi.CjStringTemplateExpression
+import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.psi.psiUtil.getOutermostParenthesizerOrThis
 import org.cangnova.cangjie.psi.stubs.ConstantValueKind
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.utils.exceptions.rethrowExceptionWithDetails
 import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 import org.cangnova.cangjie.utils.exceptions.withPsiEntry
@@ -56,6 +75,15 @@ internal class CaCfirExpressionTypeProvider(
                         withCfirEntry("cfir", cfir)
                     }
                 }
+            }
+        }
+
+    override val PsiElement.expectedType: CaType?
+        get() = with(this@CaCfirExpressionTypeProvider as CaBaseSessionComponent<CaCfirSession>) {
+            this@expectedType.withPsiValidityAssertion {
+                val unwrapped = unwrapExpectedTypeTarget()
+                getExpectedTypeOfFunctionParameter(unwrapped)
+                    ?: getExpectedTypeByReturnExpression(unwrapped)
             }
         }
 
@@ -92,6 +120,28 @@ internal class CaCfirExpressionTypeProvider(
                 }
             }
         }
+
+    /**
+     * 当前先补齐 analysis 测试已经依赖的两个稳定入口：
+     * 1. 函数调用参数位置的期望类型；
+     * 2. return 表达式的期望类型。
+     *
+     * 其余 expected-type 场景后续继续按 Kotlin 对位补齐。
+     */
+    private fun getExpectedTypeOfFunctionParameter(element: PsiElement): CaType? {
+        val argumentExpression = element as? CjExpression ?: return null
+        val valueArgument = argumentExpression.parent as? CjValueArgument ?: return null
+        val callExpression = valueArgument.parent?.parent as? CjCallExpression ?: return null
+        val call = with(analysisSession) { callExpression.resolveToCall() }?.successfulFunctionCallOrNull() ?: return null
+        return call.valueArgumentMapping[argumentExpression]?.returnType
+    }
+
+    private fun getExpectedTypeByReturnExpression(element: PsiElement): CaType? {
+        val returnedExpression = element as? CjExpression ?: return null
+        val returnExpression = returnedExpression.parent as? CjReturnExpression ?: return null
+        val ownerFunction = returnExpression.getStrictParentOfType<CjNamedFunction>() ?: return null
+        return ownerFunction.returnType
+    }
 
     /**
      * 对齐 Kotlin FIR provider 的做法，在进入完整符号解析前先用 PSI 做一层便宜推断。
@@ -161,5 +211,20 @@ internal class CaCfirExpressionTypeProvider(
             is CfirOptionalChainExpression -> outerCfirElement.expression as? CfirNamedAccessExpression
             else -> null
         }
+    }
+
+    private inline fun <reified T : PsiElement> PsiElement.getStrictParentOfType(): T? {
+        var current = parent
+        while (current != null) {
+            if (current is T) return current
+            current = current.parent
+        }
+        return null
+    }
+
+    private fun PsiElement.unwrapExpectedTypeTarget(): PsiElement = when (this) {
+        is CjParenthesizedExpression -> expression ?: this
+        is CjPrefixExpression -> baseExpression ?: this
+        else -> this
     }
 }

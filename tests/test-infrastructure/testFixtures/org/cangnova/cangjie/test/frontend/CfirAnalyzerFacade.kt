@@ -9,7 +9,11 @@ import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirFromCjFiles
 import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirViaLightTree
 import org.cangnova.cangjie.cfir.pipeline.resolveAndCheckCfirAfterConstruction
 import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFailurePolicy
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.diagnosticsCollector
 import org.cangnova.cangjie.frontend.pipeline.FrontendMacroConstructionService
@@ -53,11 +57,23 @@ class CfirAnalyzerFacade(
             )
             CfirParser.Psi -> session.buildPreMacroRawCfirFromCjFiles(cjFiles)
         }
-        val artifactPreparation = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(pre))
+        session.ensureAnnotationMetadataRegistry()
+        val classification = MacroDemandClassification.create(pre).also {
+            session.register(MacroDemandClassification::class, it)
+        }
+        val artifactPreparation = prepareMacroArtifactDefinitionsForExpansion(configuration, listOf(classification))
+        classification.freezeFinal(
+            macroArtifactDefinitions = artifactPreparation.definitions,
+            failurePolicy = when (configuration.macroConstructionMode) {
+                MacroConstructionService.Mode.STRICT -> MacroFailurePolicy.STRICT
+                MacroConstructionService.Mode.DEGRADED -> MacroFailurePolicy.DEGRADED
+            },
+        )
         configuration.installDefaultMacroFragmentParserFactory(cjFiles.firstOrNull()?.project)
         val (constructionResult, output) = resolveAndCheckCfirAfterConstruction(
             session = session,
             pre = pre,
+            classification = classification,
             constructionService = FrontendMacroConstructionService(configuration),
             constructionMode = configuration.macroConstructionMode,
             diagnosticsCollector = configuration.diagnosticsCollector,

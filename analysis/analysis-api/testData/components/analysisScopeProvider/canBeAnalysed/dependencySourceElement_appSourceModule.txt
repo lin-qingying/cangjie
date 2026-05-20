@@ -1,0 +1,4 @@
+target: func provide(): Int64 {
+    return 1
+}
+canBeAnalysed: true

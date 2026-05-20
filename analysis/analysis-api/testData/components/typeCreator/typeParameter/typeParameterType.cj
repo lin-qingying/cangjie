@@ -1,0 +1,14 @@
+// FILE: typeParameterType.cj
+// TARGET_CLASS: User
+// TYPE_PARAMETER_OWNER_CLASS: Box
+// TARGET_TYPE_PARAMETER: T
+// TYPE_CREATION_KIND: TYPE_PARAMETER
+// EXPECTED_QUALIFIED_TYPE_RENDER: T
+// EXPECTED_SHORT_TYPE_RENDER: T
+package sample.typecreator
+
+class User {
+}
+
+class Box<T> {
+}

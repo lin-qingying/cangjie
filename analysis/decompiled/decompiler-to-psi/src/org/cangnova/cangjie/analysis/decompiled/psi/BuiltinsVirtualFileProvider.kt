@@ -6,9 +6,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileManager
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import java.io.File
+import java.nio.file.Path
 
 abstract class BuiltinsVirtualFileProvider {
     abstract fun getBuiltinVirtualFiles(): Set<VirtualFile>
@@ -63,6 +65,23 @@ abstract class BuiltinsVirtualFileProviderBaseImpl : BuiltinsVirtualFileProvider
         return file.fileType == CangJieBuiltInFileType ||
             file.extension.equals(CangJieBuiltInFileType.defaultExtension, ignoreCase = true)
     }
+
+    /**
+     * 统一解析宿主传入的本地 stdlib 根路径。
+     *
+     * CLI/LSP/IDE 都可能在运行期拿到新复制出来的目录，
+     * 这里只允许走同一条 refresh-aware VFS 恢复链，避免不同宿主各自出现
+     * “属性已设置但 VirtualFile 尚未进入 VFS” 的分叉。
+     */
+    protected fun resolveLocalRootVirtualFile(path: String): VirtualFile? {
+        val normalizedPath = path.replace('\\', '/')
+        val localFileSystem = StandardFileSystems.local()
+        val nioPath = runCatching { Path.of(path) }.getOrNull()
+
+        return localFileSystem.findFileByPath(normalizedPath)
+            ?: localFileSystem.refreshAndFindFileByPath(normalizedPath)
+            ?: nioPath?.let(VirtualFileManager.getInstance()::findFileByNioPath)
+    }
 }
 
 /**
@@ -76,7 +95,7 @@ class BuiltinsVirtualFileProviderCliImpl : BuiltinsVirtualFileProviderBaseImpl()
     override fun getBuiltinRootVirtualFiles(): Set<VirtualFile> {
         return readPaths("cangjie.stdlib.module", "CANGJIE_STDLIB_MODULE")
             .mapNotNull { path ->
-                StandardFileSystems.local().findFileByPath(path.replace('\\', '/'))
+                resolveLocalRootVirtualFile(path)
                     ?: run {
                         logger<BuiltinsVirtualFileProviderCliImpl>().warn("Cannot resolve builtins path: $path")
                         null

@@ -1,0 +1,6 @@
+presentation: sample/types/abbreviated/Box<sample/types/abbreviated/User>
+qualified: sample.types.abbreviated.Box<sample.types.abbreviated.User>
+short: Box<User>
+abbreviation: null
+fullyExpanded: sample.types.abbreviated.Box<sample.types.abbreviated.User>
+classLikeSymbol: sample/types/abbreviated/Box

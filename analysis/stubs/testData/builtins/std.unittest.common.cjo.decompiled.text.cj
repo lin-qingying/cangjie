@@ -39,7 +39,7 @@ class Configuration <: std.core.Object & std.core.ToString {
 }
 
 interface DataShrinker {
-    func shrink(value: T): std.core.Iterable<T> { /* compiled code */ }
+    abstract func shrink(value: T): std.core.Iterable<T>
 }
 
 class NoShrinker <: std.core.Object & std.unittest.common.DataShrinker<T> {
@@ -51,9 +51,7 @@ class NoShrinker <: std.core.Object & std.unittest.common.DataShrinker<T> {
 }
 
 interface KeyFor {
-    prop name: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop name: std.core.String
 }
 
 struct KeyTags <: std.unittest.common.KeyFor<std.core.Array<std.core.String>> {
@@ -71,7 +69,7 @@ struct KeyTags <: std.unittest.common.KeyFor<std.core.Array<std.core.String>> {
 class ConfigurationKey <: std.core.Object & std.core.Equatable<std.unittest.common.ConfigurationKey> & std.core.Hashable {
     override func hashCode(): Int64 { /* compiled code */ }
 
-    func equals(that: std.unittest.common.ConfigurationKey): Bool { /* compiled code */ }
+    abstract func equals(that: std.unittest.common.ConfigurationKey): Bool
 
     override operator func ==(that: std.unittest.common.ConfigurationKey): Bool { /* compiled code */ }
 
@@ -79,7 +77,7 @@ class ConfigurationKey <: std.core.Object & std.core.Equatable<std.unittest.comm
 
     let name: std.core.String
 
-    init(name: std.core.String) { /* compiled code */ }
+    ConfigurationKey(name: std.core.String) { /* compiled code */ }
 }
 
 extend ConfigurationKey {
@@ -87,11 +85,11 @@ extend ConfigurationKey {
 }
 
 interface DataProvider {
-    func provide(): std.core.Iterable<T> { /* compiled code */ }
+    abstract func provide(): std.core.Iterable<T>
 }
 
 interface DataStrategy {
-    func provider(configuration: std.unittest.common.Configuration): std.unittest.common.DataProvider<T> { /* compiled code */ }
+    abstract func provider(configuration: std.unittest.common.Configuration): std.unittest.common.DataProvider<T>
 
     func shrinker(configuration: std.unittest.common.Configuration): std.unittest.common.DataShrinker<T> { /* compiled code */ }
 
@@ -155,13 +153,13 @@ enum JsonKind {
 }
 
 class JsonValue <: std.core.Object & std.core.ToString {
-    func toString(): std.core.String { /* compiled code */ }
+    abstract func toString(): std.core.String
 
-    func toJsonString(): std.core.String { /* compiled code */ }
+    abstract func toJsonString(): std.core.String
 
     static func fromStr(s: std.core.String): std.unittest.common.JsonValue { /* compiled code */ }
 
-    func kind(): std.unittest.common.JsonKind { /* compiled code */ }
+    abstract func kind(): std.unittest.common.JsonKind
 
     func asNull(): std.unittest.common.JsonNull { /* compiled code */ }
 
@@ -295,9 +293,9 @@ class JsonObject <: std.unittest.common.JsonValue {
 }
 
 interface ToJson {
-    func toJson(): std.unittest.common.JsonValue { /* compiled code */ }
+    abstract func toJson(): std.unittest.common.JsonValue
 
-    static func fromJson(jv: std.unittest.common.JsonValue): std.unittest.common.DataModel { /* compiled code */ }
+    abstract static func fromJson(jv: std.unittest.common.JsonValue): std.unittest.common.DataModel
 }
 
 class DataModel {
@@ -365,11 +363,11 @@ enum Color <: std.core.Equatable<std.unittest.common.Color> {
 }
 
 class PrettyPrinter {
-    func put(s: std.core.String): Unit { /* compiled code */ }
+    abstract func put(s: std.core.String): Unit
 
     func putNewLine(): Unit { /* compiled code */ }
 
-    func setColor(color: std.unittest.common.Color): Unit { /* compiled code */ }
+    abstract func setColor(color: std.unittest.common.Color): Unit
 
     var currentIndent: std.core.String
 
@@ -413,11 +411,11 @@ class PrettyPrinter {
 
     let startingIndent: UInt64
 
-    init(indentationSize: UInt64, startingIndent: UInt64) { /* compiled code */ }
+    PrettyPrinter(indentationSize: UInt64, startingIndent: UInt64) { /* compiled code */ }
 }
 
 interface PrettyPrintable {
-    func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
+    abstract func pprint(to: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter
 }
 
 enum PrettyPrintableTextChunk {
@@ -471,9 +469,9 @@ extend Color <: Serializable {
 }
 
 interface Serializable {
-    func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
+    abstract func serializeInternal(): std.unittest.common.DataModel
 
-    static func deserialize(dm: std.unittest.common.DataModel): T { /* compiled code */ }
+    abstract static func deserialize(dm: std.unittest.common.DataModel): T
 }
 
 extend PrettyText <: Serializable {
@@ -568,73 +566,73 @@ class DataModelException <: std.core.Exception {
     override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Int64 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Int32 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Int16 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Int8 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): UInt64 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): UInt32 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): UInt16 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): UInt8 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Float64 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Float32 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Float16 { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Bool { /* compiled code */ }
@@ -646,7 +644,7 @@ extend String <: Serializable {
     static func deserialize(dm: std.unittest.common.DataModel): std.core.String { /* compiled code */ }
 }
 
-extend Extend <: Serializable {
+extend `Unit` <: Serializable {
     func serializeInternal(): std.unittest.common.DataModel { /* compiled code */ }
 
     static func deserialize(dm: std.unittest.common.DataModel): Rune { /* compiled code */ }
@@ -683,10 +681,10 @@ extend HashMap <: Serializable {
 }
 
 interface TextWidth {
-    func width(): Int64 { /* compiled code */ }
+    abstract func width(): Int64
 }
 
-extend Extend <: TextWidth {
+extend `Unit` <: TextWidth {
     func width(): Int64 { /* compiled code */ }
 }
 

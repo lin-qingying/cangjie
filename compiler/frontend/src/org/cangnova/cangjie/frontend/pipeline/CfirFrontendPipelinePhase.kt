@@ -36,6 +36,8 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFailurePolicy
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
@@ -44,6 +46,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.TokenBackedMacroFragmen
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.cangjieSourceRoots
 import org.cangnova.cangjie.config.classpathRoots
@@ -129,13 +132,27 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
         }
 
         val constructionService = FrontendMacroConstructionService(configuration)
-        val preResults = sessionPreResults.map { it.pre }
-        val artifactPreparation = prepareMacroArtifactDefinitionsForExpansion(configuration, preResults)
+        val classifications = sessionPreResults.map { (session, pre) ->
+            session.ensureAnnotationMetadataRegistry()
+            MacroDemandClassification.create(pre).also {
+                session.register(MacroDemandClassification::class, it)
+            }
+        }
+        val artifactPreparation = prepareMacroArtifactDefinitionsForExpansion(configuration, classifications)
 
-        val outputs = sessionPreResults.mapNotNull { (session, pre) ->
+        val outputs = sessionPreResults.mapIndexedNotNull { index, (session, pre) ->
+            val classification = classifications[index]
+            classification.freezeFinal(
+                macroArtifactDefinitions = artifactPreparation.definitions,
+                failurePolicy = when (configuration.macroConstructionMode) {
+                    MacroConstructionService.Mode.STRICT -> MacroFailurePolicy.STRICT
+                    MacroConstructionService.Mode.DEGRADED -> MacroFailurePolicy.DEGRADED
+                },
+            )
             val (result, output) = resolveAndCheckCfirAfterConstruction(
                 session = session,
                 pre = pre,
+                classification = classification,
                 constructionService = constructionService,
                 constructionMode = configuration.macroConstructionMode,
                 diagnosticsCollector = configuration.diagnosticsCollector,

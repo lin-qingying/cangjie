@@ -3,12 +3,18 @@ package org.cangnova.cangjie.frontend.pipeline
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
+import org.cangnova.cangjie.cfir.resolve.providers.macro.FinalMacroSurfaceDecision
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallForestBuilder
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroForestEvaluator
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFailurePolicy
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplacementSlotType
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
@@ -262,11 +268,8 @@ class MacroConstructionArchitectureGuardTest {
             resultTokens = listOf(TokenInfo(kind = 1.toUByte(), value = "expanded")),
         )
         val parser = object : MacroFragmentParser {
-            override fun parse(
-                node: MacroCallNode,
-                tokens: List<MacroSurfaceToken>,
-                mode: MacroFragmentParser.Mode,
-            ): MacroFragmentResult = MacroFragmentResult.Success(node, tokens, mode)
+            override fun parse(input: MacroFragmentInput): MacroFragmentResult =
+                MacroFragmentResult.Success(input.node, input.tokens, input.mode)
         }
         val splicer = object : MacroStableSplicer {
             val slots = mutableListOf<MacroReplaceSlot>()
@@ -306,9 +309,11 @@ class MacroConstructionArchitectureGuardTest {
         )
         val rootNode = forest.roots.single()
         val fragment = parser.parse(
-            node = rootNode,
-            tokens = evaluatorResults.getValue(rootNode),
-            mode = MacroFragmentParser.Mode.EXPRESSION,
+            MacroFragmentInput(
+                node = rootNode,
+                tokens = evaluatorResults.getValue(rootNode),
+                decision = expressionDecision(surface),
+            ),
         )
         splicer.applySlices(
             files = emptyList(),
@@ -522,13 +527,15 @@ class MacroConstructionArchitectureGuardTest {
         )
         val node = MacroCallForestBuilder.build(listOf(surface)).roots.single()
         val parser = org.cangnova.cangjie.cfir.resolve.providers.macro.TokenBackedMacroFragmentParser(
-            reparse = { _, _, _ -> null },
+            reparse = { _, _ -> null },
             reTokenize = { tokens -> tokens },
         )
         val result = parser.parse(
-            node = node,
-            tokens = surface.inputTokens,
-            mode = MacroFragmentParser.Mode.EXPRESSION,
+            MacroFragmentInput(
+                node = node,
+                tokens = surface.inputTokens,
+                decision = expressionDecision(surface),
+            ),
         )
         assertTrue(
             result is MacroFragmentResult.Failure,
@@ -587,8 +594,9 @@ class MacroConstructionArchitectureGuardTest {
         val pipelineSource = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/CfirFrontendPipelinePhase.kt")
         val source = readRepoFile("compiler/frontend/src/org/cangnova/cangjie/frontend/pipeline/MacroExpansionArtifactPreparation.kt")
         val preIndex = pipelineSource.indexOf("val sessionPreResults = sessionsWithSources.map")
-        val preparationCallIndex = pipelineSource.indexOf("prepareMacroArtifactDefinitionsForExpansion(configuration, preResults)")
-        val demandSurfacesIndex = source.indexOf("val demandSurfacesByPackage = collectMacroExpansionPackageDemandSurfaces(preResults)")
+        val classificationIndex = pipelineSource.indexOf("val classifications = sessionPreResults.map")
+        val preparationCallIndex = pipelineSource.indexOf("prepareMacroArtifactDefinitionsForExpansion(configuration, classifications)")
+        val demandSurfacesIndex = source.indexOf("val demandSurfacesByPackage = collectMacroExpansionPackageDemandSurfaces(classifications)")
         val demandIndex = source.indexOf("val demandedMacroPackages = demandSurfacesByPackage.keys")
         val locatorIndex = source.indexOf("val artifactLocator = MacroArtifactLocator(configuration.macroSdkHome)")
         val initialLocateIndex = source.indexOf("val initialArtifacts = artifactLocator.locate")
@@ -603,6 +611,8 @@ class MacroConstructionArchitectureGuardTest {
         assertTrue(
             listOf(
                 preIndex,
+                classificationIndex,
+                preparationCallIndex,
                 demandSurfacesIndex,
                 demandIndex,
                 locatorIndex,
@@ -618,7 +628,8 @@ class MacroConstructionArchitectureGuardTest {
             "Frontend phase must derive macro package demand, locate artifacts, compile missing same-project sources, and re-locate compiled artifacts before resolver.",
         )
         assertTrue(
-            preIndex < preparationCallIndex &&
+            preIndex < classificationIndex &&
+                classificationIndex < preparationCallIndex &&
                 demandSurfacesIndex < demandIndex &&
                 demandIndex < locatorIndex &&
                 locatorIndex < initialLocateIndex &&
@@ -723,6 +734,21 @@ class MacroConstructionArchitectureGuardTest {
         val displayName: String,
         val relativePaths: List<String>,
     )
+
+    private fun expressionDecision(surface: MacroSurface): FinalMacroSurfaceDecision =
+        FinalMacroSurfaceDecision(
+            surface = surface,
+            callSite = MacroCallSite.EXPRESSION,
+            slotType = MacroReplacementSlotType.EXPRESSION,
+            annotationCarrier = null,
+            resolution = MacroResolution.CustomAnnotation(surface.qualifiedName?.shortName() ?: Name.identifier("Unknown")),
+            parserMode = MacroFragmentParser.Mode.EXPRESSION,
+            localConstruction = true,
+            executorRequired = false,
+            externalPackageDemand = null,
+            failurePolicy = MacroFailurePolicy.STRICT,
+            blockedDiagnostic = null,
+        )
 
     private companion object {
         val root: Path = findRepoRoot()

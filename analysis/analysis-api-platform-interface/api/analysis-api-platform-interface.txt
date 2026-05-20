@@ -1,5 +1,37 @@
 # analysis-api-platform-interface
 
+## org/cangnova/cangjie/analysis/api/platform/CaCompositeProviderFactory.kt
+package org.cangnova.cangjie.analysis.api.platform
+public inline fun <P : CangJieComposableProvider, reified T : P> List<P>.mergeSpecificProviders( factory: CaCompositeProviderFactory<P>, crossinline mergeTargets: (List<T>) -> P, ): P
+## org/cangnova/cangjie/analysis/api/platform/CaEngineService.kt
+package org.cangnova.cangjie.analysis.api.platform
+public interface CaEngineService
+## org/cangnova/cangjie/analysis/api/platform/CaPlatformComponent.kt
+package org.cangnova.cangjie.analysis.api.platform
+public interface CaPlatformComponent
+public interface CaOptionalPlatformComponent : CaPlatformComponent
+## org/cangnova/cangjie/analysis/api/platform/CaPlatformSettings.kt
+package org.cangnova.cangjie.analysis.api.platform
+public interface CaPlatformSettings
+CaPlatformSettings.public val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
+CaPlatformSettings.public val allowUseSiteLibraryModuleAnalysis: Boolean
+CaPlatformSettings.public companion object
+CaPlatformSettings.Companion.public fun getInstance(project: Project): CaPlatformSettings
+public enum class CaDeserializedDeclarationsOrigin
+## org/cangnova/cangjie/analysis/api/platform/CangJieComposableProvider.kt
+package org.cangnova.cangjie.analysis.api.platform
+public interface CangJieComposableProvider
+public interface CangJieCompositeProvider<P : CangJieComposableProvider> : CangJieComposableProvider
+CangJieCompositeProvider.public val providers: List<P>
+public interface CaComposableProviderMerger<P : CangJieComposableProvider>
+CaComposableProviderMerger.public fun merge(providers: List<P>): P
+## org/cangnova/cangjie/analysis/api/platform/CangJieMessageBusProvider.kt
+package org.cangnova.cangjie.analysis.api.platform
+public interface CangJieMessageBusProvider : CaPlatformComponent
+CangJieMessageBusProvider.public fun getMessageBus(): MessageBus
+CangJieMessageBusProvider.public companion object
+CangJieMessageBusProvider.Companion.public fun getInstance(project: Project): CangJieMessageBusProvider
+public val Project.analysisMessageBus: MessageBus
 ## org/cangnova/cangjie/analysis/api/platform/KotlinAnalysisInWriteActionListener.kt
 package org.cangnova.cangjie.analysis.api.platform
 public interface KotlinAnalysisInWriteActionListener
@@ -7,20 +39,128 @@ KotlinAnalysisInWriteActionListener.public fun onEnteringAnalysisInWriteAction()
 KotlinAnalysisInWriteActionListener.public fun afterLeavingAnalysisInWriteAction()
 KotlinAnalysisInWriteActionListener.public companion object
 KotlinAnalysisInWriteActionListener.Companion.public val TOPIC: Topic<KotlinAnalysisInWriteActionListener>
-## org/cangnova/cangjie/analysis/api/platform/CaPlatformSettings.kt
+## org/cangnova/cangjie/analysis/api/platform/annotations.kt
 package org.cangnova.cangjie.analysis.api.platform
-public interface CaPlatformSettings
-CaPlatformSettings.public val allowUseSiteLibraryModuleAnalysis: Boolean
-CaPlatformSettings.public companion object
-CaPlatformSettings.Companion.public fun getInstance(project: Project): CaPlatformSettings
-## org/cangnova/cangjie/analysis/api/platform/compat/CaPlatformAliases.kt
-package org.cangnova.cangjie.analysis.api.platform.compat
-public typealias CaPlatformLifetimeTokenFactory
-public typealias CaPlatformPermissionChecker
+public annotation class CaCachedService
+## org/cangnova/cangjie/analysis/api/platform/caches/NullValue.kt
+package org.cangnova.cangjie.analysis.api.platform.caches
+public object NullValue
+public inline fun <V> Any.nullValueToNull(): V
+public inline fun <K : Any, R> ConcurrentMap<K, Any>.getOrPutWithNullableValue( key: K, crossinline compute: (K) -> Any?, ): R
+public inline fun <K : Any, R> Cache<K, Any>.getOrPutWithNullableValue( key: K, crossinline compute: (K) -> Any?, ): R
+## org/cangnova/cangjie/analysis/api/platform/caches/NullableCaffeineCache.kt
+package org.cangnova.cangjie.analysis.api.platform.caches
+public value class NullableCaffeineCache<K : Any, V : Any>( val cache: Cache<K, Any>, )
+NullableCaffeineCache.public inline fun get(key: K, crossinline compute: (K) -> V?): V?
+NullableCaffeineCache.public inline fun getOrPut(key: K, crossinline compute: (K) -> V?): V?
+NullableCaffeineCache.public val estimatedSize: @NonNegative Long
+## org/cangnova/cangjie/analysis/api/platform/caches/NullableConcurrentCache.kt
+package org.cangnova.cangjie.analysis.api.platform.caches
+public value class NullableConcurrentCache<K : Any, V>( val map: ConcurrentMap<K, Any> = ConcurrentHashMap(), )
+NullableConcurrentCache.public inline fun getOrPut( key: K, crossinline compute: (K) -> V?, ): V
+## org/cangnova/cangjie/analysis/api/platform/caches/util.kt
+package org.cangnova.cangjie.analysis.api.platform.caches
+public fun <K : Any, V : Any> Cache<K, V>.getOrPut(key: K, compute: (K) -> V): V
+public fun <K : Any, V : Any> Caffeine<K, V>.withStatsCounter(statsCounter: StatsCounter?): Caffeine<K, V>
+## org/cangnova/cangjie/analysis/api/platform/declarations/CangJieAnnotationsResolver.kt
+package org.cangnova.cangjie.analysis.api.platform.declarations
+public interface CangJieAnnotationsResolver
+CangJieAnnotationsResolver.public fun declarationsByAnnotation(annotationClassId: ClassId): Set<CjAnnotated>
+CangJieAnnotationsResolver.public fun annotationsOnDeclaration(declaration: CjAnnotated): Set<ClassId>
+public interface CangJieAnnotationsResolverFactory : CaPlatformComponent
+CangJieAnnotationsResolverFactory.public fun createAnnotationResolver(searchScope: GlobalSearchScope): CangJieAnnotationsResolver
+CangJieAnnotationsResolverFactory.public companion object
+CangJieAnnotationsResolverFactory.Companion.public fun getInstance(project: Project): CangJieAnnotationsResolverFactory
+public fun Project.createAnnotationResolver(searchScope: GlobalSearchScope): CangJieAnnotationsResolver
+## org/cangnova/cangjie/analysis/api/platform/declarations/CangJieDeclarationProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.declarations
+public interface CangJieDeclarationProvider : CangJieComposableProvider
+CangJieDeclarationProvider.public fun getClassLikeDeclarationByClassId(classId: ClassId): CjClassLikeDeclaration?
+CangJieDeclarationProvider.public fun getAllClassesByClassId(classId: ClassId): Collection<CjTypeStatement>
+CangJieDeclarationProvider.public fun getAllTypeAliasesByClassId(classId: ClassId): Collection<CjTypeAlias>
+CangJieDeclarationProvider.public fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
+CangJieDeclarationProvider.public fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty>
+CangJieDeclarationProvider.public fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction>
+CangJieDeclarationProvider.public fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile>
+CangJieDeclarationProvider.public fun getTopLevelExtends(): Collection<CjExtend>
+CangJieDeclarationProvider.public fun getTopLevelExtendFiles(): Collection<CjFile>
+CangJieDeclarationProvider.public fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>
+CangJieDeclarationProvider.public fun findFilesForFacadeByPackage(packageFqName: FqName): Collection<CjFile>
+CangJieDeclarationProvider.public fun findFilesForFacade(facadeFqName: FqName): Collection<CjFile>
+CangJieDeclarationProvider.public fun findInternalFilesForFacade(facadeFqName: FqName): Collection<CjFile>
+CangJieDeclarationProvider.public fun computePackageNames(): Set<String>?
+CangJieDeclarationProvider.public val hasSpecificClassifierPackageNamesComputation: Boolean
+CangJieDeclarationProvider.public fun computePackageNamesWithTopLevelClassifiers(): Set<String>?
+CangJieDeclarationProvider.public val hasSpecificCallablePackageNamesComputation: Boolean
+CangJieDeclarationProvider.public fun computePackageNamesWithTopLevelCallables(): Set<String>?
+public interface CangJieDeclarationProviderFactory : CaPlatformComponent
+CangJieDeclarationProviderFactory.public fun createDeclarationProvider(scope: GlobalSearchScope, contextualModule: CaModule?): CangJieDeclarationProvider
+CangJieDeclarationProviderFactory.public companion object
+CangJieDeclarationProviderFactory.Companion.public fun getInstance(project: Project): CangJieDeclarationProviderFactory
+public interface CangJieDeclarationProviderMerger : CaComposableProviderMerger<CangJieDeclarationProvider>, CaPlatformComponent
+CangJieDeclarationProviderMerger.public companion object
+CangJieDeclarationProviderMerger.Companion.public fun getInstance(project: Project): CangJieDeclarationProviderMerger
+public fun Project.createDeclarationProvider(scope: GlobalSearchScope, contextualModule: CaModule?): CangJieDeclarationProvider
+public fun Project.mergeDeclarationProviders(declarationProviders: List<CangJieDeclarationProvider>): CangJieDeclarationProvider
+## org/cangnova/cangjie/analysis/api/platform/declarations/CangJieDirectInheritorsProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.declarations
+public interface CangJieDirectInheritorsProvider : CaPlatformComponent
+CangJieDirectInheritorsProvider.public fun getDirectCangJieInheritors( cjClass: CjClass, scope: GlobalSearchScope, includeLocalInheritors: Boolean = true, ): Iterable<CjClassLikeDeclaration>
+CangJieDirectInheritorsProvider.public companion object
+CangJieDirectInheritorsProvider.Companion.public fun getInstance(project: Project): CangJieDirectInheritorsProvider
+## org/cangnova/cangjie/analysis/api/platform/declarations/CangJieEmptyDeclarationProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.declarations
+public object CangJieEmptyDeclarationProvider : CangJieDeclarationProvider
+CangJieEmptyDeclarationProvider.public override fun getClassLikeDeclarationByClassId(classId: ClassId): CjClassLikeDeclaration?
+CangJieEmptyDeclarationProvider.public override fun getAllClassesByClassId(classId: ClassId): List<CjTypeStatement>
+CangJieEmptyDeclarationProvider.public override fun getAllTypeAliasesByClassId(classId: ClassId): List<CjTypeAlias>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelProperties(callableId: CallableId): List<CjProperty>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelFunctions(callableId: CallableId): List<CjNamedFunction>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelCallableFiles(callableId: CallableId): List<CjFile>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelExtends(): List<CjExtend>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelExtendFiles(): List<CjFile>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>
+CangJieEmptyDeclarationProvider.public override fun findFilesForFacadeByPackage(packageFqName: FqName): List<CjFile>
+CangJieEmptyDeclarationProvider.public override fun findFilesForFacade(facadeFqName: FqName): List<CjFile>
+CangJieEmptyDeclarationProvider.public override fun findInternalFilesForFacade(facadeFqName: FqName): List<CjFile>
+CangJieEmptyDeclarationProvider.public override fun computePackageNames(): Set<String>
+CangJieEmptyDeclarationProvider.public override val hasSpecificClassifierPackageNamesComputation: Boolean
+CangJieEmptyDeclarationProvider.public override val hasSpecificCallablePackageNamesComputation: Boolean
+## org/cangnova/cangjie/analysis/api/platform/declarations/CangJieFileBasedDeclarationProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.declarations
+public class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDeclarationProvider
+CangJieFileBasedDeclarationProvider.public override fun getClassLikeDeclarationByClassId(classId: ClassId): CjClassLikeDeclaration?
+CangJieFileBasedDeclarationProvider.public override fun getAllClassesByClassId(classId: ClassId): Collection<CjTypeStatement>
+CangJieFileBasedDeclarationProvider.public override fun getAllTypeAliasesByClassId(classId: ClassId): Collection<CjTypeAlias>
+CangJieFileBasedDeclarationProvider.public override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
+CangJieFileBasedDeclarationProvider.public override fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty>
+CangJieFileBasedDeclarationProvider.public override fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction>
+CangJieFileBasedDeclarationProvider.public override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile>
+CangJieFileBasedDeclarationProvider.public override fun getTopLevelExtends(): Collection<CjExtend>
+CangJieFileBasedDeclarationProvider.public override fun getTopLevelExtendFiles(): Collection<CjFile>
+CangJieFileBasedDeclarationProvider.public override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>
+CangJieFileBasedDeclarationProvider.public override fun findFilesForFacadeByPackage(packageFqName: FqName): Collection<CjFile>
+CangJieFileBasedDeclarationProvider.public override fun findFilesForFacade(facadeFqName: FqName): Collection<CjFile>
+CangJieFileBasedDeclarationProvider.public override fun findInternalFilesForFacade(facadeFqName: FqName): Collection<CjFile>
+CangJieFileBasedDeclarationProvider.public override fun computePackageNames(): Set<String>
+CangJieFileBasedDeclarationProvider.public override val hasSpecificClassifierPackageNamesComputation: Boolean
+CangJieFileBasedDeclarationProvider.public override val hasSpecificCallablePackageNamesComputation: Boolean
+## org/cangnova/cangjie/analysis/api/platform/lifetime/CaAlwaysAccessibleLifetimeToken.kt
+package org.cangnova.cangjie.analysis.api.platform.lifetime
+public class CaAlwaysAccessibleLifetimeToken(project: Project) : CaLifetimeToken()
+CaAlwaysAccessibleLifetimeToken.public override fun isValid(): Boolean
+CaAlwaysAccessibleLifetimeToken.public override fun getInvalidationReason(): String
+CaAlwaysAccessibleLifetimeToken.public override fun isAccessible(): Boolean
+CaAlwaysAccessibleLifetimeToken.public override fun getInaccessibilityReason(): String
+public class CaAlwaysAccessibleLifetimeTokenFactory : CaLifetimeTokenFactory
+CaAlwaysAccessibleLifetimeTokenFactory.public override val identifier: KClass<out CaLifetimeToken>
+CaAlwaysAccessibleLifetimeTokenFactory.public override fun create(project: Project, modificationTracker: ModificationTracker): CaLifetimeToken
 ## org/cangnova/cangjie/analysis/api/platform/lifetime/CaLifetimeTokenFactory.kt
 package org.cangnova.cangjie.analysis.api.platform.lifetime
 public interface CaLifetimeTokenFactory
-CaLifetimeTokenFactory.public fun create(project: Project): CaLifetimeToken
+CaLifetimeTokenFactory.public val identifier: KClass<out CaLifetimeToken>
+CaLifetimeTokenFactory.public fun create(project: Project, modificationTracker: ModificationTracker): CaLifetimeToken
 CaLifetimeTokenFactory.public companion object
 CaLifetimeTokenFactory.Companion.public fun getInstance(project: Project): CaLifetimeTokenFactory
 ## org/cangnova/cangjie/analysis/api/platform/lifetime/CaLifetimeTracker.kt
@@ -29,6 +169,21 @@ public interface CaLifetimeTracker
 CaLifetimeTracker.public val currentToken: CaLifetimeToken?
 CaLifetimeTracker.public companion object
 CaLifetimeTracker.Companion.public fun getInstance(project: Project): CaLifetimeTracker
+## org/cangnova/cangjie/analysis/api/platform/lifetime/CaReadActionConfinementLifetimeToken.kt
+package org.cangnova.cangjie.analysis.api.platform.lifetime
+public class CaReadActionConfinementLifetimeTokenFactory : CaLifetimeTokenFactory
+CaReadActionConfinementLifetimeTokenFactory.public override val identifier: KClass<out CaLifetimeToken>
+CaReadActionConfinementLifetimeTokenFactory.public override fun create(project: Project, modificationTracker: ModificationTracker): CaLifetimeToken
+## org/cangnova/cangjie/analysis/api/platform/lifetime/ModificationTrackerWithInvalidationReason.kt
+package org.cangnova.cangjie.analysis.api.platform.lifetime
+public interface ModificationTrackerWithInvalidationReason : ModificationTracker
+ModificationTrackerWithInvalidationReason.public fun getInvalidationReason(): String?
+## org/cangnova/cangjie/analysis/api/platform/modification/CaElementModificationType.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public sealed interface CaElementModificationType
+CaElementModificationType.public data object ElementAdded : CaElementModificationType
+CaElementModificationType.public class ElementRemoved(val removedElement: PsiElement) : CaElementModificationType
+CaElementModificationType.public data object Unknown : CaElementModificationType
 ## org/cangnova/cangjie/analysis/api/platform/modification/CaModificationTracker.kt
 package org.cangnova.cangjie.analysis.api.platform.modification
 public interface CaModificationTracker
@@ -42,6 +197,86 @@ public interface CaSessionInvalidationService
 CaSessionInvalidationService.public fun invalidate(modules: Set<CaModule>)
 CaSessionInvalidationService.public companion object
 CaSessionInvalidationService.Companion.public fun getInstance(project: Project): CaSessionInvalidationService?
+## org/cangnova/cangjie/analysis/api/platform/modification/CaSourceModificationLocality.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public sealed interface CaSourceModificationLocality
+CaSourceModificationLocality.public interface Invisible : CaSourceModificationLocality
+CaSourceModificationLocality.public interface Whitespace : CaSourceModificationLocality
+CaSourceModificationLocality.public interface InBlock : CaSourceModificationLocality
+CaSourceModificationLocality.public interface OutOfBlock : CaSourceModificationLocality
+## org/cangnova/cangjie/analysis/api/platform/modification/CaSourceModificationService.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public interface CaSourceModificationService : CaEngineService
+CaSourceModificationService.public fun detectLocality(element: PsiElement, modificationType: CaElementModificationType): CaSourceModificationLocality
+CaSourceModificationService.public fun handleInvalidation(element: PsiElement, modificationLocality: CaSourceModificationLocality)
+CaSourceModificationService.public fun ancestorAffectedByInBlockModification(element: PsiElement): PsiElement?
+CaSourceModificationService.public companion object
+CaSourceModificationService.Companion.public fun getInstance(project: Project): CaSourceModificationService
+public fun CaSourceModificationService.handleElementModification(element: PsiElement, modificationType: CaElementModificationType)
+## org/cangnova/cangjie/analysis/api/platform/modification/KotlinCodeFragmentContextModificationEvent.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public class KotlinCodeFragmentContextModificationEvent(val module: CaModule) : KotlinModificationEvent
+KotlinCodeFragmentContextModificationEvent.public override fun equals(other: Any?): Boolean
+KotlinCodeFragmentContextModificationEvent.public override fun hashCode(): Int
+## org/cangnova/cangjie/analysis/api/platform/modification/KotlinGlobalModuleStateModificationEvent.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public data object KotlinGlobalModuleStateModificationEvent : KotlinModificationEvent
+## org/cangnova/cangjie/analysis/api/platform/modification/KotlinGlobalSourceModuleStateModificationEvent.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public data object KotlinGlobalSourceModuleStateModificationEvent : KotlinModificationEvent
+## org/cangnova/cangjie/analysis/api/platform/modification/KotlinGlobalSourceOutOfBlockModificationEvent.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public data object KotlinGlobalSourceOutOfBlockModificationEvent : KotlinModificationEvent
+## org/cangnova/cangjie/analysis/api/platform/modification/KotlinModificationEvent.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public sealed interface KotlinModificationEvent
+KotlinModificationEvent.public companion object
+KotlinModificationEvent.Companion.public val TOPIC: Topic<KotlinModificationEventListener>
+public fun interface KotlinModificationEventListener
+public enum class KotlinModificationEventKind
+public val KotlinModificationEventKind.isModuleLevel: Boolean
+public val KotlinModificationEventKind.isGlobalLevel: Boolean
+## org/cangnova/cangjie/analysis/api/platform/modification/KotlinModuleOutOfBlockModificationEvent.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public class KotlinModuleOutOfBlockModificationEvent(val module: CaModule) : KotlinModificationEvent
+KotlinModuleOutOfBlockModificationEvent.public override fun equals(other: Any?): Boolean
+KotlinModuleOutOfBlockModificationEvent.public override fun hashCode(): Int
+## org/cangnova/cangjie/analysis/api/platform/modification/KotlinModuleStateModificationEvent.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public class KotlinModuleStateModificationEvent( val module: CaModule, val modificationKind: KotlinModuleStateModificationKind, ) : KotlinModificationEvent
+KotlinModuleStateModificationEvent.public override fun equals(other: Any?): Boolean
+KotlinModuleStateModificationEvent.public override fun hashCode(): Int
+public enum class KotlinModuleStateModificationKind
+## org/cangnova/cangjie/analysis/api/platform/modification/utils.kt
+package org.cangnova.cangjie.analysis.api.platform.modification
+public fun Project.publishModificationEvent(event: KotlinModificationEvent)
+public fun CaModule.publishModuleStateModificationEvent(modificationKind: KotlinModuleStateModificationKind)
+public fun CaModule.publishModuleOutOfBlockModificationEvent()
+public fun Project.publishGlobalModuleStateModificationEvent()
+public fun Project.publishGlobalSourceModuleStateModificationEvent()
+public fun Project.publishGlobalSourceOutOfBlockModificationEvent()
+public fun CaModule.publishCodeFragmentContextModificationEvent()
+## org/cangnova/cangjie/analysis/api/platform/packages/CangJieEmptyPackageProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.packages
+public object CangJieEmptyPackageProvider : CangJiePackageProvider
+CangJieEmptyPackageProvider.public override fun doesPackageExist(packageFqName: FqName): Boolean
+CangJieEmptyPackageProvider.public override fun getSubpackageNames(packageFqName: FqName): Set<Name>
+## org/cangnova/cangjie/analysis/api/platform/packages/CangJiePackageProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.packages
+public interface CangJiePackageProvider : CangJieComposableProvider
+CangJiePackageProvider.public fun doesPackageExist(packageFqName: FqName): Boolean
+CangJiePackageProvider.public fun getSubpackageNames(packageFqName: FqName): Set<Name>
+## org/cangnova/cangjie/analysis/api/platform/packages/CangJiePackageProviderFactory.kt
+package org.cangnova.cangjie.analysis.api.platform.packages
+public interface CangJiePackageProviderFactory : CaPlatformComponent
+CangJiePackageProviderFactory.public fun createPackageProvider(searchScope: GlobalSearchScope): CangJiePackageProvider
+CangJiePackageProviderFactory.public companion object
+CangJiePackageProviderFactory.Companion.public fun getInstance(project: Project): CangJiePackageProviderFactory
+public interface CangJiePackageProviderMerger : CaComposableProviderMerger<CangJiePackageProvider>, CaPlatformComponent
+CangJiePackageProviderMerger.public companion object
+CangJiePackageProviderMerger.Companion.public fun getInstance(project: Project): CangJiePackageProviderMerger
+public fun Project.createPackageProvider(searchScope: GlobalSearchScope): CangJiePackageProvider
+public fun Project.mergePackageProviders(packageProviders: List<CangJiePackageProvider>): CangJiePackageProvider
 ## org/cangnova/cangjie/analysis/api/platform/permissions/CaAnalysisPermissionChecker.kt
 package org.cangnova.cangjie.analysis.api.platform.permissions
 public interface CaAnalysisPermissionChecker
@@ -56,31 +291,55 @@ CaAnalysisPermissionOptions.public val defaultIsAnalysisAllowedOnEdt: Boolean
 CaAnalysisPermissionOptions.public val defaultIsAnalysisAllowedInWriteAction: Boolean
 CaAnalysisPermissionOptions.public companion object
 CaAnalysisPermissionOptions.Companion.public fun getInstance(): CaAnalysisPermissionOptions
+## org/cangnova/cangjie/analysis/api/platform/permissions/CaDefaultAnalysisPermissionOptions.kt
+package org.cangnova.cangjie.analysis.api.platform.permissions
+public class CaDefaultAnalysisPermissionOptions : CaAnalysisPermissionOptions
+CaDefaultAnalysisPermissionOptions.public override val defaultIsAnalysisAllowedOnEdt: Boolean
+CaDefaultAnalysisPermissionOptions.public override val defaultIsAnalysisAllowedInWriteAction: Boolean
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaContentScopeProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CaContentScopeProvider : CaEngineService
+CaContentScopeProvider.public fun getRefinedContentScope(module: CaModule): GlobalSearchScope
+CaContentScopeProvider.public companion object
+CaContentScopeProvider.Companion.public fun getInstance(project: Project): CaContentScopeProvider
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaContentScopeRefiner.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
-public interface CaContentScopeRefiner
+public interface CaContentScopeRefiner : CaPlatformComponent
 CaContentScopeRefiner.public fun getEnlargementScopes(module: CaModule): List<GlobalSearchScope>
 CaContentScopeRefiner.public fun getRestrictionScopes(module: CaModule): List<GlobalSearchScope>
 CaContentScopeRefiner.public companion object
 CaContentScopeRefiner.Companion.public val EP_NAME: ExtensionPointName<CaContentScopeRefiner>
 CaContentScopeRefiner.Companion.public fun getRefiners(project: Project): List<CaContentScopeRefiner>
-## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaContentScopeProvider.kt
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaDanglingFileModuleImpl.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
-public interface CaContentScopeProvider
-CaContentScopeProvider.public fun getRefinedContentScope(module: CaModule): GlobalSearchScope
-CaContentScopeProvider.public companion object
-CaContentScopeProvider.Companion.public fun getInstance(project: Project): CaContentScopeProvider
+public class CaDanglingFileModuleImpl( files: List<CjFile>, override val contextModule: CaModule, override val resolutionMode: CaDanglingFileResolutionMode, ) : CaModuleBase(), CaDanglingFileModule
+CaDanglingFileModuleImpl.public override val isCodeFragment: Boolean
+CaDanglingFileModuleImpl.public override val files: List<CjFile>
+CaDanglingFileModuleImpl.public override val name: String
+CaDanglingFileModuleImpl.public override val languageVersionSettings: LanguageVersionSettings
+CaDanglingFileModuleImpl.public override val psiRoots: List<CjFile>
+CaDanglingFileModuleImpl.public override val project: Project
+CaDanglingFileModuleImpl.public override val baseContentScope: GlobalSearchScope
+CaDanglingFileModuleImpl.public val virtualFiles
+CaDanglingFileModuleImpl.public override val directRegularDependencies: List<CaModule>
+CaDanglingFileModuleImpl.public override val directDependsOnDependencies: List<CaModule>
+CaDanglingFileModuleImpl.public override val directFriendDependencies: List<CaModule>
+CaDanglingFileModuleImpl.public override val transitiveDependsOnDependencies: List<CaModule>
+CaDanglingFileModuleImpl.public override val isValid: Boolean
+CaDanglingFileModuleImpl.public override fun equals(other: Any?): Boolean
+CaDanglingFileModuleImpl.public override fun hashCode(): Int
+CaDanglingFileModuleImpl.public override fun toString(): String
+CaDanglingFileModuleImpl.public val result
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaGlobalSearchScopeMerger.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
-public interface CaGlobalSearchScopeMerger
+public interface CaGlobalSearchScopeMerger : CaEngineService
 CaGlobalSearchScopeMerger.public fun union(scopes: Collection<GlobalSearchScope>): GlobalSearchScope
 CaGlobalSearchScopeMerger.public companion object
 CaGlobalSearchScopeMerger.Companion.public fun getInstance(project: Project): CaGlobalSearchScopeMerger
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaModuleBase.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public abstract class CaModuleBase : CaModule
-CaModuleBase.public constructor()
-CaModuleBase.public open val contentScope: GlobalSearchScope
+CaModuleBase.public override val contentScope: GlobalSearchScope
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaModuleProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public interface CaModuleProvider
@@ -88,39 +347,87 @@ CaModuleProvider.public val snapshot: CaProjectStructureSnapshot
 CaModuleProvider.public val allModules: List<CaModule>
 CaModuleProvider.public val resolvableModules: List<CaModule>
 CaModuleProvider.public val sourceLikeModules: List<CaModule>
+CaModuleProvider.public val allSourceFiles: List<PsiFileSystemItem>
 CaModuleProvider.public fun getModuleByStableName(stableModuleName: String): CaModule?
 CaModuleProvider.public fun getModuleByDescription(moduleDescription: String): CaModule?
 CaModuleProvider.public companion object
 CaModuleProvider.Companion.public fun getInstance(project: Project): CaModuleProvider
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaResolutionScope.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public abstract class CaResolutionScope : GlobalSearchScope()
+CaResolutionScope.public abstract fun contains(element: PsiElement): Boolean
+CaResolutionScope.public abstract val underlyingSearchScope: GlobalSearchScope
+CaResolutionScope.public companion object
+CaResolutionScope.Companion.public fun forModule(useSiteModule: CaModule): CaResolutionScope
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CaResolutionScopeProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CaResolutionScopeProvider : CaEngineService
+CaResolutionScopeProvider.public fun getResolutionScope(module: CaModule): CaResolutionScope
+CaResolutionScopeProvider.public companion object
+CaResolutionScopeProvider.Companion.public fun getInstance(project: Project): CaResolutionScopeProvider
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieAnchorModuleProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CangJieAnchorModuleProvider : CaOptionalPlatformComponent
+CangJieAnchorModuleProvider.public fun getAnchorModule(libraryModule: CaLibraryModule): CaSourceModule?
+CangJieAnchorModuleProvider.public fun getAllAnchorModules(): Collection<CaSourceModule>
+CangJieAnchorModuleProvider.public fun getAllAnchorModulesIfComputed(): Collection<CaSourceModule>?
+CangJieAnchorModuleProvider.public companion object
+CangJieAnchorModuleProvider.Companion.public fun getInstance(project: Project): CangJieAnchorModuleProvider?
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieCompilerPluginsProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CangJieCompilerPluginsProvider : CaOptionalPlatformComponent
+CangJieCompilerPluginsProvider.public enum class CompilerPluginType
+CangJieCompilerPluginsProvider.public fun <T : Any> getRegisteredExtensions(module: CaModule, extensionType: ExtensionPointDescriptor<T>): List<T>
+CangJieCompilerPluginsProvider.public fun isPluginOfTypeRegistered(module: CaModule, pluginType: CompilerPluginType): Boolean
+CangJieCompilerPluginsProvider.public companion object
+CangJieCompilerPluginsProvider.Companion.public fun getInstance(project: Project): CangJieCompilerPluginsProvider?
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieGlobalSearchScopeMergeStrategy.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
-public interface CangJieGlobalSearchScopeMergeStrategy<T : Any>
+public interface CangJieGlobalSearchScopeMergeStrategy<T : Any> : CaPlatformComponent
 CangJieGlobalSearchScopeMergeStrategy.public val targetType: KClass<T>
 CangJieGlobalSearchScopeMergeStrategy.public fun uniteScopes(scopes: List<T>): List<GlobalSearchScope>
 CangJieGlobalSearchScopeMergeStrategy.public companion object
 CangJieGlobalSearchScopeMergeStrategy.Companion.public val EP_NAME: ExtensionPointName<CangJieGlobalSearchScopeMergeStrategy<*>>
 CangJieGlobalSearchScopeMergeStrategy.Companion.public fun getMergeStrategies(project: Project): List<CangJieGlobalSearchScopeMergeStrategy<*>>
 public interface CangJieIntersectionScopeMergeTarget
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieModuleDependentsProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CangJieModuleDependentsProvider : CaPlatformComponent
+CangJieModuleDependentsProvider.public fun getDirectDependents(module: CaModule): Set<CaModule>
+CangJieModuleDependentsProvider.public fun getTransitiveDependents(module: CaModule): Set<CaModule>
+CangJieModuleDependentsProvider.public fun getRefinementDependents(module: CaModule): Set<CaModule>
+CangJieModuleDependentsProvider.public companion object
+CangJieModuleDependentsProvider.Companion.public fun getInstance(project: Project): CangJieModuleDependentsProvider
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieModuleDependentsProviderBase.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public abstract class CangJieModuleDependentsProviderBase : CangJieModuleDependentsProvider
+CangJieModuleDependentsProviderBase.public override fun getTransitiveDependents(module: CaModule): Set<CaModule>
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieModuleInformationProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public interface CangJieModuleInformationProvider : CaOptionalPlatformComponent
+CangJieModuleInformationProvider.public fun isEmpty(module: CaModule): Boolean?
+CangJieModuleInformationProvider.public companion object
+CangJieModuleInformationProvider.Companion.public fun getInstance(project: Project): CangJieModuleInformationProvider?
 ## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieProjectStructureProvider.kt
 package org.cangnova.cangjie.analysis.api.platform.projectStructure
 public data class CaProjectStructureSnapshot( val allModules: List<CaModule>, val allResolvableModules: List<CaModule>, val allSourceLikeModules: List<CaModule>, val allSourceFiles: List<PsiFileSystemItem>, )
 CaProjectStructureSnapshot.public fun getModuleByStableName(stableModuleName: String): CaModule?
 CaProjectStructureSnapshot.public fun requireModuleByStableName(stableModuleName: String): CaModule
 CaProjectStructureSnapshot.public fun getModuleByDescription(moduleDescription: String): CaModule?
-public interface CaProjectStructureProvider
-CaProjectStructureProvider.public fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
-CaProjectStructureProvider.public fun getModule(item: PsiFileSystemItem, useSiteModule: CaModule? = null): CaModule
-CaProjectStructureProvider.public val snapshot: CaProjectStructureSnapshot
-CaProjectStructureProvider.public val allModules: List<CaModule>
-CaProjectStructureProvider.public val allResolvableModules: List<CaModule>
-CaProjectStructureProvider.public val allSourceLikeModules: List<CaModule>
-CaProjectStructureProvider.public val allSourceFiles: List<PsiFileSystemItem>
-CaProjectStructureProvider.public companion object
-CaProjectStructureProvider.Companion.public fun getInstance(project: Project): CaProjectStructureProvider
-CaProjectStructureProvider.Companion.public fun getModule(project: Project, element: PsiElement, useSiteModule: CaModule? = null): CaModule
+public interface CangJieProjectStructureProvider
+CangJieProjectStructureProvider.public fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
+CangJieProjectStructureProvider.public fun getImplementingModules(module: CaModule): List<CaModule>
+CangJieProjectStructureProvider.public val globalLanguageVersionSettings: LanguageVersionSettings
+CangJieProjectStructureProvider.public val libraryLanguageVersionSettings: LanguageVersionSettings
+CangJieProjectStructureProvider.public companion object
+CangJieProjectStructureProvider.Companion.public fun getInstance(project: Project): CangJieProjectStructureProvider
+CangJieProjectStructureProvider.Companion.public fun getModule(project: Project, element: PsiElement, useSiteModule: CaModule? = null): CaModule
+## org/cangnova/cangjie/analysis/api/platform/projectStructure/CangJieProjectStructureProviderBase.kt
+package org.cangnova.cangjie.analysis.api.platform.projectStructure
+public abstract class CangJieProjectStructureProviderBase : CangJieProjectStructureProvider
 ## org/cangnova/cangjie/analysis/api/platform/resolution/CaResolutionActivityTracker.kt
 package org.cangnova.cangjie.analysis.api.platform.resolution
-public interface CaResolutionActivityTracker
+public interface CaResolutionActivityTracker : CaEngineService
 CaResolutionActivityTracker.public val isCangJieResolutionActive: Boolean
 CaResolutionActivityTracker.public companion object
 CaResolutionActivityTracker.Companion.public fun getInstance(): CaResolutionActivityTracker?
@@ -135,3 +442,25 @@ CaRestrictedAnalysisService.public val isRestrictedAnalysisAllowed: Boolean
 CaRestrictedAnalysisService.public fun rejectRestrictedAnalysis(): Nothing
 CaRestrictedAnalysisService.public companion object
 CaRestrictedAnalysisService.Companion.public fun getInstance(project: Project): CaRestrictedAnalysisService?
+## org/cangnova/cangjie/analysis/api/platform/statistics/CaStatisticsService.kt
+package org.cangnova.cangjie.analysis.api.platform.statistics
+public interface CaStatisticsService : CaEngineService
+CaStatisticsService.public fun start()
+CaStatisticsService.public companion object
+CaStatisticsService.Companion.public val areStatisticsEnabled: Boolean
+CaStatisticsService.Companion.public fun getInstance(project: Project): CaStatisticsService?
+## org/cangnova/cangjie/analysis/api/platform/statistics/CangJieOpenTelemetryProvider.kt
+package org.cangnova.cangjie.analysis.api.platform.statistics
+public interface CangJieOpenTelemetryProvider : CaOptionalPlatformComponent
+CangJieOpenTelemetryProvider.public val openTelemetry: OpenTelemetry
+CangJieOpenTelemetryProvider.public companion object
+CangJieOpenTelemetryProvider.Companion.public fun getInstance(project: Project): CangJieOpenTelemetryProvider?
+## org/cangnova/cangjie/analysis/api/platform/utils/SublistMerger.kt
+package org.cangnova.cangjie.analysis.api.platform.utils
+public class SublistMerger<A : Any>( initialElements: List<A>, val destination: MutableList<A>, )
+SublistMerger.public var remainingElements: List<A>
+SublistMerger.public inline fun <reified R : A> merge(create: (List<R>) -> A?)
+SublistMerger.public fun finish()
+public fun <A : Any> List<A>.mergeInto(destination: MutableList<A>, f: SublistMerger<A>.() -> Unit)
+public fun <A : Any> List<A>.mergeWith(f: SublistMerger<A>.() -> Unit): List<A>
+public inline fun <A : Any, reified R : A> List<A>.mergeOnly(crossinline create: (List<R>) -> A?): List<A>

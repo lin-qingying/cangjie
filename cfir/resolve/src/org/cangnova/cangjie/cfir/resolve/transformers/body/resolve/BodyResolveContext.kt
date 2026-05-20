@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirFile
@@ -17,9 +18,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
+import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
+import org.cangnova.cangjie.cfir.resolve.body.asTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.collectTowerDataElementsForClass
 import org.cangnova.cangjie.cfir.resolve.body.typeParametersForTower
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -297,6 +300,39 @@ class BodyResolveContext(
             l()
         } finally {
             towerDataMode = initialMode
+        }
+    }
+
+    fun <T> withCodeFragment(
+        codeFragment: CfirCodeFragment,
+        holder: SessionAndScopeSessionHolder,
+        f: () -> T,
+    ): T {
+        val codeFragmentContext = codeFragment.codeFragmentContext ?: error("Context is not set for a code fragment")
+        val towerDataContext = codeFragmentContext.towerDataContext
+
+        val fragmentImportTowerDataElements = fileImportsScope.map { scope ->
+            scope.asTowerDataElement(isLocal = false)
+        }
+
+        val base = towerDataContext
+            .addNonLocalTowerDataElements(towerDataContext.nonLocalTowerDataElements)
+            .addNonLocalTowerDataElements(fragmentImportTowerDataElements)
+
+        val baseWithLocalScope = towerDataContext.localScopes.fold(base) { acc, scope -> acc.addLocalScope(scope) }
+
+        val newContexts = CfirRegularTowerDataContexts(
+            regular = baseWithLocalScope,
+            forNestedClasses = baseWithLocalScope,
+            forStaticMembers = baseWithLocalScope,
+            forConstructorHeaders = null,
+            forEnumConstructors = null,
+            primaryConstructorPureParametersScope = null,
+            primaryConstructorAllParametersScope = null,
+        )
+
+        return withTowerDataContexts(newContexts) {
+            withContainer(codeFragment, f)
         }
     }
 

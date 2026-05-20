@@ -2,6 +2,7 @@ package org.cangnova.cangjie.frontend.pipeline
 
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.config.CompilerConfiguration
@@ -35,9 +36,10 @@ data class MacroExpansionArtifactPreparationResult(
  */
 fun prepareMacroArtifactDefinitionsForExpansion(
     configuration: CompilerConfiguration,
-    preResults: List<PreMacroRawBuildResult>,
+    classifications: List<MacroDemandClassification>,
 ): MacroExpansionArtifactPreparationResult {
-    val demandSurfacesByPackage = collectMacroExpansionPackageDemandSurfaces(preResults)
+    val preResults = classifications.map { it.pre }
+    val demandSurfacesByPackage = collectMacroExpansionPackageDemandSurfaces(classifications)
     val demandedMacroPackages = demandSurfacesByPackage.keys
     if (demandedMacroPackages.isEmpty()) return MacroExpansionArtifactPreparationResult()
 

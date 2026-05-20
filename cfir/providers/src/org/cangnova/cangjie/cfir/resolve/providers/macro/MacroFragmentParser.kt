@@ -13,20 +13,12 @@ package org.cangnova.cangjie.cfir.resolve.providers.macro
  */
 interface MacroFragmentParser {
     /**
-     * 解析 [tokens]（来自 macro evaluator 输出）为 [MacroFragmentResult]。
+     * 解析 macro fragment。
      *
-     * @param node 触发本次解析的 forest 节点（提供 owner / scope / source 上下文）
-     * @param tokens 待解析的 token 流
-     * @param mode 解析模式，决定 grammar 入口：
-     *             - [Mode.EXPRESSION] : 期望表达式产物
-     *             - [Mode.DECLARATION] : 期望声明产物
-     *             - [Mode.CUSTOM_ANNOTATION] : custom annotation 回退路径
+     * [MacroFragmentInput] 显式携带 final routing decision 和 annotation slot
+     * snapshot；CUSTOM_ANNOTATION 禁止只用裸 token 推断输入。
      */
-    fun parse(
-        node: MacroCallNode,
-        tokens: List<MacroSurfaceToken>,
-        mode: Mode,
-    ): MacroFragmentResult
+    fun parse(input: MacroFragmentInput): MacroFragmentResult
 
     enum class Mode { EXPRESSION, DECLARATION, CUSTOM_ANNOTATION }
 
@@ -38,6 +30,19 @@ interface MacroFragmentParser {
          */
         const val VERSION: Int = 1
     }
+}
+
+/**
+ * fragment parser 的完整输入。
+ */
+data class MacroFragmentInput(
+    val node: MacroCallNode,
+    val tokens: List<MacroSurfaceToken>,
+    val decision: FinalMacroSurfaceDecision,
+    val annotationSnapshot: CfirAnnotationSlotSnapshot? = null,
+) {
+    val mode: MacroFragmentParser.Mode
+        get() = decision.parserMode
 }
 
 /**
@@ -66,7 +71,7 @@ sealed class MacroFragmentResult {
 
     data class CustomAnnotation(
         override val originNode: MacroCallNode,
-        val annotationName: org.cangnova.cangjie.name.Name,
+        val payload: org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall,
         val tokens: List<MacroSurfaceToken>,
     ) : MacroFragmentResult()
 

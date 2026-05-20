@@ -1,87 +1,36 @@
 package org.cangnova.cangjie.lsp.analysis
 
+import com.intellij.openapi.editor.impl.DocumentImpl
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
+import com.intellij.psi.codeStyle.CodeStyleSettings
+import org.cangnova.cangjie.analysis.api.CaNonPublicApi
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
-import org.cangnova.cangjie.analysis.api.resolution.CaCall
-import org.cangnova.cangjie.analysis.api.resolution.singleCallOrNull
-import org.cangnova.cangjie.analysis.api.symbols.CaCallableSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaClassSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
-import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
+import org.cangnova.cangjie.analysis.api.components.isSubClassOf
+import org.cangnova.cangjie.analysis.api.resolution.*
+import org.cangnova.cangjie.analysis.api.session.restoreSymbol
+import org.cangnova.cangjie.analysis.api.symbols.*
+import org.cangnova.cangjie.analysis.api.symbols.markers.CaNamedSymbol
+import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingKind
+import org.cangnova.cangjie.codeinsight.folding.CangJieFoldingRangeCollector
+import org.cangnova.cangjie.formatter.CangJieCodeStyleSettingsFactory
+import org.cangnova.cangjie.formatter.CangJieFormatter
+import org.cangnova.cangjie.formatter.cangjieCommonSettings
+import org.cangnova.cangjie.lexer.cdoc.psi.api.CDocCommentDescriptor
+import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocSection
+import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocTag
 import org.cangnova.cangjie.lsp.capabilities.CangjieLspFeatureSet
+import org.cangnova.cangjie.lsp.semantic.CangJieSemanticToken
+import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenCollector
+import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenModifier
+import org.cangnova.cangjie.lsp.semantic.CangJieSemanticTokenType
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjAbstractClassBody
-import org.cangnova.cangjie.psi.CjCallExpression
-import org.cangnova.cangjie.psi.CjCallableDeclaration
-import org.cangnova.cangjie.psi.CjClass
-import org.cangnova.cangjie.psi.CjClassLikeDeclaration
-import org.cangnova.cangjie.psi.CjDeclaration
-import org.cangnova.cangjie.psi.CjDeclarationContainer
-import org.cangnova.cangjie.psi.CjEnum
-import org.cangnova.cangjie.psi.CjFile
-import org.cangnova.cangjie.psi.CjInterface
-import org.cangnova.cangjie.psi.CjNamedDeclaration
-import org.cangnova.cangjie.psi.CjNamedFunction
-import org.cangnova.cangjie.psi.CjParameter
-import org.cangnova.cangjie.psi.CjProperty
-import org.cangnova.cangjie.psi.CjReferenceExpression
-import org.cangnova.cangjie.psi.CjSimpleNameExpression
-import org.cangnova.cangjie.psi.CjStruct
-import org.cangnova.cangjie.psi.CjTypeAlias
-import org.cangnova.cangjie.psi.CjTypeStatement
-import org.cangnova.cangjie.psi.CjVariableDeclaration
+import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.collectDescendantsOfType
-import org.eclipse.lsp4j.CodeAction
-import org.eclipse.lsp4j.CodeActionParams
-import org.eclipse.lsp4j.Command
-import org.eclipse.lsp4j.CompletionItem
-import org.eclipse.lsp4j.CompletionItemKind
-import org.eclipse.lsp4j.CompletionList
-import org.eclipse.lsp4j.CompletionParams
-import org.eclipse.lsp4j.DeclarationParams
-import org.eclipse.lsp4j.DefinitionParams
-import org.eclipse.lsp4j.Diagnostic
-import org.eclipse.lsp4j.DocumentFormattingParams
-import org.eclipse.lsp4j.DocumentHighlight
-import org.eclipse.lsp4j.DocumentHighlightKind
-import org.eclipse.lsp4j.DocumentHighlightParams
-import org.eclipse.lsp4j.DocumentSymbol
-import org.eclipse.lsp4j.DocumentSymbolParams
-import org.eclipse.lsp4j.FoldingRange
-import org.eclipse.lsp4j.FoldingRangeRequestParams
-import org.eclipse.lsp4j.Hover
-import org.eclipse.lsp4j.HoverParams
-import org.eclipse.lsp4j.InlayHint
-import org.eclipse.lsp4j.InlayHintParams
-import org.eclipse.lsp4j.Location
-import org.eclipse.lsp4j.LocationLink
-import org.eclipse.lsp4j.MarkupContent
-import org.eclipse.lsp4j.MarkupKind
-import org.eclipse.lsp4j.ParameterInformation
-import org.eclipse.lsp4j.PrepareRenameDefaultBehavior
-import org.eclipse.lsp4j.PrepareRenameResult
-import org.eclipse.lsp4j.Range
-import org.eclipse.lsp4j.ReferenceParams
-import org.eclipse.lsp4j.RenameParams
-import org.eclipse.lsp4j.SelectionRange
-import org.eclipse.lsp4j.SelectionRangeParams
-import org.eclipse.lsp4j.SemanticTokens
-import org.eclipse.lsp4j.SemanticTokensParams
-import org.eclipse.lsp4j.SemanticTokensRangeParams
-import org.eclipse.lsp4j.SignatureHelp
-import org.eclipse.lsp4j.SignatureHelpParams
-import org.eclipse.lsp4j.SignatureInformation
-import org.eclipse.lsp4j.SymbolInformation
-import org.eclipse.lsp4j.SymbolKind
-import org.eclipse.lsp4j.TextEdit
-import org.eclipse.lsp4j.TypeDefinitionParams
-import org.eclipse.lsp4j.WorkspaceEdit
-import org.eclipse.lsp4j.WorkspaceDocumentDiagnosticReport
-import org.eclipse.lsp4j.WorkspaceFullDocumentDiagnosticReport
-import org.eclipse.lsp4j.WorkspaceSymbol
-import org.eclipse.lsp4j.WorkspaceSymbolParams
+import org.cangnova.cangjie.psi.psiUtil.getChildrenOfType
+import org.eclipse.lsp4j.*
 import org.eclipse.lsp4j.jsonrpc.messages.Either
 import org.eclipse.lsp4j.jsonrpc.messages.Either3
 
@@ -112,7 +61,10 @@ class AnalysisApiCangjieAnalysisFacade(
         documentHighlight = true,
         documentSymbol = true,
         workspaceSymbol = true,
+        formatting = true,
+        foldingRange = true,
         selectionRange = true,
+        semanticTokens = true,
         diagnostics = true,
     )
 
@@ -134,8 +86,8 @@ class AnalysisApiCangjieAnalysisFacade(
 
     override fun didChangeWorkspaceFolders(
         context: CangjieAnalysisRequestContext,
-        added: List<org.eclipse.lsp4j.WorkspaceFolder>,
-        removed: List<org.eclipse.lsp4j.WorkspaceFolder>,
+        added: List<WorkspaceFolder>,
+        removed: List<WorkspaceFolder>,
     ) {
         // 打开文档的 PSI 快照现在是稳定事实源，workspace 变更后由 project structure 重新分类。
     }
@@ -187,8 +139,8 @@ class AnalysisApiCangjieAnalysisFacade(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: CompletionParams,
-    ): Either<List<CompletionItem>, CompletionList> = Either.forLeft(
-        semanticSupport.analyzeSnapshot(document) { snapshot ->
+    ): Either<List<CompletionItem>, CompletionList> {
+        val items = semanticSupport.analyzeSnapshot(document) { snapshot ->
             val simpleName = semanticSupport.findSimpleNameExpression(document, snapshot.psiFile, params.position)
             val variantItems = simpleName
                 ?.references
@@ -200,16 +152,38 @@ class AnalysisApiCangjieAnalysisFacade(
                 ?.toList()
                 .orEmpty()
 
-            if (variantItems.isNotEmpty()) {
-                variantItems
-            } else {
-                snapshot.psiFile.getFileScope()
-                    .availableNames
+            variantItems.ifEmpty {
+                val fileScopeItems = snapshot.psiFile.getFileScope()
+                    .declarations
+                    .filterIsInstance<CaNamedSymbol>()
+                    .map(CaNamedSymbol::name)
+                    .toList()
+                    .distinctBy(Name::asString)
                     .sortedBy(Name::asString)
                     .map { name -> CompletionItem(name.asString()).apply { kind = CompletionItemKind.Text } }
+
+                /*
+                 * 空前缀位置没有主引用 variants 时，仍然需要把真实工作区里的源码声明并入补全结果。
+                 * 这里保留当前文件作用域结果，同时补齐 workspace 级源码声明，避免多文件工程退化成“当前文件 only”。
+                 */
+                val workspaceItems = semanticSupport.workspaceFiles(context)
+                    .asSequence()
+                    .flatMap { workspaceFile ->
+                        workspaceFile.psiFile.collectDescendantsOfType<CjNamedDeclaration>().asSequence()
+                    }
+                    .mapNotNull { declaration -> declaration.name }
+                    .distinct()
+                    .sorted()
+                    .map { name -> CompletionItem(name).apply { kind = CompletionItemKind.Text } }
+                    .toList()
+
+                (fileScopeItems + workspaceItems)
+                    .distinctBy(CompletionItem::getLabel)
+                    .sortedBy(CompletionItem::getLabel)
             }
-        },
-    )
+        }
+        return Either.forLeft(items)
+    }
 
     override fun hover(
         context: CangjieAnalysisRequestContext,
@@ -218,11 +192,11 @@ class AnalysisApiCangjieAnalysisFacade(
     ): Hover? = semanticSupport.analyzeSnapshot(document) { snapshot ->
         val target = semanticSupport.findPrimaryTarget(document, snapshot.psiFile, params.position)
             ?: return@analyzeSnapshot null
-        val symbol = target.toPublicSymbol(this, snapshot.psiFile)
-        if (symbol == null) return@analyzeSnapshot null
+        val declarationSymbol = target.toPublicSymbol(this, snapshot.psiFile) as? CaDeclarationSymbol
+            ?: return@analyzeSnapshot null
 
-        val rendered = symbol.render()
-        val documentation = symbol.documentation()
+        val rendered = declarationSymbol.render()
+        val documentation = documentationOf(declarationSymbol)
         val hoverText = buildString {
             append("```cangjie\n")
             append(rendered)
@@ -246,9 +220,12 @@ class AnalysisApiCangjieAnalysisFacade(
     ): SignatureHelp? = semanticSupport.analyzeSnapshot(document) { snapshot ->
         val callExpression = semanticSupport.findCallExpression(document, snapshot.psiFile, params.position) ?: return@analyzeSnapshot null
         val callInfo = callExpression.resolveToCall() ?: return@analyzeSnapshot null
-        val call = callInfo.successfulCall ?: callInfo.singleCallOrNull() ?: callInfo.calls.firstOrNull() ?: return@analyzeSnapshot null
-        val callableSymbol = call.target ?: return@analyzeSnapshot null
-        val callableDeclaration = callableSymbol.getOriginalPsi() as? CjCallableDeclaration
+        val call = callInfo.successfulCallOrNull<CaCallableMemberCall<*, *>>()
+            ?: callInfo.singleCallOrNull<CaCallableMemberCall<*, *>>()
+            ?: callInfo.calls.filterIsInstance<CaCallableMemberCall<*, *>>().firstOrNull()
+            ?: return@analyzeSnapshot null
+        val callableSymbol = call.symbol
+        val callableDeclaration = callableSymbol.psiSafe<CjCallableDeclaration>()
         val signature = buildSignatureInformation(callableDeclaration, callableSymbol)
         val activeParameter = activeParameterIndex(callExpression, document.analysisOffsetAt(params.position))
 
@@ -287,26 +264,39 @@ class AnalysisApiCangjieAnalysisFacade(
     override fun implementation(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
-        params: org.eclipse.lsp4j.ImplementationParams,
+        params: ImplementationParams,
     ): Either<List<Location>, List<LocationLink>> = Either.forLeft(
         semanticSupport.analyzeSnapshot(document) { snapshot ->
             val target = resolveImplementationTarget(document, snapshot.psiFile, params.position)
                 ?: return@analyzeSnapshot emptyList()
+            val targetPointer = target.createPointer()
             val targetClassId = target.classId ?: return@analyzeSnapshot emptyList()
 
             val locations = linkedSetOf<Location>()
             semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
                 semanticSupport.analyzeFile(workspaceFile.psiFile) {
+                    val sessionTarget = restoreSymbol(targetPointer) as? CaClassSymbol
+                        ?: return@analyzeFile
                     workspaceFile.psiFile.collectDescendantsOfType<CjClassLikeDeclaration>().forEach { declaration ->
                         val declarationSymbol = declaration.toPublicSymbol(this, workspaceFile.psiFile) as? CaClassSymbol
                             ?: return@forEach
                         val declarationClassId = declarationSymbol.classId ?: return@forEach
                         if (declarationClassId == targetClassId) return@forEach
 
-                        val directlyImplementsTarget = declarationSymbol.superTypes.any { superType ->
-                            superType.classLikeSymbol?.classId == targetClassId
-                        }
-                        if (!directlyImplementsTarget) return@forEach
+                        val directlyTargetsSuperType = (declaration as? CjTypeStatement)
+                            ?.superTypeListEntries
+                            ?.asSequence()
+                            ?.mapNotNull(CjSuperTypeListEntry::typeAsUserType)
+                            ?.mapNotNull(CjUserType::referenceExpression)
+                            ?.mapNotNull { superTypeReference ->
+                                semanticSupport.run { targetKeyFor(superTypeReference) as? AnalysisApiLspTargetKey.ClassLike }
+                            }
+                            ?.any { superTypeTarget: AnalysisApiLspTargetKey.ClassLike ->
+                                superTypeTarget.classId == targetClassId
+                            }
+                            ?: false
+                        val isSubClass = declarationSymbol.isSubClassOf(sessionTarget)
+                        if (!directlyTargetsSuperType && !isSubClass) return@forEach
 
                         semanticSupport.toLocation(declaration.nameIdentifier ?: declaration)?.let(locations::add)
                     }
@@ -440,7 +430,20 @@ class AnalysisApiCangjieAnalysisFacade(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: DocumentFormattingParams,
-    ): List<TextEdit> = emptyList()
+    ): List<TextEdit> {
+        val psiFile = psiDocumentFactory.upsertSnapshot(document)
+        val formattedText = CangJieFormatter.format(psiFile, params.toCodeStyleSettings())
+        return if (formattedText == document.analysisText) {
+            emptyList()
+        } else {
+            listOf(
+                TextEdit(
+                    document.analysisRangeOf(0, document.analysisText.length),
+                    formattedText,
+                ),
+            )
+        }
+    }
 
     override fun rename(
         context: CangjieAnalysisRequestContext,
@@ -458,7 +461,20 @@ class AnalysisApiCangjieAnalysisFacade(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: FoldingRangeRequestParams,
-    ): List<FoldingRange> = emptyList()
+    ): List<FoldingRange> = semanticSupport.analyzeSnapshot(document) { snapshot ->
+        val foldingDocument = DocumentImpl(document.analysisText)
+        CangJieFoldingRangeCollector.collect(snapshot.psiFile, foldingDocument).map { region ->
+            val start = document.analysisPositionAt(region.range.startOffset)
+            val end = document.analysisPositionAt(region.range.endOffset)
+            FoldingRange().apply {
+                startLine = start.line
+                startCharacter = start.character
+                endLine = end.line
+                endCharacter = end.character
+                kind = region.kind.toLspFoldingRangeKind()
+            }
+        }
+    }
 
     override fun selectionRanges(
         context: CangjieAnalysisRequestContext,
@@ -475,13 +491,21 @@ class AnalysisApiCangjieAnalysisFacade(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: SemanticTokensParams,
-    ): SemanticTokens? = null
+    ): SemanticTokens? = semanticSupport.analyzeSnapshot(document) { snapshot ->
+        val tokens = CangJieSemanticTokenCollector.collect(snapshot.psiFile)
+        SemanticTokens(encodeSemanticTokens(document, tokens))
+    }
 
     override fun semanticTokensRange(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: SemanticTokensRangeParams,
-    ): SemanticTokens? = null
+    ): SemanticTokens? = semanticSupport.analyzeSnapshot(document) { snapshot ->
+        val startOffset = document.analysisOffsetAt(params.range.start)
+        val endOffset = document.analysisOffsetAt(params.range.end)
+        val tokens = CangJieSemanticTokenCollector.collect(snapshot.psiFile, TextRange(startOffset, endOffset))
+        SemanticTokens(encodeSemanticTokens(document, tokens))
+    }
 
     override fun inlayHints(
         context: CangjieAnalysisRequestContext,
@@ -504,7 +528,7 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     private fun definitionLike(
         document: LspTextDocument,
-        position: org.eclipse.lsp4j.Position,
+        position: Position,
     ): Either<List<Location>, List<LocationLink>> = Either.forLeft(
         semanticSupport.analyzeSnapshot(document) { snapshot ->
             semanticSupport.findTargetElements(document, snapshot.psiFile, position)
@@ -524,7 +548,7 @@ class AnalysisApiCangjieAnalysisFacade(
     private fun CaSession.resolveTypeDefinitionTarget(
         document: LspTextDocument,
         file: CjFile,
-        position: org.eclipse.lsp4j.Position,
+        position: Position,
     ): CaClassLikeSymbol? {
         semanticSupport.findPrimaryTarget(document, file, position)
             ?.toPublicSymbol(this, file)
@@ -538,8 +562,8 @@ class AnalysisApiCangjieAnalysisFacade(
 
         val callExpression = semanticSupport.findCallExpression(document, file, position)
         callExpression?.resolveToCall()
-            ?.successfulCall
-            ?.target
+            ?.successfulFunctionCallOrNull()
+            ?.symbol
             ?.returnType
             ?.classLikeSymbol
             ?.let { return it }
@@ -564,11 +588,21 @@ class AnalysisApiCangjieAnalysisFacade(
     private fun CaSession.resolveImplementationTarget(
         document: LspTextDocument,
         file: CjFile,
-        position: org.eclipse.lsp4j.Position,
+        position: Position,
     ): CaClassSymbol? {
+        semanticSupport.findNamedDeclaration(document, file, position)
+            ?.let { declaration ->
+                (declaration as? CjTypeStatement)
+                    ?.toPublicSymbol(this, file)
+                    ?.let { publicSymbol -> publicSymbol as? CaClassSymbol }
+                    ?.let { return it }
+            }
+
         val target = semanticSupport.findPrimaryTarget(document, file, position)
         if (target is CjTypeStatement) {
-            return target.getClassId()?.let(::getClassSymbol)
+            target.toPublicSymbol(this, file)
+                ?.let { publicSymbol -> publicSymbol as? CaClassSymbol }
+                ?.let { return it }
         }
 
         return resolveTypeDefinitionTarget(document, file, position) as? CaClassSymbol
@@ -579,15 +613,15 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     private fun CaSession.classLikeTargetOfSymbol(symbol: CaSymbol): CaClassLikeSymbol? = when (symbol) {
         is CaClassLikeSymbol -> symbol
-        is CaCallableSymbol -> symbol.returnType?.classLikeSymbol
+        is CaCallableSymbol -> symbol.returnType.classLikeSymbol
         else -> null
     }
 
     /**
      * 统一把 class-like 公开符号映射到源码位置。
      */
-    private fun CaSession.locationOfClassLikeSymbol(symbol: CaClassLikeSymbol): Location? =
-        symbol.getOriginalPsi()?.let(semanticSupport::toLocation)
+    private fun locationOfClassLikeSymbol(symbol: CaClassLikeSymbol): Location? =
+        symbol.psi?.let(semanticSupport::toLocation)
 
     /**
      * Selection Range 明确复用 PSI 父链，而不是在 LSP 层自建语法树。
@@ -596,10 +630,10 @@ class AnalysisApiCangjieAnalysisFacade(
      */
     private fun buildSelectionRange(
         document: LspTextDocument,
-        leaf: com.intellij.psi.PsiElement?,
+        leaf: PsiElement?,
     ): SelectionRange {
-        val chain = generateSequence(leaf) { current -> current?.parent }
-            .mapNotNull { element -> element?.textRange }
+        val chain = generateSequence(leaf) { current -> current.parent }
+            .mapNotNull { element -> element.textRange }
             .distinctBy { range -> "${range.startOffset}:${range.endOffset}" }
             .toList()
 
@@ -640,7 +674,6 @@ class AnalysisApiCangjieAnalysisFacade(
     ): CaSymbol? {
         return when (this) {
             is CjNamedDeclaration -> toPublicSymbol(session, useSiteFile)
-            is CjFile -> session.run { this@toPublicSymbol.symbol }
             else -> null
         }
     }
@@ -655,15 +688,16 @@ class AnalysisApiCangjieAnalysisFacade(
             val owner = classLikeContainer.parent as? CjTypeStatement ?: return null
             val ownerSymbol = owner.getClassId()?.let(session::getClassLikeSymbol) ?: return null
             return session.run { ownerSymbol.declaredMemberScope }
-                .getCallableSymbols(declarationName)
+                .callables(declarationName)
+                .toList()
                 .singleOrNull { candidate: CaCallableSymbol ->
-                    session.run { candidate.getOriginalPsi() == this@restoreCallableSymbol }
+                    candidate.psi == this@restoreCallableSymbol
                 }
         }
 
         return session.getTopLevelCallableSymbols(useSiteFile.packageFqName, declarationName)
             .singleOrNull { candidate: CaCallableSymbol ->
-                session.run { candidate.getOriginalPsi() == this@restoreCallableSymbol }
+                candidate.psi == this@restoreCallableSymbol
             }
     }
 
@@ -673,9 +707,9 @@ class AnalysisApiCangjieAnalysisFacade(
     ): SignatureInformation {
         if (callableDeclaration == null) {
             return SignatureInformation().apply {
-                setLabel(callableSymbol.render())
-                setDocumentation(Either.forRight(MarkupContent(MarkupKind.MARKDOWN, callableSymbol.documentation().orEmpty())))
-                setParameters(emptyList())
+                label = callableSymbol.render()
+                documentation = Either.forRight(MarkupContent(MarkupKind.MARKDOWN, documentationOf(callableSymbol).orEmpty()))
+                parameters = emptyList()
             }
         }
 
@@ -701,16 +735,12 @@ class AnalysisApiCangjieAnalysisFacade(
 
         return SignatureInformation().apply {
             setLabel(label)
-            setDocumentation(
-                callableSymbol.documentation()
-                    ?.takeIf(String::isNotBlank)
-                    ?.let { text -> Either.forRight(MarkupContent(MarkupKind.MARKDOWN, text)) },
-            )
-            setParameters(
-                parameterLabels.map { parameterLabel ->
-                    ParameterInformation().apply { setLabel(parameterLabel) }
-                },
-            )
+            documentation = documentationOf(callableSymbol)
+                ?.takeIf(String::isNotBlank)
+                ?.let { text -> Either.forRight(MarkupContent(MarkupKind.MARKDOWN, text)) }
+            parameters = parameterLabels.map { parameterLabel ->
+                ParameterInformation().apply { setLabel(parameterLabel) }
+            }
         }
     }
 
@@ -817,5 +847,134 @@ class AnalysisApiCangjieAnalysisFacade(
         SymbolKind.Property -> CompletionItemKind.Property
         SymbolKind.Variable -> CompletionItemKind.Variable
         else -> CompletionItemKind.Text
+    }
+
+    private fun CangJieFoldingKind.toLspFoldingRangeKind(): String = when (this) {
+        CangJieFoldingKind.COMMENT -> FoldingRangeKind.Comment
+        CangJieFoldingKind.IMPORTS -> FoldingRangeKind.Imports
+        CangJieFoldingKind.REGION -> FoldingRangeKind.Region
+    }
+
+    /**
+     * 共享 collector 只产出绝对 offset token；
+     * LSP 层负责按协议 legend 编码为 delta line / delta start 结构。
+     */
+    private fun encodeSemanticTokens(
+        document: LspTextDocument,
+        tokens: List<CangJieSemanticToken>,
+    ): List<Int> {
+        if (tokens.isEmpty()) return emptyList()
+
+        val typeIndex = CangJieSemanticTokenType.lspValues.withIndex().associate { it.value to it.index }
+        val modifierIndex = CangJieSemanticTokenModifier.lspValues.withIndex().associate { it.value to it.index }
+        val data = ArrayList<Int>(tokens.size * 5)
+
+        var previousLine = 0
+        var previousStartCharacter = 0
+
+        tokens.forEach { token ->
+            val start = document.analysisPositionAt(token.range.startOffset)
+            val end = document.analysisPositionAt(token.range.endOffset)
+            if (start.line != end.line) return@forEach
+
+            val deltaLine = start.line - previousLine
+            val deltaStart = if (deltaLine == 0) start.character - previousStartCharacter else start.character
+            val length = end.character - start.character
+            if (length <= 0) return@forEach
+
+            data += deltaLine
+            data += deltaStart
+            data += length
+            data += (typeIndex[token.type.lspName] ?: 0)
+            data += encodeModifiers(token.modifiers, modifierIndex)
+
+            previousLine = start.line
+            previousStartCharacter = start.character
+        }
+
+        return data
+    }
+
+    private fun encodeModifiers(
+        modifiers: Set<CangJieSemanticTokenModifier>,
+        modifierIndex: Map<String, Int>,
+    ): Int {
+        var bitset = 0
+        modifiers.forEach { modifier ->
+            val index = modifierIndex[modifier.lspName] ?: return@forEach
+            bitset = bitset or (1 shl index)
+        }
+        return bitset
+    }
+
+    private fun DocumentFormattingParams.toCodeStyleSettings(): CodeStyleSettings {
+        val settings = CangJieCodeStyleSettingsFactory.createDefaultSettings()
+        val indentOptions = settings.cangjieCommonSettings.initIndentOptions()
+        indentOptions.INDENT_SIZE = options.tabSize
+        indentOptions.CONTINUATION_INDENT_SIZE = options.tabSize
+        indentOptions.TAB_SIZE = options.tabSize
+        indentOptions.USE_TAB_CHARACTER = !options.isInsertSpaces
+        return settings
+    }
+
+    @OptIn(CjNonPublicApi::class, CaNonPublicApi::class)
+    private fun CaSession.documentationOf(symbol: CaDeclarationSymbol): String? {
+        val declaration = symbol.psiSafe<CjDeclaration>() ?: return null
+        return declaration.findCDoc()?.renderToDocumentationString()
+    }
+
+    @OptIn(CjNonPublicApi::class)
+    private fun CDocCommentDescriptor.renderToDocumentationString(): String? {
+        val rendered = buildString {
+            val primaryContent = primaryTag.getContent().trim()
+            if (primaryContent.isNotEmpty()) {
+                append(primaryContent)
+            }
+
+            collectRenderableTags().forEach { tag ->
+                val renderedTag = tag.renderTagLine()
+                if (renderedTag.isNotEmpty()) {
+                    if (isNotEmpty()) appendLine()
+                    append(renderedTag)
+                }
+            }
+        }
+
+        return rendered.ifBlank { null }
+    }
+
+    @OptIn(CjNonPublicApi::class)
+    private fun CDocCommentDescriptor.collectRenderableTags(): List<CDocTag> {
+        return buildList {
+            (primaryTag as? CDocSection)
+                ?.getChildrenOfType<CDocTag>()
+                ?.filterTo(this) { tag -> tag.name != null }
+
+            additionalSections
+                .filterNot { section -> section == primaryTag }
+                .forEach { section ->
+                    section.getChildrenOfType<CDocTag>()
+                        .filterTo(this) { tag -> tag.name != null }
+                }
+        }
+    }
+
+    private fun CDocTag.renderTagLine(): String {
+        val tagName = name ?: return ""
+        val content = getContent().trim()
+        val subjectName = getSubjectName()
+
+        return buildString {
+            append("@")
+            append(tagName)
+            if (!subjectName.isNullOrBlank()) {
+                append(" ")
+                append(subjectName)
+            }
+            if (content.isNotEmpty()) {
+                append(" ")
+                append(content)
+            }
+        }
     }
 }

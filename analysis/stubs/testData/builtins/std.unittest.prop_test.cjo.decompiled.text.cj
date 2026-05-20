@@ -30,13 +30,13 @@ interface RandomSource {
 
     func nextInt64(max: Int64): Int64 { /* compiled code */ }
 
-    func nextUInt8(): UInt8 { /* compiled code */ }
+    abstract func nextUInt8(): UInt8
 
-    func nextUInt16(): UInt16 { /* compiled code */ }
+    abstract func nextUInt16(): UInt16
 
-    func nextUInt32(): UInt32 { /* compiled code */ }
+    abstract func nextUInt32(): UInt32
 
-    func nextUInt64(): UInt64 { /* compiled code */ }
+    abstract func nextUInt64(): UInt64
 
     func nextUInt8(max: UInt8): UInt8 { /* compiled code */ }
 
@@ -46,43 +46,43 @@ interface RandomSource {
 
     func nextUInt64(max: UInt64): UInt64 { /* compiled code */ }
 
-    func nextFloat16(): Float16 { /* compiled code */ }
+    abstract func nextFloat16(): Float16
 
-    func nextFloat32(): Float32 { /* compiled code */ }
+    abstract func nextFloat32(): Float32
 
-    func nextFloat64(): Float64 { /* compiled code */ }
+    abstract func nextFloat64(): Float64
 
-    func nextGaussianFloat64(mean: Float64, sigma: Float64): Float64 { /* compiled code */ }
+    abstract func nextGaussianFloat64(mean: Float64, sigma: Float64): Float64
 
     func nextIntNative(): IntNative { /* compiled code */ }
 
     func nextUIntNative(): UIntNative { /* compiled code */ }
 
-    func suggestUInt8(): UInt8 { /* compiled code */ }
+    abstract func suggestUInt8(): UInt8
 
-    func suggestUInt16(): UInt16 { /* compiled code */ }
+    abstract func suggestUInt16(): UInt16
 
-    func suggestUInt32(): UInt32 { /* compiled code */ }
+    abstract func suggestUInt32(): UInt32
 
-    func suggestUInt64(): UInt64 { /* compiled code */ }
+    abstract func suggestUInt64(): UInt64
 
     func suggestUIntNative(): UIntNative { /* compiled code */ }
 
-    func suggestInt8(): Int8 { /* compiled code */ }
+    abstract func suggestInt8(): Int8
 
-    func suggestInt16(): Int16 { /* compiled code */ }
+    abstract func suggestInt16(): Int16
 
-    func suggestInt32(): Int32 { /* compiled code */ }
+    abstract func suggestInt32(): Int32
 
-    func suggestInt64(): Int64 { /* compiled code */ }
+    abstract func suggestInt64(): Int64
 
     func suggestIntNative(): IntNative { /* compiled code */ }
 
-    func suggestFloat16(): Float16 { /* compiled code */ }
+    abstract func suggestFloat16(): Float16
 
-    func suggestFloat32(): Float32 { /* compiled code */ }
+    abstract func suggestFloat32(): Float32
 
-    func suggestFloat64(): Float64 { /* compiled code */ }
+    abstract func suggestFloat64(): Float64
 
     func suggestBool(): Bool { /* compiled code */ }
 
@@ -146,74 +146,74 @@ func remap(l: Float16, r: Float16, x: Float16): Float16 { /* compiled code */ }
 func emptyIterable(): std.core.Iterable<T> { /* compiled code */ }
 
 interface Arbitrary {
-    static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<T> { /* compiled code */ }
+    abstract static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<T>
 }
 
 interface Generator {
-    func next(): T { /* compiled code */ }
+    abstract func next(): T
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(_: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Unit> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Bool> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Int8> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Int16> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Int32> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Int64> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<IntNative> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<UInt8> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<UInt16> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<UInt32> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<UInt64> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<UIntNative> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Float16> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Float32> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Float64> { /* compiled code */ }
 }
 
-extend Extend <: Arbitrary {
+extend `Unit` <: Arbitrary {
     static func arbitrary(random: std.unittest.prop_test.RandomSource): std.unittest.prop_test.Generator<Rune> { /* compiled code */ }
 }
 
@@ -254,7 +254,7 @@ struct Function0Wrapper {
 
     let function: () -> R
 
-    init(function: () -> R) { /* compiled code */ }
+    Function0Wrapper(function: () -> R) { /* compiled code */ }
 }
 
 extend TupleWrapper2 <: Arbitrary {
@@ -266,7 +266,7 @@ struct TupleWrapper2 {
 
     let tuple: (T0, T1)
 
-    init(tuple: (T0, T1)) { /* compiled code */ }
+    TupleWrapper2(tuple: (T0, T1)) { /* compiled code */ }
 }
 
 extend TupleWrapper3 <: Arbitrary {
@@ -278,7 +278,7 @@ struct TupleWrapper3 {
 
     let tuple: (T0, T1, T2)
 
-    init(tuple: (T0, T1, T2)) { /* compiled code */ }
+    TupleWrapper3(tuple: (T0, T1, T2)) { /* compiled code */ }
 }
 
 extend TupleWrapper4 <: Arbitrary {
@@ -290,7 +290,7 @@ struct TupleWrapper4 {
 
     let tuple: (T0, T1, T2, T3)
 
-    init(tuple: (T0, T1, T2, T3)) { /* compiled code */ }
+    TupleWrapper4(tuple: (T0, T1, T2, T3)) { /* compiled code */ }
 }
 
 extend TupleWrapper5 <: Arbitrary {
@@ -302,18 +302,18 @@ struct TupleWrapper5 {
 
     let tuple: (T0, T1, T2, T3, T4)
 
-    init(tuple: (T0, T1, T2, T3, T4)) { /* compiled code */ }
+    TupleWrapper5(tuple: (T0, T1, T2, T3, T4)) { /* compiled code */ }
 }
 
 interface ArbitraryRange {
-    static func min(): T { /* compiled code */ }
+    abstract static func min(): T
 
-    static func max(): T { /* compiled code */ }
+    abstract static func max(): T
 
-    static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: T, max: T): std.unittest.prop_test.Generator<T> { /* compiled code */ }
+    abstract static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: T, max: T): std.unittest.prop_test.Generator<T>
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): Int64 { /* compiled code */ }
 
     static func max(): Int64 { /* compiled code */ }
@@ -321,7 +321,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: Int64, max: Int64): std.unittest.prop_test.Generator<Int64> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): UInt64 { /* compiled code */ }
 
     static func max(): UInt64 { /* compiled code */ }
@@ -329,7 +329,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: UInt64, max: UInt64): std.unittest.prop_test.Generator<UInt64> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): Int32 { /* compiled code */ }
 
     static func max(): Int32 { /* compiled code */ }
@@ -337,7 +337,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: Int32, max: Int32): std.unittest.prop_test.Generator<Int32> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): UInt32 { /* compiled code */ }
 
     static func max(): UInt32 { /* compiled code */ }
@@ -345,7 +345,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: UInt32, max: UInt32): std.unittest.prop_test.Generator<UInt32> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): Int16 { /* compiled code */ }
 
     static func max(): Int16 { /* compiled code */ }
@@ -353,7 +353,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: Int16, max: Int16): std.unittest.prop_test.Generator<Int16> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): UInt16 { /* compiled code */ }
 
     static func max(): UInt16 { /* compiled code */ }
@@ -361,7 +361,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: UInt16, max: UInt16): std.unittest.prop_test.Generator<UInt16> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): Int8 { /* compiled code */ }
 
     static func max(): Int8 { /* compiled code */ }
@@ -369,7 +369,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: Int8, max: Int8): std.unittest.prop_test.Generator<Int8> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): UInt8 { /* compiled code */ }
 
     static func max(): UInt8 { /* compiled code */ }
@@ -377,7 +377,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: UInt8, max: UInt8): std.unittest.prop_test.Generator<UInt8> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): IntNative { /* compiled code */ }
 
     static func max(): IntNative { /* compiled code */ }
@@ -385,7 +385,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: IntNative, max: IntNative): std.unittest.prop_test.Generator<IntNative> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): UIntNative { /* compiled code */ }
 
     static func max(): UIntNative { /* compiled code */ }
@@ -393,7 +393,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: UIntNative, max: UIntNative): std.unittest.prop_test.Generator<UIntNative> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): Float64 { /* compiled code */ }
 
     static func max(): Float64 { /* compiled code */ }
@@ -401,7 +401,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: Float64, max: Float64): std.unittest.prop_test.Generator<Float64> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): Float32 { /* compiled code */ }
 
     static func max(): Float32 { /* compiled code */ }
@@ -409,7 +409,7 @@ extend Extend <: ArbitraryRange {
     static func arbitraryRange(random: std.unittest.prop_test.RandomSource, min: Float32, max: Float32): std.unittest.prop_test.Generator<Float32> { /* compiled code */ }
 }
 
-extend Extend <: ArbitraryRange {
+extend `Unit` <: ArbitraryRange {
     static func min(): Float16 { /* compiled code */ }
 
     static func max(): Float16 { /* compiled code */ }
@@ -592,7 +592,7 @@ class RandomDataProvider <: std.core.Object & std.unittest.common.DataProvider<T
 
     let configuration: std.unittest.common.Configuration
 
-    init(configuration: std.unittest.common.Configuration) { /* compiled code */ }
+    RandomDataProvider(configuration: std.unittest.common.Configuration) { /* compiled code */ }
 }
 
 class RandomDataShrinker <: std.core.Object & std.unittest.common.DataShrinker<T> {
@@ -626,7 +626,7 @@ class RandomDataProviderRange <: std.core.Object & std.unittest.common.DataProvi
 
     let max: T
 
-    init(configuration: std.unittest.common.Configuration, min: T, max: T) { /* compiled code */ }
+    RandomDataProviderRange(configuration: std.unittest.common.Configuration, min: T, max: T) { /* compiled code */ }
 }
 
 class RandomDataShrinkerRange <: std.core.Object & std.unittest.common.DataShrinker<T> {
@@ -657,65 +657,65 @@ interface Shrink {
     func shrink(): std.core.Iterable<T> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<Int8> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<Int16> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<Int32> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<Int64> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<IntNative> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<UInt8> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<UInt16> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<UInt32> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<UInt64> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<UIntNative> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<Float16> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<Float32> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<Float64> { /* compiled code */ }
 }
 
-extend Extend <: Shrink {
+extend `Unit` <: Shrink {
     func shrink(): std.core.Iterable<Rune> { /* compiled code */ }
 }
 
@@ -817,7 +817,7 @@ extend TupleWrapper5 <: Equatable {
 }
 
 interface IndexAccess {
-    func getElementAsAny(index: Int64): std.core.Option<std.core.Any> { /* compiled code */ }
+    abstract func getElementAsAny(index: Int64): std.core.Option<std.core.Any>
 }
 
 extend TupleWrapper2 <: IndexAccess {

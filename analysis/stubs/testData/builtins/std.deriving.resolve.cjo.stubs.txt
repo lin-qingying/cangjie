@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.resolve, facadeFqName=std.deriving.resolve, facadePartSimpleNames=[blocks, exprs, patterns, scope, types, utils_resolve]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$DOT_QUALIFIED_EXPRESSION
         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
@@ -670,12 +670,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.resolve, facadeFqN
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=deriving]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=resolve]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ScopeKind]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=Scope]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=Scope]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -696,6 +697,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.resolve, facadeFqN
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=Scope]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE

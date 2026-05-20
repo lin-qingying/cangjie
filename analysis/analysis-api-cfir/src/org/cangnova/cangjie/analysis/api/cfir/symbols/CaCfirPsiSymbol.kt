@@ -19,7 +19,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfirOfType
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.realPsi
-import org.cangnova.cangjie.analysis.api.impl.base.annotations.CaBaseEmptyAnnotationList
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -142,10 +141,6 @@ internal fun <P : CjElement> CaCfirPsiSymbol<P, *>.psiOrSymbolOrigin(): CaSymbol
     }
 }
 internal fun CaCfirCjBasedSymbol<CjAnnotated, *>.psiOrSymbolAnnotationList(): CaAnnotationList {
-    if (backingPsi?.annotationEntries?.isEmpty() == true) {
-        return CaBaseEmptyAnnotationList(token)
-    }
-
     return CaCfirAnnotationListForDeclaration.create(cfirSymbol, builder)
 }
 internal val CjElement.cameFromCangJieLibrary: Boolean get() = containingCjFile.isCompiled

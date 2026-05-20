@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.hasAnnotation
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -22,7 +23,6 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.source.psi
 
 /**
  * `createMock` / `createSpy` 语义边界检查。
@@ -92,16 +92,6 @@ object CfirMockApiChecker : CfirFunctionCallChecker() {
         }
 
         reporter.reportOn(source, CfirErrors.MOCK_DISABLED, "--mock")
-    }
-
-    private fun CfirClassLikeDeclaration.hasAnnotation(annotationName: Name): Boolean {
-        val owner = source?.psi as? org.cangnova.cangjie.psi.CjModifierListOwner
-        return owner?.annotationEntries?.any { it.shortName == annotationName } == true
-    }
-
-    private fun CfirFunction.hasAnnotation(annotationName: Name): Boolean {
-        val owner = source?.psi as? org.cangnova.cangjie.psi.CjModifierListOwner
-        return owner?.annotationEntries?.any { it.shortName == annotationName } == true
     }
 
     private fun CfirFunction.callableName(): Name {

@@ -1,29 +1,40 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.diagnostic.ConeResumeThrowingMismatchTypeError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
+import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
 import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResumeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeInferenceContext
+import org.cangnova.cangjie.cfir.types.ConeRigidType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * Effects 检查器（Effects + EffectsExtra 分组）
  *
  * 对齐 C++ TypeCheckExpr/TryExpr.cpp、PerformExpr.cpp、ResumeExpr.cpp:
  * - RESUMPTION_HANDLE_TYPE_ERROR: handle clause command pattern 类型解析失败
- * - RETURN_IN_TRY_HANDLE_BLOCK: try/handle block 中的 return（已由 CfirReturnLegalityChecker 处理）
+ * - RETURN_IN_TRY_HANDLE_BLOCK: try/handle block 中的 return
  * - RESUMPTION_INCORRECT_RETURN_TYPE: resumption 返回类型不匹配
  * - COMMAND_RESUMPTION_MISMATCH: command-resumption 类型不匹配
- *
- * 注册为 tryExpressionCheckers
  */
 object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -34,14 +45,8 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
             checkHandleClauseType(handler)
             checkHandlerBodyTypeMatch(handler, tryBodyType)
         }
-
-        // 检查 try/handle block 中的 return
-        checkReturnInTryHandleBlock(expression)
     }
 
-    /**
-     * 检查 handle clause 中 command type pattern 的类型是否合法。
-     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkHandleClauseType(handleClause: CfirHandleClause) {
         val commandPattern = handleClause.commandPattern
@@ -56,99 +61,119 @@ object CfirTryHandleReturnChecker : CfirTryExpressionChecker() {
         }
     }
 
-    /**
-     * try/handle block 中不允许 return 语句。
-     *
-     * 对齐 C++ DiagKind::sema_return_in_try_handle_block。
-     * 注：CfirReturnLegalityChecker 已处理 handle 子句中的 return，
-     * 此处补充 try block 中的检查。
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkReturnInTryHandleBlock(expression: CfirTryExpression) {
-        // try block 中的 return 检查由 CfirReturnLegalityChecker 通过 containingElements 判断
-        // 此处在 try 表达式级别标记，实际 return 检查在 return checker 中完成
-    }
-
-    /**
-     * handle block 的类型必须与 try block 类型兼容。
-     *
-     * 对齐 C++ DiagKind::sema_mismatching_handle_block
-     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkHandlerBodyTypeMatch(handleClause: CfirHandleClause, tryBodyType: ConeCangJieType?) {
-        val parentStatement = context.containingStatements.asReversed().drop(1).firstOrNull()
-        if (parentStatement is CfirBlock) return
-        if (parentStatement !is CfirReturnExpression) return
-
         if (tryBodyType == null || tryBodyType is ConeErrorType) return
         val handlerBodyType = handleClause.body.coneTypeOrNull ?: return
         if (handlerBodyType is ConeErrorType) return
 
-        if (handlerBodyType != tryBodyType) {
-            // 类型不一致时报告（严格的子类型检查需要 typeContext）
-            val typeContext = context.session.typeContext
-            if (!org.cangnova.cangjie.type.AbstractTypeChecker.isSubtypeOf(typeContext, handlerBodyType, tryBodyType)) {
-                reporter.reportOn(
-                    source = handleClause.body.source ?: handleClause.source,
-                    factory = CfirErrors.MISMATCHING_HANDLE_BLOCK,
-                    a = handlerBodyType,
-                    b = tryBodyType,
-                )
-            }
+        if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, handlerBodyType, tryBodyType) != true) {
+            reporter.reportOn(
+                source = handleClause.body.source ?: handleClause.source ?: return,
+                factory = CfirErrors.MISMATCHING_HANDLE_BLOCK,
+                a = handlerBodyType,
+                b = tryBodyType,
+            )
         }
     }
 }
 
 /**
  * Effects BasicExpression 级别检查器
- *
- * 通过 BasicExpressionChecker 分发，检查 perform/resume 表达式相关的 effects 语义。
- * CfirPerformExpression 和 CfirResumeExpression 已通过 visitAlso 注册到 BasicExpressionChecker。
  */
 object CfirEffectsBasicChecker : CfirBasicExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirStatement) {
         when (expression) {
-            is org.cangnova.cangjie.cfir.expressions.CfirPerformExpression -> {
-                checkPerformExpression(expression)
-            }
-            is org.cangnova.cangjie.cfir.expressions.CfirResumeExpression -> {
-                checkResumeExpression(expression)
-            }
+            is CfirHandleClause -> checkHandleControlFlow(expression)
+            is CfirResumeExpression -> checkResumeExpression(expression)
             else -> Unit
         }
     }
 
-    /**
-     * perform 表达式的类型必须与声明的 command 类型兼容。
-     *
-     * 对齐 C++ DiagKind::sema_command_incompatible_type
-     */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkPerformExpression(expression: org.cangnova.cangjie.cfir.expressions.CfirPerformExpression) {
+    private fun checkHandleControlFlow(handleClause: CfirHandleClause) {
+        handleClause.body.accept(object : CfirDefaultVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this, null)
+            }
+
+            override fun visitBreakExpression(breakExpression: CfirBreakExpression) {
+                reporter.reportOn(breakExpression.source, CfirErrors.INVALID_LOOP_CONTROL)
+            }
+
+            override fun visitContinueExpression(continueExpression: CfirContinueExpression) {
+                reporter.reportOn(continueExpression.source, CfirErrors.INVALID_LOOP_CONTROL)
+            }
+
+            override fun visitReturnExpression(returnExpression: CfirReturnExpression) {
+                reporter.reportOn(returnExpression.source, CfirErrors.RETURN_IN_TRY_HANDLE_BLOCK)
+            }
+        })
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkResumeExpression(expression: CfirResumeExpression) {
         val exprType = expression.coneTypeOrNull
-        if (exprType is ConeErrorType) {
+        val errorDiagnostic = (exprType as? ConeErrorType)?.diagnostic
+        if (errorDiagnostic is ConeResumeThrowingMismatchTypeError) return
+
+        // `resume with` 的类型校验必须绑定到最近的 handle 子句。
+        // 某些遍历路径下 containingElements 里不一定保留 CfirHandleClause，
+        // 这里补充 containingStatements 兜住同一语义层级，避免漏报 TYPE_MISMATCH。
+        val handleClause = (
+            context.containingElements.lastOrNull { it is CfirHandleClause }
+                ?: context.containingStatements.lastOrNull { it is CfirHandleClause }
+            ) as? CfirHandleClause ?: return
+        val commandType = resolveCommandResultType(handleClause) ?: return
+        val withExpression = expression.withExpression ?: return
+        val actualType = withExpression.coneTypeOrNull ?: return
+        if (actualType is ConeErrorType || commandType is ConeErrorType) return
+        if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, actualType, commandType) != true) {
             reporter.reportOn(
-                source = expression.source,
-                factory = CfirErrors.COMMAND_INCOMPATIBLE_TYPE,
-                a = exprType,
+                source = withExpression.source ?: return,
+                factory = CfirErrors.TYPE_MISMATCH,
+                a = commandType,
+                b = actualType,
+                c = false,
             )
         }
     }
 
-    /**
-     * resume 表达式的 resumption 类型必须正确。
-     *
-     * 对齐 C++ DiagKind::sema_implicit_resume_outside_handler
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkResumeExpression(expression: org.cangnova.cangjie.cfir.expressions.CfirResumeExpression) {
-        val exprType = expression.coneTypeOrNull
-        if (exprType is ConeErrorType) {
-            reporter.reportOn(
-                source = expression.source,
-                factory = CfirErrors.IMPLICIT_RESUME_OUTSIDE_HANDLER,
-            )
+    context(context: CheckerContext)
+    private fun resolveCommandResultType(handleClause: CfirHandleClause): ConeCangJieType? {
+        val commandType = handleClause.commandPattern.typeRefs.firstOrNull()?.coneType ?: return null
+        return findCommandSupertype(commandType)?.typeArguments?.firstOrNull()?.type
+    }
+
+    context(context: CheckerContext)
+    private fun findCommandSupertype(type: ConeCangJieType?): ConeClassLikeType? {
+        if (type == null) return null
+        return collectSupertypeChain(type, context.session.typeContext)
+            .filterIsInstance<ConeClassLikeType>()
+            .firstOrNull { it.lookupTag.classId == StdlibClassIds.Command }
+    }
+
+    private fun collectSupertypeChain(
+        type: ConeCangJieType,
+        typeContext: ConeInferenceContext,
+    ): List<ConeCangJieType> {
+        val result = mutableListOf<ConeCangJieType>()
+        val visited = mutableSetOf<ConeCangJieType>()
+        val queue = ArrayDeque<ConeCangJieType>()
+        queue.add(type)
+        visited.add(type)
+        while (queue.isNotEmpty()) {
+            val current = queue.removeFirst()
+            result += current
+            val constructor = with(typeContext) { (current as? ConeRigidType)?.typeConstructor() } ?: continue
+            val supertypes = with(typeContext) {
+                constructor.supertypes().mapNotNull { it as? ConeCangJieType }
+            }
+            supertypes.forEach { supertype ->
+                if (visited.add(supertype)) queue.add(supertype)
+            }
         }
+        return result
     }
 }

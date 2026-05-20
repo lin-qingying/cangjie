@@ -19,22 +19,6 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2")
     }
 
-    @TestMetadata("annotation")
-    @TestDataPath("\$PROJECT_ROOT")
-    @Nested
-    inner class Annotation : AbstractCfirLightTreeDiagnosticsTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/annotation")
-        }
-
-        @TestMetadata("annotationNoConstInit.cj")
-        @Test
-        fun testAnnotationNoConstInit() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/annotation/annotationNoConstInit.cj")
-        }
-    }
-
     @TestMetadata("call")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -726,30 +710,6 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics2/interop")
         }
 
-        @TestMetadata("callingConventionBoundaryPlaceholder.cj")
-        @Test
-        fun testCallingConventionBoundaryPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/interop/callingConventionBoundaryPlaceholder.cj")
-        }
-
-        @TestMetadata("callingConventionOnClassPlaceholder.cj")
-        @Test
-        fun testCallingConventionOnClassPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/interop/callingConventionOnClassPlaceholder.cj")
-        }
-
-        @TestMetadata("callingConventionOnPropertyPlaceholder.cj")
-        @Test
-        fun testCallingConventionOnPropertyPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/interop/callingConventionOnPropertyPlaceholder.cj")
-        }
-
-        @TestMetadata("callingConventionPlacementPlaceholder.cj")
-        @Test
-        fun testCallingConventionPlacementPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/interop/callingConventionPlacementPlaceholder.cj")
-        }
-
         @TestMetadata("foreignFunctionCFuncLegalityPlaceholder.cj")
         @Test
         fun testForeignFunctionCFuncLegalityPlaceholder() {
@@ -778,30 +738,6 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
         @Test
         fun testForeignFunctionTypeAliasExpansion() {
             runTest("cfir/analysis-tests/testData/diagnostics2/interop/foreignFunctionTypeAliasExpansion.cj")
-        }
-
-        @TestMetadata("foreignNameLegalityPlaceholder.cj")
-        @Test
-        fun testForeignNameLegalityPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/interop/foreignNameLegalityPlaceholder.cj")
-        }
-
-        @TestMetadata("objcCJMappingBoundaryPlaceholder.cj")
-        @Test
-        fun testObjcCJMappingBoundaryPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/interop/objcCJMappingBoundaryPlaceholder.cj")
-        }
-
-        @TestMetadata("objcInitMethodBoundaryPlaceholder.cj")
-        @Test
-        fun testObjcInitMethodBoundaryPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/interop/objcInitMethodBoundaryPlaceholder.cj")
-        }
-
-        @TestMetadata("objcMirrorImplTypeBoundaryPlaceholder.cj")
-        @Test
-        fun testObjcMirrorImplTypeBoundaryPlaceholder() {
-            runTest("cfir/analysis-tests/testData/diagnostics2/interop/objcMirrorImplTypeBoundaryPlaceholder.cj")
         }
     }
 
@@ -1505,7 +1441,7 @@ private fun assertAllFilesPresentByMetadata(testInstance: Any, testDataRootRelat
     require(testDataDir.isDirectory) { "testData dir not found: ${testDataDir.path}" }
 
     val currentDir = currentClassTestDataDir(testInstance::class.java, testDataDir)
-    val expected = currentDir.walkTopDown()
+    val expected = currentDir.listFiles().orEmpty().asSequence()
         .filter { it.isFile && it.extension == "cj" }
         .map { it.relativeTo(currentDir).invariantSeparatorsPath }
         .toSet()

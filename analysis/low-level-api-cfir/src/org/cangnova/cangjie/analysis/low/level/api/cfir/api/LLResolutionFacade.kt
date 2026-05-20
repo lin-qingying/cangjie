@@ -150,28 +150,29 @@ class LLResolutionFacade internal constructor(
     }
 
     private fun findSourceCfirSymbol(cjDeclaration: CjDeclaration): CfirBasedSymbol<*> {
-        val targetModule = getModule(cjDeclaration)
+        val targetDeclaration = cjDeclaration.originalDeclaration ?: cjDeclaration
+        val targetModule = getModule(targetDeclaration)
 
         require(getModuleResolutionStrategy(targetModule) == LLModuleResolutionStrategy.LAZY) {
             "Declaration should be resolvable module, instead it had ${targetModule::class}"
         }
 
         // All elements inside a code fragment are local
-        val nonLocalContainer = cjDeclaration.containingCjFile as? CjCodeFragment
-            ?: cjDeclaration.getNonLocalContainingOrThisElement()
+        val nonLocalContainer = targetDeclaration.containingCjFile as? CjCodeFragment
+            ?: targetDeclaration.getNonLocalContainingOrThisElement()
             ?: errorWithAttachment("Declaration should have non-local container") {
-                withPsiEntry("ktDeclaration", cjDeclaration, ::getModule)
+                withPsiEntry("ktDeclaration", targetDeclaration, ::getModule)
                 withEntry("module", targetModule) { it.moduleDescription }
             }
 
-        val cfirDeclaration = if ((nonLocalContainer as? CjDeclaration) == cjDeclaration) {
+        val cfirDeclaration = if ((nonLocalContainer as? CjDeclaration) == targetDeclaration) {
             val session = sessionProvider.getResolvableSession(targetModule)
             nonLocalContainer.findSourceNonLocalCfirDeclaration(
                 cfirFileBuilder = session.moduleComponents.cfirFileBuilder,
                 provider = session.cfirProvider,
             )
         } else {
-            findSourceCfirDeclarationViaResolve(cjDeclaration)
+            findSourceCfirDeclarationViaResolve(targetDeclaration)
         }
 
         return cfirDeclaration.symbol

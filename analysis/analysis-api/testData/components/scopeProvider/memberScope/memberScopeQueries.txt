@@ -1,0 +1,13 @@
+CaCfirNamedFunctionSymbol
+name: rename
+origin: SOURCE
+location: CLASS
+psi: CjNamedFunction
+callableId: sample.scope.User.rename
+
+CaCfirNamedFunctionSymbol
+name: inherited
+origin: SOURCE
+location: CLASS
+psi: CjNamedFunction
+callableId: sample.scope.Base.inherited

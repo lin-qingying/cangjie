@@ -260,6 +260,14 @@ class ConeCannotInferTypeParameterType(
         get() = "Unknown type for type parameter ${typeParameter.name}"
 }
 
+class ConeCannotInferGenericFunctionTypeParameterType(
+    val typeParameter: CfirTypeParameterSymbol,
+    override val reason: String = "Cannot infer type arguments for generic function"
+) : ConeCannotInferType() {
+    override val readableDescriptionAsTypeConstructor: String
+        get() = "Unknown type for generic function type parameter ${typeParameter.name}"
+}
+
 abstract class ConeCannotInferType : ConeDiagnostic
 
 class ConeCannotInferValueParameterType(

@@ -13,9 +13,9 @@ fun buildExtendId(
     receiverTypeText: String?,
     superTypeTexts: List<String>,
 ): String {
-    val normalizedReceiverType = receiverTypeText?.trim()?.takeUnless { it.isBlank() } ?: "Unknown"
+    val normalizedReceiverType = normalizeExtendTypeText(receiverTypeText)?.takeUnless { it.isBlank() } ?: "Unknown"
     val normalizedSuperTypes = superTypeTexts
-        .map(String::trim)
+        .mapNotNull(::normalizeExtendTypeText)
         .filter(String::isNotBlank)
         .sorted()
         .joinToString("&")
@@ -26,4 +26,18 @@ fun buildExtendId(
         append("<:")
         append(normalizedSuperTypes)
     }
+}
+
+/**
+ * 规范化 `extend` 身份中使用的类型文本。
+ *
+ * CFIR/debug renderer 会产出 `R|Type|` 片段；反编译 PSI 的错误 text range
+ * 可能把多个片段串联起来。`extendId` 只允许消费第一个真实类型文本。
+ */
+fun normalizeExtendTypeText(typeText: String?): String? {
+    val trimmed = typeText?.trim().orEmpty()
+    if (trimmed.isBlank()) return null
+    val withoutDebugPrefix = trimmed.removePrefix("R|")
+    val firstDebugSegment = withoutDebugPrefix.substringBefore("|R|")
+    return firstDebugSegment.removeSuffix("|").trim()
 }

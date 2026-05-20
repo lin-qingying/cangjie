@@ -1,5 +1,5 @@
 CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$DOT_QUALIFIED_EXPRESSION
         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
@@ -45,14 +45,12 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
     CangJieStub$INTERFACE_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=hasNestedDiff]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-        CangJieStub$PROPERTY_BODY
-          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -101,12 +99,12 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/diff/Extend, extendId=std.unittest.diff:Extend<:AssertPrintable, fqName=std.unittest.diff.Extend, name=Extend, receiverTypeName=Extend, superNames=[AssertPrintable]]
+  CangJieStub$EXTEND[classId=std/unittest/diff/Unit, extendId=std.unittest.diff:kotlin.Unit<:AssertPrintable, fqName=std.unittest.diff.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[AssertPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -170,12 +168,12 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/diff/Extend, extendId=std.unittest.diff:Extend<:AssertPrintable, fqName=std.unittest.diff.Extend, name=Extend, receiverTypeName=Extend, superNames=[AssertPrintable]]
+  CangJieStub$EXTEND[classId=std/unittest/diff/Unit, extendId=std.unittest.diff:kotlin.Unit<:AssertPrintable, fqName=std.unittest.diff.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[AssertPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -239,12 +237,12 @@ CangJieFileStubImpl[File[packageFqName=std.unittest.diff]]
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyPrinter]
-  CangJieStub$EXTEND[classId=std/unittest/diff/Extend, extendId=std.unittest.diff:Extend<:AssertPrintable, fqName=std.unittest.diff.Extend, name=Extend, receiverTypeName=Extend, superNames=[AssertPrintable]]
+  CangJieStub$EXTEND[classId=std/unittest/diff/Unit, extendId=std.unittest.diff:kotlin.Unit<:AssertPrintable, fqName=std.unittest.diff.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[AssertPrintable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE

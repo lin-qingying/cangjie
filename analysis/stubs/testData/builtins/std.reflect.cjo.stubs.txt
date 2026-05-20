@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.reflect, facadeFqName=std.reflect, facadePartSimpleNames=[class_type_info_cjnative, constants, exception, function_info_cjnative, interface_type_info_cjnative, intrinsic_cjnative, modifier_info, package_info_cjnative, parameter_info_cjnative, primitive_type_info_cjnative, struct_type_info_cjnative, type_info_cjnative, utils, variable_info_cjnative]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=reflect]

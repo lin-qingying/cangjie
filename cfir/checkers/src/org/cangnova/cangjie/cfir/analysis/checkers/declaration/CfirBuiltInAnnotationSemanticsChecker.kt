@@ -11,9 +11,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.resolve.defaultType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -24,17 +26,8 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjAnnotation
-import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
-import org.cangnova.cangjie.psi.CjConstantExpression
-import org.cangnova.cangjie.psi.CjExpression
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.psi.CjParameter
-import org.cangnova.cangjie.psi.CjStringTemplateExpression
 import org.cangnova.cangjie.psi.CjTypeStatement
-import org.cangnova.cangjie.psi.ValueArgument
 import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.source.toCjPsiSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -49,11 +42,8 @@ import org.cangnova.cangjie.type.AbstractTypeChecker
 object CfirBuiltInAnnotationDeclarationChecker : CfirBasicDeclarationChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
-        val owner = declaration.source?.psi as? CjModifierListOwner
-        if (owner != null) {
-            checkAnnotationMetaRules(declaration, owner)
-            checkPlatformAnnotationSyntax(declaration, owner)
-        }
+        checkAnnotationMetaRules(declaration)
+        checkPlatformAnnotationSyntax(declaration)
         checkCallingConventionRules(declaration)
         checkForeignNameRules(declaration)
     }
@@ -78,17 +68,13 @@ object CfirInteropAnnotationChecker : CfirClassLikeChecker() {
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkAnnotationMetaRules(
     declaration: CfirDeclaration,
-    owner: CjModifierListOwner,
 ) {
-    val annotationEntry = owner.findAnnotationEntry(ANNOTATION) ?: return
+    val annotationEntry = declaration.findAnnotations(ANNOTATION).firstOrNull() as? CfirAnnotationCall ?: return
 
-    if (annotationEntry.valueArguments.isNotEmpty()) {
-        val arguments = annotationEntry.valueArguments
-        val targetArgument = arguments.singleOrNull()
+    if (annotationEntry.hasArguments()) {
         val isValidTargetArgument =
-            targetArgument != null &&
-                targetArgument.isNamed() &&
-                targetArgument.getArgumentName()?.asName?.asString() == "target"
+            annotationEntry.argumentCount() == 1 &&
+                annotationEntry.hasNamedArgument("target")
 
         if (!isValidTargetArgument) {
             reporter.reportOn(
@@ -96,8 +82,8 @@ private fun checkAnnotationMetaRules(
                 factory = CfirErrors.ANNOTATION_ARG_TARGET,
             )
         } else {
-            val expression = targetArgument.getArgumentExpression()
-            if (expression !is CjCollectionLiteralExpression) {
+            val expression = annotationEntry.argumentByName("target")
+            if (expression !is org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral) {
                 reporter.reportOn(
                     source = annotationEntry.toSourceOrDeclarationSource(declaration),
                     factory = CfirErrors.ANNOTATION_ARG_TARGET_ARRAY_LIT,
@@ -113,7 +99,7 @@ private fun checkAnnotationMetaRules(
         )
     }
 
-    if (owner.hasAnnotationEntry(JAVA)) {
+    if (declaration.hasAnnotation(JAVA)) {
         reporter.reportOn(
             source = annotationEntry.toSourceOrDeclarationSource(declaration),
             factory = CfirErrors.DEFINE_JAVA_ANNOTATION,
@@ -124,9 +110,8 @@ private fun checkAnnotationMetaRules(
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkPlatformAnnotationSyntax(
     declaration: CfirDeclaration,
-    owner: CjModifierListOwner,
 ) {
-    val apiLevelEntries = owner.findAnnotationEntries(API_LEVEL)
+    val apiLevelEntries = declaration.findAnnotations(API_LEVEL).filterIsInstance<CfirAnnotationCall>()
     if (apiLevelEntries.size > 1) {
         reporter.reportOn(
             source = apiLevelEntries[1].toSourceOrDeclarationSource(declaration),
@@ -136,11 +121,7 @@ private fun checkPlatformAnnotationSyntax(
     if (apiLevelEntries.isNotEmpty()) {
         val seenSyscaps = linkedSetOf<String>()
         for (entry in apiLevelEntries) {
-            val args = entry.valueArguments
-            val sinceArgument = args.firstOrNull { argument ->
-                argument.isNamed() && argument.getArgumentName()?.asName?.asString() == "since"
-            }
-            if (sinceArgument == null) {
+            if (!entry.hasNamedArgument("since")) {
                 reporter.reportOn(
                     source = entry.toSourceOrDeclarationSource(declaration),
                     factory = CfirErrors.APILEVEL_MISSING_ARG,
@@ -148,16 +129,11 @@ private fun checkPlatformAnnotationSyntax(
                 )
             }
 
-            for (argument: ValueArgument in args) {
-                val expression = argument.getArgumentExpression()
-                if (expression != null && !expression.isLiteralLike()) {
-                    reporter.reportOn(entry.toSourceOrDeclarationSource(declaration), CfirErrors.ONLY_LITERAL_SUPPORT, "annotation")
-                }
+            if (!entry.argumentsAreLiteralLike()) {
+                reporter.reportOn(entry.toSourceOrDeclarationSource(declaration), CfirErrors.ONLY_LITERAL_SUPPORT, "annotation")
             }
 
-            val syscapLiteral = args.firstOrNull { argument ->
-                argument.isNamed() && argument.getArgumentName()?.asName?.asString() == "syscap"
-            }?.getArgumentExpression()?.literalStringOrNull()
+            val syscapLiteral = entry.namedArgumentText("syscap")
             if (syscapLiteral != null && !seenSyscaps.add(syscapLiteral)) {
                 reporter.reportOn(
                     source = entry.toSourceOrDeclarationSource(declaration),
@@ -167,32 +143,28 @@ private fun checkPlatformAnnotationSyntax(
         }
     }
 
-    val ifAvailableEntries = owner.findAnnotationEntries(IF_AVAILABLE)
+    val ifAvailableEntries = declaration.findAnnotations(IF_AVAILABLE).filterIsInstance<CfirAnnotationCall>()
     for (entry in ifAvailableEntries) {
-        val firstArgument = entry.valueArguments.firstOrNull()
-        if (firstArgument != null && !firstArgument.isNamed()) {
+        if (entry.hasArguments() && !entry.firstArgumentIsNamed()) {
             reporter.reportOn(
                 source = entry.toSourceOrDeclarationSource(declaration),
                 factory = CfirErrors.IFAVAILABLE_ARG_NO_NAME,
             )
         }
-        if (firstArgument?.getArgumentExpression()?.isLiteralLike() == false) {
+        if (!entry.argumentsAreLiteralLike()) {
             reporter.reportOn(
                 source = entry.toSourceOrDeclarationSource(declaration),
                 factory = CfirErrors.IFAVAILABLE_ARG_NOT_LITERAL,
             )
         }
 
-        entry.valueArguments
-            .filter(ValueArgument::isNamed)
-            .firstOrNull { argument: ValueArgument ->
-                argument.getArgumentName()?.asName?.asString() !in allowedIfAvailableArgumentNames
-            }
-            ?.let { argument ->
+        entry.rawNamedArgumentNames()
+            .firstOrNull { it !in allowedIfAvailableArgumentNames }
+            ?.let { argumentName ->
                 reporter.reportOn(
                     source = entry.toSourceOrDeclarationSource(declaration),
                     factory = CfirErrors.IFAVAILABLE_UNKNOWN_ARG_NAME,
-                    a = argument.getArgumentName()?.asName?.asString().orEmpty(),
+                    a = argumentName,
                 )
             }
     }
@@ -205,7 +177,7 @@ private fun checkPlatformAnnotationSyntax(
         )
     }
 
-    val hideEntries = owner.findAnnotationEntries(HIDE)
+    val hideEntries = declaration.findAnnotations(HIDE).filterIsInstance<CfirAnnotationCall>()
     if (hideEntries.size > 1) {
         reporter.reportOn(
             source = hideEntries[1].toSourceOrDeclarationSource(declaration),
@@ -228,14 +200,14 @@ private fun checkPlatformAnnotationSyntax(
             )
         }
     }
-    if (declaration.source?.psi is CjParameter && hideEntries.isNotEmpty()) {
+    if (declaration is CfirValueParameter && hideEntries.isNotEmpty()) {
         reporter.reportOn(
             source = hideEntries.first().toSourceOrDeclarationSource(declaration),
             factory = CfirErrors.HIDE_AT_FUNC_PARAM,
         )
     }
     hideEntries.firstOrNull()?.let { hideEntry ->
-        if (owner.annotationEntries.lastOrNull() != hideEntry) {
+        if (declaration.annotations.lastOrNull() != hideEntry) {
             reporter.reportOn(
                 source = hideEntry.toSourceOrDeclarationSource(declaration),
                 factory = CfirErrors.HIDE_MUST_AT_END,
@@ -243,10 +215,8 @@ private fun checkPlatformAnnotationSyntax(
             )
         }
 
-        hideEntry.valueArguments.firstOrNull()?.let { argument ->
-            val isCheckedName = argument.getArgumentName()?.asName?.asString() == "isChecked"
-            val isBoolLiteral = argument.getArgumentExpression()?.isBooleanLiteral() == true
-            if (!argument.isNamed() || !isCheckedName || !isBoolLiteral) {
+        if (hideEntry.hasArguments()) {
+            if (!hideEntry.hasNamedArgument("isChecked") || !hideEntry.firstArgumentIsBooleanLiteralNamed("isChecked")) {
                 reporter.reportOn(
                     source = hideEntry.toSourceOrDeclarationSource(declaration),
                     factory = CfirErrors.HIDE_DIFF_PARAM,
@@ -259,10 +229,7 @@ private fun checkPlatformAnnotationSyntax(
     // HIDE_MISSING_HIDE: override 带 @!Hide 但父声明无 @!Hide
     if (hideEntries.isNotEmpty() && declaration is CfirNamedFunction && declaration.status.isOverride) {
         val parent = findOverriddenInSupers(declaration)
-        val parentHasHide = parent?.source?.psi
-            ?.let { it as? CjModifierListOwner }
-            ?.findAnnotationEntries(HIDE)
-            ?.isNotEmpty() == true
+        val parentHasHide = parent?.hasAnnotation(HIDE) == true
         if (!parentHasHide && parent != null) {
             reporter.reportOn(
                 source = parent.source ?: declaration.source,
@@ -443,9 +410,10 @@ private fun checkJavaMirrorMemberTypes(declaration: CfirClassLikeDeclaration) {
         if (member !is CfirNamedFunction) continue
         if (!member.hasAnnotation(Name.identifier("JavaHasDefault"))) continue
 
-        val hasDefaultOwner = member.source?.psi as? CjModifierListOwner
-        val hasDefaultEntry = hasDefaultOwner?.findAnnotationEntries(Name.identifier("JavaHasDefault"))?.firstOrNull()
-        if (hasDefaultEntry != null && hasDefaultEntry.valueArguments.isNotEmpty()) {
+        val hasDefaultEntry = member.findAnnotations(Name.identifier("JavaHasDefault"))
+            .filterIsInstance<CfirAnnotationCall>()
+            .firstOrNull()
+        if (hasDefaultEntry != null && hasDefaultEntry.hasArguments()) {
             reporter.reportOn(
                 source = hasDefaultEntry.toSourceOrDeclarationSource(member),
                 factory = CfirErrors.JAVA_HAS_DEFAULT_ANNOTATION_ARGS,
@@ -647,7 +615,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
     if (hasObjCImpl) {
         if (superDeclarations.none { it.hasAnnotation(OBJC_MIRROR) }) {
             reporter.reportOn(
-                source = declaration.source,
+                source = declaration.classLikeNameDiagnosticSource(),
                 factory = CfirErrors.OBJC_MIRROR_SUBTYPE_MUST_INHERIT_MIRROR,
             )
         }
@@ -655,7 +623,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
 
     if (hasObjCImpl && superDeclarations.none { it.hasAnnotation(OBJC_MIRROR) }) {
         reporter.reportOn(
-            source = declaration.source,
+            source = declaration.classLikeNameDiagnosticSource(),
             factory = CfirErrors.OBJC_IMPL_MUST_HAVE_OBJC_MIRROR_SUPER_CLASS,
         )
     }
@@ -666,7 +634,7 @@ private fun checkObjCInteropSemantics(declaration: CfirClassLikeDeclaration) {
                 checkObjCInitMethodReturnType(declaration, member)
                 if (member.valueParameters.size > 1 && !member.hasAnnotation(FOREIGN_NAME)) {
                     reporter.reportOn(
-                        source = member.source ?: declaration.source,
+                        source = member.functionNameDiagnosticSource() ?: declaration.source,
                         factory = CfirErrors.OBJC_METHOD_MUST_HAVE_FOREIGN_NAME,
                         a = "ObjC",
                         b = member.name,
@@ -796,39 +764,8 @@ private fun CfirTypeRef.isInteropMirrorCompatible(
 private fun CfirClassLikeDeclaration.isPublicLike(): Boolean =
     status.visibility.externalDisplayName == "public"
 
-private fun CjModifierListOwner.findAnnotationEntries(annotationName: Name): List<CjAnnotation> =
-    annotationEntries.filter { entry -> entry.shortName == annotationName }
-
-private fun CjModifierListOwner.findAnnotationEntry(annotationName: Name): CjAnnotation? =
-    findAnnotationEntries(annotationName).firstOrNull()
-
-private fun CjModifierListOwner.hasAnnotationEntry(annotationName: Name): Boolean =
-    findAnnotationEntry(annotationName) != null
-
-private fun CjAnnotation.toSourceOrDeclarationSource(declaration: CfirDeclaration): org.cangnova.cangjie.source.CjSourceElement? =
-    this.toCjPsiSourceElement() ?: declaration.source
-
 private fun CfirAnnotation.toSourceOrDeclarationSource(declaration: CfirDeclaration): org.cangnova.cangjie.source.CjSourceElement? =
     this.source ?: declaration.source
-
-private fun CjExpression.isLiteralLike(): Boolean = when (this) {
-    is CjConstantExpression -> true
-    is CjStringTemplateExpression -> !hasInterpolation()
-    is CjCollectionLiteralExpression -> innerExpressions.all { it.isLiteralLike() }
-    else -> false
-}
-
-private fun CjExpression.isBooleanLiteral(): Boolean =
-    this is CjConstantExpression && text in setOf("true", "false")
-
-private fun CjExpression.literalStringOrNull(): String? = when (this) {
-    is CjConstantExpression -> text
-    is CjStringTemplateExpression -> if (!hasInterpolation()) text else null
-    else -> null
-}
-
-private fun CjStringTemplateExpression.hasInterpolation(): Boolean =
-    entries.any { entry -> entry !is org.cangnova.cangjie.psi.CjLiteralStringTemplateEntry }
 
 private val ANNOTATION = Name.identifier("Annotation")
 private val JAVA = Name.identifier("Java")
@@ -861,18 +798,18 @@ private fun checkObjCInitMethodReturnType(
 ) {
     if (!declaration.hasAnnotation(OBJC_MIRROR)) return
     if (!member.hasAnnotation(Name.identifier("ObjCInit"))) return
-    if (!member.status.isStatic) return
 
     val returnTypeRef = member.returnTypeRef as? CfirResolvedTypeRef ?: return
     val expectedType = declaration.defaultType()
     val actualType = returnTypeRef.coneType
     if (AbstractTypeChecker.equalTypes(context.session.typeContext, expectedType, actualType)) return
 
-    checkTypeMismatch(
-        expectedType = expectedType,
-        actualType = actualType,
+    reporter.reportOn(
         source = returnTypeRef.source ?: member.source ?: declaration.source ?: return,
-        diagnosticFactory = CfirErrors.TYPE_MISMATCH,
+        factory = CfirErrors.TYPE_MISMATCH,
+        a = expectedType,
+        b = actualType,
+        c = false,
     )
 }
 
@@ -972,13 +909,10 @@ private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration
     if (!isJavaRelated) return
 
     // JAVA_INCORRECT_USE_BETWEEN_TYPES: @Java 注解的不同值域不能混用
-    val javaEntries = (declaration.source?.psi as? CjModifierListOwner)?.findAnnotationEntries(JAVA).orEmpty()
+    val javaEntries = declaration.findAnnotations(JAVA).filterIsInstance<CfirAnnotationCall>()
     if (javaEntries.isNotEmpty()) {
         val javaValues = javaEntries.mapNotNull { entry ->
-            entry.valueArguments.firstOrNull()?.getArgumentExpression()?.let { arg ->
-                (arg as? org.cangnova.cangjie.psi.CjStringTemplateExpression)?.text
-                    ?: (arg as? org.cangnova.cangjie.psi.CjConstantExpression)?.text
-            }
+            entry.argumentTextAt(0)
         }.toSet()
         if (javaValues.size > 1) {
             reporter.reportOn(
@@ -991,10 +925,8 @@ private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration
         val isExt = javaValues.any { it.contains("ext") }
         if (!isExt) {
             for (superDecl in superDeclarations) {
-                val superJavaOwner = superDecl.source?.psi as? CjModifierListOwner ?: continue
-                val superJavaEntry = superJavaOwner.findAnnotationEntries(JAVA).firstOrNull() ?: continue
-                val superIsExt = superJavaEntry.valueArguments.firstOrNull()
-                    ?.getArgumentExpression()?.text?.contains("ext") == true
+                val superJavaEntry = superDecl.findAnnotations(JAVA).filterIsInstance<CfirAnnotationCall>().firstOrNull() ?: continue
+                val superIsExt = superJavaEntry.argumentTextAt(0)?.contains("ext") == true
                 if (superIsExt) {
                     reporter.reportOn(
                         source = declaration.source,
@@ -1044,8 +976,7 @@ private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration
         else -> emptyList()
     }
     for (typeParam in typeParams) {
-        val tpOwner = typeParam.source?.psi as? CjModifierListOwner ?: continue
-        if (tpOwner.findAnnotationEntries(Name.identifier("Shadow")).isNotEmpty()) {
+        if (typeParam.hasAnnotation(Name.identifier("Shadow"))) {
             // 查找类型参数上的 shadow 字段信息——简化实现：只要有 Shadow 标注即报告
             reporter.reportOn(
                 source = typeParam.source ?: declaration.source,
@@ -1074,14 +1005,13 @@ private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration
 
     // INVALID_USE_OF_JAVA_ANNOTATION / INVALID_USE_OF_ANNOTATION_JFFI
     // 非 @Java 类型不能使用 Java 注解
-    val ownerPsi = declaration.source?.psi as? CjModifierListOwner
-    if (ownerPsi != null && !hasJava && !hasJavaMirror && !hasJavaImpl) {
-        for (ann in ownerPsi.annotationEntries) {
-            val name = ann.shortName ?: continue
+    if (!hasJava && !hasJavaMirror && !hasJavaImpl) {
+        for (ann in declaration.annotations) {
+            val name = ann.shortNameOrNull() ?: continue
             // 形似 "XxxJavaXxx" 的 Java 注解不能用在非 @Java 类型上
             if (name.asString().startsWith("Java") && name != JAVA && name != JAVA_MIRROR && name != JAVA_IMPL) {
                 reporter.reportOn(
-                    source = ann.toCjPsiSourceElement() ?: declaration.source,
+                    source = ann.toSourceOrDeclarationSource(declaration),
                     factory = CfirErrors.INVALID_USE_OF_JAVA_ANNOTATION,
                 )
             }
@@ -1091,13 +1021,12 @@ private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration
     // INVALID_USE_OF_ANNOTATION_JFFI: JFFI 的注解只能用于 @Java 类型
     // 遍历成员检查
     for (member in declaration.declarations) {
-        val memberOwner = member.source?.psi as? CjModifierListOwner ?: continue
-        for (ann in memberOwner.annotationEntries) {
-            val name = ann.shortName ?: continue
+        for (ann in member.annotations) {
+            val name = ann.shortNameOrNull() ?: continue
             if (name.asString().endsWith("Jffi") || name.asString().startsWith("Jffi")) {
                 if (!hasJava && !hasJavaMirror && !hasJavaImpl) {
                     reporter.reportOn(
-                        source = ann.toCjPsiSourceElement() ?: member.source ?: declaration.source,
+                        source = ann.source ?: member.source ?: declaration.source,
                         factory = CfirErrors.INVALID_USE_OF_ANNOTATION_JFFI,
                     )
                 }
@@ -1110,7 +1039,6 @@ private fun checkJavaInteropExtraSemantics(declaration: CfirClassLikeDeclaration
  * ObjC 互操作的额外声明级约束。
  *
  * 对齐 C++ Sema 中 ObjC 剩余诊断：
- * - OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED: 使用 ObjC 互操作必须导入 interoplib.objc
  * - OBJC_INTEROP_NOT_SUPPORTED: 不支持的 ObjC 互操作特性
  * - OBJC_POINTER_ARGUMENT_MUST_BE_OBJC_COMPATIBLE: ObjCPointer 类型参数必须是 ObjC 兼容
  * - OBJC_INTEROP_TOPLEVEL_PARAM_MUST_BE_OBJC_COMPATIBLE: 顶层函数参数类型约束
@@ -1123,20 +1051,6 @@ private fun checkObjCInteropExtraSemantics(declaration: CfirClassLikeDeclaration
     val hasObjCMirror = declaration.hasAnnotation(OBJC_MIRROR)
     val hasObjCImpl = declaration.hasAnnotation(OBJC_IMPL)
     if (!hasObjCMirror && !hasObjCImpl) return
-
-    // OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED: 检查当前文件是否导入 interoplib.objc
-    val declFile = declaration.source?.psi?.containingFile as? org.cangnova.cangjie.psi.CjFile
-    if (declFile != null) {
-        val hasInteropImport = declFile.importDirectivesItem.any { imp ->
-            imp.importedFqName?.asString()?.startsWith("interoplib.objc") == true
-        }
-        if (!hasInteropImport) {
-            reporter.reportOn(
-                source = declaration.source,
-                factory = CfirErrors.OBJC_MIRROR_INTEROPLIB_MUST_BE_IMPORTED,
-            )
-        }
-    }
 
     // 检查成员中是否使用了 ObjCPointer / ObjCFunc 类型的约束
     for (member in declaration.declarations) {
@@ -1216,10 +1130,9 @@ private fun checkObjCFuncPropertyCallOnly(
  */
 context(context: CheckerContext, reporter: DiagnosticReporter)
 private fun checkObjCTopLevelFunction(function: CfirNamedFunction) {
-    val owner = function.source?.psi as? CjModifierListOwner ?: return
-    val hasObjCAnnotation = owner.findAnnotationEntries(OBJC_MIRROR).isNotEmpty() ||
-        owner.findAnnotationEntries(OBJC_IMPL).isNotEmpty() ||
-        owner.findAnnotationEntries(Name.identifier("ObjCName")).isNotEmpty()
+    val hasObjCAnnotation = function.hasAnnotation(OBJC_MIRROR) ||
+        function.hasAnnotation(OBJC_IMPL) ||
+        function.hasAnnotation(Name.identifier("ObjCName"))
     if (!hasObjCAnnotation) return
 
     for (param in function.valueParameters) {

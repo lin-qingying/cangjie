@@ -13,7 +13,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
+import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.CjRealSourceElementKind
@@ -22,6 +24,11 @@ import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 
 /**
@@ -87,6 +94,18 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
         }
 
         if (!isSubtypeForTypeMismatch(context.session, context.session.typeContext, actualType, expectedType)) {
+            if (
+                expectedType.rangeElementTypeOrNull() != null && actualType.rangeElementTypeOrNull() != null ||
+                result is CfirFunctionCall && result.argumentList.arguments.any { it is CfirRangeExpression }
+            ) {
+                reporter.reportOn(
+                    source, CfirErrors.TYPE_MISMATCH,
+                    expectedType,
+                    actualType,
+                    false,
+                )
+                return
+            }
             reporter.reportOn(
                 source, CfirErrors.RETURN_TYPE_MISMATCH,
                 expectedType,
@@ -95,4 +114,11 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
             )
         }
     }
+}
+
+private fun org.cangnova.cangjie.cfir.types.ConeCangJieType?.rangeElementTypeOrNull(): org.cangnova.cangjie.cfir.types.ConeCangJieType? = when (this) {
+    is ConeClassLikeType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
+    is ConeStructType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
+    is ConeTypeAliasType -> expandedType?.rangeElementTypeOrNull()
+    else -> null
 }

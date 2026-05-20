@@ -28,6 +28,16 @@ object AnalysisApiTypeCreatorTestDirectives : SimpleDirectivesContainer() {
         applicability = DirectiveApplicability.File,
     )
 
+    val TYPE_PARAMETER_OWNER_CLASS by stringDirective(
+        description = "当前用例中持有目标类型参数的 class-like 声明名，用于 TYPE_PARAMETER 场景。",
+        applicability = DirectiveApplicability.File,
+    )
+
+    val TARGET_TYPE_PARAMETER by stringDirective(
+        description = "当前用例中要恢复并构造成 public type 的类型参数名。",
+        applicability = DirectiveApplicability.File,
+    )
+
     val EXPECTED_QUALIFIED_TYPE_RENDER by stringDirective(
         description = "以 qualified names 渲染构造后类型时的期望文本。",
         applicability = DirectiveApplicability.File,
@@ -47,6 +57,12 @@ val RegisteredDirectives.secondTargetClassName: String?
 
 val RegisteredDirectives.containerClassName: String?
     get() = this[AnalysisApiTypeCreatorTestDirectives.CONTAINER_CLASS].singleOrNull()
+
+val RegisteredDirectives.typeParameterOwnerClassName: String?
+    get() = this[AnalysisApiTypeCreatorTestDirectives.TYPE_PARAMETER_OWNER_CLASS].singleOrNull()
+
+val RegisteredDirectives.targetTypeParameterName: String?
+    get() = this[AnalysisApiTypeCreatorTestDirectives.TARGET_TYPE_PARAMETER].singleOrNull()
 
 val RegisteredDirectives.expectedQualifiedTypeRender: String
     get() = this[AnalysisApiTypeCreatorTestDirectives.EXPECTED_QUALIFIED_TYPE_RENDER].restoreTypeRenderExpectation()

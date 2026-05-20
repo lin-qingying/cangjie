@@ -324,6 +324,7 @@ internal fun createConstructorStub(
             parent = constructorStub,
             valueParameters = declaration.valueParameters,
             createEmptyList = true,
+            includeParameterModifierList = true,
         )
     } else {
         val constructorStub = CangJieConstructorStubImpl<CjSecondaryConstructor>(

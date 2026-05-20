@@ -11,9 +11,19 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
+import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
+import org.cangnova.cangjie.cfir.expressions.builder.buildInoutArgumentExpression
+import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
@@ -23,6 +33,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContex
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
@@ -32,6 +43,7 @@ import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -39,6 +51,7 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.descriptors.Visibilities
 
@@ -170,6 +183,54 @@ class LightTreeRawCfirDeclarationBuilder(
     ): CfirValueParameter {
         return withPackageContext(packageFqName) {
             convertValueParameter(parameter, containingSymbol)
+        }
+    }
+
+    /**
+     * Macro custom annotation fragment reparse 入口。
+     *
+     * 直接从 annotation light-tree node 构造 [CfirAnnotationCall]，不通过
+     * 临时参数 fragment 间接提取 annotation，避免 annotation slot 语法被参数语法改写。
+     */
+    fun buildAnnotationCallInPackage(
+        annotation: LighterASTNode,
+        containingSymbol: CfirBasedSymbol<*>,
+        packageFqName: FqName,
+        sourceOverride: CjSourceElement? = null,
+        argumentListSourceOverride: CjSourceElement? = null,
+    ): CfirAnnotationCall? {
+        val rawName = extractAnnotationNameText(annotation) ?: return null
+        return withPackageContext(packageFqName) {
+            buildRawAnnotationCall(
+                annotation = annotation,
+                rawName = rawName,
+                containingSymbol = containingSymbol,
+                sourceOverride = sourceOverride,
+                argumentListSourceOverride = argumentListSourceOverride,
+            )
+        }
+    }
+
+    /**
+     * LightTree parser 会把 declaration 前的 `@Anno` 解析为 MACRO_EXPRESSION。
+     * custom annotation reparse 需要把该表示重新落回 annotation payload。
+     */
+    fun buildMacroExpressionAnnotationCallInPackage(
+        macroExpression: LighterASTNode,
+        containingSymbol: CfirBasedSymbol<*>,
+        packageFqName: FqName,
+        sourceOverride: CjSourceElement? = null,
+        argumentListSourceOverride: CjSourceElement? = null,
+    ): CfirAnnotationCall? {
+        val rawName = extractMacroExpressionNameText(macroExpression) ?: return null
+        return withPackageContext(packageFqName) {
+            buildRawAnnotationCall(
+                annotation = macroExpression,
+                rawName = rawName,
+                containingSymbol = containingSymbol,
+                sourceOverride = sourceOverride,
+                argumentListSourceOverride = argumentListSourceOverride,
+            )
         }
     }
 
@@ -843,8 +904,8 @@ class LightTreeRawCfirDeclarationBuilder(
     /**
      * LightTree 声明/参数层的 annotation surface 采集入口。
      *
-     * 这里只记录 construction-only surface，不把 annotation 语义写回最终 CFIR 节点；
-     * `@IfAvailable` 归入 builtin non-macro surface，避免进入普通 macro executor 路径。
+     * 先把 annotation 构造成 [CfirAnnotationCall] 并 append 到 owner.annotations，
+     * 再基于该 slot identity 建 construction-only surface 与 metadata。
      */
     private fun collectMacroSurfacesFromAnnotations(
         ownerNode: LighterASTNode,
@@ -853,17 +914,136 @@ class LightTreeRawCfirDeclarationBuilder(
         carrier: CfirDeclaration,
     ) {
         if (modifiers.annotations.isEmpty()) return
+        val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
 
         val carriedAnnotations = modifiers.annotations.map { it.asText() }
         modifiers.annotations.forEach { annotation ->
+            val rawName = extractAnnotationNameText(annotation) ?: return@forEach
+            val qualifiedName = macroSurfaceQualifiedName(rawName)
+            val annotationCall = buildRawAnnotationCall(annotation, rawName, carrier)
+            val annotationIndex = carrier.annotations.size
+            carrier.replaceAnnotations(carrier.annotations + annotationCall)
+            val valueArgumentList = findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
+            val snapshot = CfirAnnotationSlotSnapshot(
+                owner = carrier,
+                annotationIndex = annotationIndex,
+                originalAnnotation = annotationCall,
+                rawSyntax = annotation.asText(),
+                forcedCustom = annotation.asText().trimStart().startsWith("@!"),
+                qualifiedName = qualifiedName,
+                argumentText = valueArgumentList?.asText(),
+                tokens = tokenizeFullAnnotation(annotation),
+                callSite = when (ownerKind) {
+                    MacroSurfaceOwnerKind.DECLARATION -> MacroCallSite.DECLARATION
+                    MacroSurfaceOwnerKind.PARAMETER -> MacroCallSite.PARAMETER
+                },
+            )
+            val annotationCarrier = metadataRegistry.record(snapshot)
             buildMacroSurfaceFromAnnotation(
                 ownerNode = ownerNode,
                 annotation = annotation,
                 ownerKind = ownerKind,
                 carrier = carrier,
+                annotationCarrier = annotationCarrier,
                 modifiers = modifiers.modifierTexts,
                 carriedAnnotations = carriedAnnotations,
             )?.let { collectedMacroSurfaces += it }
+        }
+    }
+
+    private fun buildRawAnnotationCall(
+        annotation: LighterASTNode,
+        rawName: String,
+        carrier: CfirDeclaration,
+    ): CfirAnnotationCall {
+        val containingSymbol = when (carrier) {
+            is CfirValueParameter -> carrier.containingDeclarationSymbol
+            else -> carrier.symbol
+        }
+        return buildRawAnnotationCall(annotation, rawName, containingSymbol)
+    }
+
+    private fun buildRawAnnotationCall(
+        annotation: LighterASTNode,
+        rawName: String,
+        containingSymbol: CfirBasedSymbol<*>,
+        sourceOverride: CjSourceElement? = null,
+        argumentListSourceOverride: CjSourceElement? = null,
+    ): CfirAnnotationCall {
+        val valueArgumentList = findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
+        val arguments = convertAnnotationArguments(annotation, valueArgumentList)
+        return buildAnnotationCall {
+            source = sourceOverride ?: annotation.toSource()
+            typeRef = buildAnnotationTypeRef(rawName, annotation)
+            this.arguments.addAll(arguments)
+            argumentList = buildArgumentList {
+                source = argumentListSourceOverride ?: valueArgumentList?.toSource()
+                this.arguments.addAll(arguments)
+            }
+            calleeReference = buildNamedReference(Name.identifier(rawName.substringAfterLast('.')), annotation.toSource())
+            containingDeclarationSymbol = containingSymbol
+        }
+    }
+
+    private fun convertAnnotationArguments(
+        annotation: LighterASTNode,
+        valueArgumentList: LighterASTNode?,
+    ): List<CfirExpression> {
+        val valueArguments = valueArgumentList
+            ?.let { tree.getChildrenByType(it, CjNodeTypes.VALUE_ARGUMENT) }
+            .orEmpty()
+            .mapNotNull(::convertAnnotationArgument)
+        if (valueArguments.isNotEmpty()) return valueArguments
+
+        val callingConvention = findFirstDescendantByType(annotation, CjNodeTypes.ANNOTATION_CALLING_CONV)
+        if (callingConvention != null) {
+            return listOf(buildLiteralExpression {
+                source = callingConvention.toSource()
+                kind = CfirLiteralKind.STRING
+                value = callingConvention.asText()
+            })
+        }
+
+        return emptyList()
+    }
+
+    private fun convertAnnotationArgument(valueArgumentNode: LighterASTNode): CfirExpression? {
+        val expressionNode = findFirstExpressionIn(valueArgumentNode) ?: return null
+        val convertedExpression = expressionBuilder.convertExpression(expressionNode)
+        val wrapped = if (tree.findChildByType(valueArgumentNode, CjTokens.INOUT_KEYWORD) != null) {
+            buildInoutArgumentExpression {
+                source = expressionNode.toSource()
+                expression = convertedExpression
+            }
+        } else {
+            convertedExpression
+        }
+        if (tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME) == null) return wrapped
+        return buildBlock {
+            source = valueArgumentNode.toSource()
+            statements.add(wrapped)
+        }
+    }
+
+    private fun findFirstExpressionIn(node: LighterASTNode): LighterASTNode? {
+        if (LightTreeRawCfirExpressionBuilder.isExpressionToken(node.tokenType)) return node
+        tree.forEachChildren(node) { child ->
+            findFirstExpressionIn(child)?.let { return it }
+        }
+        return null
+    }
+
+    private fun buildAnnotationTypeRef(rawName: String, annotation: LighterASTNode): CfirTypeRef {
+        val parts = rawName.split('.').filter(String::isNotBlank)
+        if (parts.isEmpty()) return buildImplicitTypeRef()
+        return buildUserTypeRef {
+            source = annotation.toSource()
+            qualifier += parts.map { part ->
+                buildQualifierPart {
+                    source = annotation.toSource()
+                    name = Name.identifier(part)
+                }
+            }
         }
     }
 
@@ -872,6 +1052,7 @@ class LightTreeRawCfirDeclarationBuilder(
         annotation: LighterASTNode,
         ownerKind: MacroSurfaceOwnerKind,
         carrier: CfirDeclaration,
+        annotationCarrier: CfirAnnotationReplaceCarrier,
         modifiers: List<String>,
         carriedAnnotations: List<String>,
     ): MacroSurface? {
@@ -902,7 +1083,11 @@ class LightTreeRawCfirDeclarationBuilder(
             carriedAnnotations = carriedAnnotations,
             capturedRawSyntax = annotation.asText(),
             containerContext = macroSurfaceContainerContext(ownerNode),
-            replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
+            replaceHandle = CfirReplaceHandle(
+                handleId = surfaceId,
+                carrier = carrier,
+                annotationCarrier = annotationCarrier,
+            ),
         )
 
         if (shortName == "IfAvailable") {
@@ -978,6 +1163,20 @@ class LightTreeRawCfirDeclarationBuilder(
         return MacroPayloadTokenizer.tokenize(
             payload = node?.asText(),
             baseOffset = node?.startOffset ?: 0,
+        ).map { token ->
+            MacroSurfaceToken(
+                text = token.text,
+                startOffset = token.startOffset,
+                endOffset = token.endOffset,
+                kindName = token.kindName,
+            )
+        }
+    }
+
+    private fun tokenizeFullAnnotation(node: LighterASTNode): List<MacroSurfaceToken> {
+        return MacroPayloadTokenizer.tokenize(
+            payload = node.asText(),
+            baseOffset = node.startOffset,
         ).map { token ->
             MacroSurfaceToken(
                 text = token.text,
@@ -1190,15 +1389,60 @@ class LightTreeRawCfirDeclarationBuilder(
 
     private fun buildFileDeclarations(file: LighterASTNode): List<CfirDeclaration> {
         val declarations = mutableListOf<CfirDeclaration>()
+        val pendingAnnotations = mutableListOf<LighterASTNode>()
         tree.forEachChildren(file) { child ->
-            when {
-                LightTreeRawCfirExpressionBuilder.isDeclarationToken(child.tokenType) ->
-                    declarations.add(convertDeclaration(child))
-                child.tokenType == CjNodeTypes.MACRO_EXPRESSION ->
-                    convertTopLevelMacroDeclaration(child)?.let(declarations::add)
+            when (child.tokenType) {
+                CjStubElementTypes.ANNOTATIONS -> {
+                    tree.forEachChildren(child) { annotation ->
+                        if (annotation.tokenType == CjNodeTypes.ANNOTATION || annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+                            pendingAnnotations += annotation
+                        }
+                    }
+                    return@forEachChildren
+                }
+                CjNodeTypes.ANNOTATION,
+                    -> {
+                    pendingAnnotations += child
+                    return@forEachChildren
+                }
+                CjNodeTypes.MACRO_EXPRESSION -> {
+                    if (child.isTopLevelMacroDeclaration()) {
+                        val declaration = convertTopLevelMacroDeclaration(child) ?: return@forEachChildren
+                        if (pendingAnnotations.isNotEmpty()) {
+                            collectMacroSurfacesFromAnnotations(
+                                ownerNode = child,
+                                modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList()),
+                                ownerKind = MacroSurfaceOwnerKind.DECLARATION,
+                                carrier = declaration,
+                            )
+                            pendingAnnotations.clear()
+                        }
+                        declarations.add(declaration)
+                    } else {
+                        pendingAnnotations += child
+                    }
+                    return@forEachChildren
+                }
+            }
+            if (LightTreeRawCfirExpressionBuilder.isDeclarationToken(child.tokenType)) {
+                val declaration = convertDeclaration(child)
+                if (pendingAnnotations.isNotEmpty()) {
+                    collectMacroSurfacesFromAnnotations(
+                        ownerNode = child,
+                        modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList()),
+                        ownerKind = MacroSurfaceOwnerKind.DECLARATION,
+                        carrier = declaration,
+                    )
+                    pendingAnnotations.clear()
+                }
+                declarations.add(declaration)
             }
         }
         return declarations
+    }
+
+    private fun LighterASTNode.isTopLevelMacroDeclaration(): Boolean {
+        return resolveTopLevelMacroDeclarationChain(this) != null
     }
 
     /**
@@ -1207,12 +1451,72 @@ class LightTreeRawCfirDeclarationBuilder(
      * 后续 stable splice 才能按对象身份替换最终 CFIR 声明。
      */
     private fun convertTopLevelMacroDeclaration(node: LighterASTNode): CfirDeclaration? {
-        val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT) ?: return null
-        val declarationNode = findFirstDeclarationDescendant(inputNode) ?: return null
+        val chain = resolveTopLevelMacroDeclarationChain(node) ?: return null
+        val (declarationNode, macroExpressions) = chain
         val carrier = convertDeclaration(declarationNode)
-        val rawName = extractMacroExpressionNameText(node) ?: return carrier
+        macroExpressions.forEach { macroExpression ->
+            repairMacroExpressionCarrierShape(macroExpression, carrier)
+            applyTopLevelMacroExpression(macroExpression, carrier)
+        }
+        return carrier
+    }
+
+    /**
+     * LightTree 顶层 annotation 包裹会形成多层 MACRO_EXPRESSION 链。
+     * 这里必须按链恢复最终 carrier 声明，并让每层 wrapper 都把 annotation-site
+     * 附着到同一份 CFIR 声明对象上。
+     */
+    private fun resolveTopLevelMacroDeclarationChain(root: LighterASTNode): Pair<LighterASTNode, List<LighterASTNode>>? {
+        val macroExpressions = mutableListOf<LighterASTNode>()
+        var current: LighterASTNode? = root
+
+        while (current != null && current.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+            macroExpressions += current
+            val inputNode = tree.findChildByType(current, CjNodeTypes.MACRO_INPUT) ?: return null
+            findDirectDeclarationChild(inputNode)?.let { declarationNode ->
+                return declarationNode to macroExpressions.toList()
+            }
+            current = findDirectMacroExpressionChild(inputNode)
+        }
+
+        return null
+    }
+
+    private fun applyTopLevelMacroExpression(
+        node: LighterASTNode,
+        carrier: CfirDeclaration,
+    ) {
+        val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT) ?: return
+        val rawName = extractMacroExpressionNameText(node) ?: return
         val surfaceId = MacroSurfaceIdGenerator.next()
         val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
+        val rawAnnotationSyntax = macroExpressionAnnotationSyntax(node, rawName, attrNode)
+        val containingSymbol = when (carrier) {
+            is CfirValueParameter -> carrier.containingDeclarationSymbol
+            else -> carrier.symbol
+        }
+        val annotationCall = buildRawAnnotationCall(
+            annotation = node,
+            rawName = rawName,
+            containingSymbol = containingSymbol,
+            sourceOverride = node.toSource(),
+            argumentListSourceOverride = attrNode?.toSource(),
+        )
+        val annotationIndex = carrier.annotations.size
+        carrier.replaceAnnotations(carrier.annotations + annotationCall)
+        val annotationCarrier = baseSession.ensureAnnotationMetadataRegistry().record(
+            CfirAnnotationSlotSnapshot(
+                owner = carrier,
+                annotationIndex = annotationIndex,
+                originalAnnotation = annotationCall,
+                rawSyntax = rawAnnotationSyntax,
+                forcedCustom = node.asText().trimStart().startsWith("@!"),
+                qualifiedName = macroSurfaceQualifiedName(rawName),
+                argumentText = attrNode?.asText(),
+                tokens = tokenizeMacroExpressionAnnotationSyntax(rawAnnotationSyntax, node.startOffset),
+                callSite = MacroCallSite.DECLARATION,
+            )
+        )
         collectedMacroSurfaces += MacroSurfaceDecl(
             surfaceId = surfaceId,
             qualifiedName = macroSurfaceQualifiedName(rawName),
@@ -1235,10 +1539,81 @@ class LightTreeRawCfirDeclarationBuilder(
                 isInsideEnumBody = false,
                 isInsideBlock = false,
             ),
-            replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
+            replaceHandle = CfirReplaceHandle(
+                handleId = surfaceId,
+                carrier = carrier,
+                annotationCarrier = annotationCarrier,
+            ),
         )
-        return carrier
     }
+
+    /**
+     * `@Anno func f(): T` 在 LightTree 中以 MACRO_EXPRESSION 包住声明。
+     * 其中 carrier FUNC 子树可能不直接包含返回类型节点，返回类型保留在 wrapper 上；
+     * raw CFIR 必须把这个声明形状恢复到 carrier，后续 checker/resolve 才能只读 CFIR。
+     */
+    private fun repairMacroExpressionCarrierShape(
+        macroExpression: LighterASTNode,
+        carrier: CfirDeclaration,
+    ) {
+        if (carrier is CfirFunction && carrier.returnTypeRef is CfirImplicitTypeRef) {
+            val restoredReturnType = findFunctionReturnTypeRefInMacroExpression(macroExpression)
+                ?.let(::convertTypeRef)
+            restoredReturnType?.let(carrier::replaceReturnTypeRef)
+        }
+    }
+
+    private fun findFunctionReturnTypeRefInMacroExpression(macroExpression: LighterASTNode): LighterASTNode? {
+        val parameterList = findFirstDescendantByType(macroExpression, CjNodeTypes.VALUE_PARAMETER_LIST) ?: return null
+        val block = findFirstDescendantByType(macroExpression, CjNodeTypes.BLOCK)
+        val afterParameters = tree.getEndOffset(parameterList)
+        val beforeBody = block?.let(tree::getStartOffset) ?: macroExpression.endOffset
+        return findDescendantsByType(macroExpression, CjNodeTypes.TYPE_REFERENCE)
+            .firstOrNull { typeRef ->
+                tree.getStartOffset(typeRef) >= afterParameters && tree.getEndOffset(typeRef) <= beforeBody
+            }
+    }
+
+    private fun findDescendantsByType(
+        node: LighterASTNode,
+        tokenType: com.intellij.psi.tree.IElementType,
+    ): List<LighterASTNode> {
+        val result = mutableListOf<LighterASTNode>()
+        fun visit(current: LighterASTNode) {
+            if (current.tokenType == tokenType) {
+                result += current
+            }
+            tree.forEachChildren(current, ::visit)
+        }
+        visit(node)
+        return result
+    }
+
+    /**
+     * LightTree 的 MACRO_EXPRESSION 同时承载 declaration macro 与 annotation-site。
+     * raw 阶段先恢复 annotation slot 文本，classification 再决定最终 splice 槽位。
+     */
+    private fun macroExpressionAnnotationSyntax(
+        node: LighterASTNode,
+        rawName: String,
+        attrNode: LighterASTNode?,
+    ): String {
+        val prefix = if (node.asText().trimStart().startsWith("@!")) "@!" else "@"
+        return prefix + rawName + attrNode?.asText().orEmpty()
+    }
+
+    private fun tokenizeMacroExpressionAnnotationSyntax(
+        rawAnnotationSyntax: String,
+        baseOffset: Int,
+    ): List<MacroSurfaceToken> =
+        MacroPayloadTokenizer.tokenize(rawAnnotationSyntax, baseOffset).map { token ->
+            MacroSurfaceToken(
+                text = token.text,
+                startOffset = token.startOffset,
+                endOffset = token.endOffset,
+                kindName = token.kindName,
+            )
+        }
 
     private fun findFirstDeclarationDescendant(node: LighterASTNode): LighterASTNode? {
         if (LightTreeRawCfirExpressionBuilder.isDeclarationToken(node.tokenType)) return node
@@ -1246,6 +1621,26 @@ class LightTreeRawCfirDeclarationBuilder(
             findFirstDeclarationDescendant(child)?.let { return it }
         }
         return null
+    }
+
+    private fun findDirectDeclarationChild(node: LighterASTNode): LighterASTNode? {
+        var declarationNode: LighterASTNode? = null
+        tree.forEachChildren(node) { child ->
+            if (declarationNode == null && LightTreeRawCfirExpressionBuilder.isDeclarationToken(child.tokenType)) {
+                declarationNode = child
+            }
+        }
+        return declarationNode
+    }
+
+    private fun findDirectMacroExpressionChild(node: LighterASTNode): LighterASTNode? {
+        var macroExpression: LighterASTNode? = null
+        tree.forEachChildren(node) { child ->
+            if (macroExpression == null && child.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+                macroExpression = child
+            }
+        }
+        return macroExpression
     }
 
     private fun extractMacroExpressionNameText(node: LighterASTNode): String? {
@@ -1462,11 +1857,55 @@ class LightTreeRawCfirDeclarationBuilder(
             ?: return emptyList()
 
         val declarations = mutableListOf<CfirDeclaration>()
+        val pendingAnnotations = mutableListOf<LighterASTNode>()
         tree.forEachChildren(bodyNode) { child ->
             val tt = child.tokenType
+            when (tt) {
+                CjStubElementTypes.ANNOTATIONS -> {
+                    tree.forEachChildren(child) { annotation ->
+                        if (annotation.tokenType == CjNodeTypes.ANNOTATION || annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+                            pendingAnnotations += annotation
+                        }
+                    }
+                    return@forEachChildren
+                }
+                CjNodeTypes.ANNOTATION,
+                    -> {
+                    pendingAnnotations += child
+                    return@forEachChildren
+                }
+                CjNodeTypes.MACRO_EXPRESSION -> {
+                    if (child.isTopLevelMacroDeclaration()) {
+                        val declaration = convertTopLevelMacroDeclaration(child) ?: return@forEachChildren
+                        if (pendingAnnotations.isNotEmpty()) {
+                            collectMacroSurfacesFromAnnotations(
+                                ownerNode = child,
+                                modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList()),
+                                ownerKind = MacroSurfaceOwnerKind.DECLARATION,
+                                carrier = declaration,
+                            )
+                            pendingAnnotations.clear()
+                        }
+                        declarations.add(declaration)
+                    } else {
+                        pendingAnnotations += child
+                    }
+                    return@forEachChildren
+                }
+            }
             // 排除 ENUM_CONSTRUCTOR（由 convertClass 单独处理）
             if (tt != CjNodeTypes.ENUM_CONSTRUCTOR && LightTreeRawCfirExpressionBuilder.isDeclarationToken(tt)) {
-                declarations.add(convertDeclaration(child))
+                val declaration = convertDeclaration(child)
+                if (pendingAnnotations.isNotEmpty()) {
+                    collectMacroSurfacesFromAnnotations(
+                        ownerNode = child,
+                        modifiers = LightTreeModifierList(tree, modifierListNode = null, annotations = pendingAnnotations.toList()),
+                        ownerKind = MacroSurfaceOwnerKind.DECLARATION,
+                        carrier = declaration,
+                    )
+                    pendingAnnotations.clear()
+                }
+                declarations.add(declaration)
             }
         }
         return declarations
@@ -1494,9 +1933,16 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
-    /** 提取返回类型引用 */
+    /** 提取声明自身的类型引用，避免把参数、约束或 body 内部的类型误当成声明返回类型。 */
     private fun extractReturnTypeRef(node: LighterASTNode): CfirTypeRef {
-        val typeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
+        val typeRef = when (node.tokenType) {
+            CjNodeTypes.FUNC,
+            CjNodeTypes.MAIN_FUNC,
+            CjNodeTypes.MACRO,
+            -> findFunctionReturnTypeRefInMacroExpression(node)
+                ?: tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
+            else -> tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
+        }
         return convertTypeRef(typeRef)
     }
 

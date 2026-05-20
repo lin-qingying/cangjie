@@ -39,9 +39,17 @@ class CjRangeExpression(node: ASTNode) : CjBinaryExpression(node), CjReferenceEx
 
     val step: CjExpression?
         get() {
-            val COLON = findChildByType<PsiElement>(CjTokens.COLON) ?: return null
+            val colon = findChildByType<PsiElement>(CjTokens.COLON) ?: return null
 
-//            获取COLON后面的元素
-            return COLON.node.treeNext.psi as? CjExpression
+            var node = colon.node.treeNext
+            while (node != null) {
+                val psi = node.psi
+                if (psi is CjExpression) {
+                    return psi
+                }
+                node = node.treeNext
+            }
+
+            return null
         }
 }

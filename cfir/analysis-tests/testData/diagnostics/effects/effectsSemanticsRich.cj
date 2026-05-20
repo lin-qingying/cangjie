@@ -47,8 +47,8 @@ func resumeThrowingType(): Int64 {
 
 func mismatchHandleBlock(): Unit {
     try {
-        1
-    } handle (cmd: GoodCommand) {
+        <!UNUSED_EXPRESSION!>1<!>
+    } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         false
-    }
+    }<!>
 }

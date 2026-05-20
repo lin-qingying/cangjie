@@ -1,10 +1,27 @@
 # analysis-api-standalone
 
-## org/cangnova/cangjie/analysis/api/standalone/platform/CaStandaloneAnalysisPermissionChecker.kt
-package org.cangnova.cangjie.analysis.api.standalone.platform
-public class CaStandaloneAnalysisPermissionChecker : CaAnalysisPermissionChecker
-CaStandaloneAnalysisPermissionChecker.public override fun isAnalysisAllowed(): Boolean
-CaStandaloneAnalysisPermissionChecker.public override fun getRejectionReason(): String
+## org/cangnova/cangjie/analysis/api/standalone/base/declarations/CangJieStandaloneDeclarationProvider.kt
+package org.cangnova.cangjie.analysis.api.standalone.base.declarations
+public class CangJieStandaloneDeclarationProviderMerger : CangJieDeclarationProviderMerger
+CangJieStandaloneDeclarationProviderMerger.public override fun merge(providers: List<CangJieDeclarationProvider>): CangJieDeclarationProvider
+public class CangJieStandaloneAnnotationsResolverFactory : CangJieAnnotationsResolverFactory
+CangJieStandaloneAnnotationsResolverFactory.public override fun createAnnotationResolver(searchScope: GlobalSearchScope): CangJieAnnotationsResolver
+## org/cangnova/cangjie/analysis/api/standalone/base/packages/CangJieStandalonePackageProvider.kt
+package org.cangnova.cangjie.analysis.api.standalone.base.packages
+public class CangJieStandalonePackageProviderFactory( project: Project, ) : CangJiePackageProviderFactory
+CangJieStandalonePackageProviderFactory.public override fun createPackageProvider(searchScope: GlobalSearchScope): CangJiePackageProvider
+public class CangJieStandalonePackageProviderMerger : CangJiePackageProviderMerger
+CangJieStandalonePackageProviderMerger.public override fun merge(providers: List<CangJiePackageProvider>): CangJiePackageProvider
+## org/cangnova/cangjie/analysis/api/standalone/base/permissions/CaStandaloneAnalysisPermissionOptions.kt
+package org.cangnova.cangjie.analysis.api.standalone.base.permissions
+public class CaStandaloneAnalysisPermissionOptions : CaAnalysisPermissionOptions
+CaStandaloneAnalysisPermissionOptions.public override val defaultIsAnalysisAllowedOnEdt: Boolean
+CaStandaloneAnalysisPermissionOptions.public override val defaultIsAnalysisAllowedInWriteAction: Boolean
+## org/cangnova/cangjie/analysis/api/standalone/base/projectStructure/CangJieStaticProjectStructureProvider.kt
+package org.cangnova.cangjie.analysis.api.standalone.base.projectStructure
+public abstract class CangJieStaticProjectStructureProvider : CangJieProjectStructureProviderBase()
+CangJieStaticProjectStructureProvider.public abstract val allModules: List<CaModule>
+CangJieStaticProjectStructureProvider.public abstract val allSourceFiles: List<PsiFileSystemItem>
 ## org/cangnova/cangjie/analysis/api/standalone/platform/CaStandalonePlatformServices.kt
 package org.cangnova.cangjie.analysis.api.standalone.platform
 public class CaStandaloneRestrictedAnalysisService : CaRestrictedAnalysisService
@@ -12,9 +29,36 @@ CaStandaloneRestrictedAnalysisService.public override val isAnalysisRestricted: 
 CaStandaloneRestrictedAnalysisService.public override val isRestrictedAnalysisAllowed: Boolean
 CaStandaloneRestrictedAnalysisService.public override fun rejectRestrictedAnalysis(): Nothing
 public class CaStandalonePlatformSettings : CaPlatformSettings
+CaStandalonePlatformSettings.public override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
 CaStandalonePlatformSettings.public override val allowUseSiteLibraryModuleAnalysis: Boolean
 public object CaStandaloneAnalysisApiServiceRegistrar
 CaStandaloneAnalysisApiServiceRegistrar.public fun register(application: MockApplication, project: MockProject)
+## org/cangnova/cangjie/analysis/api/standalone/projectStructure/AnalysisApiServiceRegistrar.kt
+package org.cangnova.cangjie.analysis.api.standalone.projectStructure
+public interface AnalysisApiServiceRegistrar<in DATA>
+AnalysisApiServiceRegistrar.public fun registerApplicationServices(application: MockApplication, data: DATA)
+AnalysisApiServiceRegistrar.public fun registerProjectExtensionPoints(project: MockProject, data: DATA)
+AnalysisApiServiceRegistrar.public fun registerProjectServices(project: MockProject, data: DATA)
+AnalysisApiServiceRegistrar.public fun registerProjectModelServices(project: MockProject, disposable: Disposable, data: DATA)
+public fun <T> List<AnalysisApiServiceRegistrar<T>>.registerApplicationServices(application: MockApplication, data: T)
+public fun <T> List<AnalysisApiServiceRegistrar<T>>.registerProjectExtensionPoints(project: MockProject, data: T)
+public fun <T> List<AnalysisApiServiceRegistrar<T>>.registerProjectServices(project: MockProject, data: T)
+public fun <T> List<AnalysisApiServiceRegistrar<T>>.registerProjectModelServices(project: MockProject, disposable: Disposable, data: T)
+public abstract class AnalysisApiSimpleServiceRegistrar : AnalysisApiServiceRegistrar<Any>
+AnalysisApiSimpleServiceRegistrar.public open fun registerApplicationServices(application: MockApplication)
+AnalysisApiSimpleServiceRegistrar.public open fun registerProjectExtensionPoints(project: MockProject)
+AnalysisApiSimpleServiceRegistrar.public open fun registerProjectServices(project: MockProject)
+AnalysisApiSimpleServiceRegistrar.public open fun registerProjectModelServices(project: MockProject, disposable: Disposable)
+AnalysisApiSimpleServiceRegistrar.public final override fun registerApplicationServices(application: MockApplication, data: Any)
+AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectExtensionPoints(project: MockProject, data: Any)
+AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectServices(project: MockProject, data: Any)
+AnalysisApiSimpleServiceRegistrar.public final override fun registerProjectModelServices(project: MockProject, disposable: Disposable, data: Any)
+## org/cangnova/cangjie/analysis/api/standalone/projectStructure/ApplicationServiceRegistration.kt
+package org.cangnova.cangjie.analysis.api.standalone.projectStructure
+public object ApplicationServiceRegistration
+ApplicationServiceRegistration.public fun <DATA> register(application: MockApplication, registrars: List<AnalysisApiServiceRegistrar<DATA>>, data: DATA)
+ApplicationServiceRegistration.public fun <DATA> registerWithCustomRegistration( application: MockApplication, registrars: List<AnalysisApiServiceRegistrar<DATA>>, register: AnalysisApiServiceRegistrar<DATA>.() -> Unit, )
+ApplicationServiceRegistration.public class.qualifiedName ?: error("A service registrar should have a qualified name.")
 ## org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneModules.kt
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
 public class CaStandaloneSourceModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, project: Project, override val psiRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, psiRoots), CaSourceModule
@@ -23,18 +67,33 @@ public class CaStandaloneLibrarySourceModule( override val libraryName: String, 
 public class CaStandaloneLibraryFallbackDependenciesModule( override val dependencyOwnerName: String, project: Project, scopeRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, scopeRoots), CaLibraryFallbackDependenciesModule
 public class CaStandaloneBuiltinsModule( project: Project, scopeRoots: List<PsiFileSystemItem> = emptyList(), override val builtinsName: String = "<builtins>", ) : CaStandaloneModule(project, scopeRoots), CaBuiltinsModule
 CaStandaloneBuiltinsModule.public override val contentScope: GlobalSearchScope
-public class CaStandaloneDanglingFileModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, override val contextModule: CaModule?, project: Project, override val psiRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, psiRoots), CaDanglingFileModule
+public class CaStandaloneDanglingFileModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, override val contextModule: CaModule, override val resolutionMode: CaDanglingFileResolutionMode = CaDanglingFileResolutionMode.PREFER_SELF, project: Project, override val psiRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, psiRoots), CaDanglingFileModule
+CaStandaloneDanglingFileModule.public override val files: List<CjFile>
+CaStandaloneDanglingFileModule.public override val isCodeFragment: Boolean
+CaStandaloneDanglingFileModule.public override val isValid: Boolean
+CaStandaloneDanglingFileModule.public override val baseContentScope: GlobalSearchScope
+CaStandaloneDanglingFileModule.public val result
 public class CaStandaloneNotUnderContentRootModule( override val name: String, override val originalModule: CaModule?, project: Project, scopeRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, scopeRoots), CaNotUnderContentRootModule
 ## org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneProjectStructure.kt
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
-public class CaStandaloneProjectStructure( override val allModules: List<CaModule>, ) : CaProjectStructureProvider, CaModuleProvider, CaContentScopeRefiner, CaModificationTracker, CaSessionInvalidationService
+public class, org.cangnova.cangjie.analysis.api.CaPlatformInterface::class, )
+public class CaStandaloneProjectStructure( override val allModules: List<CaModule>, ) : CangJieStaticProjectStructureProvider(), CaModuleProvider, CaModificationTracker, CaSessionInvalidationService, CaResolutionScopeProvider
+CaStandaloneProjectStructure.public override val allSourceFiles: List<PsiFileSystemItem>
 CaStandaloneProjectStructure.public override val snapshot: CaProjectStructureSnapshot
 CaStandaloneProjectStructure.public override val modificationCount: Long
 CaStandaloneProjectStructure.public override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule
-CaStandaloneProjectStructure.public override fun getRefinedContentScope(module: CaModule, baseContentScope: GlobalSearchScope): GlobalSearchScope
+CaStandaloneProjectStructure.public override fun getImplementingModules(module: CaModule): List<CaModule>
+CaStandaloneProjectStructure.public override fun getNotUnderContentRootModule(project: Project): CaNotUnderContentRootModule
+CaStandaloneProjectStructure.public override fun getResolutionScope(module: CaModule): CaResolutionScope
 CaStandaloneProjectStructure.public override fun getModuleByStableName(stableModuleName: String): CaModule?
 CaStandaloneProjectStructure.public override fun getModuleModificationCount(module: CaModule): Long
 CaStandaloneProjectStructure.public override fun invalidate(modules: Set<CaModule>)
+## org/cangnova/cangjie/analysis/api/standalone/projectStructure/PluginStructureProvider.kt
+package org.cangnova.cangjie.analysis.api.standalone.projectStructure
+public object PluginStructureProvider
+PluginStructureProvider.public fun registerApplicationServices(application: MockApplication, pluginRelativePath: String)
+PluginStructureProvider.public fun registerProjectServices(project: MockProject, pluginRelativePath: String)
+PluginStructureProvider.public class.java.name, fakePluginDescriptor).classLoader
 ## org/cangnova/cangjie/analysis/api/standalone/session/CaStandaloneSessionBuilder.kt
 package org.cangnova.cangjie.analysis.api.standalone.session
 public class CaStandaloneAnalysisContext( val project: Project, val projectStructure: CaStandaloneProjectStructure, )

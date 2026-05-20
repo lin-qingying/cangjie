@@ -12,10 +12,7 @@ import std.ast.Token
 import std.deriving.api.Identifier
 
 interface ClassLikeDecl {
-    mut prop body: std.ast.Body {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop body: std.ast.Body
 
     func allFields(): std.core.Array<std.deriving.api.TargetNamedAttribute> { /* compiled code */ }
 
@@ -23,7 +20,7 @@ interface ClassLikeDecl {
 
     func allProperties(): std.core.Array<std.ast.PropDecl> { /* compiled code */ }
 
-    func allGenerics(): std.core.Array<std.deriving.api.GenericDecl> { /* compiled code */ }
+    abstract func allGenerics(): std.core.Array<std.deriving.api.GenericDecl>
 }
 
 func unwrapParams(ctor: std.ast.PrimaryCtorDecl): std.core.Iterator<std.ast.Decl> { /* compiled code */ }
@@ -49,7 +46,7 @@ struct InputOptions {
 
     let ordering: std.core.Array<std.deriving.api.Identifier>
 
-    init(origin: std.core.Array<std.deriving.impl.DeriveInterfaceOption>, inputNames: std.core.Array<std.deriving.api.QualifiedName>, allInterfaceNames: std.core.Array<std.deriving.api.QualifiedName>, decl: std.ast.Decl, included: std.core.Array<std.deriving.api.Identifier>, excluded: std.core.Array<std.deriving.api.Identifier>, ordering: std.core.Array<std.deriving.api.Identifier>) { /* compiled code */ }
+    InputOptions(origin: std.core.Array<std.deriving.impl.DeriveInterfaceOption>, inputNames: std.core.Array<std.deriving.api.QualifiedName>, allInterfaceNames: std.core.Array<std.deriving.api.QualifiedName>, decl: std.ast.Decl, included: std.core.Array<std.deriving.api.Identifier>, excluded: std.core.Array<std.deriving.api.Identifier>, ordering: std.core.Array<std.deriving.api.Identifier>) { /* compiled code */ }
 }
 
 struct SettingsOutput {
@@ -57,7 +54,7 @@ struct SettingsOutput {
 
     let target: std.deriving.api.DerivingTarget
 
-    init(settings: std.deriving.api.DerivingSettings, target: std.deriving.api.DerivingTarget) { /* compiled code */ }
+    SettingsOutput(settings: std.deriving.api.DerivingSettings, target: std.deriving.api.DerivingTarget) { /* compiled code */ }
 }
 
 func applyFieldsOrder(allFieldsMap: std.collection.HashMap<std.deriving.api.Identifier, std.deriving.api.TargetNamedAttribute>, userDefinedOrder: std.core.Array<std.deriving.api.Identifier>, includedSet: std.collection.HashSet<std.deriving.api.Identifier>, excludedSet: std.collection.HashSet<std.deriving.api.Identifier>): std.core.Array<std.deriving.api.TargetNamedAttribute> { /* compiled code */ }
@@ -99,7 +96,7 @@ struct DeriveInterfaceOption <: std.ast.ToTokens & std.core.ToString {
 
     let parsedConstraints: std.core.Option<std.deriving.impl.ParsedExplicitConstraints>
 
-    init(interfaceName: std.deriving.api.Identifier, resolvedInterface: std.deriving.api.QualifiedName, parsedConstraints: std.core.Option<std.deriving.impl.ParsedExplicitConstraints>) { /* compiled code */ }
+    DeriveInterfaceOption(interfaceName: std.deriving.api.Identifier, resolvedInterface: std.deriving.api.QualifiedName, parsedConstraints: std.core.Option<std.deriving.impl.ParsedExplicitConstraints>) { /* compiled code */ }
 }
 
 func settingsFor(inputOptions: std.deriving.impl.InputOptions, logger: std.deriving.api.Logger): std.core.Option<std.deriving.impl.SettingsOutput> { /* compiled code */ }
@@ -119,7 +116,7 @@ struct ParsedGenericConstraint <: std.core.ToString & std.ast.ToTokens {
 
     let upperBounds: std.core.Array<std.ast.TypeNode>
 
-    init(genericParameter: std.deriving.api.Identifier, upperBounds: std.core.Array<std.ast.TypeNode>) { /* compiled code */ }
+    ParsedGenericConstraint(genericParameter: std.deriving.api.Identifier, upperBounds: std.core.Array<std.ast.TypeNode>) { /* compiled code */ }
 }
 
 struct ParsedExplicitConstraints <: std.core.ToString & std.ast.ToTokens {
@@ -131,7 +128,7 @@ struct ParsedExplicitConstraints <: std.core.ToString & std.ast.ToTokens {
 
     let explicitConstraints: std.core.Array<std.deriving.impl.ParsedGenericConstraint>
 
-    init(whereKeyword: std.ast.Token, explicitConstraints: std.core.Array<std.deriving.impl.ParsedGenericConstraint>) { /* compiled code */ }
+    ParsedExplicitConstraints(whereKeyword: std.ast.Token, explicitConstraints: std.core.Array<std.deriving.impl.ParsedGenericConstraint>) { /* compiled code */ }
 }
 
 func parseDeriveOptions(input: std.ast.Tokens, logger: std.deriving.api.Logger): std.core.Array<std.deriving.impl.DeriveInterfaceOption> { /* compiled code */ }
@@ -169,13 +166,13 @@ class PushbackTokensIterator {
 
     let tokens: std.ast.Tokens
 
-    init(tokens: std.ast.Tokens) { /* compiled code */ }
+    PushbackTokensIterator(tokens: std.ast.Tokens) { /* compiled code */ }
 }
 
 struct Mark {
     let markedAt: Int64
 
-    init(markedAt: Int64) { /* compiled code */ }
+    Mark(markedAt: Int64) { /* compiled code */ }
 }
 
 func collectHashMap(it: std.core.Iterable<(K, V)>): std.collection.HashMap<std.deriving.api.Identifier, V> { /* compiled code */ }
@@ -191,7 +188,7 @@ struct MapNotNoneIterable <: std.core.Iterable<T> {
 
     let mapper: (F) -> std.core.Option<T>
 
-    init(source: std.core.Iterable<F>, mapper: (F) -> std.core.Option<T>) { /* compiled code */ }
+    MapNotNoneIterable(source: std.core.Iterable<F>, mapper: (F) -> std.core.Option<T>) { /* compiled code */ }
 }
 
 class MapNotNoneIterator <: std.core.Iterator<T> {
@@ -201,7 +198,7 @@ class MapNotNoneIterator <: std.core.Iterator<T> {
 
     let mapper: (F) -> std.core.Option<T>
 
-    init(source: std.core.Iterator<F>, mapper: (F) -> std.core.Option<T>) { /* compiled code */ }
+    MapNotNoneIterator(source: std.core.Iterator<F>, mapper: (F) -> std.core.Option<T>) { /* compiled code */ }
 }
 
 func collectTokens(iterator: std.core.Iterable<std.ast.Token>): std.ast.Tokens { /* compiled code */ }

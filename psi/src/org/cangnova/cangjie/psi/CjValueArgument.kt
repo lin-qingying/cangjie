@@ -55,6 +55,12 @@ open class CjValueArgument :
             }
         }
 
+        var child = node.firstChildNode
+        while (child != null) {
+            (child.psi as? CjExpression)?.let { return it }
+            child = child.treeNext
+        }
+
         return findChildByClass(CjExpression::class.java)
     }
 

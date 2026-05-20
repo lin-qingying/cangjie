@@ -4178,11 +4178,13 @@ class CangJieParsing private constructor(
         if (parseContext.allowParseAnnotationsInValueParameter) {
             parseAnnotations()
         }
+        val detector = ModifierDetector()
+        if (isPrimaryInitFunc) {
+            parseModifierList(detector, TokenSet.EMPTY, true)
+        }
+
         if (isPrimaryInitFunc) {
 //            主构造方法不可以宏调用
-
-            val detector = ModifierDetector()
-            parseModifierList(detector, TokenSet.EMPTY, true)
 
             when {
                 at(LET_KEYWORD) || at(VAR_KEYWORD) -> advance()
@@ -4698,7 +4700,6 @@ class CangJieParsing private constructor(
             }
         }
     }
-
 
     /**
      * 解析类型引用内容的具体实现

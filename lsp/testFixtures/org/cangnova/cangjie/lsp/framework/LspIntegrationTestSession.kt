@@ -173,6 +173,11 @@ class LspIntegrationTestSession(
         connection.awaitDiagnosticsCount(expectedCount)
     }
 
+    fun awaitPublishedDiagnostics(
+        uri: String,
+        predicate: (PublishDiagnosticsParams) -> Boolean = { true },
+    ): PublishDiagnosticsParams = connection.awaitPublishedDiagnostics(uri, predicate)
+
     fun clearPublishedDiagnostics() {
         connection.clearPublishedDiagnostics()
     }

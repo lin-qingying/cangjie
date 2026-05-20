@@ -47,6 +47,12 @@ public class CfirStandaloneNormalAnalysisSourceModulePackageScopeTestGenerated e
   }
 
   @Test
+  @TestMetadata("multiFilePackageScope.cj")
+  public void testMultiFilePackageScope() {
+    run("multiFilePackageScope.cj");
+  }
+
+  @Test
   @TestMetadata("packageScopeQueries.cj")
   public void testPackageScopeQueries() {
     run("packageScopeQueries.cj");

@@ -26,6 +26,7 @@ package org.cangnova.cangjie.psi.stubs.impl
 
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjExtend
+import org.cangnova.cangjie.psi.normalizeExtendTypeText
 import org.cangnova.cangjie.psi.stubs.CangJieExtendStub
 import org.cangnova.cangjie.psi.stubs.elements.CjExtendElementType
 import com.intellij.psi.PsiElement
@@ -44,9 +45,10 @@ open class CangJieExtendStubImpl(
 
     private val superNames: Array<StringRef>,
 
-    override val receiverTypeName: String?,
+    receiverTypeName: String?,
 
     ) : CangJieStubBaseImpl<CjExtend>(parent, type), CangJieExtendStub {
+    private val receiverTypeNameText: String? = receiverTypeName
 
     override fun getFqName(): FqName? {
         val stringRef = StringRef.toString(qualifiedName) ?: return null
@@ -54,7 +56,10 @@ open class CangJieExtendStubImpl(
     }
 
     override val extendId: String
-        get() = StringRef.toString(extendIdRef)
+        get() = normalizeExtendId(StringRef.toString(extendIdRef))
+
+    override val receiverTypeName: String?
+        get() = normalizeExtendTypeText(receiverTypeNameText)
 
     override fun getName(): String? = StringRef.toString(name)
 
@@ -78,4 +83,20 @@ open class CangJieExtendStubImpl(
         superNames = superNames,
         receiverTypeName = receiverTypeName,
     )
+
+    private companion object {
+        fun normalizeExtendId(extendId: String): String {
+            val packagePart = extendId.substringBefore(':', missingDelimiterValue = "")
+            val body = extendId.substringAfter(':', missingDelimiterValue = extendId)
+            val receiver = body.substringBefore("<:", missingDelimiterValue = body)
+            val superTypes = body.substringAfter("<:", missingDelimiterValue = "")
+            return buildString {
+                append(packagePart)
+                append(':')
+                append(normalizeExtendTypeText(receiver) ?: receiver)
+                append("<:")
+                append(superTypes)
+            }
+        }
+    }
 }

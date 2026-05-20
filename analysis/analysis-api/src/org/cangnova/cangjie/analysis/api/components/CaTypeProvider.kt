@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.components
 
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
 
 /**
@@ -18,4 +19,11 @@ interface CaTypeProvider : CaLifetimeOwner {
      * 该 class-like 声明对应的默认类型(未带类型实参或带全部类型参数自身)。
      */
     val CaClassLikeSymbol.defaultType: CaType
+
+    /**
+     * 如果该值参数是 `vararg`，返回承载其实参数列的 `Array<T>` 类型。
+     *
+     * 非 `vararg` 参数返回 `null`。
+     */
+    val CaValueParameterSymbol.varargArrayType: CaType?
 }

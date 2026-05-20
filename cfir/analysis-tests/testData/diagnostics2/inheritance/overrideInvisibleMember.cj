@@ -6,7 +6,7 @@ open class Base {
 }
 
 class Child <: Base {
-    <!NOTHING_TO_OVERRIDE!>override<!> func hidden(): Int64 {
+    <!CANNOT_OVERRIDE_INVISIBLE_MEMBER!>override<!> func hidden(): Int64 {
         return 2
     }
 }

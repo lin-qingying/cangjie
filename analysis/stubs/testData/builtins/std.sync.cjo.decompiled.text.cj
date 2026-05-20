@@ -470,11 +470,11 @@ class SyncCounter {
 }
 
 interface IReentrantMutex {
-    func lock(): Unit { /* compiled code */ }
+    abstract func lock(): Unit
 
-    func tryLock(): Bool { /* compiled code */ }
+    abstract func tryLock(): Bool
 
-    func unlock(): Unit { /* compiled code */ }
+    abstract func unlock(): Unit
 }
 
 class IllegalSynchronizationStateException <: std.core.Exception {
@@ -486,29 +486,29 @@ class IllegalSynchronizationStateException <: std.core.Exception {
 }
 
 interface Lock {
-    func lock(): Unit { /* compiled code */ }
+    abstract func lock(): Unit
 
-    func tryLock(): Bool { /* compiled code */ }
+    abstract func tryLock(): Bool
 
-    func unlock(): Unit { /* compiled code */ }
+    abstract func unlock(): Unit
 }
 
 interface UniqueLock <: std.sync.Lock {
-    func condition(): std.sync.Condition { /* compiled code */ }
+    abstract func condition(): std.sync.Condition
 }
 
 interface Condition {
-    func wait(): Unit { /* compiled code */ }
+    abstract func wait(): Unit
 
-    func wait(timeout: std.core.Duration): Bool { /* compiled code */ }
+    abstract func wait(timeout: std.core.Duration): Bool
 
-    func waitUntil(predicate: () -> Bool): Unit { /* compiled code */ }
+    abstract func waitUntil(predicate: () -> Bool): Unit
 
-    func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool { /* compiled code */ }
+    abstract func waitUntil(predicate: () -> Bool, timeout: std.core.Duration): Bool
 
-    func notify(): Unit { /* compiled code */ }
+    abstract func notify(): Unit
 
-    func notifyAll(): Unit { /* compiled code */ }
+    abstract func notifyAll(): Unit
 }
 
 class Monitor <: std.sync.ReentrantMutex {
@@ -652,7 +652,7 @@ class ReadLock <: std.core.Object & std.sync.Lock {
 
     let _readWriteLockImpl: std.sync.ReadWriteLockImpl
 
-    init(_readWriteLockImpl: std.sync.ReadWriteLockImpl) { /* compiled code */ }
+    ReadLock(_readWriteLockImpl: std.sync.ReadWriteLockImpl) { /* compiled code */ }
 }
 
 class ReadWriteLockImpl {
@@ -702,7 +702,7 @@ class WriteLock <: std.core.Object & std.sync.UniqueLock {
 
     let _readWriteLockImpl: std.sync.ReadWriteLockImpl
 
-    init(_readWriteLockImpl: std.sync.ReadWriteLockImpl) { /* compiled code */ }
+    WriteLock(_readWriteLockImpl: std.sync.ReadWriteLockImpl) { /* compiled code */ }
 }
 
 class ReadWriteLockCondition <: std.core.Object & std.sync.Condition {
@@ -722,7 +722,7 @@ class ReadWriteLockCondition <: std.core.Object & std.sync.Condition {
 
     let lock: std.sync.ReadWriteLockImpl
 
-    init(lock: std.sync.ReadWriteLockImpl) { /* compiled code */ }
+    ReadWriteLockCondition(lock: std.sync.ReadWriteLockImpl) { /* compiled code */ }
 }
 
 class SyncList {
@@ -996,7 +996,7 @@ class TimerBlock {
 
     let version: UInt64
 
-    init(version: UInt64) { /* compiled code */ }
+    TimerBlock(version: UInt64) { /* compiled code */ }
 }
 
 func newBlock(tailBlock: std.sync.TimerBlock, tail: std.sync.AtomicReference<std.sync.TimerBlock>): Unit { /* compiled code */ }

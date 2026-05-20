@@ -183,33 +183,21 @@ struct AddressFamily <: std.core.ToString & std.core.Equatable<std.net.AddressFa
 }
 
 interface StreamingSocket <: std.io.IOStream & std.core.Resource & std.core.ToString {
-    prop localAddress: std.net.SocketAddress {
-        get() { /* compiled code */ }
-    }
+    abstract prop localAddress: std.net.SocketAddress
 
-    prop remoteAddress: std.net.SocketAddress {
-        get() { /* compiled code */ }
-    }
+    abstract prop remoteAddress: std.net.SocketAddress
 
-    mut prop readTimeout: std.core.Option<std.core.Duration> {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop readTimeout: std.core.Option<std.core.Duration>
 
-    mut prop writeTimeout: std.core.Option<std.core.Duration> {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop writeTimeout: std.core.Option<std.core.Duration>
 }
 
 interface ServerSocket <: std.core.Resource & std.core.ToString {
-    prop localAddress: std.net.SocketAddress {
-        get() { /* compiled code */ }
-    }
+    abstract prop localAddress: std.net.SocketAddress
 
-    func bind(): Unit { /* compiled code */ }
+    abstract func bind(): Unit
 
-    func accept(timeout: std.core.Option<std.core.Duration>): std.net.StreamingSocket { /* compiled code */ }
+    abstract func accept(timeout: std.core.Option<std.core.Duration>): std.net.StreamingSocket
 
     func accept(): std.net.StreamingSocket { /* compiled code */ }
 }
@@ -249,7 +237,7 @@ struct NonReentrantWriteLock <: std.sync.IReentrantMutex {
 
     let useCounter: std.sync.AtomicInt64
 
-    init(m: std.sync.Monitor, useCounter: std.sync.AtomicInt64) { /* compiled code */ }
+    NonReentrantWriteLock(m: std.sync.Monitor, useCounter: std.sync.AtomicInt64) { /* compiled code */ }
 }
 
 struct SocketKeepAliveConfig <: std.core.ToString & std.core.Equatable<std.net.SocketKeepAliveConfig> {
@@ -294,15 +282,11 @@ struct ExternallyLockedLazy {
 }
 
 class SocketAddress <: std.core.Object & std.core.ToString & std.core.Equatable<std.net.SocketAddress> & std.core.Hashable {
-    prop size: Int64 {
-        get() { /* compiled code */ }
-    }
+    abstract prop size: Int64
 
-    prop family: std.net.AddressFamily {
-        get() { /* compiled code */ }
-    }
+    abstract prop family: std.net.AddressFamily
 
-    func getAddressBytes(): std.core.Array<UInt8> { /* compiled code */ }
+    abstract func getAddressBytes(): std.core.Array<UInt8>
 
     operator func ==(rhs: std.net.SocketAddress): Bool { /* compiled code */ }
 
@@ -342,45 +326,45 @@ class SocketHolder <: std.core.Object & std.core.Resource {
 
     func write(block: (NS, std.net.SocketState) -> R): std.core.Option<R> { /* compiled code */ }
 
-    init(create: () -> NS) { /* compiled code */ }
+    SocketHolder(create: () -> NS) { /* compiled code */ }
 }
 
 interface PlatformSocket {
-    func write(buffer: std.core.Array<UInt8>, timeout: std.core.Option<std.core.Duration>): Unit { /* compiled code */ }
+    abstract func write(buffer: std.core.Array<UInt8>, timeout: std.core.Option<std.core.Duration>): Unit
 
-    func read(buffer: std.core.Array<UInt8>, timeout: std.core.Option<std.core.Duration>): std.core.Option<Int64> { /* compiled code */ }
+    abstract func read(buffer: std.core.Array<UInt8>, timeout: std.core.Option<std.core.Duration>): std.core.Option<Int64>
 
-    func send(buffer: std.core.Array<UInt8>, timeout: std.core.Option<std.core.Duration>, destination: std.net.SocketAddress): Int64 { /* compiled code */ }
+    abstract func send(buffer: std.core.Array<UInt8>, timeout: std.core.Option<std.core.Duration>, destination: std.net.SocketAddress): Int64
 
-    func receiveFrom(buffer: std.core.Array<UInt8>, timeout: std.core.Option<std.core.Duration>): std.core.Option<(std.net.SocketAddress, Int64)> { /* compiled code */ }
+    abstract func receiveFrom(buffer: std.core.Array<UInt8>, timeout: std.core.Option<std.core.Duration>): std.core.Option<(std.net.SocketAddress, Int64)>
 
-    func connect(localAddress: std.core.Option<std.net.SocketAddress>, address: std.net.SocketAddress, timeout: std.core.Option<std.core.Duration>): Unit { /* compiled code */ }
+    abstract func connect(localAddress: std.core.Option<std.net.SocketAddress>, address: std.net.SocketAddress, timeout: std.core.Option<std.core.Duration>): Unit
 
-    func disconnect(): Unit { /* compiled code */ }
+    abstract func disconnect(): Unit
 
-    func bindListen(address: std.net.SocketAddress, backlogSize: std.core.Option<Int32>, ignoreAlreadyBound: Bool): Unit { /* compiled code */ }
+    abstract func bindListen(address: std.net.SocketAddress, backlogSize: std.core.Option<Int32>, ignoreAlreadyBound: Bool): Unit
 
-    func accept(timeout: std.core.Option<std.core.Duration>): std.core.Option<Self> { /* compiled code */ }
+    abstract func accept(timeout: std.core.Option<std.core.Duration>): std.core.Option<Self>
 
-    func shutdown(): Unit { /* compiled code */ }
+    abstract func shutdown(): Unit
 
-    func detectLocalAddress(): std.core.Option<std.net.SocketAddress> { /* compiled code */ }
+    abstract func detectLocalAddress(): std.core.Option<std.net.SocketAddress>
 
-    func detectRemoteAddress(): std.core.Option<std.net.SocketAddress> { /* compiled code */ }
+    abstract func detectRemoteAddress(): std.core.Option<std.net.SocketAddress>
 
-    func getSocketOption(level: Int32, option: Int32, value: CPointer<Unit>, valueLength: CPointer<UIntNative>): Unit { /* compiled code */ }
+    abstract func getSocketOption(level: Int32, option: Int32, value: CPointer<Unit>, valueLength: CPointer<UIntNative>): Unit
 
-    func setSocketOption(level: Int32, option: Int32, value: CPointer<Unit>, valueLength: UIntNative): Unit { /* compiled code */ }
+    abstract func setSocketOption(level: Int32, option: Int32, value: CPointer<Unit>, valueLength: UIntNative): Unit
 
-    func getSocketOptionIntNative(level: Int32, option: Int32): IntNative { /* compiled code */ }
+    abstract func getSocketOptionIntNative(level: Int32, option: Int32): IntNative
 
-    func setSocketOptionIntNative(level: Int32, option: Int32, value: IntNative): Unit { /* compiled code */ }
+    abstract func setSocketOptionIntNative(level: Int32, option: Int32, value: IntNative): Unit
 
-    func setKeepAlive(config: std.core.Option<std.net.SocketKeepAliveConfig>): Bool { /* compiled code */ }
+    abstract func setKeepAlive(config: std.core.Option<std.net.SocketKeepAliveConfig>): Bool
 
-    func dispose(): Unit { /* compiled code */ }
+    abstract func dispose(): Unit
 
-    static func create(net: std.net.SocketNet, kind: std.net.AddressFamily, mode: std.net.SocketMode): Self { /* compiled code */ }
+    abstract static func create(net: std.net.SocketNet, kind: std.net.AddressFamily, mode: std.net.SocketMode): Self
 }
 
 struct UInt128 {
@@ -466,13 +450,13 @@ class IPAddress <: std.core.Object & std.core.ToString & std.core.Equatable<std.
 
     func isLoopback(): Bool { /* compiled code */ }
 
-    func isMulticast(): Bool { /* compiled code */ }
+    abstract func isMulticast(): Bool
 
-    func isPrivate(): Bool { /* compiled code */ }
+    abstract func isPrivate(): Bool
 
-    func isLinkLocal(): Bool { /* compiled code */ }
+    abstract func isLinkLocal(): Bool
 
-    func isGlobalUnicast(): Bool { /* compiled code */ }
+    abstract func isGlobalUnicast(): Bool
 
     func getPrefix(prefixLen: UInt8): std.net.IPPrefix { /* compiled code */ }
 
@@ -492,13 +476,9 @@ class IPAddress <: std.core.Object & std.core.ToString & std.core.Equatable<std.
 func sortIPAddr(lhs: std.net.IPAddress, rhs: std.net.IPAddress): std.core.Ordering { /* compiled code */ }
 
 class IPPrefix <: std.core.Object & std.core.Equatable<std.net.IPPrefix> & std.core.Hashable & std.core.ToString {
-    prop address: std.net.IPAddress {
-        get() { /* compiled code */ }
-    }
+    abstract prop address: std.net.IPAddress
 
-    prop prefixLength: UInt8 {
-        get() { /* compiled code */ }
-    }
+    abstract prop prefixLength: UInt8
 
     static func parse(s: std.core.String): std.net.IPPrefix { /* compiled code */ }
 
@@ -524,7 +504,7 @@ class IPPrefix <: std.core.Object & std.core.Equatable<std.net.IPPrefix> & std.c
 
     operator func !=(rhs: std.net.IPPrefix): Bool { /* compiled code */ }
 
-    func toString(): std.core.String { /* compiled code */ }
+    abstract func toString(): std.core.String
 
     init() { /* compiled code */ }
 }
@@ -1014,7 +994,7 @@ struct NonReentrantReadLock <: std.sync.IReentrantMutex {
 
     let useCounter: std.sync.AtomicInt64
 
-    init(m: std.sync.Monitor, useCounter: std.sync.AtomicInt64) { /* compiled code */ }
+    NonReentrantReadLock(m: std.sync.Monitor, useCounter: std.sync.AtomicInt64) { /* compiled code */ }
 }
 
 extend Result <: ToString {
@@ -1022,27 +1002,17 @@ extend Result <: ToString {
 }
 
 interface DatagramSocket <: std.core.Resource & std.core.ToString {
-    prop localAddress: std.net.SocketAddress {
-        get() { /* compiled code */ }
-    }
+    abstract prop localAddress: std.net.SocketAddress
 
-    prop remoteAddress: std.core.Option<std.net.SocketAddress> {
-        get() { /* compiled code */ }
-    }
+    abstract prop remoteAddress: std.core.Option<std.net.SocketAddress>
 
-    mut prop receiveTimeout: std.core.Option<std.core.Duration> {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop receiveTimeout: std.core.Option<std.core.Duration>
 
-    mut prop sendTimeout: std.core.Option<std.core.Duration> {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop sendTimeout: std.core.Option<std.core.Duration>
 
-    func receiveFrom(buffer: std.core.Array<UInt8>): (std.net.SocketAddress, Int64) { /* compiled code */ }
+    abstract func receiveFrom(buffer: std.core.Array<UInt8>): (std.net.SocketAddress, Int64)
 
-    func sendTo(address: std.net.SocketAddress, payload: std.core.Array<UInt8>): Unit { /* compiled code */ }
+    abstract func sendTo(address: std.net.SocketAddress, payload: std.core.Array<UInt8>): Unit
 }
 
 struct SocketBuffer {
@@ -1309,7 +1279,7 @@ class DopraSocketImpl <: std.core.Object & std.net.PlatformSocket<Self> {
 
     override func connect(localAddress: std.core.Option<std.net.SocketAddress>, address: std.net.SocketAddress, timeout: std.core.Option<std.core.Duration>): Unit { /* compiled code */ }
 
-    func onHandleReplaced(newHandle: Int64): Unit { /* compiled code */ }
+    abstract func onHandleReplaced(newHandle: Int64): Unit
 
     override func disconnect(): Unit { /* compiled code */ }
 
@@ -1341,7 +1311,7 @@ class DopraSocketImpl <: std.core.Object & std.net.PlatformSocket<Self> {
 
     var _handle: std.sync.AtomicInt64
 
-    init(_handle: std.sync.AtomicInt64) { /* compiled code */ }
+    DopraSocketImpl(_handle: std.sync.AtomicInt64) { /* compiled code */ }
 }
 
 class DopraTcpSocketImpl <: std.net.DopraSocketImpl<std.net.DopraTcpSocketImpl> {
@@ -1466,7 +1436,7 @@ struct SocketState {
 
     var value: UInt32
 
-    init(value: UInt32) { /* compiled code */ }
+    SocketState(value: UInt32) { /* compiled code */ }
 }
 
 struct SocketOptions {
@@ -1837,7 +1807,7 @@ class TcpSocket <: std.core.Object & std.net.StreamingSocket & std.core.Equatabl
 
     let impl: std.net.SocketCommon<std.net.DopraOtherSocketImpl>
 
-    init(impl: std.net.SocketCommon<std.net.DopraOtherSocketImpl>) { /* compiled code */ }
+    TcpSocket(impl: std.net.SocketCommon<std.net.DopraOtherSocketImpl>) { /* compiled code */ }
 }
 
 class TcpServerSocket <: std.core.Object & std.net.ServerSocket {

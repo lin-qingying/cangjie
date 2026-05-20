@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.test.framework.base
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
 import com.intellij.openapi.util.Disposer
+import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
@@ -303,6 +304,36 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
 
     protected fun <R> analyzeForTest(contextElement: CjElement, action: CaSession.() -> R): R {
         return analyze(contextElement, action)
+    }
+
+    /**
+     * 对齐 Kotlin copy-aware 分析入口。
+     *
+     * dependent session 模式下，测试应当在复制文件中的同构 PSI 上执行，
+     * 避免继续引用原文件元素而绕开 dangling/dependent 语义边界。
+     */
+    protected fun <E : CjElement, R> copyAwareAnalyzeForTest(
+        contextElement: E,
+        action: CaSession.(E) -> R,
+    ): R {
+        return if (configurator.analyseInDependentSession) {
+            val originalContainingFile = contextElement.containingFile as? CjFile
+                ?: error("copyAwareAnalyzeForTest requires a CjFile-backed context element: $contextElement")
+            val fileCopy = originalContainingFile.copy() as CjFile
+            analyze(getDependentElementFromFile(contextElement, fileCopy), action = { action(getDependentElementFromFile(contextElement, fileCopy)) })
+        } else {
+            analyze(contextElement, action = { action(contextElement) })
+        }
+    }
+
+    /**
+     * 把原文件中的 PSI 元素映射到 copy-aware 上下文文件中。
+     */
+    protected fun <E : CjElement> getDependentElementFromFile(originalElement: E, contextFile: CjFile): E {
+        if (!configurator.analyseInDependentSession || originalElement.containingFile != contextFile.originalFile) {
+            return originalElement
+        }
+        return PsiTreeUtil.findSameElementInCopy(originalElement, contextFile)
     }
 
     /**

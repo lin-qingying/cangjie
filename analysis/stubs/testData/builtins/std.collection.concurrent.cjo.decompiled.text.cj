@@ -342,33 +342,33 @@ class LinkedBlockingQueue {
 type KeyValue = (Int64, K, V)
 
 interface ConcurrentMap {
-    func `get`(key: K): std.core.Option<V> { /* compiled code */ }
+    abstract func `get`(key: K): std.core.Option<V>
 
-    func contains(key: K): Bool { /* compiled code */ }
+    abstract func contains(key: K): Bool
 
-    func put(key: K, value: V): std.core.Option<V> { /* compiled code */ }
+    abstract func put(key: K, value: V): std.core.Option<V>
 
-    func add(key: K, value: V): std.core.Option<V> { /* compiled code */ }
+    abstract func add(key: K, value: V): std.core.Option<V>
 
-    func putIfAbsent(key: K, value: V): std.core.Option<V> { /* compiled code */ }
+    abstract func putIfAbsent(key: K, value: V): std.core.Option<V>
 
-    func addIfAbsent(key: K, value: V): std.core.Option<V> { /* compiled code */ }
+    abstract func addIfAbsent(key: K, value: V): std.core.Option<V>
 
-    func remove(key: K): std.core.Option<V> { /* compiled code */ }
+    abstract func remove(key: K): std.core.Option<V>
 
-    func remove(key: K, predicate: (V) -> Bool): std.core.Option<V> { /* compiled code */ }
+    abstract func remove(key: K, predicate: (V) -> Bool): std.core.Option<V>
 
-    func replace(key: K, value: V): std.core.Option<V> { /* compiled code */ }
+    abstract func replace(key: K, value: V): std.core.Option<V>
 
-    func replace(key: K, eval: (V) -> V): std.core.Option<V> { /* compiled code */ }
+    abstract func replace(key: K, eval: (V) -> V): std.core.Option<V>
 
-    func replace(key: K, predicate: (V) -> Bool, eval: (V) -> V): std.core.Option<V> { /* compiled code */ }
+    abstract func replace(key: K, predicate: (V) -> Bool, eval: (V) -> V): std.core.Option<V>
 
-    func entryView(key: K, fn: (std.collection.MapEntryView<K, V>) -> Unit): std.core.Option<V> { /* compiled code */ }
+    abstract func entryView(key: K, fn: (std.collection.MapEntryView<K, V>) -> Unit): std.core.Option<V>
 
-    operator func [](key: K): V { /* compiled code */ }
+    abstract operator func [](key: K): V
 
-    operator func [](key: K, value: V): Unit { /* compiled code */ }
+    abstract operator func [](key: K, value: V): Unit
 }
 
 type NonBlockingQueue = std.collection.concurrent.ConcurrentLinkedQueue<E>

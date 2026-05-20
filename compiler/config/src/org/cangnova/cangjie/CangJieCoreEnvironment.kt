@@ -48,6 +48,10 @@ class CangJieCoreEnvironment private constructor(
         }
 
         private fun ensureIdeaStandaloneProperties() {
+            // 这个核心环境面向 CLI / LSP / 单测等无界面宿主，必须显式声明 AWT headless。
+            // 否则 IntelliJ 253+ 的 JBUIScale 会把纯 PSI/高亮测试误判成带界面启动流程，
+            // 在 `LoadingState.APP_STARTED` 之前访问 UI 默认值时直接触发 "Must be precomputed"。
+            System.setProperty(JAVA_AWT_HEADLESS_PROPERTY, "true")
             if (System.getProperty(IDEA_HOME_PATH_PROPERTY).isNullOrBlank()) {
                 System.setProperty(IDEA_HOME_PATH_PROPERTY, ideaHomePath.toString())
             }
@@ -70,6 +74,7 @@ class CangJieCoreEnvironment private constructor(
         private const val IDEA_SYSTEM_PATH_PROPERTY = "idea.system.path"
         private const val IDEA_PLUGINS_COMPATIBLE_BUILD_PROPERTY = "idea.plugins.compatible.build"
         private const val IDEA_IGNORE_DISABLED_PLUGINS_PROPERTY = "idea.ignore.disabled.plugins"
+        private const val JAVA_AWT_HEADLESS_PROPERTY = "java.awt.headless"
 
         private val processTmpRoot: Path by lazy {
             Files.createTempDirectory("cangjie-test-intellij-home")

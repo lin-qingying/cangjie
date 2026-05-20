@@ -737,10 +737,10 @@ private inline fun BodyResolveContext.withFunctionDeclarationCompat(
     function: CfirFunction,
     block: () -> Unit,
 ) {
-    if (containerIfAny !is CfirClassLikeDeclaration && containerIfAny !is CfirExtend) {
+    if (containerIfAny !is CfirClassLikeDeclaration && containerIfAny !is CfirExtend && function is CfirNamedFunction) {
         val symbol = function.symbol as? CfirFunctionSymbol<*>
         if (symbol != null) {
-            storeFunction(function as CfirNamedFunction, function.moduleData.session)
+            storeFunction(function, function.moduleData.session)
         }
     }
 

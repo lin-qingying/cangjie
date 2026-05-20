@@ -31,4 +31,8 @@ tasks.withType<Test>().configureEach {
     if (updateTestData != null) {
         systemProperty("update.test.data", updateTestData)
     }
+    val builtinsTestFile = System.getProperty("cangjie.builtins.test.file")
+    if (builtinsTestFile != null) {
+        systemProperty("cangjie.builtins.test.file", builtinsTestFile)
+    }
 }

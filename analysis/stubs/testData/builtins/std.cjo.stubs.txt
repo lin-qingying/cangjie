@@ -1,5 +1,5 @@
 CangJieFileStubImpl[File[packageFqName=std]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
   CangJieStub$IMPORT_LIST
     CangJieStub$IMPORT_DIRECTIVE[importItems=[ImportItemInfo(importedFqName=std.core, isAllUnder=true, aliasName=null)], packageFqName=std]

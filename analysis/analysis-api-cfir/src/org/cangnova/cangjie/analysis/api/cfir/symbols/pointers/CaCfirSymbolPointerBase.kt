@@ -2,9 +2,9 @@ package org.cangnova.cangjie.analysis.api.cfir.symbols.pointers
 
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.impl.base.symbols.pointers.CaBaseCachedSymbolPointer
 import org.cangnova.cangjie.analysis.api.symbols.CaSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
-import java.lang.ref.SoftReference
 
 /**
  * CFIR 符号指针的内部基类。
@@ -24,17 +24,8 @@ internal abstract class CaCfirSymbolPointerBase<out S : CaSymbol> : CaSymbolPoin
  */
 internal abstract class CaCfirCachedSymbolPointer<S : CaSymbol>(
     originalSymbol: S?,
-) : CaCfirSymbolPointerBase<S>() {
-    private val originalSymbolRef = SoftReference(originalSymbol)
-
-    final override fun restoreSymbol(session: CaSession): S? {
-        originalSymbolRef.get()?.let { symbol ->
-            return symbol
-        }
-        return restoreIfNotCached(session)
-    }
-
-    protected abstract fun restoreIfNotCached(session: CaSession): S?
+) : CaBaseCachedSymbolPointer<S>(originalSymbol) {
+    protected abstract override fun restoreIfNotCached(session: CaSession): S?
 }
 
 internal fun <S : CaSymbol> Class<S>.castOrNull(symbol: CaSymbol?): S? =

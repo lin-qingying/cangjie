@@ -8,6 +8,8 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.expectedQualifiedTypeRen
 import org.cangnova.cangjie.analysis.api.impl.base.test.expectedShortTypeRender
 import org.cangnova.cangjie.analysis.api.impl.base.test.secondTargetClassName
 import org.cangnova.cangjie.analysis.api.impl.base.test.targetClassName
+import org.cangnova.cangjie.analysis.api.impl.base.test.targetTypeParameterName
+import org.cangnova.cangjie.analysis.api.impl.base.test.typeParameterOwnerClassName
 import org.cangnova.cangjie.analysis.api.impl.base.test.typeCreationKind
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
@@ -45,12 +47,17 @@ abstract class AbstractTypeCreatorTest : AbstractAnalysisApiComponentTest() {
             val containerClass = directives.containerClassName?.let { name ->
                 AnalysisApiTypeTestSupport.resolveClassSymbol(mainModule, name)
             }
+            val typeParameterOwnerClass = directives.typeParameterOwnerClassName?.let { name ->
+                AnalysisApiTypeTestSupport.resolveClassSymbol(mainModule, name)
+            }
 
             val createdType = AnalysisApiTypeTestSupport.buildType(
                 kind = directives.typeCreationKind,
                 primaryClass = primaryClass,
                 secondaryClass = secondaryClass,
                 containerClass = containerClass,
+                typeParameterOwnerClass = typeParameterOwnerClass,
+                targetTypeParameterName = directives.targetTypeParameterName,
             )
 
             assertEquals(

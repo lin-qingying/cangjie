@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
@@ -107,10 +108,10 @@ internal fun selectMacroSourcePackageCompilationRequestsForExpansion(
 }
 
 internal fun collectMacroExpansionPackageDemands(preResults: List<PreMacroRawBuildResult>): Set<FqName> {
-    return collectMacroExpansionPackageDemandSurfaces(preResults).keys
+    return collectMacroExpansionPackageDemandSurfaces(preResults.map { MacroDemandClassification.create(it) }).keys
 }
 
-internal fun collectMacroExpansionPackageDemandSurfaces(
+internal fun collectMacroExpansionPackageDemandSurfacesFromPreResults(
     preResults: List<PreMacroRawBuildResult>,
 ): Map<FqName, List<MacroSurface>> {
     val demandedPackages = linkedSetOf<FqName>()
@@ -164,6 +165,15 @@ internal fun collectMacroExpansionPackageDemandSurfaces(
     return demandedPackages.associateWith { packageFqName ->
         demandedSurfaces[packageFqName].orEmpty().distinctBy { it.surfaceId }
     }
+}
+
+internal fun collectMacroExpansionPackageDemandSurfaces(
+    classifications: List<MacroDemandClassification>,
+): Map<FqName, List<MacroSurface>> {
+    return classifications
+        .flatMap { classification -> classification.preArtifactSnapshot.externalPackageDemandSurfaces.entries }
+        .groupBy(keySelector = { it.key }, valueTransform = { it.value })
+        .mapValues { (_, grouped) -> grouped.flatten().distinctBy { it.surfaceId } }
 }
 
 /**
