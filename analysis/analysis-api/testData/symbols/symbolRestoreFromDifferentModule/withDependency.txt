@@ -1,0 +1,5 @@
+Inital from Sources of main:
+internal final func marked(): Int64
+
+Restored in Sources of restore:
+internal final func marked(): Int64

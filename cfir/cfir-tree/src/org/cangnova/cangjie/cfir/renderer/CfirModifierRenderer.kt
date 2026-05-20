@@ -16,6 +16,15 @@ open class CfirModifierRenderer {
         renderExtraModifiers(declaration.status)
     }
 
+    open fun renderModifiers(extend: CfirExtend) {
+    }
+
+    open fun renderModifiers(constructor: CfirConstructor) {
+    }
+
+    open fun renderModifiers(valueParameter: CfirValueParameter) {
+    }
+
     protected open fun renderVisibility(status: CfirDeclarationStatus, source: AbstractCjSourceElement?) {
         val visibilityName = status.visibility.name
         if (status.isVisibilityExplicit) {

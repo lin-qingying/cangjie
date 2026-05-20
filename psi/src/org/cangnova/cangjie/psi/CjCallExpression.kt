@@ -36,17 +36,44 @@ open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallEleme
         get() {
             return findChildrenByType<CjLambdaArgument>(CjNodeTypes.LAMBDA_ARGUMENT)
         }
-    val referenceExpression: CjNameReferenceExpression? get() = calleeExpression as? CjNameReferenceExpression
+    val referenceExpression: CjSimpleNameExpression? get() = calleeExpression as? CjSimpleNameExpression
 
     override val typeArguments: List<CjTypeProjection>
         get() {
-            return referenceExpression?.typeArguments ?: emptyList()
+            return typeArgumentList?.arguments ?: emptyList()
         }
 
     override val typeArgumentList: CjTypeArgumentList?
         get() {
-            return referenceExpression?.typeArgumentList
+            val directTypeArgumentList = findChildByType<CjTypeArgumentList>(CjNodeTypes.TYPE_ARGUMENT_LIST)
+            return directTypeArgumentList
+                ?: findTypeArgumentListInCalleeSyntax()
+                ?: referenceExpression?.getTypeArgumentList()
         }
+
+    private fun findTypeArgumentListInCalleeSyntax(): CjTypeArgumentList? {
+        fun ASTNode.findTypeArgumentList(): CjTypeArgumentList? {
+            if (elementType == CjNodeTypes.TYPE_ARGUMENT_LIST) {
+                return psi as? CjTypeArgumentList
+            }
+            var child = firstChildNode
+            while (child != null) {
+                child.findTypeArgumentList()?.let { return it }
+                child = child.treeNext
+            }
+            return null
+        }
+
+        var child = node.firstChildNode
+        while (child != null) {
+            if (child.elementType == CjNodeTypes.VALUE_ARGUMENT_LIST || child.elementType == CjNodeTypes.LAMBDA_ARGUMENT) {
+                return null
+            }
+            child.findTypeArgumentList()?.let { return it }
+            child = child.treeNext
+        }
+        return null
+    }
 
     fun getBasicTypeExpr(): CjExpression? {
         val typeElement = findChildByType<CjTypeReference>(CjNodeTypes.TYPE_REFERENCE) ?: return null

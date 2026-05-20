@@ -4,9 +4,11 @@ package org.cangnova.cangjie.analysis.test.services
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProviderBase
 import org.cangnova.cangjie.LanguageVersionSettings
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.test.framework.projectStructure.CaNotUnderContentRootModuleImpl
 
 /**
  * Analysis API 测试宿主的 project-structure 服务。
@@ -17,11 +19,15 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
  */
 class CaTestProjectStructureProvider(
     private val project: Project,
-) : CangJieProjectStructureProvider {
+) : CangJieProjectStructureProviderBase() {
     private val state: CaTestPlatformState
         get() = project.getService(CaTestPlatformState::class.java)
 
     override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
+        element.containingFile?.let { containingFile ->
+            computeSpecialModule(containingFile)?.let { return it }
+        }
+
         return state.getModule(element, useSiteModule)
     }
 
@@ -31,4 +37,13 @@ class CaTestProjectStructureProvider(
 
     override val globalLanguageVersionSettings: LanguageVersionSettings
         get() = LanguageVersionSettings.DEFAULT
+
+    override fun getNotUnderContentRootModule(project: Project): CaNotUnderContentRootModule {
+        return CaNotUnderContentRootModuleImpl(
+            name = "unnamed-outside-content-root",
+            originalModule = null,
+            project = project,
+            scopeRoots = emptyList(),
+        )
+    }
 }

@@ -1,0 +1,6 @@
+CaCfirNamedFunctionSymbol
+name: selected
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjNamedFunction
+callableId: sample.symbols.singlepsi.selected

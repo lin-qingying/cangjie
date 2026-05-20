@@ -62,7 +62,11 @@ class CangjieSemanticDiagnosticsIntegrationTest : AbstractLspIntegrationTest() {
                     """.trimIndent(),
                     2,
                 )
-                testSession.awaitDiagnosticsCount(2)
+                testSession.awaitPublishedDiagnostics(mainUri) { published ->
+                    published.diagnostics.any { diagnostic ->
+                        diagnostic.message.left?.contains("Unresolved reference") == true
+                    }
+                }
 
                 assertTrue(
                     diagnosticsFor(testSession, mainUri).any { diagnostic ->

@@ -99,9 +99,21 @@ class CjExtend : CjTypeStatement {
         val packageFqName = (containingFile as? CjFile)?.packageFqName
         return buildExtendId(
             packageFqName = packageFqName,
-            receiverTypeText = receiverTypeReceiver?.text,
-            superTypeTexts = superTypeListEntries.mapNotNull { entry -> entry.typeReference?.text },
+            receiverTypeText = getReceiverTypeTextForStub(),
+            superTypeTexts = superTypeListEntries.mapNotNull { entry -> entry.typeReference?.getTypeText() },
         )
+    }
+
+    /**
+     * `extend` 接收者类型的稳定文本。
+     *
+     * compiled/decompiled PSI 优先使用 stub 中已固化的接收者类型，避免从反编译
+     * light text 的 PSI range 反推身份时把调试渲染片段拼入 `extendId`。
+     */
+    fun getReceiverTypeTextForStub(): String? {
+        normalizeExtendTypeText(_stub?.receiverTypeName)?.takeIf { it.isNotBlank() }?.let { return it }
+        normalizeExtendTypeText(receiverTypeReceiver?.getTypeText())?.takeIf { it.isNotBlank() }?.let { return it }
+        return normalizeExtendTypeText(name)?.takeIf { it.isNotBlank() }
     }
 
     private fun getReceiverTypeRefByTree(): CjTypeReference? {

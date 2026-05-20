@@ -1,0 +1,4 @@
+expression: (42)
+constant:
+  kind: SCALAR(INTEGER)
+  renderedText: 42

@@ -4,6 +4,7 @@ import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.common.CfirModuleCapabilities
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.common.CfirPlatform
+import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.builder.buildClass
 import org.cangnova.cangjie.cfir.declarations.builder.buildFile
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
@@ -11,6 +12,8 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildPackageDirective
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.renderer.CfirRenderer
+import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
+import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFileSymbol
@@ -20,6 +23,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjBinarySourceElement
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
@@ -29,10 +33,12 @@ class CfirDeclarationToStringTest {
     fun `class toString delegates to readability renderer`() {
         val classId = org.cangnova.cangjie.name.ClassId(FqName("sample"), Name.identifier("Box"))
         val declaration = buildClass {
+            source = TestBinarySourceElement("class Box")
             moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
             origin = CfirDeclarationOrigin.Source
             attributes = CfirDeclarationAttributes.EMPTY
-            isLocal = false
+            scopeProvider = TestScopeProvider
             status = CfirDeclarationStatusImpl()
             symbol = CfirClassSymbol(classId)
             name = Name.identifier("Box")
@@ -46,24 +52,30 @@ class CfirDeclarationToStringTest {
     @Test
     fun `named function toString delegates to readability renderer`() {
         val callableId = CallableId(FqName("sample"), Name.identifier("compute"))
+        val functionSymbol = CfirNamedFunctionSymbol(callableId)
         val declaration = buildNamedFunction {
+            source = TestBinarySourceElement("func compute")
             moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
             origin = CfirDeclarationOrigin.Source
             attributes = CfirDeclarationAttributes.EMPTY
             isLocal = false
             dispatchReceiverType = null
             status = CfirDeclarationStatusImpl()
             returnTypeRef = buildImplicitTypeRef()
-            symbol = CfirNamedFunctionSymbol(callableId)
+            symbol = functionSymbol
             name = Name.identifier("compute")
             isMut = false
             valueParameters += buildValueParameter {
+                source = TestBinarySourceElement("param value")
                 moduleData = TestModuleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
                 origin = CfirDeclarationOrigin.Source
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = false
                 dispatchReceiverType = null
                 symbol = CfirValueParameterSymbol(CallableId(Name.identifier("value")))
+                containingDeclarationSymbol = functionSymbol
                 isNamed = false
                 status = CfirDeclarationStatusImpl()
                 returnTypeRef = buildImplicitTypeRef()
@@ -79,7 +91,9 @@ class CfirDeclarationToStringTest {
     @Test
     fun `file toString delegates to readability renderer`() {
         val file = buildFile {
+            source = TestBinarySourceElement("file sample.cj")
             moduleData = TestModuleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
             origin = CfirDeclarationOrigin.Source
             attributes = CfirDeclarationAttributes.EMPTY
             symbol = CfirFileSymbol()
@@ -102,6 +116,26 @@ class CfirDeclarationToStringTest {
 
     private object TestSession : CfirSession(Kind.Source) {
         override fun toString(): String = "CfirDeclarationToStringTestSession"
+    }
+
+    private class TestBinarySourceElement(identity: String) : CjBinarySourceElement(
+        debugText = identity,
+        binaryFilePath = null,
+        stableIdentity = identity,
+    )
+
+    private object TestScopeProvider : CfirScopeProvider() {
+        override fun getUseSiteMemberScope(
+            klass: CfirClass,
+            useSiteSession: CfirSession,
+            scopeSession: ScopeSession,
+        ): CfirTypeScope = CfirTypeScope.Empty
+
+        override fun getDeclarationSiteMemberScope(
+            klass: CfirClass,
+            useSiteSession: CfirSession,
+            scopeSession: ScopeSession,
+        ): CfirTypeScope = CfirTypeScope.Empty
     }
 
     private object TestModuleData : CfirModuleData() {

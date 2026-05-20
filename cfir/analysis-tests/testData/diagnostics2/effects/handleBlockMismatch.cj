@@ -14,7 +14,7 @@ class GoodCommand <: Command<Int64> {}
 
 func mismatchHandleBlockInIntTry(): Unit {
     try {
-        1
+        <!UNUSED_EXPRESSION!>1<!>
     } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         false
     }<!>
@@ -22,7 +22,7 @@ func mismatchHandleBlockInIntTry(): Unit {
 
 func mismatchHandleBlockInBoolTry(): Unit {
     try {
-        true
+        <!UNUSED_EXPRESSION!>true<!>
     } handle (cmd: GoodCommand) <!MISMATCHING_HANDLE_BLOCK!>{
         1
     }<!>

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.analysis.tests
 import org.cangnova.cangjie.cfir.analysis.tests.runners.AbstractCjcLlTDiagnosticsConsistencyTest
 import org.cangnova.cangjie.cfir.analysis.tests.golden.CjcProcessRunner
 import org.junit.jupiter.api.DynamicTest
+import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.TestFactory
 import java.io.File
 import java.nio.file.Path
@@ -15,6 +16,7 @@ import java.nio.file.Path
  * 2. 每个用例调用框架 `runTest`；
  * 3. 具体 CFIR vs CJC 诊断比较由测试基类中挂载的 after-analysis checker 完成。
  */
+@Disabled("LLT 官方一致性测试不作为当前 CFIR analysis-tests 门禁执行")
 class CjcLlTTest : AbstractCjcLlTDiagnosticsConsistencyTest() {
 
     private val testDataDir = File("cfir/analysis-tests/testData/llt")

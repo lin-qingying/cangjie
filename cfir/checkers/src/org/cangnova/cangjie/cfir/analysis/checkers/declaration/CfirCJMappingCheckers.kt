@@ -1,5 +1,9 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
+import com.intellij.lang.LighterASTNode
+import com.intellij.openapi.util.Ref
+import com.intellij.psi.util.PsiTreeUtil
+import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -14,7 +18,15 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.CjTypeParameterListOwner
+import org.cangnova.cangjie.psi.CjClassLikeDeclaration as CjPsiClassLikeDeclaration
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.source.toCjPsiSourceElement
 
 /**
  * CJMapping（Java）语义检查器
@@ -104,7 +116,7 @@ object CfirObjCCJMappingChecker : CfirClassLikeChecker() {
 
         if (declaration.superTypeRefs.isNotEmpty()) {
             reporter.reportOn(
-                source = declaration.source,
+                source = declaration.nameDiagnosticSource(),
                 factory = CfirErrors.OBJC_CJMAPPING_INHERITANCE_INTERFACE_NOT_SUPPORTED,
             )
         }
@@ -118,10 +130,98 @@ object CfirObjCCJMappingChecker : CfirClassLikeChecker() {
         }
         if (typeParams.isNotEmpty()) {
             reporter.reportOn(
-                source = declaration.source,
+                source = declaration.nameDiagnosticSource(includeTypeParameters = true),
                 factory = CfirErrors.OBJC_CJMAPPING_GENERIC_NOT_SUPPORTED,
                 a = typeParams.joinToString { it.name.asString() },
             )
         }
     }
+}
+
+private fun CfirClassLikeDeclaration.nameDiagnosticSource(
+    includeTypeParameters: Boolean = false,
+): AbstractCjSourceElement? {
+    source?.psi?.let { psi ->
+        val classLikePsi = when (psi) {
+            is CjPsiClassLikeDeclaration -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjPsiClassLikeDeclaration::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjPsiClassLikeDeclaration::class.java)
+        }
+        classLikePsi?.classLikeNameSource(includeTypeParameters)?.let { return it }
+    }
+    return (source as? CjSourceElement)?.findClassLikeNameSource(symbol.name, includeTypeParameters) ?: source
+}
+
+private fun CjPsiClassLikeDeclaration.classLikeNameSource(
+    includeTypeParameters: Boolean,
+): AbstractCjSourceElement? {
+    val nameIdentifier = nameIdentifier ?: return null
+    if (!includeTypeParameters) return nameIdentifier.toCjPsiSourceElement()
+
+    val typeParameterList = (this as? CjTypeParameterListOwner)?.typeParameterList
+        ?: return nameIdentifier.toCjPsiSourceElement()
+    return CjOffsetsOnlySourceElement(
+        startOffset = nameIdentifier.textRange.startOffset,
+        endOffset = typeParameterList.textRange.endOffset,
+    )
+}
+
+private fun CjSourceElement.findClassLikeNameSource(
+    name: Name,
+    includeTypeParameters: Boolean,
+): AbstractCjSourceElement? {
+    val tokens = mutableListOf<LighterASTNode>()
+
+    fun collectLeaves(node: LighterASTNode) {
+        val children = treeStructure.children(node)
+        if (children.isEmpty()) {
+            tokens += node
+            return
+        }
+        children.forEach(::collectLeaves)
+    }
+
+    collectLeaves(lighterASTNode)
+
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType !in classLikeDeclarationKeywords) continue
+        val nameToken = tokens.asSequence()
+            .drop(index + 1)
+            .firstOrNull { it.tokenType == CjTokens.IDENTIFIER && treeStructure.toString(it).toString() == name.asString() }
+            ?: continue
+        if (includeTypeParameters) {
+            val endToken = tokens.asSequence()
+                .drop(tokens.indexOf(nameToken) + 1)
+                .takeWhile { it.tokenType != CjTokens.LTCOLON && it.tokenType != CjTokens.LBRACE }
+                .filter { treeStructure.toString(it).toString().isNotBlank() }
+                .lastOrNull()
+            if (endToken != null && treeStructure.getEndOffset(endToken) > treeStructure.getEndOffset(nameToken)) {
+                return CjOffsetsOnlySourceElement(
+                    startOffset = treeStructure.getStartOffset(nameToken),
+                    endOffset = treeStructure.getEndOffset(endToken),
+                )
+            }
+        }
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(nameToken),
+            endOffset = treeStructure.getEndOffset(nameToken),
+        )
+    }
+
+    return null
+}
+
+private val classLikeDeclarationKeywords = setOf(
+    CjTokens.CLASS_KEYWORD,
+    CjTokens.STRUCT_KEYWORD,
+    CjTokens.INTERFACE_KEYWORD,
+    CjTokens.ENUM_KEYWORD,
+)
+
+private fun FlyweightCapableTreeStructure<LighterASTNode>.children(
+    node: LighterASTNode,
+): List<LighterASTNode> {
+    val childrenRef = Ref<Array<LighterASTNode?>>()
+    getChildren(node, childrenRef)
+    return childrenRef.get()?.filterNotNull().orEmpty()
 }

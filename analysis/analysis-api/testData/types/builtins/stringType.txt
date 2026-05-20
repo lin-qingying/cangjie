@@ -1,0 +1,6 @@
+presentation: struct std/core/String
+qualified: std.core.String
+short: String
+abbreviation: null
+fullyExpanded: std.core.String
+classLikeSymbol: std/core/String

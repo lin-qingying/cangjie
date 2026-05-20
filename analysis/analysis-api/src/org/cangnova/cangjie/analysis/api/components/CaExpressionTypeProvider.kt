@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.components
 
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeOwner
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.psi.CjCallableDeclaration
@@ -20,6 +21,15 @@ interface CaExpressionTypeProvider : CaLifetimeOwner {
      * 该表达式的解析后类型;不参与类型计算或不在表达式树中的元素返回 `null`。
      */
     val CjExpression.expressionType: CaType?
+
+    /**
+     * 该 PSI 元素在当前位置的期望类型；若上下文不施加类型约束则返回 `null`。
+     *
+     * 该语义与表达式实际类型不同：
+     * - `expressionType` 表示解析后的真实结果类型；
+     * - `expectedType` 表示当前位置上下文要求它满足的目标类型。
+     */
+    val PsiElement.expectedType: CaType?
 
     /**
      * 可调用声明对外暴露的返回类型;不可推断时返回 `null`。

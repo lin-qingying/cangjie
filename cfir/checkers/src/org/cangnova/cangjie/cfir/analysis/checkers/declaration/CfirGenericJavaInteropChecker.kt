@@ -21,8 +21,6 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.source.psi
-import org.cangnova.cangjie.psi.CjModifierListOwner
 
 /**
  * 泛型 Java 互操作检查器（GenericDeep Java 子集）
@@ -39,8 +37,7 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        val owner = declaration.source?.psi as? CjModifierListOwner ?: return
-        if (!owner.hasAnnotationEntry(JAVA)) return
+        if (!declaration.hasAnnotation(JAVA)) return
 
         checkStaticMembersNotDependOnGenericParams(declaration)
         checkGenericUpperBoundsAreJava(declaration)
@@ -104,8 +101,7 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
                     val boundSymbol = context.session.symbolProvider
                         .getClassLikeSymbolByClassId(boundClassId) ?: continue
                     val boundDecl = boundSymbol.cfir
-                    val boundOwner = boundDecl.source?.psi as? CjModifierListOwner
-                    if (boundOwner != null && !boundOwner.hasAnnotationEntry(JAVA)) {
+                    if (!boundDecl.hasAnnotation(JAVA)) {
                         reporter.reportOn(
                             source = bound.source ?: typeParam.source,
                             factory = CfirErrors.GENERIC_UPPER_BOUNDS_MUST_BE_JAVA_IN_JAVA,
@@ -131,7 +127,4 @@ object CfirGenericJavaInteropChecker : CfirClassLikeChecker() {
         }
         return false
     }
-
-    private fun CjModifierListOwner.hasAnnotationEntry(name: Name): Boolean =
-        annotationEntries.any { it.shortName == name }
 }

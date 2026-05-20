@@ -6,7 +6,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
 import org.cangnova.cangjie.analysis.api.cfir.utils.cfirSymbol
 import org.cangnova.cangjie.analysis.api.components.CaTypeProvider
-import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseSessionComponent
+import org.cangnova.cangjie.analysis.api.impl.base.components.CaBaseTypeProvider
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
 import org.cangnova.cangjie.analysis.api.types.CaType
@@ -24,7 +24,7 @@ import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
  */
 internal class CaCfirTypeProvider(
     override val analysisSessionProvider: () -> CaCfirSession,
-) : CaBaseSessionComponent<CaCfirSession>(), CaTypeProvider, CaCfirSessionComponent {
+) : CaBaseTypeProvider<CaCfirSession>(), CaTypeProvider, CaCfirSessionComponent {
 
     override val CaClassLikeSymbol.defaultType: CaType
         get() = withValidityAssertion {

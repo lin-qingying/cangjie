@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.deriving.builtins, facadeFqName=std.deriving.builtins, facadePartSimpleNames=[arbitrary, comparable, equatable, hashable, shrink, tostring, utils]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$DOT_QUALIFIED_EXPRESSION
         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]

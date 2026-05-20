@@ -1,0 +1,5 @@
+left: left()
+leftType: sample.typeprovider.User
+right: right()
+rightType: sample.typeprovider.User
+haveCommonSubtype: true

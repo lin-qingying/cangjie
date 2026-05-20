@@ -14,10 +14,16 @@ import org.cangnova.cangjie.analysis.api.symbols.CaSymbolVisibility
 import org.cangnova.cangjie.analysis.api.symbols.CaValueParameterSymbol
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaValueParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
+import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.builtins.StandardNames
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.isArray
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.source.psi
 
 /**
@@ -104,7 +110,24 @@ internal class CaCfirValueParameterSymbol private constructor(
         get() = parameterDeclaration.isNamed
 
     override val isVararg: Boolean
-        get() = resolvedParameterPsi?.isVarArg == true
+        get() = withValidityAssertion {
+            if (parameterDeclaration.isNamed) {
+                return false
+            }
+
+            val ownerDeclaration = cfirSymbol.containingDeclarationSymbol.cfir as? CfirFunction ?: return false
+            val parameterIndex = ownerDeclaration.valueParameters.indexOfFirst { candidate ->
+                candidate.symbol.cfir === parameterDeclaration
+            }
+            if (parameterIndex < 0 || parameterIndex != ownerDeclaration.valueParameters.lastIndex) {
+                return false
+            }
+
+            parameterDeclaration.returnTypeRef.coneTypeOrNull?.let { return it.isArray }
+
+            val publicReturnType = returnType as? CaClassLikeType ?: return false
+            return publicReturnType.classId == ARRAY_CLASS_ID
+        }
 
     override val hasDefaultValue: Boolean
         get() = parameterDeclaration.defaultValue != null || resolvedParameterPsi?.defaultValue != null
@@ -122,7 +145,12 @@ internal class CaCfirValueParameterSymbol private constructor(
         get() = false
 
     private val resolvedParameterPsi: org.cangnova.cangjie.psi.CjParameter?
-        get() = parameterDeclaration.source?.psi as? org.cangnova.cangjie.psi.CjParameter
-            ?: explicitParameterPsi
+        get() = explicitParameterPsi
+            ?: backingPsi
+            ?: parameterDeclaration.source?.psi as? org.cangnova.cangjie.psi.CjParameter
             ?: psi as? org.cangnova.cangjie.psi.CjParameter
+
+    private companion object {
+        val ARRAY_CLASS_ID = ClassId(StandardNames.FqNames.core, StandardNames.ARRAY)
+    }
 }

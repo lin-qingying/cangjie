@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math, facadePartSimpleNames=[math_enum, math_extension, math_funcs, math_funcs_cjnative, math_interface, native, native_cjnative]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=math]
@@ -726,12 +726,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MathExtension, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MathExtension]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MathExtension, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MathExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -756,24 +756,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MathExtension, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MathExtension]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MathExtension, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MathExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -792,12 +792,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MathExtension, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MathExtension]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MathExtension, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MathExtension]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -816,12 +816,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -846,24 +846,24 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -882,12 +882,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -906,12 +906,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -930,12 +930,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -954,12 +954,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -978,12 +978,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1002,12 +1002,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1026,12 +1026,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1050,12 +1050,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1074,12 +1074,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1098,12 +1098,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1122,12 +1122,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:MaxMinValue, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[MaxMinValue]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:MaxMinValue, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[MaxMinValue]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1146,12 +1146,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1210,7 +1210,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1222,7 +1222,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1234,7 +1234,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1246,7 +1246,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1258,17 +1258,17 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1321,12 +1321,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1379,12 +1379,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1437,12 +1437,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1495,12 +1495,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=IntNative]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1553,12 +1553,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1611,12 +1611,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1669,12 +1669,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1727,12 +1727,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1785,12 +1785,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UIntNative]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1843,12 +1843,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Float16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1901,12 +1901,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Float32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Number, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Number]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Number, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Number]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1959,12 +1959,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Float64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2063,13 +2063,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2081,7 +2081,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2093,7 +2093,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2105,7 +2105,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2117,14 +2117,14 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2135,7 +2135,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2144,12 +2144,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2228,12 +2228,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2312,12 +2312,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2396,12 +2396,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2480,12 +2480,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=IntNative]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2564,12 +2564,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2648,12 +2648,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2732,12 +2732,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2816,12 +2816,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:Integer, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[Integer]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:Integer, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Integer]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2900,12 +2900,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
               CangJieStub$BASIC_TYPE[basicType=UIntNative]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:FloatingPoint, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[FloatingPoint]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:FloatingPoint, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[FloatingPoint]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2968,70 +2968,70 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:FloatingPoint, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[FloatingPoint]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:FloatingPoint, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[FloatingPoint]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3074,12 +3074,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.math, facadeFqName=std.math
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/math/Extend, extendId=std.math:Extend<:FloatingPoint, fqName=std.math.Extend, name=Extend, receiverTypeName=Extend, superNames=[FloatingPoint]]
+  CangJieStub$EXTEND[classId=std/math/Unit, extendId=std.math:kotlin.Unit<:FloatingPoint, fqName=std.math.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[FloatingPoint]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE

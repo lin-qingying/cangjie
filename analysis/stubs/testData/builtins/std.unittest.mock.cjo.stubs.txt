@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName=std.unittest.mock, facadePartSimpleNames=[action_selectors, api_usage_error, argument_matchers, captor, cardinality, configure, create, exceptions, expectations, failure_report, fields, framework, func_info_utils, handlers, internal_error, invocation_log, invocation_matcher, location, mock_session, model, none_matcher, record, runtime_failure_report, scenario, selectors, unwrap, verification, verification_failure, verify_api, verify_ordered, verify_unordered]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$DOT_QUALIFIED_EXPRESSION
         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
@@ -187,16 +187,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=CallHandlerImpl]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=CallHandlerImpl]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -314,7 +316,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -330,7 +332,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -346,7 +348,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -561,7 +563,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ValueListenerImpl]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=ValueListenerImpl]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -680,12 +682,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Scenario]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ActionSelector]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=ActionSelector]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -804,12 +807,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=StubChain]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=Scenario]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=Scenario]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1157,12 +1161,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=TRet]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=MethodActionSelector]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=MethodActionSelector]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1283,12 +1288,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=A]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=CardinalitySelector]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=CardinalitySelector]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1300,6 +1306,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Scenario]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -1358,12 +1365,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=A]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=Continuation]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=Continuation]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1375,6 +1383,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Scenario]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -1774,12 +1783,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=TRet]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=GetterActionSelector]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=GetterActionSelector]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -1828,12 +1838,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=SyntheticFieldDescription]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=SyntheticField]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=SyntheticField]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2069,12 +2080,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$TYPE_REFERENCE
                           CangJieStub$USER_TYPE
                             CangJieStub$REFERENCE_EXPRESSION[referencedName=TArg]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=SetterActionSelector]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=SetterActionSelector]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2196,7 +2208,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=StubMisconfigurationReason]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=StubMisconfiguration]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=StubMisconfiguration]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -2302,12 +2314,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=MockSession]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=StubChain]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=StubChain]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2319,6 +2332,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=InvocationMatcher]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2330,6 +2344,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=MockKind]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2953,12 +2968,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=MockNameRegistry]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=FailureReport]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=FailureReport]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -2970,6 +2986,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=LogSnapshot]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -3063,7 +3080,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=StubChain]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Nothing]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=StubModeViolation]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=StubModeViolation]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -3112,12 +3129,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Location]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=StubDescription]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=StubDescription]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -3127,6 +3145,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -3145,6 +3164,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -3484,12 +3504,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=InvocationMatcher]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=VerifyStatement]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=VerifyStatement]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -3627,7 +3648,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
             CangJieStub$REFERENCE_EXPRESSION[referencedName=ArgumentMatcher]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3640,7 +3661,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ArgumentMatcher]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=ArgumentMatcher]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -3686,7 +3707,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
     CangJieStub$INTERFACE_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=valueListener]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$USER_TYPE
@@ -3705,15 +3726,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=ListenerInternal]
-        CangJieStub$PROPERTY_BODY
-          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
   CangJieStub$INTERFACE[classId=std/unittest/mock/ListenerInternal, fqName=std.unittest.mock.ListenerInternal, name=ListenerInternal, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3743,7 +3762,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3772,12 +3791,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=TypedMatcher]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=TypedMatcher]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
   CangJieStub$CLASS[classId=std/unittest/mock/PredicateMatcher, fqName=std.unittest.mock.PredicateMatcher, name=PredicateMatcher, superNames=[TypedMatcher, ListeningMatcher]]
@@ -3882,12 +3902,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=ListenerInternal]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=PredicateMatcher]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=PredicateMatcher]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$FUNCTION_TYPE
                 CangJieStub$VALUE_PARAMETER_LIST
@@ -3899,10 +3920,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                   CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Bool]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -4358,16 +4381,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=Cardinality]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=Cardinality]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -4817,12 +4842,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=common]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyText]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=PrettyException]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=PrettyException]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -4847,12 +4873,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
     CangJieStub$CLASS_BODY
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=MockFrameworkInternalError]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=MockFrameworkInternalError]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -4877,12 +4904,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
     CangJieStub$CLASS_BODY
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=MockFrameworkException]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=MockFrameworkException]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -4907,12 +4935,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
     CangJieStub$CLASS_BODY
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ExpectationFailedException]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=ExpectationFailedException]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -4937,12 +4966,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
     CangJieStub$CLASS_BODY
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=UnnecessaryStubbingException]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=UnnecessaryStubbingException]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -4967,12 +4997,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
     CangJieStub$CLASS_BODY
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=UnstubbedInvocationException]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=UnstubbedInvocationException]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -4997,12 +5028,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
     CangJieStub$CLASS_BODY
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=UnhandledCallException]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=UnhandledCallException]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5027,12 +5059,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=PrettyException]
     CangJieStub$CLASS_BODY
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=VerificationFailedException]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=VerificationFailedException]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5196,12 +5229,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=MockSessionKind]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=MockSession]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=MockSession]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5211,6 +5245,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5455,12 +5490,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=LogEntry]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ExpectationFailedReport]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=ExpectationFailedReport]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5472,6 +5508,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=LogSnapshot]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5540,12 +5577,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=LogEntry]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=LogSnapshot]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=LogSnapshot]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5609,12 +5647,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BehaviourSource]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=LogEntry]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=LogEntry]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5626,6 +5665,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Invocation]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5734,12 +5774,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=StubId]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=StubId]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5753,6 +5794,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=FuncInfo]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
   CangJieStub$CLASS[classId=std/unittest/mock/MockNameRegistry, fqName=std.unittest.mock.MockNameRegistry, name=MockNameRegistry, superNames=[]]
@@ -5866,12 +5908,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=MockNameRegistry]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=MockNameRegistry]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=MockNameRegistry]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -5999,12 +6042,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=StubDescription]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=InvocationMatcher]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=InvocationMatcher]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6025,6 +6069,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=ArgumentMatcher]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6043,6 +6088,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6054,6 +6100,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=StubId]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6126,12 +6173,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Location]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=Invocation]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=Invocation]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6152,6 +6200,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=MockObject]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6165,6 +6214,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Call]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6180,7 +6230,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -6223,12 +6273,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=SyntheticFieldDescription]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=SyntheticFieldDescription]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6529,16 +6580,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=AutoFieldId]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=AutoFieldId]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6617,16 +6670,18 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=MockObject]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=MockObject]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6636,6 +6691,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Object]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6647,6 +6703,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=MockKind]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -6667,6 +6724,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=StubMode]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7213,12 +7271,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=RecordingInfo]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=RecordingHandler]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=RecordingHandler]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7280,12 +7339,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=RecordingInfo]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=RecordingInfo]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7297,6 +7357,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=RecordingTarget]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7315,6 +7376,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7390,12 +7452,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=RecordedCall]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=RecordedCall]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7416,6 +7479,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=MockObject]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7427,6 +7491,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=StubId]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7438,6 +7503,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Location]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7945,12 +8011,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=TraceEntry]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=TraceEntry]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7960,6 +8027,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
@@ -8034,12 +8102,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=TraceEntry]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=LocationImpl]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=LocationImpl]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -8122,12 +8191,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=SimpleLocation]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=SimpleLocation]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -8137,6 +8207,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
   CangJieStub$VARIABLE[hasInitializer=false, hasReturnTypeRef=true, isTopLevel=true, isVar=false, patternKind=BINDING]
@@ -8229,7 +8300,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Any]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=NoneMatcher]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=NoneMatcher]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -8657,12 +8728,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Invocation]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=RuntimeFailureReport]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=RuntimeFailureReport]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -8674,6 +8746,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=LogSnapshot]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -8763,12 +8836,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Cardinality]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=ScenarioConfiguration]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=ScenarioConfiguration]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -8780,6 +8854,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Action]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -8859,7 +8934,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -9299,12 +9374,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=VerificationFailedReason]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Nothing]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=VerificationFailureReport]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=VerificationFailureReport]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -9316,6 +9392,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=LogSnapshot]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -9598,7 +9675,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=UnorderedVerifier]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=UnorderedVerifier]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=UnorderedVerifier]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -9651,7 +9728,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=OrderedVerifier]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=OrderedVerifier]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=OrderedVerifier]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
@@ -9817,12 +9894,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=unittest]
                       CangJieStub$REFERENCE_EXPRESSION[referencedName=mock]
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=Invocation]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=VerifyIterator]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=VerifyIterator]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -9843,6 +9921,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock, facadeFqName
                         CangJieStub$REFERENCE_EXPRESSION[referencedName=VerifyStatement]
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE

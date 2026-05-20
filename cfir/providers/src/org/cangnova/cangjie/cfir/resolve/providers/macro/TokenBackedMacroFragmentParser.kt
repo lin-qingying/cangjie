@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.providers.macro
 
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 
 /**
  * `MacroFragmentParser` 的最小 token-backed 实现（baseline Batch 8 真实实现）。
@@ -25,7 +26,7 @@ class TokenBackedMacroFragmentParser(
      * fragment payload；解析失败返回 null。返回的对象类型在不同 raw builder
      * 装配时不同，所以只持有为 [Any] 引用。
      */
-    private val reparse: (text: String, mode: MacroFragmentParser.Mode, owner: MacroCallNode) -> Any?,
+    private val reparse: (text: String, input: MacroFragmentInput) -> Any?,
     /**
      * 对 macro executor 产出的 newTokens 做 lexer/token-stage 复扫。
      *
@@ -35,14 +36,24 @@ class TokenBackedMacroFragmentParser(
     private val reTokenize: (List<MacroSurfaceToken>) -> List<MacroSurfaceToken>,
 ) : MacroFragmentParser {
 
-    override fun parse(
-        node: MacroCallNode,
-        tokens: List<MacroSurfaceToken>,
-        mode: MacroFragmentParser.Mode,
-    ): MacroFragmentResult {
+    override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+        val node = input.node
+        val mode = input.mode
+        val tokens = if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+            input.annotationSnapshot?.tokens ?: return MacroFragmentResult.Failure(
+                originNode = node,
+                reason = "Custom-annotation fragment requires a full annotation slot snapshot.",
+            )
+        } else {
+            input.tokens
+        }
         // baseline Batch 8: 先按 token-stage 重组到稳定点（newTokens token-stage re-eval）
         val reEvaluatedTokens = MacroTokenReEvaluator.reTokenizeUntilStable(tokens, reTokenize)
-        val source = MacroTokenReEvaluator.reTokenizeText(reEvaluatedTokens).trim()
+        val source = if (mode == MacroFragmentParser.Mode.CUSTOM_ANNOTATION) {
+            input.annotationSnapshot!!.rawSyntax.normalizeForcedCustomAnnotationSyntax().trim()
+        } else {
+            MacroTokenReEvaluator.reTokenizeText(reEvaluatedTokens).trim()
+        }
         if (source.isEmpty()) {
             return MacroFragmentResult.Failure(
                 originNode = node,
@@ -54,7 +65,7 @@ class TokenBackedMacroFragmentParser(
         // 装配层显式判定无法 reparse；二者诊断信息不同，便于上层定位是 reparse 通道
         // 未注入还是 reparse 真正失败。
         val payload = try {
-            reparse(source, mode, node)
+            reparse(source, input)
         } catch (failure: Throwable) {
             return MacroFragmentResult.Failure(
                 originNode = node,
@@ -68,16 +79,21 @@ class TokenBackedMacroFragmentParser(
 
         return when (mode) {
             MacroFragmentParser.Mode.CUSTOM_ANNOTATION -> {
-                // 名称推断由具体 reparser 决定，这里走默认 fallback
-                val qname = node.surface.qualifiedName
-                val annotationName = qname?.shortName()
+                val annotationPayload = payload as? CfirAnnotationCall
                     ?: return MacroFragmentResult.Failure(
                         originNode = node,
-                        reason = "Custom-annotation fragment missing a name",
+                        reason = "Custom-annotation fragment did not produce a CfirAnnotationCall payload.",
                     )
+                val original = input.annotationSnapshot?.originalAnnotation
+                if (original != null && annotationPayload === original) {
+                    return MacroFragmentResult.Failure(
+                        originNode = node,
+                        reason = "Custom-annotation fragment reused the original annotation payload.",
+                    )
+                }
                 MacroFragmentResult.CustomAnnotation(
                     originNode = node,
-                    annotationName = annotationName,
+                    payload = annotationPayload,
                     tokens = reEvaluatedTokens,
                 )
             }
@@ -92,6 +108,12 @@ class TokenBackedMacroFragmentParser(
 
     @Suppress("UNUSED")
     val lastReparseSentinel: Any? get() = null
+}
+
+private fun String.normalizeForcedCustomAnnotationSyntax(): String {
+    val atExcl = indexOf("@!")
+    if (atExcl < 0) return this
+    return replaceRange(atExcl, atExcl + 2, "@")
 }
 
 /**

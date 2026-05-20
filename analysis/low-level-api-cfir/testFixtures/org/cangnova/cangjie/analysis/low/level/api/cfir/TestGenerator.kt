@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir
 
+import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.AbstractSourceCfirContextCollectionTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.diagnostic.AbstractSourceDiagnosticTraversalCounterTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.file.structure.AbstractSourceFileStructureTest
 import org.cangnova.cangjie.analysis.low.level.api.cfir.resolve.AbstractSourceWholeFileResolvePhaseTest
@@ -16,8 +17,16 @@ fun main(args: Array<String>) {
                 model("fileStructure", pattern = """^(.+)\.cj$""")
             }
 
+            testClass<AbstractSourceCfirContextCollectionTest> {
+                model("fileStructure", pattern = """^(.+)\.cj$""")
+            }
+
             testClass<AbstractSourceWholeFileResolvePhaseTest> {
                 model("fileStructure", pattern = """^(.+)\.cj$""")
+            }
+
+            testClass<AbstractSourceClassIdTest> {
+                model("classId", pattern = """^(.+)\.cj$""")
             }
         }
     }

@@ -26,7 +26,7 @@ func identity1<T>(value: T): T {
 }
 
 func name():Unit {
-  <!CANNOT_INFER_PARAMETER_TYPE!>name1<!>(1)
+  <!NEW_INFERENCE_ERROR!>name1<!>(1)
    let a = A1(1)
 
    let b = <!NO_MATCHING_OPERATOR_INVOKE!>A<!>(1)
@@ -36,10 +36,10 @@ func name():Unit {
     let e = None<Int64>
     let fOption1:Option1<Int64> = <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>None<!>
 
-      let gSome2  = <!CANNOT_INFER_PARAMETER_TYPE!>Some2<!>(1)
+      let gSome2  = <!NEW_INFERENCE_ERROR!>Some2<!>(1)
 
 
-    let fStd = Some<Float64>(<!ARGUMENT_TYPE_MISMATCH!>1<!>)
+    let fStd = <!NEW_INFERENCE_ERROR!>Some<Float64><!>(1)
     let gStd = None<Int64>
 
 }

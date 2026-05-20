@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.name.Name
 
 /**
  * Alignment target: Kotlin FIR `FirNotImplementedOverrideChecker` core behavior.
@@ -30,10 +31,13 @@ import org.cangnova.cangjie.descriptors.Visibilities
  * 不含 extendProvider 的 scope，只检查类/struct 自身声明的继承关系。
  */
 object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
+    private val OBJC_CJ_MAPPING = Name.identifier("ObjCCJMapping")
+
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
         if (declaration !is CfirClass && declaration !is CfirStruct) return
         if (declaration.status.isAbstract || declaration.status.isSealed) return
+        if (declaration.hasAnnotation(OBJC_CJ_MAPPING) && declaration.superTypeRefs.isNotEmpty()) return
 
         val classScope = createOwnMemberScope(declaration)
         if (!classScope.hasUnimplementedAbstractMember(declaration, context)) return

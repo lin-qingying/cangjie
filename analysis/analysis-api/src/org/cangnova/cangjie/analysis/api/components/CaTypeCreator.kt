@@ -57,6 +57,11 @@ interface CaTypeCreator : CaLifetimeOwner {
     fun buildClassType(symbol: CaClassLikeSymbol, init: CaClassTypeBuilder.() -> Unit = {}): CaType
 
     /**
+     * 根据给定的元素类型构造可变参数所对应的底层 `Array<T>` 类型。
+     */
+    fun buildVarargArrayType(elementType: CaType): CaType
+
+    /**
      * 根据类型参数符号 [symbol] 构造一个 [CaTypeParameterType]。
      */
     fun buildTypeParameterType(symbol: CaTypeParameterSymbol, init: CaTypeParameterTypeBuilder.() -> Unit = {}): CaTypeParameterType

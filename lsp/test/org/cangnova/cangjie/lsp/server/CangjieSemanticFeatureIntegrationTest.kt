@@ -82,6 +82,16 @@ class CangjieSemanticFeatureIntegrationTest : AbstractLspIntegrationTest() {
                         positionOf(fixture, "src/model.cj", "User()", delta = 1),
                     ),
                 )
+                val semanticTokensFull = testSession.semanticTokensFull(SemanticTokensParams(TextDocumentIdentifier(modelUri)))
+                val semanticTokensRange = testSession.semanticTokensRange(
+                    SemanticTokensRangeParams(
+                        TextDocumentIdentifier(modelUri),
+                        Range(
+                            positionOf(fixture, "src/model.cj", "func greet"),
+                            positionOf(fixture, "src/model.cj", "func buildUser"),
+                        ),
+                    ),
+                )
                 val documentSymbols = testSession.documentSymbol(DocumentSymbolParams(TextDocumentIdentifier(modelUri)))
                 val workspaceSymbols = testSession.workspaceSymbol(WorkspaceSymbolParams("User"))
 
@@ -97,6 +107,8 @@ class CangjieSemanticFeatureIntegrationTest : AbstractLspIntegrationTest() {
                 assertTrue(references.any { location -> location.uri == modelUri })
                 assertTrue(references.any { location -> location.uri == useUri })
                 assertFalse(highlights.isEmpty())
+                assertFalse(semanticTokensFull.data.isEmpty())
+                assertFalse(semanticTokensRange.data.isEmpty())
                 assertEquals(listOf("Base", "User", "greet", "buildUser"), symbolNames)
                 assertTrue(workspaceNames.contains("User"))
                 assertFalse(workspaceSymbols.right.isEmpty())

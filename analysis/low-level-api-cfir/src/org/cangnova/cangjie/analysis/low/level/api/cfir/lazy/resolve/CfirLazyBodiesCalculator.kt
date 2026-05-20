@@ -11,12 +11,9 @@ import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
 import org.cangnova.cangjie.analysis.low.level.api.cfir.LLCfirInternals
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.CfirDesignation
-import org.cangnova.cangjie.analysis.low.level.api.cfir.util.CfirElementFinder
 import org.cangnova.cangjie.analysis.low.level.api.cfir.util.errorWithCfirSpecificEntries
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirElementWithResolveState
-import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
-import org.cangnova.cangjie.cfir.builder.PsiRawCfirBuilder
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
@@ -45,7 +42,6 @@ import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.unwrapFakeOverridesOrDelegated
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.transformSingle
-import org.cangnova.cangjie.psi.CjAnnotation
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjDeclarationWithInitializer
 import org.cangnova.cangjie.psi.CjElement
@@ -75,27 +71,12 @@ object CfirLazyBodiesCalculator {
     }
 
     fun createArgumentsForAnnotation(annotationCall: CfirAnnotationCall, session: CfirSession): CfirArgumentList {
-        val annotationPsi = annotationCall.psi as? CjAnnotation
-            ?: errorWithCfirSpecificEntries(
-                "Annotation PSI is not found for lazy argument reconstruction",
-                cfir = annotationCall,
-                psi = annotationCall.psi,
-            )
-
-        val rebuiltFile = PsiRawCfirBuilder(
-            session,
-            baseScopeProvider = session.cangjieScopeProvider,
-            bodyBuildingMode = BodyBuildingMode.NORMAL,
-        ).buildCfirFile(annotationPsi.containingCjFile)
-
-        val rebuiltAnnotation = CfirElementFinder.findElementIn<CfirAnnotationCall>(rebuiltFile) { it.psi == annotationPsi }
-            ?: errorWithCfirSpecificEntries(
-                "Rebuilt annotation call was not found",
-                cfir = rebuiltFile,
-                psi = annotationPsi,
-            )
-
-        return rebuiltAnnotation.argumentList
+        /*
+         * v5.14 custom annotation 闭环后，annotation slot 由 raw CFIR 和 metadata
+         * 共同承载。LL/lazy 阶段不能在 `psi == null` 时重建 PSI annotation；
+         * 已有的 CFIR argumentList 是唯一入口。
+         */
+        return annotationCall.argumentList
     }
 
     fun needCalculatingAnnotationCall(cfirAnnotationCall: CfirAnnotationCall): Boolean =

@@ -146,6 +146,9 @@ private fun tryCollectDesignation(providedFile: CfirFile?, target: CfirElementWi
         }
 
         is CfirFile -> CfirDesignation(target)
+        is CfirCodeFragment -> {
+            collectDesignationPathWithContainingClass(providedFile, target, containingClassId = null)
+        }
         else -> null
     }
 }

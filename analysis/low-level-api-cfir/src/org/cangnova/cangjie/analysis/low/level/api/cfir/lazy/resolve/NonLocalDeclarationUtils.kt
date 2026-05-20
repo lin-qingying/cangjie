@@ -6,6 +6,7 @@
 package org.cangnova.cangjie.analysis.low.level.api.cfir.lazy.resolve
 
 
+import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.psiUtil.containingClass
 import org.cangnova.cangjie.psi.psiUtil.parentOfType
@@ -24,7 +25,8 @@ internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (el
     // 仓颉 low-level 主干不承载 Kotlin FIR 的 enum entry / dangling modifier list 形态。
     // 这里仅保留真实存在的可调用声明入口，避免把不存在的 declaration shape 带入 designation/file-structure 主流程。
     is CjCallableDeclaration -> {
-        val parentToCheck = when (val parent = element.parent) {
+        // 仓颉注解在 PSI 上会引入 CjMacroInput 包装层，lazy-resolve 需要把这层视为透明容器。
+        val parentToCheck = when (val parent = unwrapMacroInputParent(element.parent)) {
             is CjTypeStatement, is CjFile -> parent
             is CjAbstractClassBody -> parent.containingClass
             else -> null
@@ -34,10 +36,17 @@ internal fun elementCanBeLazilyResolved(element: CjElement?): Boolean = when (el
     }
 
     is CjPropertyAccessor -> elementCanBeLazilyResolved(element.property)
-    is CjTypeStatement -> element.parent is CjFile
-    is CjTypeAlias -> element.parent is CjFile
+    is CjTypeStatement -> element.getClassId() != null
+    is CjTypeAlias -> element.getClassId() != null
     !is CjNamedDeclaration -> false
     else -> errorWithAttachment("Unexpected ${element::class}") {
         withPsiEntry("declaration", element)
+    }
+}
+
+private fun unwrapMacroInputParent(parent: PsiElement?): PsiElement? {
+    return when (parent) {
+        is CjMacroInput -> parent.parent
+        else -> parent
     }
 }

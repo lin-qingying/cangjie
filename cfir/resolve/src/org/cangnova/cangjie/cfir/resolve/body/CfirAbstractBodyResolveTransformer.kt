@@ -277,6 +277,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         }
     }
 
+    override fun transformCodeFragment(codeFragment: CfirCodeFragment, data: ResolutionMode): CfirCodeFragment {
+        return declarationsTransformer.transformCodeFragment(codeFragment, data)
+    }
+
     override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass {
         return declarationsTransformer.transformClass(klass, data)
     }

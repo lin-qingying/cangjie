@@ -28,6 +28,7 @@ import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.stubs.CangJieNamedFunctionStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentation
 import com.intellij.navigation.ItemPresentationProviders
@@ -72,19 +73,37 @@ open class CjNamedFunction : CjFunctionImpl<CangJieNamedFunctionStub, CjNamedFun
     }
 
     override val nameAsName: Name?
-        get() {
-            if (isSetFunc) return OperatorNameConventions.SET
-            return super.nameAsName
-        }
+        get() = normalizedOperatorName() ?: super.nameAsName
+
     override val fqName: FqName?
         get() = super.fqName
 
     override val nameAsSafeName: Name
-        get() {
+        get() = normalizedOperatorName() ?: super.nameAsSafeName
 
-            if (isSetFunc) return OperatorNameConventions.SET
-            return super.nameAsSafeName
+    /**
+     * 操作符函数的 PSI 名称归一化。
+     *
+     * `+`/`-` 在 PSI 裸文本中无法区分一元与二元，必须在函数声明上下文按参数个数归一化，
+     * 这样 PSI raw CFIR、Analysis API 与 LightTree raw CFIR 使用同一套操作符名称。
+     */
+    private fun normalizedOperatorName(): Name? {
+        if (!isOperator) return null
+
+        val rawName = nameIdentifier?.text ?: name ?: return null
+        return when (rawName) {
+            "-", OperatorNameConventions.MINUS.asString(), OperatorNameConventions.UNARY_MINUS.asString() ->
+                if (valueParameters.isEmpty()) OperatorNameConventions.UNARY_MINUS else OperatorNameConventions.MINUS
+
+            "+", OperatorNameConventions.PLUS.asString(), OperatorNameConventions.UNARY_PLUS.asString() ->
+                if (valueParameters.isEmpty()) OperatorNameConventions.UNARY_PLUS else OperatorNameConventions.PLUS
+
+            "[]", OperatorNameConventions.GET.asString(), OperatorNameConventions.SET.asString() ->
+                if (isSetFunc) OperatorNameConventions.SET else OperatorNameConventions.GET
+
+            else -> rawName.asOperatorName()
         }
+    }
 
     override fun hasBlockBody(): Boolean {
         val stub: CangJieNamedFunctionStub? = stub

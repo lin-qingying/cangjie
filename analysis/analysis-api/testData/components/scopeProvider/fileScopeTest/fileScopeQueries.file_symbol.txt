@@ -1,0 +1,7 @@
+CaCfirFileSymbol
+name: fileScopeQueries.cj
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjFile
+file: fileScopeQueries.cj
+package: analysis.scopes

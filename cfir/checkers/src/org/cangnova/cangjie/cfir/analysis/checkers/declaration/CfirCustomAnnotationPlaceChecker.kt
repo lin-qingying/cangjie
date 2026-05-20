@@ -15,8 +15,6 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.source.psi
 
 /**
  * 自定义注解的合法放置检查器。
@@ -55,7 +53,6 @@ object CfirCustomAnnotationPlaceChecker : CfirCallableDeclarationChecker() {
         val classDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(type.classId)?.cfir
             as? CfirClassLikeDeclaration ?: return false
-        val owner = classDecl.source?.psi as? CjModifierListOwner ?: return false
-        return owner.annotationEntries.any { it.shortName == ANNOTATION }
+        return classDecl.hasAnnotation(ANNOTATION)
     }
 }

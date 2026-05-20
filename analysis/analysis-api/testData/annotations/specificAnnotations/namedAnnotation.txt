@@ -1,0 +1,4 @@
+CjDeclaration: CjClass User
+annotations: [
+  @sample.annotations.Named[value = "demo", <annotation-arg-1> = error("Unsupported CFIR annotation argument at position 1")]
+]

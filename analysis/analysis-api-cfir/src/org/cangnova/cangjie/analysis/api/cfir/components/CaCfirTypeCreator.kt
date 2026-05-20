@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeUnionType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
 
@@ -79,6 +80,12 @@ internal class CaCfirTypeCreator(
         val builder = CaBaseTypeParameterTypeBuilder.BySymbol(symbol, token).apply(init)
         val cfirSymbol = builder.symbol.requireCfirTypeParameterSymbol()
         ConeTypeParameterTypeImpl(cfirSymbol.toLookupTag()).asPublicType() as CaTypeParameterType
+    }
+
+    override fun buildVarargArrayType(elementType: CaType): CaType = withValidityAssertion {
+        buildClassType(StdlibClassIds.Array) {
+            argument(elementType)
+        }
     }
 
 

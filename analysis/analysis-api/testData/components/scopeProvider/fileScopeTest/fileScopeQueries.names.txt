@@ -1,0 +1,6 @@
+Classifier names:
+  User
+
+Callable names:
+  consume
+  makeUser

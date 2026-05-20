@@ -1,7 +1,7 @@
 [ResolvedTo(BODY_RESOLVE)] FILE: interfaceStatus.cj
     package test
     [ResolvedTo(BODY_RESOLVE)] internal? interface Parent {
-        [ResolvedTo(IMPORTS)] public? func print():
+        [ResolvedTo(IMPORTS)] public? func print(): R|Unit|
     }
-    [ResolvedTo(BODY_RESOLVE)] internal? interface Child <: R|| {
+    [ResolvedTo(BODY_RESOLVE)] internal? interface Child <: R|kotlin.Unit| {
     }

@@ -10,9 +10,9 @@ import std.collection.*
 func createMock(handler: std.unittest.mock.`internal`.CallHandler): T { /* compiled code */ }
 
 interface CallHandler {
-    func onCall(call: std.unittest.mock.`internal`.Call): std.unittest.mock.`internal`.OnCall { /* compiled code */ }
+    abstract func onCall(call: std.unittest.mock.`internal`.Call): std.unittest.mock.`internal`.OnCall
 
-    func requireMockObject(obj: T): T { /* compiled code */ }
+    abstract func requireMockObject(obj: T): T
 
     static func recordStatic(callHandler: std.unittest.mock.`internal`.CallHandler): Unit { /* compiled code */ }
 
@@ -38,7 +38,7 @@ struct Call {
 
     let funcInfo: std.unittest.mock.`internal`.FuncInfo
 
-    init(_receiver: std.core.Option<std.core.Object>, _typeArgs: std.core.Array<std.core.ToString>, args: std.core.Array<std.core.Any>, funcInfo: std.unittest.mock.`internal`.FuncInfo) { /* compiled code */ }
+    Call(_receiver: std.core.Option<std.core.Object>, _typeArgs: std.core.Array<std.core.ToString>, args: std.core.Array<std.core.Any>, funcInfo: std.unittest.mock.`internal`.FuncInfo) { /* compiled code */ }
 }
 
 enum OnCall {
@@ -76,7 +76,7 @@ struct FuncInfo {
 
     let kind: std.unittest.mock.`internal`.DeclKind
 
-    init(id: std.unittest.mock.`internal`.DeclId, params: std.core.Array<std.unittest.mock.`internal`.ParameterInfo>, typeParams: std.core.Array<std.core.String>, location: (std.core.String, Int64, Int64), hasImplementation: Bool, outerDeclId: std.core.Option<std.unittest.mock.`internal`.DeclId>, hasDefaultValue: Bool, returnTypeName: std.core.String, isAccessible: Bool, kind: std.unittest.mock.`internal`.DeclKind) { /* compiled code */ }
+    FuncInfo(id: std.unittest.mock.`internal`.DeclId, params: std.core.Array<std.unittest.mock.`internal`.ParameterInfo>, typeParams: std.core.Array<std.core.String>, location: (std.core.String, Int64, Int64), hasImplementation: Bool, outerDeclId: std.core.Option<std.unittest.mock.`internal`.DeclId>, hasDefaultValue: Bool, returnTypeName: std.core.String, isAccessible: Bool, kind: std.unittest.mock.`internal`.DeclKind) { /* compiled code */ }
 }
 
 struct DeclId <: std.core.Equatable<std.unittest.mock.`internal`.DeclId> & std.core.Hashable {
@@ -90,7 +90,7 @@ struct DeclId <: std.core.Equatable<std.unittest.mock.`internal`.DeclId> & std.c
 
     let shortName: std.core.String
 
-    init(mangledName: std.core.String, shortName: std.core.String) { /* compiled code */ }
+    DeclId(mangledName: std.core.String, shortName: std.core.String) { /* compiled code */ }
 }
 
 struct ParameterInfo {
@@ -102,7 +102,7 @@ struct ParameterInfo {
 
     let hasDefaultValue: Bool
 
-    init(name: std.core.String, position: Int64, isNamed: Bool, hasDefaultValue: Bool) { /* compiled code */ }
+    ParameterInfo(name: std.core.String, position: Int64, isNamed: Bool, hasDefaultValue: Bool) { /* compiled code */ }
 }
 
 enum DeclKind {
@@ -134,42 +134,42 @@ enum DeclKind {
 }
 
 interface HasDefaultValueForStub {
-    static func defaultValueForStub(): T { /* compiled code */ }
+    abstract static func defaultValueForStub(): T
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Unit { /* compiled code */ }
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Int8 { /* compiled code */ }
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Int16 { /* compiled code */ }
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Int32 { /* compiled code */ }
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Int64 { /* compiled code */ }
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Float16 { /* compiled code */ }
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Float32 { /* compiled code */ }
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Float64 { /* compiled code */ }
 }
 
-extend Extend <: HasDefaultValueForStub {
+extend `Unit` <: HasDefaultValueForStub {
     static func defaultValueForStub(): Bool { /* compiled code */ }
 }
 
@@ -210,7 +210,7 @@ class MockReturnValueTypeMismatchException <: std.core.Exception {
 }
 
 interface Mocked {
-    func getHandler(): std.unittest.mock.`internal`.CallHandler { /* compiled code */ }
+    abstract func getHandler(): std.unittest.mock.`internal`.CallHandler
 }
 
 struct MockZeroValue {

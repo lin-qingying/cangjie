@@ -510,44 +510,39 @@ class HashMapEntryView <: std.core.Object & std.collection.MapEntryView<K, V> {
 }
 
 interface MapEntryView {
-    prop key: K {
-        get() { /* compiled code */ }
-    }
+    abstract prop key: K
 
-    mut prop value: std.core.Option<V> {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop value: std.core.Option<V>
 }
 
 interface EquatableCollection <: std.core.Collection<T> {
-    func contains(element: T): Bool { /* compiled code */ }
+    abstract func contains(element: T): Bool
 
-    func contains(all: std.core.Collection<T>): Bool { /* compiled code */ }
+    abstract func contains(all: std.core.Collection<T>): Bool
 }
 
 interface ReadOnlySet <: std.core.Collection<T> {
-    func contains(element: T): Bool { /* compiled code */ }
+    abstract func contains(element: T): Bool
 
-    func contains(all: std.core.Collection<T>): Bool { /* compiled code */ }
+    abstract func contains(all: std.core.Collection<T>): Bool
 
-    func subsetOf(other: std.collection.ReadOnlySet<T>): Bool { /* compiled code */ }
+    abstract func subsetOf(other: std.collection.ReadOnlySet<T>): Bool
 }
 
 interface Set <: std.collection.ReadOnlySet<T> {
-    func add(element: T): Bool { /* compiled code */ }
+    abstract func add(element: T): Bool
 
-    func add(all: std.core.Collection<T>): Unit { /* compiled code */ }
+    abstract func add(all: std.core.Collection<T>): Unit
 
-    func remove(element: T): Bool { /* compiled code */ }
+    abstract func remove(element: T): Bool
 
-    func remove(all: std.core.Collection<T>): Unit { /* compiled code */ }
+    abstract func remove(all: std.core.Collection<T>): Unit
 
-    func removeIf(predicate: (T) -> Bool): Unit { /* compiled code */ }
+    abstract func removeIf(predicate: (T) -> Bool): Unit
 
-    func clear(): Unit { /* compiled code */ }
+    abstract func clear(): Unit
 
-    func retain(all: std.collection.Set<T>): Unit { /* compiled code */ }
+    abstract func retain(all: std.collection.Set<T>): Unit
 }
 
 class LinkedListNode {
@@ -678,21 +673,21 @@ class LinkedListIterator <: std.core.Iterator<T> {
 }
 
 interface Map <: std.collection.ReadOnlyMap<K, V> {
-    func add(key: K, value: V): std.core.Option<V> { /* compiled code */ }
+    abstract func add(key: K, value: V): std.core.Option<V>
 
-    func add(all: std.core.Collection<(K, V)>): Unit { /* compiled code */ }
+    abstract func add(all: std.core.Collection<(K, V)>): Unit
 
-    func remove(key: K): std.core.Option<V> { /* compiled code */ }
+    abstract func remove(key: K): std.core.Option<V>
 
-    func remove(all: std.core.Collection<K>): Unit { /* compiled code */ }
+    abstract func remove(all: std.core.Collection<K>): Unit
 
-    func removeIf(predicate: (K, V) -> Bool): Unit { /* compiled code */ }
+    abstract func removeIf(predicate: (K, V) -> Bool): Unit
 
-    func clear(): Unit { /* compiled code */ }
+    abstract func clear(): Unit
 
-    operator func [](key: K, value: V): Unit { /* compiled code */ }
+    abstract operator func [](key: K, value: V): Unit
 
-    func entryView(k: K): std.collection.MapEntryView<K, V> { /* compiled code */ }
+    abstract func entryView(k: K): std.collection.MapEntryView<K, V>
 
     func addIfAbsent(key: K, value: V): std.core.Option<V> { /* compiled code */ }
 
@@ -913,21 +908,17 @@ class TreeSet <: std.core.Object & std.collection.OrderedSet<T> {
 }
 
 interface Deque <: std.core.Collection<T> {
-    prop first: std.core.Option<T> {
-        get() { /* compiled code */ }
-    }
+    abstract prop first: std.core.Option<T>
 
-    prop last: std.core.Option<T> {
-        get() { /* compiled code */ }
-    }
+    abstract prop last: std.core.Option<T>
 
-    func addFirst(element: T): Unit { /* compiled code */ }
+    abstract func addFirst(element: T): Unit
 
-    func addLast(element: T): Unit { /* compiled code */ }
+    abstract func addLast(element: T): Unit
 
-    func removeFirst(): std.core.Option<T> { /* compiled code */ }
+    abstract func removeFirst(): std.core.Option<T>
 
-    func removeLast(): std.core.Option<T> { /* compiled code */ }
+    abstract func removeLast(): std.core.Option<T>
 }
 
 extend ArrayDeque <: ToString {
@@ -935,23 +926,23 @@ extend ArrayDeque <: ToString {
 }
 
 interface List <: std.collection.ReadOnlyList<T> {
-    func add(element: T): Unit { /* compiled code */ }
+    abstract func add(element: T): Unit
 
-    func add(all: std.core.Collection<T>): Unit { /* compiled code */ }
+    abstract func add(all: std.core.Collection<T>): Unit
 
-    func add(element: T, at: Int64): Unit { /* compiled code */ }
+    abstract func add(element: T, at: Int64): Unit
 
-    func add(all: std.core.Collection<T>, at: Int64): Unit { /* compiled code */ }
+    abstract func add(all: std.core.Collection<T>, at: Int64): Unit
 
-    func remove(at: Int64): T { /* compiled code */ }
+    abstract func remove(at: Int64): T
 
-    func remove(range: std.core.Range<Int64>): Unit { /* compiled code */ }
+    abstract func remove(range: std.core.Range<Int64>): Unit
 
-    func removeIf(predicate: (T) -> Bool): Unit { /* compiled code */ }
+    abstract func removeIf(predicate: (T) -> Bool): Unit
 
-    func clear(): Unit { /* compiled code */ }
+    abstract func clear(): Unit
 
-    operator func [](index: Int64, value: T): Unit { /* compiled code */ }
+    abstract operator func [](index: Int64, value: T): Unit
 }
 
 extend ArrayList <: Equatable {
@@ -1021,11 +1012,11 @@ class ArrayQueue <: std.core.Object & std.collection.Queue<T> {
 }
 
 interface Queue <: std.core.Collection<T> {
-    func add(element: T): Unit { /* compiled code */ }
+    abstract func add(element: T): Unit
 
-    func peek(): std.core.Option<T> { /* compiled code */ }
+    abstract func peek(): std.core.Option<T>
 
-    func remove(): std.core.Option<T> { /* compiled code */ }
+    abstract func remove(): std.core.Option<T>
 }
 
 extend ArrayQueue <: ToString {
@@ -1033,11 +1024,11 @@ extend ArrayQueue <: ToString {
 }
 
 interface Stack <: std.core.Collection<T> {
-    func peek(): std.core.Option<T> { /* compiled code */ }
+    abstract func peek(): std.core.Option<T>
 
-    func remove(): std.core.Option<T> { /* compiled code */ }
+    abstract func remove(): std.core.Option<T>
 
-    func add(element: T): Unit { /* compiled code */ }
+    abstract func add(element: T): Unit
 }
 
 extend ArrayStack <: ToString {
@@ -1101,49 +1092,41 @@ extend LinkedList <: Equatable {
 }
 
 interface ReadOnlyList <: std.core.Collection<T> {
-    prop first: std.core.Option<T> {
-        get() { /* compiled code */ }
-    }
+    abstract prop first: std.core.Option<T>
 
-    prop last: std.core.Option<T> {
-        get() { /* compiled code */ }
-    }
+    abstract prop last: std.core.Option<T>
 
-    func `get`(index: Int64): std.core.Option<T> { /* compiled code */ }
+    abstract func `get`(index: Int64): std.core.Option<T>
 
-    operator func [](index: Int64): T { /* compiled code */ }
+    abstract operator func [](index: Int64): T
 }
 
 interface ReadOnlyMap <: std.core.Collection<(K, V)> {
-    func `get`(key: K): std.core.Option<V> { /* compiled code */ }
+    abstract func `get`(key: K): std.core.Option<V>
 
-    func contains(key: K): Bool { /* compiled code */ }
+    abstract func contains(key: K): Bool
 
-    func contains(all: std.core.Collection<K>): Bool { /* compiled code */ }
+    abstract func contains(all: std.core.Collection<K>): Bool
 
-    func keys(): std.collection.EquatableCollection<K> { /* compiled code */ }
+    abstract func keys(): std.collection.EquatableCollection<K>
 
-    func values(): std.core.Collection<V> { /* compiled code */ }
+    abstract func values(): std.core.Collection<V>
 
-    operator func [](key: K): V { /* compiled code */ }
+    abstract operator func [](key: K): V
 }
 
 interface OrderedMap <: std.collection.Map<K, V> {
-    prop first: std.core.Option<(K, V)> {
-        get() { /* compiled code */ }
-    }
+    abstract prop first: std.core.Option<(K, V)>
 
-    prop last: std.core.Option<(K, V)> {
-        get() { /* compiled code */ }
-    }
+    abstract prop last: std.core.Option<(K, V)>
 
-    func removeFirst(): std.core.Option<(K, V)> { /* compiled code */ }
+    abstract func removeFirst(): std.core.Option<(K, V)>
 
-    func removeLast(): std.core.Option<(K, V)> { /* compiled code */ }
+    abstract func removeLast(): std.core.Option<(K, V)>
 
-    func backward(mark: K, inclusive: Bool): std.core.Iterator<(K, V)> { /* compiled code */ }
+    abstract func backward(mark: K, inclusive: Bool): std.core.Iterator<(K, V)>
 
-    func forward(mark: K, inclusive: Bool): std.core.Iterator<(K, V)> { /* compiled code */ }
+    abstract func forward(mark: K, inclusive: Bool): std.core.Iterator<(K, V)>
 }
 
 func enumerate(it: std.core.Iterable<T>): std.core.Iterator<(Int64, T)> { /* compiled code */ }
@@ -1187,21 +1170,17 @@ class FlatMapIterator <: std.core.Iterator<R> {
 }
 
 interface OrderedSet <: std.collection.Set<T> {
-    prop first: std.core.Option<T> {
-        get() { /* compiled code */ }
-    }
+    abstract prop first: std.core.Option<T>
 
-    prop last: std.core.Option<T> {
-        get() { /* compiled code */ }
-    }
+    abstract prop last: std.core.Option<T>
 
-    func removeFirst(): std.core.Option<T> { /* compiled code */ }
+    abstract func removeFirst(): std.core.Option<T>
 
-    func removeLast(): std.core.Option<T> { /* compiled code */ }
+    abstract func removeLast(): std.core.Option<T>
 
-    func backward(mark: T, inclusive: Bool): std.core.Iterator<T> { /* compiled code */ }
+    abstract func backward(mark: T, inclusive: Bool): std.core.Iterator<T>
 
-    func forward(mark: T, inclusive: Bool): std.core.Iterator<T> { /* compiled code */ }
+    abstract func forward(mark: T, inclusive: Bool): std.core.Iterator<T>
 }
 
 func collectString(delimiter: std.core.String): (std.core.Iterable<T>) -> std.core.String { /* compiled code */ }

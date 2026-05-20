@@ -26,7 +26,7 @@ struct Position {
 
     let end: Int64
 
-    init(start: Int64, end: Int64) { /* compiled code */ }
+    Position(start: Int64, end: Int64) { /* compiled code */ }
 }
 
 struct MatchData {
@@ -54,7 +54,7 @@ struct MatchData {
 
     let nameToIndex: (std.core.String) -> Int64
 
-    init(input: std.core.String, positions: std.core.Array<std.regex.Position>, rc: Int64, nameToIndex: (std.core.String) -> Int64) { /* compiled code */ }
+    MatchData(input: std.core.String, positions: std.core.Array<std.regex.Position>, rc: Int64, nameToIndex: (std.core.String) -> Int64) { /* compiled code */ }
 }
 
 class Matcher {
@@ -192,7 +192,7 @@ struct CompileResult {
 
     let errorOffset: UIntNative
 
-    init(re: CPointer<Unit>, errorCode: Int32, errorOffset: UIntNative) { /* compiled code */ }
+    CompileResult(re: CPointer<Unit>, errorCode: Int32, errorOffset: UIntNative) { /* compiled code */ }
 }
 
 struct NameTableInfo {
@@ -202,7 +202,7 @@ struct NameTableInfo {
 
     let nameTable: CPointer<UInt8>
 
-    init(nameCount: UInt32, nameEntrySize: UInt32, nameTable: CPointer<UInt8>) { /* compiled code */ }
+    NameTableInfo(nameCount: UInt32, nameEntrySize: UInt32, nameTable: CPointer<UInt8>) { /* compiled code */ }
 }
 
 foreign func CJ_REGEX_Compile(pattern: CString, options: UInt32): CPointer<std.regex.CompileResult>

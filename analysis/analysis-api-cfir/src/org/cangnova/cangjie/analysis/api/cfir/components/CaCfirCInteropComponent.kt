@@ -17,13 +17,17 @@ import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CallingConvention
 import org.cangnova.cangjie.psi.CjAnnotated
 import org.cangnova.cangjie.psi.CjAnnotation
+import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjBuiltInAnnotation
 import org.cangnova.cangjie.psi.CjElement
+import org.cangnova.cangjie.psi.CjModifierList
 import org.cangnova.cangjie.psi.CjModifierListOwner
 import org.cangnova.cangjie.psi.CjStringTemplateExpression
-import org.cangnova.cangjie.psi.psiUtil.collectAnnotationEntriesFromStubOrPsi
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.psiUtil.isPlain
+import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiWhiteSpace
+import com.intellij.psi.util.PsiTreeUtil
 
 /**
  * C / FFI 互操作信息组件。
@@ -90,8 +94,8 @@ private fun resolveInteropOwner(element: CjElement): CjModifierListOwner? {
  * 从源码声明构建稳定的互操作快照。
  */
 private fun CaCfirSession.buildInteropInfo(owner: CjModifierListOwner): CaInteropInfo? {
-    val annotated = owner as? CjAnnotated ?: return null
-    val ffiAnnotations = annotated.collectAnnotationEntriesFromStubOrPsi()
+    val allAnnotations = owner.collectInteropAnnotations()
+    val ffiAnnotations = allAnnotations
         .filter(CjAnnotation::isFFIAnnotation)
 
     val backends = ffiAnnotations.mapNotNull { annotation ->
@@ -107,9 +111,7 @@ private fun CaCfirSession.buildInteropInfo(owner: CjModifierListOwner): CaIntero
     }.distinct()
 
     val isForeignDeclaration = owner.hasModifier(CjTokens.FOREIGN_KEYWORD)
-    val isFastNative = ffiAnnotations.any { annotation ->
-        annotation.builtInAnnotation == CjBuiltInAnnotation.FAST_NATIVE
-    } || annotated.collectAnnotationEntriesFromStubOrPsi().any { annotation ->
+    val isFastNative = allAnnotations.any { annotation ->
         annotation.builtInAnnotation == CjBuiltInAnnotation.FAST_NATIVE
     }
     val externalName = ffiAnnotations
@@ -134,6 +136,44 @@ private fun CaCfirSession.buildInteropInfo(owner: CjModifierListOwner): CaIntero
         ffiAnnotationNames = ffiAnnotationNames,
         token = token,
     )
+}
+
+/**
+ * 互操作注解必须绑定到声明边界本身，而不是依赖某一类 PSI 对注解容器的转发细节。
+ *
+ * 当前仓库里不同声明的注解既可能通过 `annotationEntries` 暴露，
+ * 也可能以 `CjAnnotations` / `modifierList` 形式直接挂在声明前缀上。
+ * 这里统一把这几条稳定入口合并，避免 `@C struct` 和 `@ForeignName foreign func`
+ * 因为 PSI 落位差异而被分裂处理。
+ */
+private fun CjModifierListOwner.collectInteropAnnotations(): List<CjAnnotation> {
+    val forwardedAnnotations = (this as? CjAnnotated)?.annotationEntries.orEmpty()
+    val directContainerAnnotations = children
+        .filterIsInstance<CjAnnotations>()
+        .flatMap(CjAnnotations::entries)
+    val directAnnotations = children.filterIsInstance<CjAnnotation>()
+    val modifierListAnnotations = modifierList?.let { modifierList ->
+        PsiTreeUtil.findChildrenOfType(modifierList, CjAnnotation::class.java).toList()
+    }.orEmpty()
+    val detachedSiblingAnnotations = generateSequence(prevSibling) { sibling -> sibling.prevSibling }
+        .takeWhile { sibling ->
+            sibling is PsiWhiteSpace || sibling is PsiComment || sibling is CjAnnotations || sibling is CjModifierList
+        }
+        .filterIsInstance<CjAnnotations>()
+        .flatMap(CjAnnotations::entries)
+        .toList()
+        .asReversed()
+
+    return buildList {
+        // 对齐 raw CFIR builder 的 detached annotation 恢复：部分注解会落在声明前缀 sibling 上。
+        addAll(detachedSiblingAnnotations)
+        addAll(forwardedAnnotations)
+        addAll(directContainerAnnotations)
+        addAll(directAnnotations)
+        addAll(modifierListAnnotations)
+    }.distinctBy { annotation ->
+        annotation.textRange to annotation.text
+    }
 }
 
 private fun CjAnnotation.extractForeignName(): String? {

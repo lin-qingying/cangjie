@@ -27,11 +27,11 @@ import org.cangnova.cangjie.source.text
  */
 object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(variable: CfirPatternVariable) {
-        val source = variable.source as? AbstractCjSourceElement ?: return
+    override fun check(declaration: CfirPatternVariable) {
+        val source = declaration.source as? AbstractCjSourceElement ?: return
 
-        val expectedType = (variable.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
-        val initializer = variable.initializer?.takeIf { it !is CfirErrorExpression } ?: return
+        val expectedType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
+        val initializer = declaration.initializer?.takeIf { it !is CfirErrorExpression } ?: return
         if (initializer.hasResolutionDiagnostic()) return
         if (initializer.isBareEnumConstructorAccess()) return
         if (initializer is CfirFunctionCall) return

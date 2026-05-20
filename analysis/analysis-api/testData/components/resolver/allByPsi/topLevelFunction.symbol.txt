@@ -1,0 +1,6 @@
+CjSimpleNameExpression: makeUser
+  symbolClass: CaCfirNamedFunctionSymbol
+  name: makeUser
+  callableId: sample.makeUser
+  receiverType: null
+  returnType: Int64

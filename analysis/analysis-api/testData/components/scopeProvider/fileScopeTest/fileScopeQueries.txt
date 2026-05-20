@@ -1,0 +1,20 @@
+CaCfirNamedFunctionSymbol
+name: makeUser
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjNamedFunction
+callableId: analysis.scopes.makeUser
+
+CaCfirNamedFunctionSymbol
+name: consume
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjNamedFunction
+callableId: analysis.scopes.consume
+
+CaCfirClassSymbol
+name: User
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjClass
+classId: analysis.scopes.User

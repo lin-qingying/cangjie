@@ -1,0 +1,28 @@
+CaCfirNamedFunctionSymbol
+name: member
+origin: SOURCE
+location: CLASS
+psi: CjNamedFunction
+callableId: sample.symbols.bypsi.Box.member
+
+CaCfirClassSymbol
+name: Box
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjClass
+classId: sample.symbols.bypsi.Box
+
+CaCfirNamedFunctionSymbol
+name: topLevel
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjNamedFunction
+callableId: sample.symbols.bypsi.topLevel
+
+CaCfirFileSymbol
+name: simpleDeclarations.cj
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjFile
+file: simpleDeclarations.cj
+package: sample.symbols.bypsi

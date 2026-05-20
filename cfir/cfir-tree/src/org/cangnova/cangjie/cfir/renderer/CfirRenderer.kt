@@ -86,6 +86,7 @@ interface CfirRendererComponents {
     val visitor: CfirRenderer.Visitor
     val printer: CfirPrinter
     val annotationRenderer: CfirAnnotationRenderer?
+    val callArgumentsRenderer: CfirCallArgumentsRenderer?
 
     val declarationRenderer: CfirDeclarationRenderer?
     val packageDirectiveRenderer: CfirPackageDirectiveRenderer?
@@ -133,15 +134,20 @@ class CfirRenderer(
     override val errorExpressionRenderer: CfirErrorExpressionRenderer? = CfirErrorExpressionOnlyErrorRenderer(),
     override val typeRenderer: ConeTypeRenderer = ConeTypeRendererForDebugging(),
     override val callableSignatureRenderer: CfirCallableSignatureRenderer? = CfirCallableSignatureRenderer(),
+    override val callArgumentsRenderer: CfirCallArgumentsRenderer? = CfirCallArgumentsRenderer(),
     override val referenceRenderer: CfirReferenceRenderer = CfirReferenceRenderer(),
     override val modifierRenderer: CfirModifierRenderer? = CfirModifierRenderer(),
     override val inlineExpressionRenderer: CfirInlineExpressionRenderer? = CfirInlineExpressionRenderer(
-        referenceRenderer = CfirReferenceRenderer()
+        referenceRenderer = CfirReferenceRenderer(),
+        typeRenderer = ConeTypeRendererForDebugging(),
     ),
     override val patternRenderer: CfirPatternRenderer? = CfirPatternRenderer(
         typeRenderer = ConeTypeRendererForDebugging(),
         referenceRenderer = CfirReferenceRenderer(),
-        inlineExpressionRenderer = CfirInlineExpressionRenderer(CfirReferenceRenderer()),
+        inlineExpressionRenderer = CfirInlineExpressionRenderer(
+            referenceRenderer = CfirReferenceRenderer(),
+            typeRenderer = ConeTypeRendererForDebugging(),
+        ),
     ),
 ) : CfirRendererComponents {
 
@@ -156,6 +162,7 @@ class CfirRenderer(
         resolvePhaseRenderer?.components = this
         errorExpressionRenderer?.components = this
         callableSignatureRenderer?.components = this
+        callArgumentsRenderer?.components = this
         modifierRenderer?.components = this
     }
 
@@ -194,6 +201,7 @@ class CfirRenderer(
      * 因此这里必须优先按 CfirTypeRef 结构直接渲染，不能只看 coneTypeOrNull。
      */
     private fun renderType(typeRef: CfirTypeRef?) {
+        annotationRenderer?.render(typeRef ?: return)
         val rendered = renderTypeRefForDebug(typeRef, typeRenderer)
         if (rendered.isNotEmpty()) {
             print(rendered)
@@ -278,6 +286,10 @@ class CfirRenderer(
             print("FILE: ")
             println(file.name)
             printer.pushIndent()
+            annotationRenderer?.render(file)
+            if (file.annotations.isNotEmpty()) {
+                printer.newLine()
+            }
             file.packageDirective.accept(this)
             file.imports.forEach { it.accept(this) }
             file.declarations.forEach { it.accept(this) }
@@ -302,6 +314,7 @@ class CfirRenderer(
 
         override fun visitClass(klass: CfirClass) {
             resolvePhaseRenderer?.render(klass)
+            annotationRenderer?.render(klass)
             modifierRenderer?.renderModifiers(klass)
             printClassLikeHeader("class", klass.name.asString(), klass.typeParameters, klass.superTypeRefs)
             printer.pushIndent()
@@ -312,6 +325,7 @@ class CfirRenderer(
 
         override fun visitInterface(iface: CfirInterface) {
             resolvePhaseRenderer?.render(iface)
+            annotationRenderer?.render(iface)
             modifierRenderer?.renderModifiers(iface)
             printClassLikeHeader("interface", iface.name.asString(), iface.typeParameters, iface.superTypeRefs)
             printer.pushIndent()
@@ -322,6 +336,7 @@ class CfirRenderer(
 
         override fun visitStruct(struct: CfirStruct) {
             resolvePhaseRenderer?.render(struct)
+            annotationRenderer?.render(struct)
             modifierRenderer?.renderModifiers(struct)
             printClassLikeHeader("struct", struct.name.asString(), struct.typeParameters, struct.superTypeRefs)
             printer.pushIndent()
@@ -332,6 +347,7 @@ class CfirRenderer(
 
         override fun visitEnum(enum_: CfirEnum) {
             resolvePhaseRenderer?.render(enum_)
+            annotationRenderer?.render(enum_)
             modifierRenderer?.renderModifiers(enum_)
             val refPrefix = if (enum_.isRefEnum) "ref " else ""
             printClassLikeHeader(
@@ -348,6 +364,8 @@ class CfirRenderer(
 
         override fun visitExtend(extend: CfirExtend) {
             resolvePhaseRenderer?.render(extend)
+            annotationRenderer?.render(extend)
+            modifierRenderer?.renderModifiers(extend)
             print("extend")
             printTypeParams(extend.typeParameters)
             print(" ")
@@ -364,6 +382,7 @@ class CfirRenderer(
 
         override fun visitFunction(function: CfirFunction) {
             resolvePhaseRenderer?.render(function)
+            annotationRenderer?.render(function)
             modifierRenderer?.renderModifiers(function)
 
             val mutPrefix = if ((function as? CfirNamedFunction)?.isMut == true) "mut " else ""
@@ -385,15 +404,8 @@ class CfirRenderer(
             print(functionName)
 
             // parameters
-            print("(")
-            function.valueParameters.forEachIndexed { index, param ->
-                if (index > 0) print(", ")
-                print(param.name.asString())
-                if (param.isNamed) print("!")
-                print(": ")
-                renderType(param.returnTypeRef)
-            }
-            print("): ")
+            callableSignatureRenderer?.renderParameters(function.valueParameters)
+            print(": ")
             renderType(function.returnTypeRef)
 
             if (function.body != null) {
@@ -409,14 +421,10 @@ class CfirRenderer(
 
         override fun visitConstructor(constructor: CfirConstructor) {
             resolvePhaseRenderer?.render(constructor)
-            print("init(")
-            constructor.valueParameters.forEachIndexed { index, param ->
-                if (index > 0) print(", ")
-                print(param.name.asString())
-                print(": ")
-                renderType(param.returnTypeRef)
-            }
-            print(")")
+            annotationRenderer?.render(constructor)
+            modifierRenderer?.renderModifiers(constructor)
+            print("init")
+            callableSignatureRenderer?.renderParameters(constructor.valueParameters)
             if (constructor.body != null) {
                 println(" {")
                 printer.pushIndent()
@@ -436,6 +444,7 @@ class CfirRenderer(
 
         override fun visitProperty(property: CfirProperty) {
             resolvePhaseRenderer?.render(property)
+            annotationRenderer?.render(property)
             modifierRenderer?.renderModifiers(property)
             print("prop ")
             print(property.name.asString())
@@ -446,6 +455,7 @@ class CfirRenderer(
 
         override fun visitFieldVariable(variable: CfirFieldVariable) {
             resolvePhaseRenderer?.render(variable)
+            annotationRenderer?.render(variable)
             modifierRenderer?.renderModifiers(variable)
             print(if (variable.isVar) "var" else "let")
             print(" ")
@@ -466,6 +476,7 @@ class CfirRenderer(
 
         override fun visitPatternVariable(variable: CfirPatternVariable) {
             resolvePhaseRenderer?.render(variable)
+            annotationRenderer?.render(variable)
             modifierRenderer?.renderModifiers(variable)
             print(if (variable.isVar) "var" else "let")
             print(" ")
@@ -492,11 +503,13 @@ class CfirRenderer(
 
         override fun visitTypeParameter(typeParameter: CfirTypeParameter) {
             resolvePhaseRenderer?.render(typeParameter)
+            annotationRenderer?.render(typeParameter)
             println("type-param ${typeParameter.name.asString()}")
         }
 
         override fun visitTypeAlias(typeAlias: CfirTypeAlias) {
             resolvePhaseRenderer?.render(typeAlias)
+            annotationRenderer?.render(typeAlias)
             modifierRenderer?.renderModifiers(typeAlias)
             print("typealias ")
             print(typeAlias.name.asString())
@@ -508,16 +521,20 @@ class CfirRenderer(
 
         override fun visitEnumConstructor(enumConstructor: CfirEnumConstructor) {
             resolvePhaseRenderer?.render(enumConstructor)
+            annotationRenderer?.render(enumConstructor)
             print(enumConstructor.name.asString())
             if (enumConstructor.valueParameters.isNotEmpty()) {
-                print("(")
-                enumConstructor.valueParameters.forEachIndexed { index, param ->
-                    if (index > 0) print(", ")
-                    renderType(param.returnTypeRef)
-                }
-                print(")")
+                callableSignatureRenderer?.renderParameters(enumConstructor.valueParameters)
             }
             println()
+        }
+
+        override fun visitAnnotation(annotation: CfirAnnotation) {
+            annotationRenderer?.renderAnnotation(annotation)
+        }
+
+        override fun visitAnnotationCall(annotationCall: CfirAnnotationCall) {
+            annotationRenderer?.renderAnnotation(annotationCall)
         }
 
         // ── Statements ────────────────────────────────────────────────────────
@@ -910,11 +927,39 @@ class CfirRenderer(
         }
 
         override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef) {
-            println("OPTION_TYPE {")
-            printer.pushIndent()
-            optionTypeRef.componentTypeRef.accept(this)
-            printer.popIndent()
-            println("}")
+            renderType(optionTypeRef)
+        }
+
+        override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef) {
+            renderType(resolvedTypeRef)
+        }
+
+        override fun visitBasicTypeRef(basicTypeRef: CfirBasicTypeRef) {
+            renderType(basicTypeRef)
+        }
+
+        override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef) {
+            renderType(userTypeRef)
+        }
+
+        override fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef) {
+            renderType(functionTypeRef)
+        }
+
+        override fun visitImplicitTypeRef(implicitTypeRef: CfirImplicitTypeRef) {
+            renderType(implicitTypeRef)
+        }
+
+        override fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef) {
+            renderType(tupleTypeRef)
+        }
+
+        override fun visitVArrayTypeRef(varrayTypeRef: CfirVArrayTypeRef) {
+            renderType(varrayTypeRef)
+        }
+
+        override fun visitErrorTypeRef(errorTypeRef: CfirErrorTypeRef) {
+            renderType(errorTypeRef)
         }
 
         override fun visitErrorExpression(errorExpression: CfirErrorExpression) {

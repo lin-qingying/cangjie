@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.renderer
 
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.render.ConeTypeRenderer
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.classId
@@ -31,7 +32,7 @@ open class CfirCallableSignatureRenderer {
         declarationRenderer?.renderPhaseAndAttributes(valueParameter)
         annotationRenderer?.render(valueParameter)
         modifierRenderer?.renderModifiers(valueParameter)
-        if (valueParameter.name != SpecialNames.NO_NAME_PROVIDED) {
+        if (shouldRenderParameterName(valueParameter)) {
 
                 printer.print(renderParameterName(valueParameter))
                 renderReturnTypePrefix()
@@ -44,6 +45,11 @@ open class CfirCallableSignatureRenderer {
 
     protected open fun renderParameterName(valueParameter: CfirValueParameter): String {
         return valueParameter.name.toString()
+    }
+
+    protected open fun shouldRenderParameterName(valueParameter: CfirValueParameter): Boolean {
+        return valueParameter.name != SpecialNames.NO_NAME_PROVIDED &&
+                valueParameter.containingDeclarationSymbol !is CfirEnumConstructorSymbol
     }
 
     open fun renderCallableType(callableDeclaration: CfirCallableDeclaration) {

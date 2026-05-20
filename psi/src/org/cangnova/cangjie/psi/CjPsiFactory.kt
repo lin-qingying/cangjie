@@ -249,7 +249,7 @@ class CjPsiFactory private constructor(
      * @return 注解元素
      */
     fun createAnnotations(text: String): CjAnnotations {
-        val function = createFunction(" $text func foo() { }")
+        val function = createAnnotationOnlyFile(" $text func foo() { }").declarations.single() as CjNamedFunction
 
         return function.annotations!!
     }
@@ -573,6 +573,26 @@ class CjPsiFactory private constructor(
             eventSystemEnabled,
             markGenerated,
         ) as CjFile
+    }
+
+    private fun createAnnotationOnlyFile(@NonNls text: String): CjFile {
+        val file = PsiFileFactory.getInstance(project).createFileFromText(
+            "dummy.cj.macrocall",
+            CangJieFileType.INSTANCE,
+            text,
+            LocalTimeCounter.currentTime(),
+            eventSystemEnabled,
+            markGenerated,
+        ) as CjFile
+
+        val elementContext = this@CjPsiFactory.context
+        if (elementContext != null) {
+            file.elementContext = elementContext
+        } else {
+            file.doNotAnalyze = DO_NOT_ANALYZE_NOTIFICATION
+        }
+
+        return file
     }
 
     fun createFile(@NonNls fileName: String, @NonNls text: String): CjFile {

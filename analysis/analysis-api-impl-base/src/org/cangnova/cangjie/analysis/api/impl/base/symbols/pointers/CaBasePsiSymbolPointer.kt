@@ -30,15 +30,8 @@ class CaBasePsiSymbolPointer<S : CaSymbol> private constructor(
     private val expectedClass: KClass<S>,
     private val restoreSymbolByPsi: CaSession.(CjElement) -> CaSymbol?,
     originalSymbol: S?,
-) : CaSymbolPointer<S> {
-    private val originalSymbolRef = SoftReference(originalSymbol)
-
-    override fun restoreSymbol(session: CaSession): S? {
-        originalSymbolRef.get()?.let { symbol ->
-            @Suppress("UNCHECKED_CAST")
-            return symbol as S
-        }
-
+) : CaBaseCachedSymbolPointer<S>(originalSymbol) {
+    override fun restoreIfNotCached(session: CaSession): S? {
         val psi = psiPointer.element ?: return null
         val symbol = session.restoreSymbolByPsi(psi) ?: return null
         if (!expectedClass.isInstance(symbol)) return null

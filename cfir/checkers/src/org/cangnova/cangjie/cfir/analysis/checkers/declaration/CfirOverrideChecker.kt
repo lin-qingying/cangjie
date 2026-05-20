@@ -54,9 +54,11 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
 
             val visibleOverriddenSymbols = overriddenCandidates.filter { it.isVisibleIn(declaration, context) }
             if (visibleOverriddenSymbols.isEmpty()) {
+                val invisibleOverridden = overriddenCandidates.first()
                 reporter.reportOn(
                     source = callable.source,
-                    factory = CfirErrors.NOTHING_TO_OVERRIDE,
+                    factory = CfirErrors.CANNOT_OVERRIDE_INVISIBLE_MEMBER,
+                    a = invisibleOverridden.name,
                 )
                 continue
             }

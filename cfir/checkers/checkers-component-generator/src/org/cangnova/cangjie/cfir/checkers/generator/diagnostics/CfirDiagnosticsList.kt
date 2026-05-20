@@ -9,14 +9,12 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjCommandTypePattern
+import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
-import org.cangnova.cangjie.psi.CjHandleClause
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjNamedDeclaration
-import org.cangnova.cangjie.psi.CjPerformExpression
 import org.cangnova.cangjie.psi.CjResumeExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 import org.cangnova.cangjie.util.PrivateForInline
@@ -56,7 +54,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Collection<String>>("conflictingSymbols")
         }
 
-        val REDECLARATION by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+        val REDECLARATION by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Collection<String>>("conflictingSymbols")
         }
 
@@ -140,7 +138,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // 扩展泛型使用错误：声明了泛型参数但未参与扩展语义
-        val EXTEND_GENERIC_USAGE by error<CjDeclaration> {
+        val EXTEND_GENERIC_USAGE by error<CjTypeReference> {
             parameter<Name>("typeParameterName")
         }
 
@@ -456,11 +454,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("constructName")
         }
 
-        val COMMAND_INCOMPATIBLE_TYPE by error<CjPerformExpression> {
+        val COMMAND_INCOMPATIBLE_TYPE by error<CjExpression> {
             parameter<ConeCangJieType>("actualType")
         }
 
-        val COMMAND_HANDLE_TYPE_ERROR by error<CjCommandTypePattern> {
+        val COMMAND_HANDLE_TYPE_ERROR by error<CjTypeReference> {
             parameter<ConeCangJieType>("actualType")
         }
 
@@ -474,7 +472,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<ConeCangJieType>("actualType")
         }
 
-        val MISMATCHING_HANDLE_BLOCK by error<CjHandleClause> {
+        val MISMATCHING_HANDLE_BLOCK by error<CjBlockExpression> {
             parameter<ConeCangJieType>("actualType")
             parameter<ConeCangJieType>("expectedType")
         }
@@ -766,7 +764,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      */
     val FUNCTION by object : DiagnosticGroup("Function") {
         // 无法推断返回类型
-        val UNABLE_TO_INFER_RETURN_TYPE by error<CjDeclaration>()
+        val UNABLE_TO_INFER_RETURN_TYPE by error<PsiElement>()
 
         // 无法推断泛型函数的类型参数
         val UNABLE_TO_INFER_GENERIC_FUNC by error<PsiElement>()
@@ -1140,7 +1138,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // @Java 类型不能被 extend
-        val EXTEND_A_JAVA_TYPE by error<PsiElement>()
+        val EXTEND_A_JAVA_TYPE by error<CjTypeReference>()
 
         // extend 引用目标不能是 @JavaImpl
         val EXTEND_REF_TARGET_CANNOT_BE_JAVA_IMPL by error<PsiElement>()

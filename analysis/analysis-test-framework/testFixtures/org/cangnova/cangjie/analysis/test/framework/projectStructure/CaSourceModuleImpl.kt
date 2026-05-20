@@ -16,6 +16,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDepen
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
@@ -99,6 +100,15 @@ class CaBuiltinsModuleImpl(
         get() = BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
 
     override fun toString(): String = builtinsName
+}
+
+class CaNotUnderContentRootModuleImpl(
+    override val name: String,
+    override val originalModule: CaModule?,
+    project: Project,
+    scopeRoots: List<PsiFileSystemItem>,
+) : CaTestModuleBase(project, scopeRoots), CaNotUnderContentRootModule {
+    override fun toString(): String = name
 }
 
 class CaLibraryFallbackDependenciesModuleImpl(

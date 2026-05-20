@@ -1,0 +1,6 @@
+presentation: sample/types/returntype/User
+qualified: sample.types.returntype.User
+short: User
+abbreviation: null
+fullyExpanded: sample.types.returntype.User
+classLikeSymbol: sample/types/returntype/User

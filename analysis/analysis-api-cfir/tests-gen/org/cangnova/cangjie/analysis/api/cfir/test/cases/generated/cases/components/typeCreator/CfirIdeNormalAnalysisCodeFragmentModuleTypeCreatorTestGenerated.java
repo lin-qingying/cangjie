@@ -136,4 +136,44 @@ public class CfirIdeNormalAnalysisCodeFragmentModuleTypeCreatorTestGenerated ext
       run("functionType.cj");
     }
   }
+
+  @Nested
+  @TestMetadata("analysis/analysis-api/testData/components/typeCreator/typeParameter")
+  @TestDataPath("$PROJECT_ROOT")
+  public class TypeParameter {
+    private void run(String fileName) {
+      runTest("analysis/analysis-api/testData/components/typeCreator/typeParameter/" + fileName);
+    }
+
+    @Test
+    public void testAllFilesPresentInTypeParameter() {
+      CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/components/typeCreator/typeParameter"), Pattern.compile("^(.+)\\.cj$"), null, true);
+    }
+
+    @Test
+    @TestMetadata("typeParameterType.cj")
+    public void testTypeParameterType() {
+      run("typeParameterType.cj");
+    }
+  }
+
+  @Nested
+  @TestMetadata("analysis/analysis-api/testData/components/typeCreator/varargArray")
+  @TestDataPath("$PROJECT_ROOT")
+  public class VarargArray {
+    private void run(String fileName) {
+      runTest("analysis/analysis-api/testData/components/typeCreator/varargArray/" + fileName);
+    }
+
+    @Test
+    public void testAllFilesPresentInVarargArray() {
+      CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/components/typeCreator/varargArray"), Pattern.compile("^(.+)\\.cj$"), null, true);
+    }
+
+    @Test
+    @TestMetadata("varargArrayType.cj")
+    public void testVarargArrayType() {
+      run("varargArrayType.cj");
+    }
+  }
 }

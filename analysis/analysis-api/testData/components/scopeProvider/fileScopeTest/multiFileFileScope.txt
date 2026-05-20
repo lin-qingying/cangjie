@@ -1,0 +1,13 @@
+CaCfirNamedFunctionSymbol
+name: makeMainOnly
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjNamedFunction
+callableId: analysis.scopes.multifile.makeMainOnly
+
+CaCfirClassSymbol
+name: MainOnly
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjClass
+classId: analysis.scopes.multifile.MainOnly

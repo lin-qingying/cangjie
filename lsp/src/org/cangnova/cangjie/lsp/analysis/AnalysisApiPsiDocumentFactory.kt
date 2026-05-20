@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.lsp.analysis
 
-import com.intellij.psi.PsiFileFactory
-import org.cangnova.cangjie.analysis.api.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.psi.CjFile
@@ -59,14 +58,12 @@ internal class AnalysisApiPsiDocumentFactory(
 
     private fun createPsiFile(document: LspTextDocument): CjFile {
         val fileName = document.uri.toPsiFileName()
-        val psiFile = PsiFileFactory.getInstance(lifecycleContext.environment.project).createFileFromText(
-            fileName,
-            CangJieFileType.INSTANCE,
-            document.analysisText,
+        return LspAnalysisPsiFileFactory.createFile(
+            project = lifecycleContext.environment.project,
+            documentUri = document.uri,
+            fileName = fileName,
+            text = document.analysisText,
         )
-
-        return psiFile as? CjFile
-            ?: error("Expected a Cangjie PSI file for `${document.uri}`, but got `${psiFile::class.qualifiedName}`")
     }
 
     private fun String.toPsiFileName(): String {

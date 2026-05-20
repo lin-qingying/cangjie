@@ -47,6 +47,25 @@ abstract class AbstractCfirLightTreeMacroDiagnosticsTest : AbstractCfirLightTree
     }
 }
 
+/**
+ * PSI 宏端到端诊断测试基类。
+ *
+ * 与 [AbstractCfirLightTreeMacroDiagnosticsTest] 使用同一套宏测试环境，
+ * 仅前端 parser 切换为 [CfirParser.Psi]。
+ */
+abstract class AbstractCfirPsiMacroDiagnosticsTest : AbstractCfirPsiDiagnosticTest() {
+    override fun configure(builder: TestConfigurationBuilder) {
+        super.configure(builder)
+        with(builder) {
+            useDirectives(MacroConstructionDirectives)
+            useConfigurators(::MacroConstructionEnvironmentConfigurator)
+            firHandlersStep {
+                useHandlers(::MacroExpandedCfirDumpHandler)
+            }
+        }
+    }
+}
+
 abstract class AbstractCfirDiagnosticTestSpecBase(parser: CfirParser) : AbstractCfirDiagnosticTestBase(parser) {
     override fun configure(builder: TestConfigurationBuilder) {
         super.configure(builder)

@@ -20,9 +20,23 @@ object TestGeneratorForCfirAnalysisTests {
         )
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsPsiTestGenerated.kt",
+            generatedClassName = "CfirAnalysisDiagnosticsPsiTestGenerated",
+            baseClassName = "AbstractCfirPsiDiagnosticTest",
+        )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
             relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics2",
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt",
             generatedClassName = "CfirAnalysisDiagnostics2TestGenerated",
+        )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics2",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2PsiTestGenerated.kt",
+            generatedClassName = "CfirAnalysisDiagnostics2PsiTestGenerated",
+            baseClassName = "AbstractCfirPsiDiagnosticTest",
         )
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
@@ -30,6 +44,13 @@ object TestGeneratorForCfirAnalysisTests {
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroTestGenerated.kt",
             generatedClassName = "CfirAnalysisMacroTestGenerated",
             baseClassName = "AbstractCfirLightTreeMacroDiagnosticsTest",
+        )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/macro",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroPsiTestGenerated.kt",
+            generatedClassName = "CfirAnalysisMacroPsiTestGenerated",
+            baseClassName = "AbstractCfirPsiMacroDiagnosticsTest",
         )
     }
 
@@ -121,7 +142,7 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("    require(testDataDir.isDirectory) { \"testData dir not found: \${testDataDir.path}\" }")
         appendLine()
         appendLine("    val currentDir = currentClassTestDataDir(testInstance::class.java, testDataDir)")
-        appendLine("    val expected = currentDir.walkTopDown()")
+        appendLine("    val expected = currentDir.listFiles().orEmpty().asSequence()")
         appendLine("        .filter { it.isFile && it.extension == \"cj\" }")
         appendLine("        .map { it.relativeTo(currentDir).invariantSeparatorsPath }")
         appendLine("        .toSet()")

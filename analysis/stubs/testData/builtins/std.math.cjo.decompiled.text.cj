@@ -143,115 +143,115 @@ enum RoundingMode <: std.core.Equatable<std.math.RoundingMode> & std.core.ToStri
     func toString(): std.core.String { /* compiled code */ }
 }
 
-extend Extend <: MathExtension {
+extend `Unit` <: MathExtension {
     static func GetPI(): Float64 { /* compiled code */ }
 
     static func GetE(): Float64 { /* compiled code */ }
 }
 
 interface MathExtension {
-    static func GetPI(): T { /* compiled code */ }
+    abstract static func GetPI(): T
 
-    static func GetE(): T { /* compiled code */ }
+    abstract static func GetE(): T
 }
 
-extend Extend <: MathExtension {
+extend `Unit` <: MathExtension {
     static func GetPI(): Float32 { /* compiled code */ }
 
     static func GetE(): Float32 { /* compiled code */ }
 }
 
-extend Extend <: MathExtension {
+extend `Unit` <: MathExtension {
     static func GetPI(): Float16 { /* compiled code */ }
 
     static func GetE(): Float16 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): Int8 { /* compiled code */ }
 
     static func getMin(): Int8 { /* compiled code */ }
 }
 
 interface MaxMinValue {
-    static func getMax(): T { /* compiled code */ }
+    abstract static func getMax(): T
 
-    static func getMin(): T { /* compiled code */ }
+    abstract static func getMin(): T
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): Int16 { /* compiled code */ }
 
     static func getMin(): Int16 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): Int32 { /* compiled code */ }
 
     static func getMin(): Int32 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): Int64 { /* compiled code */ }
 
     static func getMin(): Int64 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): IntNative { /* compiled code */ }
 
     static func getMin(): IntNative { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): UInt8 { /* compiled code */ }
 
     static func getMin(): UInt8 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): UInt16 { /* compiled code */ }
 
     static func getMin(): UInt16 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): UInt32 { /* compiled code */ }
 
     static func getMin(): UInt32 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): UInt64 { /* compiled code */ }
 
     static func getMin(): UInt64 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): UIntNative { /* compiled code */ }
 
     static func getMin(): UIntNative { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): Float16 { /* compiled code */ }
 
     static func getMin(): Float16 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): Float32 { /* compiled code */ }
 
     static func getMin(): Float32 { /* compiled code */ }
 }
 
-extend Extend <: MaxMinValue {
+extend `Unit` <: MaxMinValue {
     static func getMax(): Float64 { /* compiled code */ }
 
     static func getMin(): Float64 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: Int8): Int8 { /* compiled code */ }
 
     operator func +(right: Int8): Int8 { /* compiled code */ }
@@ -264,18 +264,18 @@ extend Extend <: Number {
 }
 
 interface Number {
-    operator func +(rhs: T): T { /* compiled code */ }
+    abstract operator func +(rhs: T): T
 
-    operator func -(rhs: T): T { /* compiled code */ }
+    abstract operator func -(rhs: T): T
 
-    operator func *(rhs: T): T { /* compiled code */ }
+    abstract operator func *(rhs: T): T
 
-    operator func /(rhs: T): T { /* compiled code */ }
+    abstract operator func /(rhs: T): T
 
-    operator func -(): T { /* compiled code */ }
+    abstract operator func -(): T
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: Int16): Int16 { /* compiled code */ }
 
     operator func +(right: Int16): Int16 { /* compiled code */ }
@@ -287,7 +287,7 @@ extend Extend <: Number {
     operator func /(right: Int16): Int16 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: Int32): Int32 { /* compiled code */ }
 
     operator func +(right: Int32): Int32 { /* compiled code */ }
@@ -299,7 +299,7 @@ extend Extend <: Number {
     operator func /(right: Int32): Int32 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: Int64): Int64 { /* compiled code */ }
 
     operator func +(right: Int64): Int64 { /* compiled code */ }
@@ -311,7 +311,7 @@ extend Extend <: Number {
     operator func /(right: Int64): Int64 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: IntNative): IntNative { /* compiled code */ }
 
     operator func +(right: IntNative): IntNative { /* compiled code */ }
@@ -323,7 +323,7 @@ extend Extend <: Number {
     operator func /(right: IntNative): IntNative { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: UInt8): UInt8 { /* compiled code */ }
 
     operator func +(right: UInt8): UInt8 { /* compiled code */ }
@@ -335,7 +335,7 @@ extend Extend <: Number {
     operator func /(right: UInt8): UInt8 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: UInt16): UInt16 { /* compiled code */ }
 
     operator func +(right: UInt16): UInt16 { /* compiled code */ }
@@ -347,7 +347,7 @@ extend Extend <: Number {
     operator func /(right: UInt16): UInt16 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: UInt32): UInt32 { /* compiled code */ }
 
     operator func +(right: UInt32): UInt32 { /* compiled code */ }
@@ -359,7 +359,7 @@ extend Extend <: Number {
     operator func /(right: UInt32): UInt32 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: UInt64): UInt64 { /* compiled code */ }
 
     operator func +(right: UInt64): UInt64 { /* compiled code */ }
@@ -371,7 +371,7 @@ extend Extend <: Number {
     operator func /(right: UInt64): UInt64 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: UIntNative): UIntNative { /* compiled code */ }
 
     operator func +(right: UIntNative): UIntNative { /* compiled code */ }
@@ -383,7 +383,7 @@ extend Extend <: Number {
     operator func /(right: UIntNative): UIntNative { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: Float16): Float16 { /* compiled code */ }
 
     operator func +(right: Float16): Float16 { /* compiled code */ }
@@ -395,7 +395,7 @@ extend Extend <: Number {
     operator func /(right: Float16): Float16 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: Float32): Float32 { /* compiled code */ }
 
     operator func +(right: Float32): Float32 { /* compiled code */ }
@@ -407,7 +407,7 @@ extend Extend <: Number {
     operator func /(right: Float32): Float32 { /* compiled code */ }
 }
 
-extend Extend <: Number {
+extend `Unit` <: Number {
     operator func *(right: Float64): Float64 { /* compiled code */ }
 
     operator func +(right: Float64): Float64 { /* compiled code */ }
@@ -419,7 +419,7 @@ extend Extend <: Number {
     operator func /(right: Float64): Float64 { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): Int8 { /* compiled code */ }
@@ -438,24 +438,24 @@ extend Extend <: Integer {
 }
 
 interface Integer <: std.math.Number<T> {
-    static func isSigned(): Bool { /* compiled code */ }
+    abstract static func isSigned(): Bool
 
-    operator func %(rhs: T): T { /* compiled code */ }
+    abstract operator func %(rhs: T): T
 
-    operator func &(rhs: T): T { /* compiled code */ }
+    abstract operator func &(rhs: T): T
 
-    operator func |(rhs: T): T { /* compiled code */ }
+    abstract operator func |(rhs: T): T
 
-    operator func ^(rhs: T): T { /* compiled code */ }
+    abstract operator func ^(rhs: T): T
 
-    operator func !(): T { /* compiled code */ }
+    abstract operator func !(): T
 
-    operator func >>(n: Int64): T { /* compiled code */ }
+    abstract operator func >>(n: Int64): T
 
-    operator func <<(n: Int64): T { /* compiled code */ }
+    abstract operator func <<(n: Int64): T
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): Int16 { /* compiled code */ }
@@ -473,7 +473,7 @@ extend Extend <: Integer {
     operator func |(right: Int16): Int16 { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): Int32 { /* compiled code */ }
@@ -491,7 +491,7 @@ extend Extend <: Integer {
     operator func |(right: Int32): Int32 { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): Int64 { /* compiled code */ }
@@ -509,7 +509,7 @@ extend Extend <: Integer {
     operator func |(right: Int64): Int64 { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): IntNative { /* compiled code */ }
@@ -527,7 +527,7 @@ extend Extend <: Integer {
     operator func |(right: IntNative): IntNative { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UInt8 { /* compiled code */ }
@@ -545,7 +545,7 @@ extend Extend <: Integer {
     operator func |(right: UInt8): UInt8 { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UInt16 { /* compiled code */ }
@@ -563,7 +563,7 @@ extend Extend <: Integer {
     operator func |(right: UInt16): UInt16 { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UInt32 { /* compiled code */ }
@@ -581,7 +581,7 @@ extend Extend <: Integer {
     operator func |(right: UInt32): UInt32 { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UInt64 { /* compiled code */ }
@@ -599,7 +599,7 @@ extend Extend <: Integer {
     operator func |(right: UInt64): UInt64 { /* compiled code */ }
 }
 
-extend Extend <: Integer {
+extend `Unit` <: Integer {
     static func isSigned(): Bool { /* compiled code */ }
 
     operator func !(): UIntNative { /* compiled code */ }
@@ -617,7 +617,7 @@ extend Extend <: Integer {
     operator func |(right: UIntNative): UIntNative { /* compiled code */ }
 }
 
-extend Extend <: FloatingPoint {
+extend `Unit` <: FloatingPoint {
     static func getPI(): Float16 { /* compiled code */ }
 
     static func getE(): Float16 { /* compiled code */ }
@@ -632,26 +632,26 @@ extend Extend <: FloatingPoint {
 }
 
 interface FloatingPoint <: std.math.Number<T> {
-    static func getPI(): T { /* compiled code */ }
+    abstract static func getPI(): T
 
-    static func getE(): T { /* compiled code */ }
+    abstract static func getE(): T
 
-    static func getNaN(): T { /* compiled code */ }
+    abstract static func getNaN(): T
 
-    static func getInf(): T { /* compiled code */ }
+    abstract static func getInf(): T
 
-    static func getMinDenormal(): T { /* compiled code */ }
+    abstract static func getMinDenormal(): T
 
-    static func getMinNormal(): T { /* compiled code */ }
+    abstract static func getMinNormal(): T
 
-    func isInf(): Bool { /* compiled code */ }
+    abstract func isInf(): Bool
 
-    func isNaN(): Bool { /* compiled code */ }
+    abstract func isNaN(): Bool
 
-    func isNormal(): Bool { /* compiled code */ }
+    abstract func isNormal(): Bool
 }
 
-extend Extend <: FloatingPoint {
+extend `Unit` <: FloatingPoint {
     static func getPI(): Float32 { /* compiled code */ }
 
     static func getE(): Float32 { /* compiled code */ }
@@ -665,7 +665,7 @@ extend Extend <: FloatingPoint {
     static func getMinNormal(): Float32 { /* compiled code */ }
 }
 
-extend Extend <: FloatingPoint {
+extend `Unit` <: FloatingPoint {
     static func getPI(): Float64 { /* compiled code */ }
 
     static func getE(): Float64 { /* compiled code */ }

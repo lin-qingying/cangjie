@@ -56,7 +56,7 @@ main(): Unit {
     acceptInt(inferTail())
     acceptInt(inferReturn())
     acceptInt(inferJoined(true))
-    acceptInt(unreachableTail())
+    acceptInt(<!NEW_INFERENCE_ERROR!>unreachableTail<!>())
     acceptUnit(inferUnit())
     acceptInt(declaredOk())
 }

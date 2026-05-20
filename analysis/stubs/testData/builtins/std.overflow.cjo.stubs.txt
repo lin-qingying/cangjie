@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.overflow, facadePartSimpleNames=[carrying_op, checked_op, checked_op_cjnative, saturating_op, throwing_op, wrapping_op]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=overflow]
@@ -20,7 +20,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -36,7 +36,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -52,7 +52,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -68,7 +68,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -84,7 +84,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -100,7 +100,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$TUPLE_TYPE
@@ -111,7 +111,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$TUPLE_TYPE
@@ -122,7 +122,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$TUPLE_TYPE
@@ -133,7 +133,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -148,7 +148,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -167,7 +167,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -179,12 +179,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -319,12 +319,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -459,12 +459,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -599,12 +599,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp&CarryingPow, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp, CarryingPow]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp&CarryingPow, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp, CarryingPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -757,12 +757,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -897,12 +897,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1037,12 +1037,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1177,12 +1177,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1317,12 +1317,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1457,12 +1457,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=Bool]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CarryingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CarryingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CarryingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CarryingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1603,7 +1603,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1624,7 +1624,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1645,7 +1645,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1666,7 +1666,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1687,7 +1687,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1708,7 +1708,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1724,7 +1724,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1740,7 +1740,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1756,7 +1756,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1776,7 +1776,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1800,7 +1800,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -2493,12 +2493,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2683,12 +2683,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -2873,12 +2873,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3063,12 +3063,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp&CheckedPow, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp, CheckedPow]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp&CheckedPow, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp, CheckedPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3276,12 +3276,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3466,12 +3466,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3656,12 +3656,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -3846,12 +3846,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -4036,12 +4036,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -4226,12 +4226,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:CheckedOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[CheckedOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:CheckedOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[CheckedOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -4557,7 +4557,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4569,7 +4569,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4581,7 +4581,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4593,7 +4593,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4605,7 +4605,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4617,28 +4617,28 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4649,7 +4649,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4664,7 +4664,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4672,12 +4672,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -4772,12 +4772,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -4872,12 +4872,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -4972,12 +4972,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp&SaturatingPow, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp, SaturatingPow]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp&SaturatingPow, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp, SaturatingPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5086,12 +5086,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5186,12 +5186,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5286,12 +5286,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5386,12 +5386,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5486,12 +5486,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5586,12 +5586,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:SaturatingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[SaturatingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:SaturatingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[SaturatingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5827,7 +5827,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5839,7 +5839,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5851,7 +5851,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5863,7 +5863,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5875,7 +5875,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5887,28 +5887,28 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5919,7 +5919,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5934,7 +5934,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -5942,12 +5942,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6042,12 +6042,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6142,12 +6142,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6242,12 +6242,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp&ThrowingPow, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp, ThrowingPow]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp&ThrowingPow, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp, ThrowingPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6356,12 +6356,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6456,12 +6456,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6556,12 +6556,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6656,12 +6656,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6756,12 +6756,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6856,12 +6856,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:ThrowingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[ThrowingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:ThrowingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ThrowingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7179,7 +7179,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7191,7 +7191,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7203,7 +7203,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7215,7 +7215,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7227,7 +7227,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7239,28 +7239,28 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7271,7 +7271,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7286,7 +7286,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7294,12 +7294,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7394,12 +7394,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7494,12 +7494,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7594,12 +7594,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp&WrappingPow, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp, WrappingPow]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp&WrappingPow, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp, WrappingPow]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7708,12 +7708,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7808,12 +7808,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7908,12 +7908,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -8008,12 +8008,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -8108,12 +8108,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -8208,12 +8208,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.overflow, facadeFqName=std.
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/overflow/Extend, extendId=std.overflow:Extend<:WrappingOp, fqName=std.overflow.Extend, name=Extend, receiverTypeName=Extend, superNames=[WrappingOp]]
+  CangJieStub$EXTEND[classId=std/overflow/Unit, extendId=std.overflow:kotlin.Unit<:WrappingOp, fqName=std.overflow.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[WrappingOp]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE

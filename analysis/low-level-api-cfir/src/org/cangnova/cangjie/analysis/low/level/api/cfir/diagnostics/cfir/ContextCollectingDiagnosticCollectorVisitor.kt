@@ -28,7 +28,11 @@ private class ContextCollectingDiagnosticCollectorVisitor private constructor(
     PersistentCheckerContextFactory.createEmptyPersistenceCheckerContext(sessionHolder)
 ) {
     private val contextCollector = object : ContextByDesignationCollector<CheckerContextForProvider>(designation) {
-        override fun getCurrentContext(): CheckerContextForProvider = context
+        override fun getCurrentContext(): CheckerContextForProvider =
+            PersistentCheckerContextFactory.createPersistenceCheckerContextSnapshot(context)
+
+        override fun getCurrentContextForTarget(target: CfirElementWithResolveState): CheckerContextForProvider =
+            PersistentCheckerContextFactory.createPersistenceCheckerContextSnapshot(context, target as CfirDeclaration)
 
         override fun goToNestedDeclaration(target: CfirElementWithResolveState) {
             target.accept(this@ContextCollectingDiagnosticCollectorVisitor, null)

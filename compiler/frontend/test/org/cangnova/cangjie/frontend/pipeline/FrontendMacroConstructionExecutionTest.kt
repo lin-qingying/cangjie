@@ -31,8 +31,10 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallNode
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroStableSplicer
@@ -85,15 +87,11 @@ class FrontendMacroConstructionExecutionTest {
             ),
         )
         val parser = object : MacroFragmentParser {
-            override fun parse(
-                node: MacroCallNode,
-                tokens: List<MacroSurfaceToken>,
-                mode: MacroFragmentParser.Mode,
-            ): MacroFragmentResult {
+            override fun parse(input: MacroFragmentInput): MacroFragmentResult {
                 return MacroFragmentResult.Success(
-                    originNode = node,
-                    tokens = tokens,
-                    mode = mode,
+                    originNode = input.node,
+                    tokens = input.tokens,
+                    mode = input.mode,
                     payload = buildErrorExpression {
                         diagnostic = ConeSimpleDiagnostic("expanded macro payload")
                     },
@@ -105,7 +103,7 @@ class FrontendMacroConstructionExecutionTest {
             macroFragmentParserFactory = MacroFragmentParserFactory { parser }
         }
 
-        val result = FrontendMacroConstructionService(configuration).expand(
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
             pre = fixture.pre,
             context = bindMacroImports(
                 pre = fixture.pre,
@@ -153,7 +151,7 @@ class FrontendMacroConstructionExecutionTest {
             }
         }
 
-        val result = FrontendMacroConstructionService(configuration).expand(
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
             pre = pre,
             context = contextWithArtifact(pre, "GenerateDeclaration"),
             mode = MacroConstructionService.Mode.STRICT,
@@ -190,7 +188,7 @@ class FrontendMacroConstructionExecutionTest {
             }
         }
 
-        val result = FrontendMacroConstructionService(configuration).expand(
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
             pre = pre,
             context = contextWithArtifact(pre, "GenerateParameter"),
             mode = MacroConstructionService.Mode.STRICT,
@@ -239,7 +237,7 @@ class FrontendMacroConstructionExecutionTest {
             }
         }
 
-        val result = FrontendMacroConstructionService(configuration).expand(
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
             pre = pre,
             context = contextWithArtifact(pre, "Generated"),
             mode = MacroConstructionService.Mode.STRICT,
@@ -277,7 +275,7 @@ class FrontendMacroConstructionExecutionTest {
         )
         val pre = buildPreMacroRawFiles(session, listOf(file), listOf(listOf(surface)))
 
-        val result = FrontendMacroConstructionService(CompilerConfiguration()).expand(
+        val result = FrontendMacroConstructionService(CompilerConfiguration()).expandWithClassification(
             pre = pre,
             context = bindMacroImports(pre, buildMacroSymbolIndex(pre)),
             mode = MacroConstructionService.Mode.DEGRADED,
@@ -310,7 +308,7 @@ class FrontendMacroConstructionExecutionTest {
         )
         val pre = buildPreMacroRawFiles(session, listOf(file), listOf(surfaces))
 
-        val result = FrontendMacroConstructionService(CompilerConfiguration()).expand(
+        val result = FrontendMacroConstructionService(CompilerConfiguration()).expandWithClassification(
             pre = pre,
             context = bindMacroImports(pre, buildMacroSymbolIndex(pre)),
             mode = MacroConstructionService.Mode.DEGRADED,
@@ -348,7 +346,7 @@ class FrontendMacroConstructionExecutionTest {
             macroFragmentParserFactory = MacroFragmentParserFactory { parser }
         }
 
-        val result = FrontendMacroConstructionService(configuration, splicer).expand(
+        val result = FrontendMacroConstructionService(configuration, splicer).expandWithClassification(
             pre = fixture.pre,
             context = bindMacroImports(
                 pre = fixture.pre,
@@ -430,7 +428,7 @@ class FrontendMacroConstructionExecutionTest {
             macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
         }
 
-        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expandWithClassification(
             pre = fixture.pre,
             context = contextWithArtifacts(fixture.pre, "Parent", "ChildOne", "ChildTwo"),
             mode = MacroConstructionService.Mode.STRICT,
@@ -483,7 +481,7 @@ class FrontendMacroConstructionExecutionTest {
             macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
         }
 
-        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expandWithClassification(
             pre = fixture.pre,
             context = contextWithArtifacts(fixture.pre, "Parent", "Child"),
             mode = MacroConstructionService.Mode.STRICT,
@@ -523,7 +521,7 @@ class FrontendMacroConstructionExecutionTest {
             // 不注入 macroExecutorFactory → executor 不可用
         }
 
-        val result = FrontendMacroConstructionService(configuration).expand(
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
             pre = fixture.pre,
             context = contextWithArtifact(fixture.pre, "Reformat"),
             mode = MacroConstructionService.Mode.DEGRADED,
@@ -567,7 +565,7 @@ class FrontendMacroConstructionExecutionTest {
                 ),
             ),
         )
-        val result = FrontendMacroConstructionService(configuration).expand(
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
             pre = fixture.pre,
             context = context,
             mode = MacroConstructionService.Mode.STRICT,
@@ -592,14 +590,10 @@ class FrontendMacroConstructionExecutionTest {
             MacroExpansionResult.Success(emptyList(), "42"),
         )
         val parser = object : MacroFragmentParser {
-            override fun parse(
-                node: MacroCallNode,
-                tokens: List<MacroSurfaceToken>,
-                mode: MacroFragmentParser.Mode,
-            ): MacroFragmentResult = MacroFragmentResult.Success(
-                originNode = node,
-                tokens = tokens,
-                mode = mode,
+            override fun parse(input: MacroFragmentInput): MacroFragmentResult = MacroFragmentResult.Success(
+                originNode = input.node,
+                tokens = input.tokens,
+                mode = input.mode,
                 payload = buildErrorExpression {
                     diagnostic = ConeSimpleDiagnostic("expanded WithLib payload")
                 },
@@ -624,7 +618,7 @@ class FrontendMacroConstructionExecutionTest {
                 ),
             ),
         )
-        FrontendMacroConstructionService(configuration).expand(
+        FrontendMacroConstructionService(configuration).expandWithClassification(
             pre = fixture.pre,
             context = context,
             mode = MacroConstructionService.Mode.STRICT,
@@ -652,7 +646,7 @@ class FrontendMacroConstructionExecutionTest {
             macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
         }
 
-        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expandWithClassification(
             pre = fixture.pre,
             context = bindMacroImports(
                 pre = fixture.pre,
@@ -709,7 +703,7 @@ class FrontendMacroConstructionExecutionTest {
             macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
         }
 
-        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expandWithClassification(
             pre = fixture.pre,
             context = contextWithArtifact(fixture.pre, "Warn"),
             mode = MacroConstructionService.Mode.STRICT,
@@ -749,7 +743,7 @@ class FrontendMacroConstructionExecutionTest {
             macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
         }
 
-        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expandWithClassification(
             pre = fixture.pre,
             context = contextWithArtifact(fixture.pre, "Error"),
             mode = MacroConstructionService.Mode.STRICT,
@@ -790,7 +784,7 @@ class FrontendMacroConstructionExecutionTest {
             macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
         }
 
-        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expand(
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expandWithClassification(
             pre = fixture.pre,
             context = contextWithArtifact(fixture.pre, "FailWithDiag"),
             mode = MacroConstructionService.Mode.STRICT,
@@ -869,7 +863,7 @@ class FrontendMacroConstructionExecutionTest {
         val configuration = CompilerConfiguration().apply {
             macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
         }
-        val result = FrontendMacroConstructionService(configuration).expand(
+        val result = FrontendMacroConstructionService(configuration).expandWithClassification(
             pre = pre,
             context = context,
             mode = MacroConstructionService.Mode.STRICT,
@@ -916,7 +910,7 @@ class FrontendMacroConstructionExecutionTest {
         val result = FrontendMacroConstructionService(
             configuration = configuration,
             stableSplicer = RecordingSplicer(),
-        ).expand(
+        ).expandWithClassification(
             pre = fixture.pre,
             context = context,
             mode = MacroConstructionService.Mode.STRICT,
@@ -996,7 +990,7 @@ class FrontendMacroConstructionExecutionTest {
             configuration = configuration,
             stableSplicer = splicer,
             builtinNonMacroDesugarer = desugarer,
-        ).expand(
+        ).expandWithClassification(
             pre = fixture.pre,
             context = bindMacroImports(
                 pre = fixture.pre,
@@ -1051,7 +1045,7 @@ class FrontendMacroConstructionExecutionTest {
         val result = FrontendMacroConstructionService(
             configuration = configuration,
             stableSplicer = RecordingSplicer(),
-        ).expand(
+        ).expandWithClassification(
             pre = fixture.pre,
             context = bindMacroImports(
                 pre = fixture.pre,
@@ -1392,26 +1386,18 @@ class FrontendMacroConstructionExecutionTest {
         val parsedTokens = mutableListOf<List<MacroSurfaceToken>>()
         val modes = mutableListOf<MacroFragmentParser.Mode>()
 
-        override fun parse(
-            node: MacroCallNode,
-            tokens: List<MacroSurfaceToken>,
-            mode: MacroFragmentParser.Mode,
-        ): MacroFragmentResult {
-            parsedTokens += tokens
-            modes += mode
-            return MacroFragmentResult.Success(node, tokens, mode)
+        override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+            parsedTokens += input.tokens
+            modes += input.mode
+            return MacroFragmentResult.Success(input.node, input.tokens, input.mode)
         }
     }
 
     private class StaticPayloadParser(
         private val payload: Any,
     ) : MacroFragmentParser {
-        override fun parse(
-            node: MacroCallNode,
-            tokens: List<MacroSurfaceToken>,
-            mode: MacroFragmentParser.Mode,
-        ): MacroFragmentResult {
-            return MacroFragmentResult.Success(node, tokens, mode, payload)
+        override fun parse(input: MacroFragmentInput): MacroFragmentResult {
+            return MacroFragmentResult.Success(input.node, input.tokens, input.mode, payload)
         }
     }
 
@@ -1434,6 +1420,16 @@ class FrontendMacroConstructionExecutionTest {
             this.slots += slots
             return files
         }
+    }
+
+    private fun FrontendMacroConstructionService.expandWithClassification(
+        pre: org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult,
+        context: org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolutionContext,
+        mode: MacroConstructionService.Mode,
+    ): MacroConstructionResult {
+        val classification = MacroDemandClassification.create(pre)
+        classification.freezeFinal(macroArtifactDefinitions = context.symbolIndex.foreigns)
+        return expand(pre, context, classification, mode)
     }
 
     private class TestModuleData(session: CfirSession) : CfirModuleData() {

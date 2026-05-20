@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.convert, facadePartSimpleNames=[base, formattable, parsable]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=convert]
@@ -29,7 +29,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -86,12 +86,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=Flags]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -118,12 +118,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -150,12 +150,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -182,12 +182,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -214,12 +214,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -246,12 +246,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -278,12 +278,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -310,12 +310,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -342,12 +342,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -374,12 +374,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -406,12 +406,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -438,12 +438,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Formattable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Formattable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Formattable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Formattable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -577,7 +577,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -593,7 +593,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -622,7 +622,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -642,7 +642,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -671,7 +671,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                     CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -684,12 +684,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -735,12 +735,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:RadixConvertible, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -809,12 +809,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -860,12 +860,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:RadixConvertible, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -934,12 +934,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -985,12 +985,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:RadixConvertible, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1059,12 +1059,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1110,12 +1110,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:RadixConvertible, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1184,12 +1184,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1235,12 +1235,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:RadixConvertible, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1309,12 +1309,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1360,12 +1360,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:RadixConvertible, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1434,12 +1434,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1485,12 +1485,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:RadixConvertible, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1559,12 +1559,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1610,12 +1610,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:RadixConvertible, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[RadixConvertible]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:RadixConvertible, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[RadixConvertible]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1690,7 +1690,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$MODIFIER_LIST[abstract static]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1699,12 +1699,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1750,12 +1750,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float16]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1801,12 +1801,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1852,12 +1852,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1903,12 +1903,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.convert, facadeFqName=std.c
               CangJieStub$TYPE_PROJECTION[projectionKind=NONE]
                 CangJieStub$TYPE_REFERENCE
                   CangJieStub$BASIC_TYPE[basicType=Rune]
-  CangJieStub$EXTEND[classId=std/convert/Extend, extendId=std.convert:Extend<:Parsable, fqName=std.convert.Extend, name=Extend, receiverTypeName=Extend, superNames=[Parsable]]
+  CangJieStub$EXTEND[classId=std/convert/Unit, extendId=std.convert:kotlin.Unit<:Parsable, fqName=std.convert.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Parsable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE

@@ -1,6 +1,8 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.argumentTextAt
+import org.cangnova.cangjie.cfir.analysis.checkers.declaration.findAnnotations
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -9,15 +11,13 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
 import org.cangnova.cangjie.cfir.session.apiLevelProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.psi.CjValueArgument
-import org.cangnova.cangjie.source.psi
 
 /**
  * APILevel 引用检查器。
@@ -88,26 +88,14 @@ object CfirApiLevelRefHigherChecker : CfirFunctionCallChecker() {
 
     private fun extractApiLevel(decl: CfirCallableDeclaration): Int? {
         val entry = findAnnotation(decl, API_LEVEL) ?: return null
-        for (arg in entry.valueArguments) {
-            val value = arg as? CjValueArgument ?: continue
-            val text = value.getArgumentExpression()?.text?.trim() ?: continue
-            return text.toIntOrNull() ?: continue
-        }
-        return null
+        return entry.argumentTextAt(0)?.toIntOrNull()
     }
 
     private fun extractSyscap(decl: CfirCallableDeclaration): String? {
         val entry = findAnnotation(decl, SYSCAP) ?: return null
-        for (arg in entry.valueArguments) {
-            val value = arg as? CjValueArgument ?: continue
-            val text = value.getArgumentExpression()?.text?.trim()?.trim('"') ?: continue
-            if (text.isNotEmpty()) return text
-        }
-        return null
+        return entry.argumentTextAt(0)
     }
 
-    private fun findAnnotation(decl: CfirCallableDeclaration, annName: Name): org.cangnova.cangjie.psi.CjAnnotation? {
-        val owner = decl.source?.psi as? CjModifierListOwner ?: return null
-        return owner.annotationEntries.firstOrNull { it.shortName == annName }
-    }
+    private fun findAnnotation(decl: CfirCallableDeclaration, annName: Name): CfirAnnotationCall? =
+        decl.findAnnotations(annName).firstOrNull() as? CfirAnnotationCall
 }

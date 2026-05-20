@@ -1,0 +1,4 @@
+expression: "hello"
+constant:
+  kind: SCALAR(STRING)
+  renderedText: hello

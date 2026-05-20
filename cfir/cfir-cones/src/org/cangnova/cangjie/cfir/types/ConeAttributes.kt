@@ -1,10 +1,10 @@
 package org.cangnova.cangjie.cfir.types
 
-import org.cangnova.cangjie.cfir.ConeTypeRegistry
 import org.cangnova.cangjie.type.model.AnnotationMarker
 import org.cangnova.cangjie.util.AttributeArrayOwner
 import org.cangnova.cangjie.util.TypeRegistry
 import org.cangnova.cangjie.utils.addIfNotNull
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.get
 import kotlin.properties.ReadOnlyProperty
 import kotlin.reflect.KClass
@@ -70,10 +70,10 @@ typealias ConeAttributeKey = KClass<out ConeAttribute<*>>
 class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : AttributeArrayOwner<ConeAttribute<*>, ConeAttribute<*>>(),
     Iterable<ConeAttribute<*>> {
 
-    companion object : ConeTypeRegistry<ConeAttribute<*>, ConeAttribute<*>>() {
+    companion object : TypeRegistry<ConeAttribute<*>, ConeAttribute<*>>() {
         inline fun <reified T : ConeAttribute<T>> attributeAccessor(): ReadOnlyProperty<ConeAttributes, T?> {
             @Suppress("UNCHECKED_CAST")
-            return generateNullableAccessor (T::class) as ReadOnlyProperty<ConeAttributes, T?>
+            return generateNullableAccessor(T::class) as ReadOnlyProperty<ConeAttributes, T?>
         }
 
         val Empty: ConeAttributes = ConeAttributes(emptyList())
@@ -84,6 +84,13 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
             } else {
                 ConeAttributes(attributes)
             }
+        }
+
+        override fun ConcurrentHashMap<String, Int>.customComputeIfAbsent(
+            key: String,
+            compute: (String) -> Int,
+        ): Int {
+            return this.computeIfAbsent(key, compute)
         }
     }
 
@@ -120,7 +127,7 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
     }
 
     operator fun <T : ConeAttribute<*>> get(attributeKey: KClass<T>) : T? {
-        val index = getId(attributeKey)
+        val index = Companion.getId(attributeKey)
         @Suppress("UNCHECKED_CAST")
         return arrayMap[index] as T?
     }
@@ -147,7 +154,7 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
     private inline fun perform(other: ConeAttributes, op: ConeAttribute<*>.(ConeAttribute<*>?) -> ConeAttribute<*>?): ConeAttributes {
         if (this.isEmpty() && other.isEmpty()) return this
         val attributes = mutableListOf<ConeAttribute<*>>()
-        for (index in indices) {
+        for (index in Companion.allValuesThreadUnsafeForRendering().values) {
             val a = arrayMap[index]
             val b = other.arrayMap[index]
             val res = if (a == null) b?.op(a) else a.op(b)
@@ -170,7 +177,7 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
         if (this === other) return false
         if (this.isEmpty() && other.isEmpty()) return false
 
-        for (index in indices) {
+        for (index in Companion.allValuesThreadUnsafeForRendering().values) {
             val a = arrayMap[index]
             val b = other.arrayMap[index]
 
@@ -212,6 +219,5 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
         return newList?.let(Companion::create)
     }
 
-    override val typeRegistry: TypeRegistry<ConeAttribute<*>, ConeAttribute<*>>
-        get() = Companion
+    override val typeRegistry: TypeRegistry<ConeAttribute<*>, ConeAttribute<*>> = Companion
 }

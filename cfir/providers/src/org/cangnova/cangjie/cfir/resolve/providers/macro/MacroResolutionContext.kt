@@ -50,16 +50,25 @@ data class MacroBuiltinRegistries(
          * 任何 [DEFAULT] 内 macros / annotations / nonMacros 名单变更都必须递增；
          * 上游 cache 据此整体失效。
          */
-        const val VERSION: Int = 1
+        const val VERSION: Int = 2
 
         val DEFAULT: MacroBuiltinRegistries = MacroBuiltinRegistries(
             macros = BuiltinMacroRegistry.all.toSet(),
-            // 暂未完整 lower 仓颉内建 annotation，先注册常用的几个
+            // 仓颉内建/互操作 annotation 是普通 annotation site，不参与 macro executor 解析。
             annotations = setOf(
-                Name.identifier("Java"),
                 Name.identifier("C"),
+                Name.identifier("CallingConv"),
+                Name.identifier("CJMapping"),
                 Name.identifier("Deprecated"),
+                Name.identifier("ForeignName"),
                 Name.identifier("Frozen"),
+                Name.identifier("Java"),
+                Name.identifier("JavaImpl"),
+                Name.identifier("JavaMirror"),
+                Name.identifier("ObjCCJMapping"),
+                Name.identifier("ObjCImpl"),
+                Name.identifier("ObjCInit"),
+                Name.identifier("ObjCMirror"),
             ),
             // baseline 第 8 节："builtin non-macro surface"
             nonMacros = setOf(
@@ -112,10 +121,10 @@ class MacroResolutionContext internal constructor(
      *
      * 返回结果优先级（baseline 第 8 节 + 第 12 节 Batch 5）：
      *
-     * 1. builtin non-macro surface（如 `@IfAvailable`） — 不送 executor，
+     * 1. 同包 def/call 检测 — 命中即诊断为非法，且覆盖 builtin 名称。
+     * 2. builtin non-macro surface（如 `@IfAvailable`） — 不送 executor，
      *    必须在 stable splice 前 desugar。
-     * 2. builtin macro（`sourcePackage` / `sourceFile` / `sourceLine`） — 内建 evaluator 入口。
-     * 3. 同包 def/call 检测 — 命中即诊断为非法。
+     * 3. builtin macro（`sourcePackage` / `sourceFile` / `sourceLine`） — 内建 evaluator 入口。
      * 4. qualifier 形式（含包前缀） — 直接 fqn lookup。
      * 5. explicit import 命中（aliasName / shortName 匹配）。
      * 6. wildcard import 命中。
@@ -137,12 +146,23 @@ class MacroResolutionContext internal constructor(
         hasParenthesis: Boolean = true,
         allowsDeclarationInputParenthesisOmission: Boolean = false,
     ): MacroResolution {
-        // 1. builtin non-macro：先于一切 macro lookup
+        // 1. 同包 def/call 禁止。该规则覆盖 builtin 名称，防止同包宏定义劫持 annotation site。
+        val samePackageDef = symbolIndex.samePackageMacroDef(callPackage, name)
+        if (samePackageDef != null) {
+            return MacroResolution.SamePackage(samePackageDef)
+        }
+
+        // 2. builtin annotation：annotation site 不能被同名外部 macro 定义劫持。
+        if (name in builtinRegistries.annotations) {
+            return MacroResolution.CustomAnnotation(name)
+        }
+
+        // 3. builtin non-macro
         if (name in builtinRegistries.nonMacros) {
             return MacroResolution.BuiltinNonMacro(name)
         }
 
-        // 2. builtin macro
+        // 4. builtin macro
         if (name in builtinRegistries.macros) {
             val builtin = symbolIndex.lookupByFqName(FqName.topLevel(name))
             if (builtin != null && builtin.source == MacroDefinitionEntry.Source.BUILTIN_MACRO) {
@@ -155,13 +175,7 @@ class MacroResolutionContext internal constructor(
             }
         }
 
-        // 3. 同包 def/call 禁止
-        val samePackageDef = symbolIndex.samePackageMacroDef(callPackage, name)
-        if (samePackageDef != null) {
-            return MacroResolution.SamePackage(samePackageDef)
-        }
-
-        // 4. qualifier 形式
+        // 5. qualifier 形式
         if (qualifier != null) {
             val resolved = symbolIndex.lookupByFqName(qualifier.child(name))
             if (resolved != null) {
@@ -174,7 +188,7 @@ class MacroResolutionContext internal constructor(
             }
         }
 
-        // 5. explicit import 命中
+        // 6. explicit import 命中
         for (binding in importBindings) {
             if (binding.aliasName == name || (!binding.isAllUnder && binding.importedFqName.shortName() == name)) {
                 val target = binding.resolvedTargets.firstOrNull() ?: continue
@@ -187,7 +201,7 @@ class MacroResolutionContext internal constructor(
             }
         }
 
-        // 6. wildcard 命中
+        // 7. wildcard 命中
         for (binding in importBindings) {
             if (binding.isAllUnder) {
                 val candidate = symbolIndex.lookupByFqName(binding.importedFqName.child(name))
@@ -202,7 +216,7 @@ class MacroResolutionContext internal constructor(
             }
         }
 
-        // 7. default macro import 命中
+        // 8. default macro import 命中
         for (defaultPkg in defaultMacroImports) {
             val candidate = symbolIndex.lookupByFqName(defaultPkg.child(name))
             if (candidate != null) {
@@ -213,11 +227,6 @@ class MacroResolutionContext internal constructor(
                     allowsDeclarationInputParenthesisOmission,
                 ) ?: MacroResolution.Resolved(candidate)
             }
-        }
-
-        // 8. custom annotation fallback：builtin annotation 名称走 annotation reclassify
-        if (name in builtinRegistries.annotations) {
-            return MacroResolution.CustomAnnotation(name)
         }
 
         return MacroResolution.Unresolved(name)
@@ -318,8 +327,9 @@ fun bindMacroImports(
                 resolvedTargets = targets,
             )
 
-            // alias 仅在非 wildcard 时有意义
-            if (!isAllUnder && alias != null) {
+            // alias 仅在非 wildcard 且实际绑定到 macro definition 时属于 macro construction 语义。
+            // 普通 import alias 冲突必须留给 ordinary imports checker 报 IMPORT_ALIAS_CONFLICT。
+            if (!isAllUnder && alias != null && targets.isNotEmpty()) {
                 if (!fqn.isRoot) {
                     packageAliases[alias] = fqn.parent()
                 }

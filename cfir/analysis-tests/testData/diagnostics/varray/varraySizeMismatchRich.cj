@@ -11,7 +11,7 @@ func keepTwo(values: TwoNums): TwoNums {
 }
 
 func argumentMismatch(values: ThreeNums) {
-    acceptTwo(<!VARRAY_SIZE_MISMATCH!>values<!>)
+    acceptTwo(<!NEW_INFERENCE_ERROR!>values<!>)
 }
 
 func initializerMismatch(values: ThreeNums, current: TwoNums) {

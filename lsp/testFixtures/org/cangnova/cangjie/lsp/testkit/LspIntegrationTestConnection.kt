@@ -287,6 +287,23 @@ class LspIntegrationTestConnection private constructor(
         error("Timed out waiting for $expectedCount diagnostics notifications, actual=${client.publishedDiagnostics.size}")
     }
 
+    fun awaitPublishedDiagnostics(
+        uri: String,
+        predicate: (PublishDiagnosticsParams) -> Boolean = { true },
+    ): PublishDiagnosticsParams {
+        val deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(TIMEOUT_SECONDS)
+        var lastForUri: PublishDiagnosticsParams? = null
+        while (System.nanoTime() < deadline) {
+            val published = client.publishedDiagnostics.lastOrNull { diagnostics -> diagnostics.uri == uri }
+            if (published != null) {
+                lastForUri = published
+                if (predicate(published)) return published
+            }
+            Thread.sleep(20)
+        }
+        error("Timed out waiting for diagnostics for $uri, last=$lastForUri")
+    }
+
     override fun close() {
         runCatching { awaitFuture(serverProxy.shutdown()) }
         runCatching { serverProxy.exit() }

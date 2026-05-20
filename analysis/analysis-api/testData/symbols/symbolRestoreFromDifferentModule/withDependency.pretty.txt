@@ -1,0 +1,5 @@
+Inital from Sources of main:
+func marked(): Int64
+
+Restored in Sources of restore:
+func marked(): Int64

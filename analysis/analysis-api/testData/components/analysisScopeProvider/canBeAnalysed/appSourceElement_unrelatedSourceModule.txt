@@ -1,0 +1,4 @@
+target: func consume(): Int64 {
+    return 2
+}
+canBeAnalysed: false

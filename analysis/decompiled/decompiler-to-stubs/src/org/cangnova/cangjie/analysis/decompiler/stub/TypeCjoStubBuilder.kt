@@ -43,6 +43,7 @@ internal class TypeCjoStubBuilder {
         parent: StubElement<*>,
         valueParameters: List<CfirValueParameter>,
         createEmptyList: Boolean = false,
+        includeParameterModifierList: Boolean = false,
     ) {
         if (valueParameters.isEmpty() && !createEmptyList) return
         val parameterListStub = CangJiePlaceHolderStubImpl<CjParameterList>(parent, CjStubElementTypes.VALUE_PARAMETER_LIST)
@@ -50,6 +51,7 @@ internal class TypeCjoStubBuilder {
             val parameterStub = createParameterStub(
                 parent = parameterListStub,
                 name = valueParameter.name.asString(),
+                includeModifiers = includeParameterModifierList,
             )
             createDeclaredTypeReferenceStub(parameterStub, valueParameter.returnTypeRef)
         }
@@ -286,6 +288,7 @@ internal class TypeCjoStubBuilder {
         parent: StubElement<*>,
         name: String?,
         includeAnnotations: Boolean = true,
+        includeModifiers: Boolean = false,
     ): CangJieParameterStubImpl {
         val parameterStub = CangJieParameterStubImpl(
             parent = parent,
@@ -299,6 +302,9 @@ internal class TypeCjoStubBuilder {
         )
         if (includeAnnotations) {
             CangJiePlaceHolderStubImpl<CjAnnotations>(parameterStub, CjStubElementTypes.ANNOTATIONS)
+        }
+        if (includeModifiers) {
+            CangJieModifierListStubImpl(parameterStub, 0, CjStubElementTypes.MODIFIER_LIST)
         }
         return parameterStub
     }

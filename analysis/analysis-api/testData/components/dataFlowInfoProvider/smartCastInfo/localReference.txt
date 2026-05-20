@@ -1,0 +1,5 @@
+expression: value
+smartCastInfo:
+    expressionType: Int64
+    stability: STABLE_VALUE
+    isPureReference: true

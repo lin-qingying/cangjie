@@ -105,6 +105,15 @@ open class CfirDeclarationsResolveTransformer(
         return file
     }
 
+    override fun transformCodeFragment(codeFragment: CfirCodeFragment, data: ResolutionMode): CfirCodeFragment {
+        dataFlowAnalyzer.enterCodeFragment(codeFragment)
+        context.withCodeFragment(codeFragment, components) {
+            transformBlock(codeFragment.block, data)
+        }
+        dataFlowAnalyzer.exitCodeFragment(codeFragment)
+        return codeFragment
+    }
+
     // ── Class-like declarations ───────────────────────────────────────────
 
     override fun transformClass(klass: CfirClass, data: ResolutionMode): CfirClass =

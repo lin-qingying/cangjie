@@ -30,7 +30,7 @@ class BufferedInputStream <: std.core.Object & std.io.InputStream {
 }
 
 interface InputStream {
-    func read(buffer: std.core.Array<UInt8>): Int64 { /* compiled code */ }
+    abstract func read(buffer: std.core.Array<UInt8>): Int64
 }
 
 class ByteBuffer <: std.core.Object & std.io.IOStream & std.io.Seekable {
@@ -88,7 +88,7 @@ enum SeekPosition {
 }
 
 interface Seekable {
-    func seek(sp: std.io.SeekPosition): Int64 { /* compiled code */ }
+    abstract func seek(sp: std.io.SeekPosition): Int64
 
     prop position: Int64 {
         get() { /* compiled code */ }
@@ -148,7 +148,7 @@ class BufferedOutputStream <: std.core.Object & std.io.OutputStream {
 }
 
 interface OutputStream {
-    func write(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
+    abstract func write(buffer: std.core.Array<UInt8>): Unit
 
     func flush(): Unit { /* compiled code */ }
 }

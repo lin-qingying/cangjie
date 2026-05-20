@@ -3,20 +3,28 @@ package org.cangnova.cangjie.frontend.pipeline
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorFunction
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroDesugarer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinMacroRegistry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.BuiltinNonMacroSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.FinalMacroSurfaceDecision
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IdentityMacroStableSplicer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallForestBuilder
@@ -28,11 +36,14 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCycle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroForestEvaluator
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentParser
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentInput
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroFragmentResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionCacheKey
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroBuiltinRegistries
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
+import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroPayloadChannel
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroReplaceSlot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolution
@@ -47,6 +58,7 @@ import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroCfirFile
 import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
@@ -69,6 +81,7 @@ import org.cangnova.cangjie.macro.TokenInfo
 import org.cangnova.cangjie.macro.protocol.MacroMsgCodec
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
+import org.cangnova.cangjie.source.text
 import java.util.IdentityHashMap
 
 fun interface MacroExecutorFactory {
@@ -226,6 +239,7 @@ class FrontendMacroConstructionService(
     override fun expand(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
+        classification: MacroDemandClassification,
         mode: MacroConstructionService.Mode,
         preConstructionDiagnostics: List<MacroConstructionDiagnostic>,
     ): MacroConstructionResult {
@@ -244,7 +258,7 @@ class FrontendMacroConstructionService(
         // baseline 第 12 节 Batch 5："alias conflict / macro package / ..."。
         reportAliasConflicts(context, registry)
 
-        val expandedFiles = expandMacroSurfaces(pre, context, registry) ?: rawFiles
+        val expandedFiles = expandMacroSurfaces(pre, context, classification, registry) ?: rawFiles
         if (mode == MacroConstructionService.Mode.DEGRADED &&
             pre.allSurfaces.isNotEmpty() &&
             registry.hasErrors &&
@@ -257,6 +271,7 @@ class FrontendMacroConstructionService(
         // baseline 第 11 节 cache key：splice 完成后逐文件计算 13 维 key，
         // 写入 registry 供上游 IDE / build cache 失效判定。
         registerCacheKeys(pre, context, expandedFiles, registry)
+        pre.session.annotationMetadataRegistryOrNull?.freeze()
 
         // baseline 第 10 节："session/analysis 长生命周期 registry"挂到 session
         // 上，供 ordinary checker / IDE / LSP 通过 `session.macroExpansionRegistry` 读取。
@@ -281,15 +296,25 @@ class FrontendMacroConstructionService(
     private fun expandMacroSurfaces(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
+        classification: MacroDemandClassification,
         registry: MacroExpansionRegistry,
     ): List<CfirFile>? {
-        val expansionSurfaces = pre.files.flatMap { preFile ->
-            preFile.surfaces.filter { surface ->
-                (!preFile.isMacroPackage || surface is MacroSurfaceExpr) &&
-                    !surface.isMacroDefinitionSignatureSurface()
+        for (decision in classification.finalDecisions) {
+            decision.blockedDiagnostic?.let(registry::addDiagnostic)
+        }
+        val expansionDecisions = pre.files.flatMap { preFile ->
+            preFile.surfaces.mapNotNull { surface ->
+                val decision = classification.finalDecisions.firstOrNull { it.surface === surface } ?: return@mapNotNull null
+                if (!decision.localConstruction) return@mapNotNull null
+                if ((preFile.isMacroPackage && surface !is MacroSurfaceExpr) || surface.isMacroDefinitionSignatureSurface()) {
+                    return@mapNotNull null
+                }
+                decision
             }
         }
-        if (expansionSurfaces.isEmpty()) return pre.files.map { it.cfirFile }
+        if (expansionDecisions.isEmpty()) return pre.files.map { it.cfirFile }
+        val expansionSurfaces = expansionDecisions.map { it.surface }
+        val decisionsBySurfaceId = expansionDecisions.associateBy { it.surface.surfaceId }
 
         val parserFactory = configuration.macroFragmentParserFactory
         if (parserFactory == null) {
@@ -322,6 +347,8 @@ class FrontendMacroConstructionService(
             forest = forest,
             expand = { node, childResults ->
                 val surface = node.surface
+                val decision = decisionsBySurfaceId[surface.surfaceId]
+                    ?: return@evaluate null
                 val name = surface.qualifiedName?.shortName()
                 if (surface.hasBlockingPreConstructionDiagnostic(registry)) {
                     return@evaluate null
@@ -336,14 +363,6 @@ class FrontendMacroConstructionService(
                     return@evaluate null
                 }
 
-                val resolution = context.resolveMacroCall(
-                    callPackage = surface.scopeContext.packageFqName,
-                    qualifier = surface.qualifiedName?.parent()?.takeUnless { it == surface.scopeContext.packageFqName },
-                    name = name,
-                    kind = surface.kind,
-                    hasParenthesis = surface.hasParenthesis,
-                    allowsDeclarationInputParenthesisOmission = surface is MacroSurfaceDecl,
-                )
                 if (node.hasUnresolvedChildPayloadChannel(childResults)) {
                     reportError(
                         registry = registry,
@@ -355,8 +374,9 @@ class FrontendMacroConstructionService(
                 }
                 val refreshedTokens = node.refreshTokensWithChildResults(childResults)
                 val expandedTokens = expandResolvedSurface(
+                    pre = pre,
                     surface = surface,
-                    resolution = resolution,
+                    decision = decision,
                     node = node,
                     childResults = childResults,
                     refreshedTokens = refreshedTokens,
@@ -367,6 +387,9 @@ class FrontendMacroConstructionService(
 
                 val fragment = parseAndDesugarFragment(
                     surface = surface,
+                    decision = decision,
+                    annotationSnapshot = decision.annotationCarrier
+                        ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) },
                     node = node,
                     parser = parser,
                     tokens = expandedTokens,
@@ -411,7 +434,16 @@ class FrontendMacroConstructionService(
         }
 
         return runCatching {
-            stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots)
+            stableSplicer.applySlices(pre.files.map { it.cfirFile }, slots).also {
+                val metadataRegistry = pre.session.annotationMetadataRegistryOrNull
+                if (metadataRegistry != null) {
+                    for (slot in slots) {
+                        val carrier = slot.handle.annotationCarrier ?: continue
+                        val replacement = (slot.fragment as? MacroFragmentResult.CustomAnnotation)?.payload ?: continue
+                        metadataRegistry.migrate(carrier, replacement)
+                    }
+                }
+            }
         }.getOrElse { error ->
             for (slot in slots) {
                 reportError(
@@ -426,8 +458,9 @@ class FrontendMacroConstructionService(
     }
 
     private fun expandResolvedSurface(
+        pre: PreMacroRawBuildResult,
         surface: MacroSurface,
-        resolution: MacroResolution,
+        decision: FinalMacroSurfaceDecision,
         node: MacroCallNode,
         childResults: Map<MacroCallNode, List<MacroSurfaceToken>>,
         refreshedTokens: RefreshedMacroSurfaceTokens,
@@ -435,7 +468,7 @@ class FrontendMacroConstructionService(
         registry: MacroExpansionRegistry,
         preFile: PreMacroCfirFile?,
     ): List<MacroSurfaceToken>? {
-        return when (resolution) {
+        return when (val resolution = decision.resolution) {
             is MacroResolution.SamePackage -> {
                 reportSamePackageMacroDefinition(surface, resolution.sourceEntry, registry)
                 null
@@ -461,7 +494,20 @@ class FrontendMacroConstructionService(
                 null
             }
             is MacroResolution.BuiltinNonMacro -> tokensForBuiltinNonMacro(surface, refreshedTokens)
-            is MacroResolution.CustomAnnotation -> refreshedTokens.inputTokens.ifEmpty { refreshedTokens.attrTokens }
+            is MacroResolution.CustomAnnotation -> {
+                val snapshot = decision.annotationCarrier
+                    ?.let { pre.session.annotationMetadataRegistryOrNull?.snapshot(it) }
+                    ?: pre.session.annotationMetadataRegistryOrNull?.snapshotForSurface(surface)
+                snapshot?.tokens ?: run {
+                    reportError(
+                        registry = registry,
+                        message = "Custom annotation surface `${surface.capturedRawSyntax.orEmpty()}` is missing its annotation slot snapshot.",
+                        kind = MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED,
+                        originSurfaceId = surface.surfaceId,
+                    )
+                    null
+                }
+            }
             is MacroResolution.Builtin -> evaluateBuiltinMacro(surface, resolution.entry, preFile, registry)
             is MacroResolution.Resolved -> evaluateExternalMacro(
                 surface = surface,
@@ -613,17 +659,21 @@ class FrontendMacroConstructionService(
 
     private fun parseAndDesugarFragment(
         surface: MacroSurface,
+        decision: FinalMacroSurfaceDecision,
+        annotationSnapshot: org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot?,
         node: MacroCallNode,
         parser: MacroFragmentParser,
         tokens: List<MacroSurfaceToken>,
         registry: MacroExpansionRegistry,
     ): MacroFragmentResult? {
-        val mode = when (surface) {
-            is MacroSurfaceDecl, is MacroSurfaceParam, is MacroSurfaceNode, is BuiltinNonMacroSurface ->
-                MacroFragmentParser.Mode.DECLARATION
-            is MacroSurfaceExpr -> MacroFragmentParser.Mode.EXPRESSION
-        }
-        val parsed = parser.parse(node, tokens, mode)
+        val parsed = parser.parse(
+            MacroFragmentInput(
+                node = node,
+                tokens = tokens,
+                decision = decision,
+                annotationSnapshot = annotationSnapshot,
+            )
+        )
         val fragment = if (surface is BuiltinNonMacroSurface && parsed is MacroFragmentResult.Success) {
             builtinNonMacroDesugarer.desugar(surface, parsed) ?: parsed
         } else {
@@ -886,7 +936,7 @@ class FrontendMacroConstructionService(
     ): CfirValueParameter {
         val diagnostic = macroPlaceholderDiagnostic(surface)
         val source = surface.macroOriginSource(parameter.source)
-        return org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter {
+        return buildValueParameter {
             this.source = source
             moduleData = parameter.moduleData
             resolvePhase = CfirResolvePhase.RAW_CFIR
@@ -957,7 +1007,7 @@ class FrontendMacroConstructionService(
      * 每个维度的取值入口：
      * -  1. sourceContentHash         ← `CfirFile.sourceFile.getContentsAsStream()` 的 SHA-256
      * -  2. fileIdentity              ← `sourceFile.path ?: cfirFile.name`
-     * -  3. macroSurfaceRangesHash    ← surfaces 的 `(id, fqn, range)` 序列
+     * -  3. macroSurfaceRangesHash    ← surfaces 的 `(fqn, range, snapshot)` 序列，不包含 session-local surfaceId
      * -  4. importsHash               ← `imports` + `defaultMacroImports` + 该文件相关 `importBindings`
      * -  5. modulePackageIdentity     ← `moduleData.name` + `packageFqName`
      * -  6. sdkSignature              ← `configuration.languageVersionSettings.toString()`
@@ -1003,7 +1053,7 @@ class FrontendMacroConstructionService(
             val key = MacroExpansionCacheKey(
                 sourceContentHash = hashSourceContent(cfirFile),
                 fileIdentity = identity,
-                macroSurfaceRangesHash = hashSurfaces(preFile.surfaces),
+                macroSurfaceRangesHash = hashSurfaces(preFile.surfaces, pre.session.annotationMetadataRegistryOrNull),
                 importsHash = hashImports(cfirFile, context),
                 modulePackageIdentity = "${cfirFile.moduleData.name}::${cfirFile.packageDirective.packageFqName.asString()}",
                 sdkSignature = sdkSignature,
@@ -1032,12 +1082,18 @@ class FrontendMacroConstructionService(
         return org.cangnova.cangjie.utils.StableHash.sha256(text)
     }
 
-    private fun hashSurfaces(surfaces: List<MacroSurface>): String {
+    private fun hashSurfaces(
+        surfaces: List<MacroSurface>,
+        annotationMetadataRegistry: org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationMetadataRegistry?,
+    ): String {
         if (surfaces.isEmpty()) return "surfaces:empty"
         val parts = surfaces.map { surface ->
             val range = surface.sourceRange
-            "${surface.surfaceId}|${surface.qualifiedName?.asString().orEmpty()}|" +
-                "${range?.startOffset ?: -1}|${range?.endOffset ?: -1}|${surface.kind}"
+            val snapshot = surface.replaceHandle.annotationCarrier
+                ?.let { annotationMetadataRegistry?.snapshot(it) }
+            "${surface.qualifiedName?.asString().orEmpty()}|" +
+                "${range?.startOffset ?: -1}|${range?.endOffset ?: -1}|${surface.kind}|" +
+                "slot=${snapshot?.stableCacheText().orEmpty()}"
         }
         return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
     }
@@ -1067,9 +1123,65 @@ class FrontendMacroConstructionService(
 
     private fun hashResultSnapshot(file: CfirFile): String {
         if (file.declarations.isEmpty()) return "result:empty"
-        val parts = file.declarations.map { it::class.simpleName.orEmpty() }
+        val parts = buildList {
+            file.declarations.forEach { declaration ->
+                collectDeclarationSnapshot(declaration, this)
+            }
+        }
         return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
     }
+
+    private fun collectDeclarationSnapshot(declaration: CfirDeclaration, parts: MutableList<String>) {
+        parts += "${declaration::class.simpleName.orEmpty()}|${declaration.stableName()}|ann=${declaration.annotations.stableAnnotationSnapshot()}"
+        if (declaration is CfirClassLikeDeclaration) {
+            declaration.declarations.forEach { collectDeclarationSnapshot(it, parts) }
+        }
+        if (declaration is CfirExtend) {
+            declaration.declarations.forEach { collectDeclarationSnapshot(it, parts) }
+        }
+        if (declaration is CfirFunction) {
+            declaration.valueParameters.forEach { collectDeclarationSnapshot(it, parts) }
+        }
+        if (declaration is CfirEnumConstructor) {
+            declaration.valueParameters.forEach { collectDeclarationSnapshot(it, parts) }
+        }
+    }
+
+    private fun CfirDeclaration.stableName(): String = when (this) {
+        is CfirClassLikeDeclaration -> name.asString()
+        is CfirNamedFunction -> name.asString()
+        is CfirMacroDeclaration -> name.asString()
+        is CfirProperty -> name.asString()
+        is CfirFieldVariable -> name.asString()
+        is CfirValueParameter -> name.asString()
+        is CfirTypeParameter -> name.asString()
+        is CfirEnumConstructor -> name.asString()
+        else -> ""
+    }
+
+    private fun List<CfirAnnotation>.stableAnnotationSnapshot(): String =
+        joinToString(separator = ";") { annotation ->
+            when (annotation) {
+                is CfirAnnotationCall -> {
+                    val args = annotation.argumentList.arguments.joinToString(separator = ",") { argument ->
+                        argument.source?.text?.toString().orEmpty()
+                    }
+                    "${annotation.typeRef.source?.text?.toString().orEmpty()}[$args]"
+                }
+                else -> annotation.source?.text?.toString().orEmpty()
+            }
+        }
+
+    private fun org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot.stableCacheText(): String =
+        listOf(
+            "index=$annotationIndex",
+            "raw=$rawSyntax",
+            "forced=$forcedCustom",
+            "fqn=${qualifiedName?.asString().orEmpty()}",
+            "args=${argumentText.orEmpty()}",
+            "tokens=${tokens.joinToString(separator = "") { it.text }}",
+            "callSite=$callSite",
+        ).joinToString("|")
 
     private fun Int.toConstructionSeverity(): MacroConstructionDiagnostic.Severity {
         return when (this) {
@@ -1136,9 +1248,17 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         val expressionSlotsWithCarrier = IdentityHashMap<CfirExpression, MacroReplaceSlot>()
         val declarationSlotsWithCarrier = IdentityHashMap<CfirDeclaration, MacroReplaceSlot>()
         val parameterSlotsWithCarrier = IdentityHashMap<CfirValueParameter, MacroReplaceSlot>()
+        val annotationSlotsWithCarrier = linkedMapOf<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier, MacroReplaceSlot>()
         val unsupportedSlots = mutableListOf<MacroReplaceSlot>()
 
         for (slot in slots) {
+            val annotationCarrier = slot.handle.annotationCarrier
+            if (annotationCarrier != null && slot.fragment is MacroFragmentResult.CustomAnnotation) {
+                require(annotationSlotsWithCarrier.put(annotationCarrier, slot) == null) {
+                    "Stable splice received duplicate annotation slot for index ${annotationCarrier.annotationIndex}."
+                }
+                continue
+            }
             when (val origin = slot.origin) {
                 is MacroSurfaceExpr -> {
                     val carrier = slot.handle.carrier
@@ -1167,6 +1287,16 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             }
         }
 
+        val annotationOwners = annotationSlotsWithCarrier.keys.mapTo(linkedSetOf()) { it.owner }
+        val ownerConflicts = buildList {
+            addAll(declarationSlotsWithCarrier.keys.filter { it in annotationOwners })
+            addAll(parameterSlotsWithCarrier.keys.filter { it in annotationOwners })
+        }
+        require(ownerConflicts.isEmpty()) {
+            "Stable splice cannot replace an owner/parameter and one of its annotation slots in the same batch: " +
+                ownerConflicts.joinToString { it.symbol.toString() }
+        }
+
         require(unsupportedSlots.isEmpty()) {
             "Stable splice is not implemented for macro surface(s) without typed carrier: " +
                 unsupportedSlots.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
@@ -1175,6 +1305,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         for (file in files) {
             replaceDeclarationSlots(file.declarations, declarationSlotsWithCarrier, parameterSlotsWithCarrier)
         }
+        replaceAnnotationSlots(annotationSlotsWithCarrier)
 
         val transformer = object : CfirDefaultTransformer<Unit>() {
             override fun transformErrorExpression(errorExpression: CfirErrorExpression, data: Unit): CfirExpression {
@@ -1200,7 +1331,29 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
             "Stable splice could not find parameter carrier for macro surface(s): " +
                 parameterSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
+        require(annotationSlotsWithCarrier.isEmpty()) {
+            "Stable splice could not find annotation carrier for macro surface(s): " +
+                annotationSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
+        }
         return files
+    }
+
+    private fun replaceAnnotationSlots(
+        annotationSlots: MutableMap<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier, MacroReplaceSlot>,
+    ) {
+        val entries = annotationSlots.entries.toList()
+        for ((carrier, slot) in entries) {
+            val annotations = carrier.owner.annotations
+            require(annotations.getOrNull(carrier.annotationIndex) === carrier.originalAnnotation) {
+                "Stable splice annotation carrier no longer matches owner/index ${carrier.annotationIndex}."
+            }
+            val replacement = (slot.fragment as? MacroFragmentResult.CustomAnnotation)?.payload
+                ?: error("Annotation macro surface `${slot.origin.qualifiedName?.asString().orEmpty()}` did not produce a CfirAnnotationCall payload.")
+            val mutableAnnotations = annotations.toMutableList()
+            mutableAnnotations[carrier.annotationIndex] = replacement
+            carrier.owner.replaceAnnotations(mutableAnnotations)
+            annotationSlots.remove(carrier)
+        }
     }
 
     @Suppress("UNCHECKED_CAST")

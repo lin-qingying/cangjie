@@ -18,8 +18,6 @@ import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.source.psi
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -260,11 +258,8 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         commonMember: CfirDeclaration,
         @Suppress("UNUSED_PARAMETER") memberName: Name,
     ) {
-        val specificOwner = specificMember.source?.psi as? CjModifierListOwner ?: return
-        val commonOwner = commonMember.source?.psi as? CjModifierListOwner ?: return
-
-        val specificAnnoNames = specificOwner.annotationEntries.mapNotNull { it.shortName }.toSet()
-        val commonAnnoNames = commonOwner.annotationEntries.mapNotNull { it.shortName }.toSet()
+        val specificAnnoNames = specificMember.annotationNames()
+        val commonAnnoNames = commonMember.annotationNames()
 
         // common/specific 修饰符过滤
         val filteredSpecific = specificAnnoNames - IGNORE_MATCH_ANNOTATIONS
@@ -290,21 +285,15 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
         commonMember: CfirDeclaration,
         memberName: Name,
     ) {
-        val specificOwner = specificMember.source?.psi as? CjModifierListOwner ?: return
         // 如果 specific 声明自身标注了 @Deprecated，但 common 对应声明未标注
-        val specificDep = specificOwner.annotationEntries.firstOrNull { it.shortName == DEPRECATED_NAME }
-        if (specificDep != null) {
-            val commonOwner = commonMember.source?.psi as? CjModifierListOwner
-            val commonHasDep = commonOwner?.annotationEntries?.any { it.shortName == DEPRECATED_NAME } == true
-            if (!commonHasDep) {
-                reporter.reportOn(
-                    source = specificMember.source,
-                    factory = CfirErrors.SPECIFIC_HAS_DEPRECATED_ANNOTATION,
-                    a = DEPRECATED_NAME,
-                    b = memberKind(specificMember) ?: "member",
-                    c = memberName,
-                )
-            }
+        if (specificMember.hasAnnotation(DEPRECATED_NAME) && !commonMember.hasAnnotation(DEPRECATED_NAME)) {
+            reporter.reportOn(
+                source = specificMember.source,
+                factory = CfirErrors.SPECIFIC_HAS_DEPRECATED_ANNOTATION,
+                a = DEPRECATED_NAME,
+                b = memberKind(specificMember) ?: "member",
+                c = memberName,
+            )
         }
     }
 
@@ -484,8 +473,7 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
     private fun checkCommonExtraConstraints(commonDecl: CfirClass) {
         // common 泛型声明的 @Frozen 限制
         if (commonDecl.typeParameters.isNotEmpty()) {
-            val owner = commonDecl.source?.psi as? CjModifierListOwner
-            if (owner?.annotationEntries?.any { it.shortName == FROZEN_NAME } == true) {
+            if (commonDecl.hasAnnotation(FROZEN_NAME)) {
                 reporter.reportOn(
                     source = commonDecl.source,
                     factory = CfirErrors.COMMON_GENERIC_FROZEN_NOT_SUPPORTED,
@@ -575,9 +563,8 @@ object CfirCommonSpecificChecker : CfirClassLikeChecker() {
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkCommonSpecificAnnotations(decl: CfirClass) {
-        val owner = decl.source?.psi as? CjModifierListOwner ?: return
-        for (ann in owner.annotationEntries) {
-            val name = ann.shortName ?: continue
+        for (ann in decl.annotations) {
+            val name = ann.shortNameOrNull() ?: continue
             if (name in DISALLOWED_ON_COMMON_SPECIFIC) {
                 reporter.reportOn(
                     source = decl.source,
@@ -716,8 +703,7 @@ object CfirMockSemanticsChecker : CfirClassLikeChecker() {
             if (!member.status.isStatic) continue
 
             // static/private/local/constructor 声明不能被 mock
-            val owner = member.source?.psi as? CjModifierListOwner ?: continue
-            if (owner.annotationEntries.any { it.shortName == Name.identifier("Mock") }) {
+            if (member.hasAnnotation(Name.identifier("Mock"))) {
                 if (member.status.visibility == org.cangnova.cangjie.descriptors.Visibilities.Private) {
                     reporter.reportOn(
                         source = member.source,
@@ -728,6 +714,9 @@ object CfirMockSemanticsChecker : CfirClassLikeChecker() {
         }
     }
 }
+
+private fun CfirDeclaration.annotationNames(): Set<Name> =
+    annotations.mapNotNull { it.shortNameOrNull() }.toSet()
 
 // common/specific 相关工具常量
 private val DEPRECATED_NAME = Name.identifier("Deprecated")

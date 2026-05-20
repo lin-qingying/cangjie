@@ -1,0 +1,7 @@
+CaCfirFileSymbol
+name: main.cj
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjFile
+file: main.cj
+package: analysis.scopes.multifile

@@ -8,25 +8,19 @@ import std.io.OutputStream
 import std.core.*
 
 interface Digest {
-    prop size: Int64 {
-        get() { /* compiled code */ }
-    }
+    abstract prop size: Int64
 
-    prop blockSize: Int64 {
-        get() { /* compiled code */ }
-    }
+    abstract prop blockSize: Int64
 
-    prop algorithm: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop algorithm: std.core.String
 
-    func write(buffer: std.core.Array<UInt8>): Unit { /* compiled code */ }
+    abstract func write(buffer: std.core.Array<UInt8>): Unit
 
-    func finish(to: std.core.Array<UInt8>): Unit { /* compiled code */ }
+    abstract func finish(to: std.core.Array<UInt8>): Unit
 
     func finish(): std.core.Array<UInt8> { /* compiled code */ }
 
-    func reset(): Unit { /* compiled code */ }
+    abstract func reset(): Unit
 }
 
 func digest(algorithm: T, data: std.core.String): std.core.Array<UInt8> { /* compiled code */ }

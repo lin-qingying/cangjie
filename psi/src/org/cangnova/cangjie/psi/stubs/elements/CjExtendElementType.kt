@@ -97,7 +97,7 @@ class CjExtendElementType(debugName: String) : CjStubElementType<CangJieExtendSt
 
     override fun createStub(psi: CjExtend, parentStub: StubElement<out PsiElement>?): CangJieExtendStub {
         // 获取被扩展类型的名称
-        val receiverTypeName = psi.nameAsName.asString()
+        val receiverTypeName = psi.getReceiverTypeTextForStub() ?: psi.nameAsName.asString()
 
         val fqName = psi.fqName
 

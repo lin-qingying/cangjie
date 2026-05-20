@@ -12,9 +12,15 @@ import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
+import org.cangnova.cangjie.cfir.containingClassLookupTag
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjFile
@@ -60,8 +66,31 @@ object CfirImportsChecker : CfirFileChecker() {
         }
         val duplicateImports = declaration.imports.filterTo(linkedSetOf()) { import ->
             import in conflictingNameImports || import in conflictingAliasImports
-        }
+        } + resolvedImports
+            .filter { it.targets.isNotEmpty() }
+            .allCurrentConflictingImports()
+            .toSet()
         reportUnusedImports(declaration, duplicateImports)
+    }
+
+    private fun List<CfirResolvedImportBinding>.allCurrentConflictingImports(): Set<CfirImport> {
+        val conflictingNameImports = filter { it.importDirective.aliasName == null }
+            .groupBy { it.effectiveName }
+            .collectAllCurrentConflictingImports()
+        val conflictingAliasImports = filter { it.importDirective.aliasName != null }
+            .groupBy { it.importDirective.aliasName!! }
+            .collectAllCurrentConflictingImports()
+        return conflictingNameImports + conflictingAliasImports
+    }
+
+    private fun Map<Name, List<CfirResolvedImportBinding>>.collectAllCurrentConflictingImports(): Set<CfirImport> {
+        val result = linkedSetOf<CfirImport>()
+        for (bindings in values) {
+            if (bindings.map { it.stableTargetSignature() }.toSet().size > 1) {
+                bindings.mapTo(result) { it.importDirective }
+            }
+        }
+        return result
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -101,6 +130,12 @@ object CfirImportsChecker : CfirFileChecker() {
             .filter { reference: CjSimpleNameExpression -> reference.getStrictParentOfType<CjImportDirective>() == null }
             .map(CjSimpleNameExpression::referencedNameAsName)
             .toSet()
+        val referencedClassIds = declaration.collectReferencedClassIds()
+        val importBindingsByImport = context.session.importBindingStoreOrNull
+            ?.getBindings(declaration)
+            ?.imports
+            .orEmpty()
+            .associateBy { it.importDirective }
 
         for (import in declaration.imports) {
             if (import in duplicateImports) continue
@@ -111,9 +146,38 @@ object CfirImportsChecker : CfirFileChecker() {
 
             val importedName = import.aliasName ?: importedFqName.shortName()
             if (importedName in referencedNames) continue
+            if (import.referencesAnyClassId(referencedClassIds, importBindingsByImport)) continue
 
             reporter.reportOn(import.source, CfirErrors.UNUSED_IMPORT, importedFqName)
         }
+    }
+
+    private fun CfirFile.collectReferencedClassIds(): Set<ClassId> {
+        val result = linkedSetOf<ClassId>()
+        accept(object : CfirDefaultVisitorVoid() {
+            override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
+                element.acceptChildren(this)
+            }
+
+            override fun visitResolvedNamedReference(resolvedNamedReference: CfirResolvedNamedReference) {
+                val callableSymbol = resolvedNamedReference.resolvedSymbol as? CfirCallableSymbol<*>
+                callableSymbol?.containingClassLookupTag()?.classId?.let(result::add)
+                super.visitResolvedNamedReference(resolvedNamedReference)
+            }
+        })
+        return result
+    }
+
+    private fun CfirImport.referencesAnyClassId(
+        referencedClassIds: Set<ClassId>,
+        importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
+    ): Boolean {
+        val bindings = referencedClassIds.takeIf { it.isNotEmpty() } ?: return false
+        return importBindingsByImport[this]
+            ?.targets
+            .orEmpty()
+            .filterIsInstance<CfirResolvedImportTarget.ClassLike>()
+            .any { it.classId in bindings }
     }
 
     context(context: CheckerContext)

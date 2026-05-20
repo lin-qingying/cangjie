@@ -16,7 +16,7 @@ import org.cangnova.cangjie.source.CjRealSourceElementKind
  *
  * 该检查器负责两类框架级语义：
  * 1. raw-cfir 已明确标记 `ReturnNotAllowed` 的返回语句，统一映射为 `CFIR_INVALID_RETURN`。
- * 2. `handle` 子句内部的显式 `return`，按当前 CFIR 规则禁止直接跳出，统一报 `CFIR_INVALID_RETURN`。
+ * 2. `handle` 子句内部的显式 `return`，按 effects 语义统一报 `CFIR_RETURN_IN_TRY_HANDLE_BLOCK`。
  *
  * 说明：
  * - 这里只处理“语句位置是否合法”，不处理返回值类型是否匹配（由 [CfirReturnTypeMismatchChecker] 负责）。
@@ -28,9 +28,9 @@ object CfirReturnLegalityChecker : CfirReturnExpressionChecker() {
         val source = expression.source ?: return
         if (source.kind != CjRealSourceElementKind) return
 
-        // handle 子句中的 return 目前不允许直接跨边界返回。
+        // handle 子句中的 return 需要走 effects 专用诊断，而不是普通 invalid-return。
         if (context.containingElements.any { it is CfirHandleClause }) {
-            reporter.reportOn(source, CfirErrors.INVALID_RETURN)
+            reporter.reportOn(source, CfirErrors.RETURN_IN_TRY_HANDLE_BLOCK)
             return
         }
 

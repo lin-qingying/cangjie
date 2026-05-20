@@ -2,6 +2,7 @@
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
+import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.AstLoadingFilter
 import org.cangnova.cangjie.CjPsiSourceFile
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
@@ -30,7 +31,10 @@ import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier
+import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot
 import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
@@ -44,6 +48,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.descriptors.Modality
@@ -143,6 +148,21 @@ class PsiRawCfirBuilder(
 
     private companion object {
         private const val IF_AVAILABLE_ANNOTATION_NAME: String = "IfAvailable"
+        private val builtinAnnotationMacroNames: Set<Name> = setOf(
+            Name.identifier("C"),
+            Name.identifier("CallingConv"),
+            Name.identifier("CJMapping"),
+            Name.identifier("Deprecated"),
+            Name.identifier("ForeignName"),
+            Name.identifier("Frozen"),
+            Name.identifier("Java"),
+            Name.identifier("JavaImpl"),
+            Name.identifier("JavaMirror"),
+            Name.identifier("ObjCCJMapping"),
+            Name.identifier("ObjCImpl"),
+            Name.identifier("ObjCInit"),
+            Name.identifier("ObjCMirror"),
+        )
     }
 
     // ===== Public API =====
@@ -220,6 +240,29 @@ class PsiRawCfirBuilder(
         }
     }
 
+    /**
+     * Macro custom annotation fragment reparse 入口。
+     *
+     * 只构造 annotation payload，不借用参数或声明 fragment 包装，确保
+     * `CUSTOM_ANNOTATION` 消费的是 annotation slot snapshot 的完整语法。
+     */
+    fun buildAnnotationCallInPackage(
+        annotation: CjAnnotation,
+        containingSymbol: CfirBasedSymbol<*>,
+        packageFqName: FqName,
+        sourceOverride: CjSourceElement? = null,
+        argumentListSourceOverride: CjSourceElement? = null,
+    ): CfirAnnotationCall {
+        return withPackageContext(packageFqName) {
+            converter.convertAnnotationCall(
+                annotation = annotation,
+                containingSymbol = containingSymbol,
+                sourceOverride = sourceOverride,
+                argumentListSourceOverride = argumentListSourceOverride,
+            )
+        }
+    }
+
     private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,
         builder: (S) -> D,
@@ -245,7 +288,11 @@ class PsiRawCfirBuilder(
                     sourceFileLinesMapping = CjPsiSourceFileLinesMapping(file)
                     packageDirective = buildPackageDirective(file.packageDirective)
                     imports.addAll(this@PsiRawCfirBuilder.buildImports(file))
-                    declarations.addAll(converter.convertFileDeclarations(file))
+                    if (file is CjCodeFragment) {
+                        declarations.add(converter.convertCodeFragment(file))
+                    } else {
+                        declarations.addAll(converter.convertFileDeclarations(file))
+                    }
                 }
             }
         }
@@ -275,6 +322,50 @@ class PsiRawCfirBuilder(
                         is CjDeclaration -> add(convertDeclaration(child))
                         is CjMacroExpression -> convertTopLevelMacroDeclaration(child)?.let(::add)
                     }
+                }
+            }
+        }
+
+        fun convertCodeFragment(file: CjCodeFragment): CfirCodeFragment {
+            val symbol = CfirCodeFragmentSymbol()
+            return buildCodeFragment {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                source = file.toCjPsiSourceElement()
+                moduleData = baseModuleData
+                origin = CfirDeclarationOrigin.Source
+                attributes = CfirDeclarationAttributes.EMPTY
+                this.symbol = symbol
+                block = buildOrLazyBlock {
+                    withContainerSymbol(symbol) {
+                        withLocalContext {
+                            when (file) {
+                                is CjExpressionCodeFragment -> {
+                                    val expression = file.getContentElement()
+                                    if (expression != null) {
+                                        buildBlock {
+                                            source = expression.toCjPsiSourceElement()
+                                            statements.add(convertExpression(expression))
+                                        }
+                                    } else {
+                                        buildBlock {
+                                            source = file.toCjPsiSourceElement()
+                                        }
+                                    }
+                                }
+
+                                is CjBlockCodeFragment -> convertBlock(file.getContentElement())
+
+                                is CjTypeCodeFragment -> buildBlock {
+                                    source = file.getContentElement()?.toCjPsiSourceElement()
+                                        ?: file.toCjPsiSourceElement()
+                                }
+
+                                else -> error("Unexpected code fragment type: ${file::class}")
+                            }
+                        }
+                    }
+                } ?: buildBlock {
+                    source = file.toCjPsiSourceElement()
                 }
             }
         }
@@ -319,13 +410,80 @@ class PsiRawCfirBuilder(
          * declaration surface 的 stable replace handle。
          */
         private fun convertTopLevelMacroDeclaration(psi: CjMacroExpression): CfirDeclaration? {
-            val inputDeclaration = psi.input?.declarations ?: return null
-            val carrier = convertDeclaration(inputDeclaration)
+            val chain = resolveMacroDeclarationChain(psi) ?: return null
+            val (declaration, macroExpressions) = chain
+            val carrier = convertDeclaration(declaration)
+            macroExpressions.forEach { expression ->
+                applyTopLevelMacroExpression(expression, carrier)
+            }
+            return carrier
+        }
+
+        /**
+         * 顶层 `@Anno @Anno decl` 在 PSI 上会形成多层 [CjMacroExpression] 链。
+         * raw builder 必须沿链找到最终声明，并按源码顺序把每层 annotation-site
+         * 回放到同一个 carrier 上，不能只消费最外层 wrapper。
+         */
+        private fun resolveMacroDeclarationChain(root: CjMacroExpression): Pair<CjDeclaration, List<CjMacroExpression>>? {
+            val macroExpressions = mutableListOf<CjMacroExpression>()
+            var current: CjMacroExpression? = root
+
+            while (current != null) {
+                macroExpressions += current
+                val input = current.input ?: return null
+                input.declarations?.let { declaration ->
+                    return declaration to macroExpressions.toList()
+                }
+                current = input.children.firstOrNull { it is CjMacroExpression } as? CjMacroExpression
+            }
+
+            return null
+        }
+
+        private fun applyTopLevelMacroExpression(
+            psi: CjMacroExpression,
+            carrier: CfirDeclaration,
+        ) {
+            if (applyBuiltinAnnotationMacroExpression(psi, carrier)) return
+
             val surfaceId = MacroSurfaceIdGenerator.next()
             val text = psi.text.orEmpty()
             val currentPackage = context.packageFqName
             val source = psi.toCjPsiSourceElement()
             val input = psi.input
+            val containingSymbol = when (carrier) {
+                is CfirValueParameter -> carrier.containingDeclarationSymbol
+                else -> carrier.symbol
+            }
+            val macroAnnotation = psi.asDeclarationMacroAnnotation()
+            val annotationCarrier = macroAnnotation?.let { annotation ->
+                val annotationCall = convertAnnotationCall(
+                    annotation = annotation,
+                    containingSymbol = containingSymbol,
+                    sourceOverride = source,
+                    argumentListSourceOverride = psi.attr?.toCjPsiSourceElement(),
+                )
+                val annotationIndex = carrier.annotations.size
+                carrier.replaceAnnotations(carrier.annotations + annotationCall)
+                baseSession.ensureAnnotationMetadataRegistry().record(
+                    CfirAnnotationSlotSnapshot(
+                        owner = carrier,
+                        annotationIndex = annotationIndex,
+                        originalAnnotation = annotationCall,
+                        rawSyntax = annotation.text,
+                        forcedCustom = text.trimStart().startsWith("@!"),
+                        qualifiedName = psi.shortName?.let {
+                            if (currentPackage.isRoot) FqName.topLevel(it) else currentPackage.child(it)
+                        },
+                        argumentText = psi.attr?.text,
+                        tokens = MacroPayloadTokenizer.tokenize(
+                            annotation.text,
+                            psi.textRange.startOffset,
+                        ).toMacroSurfaceTokens(),
+                        callSite = MacroCallSite.DECLARATION,
+                    )
+                )
+            }
             collectedMacroSurfaces += MacroSurfaceDecl(
                 surfaceId = surfaceId,
                 qualifiedName = psi.shortName?.let {
@@ -360,9 +518,61 @@ class PsiRawCfirBuilder(
                     isInsideEnumBody = false,
                     isInsideBlock = false,
                 ),
-                replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier),
+                replaceHandle = CfirReplaceHandle(
+                    handleId = surfaceId,
+                    carrier = carrier,
+                    annotationCarrier = annotationCarrier,
+                ),
             )
+        }
+
+        /**
+         * PSI 语法把文件级 `@Anno decl` 与 declaration macro 共用 [CjMacroExpression]。
+         * raw CFIR 必须先为该 annotation-site 建立真实 annotation slot，后续
+         * classification 再决定它是 declaration macro 还是 custom annotation。
+         */
+        private fun CjMacroExpression.asDeclarationMacroAnnotation(): CjAnnotation? {
+            val name = shortName?.asString()?.takeIf { it.isNotBlank() } ?: return null
+            val prefix = if (text.orEmpty().trimStart().startsWith("@!")) "@!" else "@"
+            val rawAnnotation = prefix + name + attr?.text.orEmpty()
+            return CjPsiFactory.contextual(this).createAnnotations(rawAnnotation).entries.singleOrNull()
+        }
+
+        private fun convertBuiltinAnnotationMacroDeclaration(psi: CjMacroExpression): CfirDeclaration? {
+            val chain = resolveMacroDeclarationChain(psi) ?: return null
+            val (declaration, macroExpressions) = chain
+            if (macroExpressions.any { !it.isBuiltinAnnotationMacroExpression() }) return null
+
+            val carrier = convertDeclaration(declaration)
+            macroExpressions.forEach { expression ->
+                applyBuiltinAnnotationMacroExpression(expression, carrier)
+            }
             return carrier
+        }
+
+        private fun CjMacroExpression.isBuiltinAnnotationMacroExpression(): Boolean {
+            val shortName = shortName ?: return false
+            return !text.orEmpty().trimStart().startsWith("@!") && shortName in builtinAnnotationMacroNames
+        }
+
+        private fun applyBuiltinAnnotationMacroExpression(
+            psi: CjMacroExpression,
+            carrier: CfirDeclaration,
+        ): Boolean {
+            if (!psi.isBuiltinAnnotationMacroExpression()) return false
+            val annotation = psi.asDeclarationMacroAnnotation() ?: return false
+            val containingSymbol = when (carrier) {
+                is CfirValueParameter -> carrier.containingDeclarationSymbol
+                else -> carrier.symbol
+            }
+            val annotationCall = convertAnnotationCall(
+                annotation = annotation,
+                containingSymbol = containingSymbol,
+                sourceOverride = psi.toCjPsiSourceElement(),
+                argumentListSourceOverride = psi.attr?.toCjPsiSourceElement(),
+            )
+            carrier.replaceAnnotations(carrier.annotations + annotationCall)
+            return true
         }
 
         private fun convertClass(psi: CjClassLikeDeclaration, classKind: CfirClassKind): CfirDeclaration {
@@ -859,7 +1069,7 @@ class PsiRawCfirBuilder(
 
                     attributes = CfirDeclarationAttributes.EMPTY
                     isLocal = context.inLocalContext
-                    status = CfirDeclarationStatusImpl.DEFAULT
+                    status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
                     typeParameters.addAll(ownerTypeParameters)
                     returnTypeRef = buildImplicitTypeRef()
                     this.valueParameters.addAll(valueParameters)
@@ -923,8 +1133,22 @@ class PsiRawCfirBuilder(
             target: AnnotationSurfaceTarget,
             carrier: CfirDeclaration,
         ) {
-            val entries = annotated.annotationEntries
+            collectMacroAnnotationSurfaces(
+                annotated = annotated,
+                entries = annotated.annotationEntries,
+                target = target,
+                carrier = carrier,
+            )
+        }
+
+        private fun collectMacroAnnotationSurfaces(
+            annotated: CjAnnotated,
+            entries: List<CjAnnotation>,
+            target: AnnotationSurfaceTarget,
+            carrier: CfirDeclaration,
+        ) {
             if (entries.isEmpty()) return
+            val metadataRegistry = baseSession.ensureAnnotationMetadataRegistry()
 
             val modifiers = (annotated as? CjModifierListOwner)
                 ?.modifierList
@@ -934,10 +1158,32 @@ class PsiRawCfirBuilder(
             val containerContext = macroContainerContext(annotated, target)
 
             for (annotation in entries) {
+                val annotationCall = buildRawAnnotationCall(annotation, carrier)
+                val annotationIndex = carrier.annotations.size
+                carrier.replaceAnnotations(carrier.annotations + annotationCall)
+                val snapshot = CfirAnnotationSlotSnapshot(
+                    owner = carrier,
+                    annotationIndex = annotationIndex,
+                    originalAnnotation = annotationCall,
+                    rawSyntax = annotation.text,
+                    forcedCustom = annotation.text.trimStart().startsWith("@!"),
+                    qualifiedName = annotationQualifiedName(annotation),
+                    argumentText = annotation.valueArgumentList?.text,
+                    tokens = MacroPayloadTokenizer.tokenize(
+                        annotation.text,
+                        annotation.textRange.startOffset,
+                    ).toMacroSurfaceTokens(),
+                    callSite = when (target) {
+                        AnnotationSurfaceTarget.DECLARATION -> MacroCallSite.DECLARATION
+                        AnnotationSurfaceTarget.PARAMETER -> MacroCallSite.PARAMETER
+                    },
+                )
+                val annotationCarrier = metadataRegistry.record(snapshot)
                 collectedMacroSurfaces += buildMacroAnnotationSurface(
                     annotation = annotation,
                     target = target,
                     carrier = carrier,
+                    annotationCarrier = annotationCarrier,
                     modifiers = modifiers,
                     carriedAnnotations = carriedAnnotations,
                     containerContext = containerContext,
@@ -945,10 +1191,61 @@ class PsiRawCfirBuilder(
             }
         }
 
+        fun convertAnnotationCall(
+            annotation: CjAnnotation,
+            containingSymbol: CfirBasedSymbol<*>,
+            sourceOverride: CjSourceElement? = null,
+            argumentListSourceOverride: CjSourceElement? = null,
+        ): CfirAnnotationCall {
+            val arguments = convertAnnotationArguments(annotation)
+            return buildAnnotationCall {
+                source = sourceOverride ?: annotation.toCjPsiSourceElement()
+                typeRef = convertTypeRef(annotation.typeReference)
+                this.arguments.addAll(arguments)
+                argumentList = buildArgumentList {
+                    source = argumentListSourceOverride ?: annotation.valueArgumentList?.toCjPsiSourceElement()
+                    this.arguments.addAll(arguments)
+                }
+                calleeReference = buildNamedReference(
+                    annotation.shortName ?: Name.identifier("<error>"),
+                    annotation.toCjPsiSourceElement(),
+                )
+                containingDeclarationSymbol = containingSymbol
+            }
+        }
+
+        private fun convertAnnotationArguments(annotation: CjAnnotation): List<CfirExpression> {
+            val valueArguments = annotation.valueArguments.mapNotNull(::convertCallArgument)
+            if (valueArguments.isNotEmpty()) return valueArguments
+
+            val callingConvention = PsiTreeUtil.findChildOfType(annotation, CjAnnotationCallingConv::class.java)
+            if (callingConvention != null) {
+                return listOf(buildLiteralExpression {
+                    source = callingConvention.toCjPsiSourceElement()
+                    kind = CfirLiteralKind.STRING
+                    value = callingConvention.getCallingConventionText()
+                })
+            }
+
+            return emptyList()
+        }
+
+        private fun buildRawAnnotationCall(
+            annotation: CjAnnotation,
+            carrier: CfirDeclaration,
+        ): CfirAnnotationCall {
+            val containingSymbol = when (carrier) {
+                is CfirValueParameter -> carrier.containingDeclarationSymbol
+                else -> carrier.symbol
+            }
+            return convertAnnotationCall(annotation, containingSymbol)
+        }
+
         private fun buildMacroAnnotationSurface(
             annotation: CjAnnotation,
             target: AnnotationSurfaceTarget,
             carrier: CfirDeclaration,
+            annotationCarrier: CfirAnnotationReplaceCarrier,
             modifiers: List<String>,
             carriedAnnotations: List<String>,
             containerContext: MacroSurfaceContainerContext,
@@ -959,7 +1256,7 @@ class PsiRawCfirBuilder(
             } else {
                 MacroSurface.Kind.PLAIN
             }
-            val qualifiedName = annotation.shortName?.let(::macroSurfaceQualifiedName)
+            val qualifiedName = annotationQualifiedName(annotation)
             val valueArgumentList = annotation.valueArgumentList
             val inputTokens = MacroPayloadTokenizer.tokenize(
                 valueArgumentList?.text,
@@ -975,7 +1272,11 @@ class PsiRawCfirBuilder(
                 enclosingClassFqName = null,
                 enclosingFunctionName = enclosingFunctionName(),
             )
-            val replaceHandle = CfirReplaceHandle(handleId = surfaceId, carrier = carrier)
+            val replaceHandle = CfirReplaceHandle(
+                handleId = surfaceId,
+                carrier = carrier,
+                annotationCarrier = annotationCarrier,
+            )
 
             if (annotation.shortName?.asString() == IF_AVAILABLE_ANNOTATION_NAME) {
                 return IfAvailableSurface(
@@ -1028,6 +1329,12 @@ class PsiRawCfirBuilder(
                     replaceHandle = replaceHandle,
                 )
             }
+        }
+
+        private fun annotationQualifiedName(annotation: CjAnnotation): FqName? {
+            val rawName = annotation.typeReference?.text?.trim()?.takeIf(String::isNotEmpty)
+            if (rawName != null && rawName.contains('.')) return FqName(rawName)
+            return annotation.shortName?.let(::macroSurfaceQualifiedName)
         }
 
         private fun macroSurfaceQualifiedName(name: Name): FqName {
@@ -1259,7 +1566,7 @@ class PsiRawCfirBuilder(
                 INTEGER_CONSTANT -> CfirLiteralKind.INT to text
                 FLOAT_CONSTANT -> CfirLiteralKind.FLOAT to text
                 RUNE_CONSTANT -> CfirLiteralKind.RUNE to text
-                BOOLEAN_CONSTANT -> CfirLiteralKind.BOOLEAN to true
+                BOOLEAN_CONSTANT -> CfirLiteralKind.BOOLEAN to (text == "true")
                 UNIT_CONSTANT -> CfirLiteralKind.UNIT to null
                 else -> CfirLiteralKind.STRING to text
             }
@@ -1494,7 +1801,8 @@ class PsiRawCfirBuilder(
             val isInout = (argument as? CjValueArgument)?.isInout == true
             val wrapped = if (isInout) {
                 buildInoutArgumentExpression {
-                    source = argument.asElement().toCjPsiSourceElement()
+                    source = argument.getArgumentExpression()?.toCjPsiSourceElement()
+                        ?: argument.asElement().toCjPsiSourceElement()
                     expression = convertedExpression
                 }
             } else convertedExpression
@@ -2441,7 +2749,47 @@ class PsiRawCfirBuilder(
 
         private fun convertClassMembers(psi: CjClassLikeDeclaration): List<CfirDeclaration> {
             val typeStatement = psi as? CjTypeStatement ?: return emptyList()
-            return typeStatement.body?.declarations?.map { convertDeclaration(it) } ?: emptyList()
+            val body = typeStatement.body ?: return emptyList()
+            val declarations = mutableListOf<CfirDeclaration>()
+            val pendingAnnotations = mutableListOf<CjAnnotation>()
+            for (child in body.children) {
+                when (child) {
+                    is CjAnnotations -> pendingAnnotations += child.entries
+                    is CjDeclaration -> {
+                        val declaration = convertDeclaration(child)
+                        collectDetachedClassMemberAnnotations(child, pendingAnnotations, declaration)
+                        pendingAnnotations.clear()
+                        declarations += declaration
+                    }
+                    is CjMacroExpression -> {
+                        convertBuiltinAnnotationMacroDeclaration(child)?.let { declaration ->
+                            val annotatedDeclaration = child.input?.declarations
+                            if (annotatedDeclaration != null) {
+                                collectDetachedClassMemberAnnotations(annotatedDeclaration, pendingAnnotations, declaration)
+                            }
+                            pendingAnnotations.clear()
+                            declarations += declaration
+                        }
+                    }
+                }
+            }
+            return declarations
+        }
+
+        private fun collectDetachedClassMemberAnnotations(
+            annotated: CjDeclaration,
+            pendingAnnotations: List<CjAnnotation>,
+            carrier: CfirDeclaration,
+        ) {
+            if (pendingAnnotations.isEmpty()) return
+            val attachedRanges = annotated.annotationEntries.mapTo(mutableSetOf()) { it.textRange }
+            val detachedAnnotations = pendingAnnotations.filter { it.textRange !in attachedRanges }
+            collectMacroAnnotationSurfaces(
+                annotated = annotated,
+                entries = detachedAnnotations,
+                target = AnnotationSurfaceTarget.DECLARATION,
+                carrier = carrier,
+            )
         }
 
         /**

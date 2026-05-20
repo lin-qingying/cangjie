@@ -1,0 +1,6 @@
+expression: callback
+type: (Int64) -> Int64
+isFunctionType: true
+isCFunction: false
+isClosureType: false
+hasVariableLengthArgument: false

@@ -14,6 +14,7 @@ import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.annotationMetadataRegistryOrNull
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.diagnosticReporter
 import org.cangnova.cangjie.cfir.session.macroExpansionRegistry
@@ -227,6 +228,7 @@ fun resolveAndCheckCfir(
 fun resolveAndCheckCfirAfterConstruction(
     session: CfirSession,
     pre: PreMacroRawBuildResult,
+    classification: MacroDemandClassification,
     constructionService: MacroConstructionService,
     constructionMode: MacroConstructionService.Mode,
     diagnosticsCollector: BaseDiagnosticsCollector,
@@ -243,14 +245,19 @@ fun resolveAndCheckCfirAfterConstruction(
             it.severity == org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic.Severity.ERROR
         } && constructionMode == MacroConstructionService.Mode.STRICT
     ) {
+        classification.freezeFailurePath(MacroFailurePolicy.STRICT)
         val registry = org.cangnova.cangjie.cfir.resolve.providers.macro.MacroExpansionRegistry().apply {
             addAll(preConstructionDiagnostics)
+            pre.allSurfaces.forEach(::registerOriginSurface)
         }
+        session.register(MacroExpansionRegistry::class, registry)
+        session.annotationMetadataRegistryOrNull?.freeze()
         return MacroConstructionResult.Failed(registry) to null
     }
     val result = constructionService.expand(
         pre = pre,
         context = context,
+        classification = classification,
         mode = constructionMode,
         preConstructionDiagnostics = preConstructionDiagnostics,
     )

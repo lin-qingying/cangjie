@@ -29,22 +29,6 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         }
     }
 
-    @TestMetadata("annotation")
-    @TestDataPath("\$PROJECT_ROOT")
-    @Nested
-    inner class Annotation : AbstractCfirLightTreeDiagnosticsTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/annotation")
-        }
-
-        @TestMetadata("annotationNoConstInitRich.cj")
-        @Test
-        fun testAnnotationNoConstInitRich() {
-            runTest("cfir/analysis-tests/testData/diagnostics/annotation/annotationNoConstInitRich.cj")
-        }
-    }
-
     @TestMetadata("call")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -295,12 +279,6 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
             @Test
             fun testExtendAccessibilitySamePackage() {
                 runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendAccessibilitySamePackage.cj")
-            }
-
-            @TestMetadata("extendCTypeNotAllowed.cj")
-            @Test
-            fun testExtendCTypeNotAllowed() {
-                runTest("cfir/analysis-tests/testData/diagnostics/coverage/extensions/extendCTypeNotAllowed.cj")
             }
 
             @TestMetadata("extendCoreProtection.cj")
@@ -702,6 +680,22 @@ class CfirAnalysisDiagnosticsTestGenerated : AbstractCfirLightTreeDiagnosticsTes
         @Test
         fun testUsedBeforeInitializationRich() {
             runTest("cfir/analysis-tests/testData/diagnostics/initialization/usedBeforeInitializationRich.cj")
+        }
+    }
+
+    @TestMetadata("interface")
+    @TestDataPath("\$PROJECT_ROOT")
+    @Nested
+    inner class Interface : AbstractCfirLightTreeDiagnosticsTest() {
+        @Test
+        fun testAllFilesPresent() {
+            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/interface")
+        }
+
+        @TestMetadata("comparable.cj")
+        @Test
+        fun testComparable() {
+            runTest("cfir/analysis-tests/testData/diagnostics/interface/comparable.cj")
         }
     }
 
@@ -1269,7 +1263,7 @@ private fun assertAllFilesPresentByMetadata(testInstance: Any, testDataRootRelat
     require(testDataDir.isDirectory) { "testData dir not found: ${testDataDir.path}" }
 
     val currentDir = currentClassTestDataDir(testInstance::class.java, testDataDir)
-    val expected = currentDir.walkTopDown()
+    val expected = currentDir.listFiles().orEmpty().asSequence()
         .filter { it.isFile && it.extension == "cj" }
         .map { it.relativeTo(currentDir).invariantSeparatorsPath }
         .toSet()

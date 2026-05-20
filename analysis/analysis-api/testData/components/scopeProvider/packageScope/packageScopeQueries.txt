@@ -1,0 +1,13 @@
+CaCfirNamedFunctionSymbol
+name: buildEntry
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjNamedFunction
+callableId: sample.scope.buildEntry
+
+CaCfirClassSymbol
+name: PackageEntry
+origin: SOURCE
+location: TOP_LEVEL
+psi: CjClass
+classId: sample.scope.PackageEntry

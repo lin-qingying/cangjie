@@ -5,8 +5,11 @@ import com.intellij.openapi.util.Disposer
 import org.cangnova.cangjie.CangJieCoreEnvironment
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 import java.nio.file.Path
 import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+import kotlin.io.path.createDirectories
 import kotlin.io.path.isRegularFile
 
 /**
@@ -40,6 +43,34 @@ class BuiltinsVirtualFileProviderCliImplTest {
         }
     }
 
+    @Test
+    fun discoverStdlibFilesFromFreshTempDirectory() {
+        withEnvironment {
+            val tempStdlibRoot = Files.createTempDirectory("cangjie-builtins-provider-stdlib-")
+            val oldValue = System.getProperty("cangjie.stdlib.module")
+            try {
+                copyStdlibFixtureRoot(tempStdlibRoot)
+                System.setProperty("cangjie.stdlib.module", tempStdlibRoot.toString())
+
+                val provider = BuiltinsVirtualFileProviderCliImpl()
+                val files = provider.getBuiltinVirtualFiles()
+
+                assertTrue(files.isNotEmpty(), "fresh temp stdlib root should also expose `.cjo` builtins files")
+                assertTrue(
+                    files.any { file -> file.name.equals("std.core.cjo", ignoreCase = true) },
+                    "fresh temp stdlib root should expose `std.core.cjo`; actual=${files.map { it.name }.sorted()}",
+                )
+            } finally {
+                if (oldValue == null) {
+                    System.clearProperty("cangjie.stdlib.module")
+                } else {
+                    System.setProperty("cangjie.stdlib.module", oldValue)
+                }
+                tempStdlibRoot.toFile().deleteRecursively()
+            }
+        }
+    }
+
     private fun locateStdlibFixtureRoot(): Path {
         val repoRoot = locateRepositoryRoot(Paths.get("").toAbsolutePath().normalize())
         val fixtureRoot = repoRoot
@@ -53,6 +84,20 @@ class BuiltinsVirtualFileProviderCliImplTest {
             "Cannot locate stdlib fixture root under $fixtureRoot"
         }
         return fixtureRoot
+    }
+
+    private fun copyStdlibFixtureRoot(destinationRoot: Path) {
+        val fixtureRoot = locateStdlibFixtureRoot()
+        copyFile(fixtureRoot.resolve("std.cjo"), destinationRoot.resolve("std.cjo"))
+        copyFile(
+            fixtureRoot.resolve("std").resolve("std.core.cjo"),
+            destinationRoot.resolve("std").resolve("std.core.cjo"),
+        )
+    }
+
+    private fun copyFile(source: Path, target: Path) {
+        target.parent?.createDirectories()
+        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING)
     }
 
     private fun locateRepositoryRoot(start: Path): Path {

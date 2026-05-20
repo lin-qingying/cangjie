@@ -43,7 +43,7 @@ public class CfirIdeNormalAnalysisLibraryBinaryModuleResolveCallTestGenerated ex
 
   @Test
   public void testAllFilesPresentInSingleByPsi() {
-    CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/components/resolver/singleByPsi"), Pattern.compile("^(.+)\\.cj$"), null, true);
+    CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/components/resolver/singleByPsi"), Pattern.compile("^(.+)\\.cj$"), null, true, "reference");
   }
 
   @Test

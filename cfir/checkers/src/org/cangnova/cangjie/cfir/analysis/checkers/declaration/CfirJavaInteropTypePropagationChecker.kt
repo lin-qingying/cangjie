@@ -15,8 +15,6 @@ import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjModifierListOwner
-import org.cangnova.cangjie.source.psi
 
 /**
  * Java 互操作类型传播约束检查器
@@ -70,10 +68,7 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
         val mainDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(classLike.classId)?.cfir
             as? CfirClassLikeDeclaration ?: return
-        val mainIsJava = (mainDecl.source?.psi as? CjModifierListOwner)
-            ?.annotationEntries
-            ?.any { it.shortName in JAVA_ANN_NAMES } == true
-        if (mainIsJava) return
+        if (mainDecl.hasAnyJavaInteropAnnotation()) return
 
         for (arg in classLike.typeArguments) {
             val argType = arg.type ?: continue
@@ -93,8 +88,7 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
                 .getClassLikeSymbolByClassId(type.classId)?.cfir
                 as? CfirClassLikeDeclaration
             if (decl != null) {
-                val owner = decl.source?.psi as? CjModifierListOwner
-                if (owner?.annotationEntries?.any { it.shortName in JAVA_ANN_NAMES } == true) {
+                if (decl.hasAnyJavaInteropAnnotation()) {
                     return type
                 }
             }
@@ -112,7 +106,9 @@ object CfirJavaInteropTypePropagationChecker : CfirCallableDeclarationChecker() 
         val classId = symbol?.callableId?.classId ?: return false
         val ownerDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(classId)?.cfir ?: return false
-        val owner = ownerDecl.source?.psi as? CjModifierListOwner ?: return false
-        return owner.annotationEntries.any { it.shortName in JAVA_ANN_NAMES }
+        return ownerDecl.hasAnyJavaInteropAnnotation()
     }
+
+    private fun CfirClassLikeDeclaration.hasAnyJavaInteropAnnotation(): Boolean =
+        JAVA_ANN_NAMES.any(::hasAnnotation)
 }

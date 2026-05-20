@@ -15,7 +15,9 @@ dependencies {
     implementation(project(":psi"))
     implementation(project(":common"))
 
+    testImplementation(project(":analysis:stubs"))
     testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
+    testImplementation(testFixtures(project(":analysis:analysis-api-standalone")))
     testImplementation(project(":analysis:analysis-api-cfir"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)

@@ -53,8 +53,6 @@ class ResultTypeResolver(
     fun findResultType(variableWithConstraints: VariableWithConstraints, direction: ResolveDirection): CangJieTypeMarker {
         findResultTypeOrNull(variableWithConstraints, direction)?.let { return it }
 
-        variableWithConstraints.findConflictFallbackType(direction)?.let { return it }
-
         // no proper constraints
         return variableWithConstraints.typeVariable.getDefaultType(direction, variableWithConstraints.constraints)
     }
@@ -254,27 +252,6 @@ class ResultTypeResolver(
         return constraints.any { constraint ->
             constraint.type.typeConstructor().isNothingConstructor()
         }
-    }
-
-    context(c: Context)
-    private fun VariableWithConstraints.findConflictFallbackType(direction: ResolveDirection): CangJieTypeMarker? {
-        val properConstraints = constraints.filter { it.isProperConstraint() }
-        if (properConstraints.isEmpty()) return null
-
-        val preferredKinds = when (direction) {
-            ResolveDirection.TO_SUBTYPE,
-            ResolveDirection.UNKNOWN,
-            -> arrayOf(ConstraintKind.LOWER, ConstraintKind.EQUALITY, ConstraintKind.UPPER)
-
-            ResolveDirection.TO_SUPERTYPE ->
-                arrayOf(ConstraintKind.UPPER, ConstraintKind.EQUALITY, ConstraintKind.LOWER)
-        }
-
-        for (kind in preferredKinds) {
-            properConstraints.firstOrNull { it.kind == kind }?.type?.let { return it }
-        }
-
-        return null
     }
 
     context(c: Context)

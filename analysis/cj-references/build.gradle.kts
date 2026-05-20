@@ -13,7 +13,10 @@ dependencies {
     implementation(project(":psi"))
 
     testImplementation(intellijCore())
+    testImplementation(project(":analysis:analysis-api-cfir"))
+    testImplementation(project(":analysis:analysis-api-standalone"))
     testImplementation(testFixtures(project(":analysis:analysis-test-framework")))
+    testImplementation(testFixtures(project(":analysis:analysis-api-standalone")))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

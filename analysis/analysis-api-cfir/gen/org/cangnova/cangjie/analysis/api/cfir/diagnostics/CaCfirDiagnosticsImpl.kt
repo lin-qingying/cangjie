@@ -11,14 +11,12 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjCommandTypePattern
+import org.cangnova.cangjie.psi.CjBlockExpression
 import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjExpression
-import org.cangnova.cangjie.psi.CjHandleClause
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjNamedDeclaration
-import org.cangnova.cangjie.psi.CjPerformExpression
 import org.cangnova.cangjie.psi.CjResumeExpression
 import org.cangnova.cangjie.psi.CjTypeReference
 
@@ -48,7 +46,7 @@ internal class RedeclarationImpl(
     override val conflictingSymbols: List<String>,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.Redeclaration
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.Redeclaration
 
 internal class ClassifierRedeclarationImpl(
     override val conflictingSymbols: List<String>,
@@ -128,7 +126,7 @@ internal class ExtendGenericUsageImpl(
     override val typeParameterName: Name,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.ExtendGenericUsage
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.ExtendGenericUsage
 
 internal class ExtendSpecializationConflictImpl(
     override val interfaceName: Name,
@@ -477,13 +475,13 @@ internal class CommandIncompatibleTypeImpl(
     override val actualType: CaType,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjPerformExpression>(cfirDiagnostic, token), CaCfirDiagnostic.CommandIncompatibleType
+) : CaAbstractCfirDiagnostic<CjExpression>(cfirDiagnostic, token), CaCfirDiagnostic.CommandIncompatibleType
 
 internal class CommandHandleTypeErrorImpl(
     override val actualType: CaType,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjCommandTypePattern>(cfirDiagnostic, token), CaCfirDiagnostic.CommandHandleTypeError
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.CommandHandleTypeError
 
 internal class ImplicitResumeOutsideHandlerImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -507,7 +505,7 @@ internal class MismatchingHandleBlockImpl(
     override val expectedType: CaType,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjHandleClause>(cfirDiagnostic, token), CaCfirDiagnostic.MismatchingHandleBlock
+) : CaAbstractCfirDiagnostic<CjBlockExpression>(cfirDiagnostic, token), CaCfirDiagnostic.MismatchingHandleBlock
 
 internal class NonExhaustiveMatchImpl(
     override val missingCases: List<String>,
@@ -818,7 +816,7 @@ internal class ParamCountMismatchImpl(
 internal class UnableToInferReturnTypeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<CjDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.UnableToInferReturnType
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UnableToInferReturnType
 
 internal class UnableToInferGenericFuncImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -1246,7 +1244,7 @@ internal class ExportExtendDependNonExportExtendImpl(
 internal class ExtendAJavaTypeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ExtendAJavaType
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.ExtendAJavaType
 
 internal class ExtendRefTargetCannotBeJavaImplImpl(
     cfirDiagnostic: CjPsiDiagnostic,

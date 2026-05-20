@@ -4,11 +4,13 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFile
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileResolutionMode
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.api.projectStructure.explicitModule
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 
@@ -16,7 +18,15 @@ import org.cangnova.cangjie.psi.CjFile
 abstract class CangJieProjectStructureProviderBase : CangJieProjectStructureProvider {
     protected abstract fun getNotUnderContentRootModule(project: Project): CaNotUnderContentRootModule
 
+    @OptIn(CaExperimentalApi::class)
     protected fun computeSpecialModule(file: PsiFile): CaModule? {
+        if (file is CjFile) {
+            val explicitModule = file.explicitModule
+            if (explicitModule != null) {
+                return explicitModule
+            }
+        }
+
         if (file is CjFile && isDangling(file)) {
             val contextModule = computeContextModule(file)
             return CaDanglingFileModuleImpl(

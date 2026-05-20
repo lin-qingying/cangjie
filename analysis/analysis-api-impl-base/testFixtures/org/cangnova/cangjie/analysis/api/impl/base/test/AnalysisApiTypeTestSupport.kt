@@ -4,6 +4,7 @@ import com.intellij.psi.util.PsiTreeUtil
 import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.renderer.types.impl.CaTypeRendererForSource
 import org.cangnova.cangjie.analysis.api.symbols.CaClassLikeSymbol
+import org.cangnova.cangjie.analysis.api.symbols.name
 import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
@@ -40,6 +41,8 @@ internal object AnalysisApiTypeTestSupport {
         primaryClass: CaClassLikeSymbol,
         secondaryClass: CaClassLikeSymbol? = null,
         containerClass: CaClassLikeSymbol? = null,
+        typeParameterOwnerClass: CaClassLikeSymbol? = null,
+        targetTypeParameterName: String? = null,
     ): CaType {
         return when (kind) {
             "CLASS" -> assertClassLikeConstruction(primaryClass)
@@ -91,6 +94,18 @@ internal object AnalysisApiTypeTestSupport {
                     isClosureType = true,
                     hasVariableLengthArgument = true,
                 )
+            }
+            "VARARG_ARRAY" -> with(session) {
+                buildVarargArrayType(primaryClass.defaultType)
+            }
+            "TYPE_PARAMETER" -> with(session) {
+                val owner = requireNotNull(typeParameterOwnerClass) { "TYPE_PARAMETER 用例必须声明类型参数 owner 类。" }
+                val typeParameterName = requireNotNull(targetTypeParameterName) { "TYPE_PARAMETER 用例必须声明目标类型参数名。" }
+                val typeParameterSymbol = owner.typeParameters.singleOrNull { typeParameter ->
+                    typeParameter.name.asString() == typeParameterName
+                } ?: error("Owner `${owner.classId?.asString()}` does not have type parameter `$typeParameterName`.")
+
+                buildTypeParameterType(typeParameterSymbol)
             }
             else -> error("Unsupported test type kind: $kind")
         }

@@ -15,7 +15,9 @@ import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
 import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionService
+import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDemandClassification
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroResolutionContext
+import org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
@@ -42,7 +44,7 @@ class FrontendMacroConstructionServiceTest {
     fun degradedModeRegistersDeclarationSurfacePlaceholderWithoutFinalSurfaceNode() {
         val fixture = macroDeclarationSurfaceFixture()
 
-        val result = FrontendMacroConstructionService(CompilerConfiguration()).expand(
+        val result = FrontendMacroConstructionService(CompilerConfiguration()).expandWithClassification(
             pre = fixture.pre,
             context = fixture.context,
             mode = MacroConstructionService.Mode.DEGRADED,
@@ -63,7 +65,7 @@ class FrontendMacroConstructionServiceTest {
     fun strictModeRejectsDeclarationSurfaceWithoutStableSplice() {
         val fixture = macroDeclarationSurfaceFixture()
 
-        val result = FrontendMacroConstructionService(CompilerConfiguration()).expand(
+        val result = FrontendMacroConstructionService(CompilerConfiguration()).expandWithClassification(
             pre = fixture.pre,
             context = fixture.context,
             mode = MacroConstructionService.Mode.STRICT,
@@ -146,9 +148,19 @@ class FrontendMacroConstructionServiceTest {
     private data class MacroDeclarationSurfaceFixture(
         val file: CfirFile,
         val surface: MacroSurfaceDecl,
-        val pre: org.cangnova.cangjie.cfir.resolve.providers.macro.PreMacroRawBuildResult,
+        val pre: PreMacroRawBuildResult,
         val context: MacroResolutionContext,
     )
+
+    private fun FrontendMacroConstructionService.expandWithClassification(
+        pre: PreMacroRawBuildResult,
+        context: MacroResolutionContext,
+        mode: MacroConstructionService.Mode,
+    ): MacroConstructionResult {
+        val classification = MacroDemandClassification.create(pre)
+        classification.freezeFinal(macroArtifactDefinitions = context.symbolIndex.foreigns)
+        return expand(pre, context, classification, mode)
+    }
 
     private class TestModuleData(session: CfirSession) : CfirModuleData() {
         override val name: Name = Name.identifier("frontend-macro-construction-test")

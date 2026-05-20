@@ -6,7 +6,6 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.StandardFileSystems
 import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiFileFactory
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
@@ -433,12 +432,12 @@ class AnalysisApiLspProjectStructureState(
 
     private fun createDiskPsiFile(path: Path): CjFile? {
         if (!Files.exists(path) || !path.isRegularFile()) return null
-        val psiFile = PsiFileFactory.getInstance(project).createFileFromText(
-            path.fileName.toString(),
-            CangJieFileType.INSTANCE,
-            Files.readString(path),
+        return LspAnalysisPsiFileFactory.createFile(
+            project = project,
+            documentUri = path.toUri().toString(),
+            fileName = path.fileName.toString(),
+            text = Files.readString(path),
         )
-        return psiFile as? CjFile
     }
 
     companion object {
@@ -579,20 +578,12 @@ internal class AnalysisApiLspProjectStructureProvider(
         return state.getModule(element, useSiteModule)
     }
 
-    override val allModules: List<CaModule>
-        get() = state.allModules
+    override fun getImplementingModules(module: CaModule): List<CaModule> {
+        return state.allModules.filter { module in it.directDependsOnDependencies }
+    }
 
-    override val allResolvableModules: List<CaModule>
-        get() = state.allResolvableModules
-
-    override val allSourceLikeModules: List<CaModule>
-        get() = state.allSourceLikeModules
-
-    override val allSourceFiles: List<PsiFileSystemItem>
-        get() = state.allSourceFiles
-
-    override val snapshot: CaProjectStructureSnapshot
-        get() = state.snapshot
+    override val globalLanguageVersionSettings: LanguageVersionSettings
+        get() = LanguageVersionSettings.DEFAULT
 }
 
 internal class AnalysisApiLspModuleProvider(
@@ -674,7 +665,7 @@ internal class AnalysisApiLspRestrictedAnalysisService : CaRestrictedAnalysisSer
  */
 internal class AnalysisApiLspPlatformSettings : CaPlatformSettings {
     override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin
-        get() = CaDeserializedDeclarationsOrigin.STUBS
+        get() = CaDeserializedDeclarationsOrigin.BINARIES
 
     override val allowUseSiteLibraryModuleAnalysis: Boolean
         get() = false

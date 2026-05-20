@@ -1,0 +1,7 @@
+Classifier names:
+  HelperOnly
+  MainOnly
+
+Callable names:
+  makeHelperOnly
+  makeMainOnly

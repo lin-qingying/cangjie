@@ -18,6 +18,7 @@ import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjParameter
 import org.cangnova.cangjie.psi.CjParameterList
 import org.cangnova.cangjie.psi.CjPatternVariable
+import org.cangnova.cangjie.psi.CjPrimaryConstructor
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjPropertyAccessor
 import org.cangnova.cangjie.psi.CjSecondaryConstructor
@@ -132,7 +133,6 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
             append(typeStatement.typeName)
             withPrefix(" ") { typeStatement.name?.let(::renderIdentifier)?.let(::append) }
             typeStatement.typeParameterList?.accept(this)
-            withPrefix("") { typeStatement.getPrimaryConstructorParameterList()?.accept(this) }
 
             val superTypes = buildList {
                 addAll(typeStatement.superTypeListEntries.mapNotNull { entry -> entry.typeReference?.getTypeText() })
@@ -237,6 +237,13 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitSecondaryConstructor(constructor: CjSecondaryConstructor) {
             withSuffix(" ") { constructor.modifierList?.accept(this) }
             append("init")
+            constructor.valueParameterList?.accept(this) ?: append("()")
+            printBody(hasBody = true)
+        }
+
+        override fun visitPrimaryConstructor(constructor: CjPrimaryConstructor) {
+            withSuffix(" ") { constructor.modifierList?.accept(this) }
+            append(constructor.name?.let(::renderIdentifier).orEmpty())
             constructor.valueParameterList?.accept(this) ?: append("()")
             printBody(hasBody = true)
         }

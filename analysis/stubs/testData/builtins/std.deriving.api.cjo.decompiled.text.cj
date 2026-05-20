@@ -19,14 +19,11 @@ interface Logger {
 
     func error(at: std.ast.Token, message: std.core.String): Unit { /* compiled code */ }
 
-    func log(at: std.ast.Tokens, message: std.core.String, error: Bool): Unit { /* compiled code */ }
+    abstract func log(at: std.ast.Tokens, message: std.core.String, error: Bool): Unit
 }
 
 interface DeclExt {
-    mut prop modifiers: std.collection.ArrayList<std.ast.Modifier> {
-        get() { /* compiled code */ }
-        set(value) { /* compiled code */ }
-    }
+    abstract mut prop modifiers: std.collection.ArrayList<std.ast.Modifier>
 
     func hasModifier(kind: std.ast.TokenKind): Bool { /* compiled code */ }
 
@@ -36,7 +33,7 @@ interface DeclExt {
 
     func isPrivate(): Bool { /* compiled code */ }
 
-    func unwrap(): std.ast.Decl { /* compiled code */ }
+    abstract func unwrap(): std.ast.Decl
 }
 
 struct QualifiedName <: std.core.ToString & std.core.Equatable<std.deriving.api.QualifiedName> & std.core.Hashable {
@@ -94,7 +91,7 @@ struct GenericDecl <: std.core.Equatable<std.deriving.api.GenericDecl> & std.cor
 
     let identifier: std.deriving.api.Identifier
 
-    init(identifier: std.deriving.api.Identifier) { /* compiled code */ }
+    GenericDecl(identifier: std.deriving.api.Identifier) { /* compiled code */ }
 }
 
 struct DerivingTarget {
@@ -116,11 +113,11 @@ struct DerivingTarget {
 
     let settings: std.deriving.api.DerivingSettings
 
-    init(declaration: std.ast.Decl, namedFields: std.core.Array<std.deriving.api.TargetNamedAttribute>, enumCases: std.core.Array<std.deriving.api.TargetEnumCase>, settings: std.deriving.api.DerivingSettings) { /* compiled code */ }
+    DerivingTarget(declaration: std.ast.Decl, namedFields: std.core.Array<std.deriving.api.TargetNamedAttribute>, enumCases: std.core.Array<std.deriving.api.TargetEnumCase>, settings: std.deriving.api.DerivingSettings) { /* compiled code */ }
 }
 
 interface GenericsInjector {
-    func injectGenerics(iface: std.deriving.api.QualifiedName, constrainedType: std.ast.TypeNode, target: std.deriving.api.DerivingTarget): std.ast.TypeNode { /* compiled code */ }
+    abstract func injectGenerics(iface: std.deriving.api.QualifiedName, constrainedType: std.ast.TypeNode, target: std.deriving.api.DerivingTarget): std.ast.TypeNode
 
     func constraintsFor(iface: std.deriving.api.QualifiedName, generic: std.deriving.api.GenericDecl, target: std.deriving.api.DerivingTarget): std.core.Array<std.ast.GenericConstraint> { /* compiled code */ }
 
@@ -156,7 +153,7 @@ struct DerivingSettings {
 
     let includedProperties: std.core.Array<std.ast.PropDecl>
 
-    init(interfaces: std.core.Array<std.deriving.api.DerivingInterfaceSettings>, excludedFields: std.core.Array<std.deriving.api.TargetNamedAttribute>, casesOrder: std.core.Array<std.deriving.api.TargetEnumCase>, fieldsOrder: std.core.Array<std.deriving.api.Identifier>, includedProperties: std.core.Array<std.ast.PropDecl>) { /* compiled code */ }
+    DerivingSettings(interfaces: std.core.Array<std.deriving.api.DerivingInterfaceSettings>, excludedFields: std.core.Array<std.deriving.api.TargetNamedAttribute>, casesOrder: std.core.Array<std.deriving.api.TargetEnumCase>, fieldsOrder: std.core.Array<std.deriving.api.Identifier>, includedProperties: std.core.Array<std.ast.PropDecl>) { /* compiled code */ }
 }
 
 struct DerivingInterfaceSettings {
@@ -164,7 +161,7 @@ struct DerivingInterfaceSettings {
 
     let generics: std.core.Array<std.deriving.api.DerivingGenericSettings>
 
-    init(name: std.deriving.api.QualifiedName, generics: std.core.Array<std.deriving.api.DerivingGenericSettings>) { /* compiled code */ }
+    DerivingInterfaceSettings(name: std.deriving.api.QualifiedName, generics: std.core.Array<std.deriving.api.DerivingGenericSettings>) { /* compiled code */ }
 }
 
 enum TargetNamedAttribute {
@@ -182,7 +179,7 @@ struct TargetEnumCase {
 
     let fields: std.core.Array<std.deriving.api.TargetEnumField>
 
-    init(name: std.core.String, constructor: std.ast.Constructor, fields: std.core.Array<std.deriving.api.TargetEnumField>) { /* compiled code */ }
+    TargetEnumCase(name: std.core.String, constructor: std.ast.Constructor, fields: std.core.Array<std.deriving.api.TargetEnumField>) { /* compiled code */ }
 }
 
 struct Identifier <: std.core.ToString & std.core.Equatable<std.deriving.api.Identifier> & std.core.Hashable & std.ast.ToTokens {
@@ -204,7 +201,7 @@ struct Identifier <: std.core.ToString & std.core.Equatable<std.deriving.api.Ide
 
     let token: std.ast.Token
 
-    init(token: std.ast.Token) { /* compiled code */ }
+    Identifier(token: std.ast.Token) { /* compiled code */ }
 }
 
 struct TargetEnumField {
@@ -212,7 +209,7 @@ struct TargetEnumField {
 
     let fieldType: std.ast.TypeNode
 
-    init(position: Int64, fieldType: std.ast.TypeNode) { /* compiled code */ }
+    TargetEnumField(position: Int64, fieldType: std.ast.TypeNode) { /* compiled code */ }
 }
 
 struct DerivingGenericSettings <: std.core.ToString & std.ast.ToTokens {
@@ -230,31 +227,25 @@ struct DerivingGenericSettings <: std.core.ToString & std.ast.ToTokens {
 
     let upperBounds: std.core.Array<std.ast.TypeNode>
 
-    init(generic: std.deriving.api.GenericDecl, upperBounds: std.core.Array<std.ast.TypeNode>) { /* compiled code */ }
+    DerivingGenericSettings(generic: std.deriving.api.GenericDecl, upperBounds: std.core.Array<std.ast.TypeNode>) { /* compiled code */ }
 }
 
 interface DerivingNode <: std.deriving.api.AstExt {
-    func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit { /* compiled code */ }
+    abstract func appendAllConstraints(deriving: std.deriving.api.Deriving, target: std.deriving.api.DerivingTarget, iface: std.deriving.api.QualifiedName): Unit
 
-    func appendAllConstraintsTo(deriving: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit { /* compiled code */ }
+    abstract func appendAllConstraintsTo(deriving: std.deriving.api.DerivingTarget, ifaceInfo: std.deriving.api.DerivingInterfaceInfo, settings: std.core.Option<std.deriving.api.DerivingInterfaceSettings>): Unit
 }
 
 interface Deriving {
-    prop name: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop name: std.core.String
 
-    prop description: std.core.String {
-        get() { /* compiled code */ }
-    }
+    abstract prop description: std.core.String
 
-    prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName> {
-        get() { /* compiled code */ }
-    }
+    abstract prop supportedInterfaces: std.core.Array<std.deriving.api.QualifiedName>
 
-    func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo { /* compiled code */ }
+    abstract func queryInterfaceInfo(interfaceName: std.deriving.api.QualifiedName): std.deriving.api.DerivingInterfaceInfo
 
-    func derive(input: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens { /* compiled code */ }
+    abstract func derive(input: std.ast.Tokens, target: std.deriving.api.DerivingTarget, logger: std.deriving.api.Logger): std.ast.Tokens
 }
 
 struct DerivingInterfaceInfo {
@@ -264,17 +255,17 @@ struct DerivingInterfaceInfo {
 
     let genericsInjector: std.deriving.api.GenericsInjector
 
-    init(name: std.deriving.api.QualifiedName, superTypes: std.core.Array<std.deriving.api.QualifiedName>, genericsInjector: std.deriving.api.GenericsInjector) { /* compiled code */ }
+    DerivingInterfaceInfo(name: std.deriving.api.QualifiedName, superTypes: std.core.Array<std.deriving.api.QualifiedName>, genericsInjector: std.deriving.api.GenericsInjector) { /* compiled code */ }
 }
 
 interface AstExt {
-    func appendSuperTypes(types: std.core.Iterable<std.ast.TypeNode>): Unit { /* compiled code */ }
+    abstract func appendSuperTypes(types: std.core.Iterable<std.ast.TypeNode>): Unit
 
-    func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit { /* compiled code */ }
+    abstract func appendConstraints(constraints: std.core.Iterable<std.ast.GenericConstraint>): Unit
 
-    func appendFunction(f: std.ast.FuncDecl): Unit { /* compiled code */ }
+    abstract func appendFunction(f: std.ast.FuncDecl): Unit
 
-    func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl { /* compiled code */ }
+    abstract func appendFunction(q: std.ast.Tokens): std.ast.FuncDecl
 }
 
 extend DerivingTarget {
@@ -384,7 +375,7 @@ class CollectingLogger <: std.core.Object & std.deriving.api.Logger {
 }
 
 interface AppendGenerics {
-    func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit { /* compiled code */ }
+    abstract func appendGenerics(args: std.core.Array<std.ast.TypeNode>): Unit
 }
 
 extend RefType <: AppendGenerics {
@@ -396,15 +387,15 @@ extend QualifiedType <: AppendGenerics {
 }
 
 interface BodyExt {
-    func declsUnwrapped(): std.core.Iterator<std.ast.Decl> { /* compiled code */ }
+    abstract func declsUnwrapped(): std.core.Iterator<std.ast.Decl>
 }
 
 interface FuncParamExt {
-    func unwrapParam(): std.ast.FuncParam { /* compiled code */ }
+    abstract func unwrapParam(): std.ast.FuncParam
 }
 
 interface FunctionExt {
-    func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam> { /* compiled code */ }
+    abstract func funcParamsUnwrapped(): std.core.Iterator<std.ast.FuncParam>
 }
 
 extend Decl <: DeclExt {
@@ -468,5 +459,5 @@ struct Registration <: std.core.Equatable<std.deriving.api.Registration> & std.c
 
     let deriving: std.deriving.api.Deriving
 
-    init(deriving: std.deriving.api.Deriving) { /* compiled code */ }
+    Registration(deriving: std.deriving.api.Deriving) { /* compiled code */ }
 }

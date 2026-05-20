@@ -8,6 +8,7 @@ import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjNamedPattern
+import org.cangnova.cangjie.psi.CjPackageDirective
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjVarOrEnumPattern
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
@@ -32,6 +33,13 @@ internal object AnalysisApiReferenceTestUtils {
             .sortedBy { expression -> expression.getTextOffset() }
             .lastOrNull()
             ?: error("Cannot locate usage simple-name `$referencedName` in `${file.name}`")
+    }
+
+    fun CjSimpleNameExpression.isUsageSimpleNameForAnalysisApiTest(): Boolean {
+        if (isDeclarationNameLike()) return false
+        if (getStrictParentOfType<CjPackageDirective>() != null) return false
+
+        return true
     }
 
     fun CjNamedFunction.isExtendMemberDeclaration(): Boolean {

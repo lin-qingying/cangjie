@@ -20,6 +20,7 @@ import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
 import org.cangnova.cangjie.psi.CjFile
+import java.awt.GraphicsEnvironment
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Assertions.assertNotNull
@@ -86,6 +87,14 @@ class CangJieCoreEnvironmentTest {
             }
 
             assertFalse(application.isWriteAccessAllowed)
+        }
+    }
+
+    @Test
+    fun `core environment forces awt headless mode for standalone bootstrap`() {
+        withEnvironment { _ ->
+            assertSame("true", System.getProperty("java.awt.headless"))
+            assertTrue(GraphicsEnvironment.isHeadless())
         }
     }
 

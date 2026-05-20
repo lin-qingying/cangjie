@@ -383,6 +383,7 @@ interface MacroConstructionService {
     fun expand(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
+        classification: MacroDemandClassification,
         mode: Mode,
         preConstructionDiagnostics: List<MacroConstructionDiagnostic> = emptyList(),
     ): MacroConstructionResult
@@ -471,13 +472,20 @@ fun MacroConstructionService.expandWithDefaultContext(
         symbolIndex = symbolIndex,
         defaultMacroImports = defaultMacroImports,
     )
-    return expand(pre, context, mode)
+    val classification = MacroDemandClassification.create(pre, defaultMacroImports = defaultMacroImports)
+    classification.freezeFinal(
+        libraryDefinitions = libraryDefinitions,
+        sharedBuiltinDefinitions = sharedBuiltinDefinitions,
+        macroArtifactDefinitions = macroArtifactDefinitions,
+    )
+    return expand(pre, context, classification, mode)
 }
 
 private object IdentityMacroConstructionService : MacroConstructionService {
     override fun expand(
         pre: PreMacroRawBuildResult,
         context: MacroResolutionContext,
+        classification: MacroDemandClassification,
         mode: MacroConstructionService.Mode,
         preConstructionDiagnostics: List<MacroConstructionDiagnostic>,
     ): MacroConstructionResult {

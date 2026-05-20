@@ -77,7 +77,7 @@ class Scope <: std.core.Object & std.core.Equatable<std.deriving.resolve.Scope> 
 
     let kind: std.deriving.resolve.ScopeKind
 
-    init(parent: std.core.Option<std.deriving.resolve.Scope>, kind: std.deriving.resolve.ScopeKind) { /* compiled code */ }
+    Scope(parent: std.core.Option<std.deriving.resolve.Scope>, kind: std.deriving.resolve.ScopeKind) { /* compiled code */ }
 }
 
 func callType(call: std.ast.CallExpr, scope: std.deriving.resolve.Scope): std.core.Option<std.ast.TypeNode> { /* compiled code */ }

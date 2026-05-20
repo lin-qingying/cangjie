@@ -54,13 +54,13 @@ allprojects {
 }
 
 dependencies {
-    kover(project(":analysis:analysis-api-cfir"))
-    kover(project(":analysis:low-level-api-cfir"))
-    kover(project(":analysis:cj-references"))
-    kover(project(":analysis:light-declarations"))
-    kover(project(":analysis:symbol-light-declarations"))
-    kover(project(":analysis:stubs"))
-    kover(project(":analysis:decompiled"))
+    // 根聚合覆盖率只消费各模块发布的 Kover artifact，不能传递解析模块的普通 runtime 依赖。
+    kover(project(":analysis:analysis-api-cfir")) { isTransitive = false }
+    kover(project(":analysis:cj-references")) { isTransitive = false }
+    kover(project(":analysis:light-declarations")) { isTransitive = false }
+    kover(project(":analysis:symbol-light-declarations")) { isTransitive = false }
+    kover(project(":analysis:stubs")) { isTransitive = false }
+    kover(project(":analysis:decompiled")) { isTransitive = false }
 }
 
 kover {
@@ -89,8 +89,6 @@ tasks.register("reportAnalysisCoverage") {
     dependsOn(
         ":analysis:analysis-api-cfir:koverHtmlReport",
         ":analysis:analysis-api-cfir:koverXmlReport",
-        ":analysis:low-level-api-cfir:koverHtmlReport",
-        ":analysis:low-level-api-cfir:koverXmlReport",
         ":analysis:cj-references:koverHtmlReport",
         ":analysis:cj-references:koverXmlReport",
         ":analysis:light-declarations:koverHtmlReport",
@@ -109,7 +107,6 @@ tasks.register("verifyAnalysisCoverage") {
     description = "Verify module-level analysis coverage thresholds."
     dependsOn(
         ":analysis:analysis-api-cfir:koverVerify",
-        ":analysis:low-level-api-cfir:koverVerify",
         ":analysis:cj-references:koverVerify",
         ":analysis:light-declarations:koverVerify",
         ":analysis:symbol-light-declarations:koverVerify",
@@ -739,6 +736,12 @@ val idePublicationArtifacts = linkedMapOf(
     """)),
     ":prepare:ide-plugin-dependencies:cangjie-frontend-psi-for-ide" to ("cangjie-frontend-psi-for-ide" to md("""
         **IDE plugin dependency:** packages :psi (with :common, :util) into a single fat jar.
+    """)),
+    ":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-formatting-for-ide" to ("cangjie-frontend-code-insight-formatting-for-ide" to md("""
+        **IDE plugin dependency:** packages :code-insight:formatting (with :psi, :common, :util) into a single fat jar.
+    """)),
+    ":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-folding-for-ide" to ("cangjie-frontend-code-insight-folding-for-ide" to md("""
+        **IDE plugin dependency:** packages :code-insight:folding (with :psi, :common, :util) into a single fat jar.
     """)),
     ":prepare:ide-plugin-dependencies:cangjie-frontend-cfir-for-ide" to ("cangjie-frontend-cfir-for-ide" to md("""
         **IDE plugin dependency:** packages :cfir:* full series and :common:diagnostics into a single fat jar.

@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.unittest.mock.mockmacro, facadeFqName=std.unittest.mock.mockmacro, facadePartSimpleNames=[generate, macros, parse_matcher, parse_stub, preprocess, syntax_errors, util]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=true]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$DOT_QUALIFIED_EXPRESSION
         CangJieStub$DOT_QUALIFIED_EXPRESSION

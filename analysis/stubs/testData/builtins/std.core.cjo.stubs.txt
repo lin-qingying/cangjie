@@ -1,5 +1,5 @@
 CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core, facadePartSimpleNames=[annotation, arithmetic_exception, array, array_common, array_intrinsic, atexit, atomic, box, byte_extension, c_pointer_resource, c_string_resource, c_type, char_extension, collection, comparable, countable, duration, endian, equatable, error, exception, float, flow, future, hashable, illegal_argument_exception, illegal_format_exception, illegal_memory_exception, illegal_state_exception, incompatible_package_exception, index_out_of_bounds_exception, iterator, libc, main_args, native, negative_array_size_exception, none_value_exception, object, option, out_of_memory_error, overflow_exception, print, range, resource, runtime_call_throw_exception, sleep, spawn_exception, stack_overflow_error, stack_trace_element, string, string_builder, string_common, thread, thread_common, thread_local, timeout_exception, to_string, type_alias, unsupported_exception]]]
-  CangJieStub$PACKAGE_DIRECTIVE
+  CangJieStub$PACKAGE_DIRECTIVE[isMacroPackage=false]
     CangJieStub$DOT_QUALIFIED_EXPRESSION
       CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
       CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
@@ -71,14 +71,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$PROPERTY[fqName=null, isTopLevel=false, isTopLevel=false, name=size]
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-        CangJieStub$PROPERTY_BODY
-          CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
@@ -126,7 +124,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -166,7 +164,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -1364,7 +1362,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -3628,7 +3626,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
@@ -5254,7 +5252,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7419,7 +7417,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -7430,7 +7428,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
             CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
@@ -7696,12 +7694,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=StringIteratorData]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=StringByteIterator]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=StringByteIterator]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7813,12 +7812,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=StringIteratorData]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=StringRuneIterator]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=StringRuneIterator]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -7878,12 +7878,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=StringIteratorData]
-      CangJieStub$SECONDARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=false, isTopLevel=false, name=StringLineIterator]
+      CangJieStub$PRIMARY_CONSTRUCTOR[fqName=null, hasBody=true, isPrimary=true, isTopLevel=false, name=StringLineIterator]
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
+            CangJieStub$MODIFIER_LIST[]
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$USER_TYPE
@@ -9735,7 +9736,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
@@ -9919,12 +9920,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -10052,12 +10053,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
             CangJieStub$TYPE_REFERENCE
               CangJieStub$USER_TYPE
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -10239,13 +10240,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
@@ -10361,12 +10362,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
             CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
           CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
         CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -10565,12 +10566,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -10811,12 +10812,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -11768,7 +11769,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11783,7 +11784,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11798,7 +11799,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11813,7 +11814,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -11877,12 +11878,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -11904,12 +11905,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -11991,12 +11992,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12078,12 +12079,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12165,12 +12166,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12252,12 +12253,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12279,12 +12280,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Ordering]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12366,12 +12367,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12453,12 +12454,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12540,12 +12541,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12627,12 +12628,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12714,12 +12715,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Float16]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12801,12 +12802,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Float32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Comparable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Comparable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Comparable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Comparable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12888,12 +12889,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Float64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12916,12 +12917,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=IntNative]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12944,12 +12945,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -12972,12 +12973,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int32]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13000,12 +13001,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int16]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13028,12 +13029,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int8]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13056,12 +13057,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13084,12 +13085,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13112,12 +13113,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13140,12 +13141,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13168,12 +13169,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt8]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Countable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Countable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Countable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Countable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13528,12 +13529,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=UInt32]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -13555,12 +13556,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=Duration]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -13572,12 +13573,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -13609,12 +13610,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -13626,12 +13627,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -13728,7 +13729,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[operator]
+        CangJieStub$MODIFIER_LIST[abstract operator]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -13737,12 +13738,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=T]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Equatable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Equatable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Equatable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -13759,12 +13760,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
               CangJieStub$BASIC_TYPE[basicType=Bool]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Equatable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Equatable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Equatable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Equatable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14207,12 +14208,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$INTERFACE_BODY
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -14230,12 +14231,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -14253,12 +14254,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt32]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$CLASS_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -14276,72 +14277,72 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=UInt16]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:BitCastRange, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:BitCastRange, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:BitCastRange, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:BitCastRange, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:BitCastRange, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:BitCastRange, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:BitCastRange, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:BitCastRange, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:BitCastRange, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:BitCastRange, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
           CangJieStub$USER_TYPE
             CangJieStub$REFERENCE_EXPRESSION[referencedName=BitCastRange]
     CangJieStub$CLASS_BODY
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:BitCastRange, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[BitCastRange]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:BitCastRange, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[BitCastRange]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14721,13 +14722,13 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Bool]
@@ -14749,12 +14750,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14767,12 +14768,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14785,12 +14786,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14843,12 +14844,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Float64]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=Int64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14875,12 +14876,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=IntNative]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14907,12 +14908,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Int64]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14939,12 +14940,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Int32]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -14971,12 +14972,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Int16]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15003,12 +15004,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Int8]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15035,12 +15036,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=UIntNative]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15067,12 +15068,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=UInt64]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15099,12 +15100,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=UInt32]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15131,12 +15132,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=UInt16]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15163,12 +15164,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=UInt8]
         CangJieStub$PROPERTY_BODY
           CangJieStub$PROPERTY_ACCESSOR[hasBlockBody=true, hasBody=true, isGetter=true]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15295,12 +15296,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                       CangJieStub$BASIC_TYPE[basicType=Float64]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float64]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15427,12 +15428,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                       CangJieStub$BASIC_TYPE[basicType=Float32]
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Float32]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:Hashable, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[Hashable]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:Hashable, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[Hashable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -15583,19 +15584,19 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[]
+        CangJieStub$MODIFIER_LIST[abstract]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Int64]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
         CangJieStub$TYPE_REFERENCE
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15605,7 +15606,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15615,7 +15616,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15625,7 +15626,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15635,7 +15636,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15645,7 +15646,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15655,7 +15656,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15665,7 +15666,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15675,7 +15676,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15685,7 +15686,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15695,7 +15696,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15705,7 +15706,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15715,7 +15716,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -15725,7 +15726,7 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
           CangJieStub$BASIC_TYPE[basicType=Unit]
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
-        CangJieStub$MODIFIER_LIST[mut]
+        CangJieStub$MODIFIER_LIST[abstract mut]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -18209,12 +18210,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18232,12 +18233,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18255,12 +18256,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18278,12 +18279,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18301,12 +18302,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18324,12 +18325,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18347,12 +18348,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18370,12 +18371,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18393,12 +18394,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18416,12 +18417,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18439,12 +18440,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18462,12 +18463,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18485,12 +18486,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18508,12 +18509,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18531,12 +18532,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -18554,12 +18555,12 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
                 CangJieStub$REFERENCE_EXPRESSION[referencedName=std]
               CangJieStub$REFERENCE_EXPRESSION[referencedName=core]
             CangJieStub$REFERENCE_EXPRESSION[referencedName=String]
-  CangJieStub$EXTEND[classId=std/core/Extend, extendId=std.core:Extend<:ToString, fqName=std.core.Extend, name=Extend, receiverTypeName=Extend, superNames=[ToString]]
+  CangJieStub$EXTEND[classId=std/core/Unit, extendId=std.core:kotlin.Unit<:ToString, fqName=std.core.Unit, name=Unit, receiverTypeName=kotlin.Unit, superNames=[ToString]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
-        CangJieStub$REFERENCE_EXPRESSION[referencedName=Extend]
+        CangJieStub$REFERENCE_EXPRESSION[referencedName=Unit]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE

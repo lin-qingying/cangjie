@@ -3,9 +3,11 @@ package org.cangnova.cangjie.analysis.test.framework.projectStructure
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.analysis.api.CaExperimentalApi
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.explicitModule
 import org.cangnova.cangjie.analysis.test.framework.AnalysisApiTestDirectives
 import org.cangnova.cangjie.analysis.test.framework.analysisApiModuleKind
 import org.cangnova.cangjie.analysis.test.framework.hasAnalysisApiFallbackDependencies
@@ -130,6 +132,10 @@ object CjTestModuleStructureFactory {
         if (primaryModule is CaDanglingFileModuleImpl) {
             primaryModule.contextModule = requireNotNull(resolvedRegularDependencies.firstOrNull()) {
                 "Code fragment 测试模块 `${cjTestModule.name}` 必须显式绑定 context module。"
+            }
+            primaryModule.files.forEach { file ->
+                @OptIn(CaExperimentalApi::class)
+                file.explicitModule = primaryModule
             }
         }
 

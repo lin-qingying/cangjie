@@ -83,13 +83,13 @@ struct ImmutableInputProvider <: std.unittest.BenchInputProvider<T> {
 
     let data: T
 
-    init(data: T) { /* compiled code */ }
+    ImmutableInputProvider(data: T) { /* compiled code */ }
 }
 
 interface BenchInputProvider <: std.unittest.BenchmarkInputMarker {
     mut func reset(max: Int64): Unit { /* compiled code */ }
 
-    mut func `get`(idx: Int64): T { /* compiled code */ }
+    abstract mut func `get`(idx: Int64): T
 }
 
 struct BatchInputProvider <: std.unittest.BenchInputProvider<T> {
@@ -101,7 +101,7 @@ struct BatchInputProvider <: std.unittest.BenchInputProvider<T> {
 
     let builder: () -> T
 
-    init(builder: () -> T) { /* compiled code */ }
+    BatchInputProvider(builder: () -> T) { /* compiled code */ }
 }
 
 struct BatchSizeOneInputProvider <: std.unittest.BenchInputProvider<T> {
@@ -113,7 +113,7 @@ struct BatchSizeOneInputProvider <: std.unittest.BenchInputProvider<T> {
 
     let builder: () -> T
 
-    init(builder: () -> T) { /* compiled code */ }
+    BatchSizeOneInputProvider(builder: () -> T) { /* compiled code */ }
 }
 
 struct GenerateEachInputProvider <: std.unittest.BenchInputProvider<T> {
@@ -123,7 +123,7 @@ struct GenerateEachInputProvider <: std.unittest.BenchInputProvider<T> {
 
     let builder: () -> T
 
-    init(builder: () -> T) { /* compiled code */ }
+    GenerateEachInputProvider(builder: () -> T) { /* compiled code */ }
 }
 
 class TestSuiteResult <: std.unittest.ResultContainer<std.unittest.TestCaseResult> {
@@ -135,17 +135,15 @@ class TestSuiteResult <: std.unittest.ResultContainer<std.unittest.TestCaseResul
 
     let suiteInfo: std.unittest.TestSuiteReportInfo
 
-    init(suiteId: std.unittest.TestSuiteId, suiteInfo: std.unittest.TestSuiteReportInfo) { /* compiled code */ }
+    TestSuiteResult(suiteId: std.unittest.TestSuiteId, suiteInfo: std.unittest.TestSuiteReportInfo) { /* compiled code */ }
 }
 
 interface BenchTable {
     static func build(suiteResult: std.unittest.TestSuiteResult, baselineReport: std.collection.HashMap<std.core.String, Float64>): std.core.Option<std.unittest.BenchTable> { /* compiled code */ }
 
-    func doBuild(): std.unittest.PrettyTable { /* compiled code */ }
+    abstract func doBuild(): std.unittest.PrettyTable
 
-    prop hasBaselineHeader: Bool {
-        get() { /* compiled code */ }
-    }
+    abstract prop hasBaselineHeader: Bool
 }
 
 class BenchTableImpl <: std.core.Object & std.unittest.BenchTable {
@@ -175,15 +173,15 @@ class BenchTableImpl <: std.core.Object & std.unittest.BenchTable {
 
     let table: std.unittest.PrettyTable
 
-    init(props: std.unittest.BenchTableProperties, table: std.unittest.PrettyTable) { /* compiled code */ }
+    BenchTableImpl(props: std.unittest.BenchTableProperties, table: std.unittest.PrettyTable) { /* compiled code */ }
 }
 
 foreign func GetRdtscp(): UInt64
 
 interface TestFilter {
-    func shouldSkipTestClass(suiteFilterKey: std.unittest.SuiteFilterKey): Bool { /* compiled code */ }
+    abstract func shouldSkipTestClass(suiteFilterKey: std.unittest.SuiteFilterKey): Bool
 
-    func shouldSkipTestCase(caseFilterKey: std.unittest.CaseFilterKey): Bool { /* compiled code */ }
+    abstract func shouldSkipTestCase(caseFilterKey: std.unittest.CaseFilterKey): Bool
 }
 
 class CompositeTestFilter <: std.core.Object & std.unittest.TestFilter {
@@ -193,7 +191,7 @@ class CompositeTestFilter <: std.core.Object & std.unittest.TestFilter {
 
     let filters: std.core.Array<std.unittest.TestFilter>
 
-    init(filters: std.core.Array<std.unittest.TestFilter>) { /* compiled code */ }
+    CompositeTestFilter(filters: std.core.Array<std.unittest.TestFilter>) { /* compiled code */ }
 }
 
 class TagsTestFilter <: std.core.Object & std.unittest.UserTestFilter {
@@ -247,7 +245,7 @@ struct SuiteFilterKey {
 
     let topLevelFunc: std.core.Option<std.core.String>
 
-    init(suiteId: std.unittest.TestSuiteId, tags: std.core.Array<std.core.String>, topLevelFunc: std.core.Option<std.core.String>) { /* compiled code */ }
+    SuiteFilterKey(suiteId: std.unittest.TestSuiteId, tags: std.core.Array<std.core.String>, topLevelFunc: std.core.Option<std.core.String>) { /* compiled code */ }
 }
 
 class TestSuite {
@@ -287,7 +285,7 @@ class TestSuite {
 
     let template: std.core.Option<std.unittest.TestSuite>
 
-    init(_name: std.core.String, cases: std.core.Array<std.unittest.CaseOrBench>, suiteConfiguration: std.unittest.common.Configuration, beforeAlls: std.core.Array<() -> Unit>, beforeEachs: std.core.Array<(std.core.String) -> Unit>, afterEachs: std.core.Array<(std.core.String) -> Unit>, afterAlls: std.core.Array<() -> Unit>, template: std.core.Option<std.unittest.TestSuite>) { /* compiled code */ }
+    TestSuite(_name: std.core.String, cases: std.core.Array<std.unittest.CaseOrBench>, suiteConfiguration: std.unittest.common.Configuration, beforeAlls: std.core.Array<() -> Unit>, beforeEachs: std.core.Array<(std.core.String) -> Unit>, afterEachs: std.core.Array<(std.core.String) -> Unit>, afterAlls: std.core.Array<() -> Unit>, template: std.core.Option<std.unittest.TestSuite>) { /* compiled code */ }
 }
 
 interface ReportFormat {
@@ -301,7 +299,7 @@ interface ReportFormat {
 
     static func fromDefaultConfiguration(): std.core.Option<std.unittest.ReportFormat> { /* compiled code */ }
 
-    func report(testInfo: std.unittest.TestGroupResult): Unit { /* compiled code */ }
+    abstract func report(testInfo: std.unittest.TestGroupResult): Unit
 }
 
 enum BenchReportFormat <: std.unittest.ReportFormat {
@@ -379,9 +377,7 @@ interface Result <: std.unittest.common.Serializable<std.unittest.Result> {
 
     static func deserialize(dm: std.unittest.common.DataModel): std.unittest.Result { /* compiled code */ }
 
-    prop details: std.unittest.Details {
-        get() { /* compiled code */ }
-    }
+    abstract prop details: std.unittest.Details
 }
 
 class RunStepResult <: std.core.Object & std.unittest.Result {
@@ -409,7 +405,7 @@ class RunStepResult <: std.core.Object & std.unittest.Result {
 
     let duration: std.core.Duration
 
-    init(checksPassed: Int64, startTimestamp: std.time.DateTime, kind: std.unittest.StepKind, info: std.unittest.StepInfo, duration: std.core.Duration) { /* compiled code */ }
+    RunStepResult(checksPassed: Int64, startTimestamp: std.time.DateTime, kind: std.unittest.StepKind, info: std.unittest.StepInfo, duration: std.core.Duration) { /* compiled code */ }
 }
 
 class TestCaseResult <: std.unittest.ResultContainer<std.unittest.RunStepResult> {
@@ -433,7 +429,7 @@ class TestCaseResult <: std.unittest.ResultContainer<std.unittest.RunStepResult>
 
     let renderOptions: std.unittest.RenderOptions
 
-    init(caseId: std.unittest.TestCaseId, caseInfo: std.unittest.TestCaseReportInfo, renderOptions: std.unittest.RenderOptions) { /* compiled code */ }
+    TestCaseResult(caseId: std.unittest.TestCaseId, caseInfo: std.unittest.TestCaseReportInfo, renderOptions: std.unittest.RenderOptions) { /* compiled code */ }
 }
 
 class TestGroupResult <: std.unittest.ResultContainer<std.unittest.GroupResultPart> {
@@ -449,7 +445,7 @@ class TestGroupResult <: std.unittest.ResultContainer<std.unittest.GroupResultPa
 
     let nonTestOutputs: std.core.Array<std.unittest.NonTestOutputs>
 
-    init(groupName: std.core.String, nonTestOutputs: std.core.Array<std.unittest.NonTestOutputs>) { /* compiled code */ }
+    TestGroupResult(groupName: std.core.String, nonTestOutputs: std.core.Array<std.unittest.NonTestOutputs>) { /* compiled code */ }
 }
 
 class Details {
@@ -485,7 +481,7 @@ class Details {
 
     var isAccountedStep: Bool
 
-    init(testcode: std.unittest.TestCode, isAccountedStep: Bool) { /* compiled code */ }
+    Details(testcode: std.unittest.TestCode, isAccountedStep: Bool) { /* compiled code */ }
 }
 
 class RememberingDataProvider <: std.core.Object & std.unittest.common.DataProvider<T> {
@@ -497,7 +493,7 @@ class RememberingDataProvider <: std.core.Object & std.unittest.common.DataProvi
 
     let delegate: std.unittest.common.DataProvider<T>
 
-    init(name: std.core.String, delegate: std.unittest.common.DataProvider<T>) { /* compiled code */ }
+    RememberingDataProvider(name: std.core.String, delegate: std.unittest.common.DataProvider<T>) { /* compiled code */ }
 }
 
 struct MeasurementInfo {
@@ -507,19 +503,19 @@ struct MeasurementInfo {
 
     let textDescription: std.core.String
 
-    init(conversionTable: std.core.Array<(Float64, std.core.String)>, name: std.core.String, textDescription: std.core.String) { /* compiled code */ }
+    MeasurementInfo(conversionTable: std.core.Array<(Float64, std.core.String)>, name: std.core.String, textDescription: std.core.String) { /* compiled code */ }
 }
 
 class TestReport <: std.unittest.Report {
     func reportTo(reporter: std.unittest.Reporter<std.unittest.TestReport, T>): T { /* compiled code */ }
 
-    init(groupResult: std.unittest.TestGroupResult, runConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
+    TestReport(groupResult: std.unittest.TestGroupResult, runConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
 }
 
 class BenchReport <: std.unittest.Report {
     func reportTo(reporter: std.unittest.Reporter<std.unittest.BenchReport, T>): T { /* compiled code */ }
 
-    init(groupResult: std.unittest.TestGroupResult, runConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
+    BenchReport(groupResult: std.unittest.TestGroupResult, runConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
 }
 
 enum ExecutionMode {
@@ -539,7 +535,7 @@ struct FilterService {
 
     let frameworkFilter: std.unittest.FrameworkTestFilter
 
-    init(userFilter: std.unittest.TestFilter, frameworkFilter: std.unittest.FrameworkTestFilter) { /* compiled code */ }
+    FilterService(userFilter: std.unittest.TestFilter, frameworkFilter: std.unittest.FrameworkTestFilter) { /* compiled code */ }
 }
 
 class TestSuiteBuilder {
@@ -583,7 +579,7 @@ class TestSuiteBuilder {
 
     var name: std.core.String
 
-    init(name: std.core.String) { /* compiled code */ }
+    TestSuiteBuilder(name: std.core.String) { /* compiled code */ }
 }
 
 enum CaseOrBench {
@@ -633,7 +629,7 @@ class TestGroup {
 
     let groupConfiguration: std.unittest.common.Configuration
 
-    init(_name: std.core.String, suites: std.core.Array<std.unittest.TestSuite>, groupConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
+    TestGroup(_name: std.core.String, suites: std.core.Array<std.unittest.TestSuite>, groupConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
 }
 
 class TestGroupBuilder {
@@ -655,7 +651,7 @@ class TestGroupBuilder {
 
     var name: std.core.String
 
-    init(name: std.core.String) { /* compiled code */ }
+    TestGroupBuilder(name: std.core.String) { /* compiled code */ }
 }
 
 class UnitTestCase {
@@ -677,7 +673,7 @@ class UnitTestCase {
 
     let executor: std.unittest.Executor
 
-    init(_name: std.core.String, caseConfiguration: std.unittest.common.Configuration, executor: std.unittest.Executor) { /* compiled code */ }
+    UnitTestCase(_name: std.core.String, caseConfiguration: std.unittest.common.Configuration, executor: std.unittest.Executor) { /* compiled code */ }
 }
 
 class Benchmark {
@@ -701,7 +697,7 @@ class Benchmark {
 
     let executor: std.unittest.Executor
 
-    init(_name: std.core.String, benchmarkConfiguration: std.unittest.common.Configuration, executor: std.unittest.Executor) { /* compiled code */ }
+    Benchmark(_name: std.core.String, benchmarkConfiguration: std.unittest.common.Configuration, executor: std.unittest.Executor) { /* compiled code */ }
 }
 
 class DataStrategyProcessor {
@@ -709,17 +705,15 @@ class DataStrategyProcessor {
 
     var currentReduction: Int64
 
-    prop isInfinite: Bool {
-        get() { /* compiled code */ }
-    }
+    abstract prop isInfinite: Bool
 
-    func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<T> { /* compiled code */ }
+    abstract func provide(configuration: std.unittest.common.Configuration): std.core.Iterable<T>
 
-    func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<T> { /* compiled code */ }
+    abstract func shrinkLastItem(configuration: std.unittest.common.Configuration, engine: std.unittest.LazyCyclicNode): std.core.Iterable<T>
 
-    func lastItemInfo(): std.core.Array<std.unittest.InputParameter> { /* compiled code */ }
+    abstract func lastItemInfo(): std.core.Array<std.unittest.InputParameter>
 
-    func lastItem(configuration: std.unittest.common.Configuration): T { /* compiled code */ }
+    abstract func lastItem(configuration: std.unittest.common.Configuration): T
 
     func nextIteration(configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
 
@@ -741,11 +735,11 @@ class DataStrategyProcessor {
 
     static func start(f: () -> std.unittest.DataStrategyProcessor<U>, _: std.core.String, x: Int64): std.unittest.DataStrategyProcessor<U> { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    DataStrategyProcessor() { /* compiled code */ }
 }
 
 interface Executor {
-    func execute(suiteInfo: std.unittest.TestSuiteReportInfo, caseResult: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit { /* compiled code */ }
+    abstract func execute(suiteInfo: std.unittest.TestSuiteReportInfo, caseResult: std.unittest.TestCaseResult, configuration: std.unittest.common.Configuration): Unit
 }
 
 interface Measurement {
@@ -777,7 +771,7 @@ struct TestCaseInfo {
 
     let caseName: std.core.String
 
-    init(groupName: std.core.String, suiteName: std.core.String, caseName: std.core.String) { /* compiled code */ }
+    TestCaseInfo(groupName: std.core.String, suiteName: std.core.String, caseName: std.core.String) { /* compiled code */ }
 }
 
 class Report {
@@ -807,14 +801,14 @@ class Report {
 
     let runConfiguration: std.unittest.common.Configuration
 
-    init(groupResult: std.unittest.TestGroupResult, runConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
+    Report(groupResult: std.unittest.TestGroupResult, runConfiguration: std.unittest.common.Configuration) { /* compiled code */ }
 }
 
 interface Reporter {
 }
 
 interface TestClass {
-    func asTestSuite(): std.unittest.TestSuite { /* compiled code */ }
+    abstract func asTestSuite(): std.unittest.TestSuite
 }
 
 class TestPackage {
@@ -830,7 +824,7 @@ class TestPackage {
 
     let name: std.core.String
 
-    init(name: std.core.String) { /* compiled code */ }
+    TestPackage(name: std.core.String) { /* compiled code */ }
 }
 
 interface FrameworkTestFilter <: std.unittest.TestFilter {
@@ -880,7 +874,7 @@ class AssertionCtx {
 
     let _caller: std.core.String
 
-    init(_passedArgs: std.core.Array<std.core.String>, _caller: std.core.String) { /* compiled code */ }
+    AssertionCtx(_passedArgs: std.core.Array<std.core.String>, _caller: std.core.String) { /* compiled code */ }
 }
 
 func assertEqual(leftStr: std.core.String, rightStr: std.core.String, expected: T, actual: T, isDelta: Bool, optParentCtx: std.core.Option<std.unittest.AssertionCtx>): Unit { /* compiled code */ }
@@ -904,7 +898,7 @@ enum CheckResultKind <: std.unittest.common.Serializable<std.unittest.CheckResul
 class AssertExpectCheckResult <: std.unittest.CheckResult {
     let kind: std.unittest.CheckResultKind
 
-    init(kind: std.unittest.CheckResultKind) { /* compiled code */ }
+    AssertExpectCheckResult(kind: std.unittest.CheckResultKind) { /* compiled code */ }
 }
 
 class AssertException <: std.core.Exception {
@@ -973,29 +967,29 @@ struct SimpleBenchWrapper <: std.unittest.BenchmarkWrapper {
 
     let f: (T, Int64, Int64) -> Float64
 
-    init(input: T, f: (T, Int64, Int64) -> Float64) { /* compiled code */ }
+    SimpleBenchWrapper(input: T, f: (T, Int64, Int64) -> Float64) { /* compiled code */ }
 }
 
 interface BenchmarkWrapper {
-    func measureLoopOnce(times: Int64, max: Int64): Float64 { /* compiled code */ }
+    abstract func measureLoopOnce(times: Int64, max: Int64): Float64
 
-    func timeLoopOnce(times: Int64, max: Int64): Float64 { /* compiled code */ }
+    abstract func timeLoopOnce(times: Int64, max: Int64): Float64
 }
 
 interface BenchmarkConfig {
-    func batchSize(b: Int64): Unit { /* compiled code */ }
+    abstract func batchSize(b: Int64): Unit
 
-    func batchSize(x: std.core.Range<Int64>): Unit { /* compiled code */ }
+    abstract func batchSize(x: std.core.Range<Int64>): Unit
 
-    func warmup(x: Int64): Unit { /* compiled code */ }
+    abstract func warmup(x: Int64): Unit
 
-    func warmup(x: std.core.Duration): Unit { /* compiled code */ }
+    abstract func warmup(x: std.core.Duration): Unit
 
-    func minDuration(x: std.core.Duration): Unit { /* compiled code */ }
+    abstract func minDuration(x: std.core.Duration): Unit
 
-    func explicitGC(x: std.unittest.ExplicitGcType): Unit { /* compiled code */ }
+    abstract func explicitGC(x: std.unittest.ExplicitGcType): Unit
 
-    func minBatches(x: Int64): Unit { /* compiled code */ }
+    abstract func minBatches(x: Int64): Unit
 }
 
 enum ExplicitGcType <: std.core.ToString {
@@ -1039,7 +1033,7 @@ class BenchExecutor <: std.core.Object & std.unittest.Executor {
 
     let doRun: (T, Int64, Int64) -> Float64
 
-    init(strategy: std.unittest.DataStrategyProcessor<T>, doRun: (T, Int64, Int64) -> Float64) { /* compiled code */ }
+    BenchExecutor(strategy: std.unittest.DataStrategyProcessor<T>, doRun: (T, Int64, Int64) -> Float64) { /* compiled code */ }
 }
 
 struct TestSuiteReportInfo {
@@ -1049,7 +1043,7 @@ struct TestSuiteReportInfo {
 
     let tags: std.core.Array<std.core.String>
 
-    init(tags: std.core.Array<std.core.String>) { /* compiled code */ }
+    TestSuiteReportInfo(tags: std.core.Array<std.core.String>) { /* compiled code */ }
 }
 
 class InputParameter {
@@ -1061,7 +1055,7 @@ class InputParameter {
 
     let name: std.core.String
 
-    init(name: std.core.String) { /* compiled code */ }
+    InputParameter(name: std.core.String) { /* compiled code */ }
 }
 
 struct TestCaseId <: std.unittest.common.Serializable<std.unittest.TestCaseId> & std.core.Hashable & std.core.Equatable<std.unittest.TestCaseId> & std.core.ToString {
@@ -1085,7 +1079,7 @@ struct TestCaseId <: std.unittest.common.Serializable<std.unittest.TestCaseId> &
 
     let isBench: Bool
 
-    init(suiteId: std.unittest.TestSuiteId, caseName: std.core.String, isBench: Bool) { /* compiled code */ }
+    TestCaseId(suiteId: std.unittest.TestSuiteId, caseName: std.core.String, isBench: Bool) { /* compiled code */ }
 }
 
 struct TestCaseReportInfo {
@@ -1099,7 +1093,7 @@ struct TestCaseReportInfo {
 
     let tags: std.core.Array<std.core.String>
 
-    init(tags: std.core.Array<std.core.String>) { /* compiled code */ }
+    TestCaseReportInfo(tags: std.core.Array<std.core.String>) { /* compiled code */ }
 }
 
 class BenchRunner {
@@ -1139,7 +1133,7 @@ class BenchRunner {
 
     let progress: std.unittest.ProgressOutput
 
-    init(configuration: std.unittest.common.Configuration, progress: std.unittest.ProgressOutput) { /* compiled code */ }
+    BenchRunner(configuration: std.unittest.common.Configuration, progress: std.unittest.ProgressOutput) { /* compiled code */ }
 }
 
 class ProgressOutput {
@@ -1151,7 +1145,7 @@ class ProgressOutput {
 
     func verbose(message: std.core.String): Unit { /* compiled code */ }
 
-    init(configuration: std.unittest.common.Configuration) { /* compiled code */ }
+    ProgressOutput(configuration: std.unittest.common.Configuration) { /* compiled code */ }
 }
 
 struct StatisticsSample {
@@ -1191,7 +1185,7 @@ struct StatisticsSample {
 
     let sample: std.unittest.Sample
 
-    init(sample: std.unittest.Sample) { /* compiled code */ }
+    StatisticsSample(sample: std.unittest.Sample) { /* compiled code */ }
 }
 
 class Sample {
@@ -1209,7 +1203,7 @@ class Sample {
 
     let data: std.collection.ArrayList<Float64>
 
-    init(data: std.collection.ArrayList<Float64>) { /* compiled code */ }
+    Sample(data: std.collection.ArrayList<Float64>) { /* compiled code */ }
 }
 
 let BOOTSTRAP_ITERATIONS: Int64
@@ -1265,7 +1259,7 @@ class BenchmarkResult {
 
     var data: std.collection.ArrayList<(Float64, Float64)>
 
-    init(data: std.collection.ArrayList<(Float64, Float64)>) { /* compiled code */ }
+    BenchmarkResult(data: std.collection.ArrayList<(Float64, Float64)>) { /* compiled code */ }
 }
 
 struct BootstrapResult {
@@ -1321,7 +1315,7 @@ class BenchTableProperties {
 
     let baselineReport: std.collection.HashMap<std.core.String, Float64>
 
-    init(hasArgsColumn: Bool, hasCasesBaseline: Bool, hasMeasurementColumn: Bool, hasRatioColumn: Bool, shouldPrintMeasurement: Bool, conversionTable: std.core.Array<(Float64, std.core.String)>, measurementName: std.core.String, baseline: std.unittest.Baseline, baselineReport: std.collection.HashMap<std.core.String, Float64>) { /* compiled code */ }
+    BenchTableProperties(hasArgsColumn: Bool, hasCasesBaseline: Bool, hasMeasurementColumn: Bool, hasRatioColumn: Bool, shouldPrintMeasurement: Bool, conversionTable: std.core.Array<(Float64, std.core.String)>, measurementName: std.core.String, baseline: std.unittest.Baseline, baselineReport: std.collection.HashMap<std.core.String, Float64>) { /* compiled code */ }
 }
 
 class PrettyTable <: std.core.Object & std.unittest.common.PrettyPrintable {
@@ -1355,7 +1349,7 @@ class PrettyTable <: std.core.Object & std.unittest.common.PrettyPrintable {
 
     let names: std.collection.ArrayList<std.core.String>
 
-    init(names: std.collection.ArrayList<std.core.String>) { /* compiled code */ }
+    PrettyTable(names: std.collection.ArrayList<std.core.String>) { /* compiled code */ }
 }
 
 struct TimeNow <: std.unittest.Measurement {
@@ -1393,7 +1387,7 @@ struct Ema {
 
     let maxLength: Int64
 
-    init(maxLength: Int64) { /* compiled code */ }
+    Ema(maxLength: Int64) { /* compiled code */ }
 }
 
 type MeasurementUnitTable = std.core.Array<(Float64, std.core.String)>
@@ -1447,7 +1441,7 @@ class UnattachedCheckResult <: std.unittest.CheckResult {
 
     let inner: std.unittest.CheckResult
 
-    init(inner: std.unittest.CheckResult) { /* compiled code */ }
+    UnattachedCheckResult(inner: std.unittest.CheckResult) { /* compiled code */ }
 }
 
 class ErrorCheckResult <: std.unittest.CheckResult {
@@ -1467,7 +1461,7 @@ class PlainCompareCheckResult <: std.unittest.AssertExpectCheckResult {
 
     let rightValue: std.core.String
 
-    init(kind: std.unittest.CheckResultKind, leftExpr: std.core.String, rightExpr: std.core.String, leftValue: std.core.String, rightValue: std.core.String) { /* compiled code */ }
+    PlainCompareCheckResult(kind: std.unittest.CheckResultKind, leftExpr: std.core.String, rightExpr: std.core.String, leftValue: std.core.String, rightValue: std.core.String) { /* compiled code */ }
 }
 
 class PlainDeltaCompareCheckResult <: std.unittest.AssertExpectCheckResult {
@@ -1477,7 +1471,7 @@ class PlainDeltaCompareCheckResult <: std.unittest.AssertExpectCheckResult {
 
     let expr: std.core.String
 
-    init(kind: std.unittest.CheckResultKind, expr: std.core.String) { /* compiled code */ }
+    PlainDeltaCompareCheckResult(kind: std.unittest.CheckResultKind, expr: std.core.String) { /* compiled code */ }
 }
 
 class FailCheckResult <: std.unittest.AssertExpectCheckResult {
@@ -1487,7 +1481,7 @@ class FailCheckResult <: std.unittest.AssertExpectCheckResult {
 
     let failMessage: std.core.String
 
-    init(kind: std.unittest.CheckResultKind, failMessage: std.core.String) { /* compiled code */ }
+    FailCheckResult(kind: std.unittest.CheckResultKind, failMessage: std.core.String) { /* compiled code */ }
 }
 
 class AssertThrowsCheckResult <: std.unittest.AssertExpectCheckResult {
@@ -1501,7 +1495,7 @@ class AssertThrowsCheckResult <: std.unittest.AssertExpectCheckResult {
 
     let caughtException: std.core.String
 
-    init(kind: std.unittest.CheckResultKind, message: std.core.String, expectedExceptions: std.core.String, caughtException: std.core.String) { /* compiled code */ }
+    AssertThrowsCheckResult(kind: std.unittest.CheckResultKind, message: std.core.String, expectedExceptions: std.core.String, caughtException: std.core.String) { /* compiled code */ }
 }
 
 class PowerAssertCheckResult <: std.unittest.AssertExpectCheckResult {
@@ -1513,7 +1507,7 @@ class PowerAssertCheckResult <: std.unittest.AssertExpectCheckResult {
 
     let diagram: std.unittest.PowerAssertDiagram
 
-    init(expr: std.core.String, diagram: std.unittest.PowerAssertDiagram) { /* compiled code */ }
+    PowerAssertCheckResult(expr: std.core.String, diagram: std.unittest.PowerAssertDiagram) { /* compiled code */ }
 }
 
 class PowerAssertExceptionCheckResult <: std.unittest.AssertExpectCheckResult {
@@ -1527,7 +1521,7 @@ class PowerAssertExceptionCheckResult <: std.unittest.AssertExpectCheckResult {
 
     let diagram: std.unittest.PowerAssertDiagram
 
-    init(expression: std.core.String, exception: std.core.String, diagram: std.unittest.PowerAssertDiagram) { /* compiled code */ }
+    PowerAssertExceptionCheckResult(expression: std.core.String, exception: std.core.String, diagram: std.unittest.PowerAssertDiagram) { /* compiled code */ }
 }
 
 class DiffCheckResult <: std.unittest.AssertExpectCheckResult {
@@ -1537,7 +1531,7 @@ class DiffCheckResult <: std.unittest.AssertExpectCheckResult {
 
     let diffMessage: std.unittest.common.PrettyText
 
-    init(kind: std.unittest.CheckResultKind, diffMessage: std.unittest.common.PrettyText) { /* compiled code */ }
+    DiffCheckResult(kind: std.unittest.CheckResultKind, diffMessage: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class CustomCheckResult <: std.unittest.AssertExpectCheckResult {
@@ -1547,7 +1541,7 @@ class CustomCheckResult <: std.unittest.AssertExpectCheckResult {
 
     let custom: std.unittest.common.PrettyText
 
-    init(kind: std.unittest.CheckResultKind, custom: std.unittest.common.PrettyText) { /* compiled code */ }
+    CustomCheckResult(kind: std.unittest.CheckResultKind, custom: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class ExceptionThrownCheckResult <: std.unittest.ErrorCheckResult {
@@ -1559,7 +1553,7 @@ class ExceptionThrownCheckResult <: std.unittest.ErrorCheckResult {
 
     let stackTrace: std.unittest.common.PrettyText
 
-    init(errorMessage: std.unittest.common.PrettyText, stackTrace: std.unittest.common.PrettyText) { /* compiled code */ }
+    ExceptionThrownCheckResult(errorMessage: std.unittest.common.PrettyText, stackTrace: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class MockFrameworkCheckResult <: std.unittest.CheckResult {
@@ -1569,7 +1563,7 @@ class MockFrameworkCheckResult <: std.unittest.CheckResult {
 
     let mockFrameworkMessage: std.unittest.common.PrettyText
 
-    init(mockFrameworkMessage: std.unittest.common.PrettyText) { /* compiled code */ }
+    MockFrameworkCheckResult(mockFrameworkMessage: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 class NoParametersProvidedResult <: std.unittest.CheckResult {
@@ -1577,7 +1571,7 @@ class NoParametersProvidedResult <: std.unittest.CheckResult {
 
     static func tryToDeserialize(dms: std.unittest.common.DataModelStruct): std.core.Option<std.unittest.NoParametersProvidedResult> { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    NoParametersProvidedResult() { /* compiled code */ }
 }
 
 class CrashedCheckResult <: std.unittest.CheckResult {
@@ -1587,7 +1581,7 @@ class CrashedCheckResult <: std.unittest.CheckResult {
 
     let exitCode: Int64
 
-    init(exitCode: Int64) { /* compiled code */ }
+    CrashedCheckResult(exitCode: Int64) { /* compiled code */ }
 }
 
 class TimeoutCheckResult <: std.unittest.CheckResult {
@@ -1597,7 +1591,7 @@ class TimeoutCheckResult <: std.unittest.CheckResult {
 
     let msg: std.unittest.common.PrettyText
 
-    init(msg: std.unittest.common.PrettyText) { /* compiled code */ }
+    TimeoutCheckResult(msg: std.unittest.common.PrettyText) { /* compiled code */ }
 }
 
 enum PrettyTreeStruct <: std.unittest.common.PrettyPrintable {
@@ -1631,7 +1625,7 @@ func typeValidator(name: std.core.String): (std.core.Any) -> std.unittest.common
 func registerUnittestOption(key: std.unittest.common.KeyFor<T>, description: std.core.Option<std.core.String>, typeDescription: std.core.Option<(std.core.String, std.core.String)>): Unit { /* compiled code */ }
 
 interface NearEquatable {
-    func isNear(obj: CT, delta: D): Bool { /* compiled code */ }
+    abstract func isNear(obj: CT, delta: D): Bool
 }
 
 struct RelativeDelta {
@@ -1639,26 +1633,26 @@ struct RelativeDelta {
 
     let relative: T
 
-    init(absolute: T, relative: T) { /* compiled code */ }
+    RelativeDelta(absolute: T, relative: T) { /* compiled code */ }
 }
 
 func isNearExpansion(l: CT, r: CT, delta: D, cmpType: std.core.String): Bool { /* compiled code */ }
 
 func isNearExpansion(l: CT, r: CT, delta: D, cmpType: std.core.String, overloadHack: Bool): Bool { /* compiled code */ }
 
-extend Extend <: NearEquatable & NearEquatable {
+extend `Unit` <: NearEquatable & NearEquatable {
     func isNear(obj: Float16, delta: Float16): Bool { /* compiled code */ }
 
     func isNear(obj: Float16, delta: std.unittest.RelativeDelta<Float16>): Bool { /* compiled code */ }
 }
 
-extend Extend <: NearEquatable & NearEquatable {
+extend `Unit` <: NearEquatable & NearEquatable {
     func isNear(obj: Float32, delta: Float32): Bool { /* compiled code */ }
 
     func isNear(obj: Float32, delta: std.unittest.RelativeDelta<Float32>): Bool { /* compiled code */ }
 }
 
-extend Extend <: NearEquatable & NearEquatable {
+extend `Unit` <: NearEquatable & NearEquatable {
     func isNear(obj: Float64, delta: Float64): Bool { /* compiled code */ }
 
     func isNear(obj: Float64, delta: std.unittest.RelativeDelta<Float64>): Bool { /* compiled code */ }
@@ -1671,7 +1665,7 @@ func testRunnerEntryMain(): Int64 { /* compiled code */ }
 class ModuleExecutionResult <: std.unittest.ResultContainer<std.unittest.TestGroupResult> {
     let moduleName: std.core.String
 
-    init(moduleName: std.core.String) { /* compiled code */ }
+    ModuleExecutionResult(moduleName: std.core.String) { /* compiled code */ }
 }
 
 class ResultContainer <: std.core.Object & std.unittest.Result {
@@ -1717,7 +1711,7 @@ class ProjectExecutionResult <: std.unittest.ResultContainer<std.unittest.Module
 class PackageExecutionResult {
     let packageResult: std.unittest.TestGroupResult
 
-    init(packageResult: std.unittest.TestGroupResult) { /* compiled code */ }
+    PackageExecutionResult(packageResult: std.unittest.TestGroupResult) { /* compiled code */ }
 }
 
 struct TestPackageExecuteCommand <: std.unittest.common.Serializable<std.unittest.TestPackageExecuteCommand> {
@@ -1741,7 +1735,7 @@ struct TestPackageExecuteCommand <: std.unittest.common.Serializable<std.unittes
 
     let env: std.collection.Map<std.core.String, std.core.String>
 
-    init(command: std.core.String, args: std.core.Array<std.core.String>, env: std.collection.Map<std.core.String, std.core.String>) { /* compiled code */ }
+    TestPackageExecuteCommand(command: std.core.String, args: std.core.Array<std.core.String>, env: std.collection.Map<std.core.String, std.core.String>) { /* compiled code */ }
 }
 
 struct ParallelCtx {
@@ -1749,7 +1743,7 @@ struct ParallelCtx {
 
     let workersQuota: std.sync.Semaphore
 
-    init(nWorkersPerPackage: Int64, workersQuota: std.sync.Semaphore) { /* compiled code */ }
+    ParallelCtx(nWorkersPerPackage: Int64, workersQuota: std.sync.Semaphore) { /* compiled code */ }
 }
 
 struct ReportCtx {
@@ -1757,7 +1751,7 @@ struct ReportCtx {
 
     let outputReporter: std.unittest.TestOutputReporter
 
-    init(perPackageReporter: std.unittest.PerPackageReporter, outputReporter: std.unittest.TestOutputReporter) { /* compiled code */ }
+    ReportCtx(perPackageReporter: std.unittest.PerPackageReporter, outputReporter: std.unittest.TestOutputReporter) { /* compiled code */ }
 }
 
 class PerPackageReporter {
@@ -1769,7 +1763,7 @@ class PerPackageReporter {
 
     let outputReporter: std.unittest.TestOutputReporter
 
-    init(format: std.core.Option<std.unittest.ReportFormat>, outputReporter: std.unittest.TestOutputReporter) { /* compiled code */ }
+    PerPackageReporter(format: std.core.Option<std.unittest.ReportFormat>, outputReporter: std.unittest.TestOutputReporter) { /* compiled code */ }
 }
 
 class TestOutputReporter {
@@ -1799,7 +1793,7 @@ struct MainExecutionCtx {
 
     let executeCommand: std.unittest.TestPackageExecuteCommand
 
-    init(nWorkers: Int64, workersQuota: std.sync.Semaphore, outputReporter: std.unittest.TestOutputReporter, executeCommand: std.unittest.TestPackageExecuteCommand) { /* compiled code */ }
+    MainExecutionCtx(nWorkers: Int64, workersQuota: std.sync.Semaphore, outputReporter: std.unittest.TestOutputReporter, executeCommand: std.unittest.TestPackageExecuteCommand) { /* compiled code */ }
 }
 
 func executeSmart(packageName: std.core.String, tests: std.core.Array<std.unittest.TestSuite>, filterService: std.unittest.FilterService, outputReporter: std.unittest.TestOutputReporter, needStartWorker: Bool): std.unittest.TestGroupResult { /* compiled code */ }
@@ -1859,7 +1853,7 @@ struct NonTestOutputs <: std.core.Hashable {
 
     let outputAfterTests: std.unittest.CapturedOutput
 
-    init(outputBeforeTests: std.unittest.CapturedOutput, outputAfterTests: std.unittest.CapturedOutput) { /* compiled code */ }
+    NonTestOutputs(outputBeforeTests: std.unittest.CapturedOutput, outputAfterTests: std.unittest.CapturedOutput) { /* compiled code */ }
 }
 
 struct CapturedOutput {
@@ -1873,7 +1867,7 @@ struct CapturedOutput {
 
     let stderr: std.core.String
 
-    init(stdout: std.core.String, stderr: std.core.String) { /* compiled code */ }
+    CapturedOutput(stdout: std.core.String, stderr: std.core.String) { /* compiled code */ }
 }
 
 enum ExecuteRestartingResult {
@@ -1893,7 +1887,7 @@ class TestProcessError <: std.core.Object & std.unittest.Result & std.core.Hasha
 
     let code: Int64
 
-    init(code: Int64) { /* compiled code */ }
+    TestProcessError(code: Int64) { /* compiled code */ }
 }
 
 interface UTProgress {
@@ -1920,7 +1914,7 @@ class TransportChannel <: std.core.Object & std.core.Resource {
 
     let isMain: Bool
 
-    init(socket: std.net.TcpSocket, outputReporter: std.unittest.TestOutputReporter, isMain: Bool) { /* compiled code */ }
+    TransportChannel(socket: std.net.TcpSocket, outputReporter: std.unittest.TestOutputReporter, isMain: Bool) { /* compiled code */ }
 }
 
 struct WrappedProcess {
@@ -1940,7 +1934,7 @@ struct WrappedProcess {
 
     let stdErrFile: std.core.Option<std.fs.Path>
 
-    init(process: std.process.SubProcess, stdOutFile: std.core.Option<std.fs.Path>, stdErrFile: std.core.Option<std.fs.Path>) { /* compiled code */ }
+    WrappedProcess(process: std.process.SubProcess, stdOutFile: std.core.Option<std.fs.Path>, stdErrFile: std.core.Option<std.fs.Path>) { /* compiled code */ }
 }
 
 class ExecutionResultPart <: std.core.Object & std.unittest.common.Serializable<std.unittest.ExecutionResultPart> {
@@ -1952,17 +1946,11 @@ class ExecutionResultPart <: std.core.Object & std.unittest.common.Serializable<
 }
 
 class ExecutionResultHeader <: std.unittest.ExecutionResultPart {
-    prop suiteId: std.unittest.TestSuiteId {
-        get() { /* compiled code */ }
-    }
+    abstract prop suiteId: std.unittest.TestSuiteId
 
-    prop suiteInfo: std.unittest.TestSuiteReportInfo {
-        get() { /* compiled code */ }
-    }
+    abstract prop suiteInfo: std.unittest.TestSuiteReportInfo
 
-    prop startTime: std.time.DateTime {
-        get() { /* compiled code */ }
-    }
+    abstract prop startTime: std.time.DateTime
 
     init() { /* compiled code */ }
 }
@@ -1990,7 +1978,7 @@ struct TestSuiteId <: std.unittest.common.Serializable<std.unittest.TestSuiteId>
 
     let suiteName: std.core.String
 
-    init(groupName: std.core.String, suiteName: std.core.String) { /* compiled code */ }
+    TestSuiteId(groupName: std.core.String, suiteName: std.core.String) { /* compiled code */ }
 }
 
 class TestCaseExecutionResultHeader <: std.unittest.ExecutionResultHeader {
@@ -2014,7 +2002,7 @@ class TestCaseExecutionResultHeader <: std.unittest.ExecutionResultHeader {
 
     let startTime_: std.time.DateTime
 
-    init(caseId: std.unittest.TestCaseId, caseInfo: std.unittest.TestCaseReportInfo, suiteInfo_: std.unittest.TestSuiteReportInfo, startTime_: std.time.DateTime) { /* compiled code */ }
+    TestCaseExecutionResultHeader(caseId: std.unittest.TestCaseId, caseInfo: std.unittest.TestCaseReportInfo, suiteInfo_: std.unittest.TestSuiteReportInfo, startTime_: std.time.DateTime) { /* compiled code */ }
 }
 
 class LifecycleExecutionResultHeader <: std.unittest.ExecutionResultHeader {
@@ -2038,7 +2026,7 @@ class LifecycleExecutionResultHeader <: std.unittest.ExecutionResultHeader {
 
     let startTime_: std.time.DateTime
 
-    init(suiteId_: std.unittest.TestSuiteId, suiteInfo_: std.unittest.TestSuiteReportInfo, step: std.unittest.LStep, startTime_: std.time.DateTime) { /* compiled code */ }
+    LifecycleExecutionResultHeader(suiteId_: std.unittest.TestSuiteId, suiteInfo_: std.unittest.TestSuiteReportInfo, step: std.unittest.LStep, startTime_: std.time.DateTime) { /* compiled code */ }
 }
 
 enum LStep <: std.core.ToString {
@@ -2058,7 +2046,7 @@ enum LStep <: std.core.ToString {
 class ExecutionResultBody <: std.unittest.ExecutionResultPart {
     let stepResult: std.unittest.TestCaseResult
 
-    init(stepResult: std.unittest.TestCaseResult) { /* compiled code */ }
+    ExecutionResultBody(stepResult: std.unittest.TestCaseResult) { /* compiled code */ }
 }
 
 class TestCasesRegistrationPart <: std.unittest.ExecutionResultPart {
@@ -2068,15 +2056,15 @@ class TestCasesRegistrationPart <: std.unittest.ExecutionResultPart {
 
     let packageName: std.core.String
 
-    init(casesCount: UInt64, workerId: Int64, packageName: std.core.String) { /* compiled code */ }
+    TestCasesRegistrationPart(casesCount: UInt64, workerId: Int64, packageName: std.core.String) { /* compiled code */ }
 }
 
 class TestCasesRegistrationFailed <: std.unittest.ExecutionResultPart {
-    init() { /* compiled code */ }
+    TestCasesRegistrationFailed() { /* compiled code */ }
 }
 
 class ExecutionPermitPart <: std.unittest.ExecutionResultPart {
-    init() { /* compiled code */ }
+    ExecutionPermitPart() { /* compiled code */ }
 }
 
 func failExpect(message: std.core.String): Unit { /* compiled code */ }
@@ -2118,7 +2106,7 @@ struct CaseFilterKey {
 
     let isTopLevel: Bool
 
-    init(caseId: std.unittest.TestCaseId, tags: std.core.Array<std.core.String>, isTopLevel: Bool) { /* compiled code */ }
+    CaseFilterKey(caseId: std.unittest.TestCaseId, tags: std.core.Array<std.core.String>, isTopLevel: Bool) { /* compiled code */ }
 }
 
 class BenchTestFilter <: std.core.Object & std.unittest.FrameworkTestFilter {
@@ -2130,7 +2118,7 @@ class BenchTestFilter <: std.core.Object & std.unittest.FrameworkTestFilter {
 
     let benchEnabled: Bool
 
-    init(benchEnabled: Bool) { /* compiled code */ }
+    BenchTestFilter(benchEnabled: Bool) { /* compiled code */ }
 }
 
 struct FilterOption {
@@ -2154,7 +2142,7 @@ struct FilterOption {
 
     let isFuncFilter: Bool
 
-    init(_classRegex: std.core.String, _funcRegex: std.core.String, exclude: Bool, isFuncFilter: Bool) { /* compiled code */ }
+    FilterOption(_classRegex: std.core.String, _funcRegex: std.core.String, exclude: Bool, isFuncFilter: Bool) { /* compiled code */ }
 }
 
 class TagsFilterOption {
@@ -2162,7 +2150,7 @@ class TagsFilterOption {
 
     let tags: std.collection.HashSet<std.core.String>
 
-    init(tags: std.collection.HashSet<std.core.String>) { /* compiled code */ }
+    TagsFilterOption(tags: std.collection.HashSet<std.core.String>) { /* compiled code */ }
 }
 
 class WorkerTestFilter <: std.core.Object & std.unittest.FrameworkTestFilter {
@@ -2188,7 +2176,7 @@ class WorkerTestFilter <: std.core.Object & std.unittest.FrameworkTestFilter {
 
     let nCasesSkip: Int64
 
-    init(defaultFilter: std.unittest.FrameworkTestFilter, workerId: Int64, nWorkers: Int64, nCasesSkip: Int64) { /* compiled code */ }
+    WorkerTestFilter(defaultFilter: std.unittest.FrameworkTestFilter, workerId: Int64, nWorkers: Int64, nCasesSkip: Int64) { /* compiled code */ }
 }
 
 enum LaunchApi {
@@ -2324,11 +2312,11 @@ class RunStepContext <: std.unittest.RunContext {
 
     var stepInfo: std.unittest.StepInfo
 
-    init(stepKind: std.unittest.StepKind, stepInfo: std.unittest.StepInfo) { /* compiled code */ }
+    RunStepContext(stepKind: std.unittest.StepKind, stepInfo: std.unittest.StepInfo) { /* compiled code */ }
 }
 
 class BenchmarkStoppedError <: std.core.Exception {
-    init() { /* compiled code */ }
+    BenchmarkStoppedError() { /* compiled code */ }
 }
 
 struct UInt8Entry {
@@ -2336,7 +2324,7 @@ struct UInt8Entry {
 
     let right: UInt8
 
-    init(left: UInt8, right: UInt8) { /* compiled code */ }
+    UInt8Entry(left: UInt8, right: UInt8) { /* compiled code */ }
 }
 
 struct UInt16Entry {
@@ -2344,7 +2332,7 @@ struct UInt16Entry {
 
     let right: UInt16
 
-    init(left: UInt16, right: UInt16) { /* compiled code */ }
+    UInt16Entry(left: UInt16, right: UInt16) { /* compiled code */ }
 }
 
 struct UInt32Entry {
@@ -2352,7 +2340,7 @@ struct UInt32Entry {
 
     let right: UInt32
 
-    init(left: UInt32, right: UInt32) { /* compiled code */ }
+    UInt32Entry(left: UInt32, right: UInt32) { /* compiled code */ }
 }
 
 struct UInt64Entry {
@@ -2360,7 +2348,7 @@ struct UInt64Entry {
 
     let right: UInt64
 
-    init(left: UInt64, right: UInt64) { /* compiled code */ }
+    UInt64Entry(left: UInt64, right: UInt64) { /* compiled code */ }
 }
 
 struct Float32Entry {
@@ -2368,7 +2356,7 @@ struct Float32Entry {
 
     let right: Float32
 
-    init(left: Float32, right: Float32) { /* compiled code */ }
+    Float32Entry(left: Float32, right: Float32) { /* compiled code */ }
 }
 
 struct Float64Entry {
@@ -2376,7 +2364,7 @@ struct Float64Entry {
 
     let right: Float64
 
-    init(left: Float64, right: Float64) { /* compiled code */ }
+    Float64Entry(left: Float64, right: Float64) { /* compiled code */ }
 }
 
 foreign func CJ_MICROFUZZ_FLIP_BIT_FLOAT(value: Float32, bit: UInt8): Float32
@@ -2428,24 +2416,24 @@ func printMessage(mes: CString, t: CString, v1: UInt64, v2: UInt64): Unit { /* c
 func currentCoverageEst(): Float64 { /* compiled code */ }
 
 interface Torcable {
-    static func randomRecentEntry(): std.core.Option<(T, T)> { /* compiled code */ }
+    abstract static func randomRecentEntry(): std.core.Option<(T, T)>
 
-    static func randomRecentValueComparedTo(value: T): std.core.Option<T> { /* compiled code */ }
+    abstract static func randomRecentValueComparedTo(value: T): std.core.Option<T>
 
-    static func nextFrom(random: std.random.Random): T { /* compiled code */ }
+    abstract static func nextFrom(random: std.random.Random): T
 
-    static func suggestedFrom(random: std.random.Random): T { /* compiled code */ }
+    abstract static func suggestedFrom(random: std.random.Random): T
 
-    func isZero(): Bool { /* compiled code */ }
+    abstract func isZero(): Bool
 
-    func bitFlip(at: UInt8): T { /* compiled code */ }
+    abstract func bitFlip(at: UInt8): T
 
-    operator func +(_: UInt8): T { /* compiled code */ }
+    abstract operator func +(_: UInt8): T
 
-    operator func -(_: UInt8): T { /* compiled code */ }
+    abstract operator func -(_: UInt8): T
 }
 
-extend Extend <: Torcable {
+extend `Unit` <: Torcable {
     static func randomRecentEntry(): std.core.Option<(UInt8, UInt8)> { /* compiled code */ }
 
     static func randomRecentValueComparedTo(value: UInt8): std.core.Option<UInt8> { /* compiled code */ }
@@ -2459,7 +2447,7 @@ extend Extend <: Torcable {
     func bitFlip(at: UInt8): UInt8 { /* compiled code */ }
 }
 
-extend Extend <: Torcable {
+extend `Unit` <: Torcable {
     static func randomRecentEntry(): std.core.Option<(UInt16, UInt16)> { /* compiled code */ }
 
     static func randomRecentValueComparedTo(value: UInt16): std.core.Option<UInt16> { /* compiled code */ }
@@ -2477,7 +2465,7 @@ extend Extend <: Torcable {
     operator func -(arg: UInt8): UInt16 { /* compiled code */ }
 }
 
-extend Extend <: Torcable {
+extend `Unit` <: Torcable {
     static func randomRecentEntry(): std.core.Option<(UInt32, UInt32)> { /* compiled code */ }
 
     static func randomRecentValueComparedTo(value: UInt32): std.core.Option<UInt32> { /* compiled code */ }
@@ -2495,7 +2483,7 @@ extend Extend <: Torcable {
     operator func -(arg: UInt8): UInt32 { /* compiled code */ }
 }
 
-extend Extend <: Torcable {
+extend `Unit` <: Torcable {
     static func randomRecentEntry(): std.core.Option<(UInt64, UInt64)> { /* compiled code */ }
 
     static func randomRecentValueComparedTo(value: UInt64): std.core.Option<UInt64> { /* compiled code */ }
@@ -2513,7 +2501,7 @@ extend Extend <: Torcable {
     operator func -(arg: UInt8): UInt64 { /* compiled code */ }
 }
 
-extend Extend <: Torcable {
+extend `Unit` <: Torcable {
     static func randomRecentEntry(): std.core.Option<(Float32, Float32)> { /* compiled code */ }
 
     static func randomRecentValueComparedTo(value: Float32): std.core.Option<Float32> { /* compiled code */ }
@@ -2531,7 +2519,7 @@ extend Extend <: Torcable {
     operator func -(arg: UInt8): Float32 { /* compiled code */ }
 }
 
-extend Extend <: Torcable {
+extend `Unit` <: Torcable {
     static func randomRecentEntry(): std.core.Option<(Float64, Float64)> { /* compiled code */ }
 
     static func randomRecentValueComparedTo(value: Float64): std.core.Option<Float64> { /* compiled code */ }
@@ -2574,7 +2562,7 @@ class Mutator {
 
     let random: std.random.Random
 
-    init(random: std.random.Random) { /* compiled code */ }
+    Mutator(random: std.random.Random) { /* compiled code */ }
 }
 
 class MutatingRandomValueStream {
@@ -2590,7 +2578,7 @@ class MutatingRandomValueStream {
 
     let values: std.collection.ArrayList<T>
 
-    init(values: std.collection.ArrayList<T>) { /* compiled code */ }
+    MutatingRandomValueStream(values: std.collection.ArrayList<T>) { /* compiled code */ }
 }
 
 class CovRandomSource <: std.core.Object & std.unittest.prop_test.RandomSource {
@@ -2672,7 +2660,7 @@ class GaussianGenerator {
 
     let sigma: Float64
 
-    init(mean: Float64, sigma: Float64) { /* compiled code */ }
+    GaussianGenerator(mean: Float64, sigma: Float64) { /* compiled code */ }
 }
 
 class CoverageInfo {
@@ -3278,7 +3266,7 @@ class PowerAssertValue <: std.core.Object & std.unittest.common.Serializable<std
 
     let position: Int64
 
-    init(kind: std.unittest.PowerAssertValueKind, expression: std.core.String, position: Int64) { /* compiled code */ }
+    PowerAssertValue(kind: std.unittest.PowerAssertValueKind, expression: std.core.String, position: Int64) { /* compiled code */ }
 }
 
 enum PowerAssertValueKind <: std.unittest.common.Serializable<std.unittest.PowerAssertValueKind> {
@@ -3372,7 +3360,7 @@ class TerminalPrettyPrinter <: std.unittest.common.PrettyPrinter {
 
     static func fromDefaultConfiguration(): std.unittest.TerminalPrettyPrinter { /* compiled code */ }
 
-    init(isColored: Bool, isOtherAnsiAble: Bool) { /* compiled code */ }
+    TerminalPrettyPrinter(isColored: Bool, isOtherAnsiAble: Bool) { /* compiled code */ }
 }
 
 foreign func SetConsoleOutputCP(cp: UInt32): UInt32
@@ -3388,7 +3376,7 @@ class CapturedProcessResult {
 
     let stdErr: std.core.Array<UInt8>
 
-    init(stdOut: std.core.Array<UInt8>, stdErr: std.core.Array<UInt8>) { /* compiled code */ }
+    CapturedProcessResult(stdOut: std.core.Array<UInt8>, stdErr: std.core.Array<UInt8>) { /* compiled code */ }
 }
 
 func processStart(ctx: std.unittest.MainExecutionCtx): std.unittest.WrappedProcess { /* compiled code */ }
@@ -3446,7 +3434,7 @@ struct BenchStepEntry {
 
     let measurementInfo: std.unittest.MeasurementInfo
 
-    init(result: std.unittest.BenchmarkResult, arg: std.unittest.ArgumentDescription, caseId: std.unittest.TestCaseId, measurementInfo: std.unittest.MeasurementInfo) { /* compiled code */ }
+    BenchStepEntry(result: std.unittest.BenchmarkResult, arg: std.unittest.ArgumentDescription, caseId: std.unittest.TestCaseId, measurementInfo: std.unittest.MeasurementInfo) { /* compiled code */ }
 }
 
 extend StatisticsSample {
@@ -3550,7 +3538,7 @@ class XmlElementBuilder <: std.core.Object & std.core.ToString {
 
     let level: UInt64
 
-    init(level: UInt64) { /* compiled code */ }
+    XmlElementBuilder(level: UInt64) { /* compiled code */ }
 }
 
 extend TestSuiteId {
@@ -3568,35 +3556,35 @@ extend TestSuiteId {
 class CsvReporter <: std.core.Object & std.unittest.Reporter<std.unittest.BenchReport, Unit> {
     let directory: std.fs.Path
 
-    init(directory: std.fs.Path) { /* compiled code */ }
+    CsvReporter(directory: std.fs.Path) { /* compiled code */ }
 }
 
 class CsvRawReporter <: std.core.Object & std.unittest.Reporter<std.unittest.BenchReport, Unit> {
     let directory: std.fs.Path
 
-    init(directory: std.fs.Path) { /* compiled code */ }
+    CsvRawReporter(directory: std.fs.Path) { /* compiled code */ }
 }
 
 class XmlReporter <: std.core.Object & std.unittest.Reporter<std.unittest.TestReport, Unit> {
     let directory: std.fs.Path
 
-    init(directory: std.fs.Path) { /* compiled code */ }
+    XmlReporter(directory: std.fs.Path) { /* compiled code */ }
 }
 
 class ConsoleReporter <: std.core.Object & std.unittest.Reporter<std.unittest.TestReport, Unit> & std.unittest.Reporter<std.unittest.BenchReport, Unit> {
     let colored: Bool
 
-    init(colored: Bool) { /* compiled code */ }
+    ConsoleReporter(colored: Bool) { /* compiled code */ }
 }
 
 class TextReporter <: std.core.Object & std.unittest.Reporter<std.unittest.TestReport, PP> & std.unittest.Reporter<std.unittest.BenchReport, PP> {
     let into: PP
 
-    init(into: PP) { /* compiled code */ }
+    TextReporter(into: PP) { /* compiled code */ }
 }
 
 interface TextReporterBase <: std.unittest.Reporter<std.unittest.TestReport, PP> & std.unittest.Reporter<std.unittest.BenchReport, PP> {
-    func printReport(report: std.unittest.Report): PP { /* compiled code */ }
+    abstract func printReport(report: std.unittest.Report): PP
 }
 
 extend TextReporter <: TextReporterBase {
@@ -3610,7 +3598,7 @@ extend ConsoleReporter <: TextReporterBase {
 class RawStatsReporter <: std.core.Object & std.unittest.Reporter<std.unittest.BenchReport, std.collection.HashMap<std.core.String, (Float64, Float64)>> {
     func benchResultsAsMap(result: std.unittest.TestGroupResult): std.collection.HashMap<std.core.String, (Float64, Float64)> { /* compiled code */ }
 
-    init() { /* compiled code */ }
+    RawStatsReporter() { /* compiled code */ }
 }
 
 class ProgressReporter {
@@ -3640,13 +3628,11 @@ class ProgressReporter {
 }
 
 interface UTProgressReporter {
-    prop updateQueue: std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress> {
-        get() { /* compiled code */ }
-    }
+    abstract prop updateQueue: std.collection.concurrent.ConcurrentLinkedQueue<std.unittest.UTProgress>
 
     func start(): Unit { /* compiled code */ }
 
-    func report(terminalHeight: std.core.Option<UInt64>, terminalWidth: std.core.Option<UInt64>): std.unittest.common.PrettyText { /* compiled code */ }
+    abstract func report(terminalHeight: std.core.Option<UInt64>, terminalWidth: std.core.Option<UInt64>): std.unittest.common.PrettyText
 
     func reset(): Unit { /* compiled code */ }
 }
@@ -3674,7 +3660,7 @@ class TestProgressReporter <: std.core.Object & std.unittest.UTProgressReporter 
 
     let entriesLimit: std.core.Option<UInt64>
 
-    init(testCasesParallelism: Int64, isBrief: Bool, entriesLimit: std.core.Option<UInt64>) { /* compiled code */ }
+    TestProgressReporter(testCasesParallelism: Int64, isBrief: Bool, entriesLimit: std.core.Option<UInt64>) { /* compiled code */ }
 }
 
 class TestProgressCollector {
@@ -3764,7 +3750,7 @@ class TestProgressCollector {
 
     func flushChanges(): Unit { /* compiled code */ }
 
-    init(testCasesParallelism: Int64) { /* compiled code */ }
+    TestProgressCollector(testCasesParallelism: Int64) { /* compiled code */ }
 }
 
 struct UniqueWorkerId <: std.core.Hashable & std.core.Equatable<std.unittest.UniqueWorkerId> {
@@ -3778,7 +3764,7 @@ struct UniqueWorkerId <: std.core.Hashable & std.core.Equatable<std.unittest.Uni
 
     let pack: std.core.String
 
-    init(id: Int64, pack: std.core.String) { /* compiled code */ }
+    UniqueWorkerId(id: Int64, pack: std.core.String) { /* compiled code */ }
 }
 
 class Progress <: std.core.Object & std.unittest.common.PrettyPrintable {
@@ -3812,7 +3798,7 @@ class Progress <: std.core.Object & std.unittest.common.PrettyPrintable {
 
     var totalPieces: Int64
 
-    init(totalPieces: Int64) { /* compiled code */ }
+    Progress(totalPieces: Int64) { /* compiled code */ }
 }
 
 struct FailedTestCaseProgressData {
@@ -3824,7 +3810,7 @@ struct FailedTestCaseProgressData {
 
     let check: std.unittest.RunStepResult
 
-    init(name: std.unittest.TestCaseName, suiteId: std.unittest.TestSuiteId, check: std.unittest.RunStepResult) { /* compiled code */ }
+    FailedTestCaseProgressData(name: std.unittest.TestCaseName, suiteId: std.unittest.TestSuiteId, check: std.unittest.RunStepResult) { /* compiled code */ }
 }
 
 struct TestCaseProgressData {
@@ -3842,7 +3828,7 @@ struct TestCaseProgressData {
 
     let startTime: std.time.DateTime
 
-    init(name: std.unittest.TestCaseName, suiteId: std.unittest.TestSuiteId, startTime: std.time.DateTime) { /* compiled code */ }
+    TestCaseProgressData(name: std.unittest.TestCaseName, suiteId: std.unittest.TestSuiteId, startTime: std.time.DateTime) { /* compiled code */ }
 }
 
 struct PackageProgressData {
@@ -3868,7 +3854,7 @@ struct PackageProgressData {
 
     let progress: std.unittest.Progress
 
-    init(name: std.core.String, totalCases: UInt64, finishedCases: UInt64, isFailed: Bool, startTime: std.time.DateTime, progress: std.unittest.Progress) { /* compiled code */ }
+    PackageProgressData(name: std.core.String, totalCases: UInt64, finishedCases: UInt64, isFailed: Bool, startTime: std.time.DateTime, progress: std.unittest.Progress) { /* compiled code */ }
 }
 
 struct SummaryProgressData {
@@ -3898,7 +3884,7 @@ struct SummaryProgressData {
 
     let progress: std.unittest.Progress
 
-    init(passedCases: UInt64, failedCases: UInt64, finishedCases: UInt64, totalCases: UInt64, crashedWorkers: UInt64, startTime: std.time.MonoTime, progress: std.unittest.Progress) { /* compiled code */ }
+    SummaryProgressData(passedCases: UInt64, failedCases: UInt64, finishedCases: UInt64, totalCases: UInt64, crashedWorkers: UInt64, startTime: std.time.MonoTime, progress: std.unittest.Progress) { /* compiled code */ }
 }
 
 struct TestProgressData <: std.unittest.UTProgress {
@@ -3906,7 +3892,7 @@ struct TestProgressData <: std.unittest.UTProgress {
 
     let workerId: Int64
 
-    init(data: std.unittest.ExecutionResultPart, workerId: Int64) { /* compiled code */ }
+    TestProgressData(data: std.unittest.ExecutionResultPart, workerId: Int64) { /* compiled code */ }
 }
 
 enum TestCaseName <: std.core.ToString {
@@ -3966,7 +3952,7 @@ struct ArgumentDescription {
 
     let randomSeed: std.core.Option<Int64>
 
-    init(textDescription: std.core.Option<std.unittest.common.PrettyText>, stepIndex: Int64, reductionIndex: Int64, randomSeed: std.core.Option<Int64>) { /* compiled code */ }
+    ArgumentDescription(textDescription: std.core.Option<std.unittest.common.PrettyText>, stepIndex: Int64, reductionIndex: Int64, randomSeed: std.core.Option<Int64>) { /* compiled code */ }
 }
 
 struct RenderOptions {
@@ -3976,7 +3962,7 @@ struct RenderOptions {
 
     let measurementInfo: std.core.Option<std.unittest.MeasurementInfo>
 
-    init(baselineString: std.core.Option<std.core.String>, measurementInfo: std.core.Option<std.unittest.MeasurementInfo>) { /* compiled code */ }
+    RenderOptions(baselineString: std.core.Option<std.core.String>, measurementInfo: std.core.Option<std.unittest.MeasurementInfo>) { /* compiled code */ }
 }
 
 enum GroupResultPart <: std.unittest.Result {
@@ -4066,7 +4052,7 @@ struct ArrayOfTuples <: std.unittest.common.Serializable<std.unittest.ArrayOfTup
 
     let right: std.core.Array<B>
 
-    init(left: std.core.Array<A>, right: std.core.Array<B>) { /* compiled code */ }
+    ArrayOfTuples(left: std.core.Array<A>, right: std.core.Array<B>) { /* compiled code */ }
 }
 
 let MEDIAN_CI_95_COEFF: Float64
@@ -4096,14 +4082,14 @@ class Measurements {
 
     let data: std.core.Array<(Float64, Float64)>
 
-    init(data: std.core.Array<(Float64, Float64)>) { /* compiled code */ }
+    Measurements(data: std.core.Array<(Float64, Float64)>) { /* compiled code */ }
 }
 
 interface AsFloat {
-    func asFloat(): Float64 { /* compiled code */ }
+    abstract func asFloat(): Float64
 }
 
-extend Extend <: AsFloat {
+extend `Unit` <: AsFloat {
     func asFloat(): Float64 { /* compiled code */ }
 }
 
@@ -4126,7 +4112,7 @@ class FlatMapProcessor <: std.unittest.DataStrategyProcessor<R> {
 
     let mapper: (T) -> std.unittest.common.DataProvider<R>
 
-    init(orig: std.unittest.DataStrategyProcessor<T>, mapper: (T) -> std.unittest.common.DataProvider<R>) { /* compiled code */ }
+    FlatMapProcessor(orig: std.unittest.DataStrategyProcessor<T>, mapper: (T) -> std.unittest.common.DataProvider<R>) { /* compiled code */ }
 }
 
 class LazyCyclicNode {
@@ -4168,7 +4154,7 @@ class FlatMapStrategyProcessor <: std.unittest.DataStrategyProcessor<R> {
 
     let mapper: (T) -> std.unittest.common.DataStrategy<R>
 
-    init(orig: std.unittest.DataStrategyProcessor<T>, mapper: (T) -> std.unittest.common.DataStrategy<R>) { /* compiled code */ }
+    FlatMapStrategyProcessor(orig: std.unittest.DataStrategyProcessor<T>, mapper: (T) -> std.unittest.common.DataStrategy<R>) { /* compiled code */ }
 }
 
 class MapProcessor <: std.unittest.DataStrategyProcessor<R> {
@@ -4188,7 +4174,7 @@ class MapProcessor <: std.unittest.DataStrategyProcessor<R> {
 
     let mapper: (T, std.unittest.common.Configuration) -> R
 
-    init(orig: std.unittest.DataStrategyProcessor<T>, mapper: (T, std.unittest.common.Configuration) -> R) { /* compiled code */ }
+    MapProcessor(orig: std.unittest.DataStrategyProcessor<T>, mapper: (T, std.unittest.common.Configuration) -> R) { /* compiled code */ }
 }
 
 class CartesianProductProcessor <: std.unittest.DataStrategyProcessor<(T0, T1)> {
@@ -4208,7 +4194,7 @@ class CartesianProductProcessor <: std.unittest.DataStrategyProcessor<(T0, T1)> 
 
     let right: std.unittest.DataStrategyProcessor<T1>
 
-    init(left: std.unittest.DataStrategyProcessor<T0>, right: std.unittest.DataStrategyProcessor<T1>) { /* compiled code */ }
+    CartesianProductProcessor(left: std.unittest.DataStrategyProcessor<T0>, right: std.unittest.DataStrategyProcessor<T1>) { /* compiled code */ }
 }
 
 class CartesianProductIterator <: std.core.Iterator<(A, B)> {
@@ -4222,7 +4208,7 @@ class CartesianProductIterator <: std.core.Iterator<(A, B)> {
 
     let rightGen: () -> std.core.Iterator<B>
 
-    init(left: std.core.Iterator<A>, rightGen: () -> std.core.Iterator<B>) { /* compiled code */ }
+    CartesianProductIterator(left: std.core.Iterator<A>, rightGen: () -> std.core.Iterator<B>) { /* compiled code */ }
 }
 
 class SimpleProcessor <: std.unittest.DataStrategyProcessor<T> {
@@ -4250,7 +4236,7 @@ class SimpleProcessor <: std.unittest.DataStrategyProcessor<T> {
 
     let name: std.core.String
 
-    init(buildDelegate: () -> std.unittest.common.DataStrategy<T>, name: std.core.String) { /* compiled code */ }
+    SimpleProcessor(buildDelegate: () -> std.unittest.common.DataStrategy<T>, name: std.core.String) { /* compiled code */ }
 }
 
 class RememberingIterable <: std.core.Iterator<T> {
@@ -4260,7 +4246,7 @@ class RememberingIterable <: std.core.Iterator<T> {
 
     let source: std.unittest.RememberingDataProvider<T>
 
-    init(delegate: std.core.Iterator<T>, source: std.unittest.RememberingDataProvider<T>) { /* compiled code */ }
+    RememberingIterable(delegate: std.core.Iterator<T>, source: std.unittest.RememberingDataProvider<T>) { /* compiled code */ }
 }
 
 class RememberingLazyIterator <: std.core.Iterator<T> {
@@ -4268,7 +4254,7 @@ class RememberingLazyIterator <: std.core.Iterator<T> {
 
     let delegate: std.unittest.RememberingLazyIterable<T>
 
-    init(delegate: std.unittest.RememberingLazyIterable<T>) { /* compiled code */ }
+    RememberingLazyIterator(delegate: std.unittest.RememberingLazyIterable<T>) { /* compiled code */ }
 }
 
 class RememberingLazyIterable <: std.unittest.LazyCyclicNode & std.core.Iterable<T> {
@@ -4286,7 +4272,7 @@ class RememberingLazyIterable <: std.unittest.LazyCyclicNode & std.core.Iterable
 
     let storage: std.unittest.RememberingDataProvider<T>
 
-    init(delegate: std.core.Iterator<T>, storage: std.unittest.RememberingDataProvider<T>) { /* compiled code */ }
+    RememberingLazyIterable(delegate: std.core.Iterator<T>, storage: std.unittest.RememberingDataProvider<T>) { /* compiled code */ }
 }
 
 class IterableMix <: std.core.Iterator<T> {
@@ -4296,7 +4282,7 @@ class IterableMix <: std.core.Iterator<T> {
 
     let delegate2: std.core.Iterator<T>
 
-    init(delegate1: std.core.Iterator<T>, delegate2: std.core.Iterator<T>) { /* compiled code */ }
+    IterableMix(delegate1: std.core.Iterator<T>, delegate2: std.core.Iterator<T>) { /* compiled code */ }
 }
 
 class LazyCyclicNodeEngine <: std.core.Iterator<T> {
@@ -4308,7 +4294,7 @@ class LazyCyclicNodeEngine <: std.core.Iterator<T> {
 
     let iter: std.core.Iterator<T>
 
-    init(current: std.unittest.LazyCyclicNode, iter: std.core.Iterator<T>) { /* compiled code */ }
+    LazyCyclicNodeEngine(current: std.unittest.LazyCyclicNode, iter: std.core.Iterator<T>) { /* compiled code */ }
 }
 
 type ShrinkResult = std.unittest.RunStepResult
@@ -4358,7 +4344,7 @@ class TestSuiteExecutor {
 
     let filterService: std.unittest.FilterService
 
-    init(externalConfiguration: std.unittest.common.Configuration, suiteId: std.unittest.TestSuiteId, testSuite: std.unittest.TestSuite, filterService: std.unittest.FilterService) { /* compiled code */ }
+    TestSuiteExecutor(externalConfiguration: std.unittest.common.Configuration, suiteId: std.unittest.TestSuiteId, testSuite: std.unittest.TestSuite, filterService: std.unittest.FilterService) { /* compiled code */ }
 }
 
 extend TestSuite {
@@ -4414,7 +4400,7 @@ class Root {
 
     func substitute(values: std.unittest.common.JsonValue): std.core.String { /* compiled code */ }
 
-    init(t: std.core.String) { /* compiled code */ }
+    Root(t: std.core.String) { /* compiled code */ }
 }
 
 class Template {
@@ -4432,13 +4418,13 @@ class Template {
 
     let baseText: std.core.String
 
-    init(name: std.core.String, baseText: std.core.String) { /* compiled code */ }
+    Template(name: std.core.String, baseText: std.core.String) { /* compiled code */ }
 }
 
 func object(data: std.core.Array<(std.core.String, std.unittest.IntoJson)>): std.unittest.common.JsonObject { /* compiled code */ }
 
 interface IntoJson {
-    func json(): std.unittest.common.JsonValue { /* compiled code */ }
+    abstract func json(): std.unittest.common.JsonValue
 }
 
 extend JsonValue <: IntoJson {
@@ -4449,7 +4435,7 @@ extend String <: IntoJson {
     func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
-extend Extend <: IntoJson {
+extend `Unit` <: IntoJson {
     func json(): std.unittest.common.JsonValue { /* compiled code */ }
 }
 
@@ -4482,7 +4468,7 @@ class TestCaseExecutor <: std.core.Object & std.unittest.Executor {
 
     let body: (T) -> Unit
 
-    init(strategy: std.unittest.DataStrategyProcessor<T>, body: (T) -> Unit) { /* compiled code */ }
+    TestCaseExecutor(strategy: std.unittest.DataStrategyProcessor<T>, body: (T) -> Unit) { /* compiled code */ }
 }
 
 extend RunStepResult {
@@ -4528,7 +4514,7 @@ class PackageTextReport {
 
     let detailed: Bool
 
-    init(pp: std.unittest.common.PrettyPrinter, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration, detailed: Bool) { /* compiled code */ }
+    PackageTextReport(pp: std.unittest.common.PrettyPrinter, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration, detailed: Bool) { /* compiled code */ }
 }
 
 func appendDashLine(pp: std.unittest.common.PrettyPrinter): std.unittest.common.PrettyPrinter { /* compiled code */ }
@@ -4546,7 +4532,7 @@ class TextReportEntry {
 
     let bodyMessage: std.core.Option<std.unittest.common.PrettyText>
 
-    init(source: std.unittest.RunStepResult, caseName: std.core.String, caseInfo: std.unittest.TestCaseReportInfo, bodyMessage: std.core.Option<std.unittest.common.PrettyText>) { /* compiled code */ }
+    TextReportEntry(source: std.unittest.RunStepResult, caseName: std.core.String, caseInfo: std.unittest.TestCaseReportInfo, bodyMessage: std.core.Option<std.unittest.common.PrettyText>) { /* compiled code */ }
 }
 
 class ProjectTextReport {
@@ -4558,7 +4544,7 @@ class ProjectTextReport {
 
     let config: std.unittest.common.Configuration
 
-    init(pp: std.unittest.common.PrettyPrinter, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration) { /* compiled code */ }
+    ProjectTextReport(pp: std.unittest.common.PrettyPrinter, outputReporter: std.unittest.TestOutputReporter, config: std.unittest.common.Configuration) { /* compiled code */ }
 }
 
 class TextReports {
@@ -4628,7 +4614,7 @@ struct WorkerOutput {
 
     let stderr: std.core.Array<UInt8>
 
-    init(stdout: std.core.Array<UInt8>, stderr: std.core.Array<UInt8>) { /* compiled code */ }
+    WorkerOutput(stdout: std.core.Array<UInt8>, stderr: std.core.Array<UInt8>) { /* compiled code */ }
 }
 
 class UnittestException <: std.core.Exception {
@@ -4680,7 +4666,7 @@ class ParallelOrderedMapIterator <: std.core.Iterator<T> {
 
     let iter: std.core.Iterator<std.core.Future<T>>
 
-    init(bufferSize: Int64, iter: std.core.Iterator<std.core.Future<T>>) { /* compiled code */ }
+    ParallelOrderedMapIterator(bufferSize: Int64, iter: std.core.Iterator<std.core.Future<T>>) { /* compiled code */ }
 }
 
 class ChainIterator <: std.core.Iterator<T> {
@@ -4690,7 +4676,7 @@ class ChainIterator <: std.core.Iterator<T> {
 
     let r: std.core.Iterator<T>
 
-    init(l: std.core.Iterator<T>, r: std.core.Iterator<T>) { /* compiled code */ }
+    ChainIterator(l: std.core.Iterator<T>, r: std.core.Iterator<T>) { /* compiled code */ }
 }
 
 func chain(l: std.core.Iterable<T>, r: std.core.Iterable<T>): std.core.Iterable<T> { /* compiled code */ }

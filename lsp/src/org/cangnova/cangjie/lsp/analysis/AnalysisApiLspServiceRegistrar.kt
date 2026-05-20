@@ -2,7 +2,11 @@ package org.cangnova.cangjie.lsp.analysis
 
 import com.intellij.mock.MockApplication
 import com.intellij.mock.MockProject
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolverFactory
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderFactory
+import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclarationProviderMerger
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 import org.cangnova.cangjie.analysis.api.platform.permissions.CaAnalysisPermissionChecker
@@ -10,6 +14,13 @@ import org.cangnova.cangjie.analysis.api.platform.restrictedAnalysis.CaRestricte
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
+import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderFactory
+import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderMerger
+import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneAnnotationsResolverFactory
+import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderFactory
+import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderMerger
+import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderFactory
+import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderMerger
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
 /**
@@ -27,6 +38,7 @@ internal object AnalysisApiLspServiceRegistrar {
         "META-INF/analysis-api/cangjie-cj-references.xml",
     )
 
+    @OptIn(CaPlatformInterface::class)
     fun register(environment: CangjieLspEnvironment) {
         val application = environment.coreEnvironment.applicationEnvironment.application as? MockApplication
             ?: error("LSP Analysis API 集成要求使用 MockApplication 容器")
@@ -37,6 +49,32 @@ internal object AnalysisApiLspServiceRegistrar {
             PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
             PluginStructureProvider.registerProjectServices(project, pluginXmlPath)
         }
+
+        /*
+         * LSP 运行时要保留自己的 project structure / modification 服务实现，
+         * 但 low-level session 仍然需要 standalone 平台提供 declaration/package/annotation provider。
+         * 这里按 Kotlin `AnalysisApiBaseTestServiceRegistrar` 的 owner 边界手工补齐，不整包覆盖 standalone XML。
+         */
+        project.registerService(
+            CangJieAnnotationsResolverFactory::class.java,
+            CangJieStandaloneAnnotationsResolverFactory::class.java,
+        )
+        project.registerService(
+            CangJieDeclarationProviderFactory::class.java,
+            CangJieStandaloneDeclarationProviderFactory(project),
+        )
+        project.registerService(
+            CangJieDeclarationProviderMerger::class.java,
+            CangJieStandaloneDeclarationProviderMerger::class.java,
+        )
+        project.registerService(
+            CangJiePackageProviderFactory::class.java,
+            CangJieStandalonePackageProviderFactory(project),
+        )
+        project.registerService(
+            CangJiePackageProviderMerger::class.java,
+            CangJieStandalonePackageProviderMerger::class.java,
+        )
 
         project.registerService(
             AnalysisApiLspProjectStructureState::class.java,

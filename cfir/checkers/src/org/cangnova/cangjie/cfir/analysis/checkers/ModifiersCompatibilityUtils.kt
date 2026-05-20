@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.checkers
 
+import com.intellij.lang.ASTNode
 import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.tree.IElementType
@@ -119,14 +120,16 @@ internal fun CjSourceElement.realSourceModifiers(): List<SourceModifier>? {
     if (kind !is CjRealSourceElementKind) return null
     return when (this) {
         is CjPsiSourceElement -> {
-            val modifierOwner = psi as? CjModifierListOwner ?: return null
-            modifierOwner.modifierList
-                ?.children
-                ?.mapNotNull { child ->
-                    val token = child.node?.elementType as? CjKeywordToken ?: return@mapNotNull null
-                    SourceModifier(token, child.toCjPsiSourceElement(kind))
+            val modifierList = (psi as? CjModifierListOwner)?.modifierList ?: return null
+            modifierList.node
+                .modifierChildren()
+                .map { modifierNode ->
+                    SourceModifier(
+                        token = modifierNode.elementType as CjKeywordToken,
+                        source = modifierNode.psi.toCjPsiSourceElement(kind),
+                    )
                 }
-                ?.takeIf { it.isNotEmpty() }
+                .takeIf { it.isNotEmpty() }
         }
         is CjLightSourceElement -> realSourceModifiersForNode(lighterASTNode)
         else -> null
@@ -161,6 +164,9 @@ internal fun CjSourceElement.isConstructorSource(): Boolean {
         else -> false
     }
 }
+
+private fun ASTNode.modifierChildren(): List<ASTNode> =
+    getChildren(null).filter { it.elementType is CjKeywordToken }
 
 private fun CjLightSourceElement.realSourceModifiersForNode(node: LighterASTNode): List<SourceModifier>? {
     val modifierListNode = treeStructure.findChildByType(node, CjNodeTypes.MODIFIER_LIST) ?: return null
