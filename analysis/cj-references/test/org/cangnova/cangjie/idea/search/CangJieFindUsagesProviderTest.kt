@@ -62,10 +62,7 @@ class CangJieFindUsagesProviderTest : AbstractAnalysisApiExecutionTest(
         assertTrue(provider.canFindUsagesFor(importAlias))
         assertNull(provider.getHelpId(function))
 
-        val unnamedFileText = org.cangnova.cangjie.psi.CjPsiFactory(mainFile.project, markGenerated = false)
-            .createFile("plain.cj", "package sample.find.usages\n1 + 2\n")
-        val literal = PsiTreeUtil.findChildOfType(unnamedFileText, CjConstantExpression::class.java)
-            ?: error("constant literal not found")
+        val literal = PsiTreeUtil.findChildrenOfType(mainFile, CjConstantExpression::class.java).first()
         assertFalse(provider.canFindUsagesFor(literal))
     }
 }

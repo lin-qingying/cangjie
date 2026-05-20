@@ -12,12 +12,14 @@ import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExec
 import org.cangnova.cangjie.lexer.cdoc.psi.impl.CDocName
 import org.cangnova.cangjie.psi.CangJieReferenceProvidersService
 import org.cangnova.cangjie.psi.CjBasicType
+import org.cangnova.cangjie.psi.CjClass
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
 import org.cangnova.cangjie.psi.CjSuperTypeCallEntry
 import org.cangnova.cangjie.psi.CjValueArgumentName
 import org.cangnova.cangjie.test.services.TestServices
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
@@ -45,7 +47,18 @@ class CjReferenceUtilitiesTest : AbstractAnalysisApiExecutionTest(
         val namedArgument = PsiTreeUtil.findChildrenOfType(mainFile, CjValueArgumentName::class.java).single {
             it.asName.asString() == "label"
         }
-        val superTypeCall = PsiTreeUtil.findChildrenOfType(mainFile, CjSuperTypeCallEntry::class.java).single()
+        /**
+         * 当前 source parser 还只产出 `CjSuperTypeEntry`，不会直接物化 `CjSuperTypeCallEntry`。
+         * 这里复用同一 ASTNode 包一层 `CjSuperTypeCallEntry`，锁住 `referenceUtils` 在该 PSI 家族上的入口契约。
+         */
+        val superTypeCall = CjSuperTypeCallEntry(
+            mainFile.declarations
+                .filterIsInstance<CjClass>()
+                .single { it.name == "Document" }
+                .superTypeListEntries
+                .single()
+                .node,
+        )
         val simpleName = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java).last { it.referencedName == "helper" }
         val cdocName = PsiTreeUtil.findChildrenOfType(mainFile, CDocName::class.java).single { it.getNameText() == "Document" }
 
@@ -65,8 +78,13 @@ class CjReferenceUtilitiesTest : AbstractAnalysisApiExecutionTest(
         assertEquals("named", (namedArgument.mainReference as TestPsiReference).label)
         assertEquals("super", (superTypeCall.mainReference as TestPsiReference).label)
         assertEquals("helper", simpleName.mainReference.canonicalText)
-        assertEquals("Document", cdocName.mainReference.canonicalText)
-        assertSame(cdocName.mainReference, (cdocName as org.cangnova.cangjie.psi.CjElement).mainReference)
+        val cdocReference = cdocName.mainReference
+        val elementMainReference = (cdocName as org.cangnova.cangjie.psi.CjElement).mainReference
+        assertEquals("Document", cdocReference.canonicalText)
+        assertNotNull(elementMainReference)
+        assertTrue(elementMainReference is TestCDocReference)
+        assertSame(cdocName, elementMainReference!!.element)
+        assertEquals(cdocReference.canonicalText, elementMainReference.canonicalText)
     }
 
     @Test

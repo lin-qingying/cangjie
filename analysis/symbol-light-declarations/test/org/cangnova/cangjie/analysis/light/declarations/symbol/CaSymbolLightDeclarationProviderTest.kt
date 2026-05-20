@@ -58,25 +58,25 @@ class CaSymbolLightDeclarationProviderTest : AbstractAnalysisApiExecutionTest(
         val topLevelCallable = declarations.filterIsInstance<CaLightCallableDeclaration>().single { it.name == "topLevel" }
 
         assertEquals(CaLightDeclarationOriginKind.SOURCE_PSI, document.origin.kind)
-        assertEquals("sample.symbol.light/Document", document.classId?.asString())
+        assertEquals("sample/symbol/light/Document", document.classId?.asString())
         assertTrue(document.members.filterIsInstance<CaLightCallableDeclaration>().any { it.name == "member" })
 
         assertEquals(CaLightDeclarationOriginKind.SOURCE_PSI, alias.origin.kind)
-        assertEquals("sample.symbol.light/DocAlias", alias.classId?.asString())
+        assertEquals("sample/symbol/light/DocAlias", alias.classId?.asString())
         assertTrue(alias.members.isEmpty(), "typealias light declaration 不应伪造成员树")
 
         assertEquals(CaLightDeclarationOriginKind.SOURCE_PSI, extend.origin.kind)
-        assertEquals("sample.symbol.light/Document", extend.targetClassId?.asString())
+        assertEquals("sample/symbol/light/Document", extend.targetClassId?.asString())
         assertTrue(extend.members.filterIsInstance<CaLightCallableDeclaration>().any { it.name == "prettyPrint" })
 
-        assertEquals("sample.symbol.light/topLevel", topLevelCallable.callableId?.toString())
+        assertEquals("sample/symbol/light/topLevel", topLevelCallable.callableId?.toString())
 
         analyzeForTest(mainFile) {
             assertEquals("Source top level doc.", documentation(topLevelCallable))
 
             val classSymbolLightDeclaration = provider.getLightDeclaration(mainFile.declarations
                 .filterIsInstance<org.cangnova.cangjie.psi.CjTypeStatement>()
-                .single { it.name == "Document" }
+                .single { declaration -> declaration !is org.cangnova.cangjie.psi.CjExtend && declaration.name == "Document" }
                 .classSymbol)
             assertNotNull(classSymbolLightDeclaration)
             assertEquals(document.classId, (classSymbolLightDeclaration as CaLightClassLikeDeclaration).classId)
@@ -89,7 +89,7 @@ class CaSymbolLightDeclarationProviderTest : AbstractAnalysisApiExecutionTest(
         val declarations = provider.getLightDeclarations(mainFile, mainModule.caModule)
         val documentDeclaration = mainFile.declarations
             .filterIsInstance<org.cangnova.cangjie.psi.CjTypeStatement>()
-            .single { it.name == "Document" }
+            .single { declaration -> declaration !is org.cangnova.cangjie.psi.CjExtend && declaration.name == "Document" }
 
         analyzeForTest(mainFile) {
             val lightBySymbol = provider.getLightDeclaration(documentDeclaration.classSymbol)

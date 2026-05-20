@@ -229,13 +229,23 @@ class CaSymbolLightDeclarationProvider(
         }
 
         private fun buildCallable(declaration: CjNamedDeclaration): CaLightDeclaration {
-            val callableData = analyze(useSiteModule) {
-                val callableSymbol = declaration.symbol as? CaCallableSymbol ?: return@analyze null
-                CallableLightDeclarationData(
-                    callableId = callableSymbol.callableId,
-                    signature = callableSymbol.asSignature(),
-                    annotations = callableSymbol.annotations,
-                )
+            /**
+             * decompiled PSI 不能再走 source-only 的 `declaration.symbol -> source CFIR` 恢复链，
+             * 否则成员树一展开就会在 LL API 的 source container 断言处失败。
+             *
+             * 对这类声明，light declaration 先稳定保留名字树和来源信息；
+             * `callableId` / `signature` 按当前公开契约允许为空。
+             */
+            val callableData = when {
+                declaration.containingCjFile.isCompiled -> null
+                else -> analyze(useSiteModule) {
+                    val callableSymbol = declaration.symbol as? CaCallableSymbol ?: return@analyze null
+                    CallableLightDeclarationData(
+                        callableId = callableSymbol.callableId,
+                        signature = callableSymbol.asSignature(),
+                        annotations = callableSymbol.annotations,
+                    )
+                }
             }
             val key = callableCacheKey(callableData?.callableId, callableData?.signature, declaration)
             return cache.getOrPut(key) {
