@@ -1477,7 +1477,13 @@ class LightTreeRawCfirExpressionBuilder(
                 CjNodeTypes.VALUE_PARAMETER_LIST -> {
                     tree.forEachChildren(child) { param ->
                         if (param.tokenType == CjNodeTypes.VALUE_PARAMETER) {
-                            valueParams.add(declarationBuilder.convertValueParameter(param, functionSymbol))
+                            valueParams.add(
+                                declarationBuilder.convertValueParameter(
+                                    param,
+                                    functionSymbol,
+                                    requiresExplicitType = false,
+                                )
+                            )
                         }
                     }
                 }

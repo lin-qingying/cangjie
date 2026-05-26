@@ -79,21 +79,26 @@ class CfirDeclDeserializer(
     fun deserializeDecl(declIndex: Int): CfirDeclaration? {
         context.declCache[declIndex]?.let { return it }
         if (declIndex !in 0 until context.pkg.allDeclsLength) return null
-        if (!declsUnderDeserialization.add(declIndex)) {
-            return context.declCache[declIndex]
-        }
+        val lock = context.declMaterializationLock(declIndex)
+        synchronized(lock) {
+            context.declCache[declIndex]?.let { return it }
+            if (!declsUnderDeserialization.add(declIndex)) {
+                return context.declCache[declIndex]
+            }
 
-        return try {
-            val decl = try {
-                context.pkg.allDecls(declIndex)
-            } catch (_: IndexOutOfBoundsException) {
-                null
-            } ?: return null
-            val result = convertDecl(decl) ?: return null
-            context.declCache[declIndex] = result
-            result
-        } finally {
-            declsUnderDeserialization.remove(declIndex)
+            return try {
+                val decl = try {
+                    context.pkg.allDecls(declIndex)
+                } catch (_: IndexOutOfBoundsException) {
+                    null
+                } ?: return null
+                val result = convertDecl(decl) ?: return null
+                context.declCache.putIfAbsent(declIndex, result)
+                context.declCache[declIndex] ?: result
+            } finally {
+                declsUnderDeserialization.remove(declIndex)
+                context.releaseDeclMaterializationLock(declIndex, lock)
+            }
         }
     }
 

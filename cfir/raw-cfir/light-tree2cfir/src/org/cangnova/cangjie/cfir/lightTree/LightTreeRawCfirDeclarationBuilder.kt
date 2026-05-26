@@ -639,9 +639,13 @@ class LightTreeRawCfirDeclarationBuilder(
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(accessorSymbol) {
             withFunctionTarget(functionTarget) { extractBody(node) }
         }
-        val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
-        val valueParameters = extractValueParameters(node, accessorSymbol)
         val isGetter = isGetterAccessor(node)
+        val explicitReturnTypeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)?.let(::convertTypeRef)
+        val valueParameters = extractValueParameters(
+            node,
+            accessorSymbol,
+            requiresExplicitType = isGetter,
+        )
         if (!isGetter) {
             valueParameters.firstOrNull()
                 ?.takeIf { it.returnTypeRef is CfirImplicitTypeRef }
@@ -736,7 +740,7 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertConstructor(node: LighterASTNode, isPrimary: Boolean): CfirConstructor {
         val modifiers = LightTreeModifierList.from(tree, node)
         val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
-        val valueParams = extractValueParameters(node, constructorSymbol)
+        val valueParams = extractValueParameters(node, constructorSymbol, requiresExplicitType = true)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(constructorSymbol) {
             withFunctionTarget(functionTarget) { extractBody(node) }
@@ -862,15 +866,16 @@ class LightTreeRawCfirDeclarationBuilder(
     fun convertValueParameter(
         node: LighterASTNode,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
+        requiresExplicitType: Boolean = true,
     ): CfirValueParameter {
         val modifiers = LightTreeModifierList.from(tree, node)
 
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
         val paramName = if (nameNode != null) Name.identifier(nameNode.asText()) else Name.special("<error>")
         val typeRef = tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
-        val paramType = convertTypeRef(typeRef)
 
         val isNamed = tree.findChildByType(node, CjTokens.EXCL) != null
+        val parameterSource = node.toSource()
 
         // 默认值是最后一个表达式子节点
         var defaultExpr: CfirExpression? = null
@@ -883,7 +888,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(paramName))) { symbol ->
             buildValueParameter {
                 resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = node.toSource()
+                source = parameterSource
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
@@ -891,7 +896,11 @@ class LightTreeRawCfirDeclarationBuilder(
                 isLocal = false
                 this.isNamed = isNamed
                 status = CfirDeclarationStatusImpl.DEFAULT
-                returnTypeRef = paramType
+                returnTypeRef = when {
+                    typeRef != null -> convertTypeRef(typeRef)
+                    requiresExplicitType -> createNoTypeForParameterTypeRef(parameterSource)
+                    else -> buildImplicitTypeRef()
+                }
                 name = paramName
                 defaultValue = defaultExpr
                 this.containingDeclarationSymbol = containingDeclarationSymbol
@@ -1950,10 +1959,11 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun extractValueParameters(
         node: LighterASTNode,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
+        requiresExplicitType: Boolean = true,
     ): List<CfirValueParameter> {
         val paramList = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST) ?: return emptyList()
         return tree.getChildrenByType(paramList, CjNodeTypes.VALUE_PARAMETER)
-            .map { convertValueParameter(it, containingDeclarationSymbol) }
+            .map { convertValueParameter(it, containingDeclarationSymbol, requiresExplicitType) }
     }
 
     private fun countValueParameters(node: LighterASTNode): Int {

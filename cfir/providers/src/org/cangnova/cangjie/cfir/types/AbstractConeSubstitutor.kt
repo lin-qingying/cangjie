@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeSubstitutorMarker
 
@@ -65,7 +64,7 @@ abstract class AbstractConeSubstitutor(
         }
 
         if (!changed) return null
-        return withReplacedArguments(newArguments)
+        return withArguments(newArguments)
     }
 }
 
@@ -124,77 +123,6 @@ private fun ConeCangJieType.typeConstructorForSubstitution(): TypeConstructorMar
         is ConeStubType -> constructor
         is ConeTypeConstructorMarker -> this
         else -> null
-    }
-}
-
-private fun ConeCangJieType.withAttributes(newAttributes: ConeAttributes): ConeCangJieType {
-    return when (this) {
-        is ConeClassLikeType -> ConeClassLikeType(lookupTag, typeArguments, newAttributes, isInterface, isThisType)
-        is ConeStructType -> ConeStructType(lookupTag, typeArguments, newAttributes)
-        is ConeEnumType -> ConeEnumType(lookupTag, typeArguments, newAttributes, isRefEnum)
-        is ConePrimitiveType -> ConePrimitiveType(kind, newAttributes)
-        is ConeCStringType -> ConeCStringType(newAttributes)
-        is ConeTypeParameterType -> ConeTypeParameterTypeImpl(lookupTag, newAttributes)
-        is ConeFunctionType -> ConeFunctionType(
-            parameterTypes,
-            returnType,
-            isCFunc,
-            isClosureType,
-            hasVariableLenArg,
-            newAttributes
-        )
-        is ConeTupleType -> ConeTupleType(elementTypes, newAttributes)
-        is ConeVArrayType -> ConeVArrayType(elementType, size, newAttributes)
-        is ConePointerType -> ConePointerType(pointeeType, newAttributes)
-        is ConeIntersectionType -> ConeIntersectionType(
-            intersectedTypes = intersectedTypes,
-            upperBoundForApproximation = upperBoundForApproximation,
-            attributes = newAttributes,
-        )
-        is ConeUnionType -> ConeUnionType(unionTypes, newAttributes)
-        is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, typeArguments, newAttributes)
-        is ConeErrorType -> ConeErrorType(
-            diagnostic,
-            isUninferredParameter,
-            delegatedType,
-            typeArguments,
-            newAttributes
-        )
-        is ConeQuestType -> ConeQuestType(newAttributes)
-        is ConeTypeVariableType -> ConeTypeVariableType(typeConstructor, newAttributes)
-        is ConePlaceholderType -> ConePlaceholderType(debugName, newAttributes)
-        else -> this
-    }
-}
-
-private fun ConeCangJieType.withReplacedArguments(newArguments: List<ConeTypeProjection>): ConeCangJieType {
-    return when (this) {
-        is ConeClassLikeType -> ConeClassLikeType(lookupTag, newArguments, attributes, isInterface, isThisType)
-        is ConeStructType -> ConeStructType(lookupTag, newArguments, attributes)
-        is ConeEnumType -> ConeEnumType(lookupTag, newArguments, attributes, isRefEnum)
-        is ConeFunctionType -> {
-            val paramTypes = newArguments.dropLast(1).map { it.type }
-            val retType = newArguments.last().type
-            ConeFunctionType(paramTypes, retType, isCFunc, isClosureType, hasVariableLenArg, attributes)
-        }
-        is ConeTupleType -> ConeTupleType(newArguments.map { it.type }, attributes)
-        is ConeVArrayType -> ConeVArrayType(newArguments.first().type, size, attributes)
-        is ConePointerType -> ConePointerType(newArguments.first().type, attributes)
-        is ConeIntersectionType -> ConeIntersectionType(
-            intersectedTypes = newArguments.map { it.type },
-            upperBoundForApproximation = upperBoundForApproximation,
-            attributes = attributes,
-        )
-        is ConeUnionType -> ConeUnionType(newArguments.map { it.type }.toSet(), attributes)
-        is ConeTypeAliasType -> ConeTypeAliasType(classId, expandedType, newArguments, attributes)
-        is ConeErrorType -> ConeErrorType(
-            diagnostic,
-            isUninferredParameter,
-            delegatedType,
-            newArguments,
-            attributes
-        )
-        else -> this
     }
 }
 

@@ -421,7 +421,10 @@ object CfirClassStructSemanticsChecker : CfirClassLikeChecker() {
                     if (element is org.cangnova.cangjie.cfir.expressions.CfirFunctionCall) {
                         val ref = element.calleeReference as? org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
                         val sym = ref?.resolvedSymbol as? org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-                        if (sym != null && !sym.cfir.status.isStatic) {
+                        val targetFunction = sym?.cfir
+                        // 这里只拦 class 实例方法；顶层函数/局部函数本身并不违反 finalizer 约束，
+                        // 违规点在于把 `this` 当值传出，由表达式检查器单独报告。
+                        if (targetFunction != null && targetFunction.dispatchReceiverType != null && !targetFunction.status.isStatic) {
                             reporter.reportOn(
                                 source = element.source,
                                 factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.serialization.provider
 
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoExportedTopLevelNamesResolver
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -13,6 +14,7 @@ import org.cangnova.cangjie.name.Name
 class CfirDeserializedSymbolNamesProvider(
     private val cjoManager: CjoManager,
 ) : CfirSymbolNamesProvider() {
+    private val exportedTopLevelNamesResolver = CjoExportedTopLevelNamesResolver(cjoManager)
 
     override fun getPackageNames(): Set<String>? =
         cjoManager.getAvailablePackageNames().mapTo(linkedSetOf()) { it.asString() }
@@ -21,15 +23,13 @@ class CfirDeserializedSymbolNamesProvider(
         get() = false
 
     override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name>? {
-        val header = cjoManager.loadPackageHeader(packageFqName.asString()) ?: return emptySet()
-        return header.topLevelClassNames
+        return exportedTopLevelNamesResolver.resolve(packageFqName).classifierNames
     }
 
     override val hasSpecificCallablePackageNamesComputation: Boolean
         get() = false
 
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name>? {
-        val header = cjoManager.loadPackageHeader(packageFqName.asString()) ?: return emptySet()
-        return header.topLevelCallableNames
+        return exportedTopLevelNamesResolver.resolve(packageFqName).callableNames
     }
 }

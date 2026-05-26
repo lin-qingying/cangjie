@@ -52,6 +52,7 @@ import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef as buildImplicitTypeRefNode
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.CallableId
@@ -249,6 +250,17 @@ abstract class AbstractRawCfirBuilder<T : Any>(
     protected fun buildImplicitTypeRef(): CfirTypeRef {
         return buildImplicitTypeRefNode {
             customRenderer = false
+        }
+    }
+
+    /**
+     * 对语法上必须显式声明类型的值参数，缺失类型时直接构造 error type，
+     * 避免普通函数/构造器参数继续以 implicit type 进入后续 resolve。
+     */
+    protected fun createNoTypeForParameterTypeRef(parameterSource: CjSourceElement): CfirTypeRef {
+        return buildErrorTypeRef {
+            source = parameterSource
+            diagnostic = ConeSimpleDiagnostic("No type for parameter")
         }
     }
 

@@ -35,19 +35,24 @@ class CfirTypeDeserializer(
      */
     fun deserializeType(typeIndex: Int): ConeCangJieType {
         context.typeCache[typeIndex]?.let { return it }
-        if (!typesUnderDeserialization.add(typeIndex)) {
-            return createRecursiveTypeFallback(typeIndex)
-        }
+        val lock = context.typeMaterializationLock(typeIndex)
+        synchronized(lock) {
+            context.typeCache[typeIndex]?.let { return it }
+            if (!typesUnderDeserialization.add(typeIndex)) {
+                return createRecursiveTypeFallback(typeIndex)
+            }
 
-        val semaTy = context.pkg.allTypes(typeIndex)
-            ?: return errorType("Cannot read type index $typeIndex")
+            val semaTy = context.pkg.allTypes(typeIndex)
+                ?: return errorType("Cannot read type index $typeIndex")
 
-        return try {
-            val result = convertSemaTy(semaTy)
-            context.typeCache[typeIndex] = result
-            result
-        } finally {
-            typesUnderDeserialization.remove(typeIndex)
+            return try {
+                val result = convertSemaTy(semaTy)
+                context.typeCache.putIfAbsent(typeIndex, result)
+                context.typeCache[typeIndex] ?: result
+            } finally {
+                typesUnderDeserialization.remove(typeIndex)
+                context.releaseTypeMaterializationLock(typeIndex, lock)
+            }
         }
     }
 

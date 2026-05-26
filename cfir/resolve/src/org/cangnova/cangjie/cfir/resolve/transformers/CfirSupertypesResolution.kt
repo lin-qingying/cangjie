@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.services.CfirSuperTypeGraphEdge
@@ -238,11 +239,25 @@ open class SupertypeComputationSession {
         return classLikeDeclaration.superTypeRefs
     }
 
-    fun expandTypealiasInPlace(typeRef: CfirResolvedTypeRef): CfirResolvedTypeRef {
-        val expandedType = fullyExpandTypeAlias(typeRef.coneType) ?: return typeRef
+    /**
+     * 对齐 Kotlin `SupertypeComputationSession.expandTypealiasInPlace(...)`：
+     * `SUPER_TYPES` 阶段是否真的把 alias 改写成展开类型，必须受 session 里的全局 analysis flag 控制，
+     * 不能在这里无条件把 `ConeTypeAliasType` 抹平成真实类型。
+     */
+    fun expandTypealiasInPlace(typeRef: CfirResolvedTypeRef, session: CfirSession): CfirResolvedTypeRef {
+        if (!session.languageVersionSettings.getFlag(AnalysisFlags.expandTypeAliasesInTypeResolution)) {
+            return typeRef
+        }
+
+        val expandedType = typeRef.coneType.fullyExpandedType(session)
         if (expandedType == typeRef.coneType) return typeRef
-        return buildResolvedTypeRefCopy(typeRef) {
+        val expandedTypeRef = buildResolvedTypeRefCopy(typeRef) {
             coneType = expandedType
+        }
+        return if (expandedTypeRef.coneType is ConeErrorType) {
+            expandedTypeRef.toErrorTypeRef()
+        } else {
+            expandedTypeRef
         }
     }
 
@@ -459,7 +474,13 @@ internal open class CfirSupertypeResolverVisitor(
             createTypeResolutionConfiguration(typeAlias, prepareScopes(typeAlias)),
         )
         val resolvedTypeRef = when (resolvedExpandedType) {
-            is CfirResolvedTypeRef -> resolvedExpandedType
+            is CfirResolvedTypeRef -> {
+                if (resolvedExpandedType.coneType is ConeErrorType) {
+                    resolvedExpandedType.toErrorTypeRef()
+                } else {
+                    resolvedExpandedType
+                }
+            }
             else -> createErrorTypeRef(
                 typeAlias.expandedTypeRef.source,
                 "Unresolved expanded type: ${typeAlias.expandedTypeRef.renderReadable()}",
@@ -669,7 +690,10 @@ private class CfirApplySupertypesTransformer(
 
     override fun transformTypeAlias(typeAlias: CfirTypeAlias, data: Any?): CfirTypeAlias {
         if (typeAlias.expandedTypeRef !is CfirResolvedTypeRef) {
-            val expanded = supertypeComputationSession.expandTypealiasInPlace(supertypeComputationSession.getResolvedExpandedTypeRef(typeAlias))
+            val expanded = supertypeComputationSession.expandTypealiasInPlace(
+                supertypeComputationSession.getResolvedExpandedTypeRef(typeAlias),
+                session,
+            )
             typeAlias.replaceExpandedTypeRef(expanded)
         }
         typeAlias.replaceResolvePhase(CfirResolvePhase.SUPER_TYPES)
@@ -678,7 +702,7 @@ private class CfirApplySupertypesTransformer(
 
     private fun applyResolvedSupertypesToClassLike(classLikeDeclaration: CfirClassLikeDeclaration) {
         val resolvedRefs = supertypeComputationSession.getResolvedSupertypeRefs(classLikeDeclaration)
-            .map(supertypeComputationSession::expandTypealiasInPlace)
+            .map { ref -> supertypeComputationSession.expandTypealiasInPlace(ref, session) }
         if (classLikeDeclaration.superTypeRefs.any { it !is CfirResolvedTypeRef }) {
             classLikeDeclaration.replaceSuperTypeRefs(resolvedRefs)
         }
@@ -870,14 +894,6 @@ private fun ConeCangJieType.toReferencedDeclaration(session: CfirSession): CfirC
     } ?: return null
     return session.cfirProvider.getCfirClassifierByFqName(classId)
         ?: session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
-}
-
-private fun fullyExpandTypeAlias(type: ConeCangJieType): ConeCangJieType? {
-    var current: ConeCangJieType = type
-    while (current is ConeTypeAliasType && current.expandedType != null) {
-        current = current.expandedType ?: break
-    }
-    return current
 }
 
 private fun createErrorTypeRef(

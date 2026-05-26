@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
@@ -51,7 +52,23 @@ interface ConeTypeContext :
         return a.typeArguments == b.typeArguments
     }
 
-    override fun CangJieTypeMarker.asRigidType(): RigidTypeMarker? = this as? ConeRigidType
+    /**
+     * 对齐 Kotlin FIR `ConeTypeContext.asRigidType()`：
+     * 进入通用类型检查器之前，class-like 语义比较必须基于 fully expanded type，
+     * 不能把 `ConeTypeAliasType` 当成独立 constructor 直接带进 subtype/equality/supertypes 计算。
+     *
+     * `DISABLE_TYPEALIAS_EXPANSION` 只要求保留声明/引用处的 alias 语法视图，
+     * 不应改变类型系统内部做语义判定时看到的真实类型头。
+     */
+    override fun CangJieTypeMarker.asRigidType(): RigidTypeMarker? {
+        val coneType = this as? ConeCangJieType ?: return null
+        val rigidType = coneType as? ConeRigidType ?: return null
+        return when (rigidType) {
+            is ConeClassLikeType -> rigidType.fullyExpandedType(session) as? ConeRigidType ?: rigidType
+            is ConeTypeAliasType -> rigidType.fullyExpandedType(session) as? ConeRigidType ?: rigidType
+            else -> rigidType
+        }
+    }
 
     override fun CangJieTypeMarker.isError(): Boolean = (this as? ConeCangJieType)?.isError == true
 

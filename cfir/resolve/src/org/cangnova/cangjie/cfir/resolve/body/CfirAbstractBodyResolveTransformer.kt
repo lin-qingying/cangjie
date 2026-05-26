@@ -75,6 +75,7 @@ abstract class CfirAbstractBodyResolveTransformer(
             }
         }
     }
+
     /**
      * 共享组件容器，集中持有 body resolve 所需的会话、上下文和服务。
      */
@@ -232,7 +233,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         declaration: CfirDeclaration,
         data: ResolutionMode,
     ): CfirDeclaration {
-        return declaration.transform(this, data)
+        // 对齐 Kotlin K2：declaration-content 钩子只负责继续向下遍历当前声明的 children，
+        // 让 designated body resolve 可以在“容器已选定”的前提下接管后续子树，而不是重新走一遍具体 transformXxx 分发。
+        @Suppress("UNCHECKED_CAST")
+        return transformElement(declaration, data) as CfirDeclaration
     }
 
     override fun <E : CfirElement> transformElement(element: E, data: ResolutionMode): E {
@@ -315,6 +319,14 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     override fun transformMainFunction(mainFunction: CfirMainFunction, data: ResolutionMode): CfirMainFunction {
         return declarationsTransformer.transformMainFunction(mainFunction, data)
+    }
+
+    override fun transformMacroDeclaration(macroDeclaration: CfirMacroDeclaration, data: ResolutionMode): CfirMacroDeclaration {
+        return declarationsTransformer.transformMacroDeclaration(macroDeclaration, data)
+    }
+
+    override fun transformFinalizer(finalizer: CfirFinalizer, data: ResolutionMode): CfirFinalizer {
+        return declarationsTransformer.transformFinalizer(finalizer, data)
     }
 
     override fun transformProperty(property: CfirProperty, data: ResolutionMode): CfirProperty {

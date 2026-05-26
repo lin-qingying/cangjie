@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
@@ -211,6 +212,13 @@ abstract class AbstractDiagnosticCollectorVisitor(
             visitWithDeclaration(macroDeclaration)
         }
     }
+
+    override fun visitFinalizer(finalizer: CfirFinalizer, data: Nothing?) {
+        withAnnotationContainer(finalizer) {
+            visitWithDeclaration(finalizer)
+        }
+    }
+
     override fun visitNamedFunction(namedFunction: CfirNamedFunction, data: Nothing?) {
         withAnnotationContainer(namedFunction) {
             visitWithDeclaration(namedFunction)

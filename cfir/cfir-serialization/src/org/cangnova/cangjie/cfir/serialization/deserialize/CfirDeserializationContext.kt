@@ -29,11 +29,43 @@ class CfirDeserializationContext(
     /** `allDecls` 索引 -> 已反序列化声明。 */
     val declCache = ConcurrentHashMap<Int, CfirDeclaration>()
 
+    /**
+     * 声明/类型反序列化器本身持有递归检测与 owner 栈，不能跨线程共享。
+     *
+     * 这里把“最终结果缓存”留在 context 上，再按索引串行化实际 materialization，
+     * 以保证同一个 `.cjo` 条目只会有一个共享结果进入缓存。
+     */
+    private val declMaterializationLocks = ConcurrentHashMap<Int, Any>()
+    private val typeMaterializationLocks = ConcurrentHashMap<Int, Any>()
+
     /** 导入包索引 -> 包级声明索引。 */
     internal val importedPackageIndices = ConcurrentHashMap<Int, CjoPackageIndex>()
 
     /** FullId 统一解析器。 */
     internal val fullIdResolver: CjoFullIdResolver by lazy(LazyThreadSafetyMode.PUBLICATION) {
         CjoFullIdResolver(this)
+    }
+
+    /**
+     * `CfirDeclDeserializer` / `CfirTypeDeserializer` 都带有调用栈态，
+     * 必须按次创建，不能像 Kotlin 的无栈 member deserializer 那样直接复用实例。
+     */
+    internal fun createTypeDeserializer(): CfirTypeDeserializer = CfirTypeDeserializer(this)
+
+    internal fun createDeclDeserializer(): CfirDeclDeserializer =
+        CfirDeclDeserializer(this, createTypeDeserializer())
+
+    internal fun declMaterializationLock(index: Int): Any =
+        declMaterializationLocks.computeIfAbsent(index) { Any() }
+
+    internal fun releaseDeclMaterializationLock(index: Int, lock: Any) {
+        declMaterializationLocks.remove(index, lock)
+    }
+
+    internal fun typeMaterializationLock(index: Int): Any =
+        typeMaterializationLocks.computeIfAbsent(index) { Any() }
+
+    internal fun releaseTypeMaterializationLock(index: Int, lock: Any) {
+        typeMaterializationLocks.remove(index, lock)
     }
 }

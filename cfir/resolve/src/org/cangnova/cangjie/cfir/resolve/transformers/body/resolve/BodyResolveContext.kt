@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
@@ -228,11 +229,22 @@ class BodyResolveContext(
 
     @OptIn(PrivateForInline::class)
     inline fun <T> withContainer(declaration: CfirDeclaration, f: () -> T): T {
+        containers.addLast(declaration)
+        return try {
+            f()
+        } finally {
+            containers.removeLast()
+        }
+    }
+
+    /**
+     * 对齐 Kotlin `withContainerRegularClass`：regular class 既要入容器栈，也要更新当前 containing class。
+     */
+    @OptIn(PrivateForInline::class)
+    private inline fun <T> withContainerRegularClass(declaration: CfirClass, f: () -> T): T {
         val oldContainingRegularClass = containingRegularClass
         containers.addLast(declaration)
-        if (declaration is CfirClass) {
-            containingRegularClass = declaration
-        }
+        containingRegularClass = declaration
         return try {
             f()
         } finally {
@@ -423,17 +435,51 @@ class BodyResolveContext(
             withTypeParameters
         }
 
+        val forFinalizers = if (owner is CfirClass && !isContextCollectorMode) {
+            val inaccessibleReceiver = InaccessibleImplicitReceiverValue(
+                ownerSymbol,
+                ownerType,
+                InaccessibleReceiverKind.FINALIZER,
+                holder.session,
+                holder.scopeSession,
+            )
+
+            withTypeParameters.addReceiver(null, inaccessibleReceiver)
+        } else {
+            forMembersResolution
+        }
+
         val newContexts = CfirRegularTowerDataContexts(
             regular = forMembersResolution,
             forNestedClasses = forNestedClasses,
             forStaticMembers = statics,
             forConstructorHeaders = forConstructorHeaders,
             forEnumConstructors = forEnumConstructors,
+            forFinalizers = forFinalizers,
             primaryConstructorPureParametersScope = primaryConstructorPureParametersScope,
             primaryConstructorAllParametersScope = primaryConstructorAllParametersScope,
         )
 
         return withTowerDataContexts(newContexts, f)
+    }
+
+    /**
+     * 对齐 Kotlin `forRegularClassBody`：
+     * 统一 regular class body 的本地 class 注册、class scope 安装和容器栈更新。
+     *
+     * 仓颉当前没有 Kotlin 的 inner/companion 静态嵌套 tower-data mode 切换语义，
+     * 因此这里只保留统一入口，不额外改写 tower data mode。
+     */
+    @OptIn(PrivateForInline::class)
+    fun <T> forRegularClassBody(
+        regularClass: CfirClass,
+        holder: SessionAndScopeSessionHolder,
+        f: () -> T,
+    ): T {
+        storeClassOrTypealiasIfNotNested(regularClass, holder.session)
+        return withScopesForClass(regularClass, holder) {
+            withContainerRegularClass(regularClass, f)
+        }
     }
 
     fun getPrimaryConstructorPureParametersScope(): CfirLocalScope? {
@@ -466,10 +512,31 @@ class BodyResolveContext(
         function: CfirFunction,
         holder: SessionAndScopeSessionHolder,
         f: () -> T,
+    ): T = withFunctionLocalScope(function, holder.session, f)
+
+    /**
+     * finalizer body 与普通函数共享局部参数作用域，
+     * 但需要切到 FINALIZER receiver mode：
+     * 成员访问仍可通过当前类 receiver 完成，而把 `this` 当值直接使用会由后续 checker 报错。
+     */
+    @OptIn(PrivateForInline::class)
+    inline fun <T> forFinalizerBody(
+        finalizer: CfirFinalizer,
+        holder: SessionAndScopeSessionHolder,
+        f: () -> T,
+    ): T = withTowerDataMode(CfirTowerDataMode.FINALIZER) {
+        withFunctionLocalScope(finalizer, holder.session, f)
+    }
+
+    @PublishedApi
+    internal inline fun <T> withFunctionLocalScope(
+        function: CfirFunction,
+        session: CfirSession,
+        f: () -> T,
     ): T = withTowerDataCleanup {
-        addLocalScope(CfirLocalScope(holder.session))
+        addLocalScope(CfirLocalScope(session))
         for (parameter in function.valueParameters) {
-            storeVariable(parameter, holder.session)
+            storeVariable(parameter, session)
         }
         f()
     }
@@ -748,6 +815,7 @@ enum class CfirTowerDataMode {
     STATIC_MEMBER,
     CONSTRUCTOR_HEADER,
     ENUM_CONSTRUCTOR,
+    FINALIZER,
 }
 
 class CfirRegularTowerDataContexts private constructor(
@@ -762,10 +830,11 @@ class CfirRegularTowerDataContexts private constructor(
         forStaticMembers: CfirTowerDataContext? = null,
         forConstructorHeaders: CfirTowerDataContext? = null,
         forEnumConstructors: CfirTowerDataContext? = null,
+        forFinalizers: CfirTowerDataContext? = null,
         primaryConstructorPureParametersScope: CfirLocalScope? = null,
         primaryConstructorAllParametersScope: CfirLocalScope? = null,
     ) : this(
-        enumMap(regular, forNestedClasses, forStaticMembers, forConstructorHeaders, forEnumConstructors),
+        enumMap(regular, forNestedClasses, forStaticMembers, forConstructorHeaders, forEnumConstructors, forFinalizers),
         primaryConstructorPureParametersScope,
         primaryConstructorAllParametersScope,
         CfirTowerDataMode.REGULAR,
@@ -814,6 +883,7 @@ class CfirRegularTowerDataContexts private constructor(
             forStaticMembers: CfirTowerDataContext?,
             forConstructorHeaders: CfirTowerDataContext?,
             forEnumConstructors: CfirTowerDataContext?,
+            forFinalizers: CfirTowerDataContext?,
         ): EnumMap<CfirTowerDataMode, CfirTowerDataContext> {
             val result = EnumMap<CfirTowerDataMode, CfirTowerDataContext>(CfirTowerDataMode::class.java)
             result[CfirTowerDataMode.REGULAR] = regular
@@ -821,6 +891,7 @@ class CfirRegularTowerDataContexts private constructor(
             result[CfirTowerDataMode.STATIC_MEMBER] = forStaticMembers ?: regular
             result[CfirTowerDataMode.CONSTRUCTOR_HEADER] = forConstructorHeaders ?: regular
             result[CfirTowerDataMode.ENUM_CONSTRUCTOR] = forEnumConstructors ?: regular
+            result[CfirTowerDataMode.FINALIZER] = forFinalizers ?: regular
             return result
         }
     }

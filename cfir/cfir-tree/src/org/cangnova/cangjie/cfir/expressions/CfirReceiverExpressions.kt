@@ -13,10 +13,15 @@ enum class InaccessibleReceiverKind {
     CLASS_HEADER,
     NESTED_CLASS,
     STATIC_MEMBER,
-    ENUM_CONSTRUCTOR;
+    ENUM_CONSTRUCTOR,
+    FINALIZER;
 
     val producesApplicableCandidate: Boolean
-        get() = false
+        get() = when (this) {
+            // finalizer 中成员访问仍然合法，只禁止把 `this` 当值直接使用。
+            FINALIZER -> true
+            else -> false
+        }
 }
 
 enum class CfirSmartcastStability {

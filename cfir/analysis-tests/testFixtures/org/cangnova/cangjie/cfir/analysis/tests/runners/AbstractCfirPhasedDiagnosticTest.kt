@@ -8,12 +8,10 @@ import org.cangnova.cangjie.test.TargetBackend
 import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
 import org.cangnova.cangjie.test.config.TestPhaseDirectives
 import org.cangnova.cangjie.test.config.TestPhase
-import org.cangnova.cangjie.test.config.commonConfigurationForTest
-import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.CFIR_PARSER
+import org.cangnova.cangjie.test.config.configurePhasedDiagnosticTest
 import org.cangnova.cangjie.test.directives.LanguageSettingsDirectives
 import org.cangnova.cangjie.test.directives.MacroConstructionDirectives
 import org.cangnova.cangjie.test.frontend.CfirDefaultFacade
-import org.cangnova.cangjie.test.model.FrontendKinds
 import org.cangnova.cangjie.test.runners.AbstractCangjieCompilerWithTargetBackendTest
 import org.cangnova.cangjie.test.services.impl.JUnit5Assertions
 
@@ -36,16 +34,12 @@ abstract class AbstractCfirPhasedDiagnosticTest(
 
         defaultDirectives {
             TestPhaseDirectives.LATEST_PHASE_IN_PIPELINE with TestPhase.BACKEND
-            CFIR_PARSER with parser
         }
 
-        commonConfigurationForTest(
-            targetFrontend = FrontendKinds.CFIR,
+        configurePhasedDiagnosticTest(
+            parser = parser,
             frontendFacade = ::CfirDefaultFacade,
         )
-
-
-        enableMetaInfoHandler()
     }
 }
 
@@ -62,12 +56,12 @@ abstract class AbstractCfirStructuredPhasedDiagnosticTest(
 
         defaultDirectives {
             TestPhaseDirectives.LATEST_PHASE_IN_PIPELINE with TestPhase.BACKEND
-            CFIR_PARSER with structuredParser
         }
 
-        commonConfigurationForTest(
-            targetFrontend = FrontendKinds.CFIR,
+        configurePhasedDiagnosticTest(
+            parser = structuredParser,
             frontendFacade = ::CfirDefaultFacade,
+            enableMetaInfoHandler = false,
         )
 
         useAfterAnalysisCheckers(::CfirInlineDiagnosticsChecker)

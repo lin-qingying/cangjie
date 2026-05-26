@@ -804,7 +804,9 @@ class PsiRawCfirBuilder(
             propertySymbol: CfirPropertySymbol,
         ): CfirPropertyAccessor {
             val accessorSymbol = CfirPropertyAccessorSymbol()
-            val valueParams = psi.valueParameters.map { parameter -> convertValueParameter(parameter, accessorSymbol) }
+            val valueParams = psi.valueParameters.map { parameter ->
+                convertValueParameter(parameter, accessorSymbol, requiresExplicitType = psi.isGetter)
+            }
             if (!psi.isGetter) {
                 valueParams.firstOrNull()
                     ?.takeIf { it.returnTypeRef is CfirImplicitTypeRef }
@@ -972,7 +974,9 @@ class PsiRawCfirBuilder(
 
         private fun convertConstructor(psi: CjConstructor<*>, isPrimary: Boolean): CfirConstructor {
             val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
-            val valueParams = psi.valueParameters.map { convertValueParameter(it, constructorSymbol) }
+            val valueParams = psi.valueParameters.map {
+                convertValueParameter(it, constructorSymbol, requiresExplicitType = true)
+            }
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
             val body = psi.buildCfirBody(functionTarget, constructorSymbol)
 
@@ -1101,11 +1105,13 @@ class PsiRawCfirBuilder(
         fun convertValueParameter(
             psi: CjParameter,
             containingSymbol: CfirBasedSymbol<*>,
+            requiresExplicitType: Boolean = true,
         ): CfirValueParameter {
+            val parameterSource = psi.toCjPsiSourceElement()
             val parameter = buildSourceDeclaration(CfirValueParameterSymbol(callableIdFor(psi.nameAsSafeName))) { symbol ->
                 buildValueParameter {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = psi.toCjPsiSourceElement()
+                    source = parameterSource
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
@@ -1114,7 +1120,11 @@ class PsiRawCfirBuilder(
                     isLocal = false
                     isNamed = psi.isNamed
                     status = CfirDeclarationStatusImpl.DEFAULT
-                    returnTypeRef = convertTypeRef(psi.typeReference)
+                    returnTypeRef = when {
+                        psi.typeReference != null -> convertTypeRef(psi.typeReference)
+                        requiresExplicitType -> createNoTypeForParameterTypeRef(parameterSource)
+                        else -> buildImplicitTypeRef()
+                    }
                     name = psi.nameAsSafeName
                     defaultValue = psi.defaultValue?.let { convertExpression(it) }
                     containingDeclarationSymbol = containingSymbol
@@ -2304,7 +2314,9 @@ class PsiRawCfirBuilder(
 
         private fun convertLambda(psi: CjLambdaExpression): CfirAnonymousFunctionExpression {
             val anonymousFunctionSymbol = CfirAnonymousFunctionSymbol()
-            val valueParams = psi.valueParameters.map { convertValueParameter(it, anonymousFunctionSymbol) }
+            val valueParams = psi.valueParameters.map {
+                convertValueParameter(it, anonymousFunctionSymbol, requiresExplicitType = false)
+            }
             val hasExplicitParameterList = psi.valueParameters.isNotEmpty()
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = true)
             val body = withContainerSymbol(anonymousFunctionSymbol) {

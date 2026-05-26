@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.render
 
 import org.cangnova.cangjie.cfir.types.ConeAnyType
+import org.cangnova.cangjie.cfir.types.AbbreviatedTypeAttribute
 import org.cangnova.cangjie.cfir.types.ConeCStringType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -118,8 +119,9 @@ open class ConeTypeRenderer(
      * 因此暂时直接复用全部 attributes 的 renderer 输出。
      */
     protected fun ConeCangJieType.renderNonCompilerAttributes() {
-        if (!attributes.any()) return
-        builder.append(attributeRenderer.render(attributes))
+        val nonCompilerAttributes = attributes.filter { it.key != AbbreviatedTypeAttribute::class }
+        if (nonCompilerAttributes.isEmpty()) return
+        builder.append(attributeRenderer.render(nonCompilerAttributes))
     }
 
     /**

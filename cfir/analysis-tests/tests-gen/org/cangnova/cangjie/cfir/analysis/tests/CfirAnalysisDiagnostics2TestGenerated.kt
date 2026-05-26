@@ -1331,6 +1331,12 @@ class CfirAnalysisDiagnostics2TestGenerated : AbstractCfirLightTreeDiagnosticsTe
         fun testA() {
             runTest("cfir/analysis-tests/testData/diagnostics2/typealias/a.cj")
         }
+
+        @TestMetadata("crossPackageImportedAliasInFunctionSignature.cj")
+        @Test
+        fun testCrossPackageImportedAliasInFunctionSignature() {
+            runTest("cfir/analysis-tests/testData/diagnostics2/typealias/crossPackageImportedAliasInFunctionSignature.cj")
+        }
     }
 
     @TestMetadata("unresolved")

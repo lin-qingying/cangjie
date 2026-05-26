@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.analysis.tests.services
 
+import java.nio.charset.StandardCharsets
 import org.cangnova.cangjie.test.WrappedException
 import org.cangnova.cangjie.test.config.TestPhaseDirectives
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
@@ -20,7 +21,7 @@ class CfirWithoutAliasExpansionTestSuppressor(
     testServices: TestServices,
 ) : AfterAnalysisChecker(testServices) {
     override val directiveContainers: List<DirectivesContainer>
-        get() = listOf(TestPhaseDirectives)
+        get() = listOf(CfirDiagnosticsDirectives)
 
     override val order: Order
         get() = Order.P5
@@ -41,7 +42,7 @@ class CfirWithoutAliasExpansionTestSuppressor(
 }
 
 /**
- * Runs this test configuration only for test data containing `typealias`.
+ * Runs this test configuration only for test data containing real Cangjie type aliases.
  *
  * Aligned with Kotlin's `OnlyTestsWithTypeAliasesMetaConfigurator`.
  */
@@ -49,9 +50,15 @@ class OnlyTestsWithTypeAliasesMetaConfigurator(
     testServices: TestServices,
 ) : MetaTestConfigurator(testServices) {
     override fun shouldSkipTest(): Boolean {
-        return testServices.moduleStructure.originalTestDataFiles.none { file ->
-            file.readText().contains("typealias")
-        }
+        return testServices.moduleStructure.originalTestDataFiles.none(::containsTypeAliasDeclaration)
     }
 }
 
+private val TYPE_ALIAS_DECLARATION_REGEX = Regex(
+    """(?m)^\s*(?:(?:public|protected|internal|private|open|abstract|override|redef|mut|unsafe|foreign|static|sealed)\s+)*type\s+[A-Za-z_][A-Za-z0-9_]*(?:\s*<[^=\r\n]*>)?\s*=""",
+)
+
+private fun containsTypeAliasDeclaration(file: java.io.File): Boolean {
+    val text = file.readText(StandardCharsets.UTF_8)
+    return TYPE_ALIAS_DECLARATION_REGEX.containsMatchIn(text)
+}

@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.resolve.providers.macro.RecordableRawCfirFiles
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
@@ -54,6 +55,7 @@ class CfirProviderImpl(
     override val symbolProvider: CfirSymbolProvider = SourceSymbolProvider()
 
     private val state = State()
+    private val exportedTopLevelNamesCache: MutableMap<FqName, SourceExportedTopLevelNames> = hashMapOf()
 
     /**
      * Source provider 注册状态机（baseline 第 5 节）。
@@ -121,13 +123,21 @@ class CfirProviderImpl(
                 isTopLevel = true,
             )
         }
+
+        for (import in file.imports) {
+            import.reexportInfoOrNull()?.let { reexport ->
+                state.exportedImportsInPackage.getOrPut(packageName, ::mutableListOf).add(reexport)
+            }
+        }
     }
 
     override fun getCfirFilesByPackage(fqName: FqName): List<CfirFile> =
         state.fileMap[fqName].orEmpty()
 
     override fun getCfirClassifierByFqName(classId: ClassId): CfirClassLikeDeclaration? {
-        val symbol = state.classifierMap[classId] ?: return null
+        val symbol = state.classifierMap[classId]
+            ?: symbolProvider.getClassLikeSymbolByClassId(classId)
+            ?: return null
         return if (symbol.isBound) symbol.cfir as? CfirClassLikeDeclaration else null
     }
 
@@ -142,7 +152,7 @@ class CfirProviderImpl(
         state.callableContainerFileMap[symbol.unwrapCallableForDeclarationMetadataLookup()]
 
     override fun getClassNamesInPackage(fqName: FqName): Set<Name> =
-        state.classesInPackage[fqName].orEmpty()
+        resolveSourcePackageTopLevelNames(fqName).classifierNames
 
     override fun getContainingClass(symbol: org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol<*>): CfirClassLikeSymbol<*>? {
         val normalizedSymbol = symbol.unwrapForDeclarationMetadataLookup()
@@ -162,17 +172,17 @@ class CfirProviderImpl(
                 get() = false
 
             override fun getTopLevelClassifierNamesInPackage(packageFqName: FqName): Set<Name> =
-                state.classifierInPackage[packageFqName].orEmpty()
+                resolveSourcePackageTopLevelNames(packageFqName).classifierNames
 
             override val hasSpecificCallablePackageNamesComputation: Boolean
                 get() = false
 
             override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> =
-                state.callableNamesInPackage[packageFqName].orEmpty()
+                resolveSourcePackageTopLevelNames(packageFqName).callableNames
         }
 
         override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? =
-            state.classifierMap[classId] as? CfirClassLikeSymbol<*>
+            resolveSourcePackageTopLevelClassSymbol(classId)
 
         @CfirSymbolProviderInternals
         override fun getTopLevelCallableSymbolsTo(
@@ -180,7 +190,7 @@ class CfirProviderImpl(
             packageFqName: FqName,
             name: Name,
         ) {
-            destination += state.callableMap[CallableId(packageFqName, name)].orEmpty()
+            destination += resolveSourcePackageTopLevelCallableSymbols(packageFqName, name)
         }
 
         @CfirSymbolProviderInternals
@@ -189,7 +199,7 @@ class CfirProviderImpl(
             packageFqName: FqName,
             name: Name,
         ) {
-            destination += state.functionMap[CallableId(packageFqName, name)].orEmpty()
+            destination += resolveSourcePackageTopLevelFunctionSymbols(packageFqName, name)
         }
 
         @CfirSymbolProviderInternals
@@ -198,11 +208,206 @@ class CfirProviderImpl(
             packageFqName: FqName,
             name: Name,
         ) {
-            destination += state.propertyMap[CallableId(packageFqName, name)].orEmpty()
+            destination += resolveSourcePackageTopLevelPropertySymbols(packageFqName, name)
         }
 
         override fun hasPackage(fqName: FqName): Boolean =
             fqName in state.allSubPackages
+    }
+
+    /**
+     * source package 侧的导出顶层名视图。
+     *
+     * 与 `.cjo` 读取侧保持同一策略：
+     * 先放入本包物理声明，再递归合并 reexport import，
+     * 同名时保持先到先得，让本包物理声明优先。
+     */
+    private fun resolveSourcePackageTopLevelNames(packageFqName: FqName): SourceExportedTopLevelNames {
+        if (packageFqName !in state.allSubPackages) {
+            return EMPTY_EXPORTED_TOP_LEVEL_NAMES
+        }
+        return resolveAvailableTopLevelNames(packageFqName, linkedSetOf())
+    }
+
+    private fun resolveAvailableTopLevelNames(
+        packageFqName: FqName,
+        visiting: LinkedHashSet<FqName>,
+    ): SourceExportedTopLevelNames {
+        exportedTopLevelNamesCache[packageFqName]?.let { return it }
+        if (packageFqName !in state.allSubPackages) {
+            return resolveDelegatedTopLevelNames(packageFqName)
+        }
+        if (!visiting.add(packageFqName)) return EMPTY_EXPORTED_TOP_LEVEL_NAMES
+
+        val callableNames = linkedSetOf<Name>().apply {
+            addAll(state.callableNamesInPackage[packageFqName].orEmpty())
+        }
+        val classifierNames = linkedSetOf<Name>().apply {
+            addAll(state.classifierInPackage[packageFqName].orEmpty())
+        }
+        val callableTargets = linkedMapOf<Name, SourceExportedTopLevelTarget>().apply {
+            for (name in callableNames) {
+                put(name, SourceExportedTopLevelTarget(packageFqName, name))
+            }
+        }
+        val classifierTargets = linkedMapOf<Name, SourceExportedTopLevelTarget>().apply {
+            for (name in classifierNames) {
+                put(name, SourceExportedTopLevelTarget(packageFqName, name))
+            }
+        }
+
+        for (reexport in state.exportedImportsInPackage[packageFqName].orEmpty()) {
+            val importedNames = resolveAvailableTopLevelNames(reexport.importedPackageFqName, visiting)
+
+            if (reexport.isAllUnder) {
+                callableNames += importedNames.callableNames
+                classifierNames += importedNames.classifierNames
+                mergeExportTargets(callableTargets, importedNames.callableTargets)
+                mergeExportTargets(classifierTargets, importedNames.classifierTargets)
+                continue
+            }
+
+            val importedName = reexport.importedName ?: continue
+            val exportedName = reexport.exportedName ?: continue
+
+            if (importedName in importedNames.callableNames) {
+                callableNames += exportedName
+                importedNames.callableTargets[importedName]?.let { target ->
+                    callableTargets.putIfAbsent(exportedName, target)
+                }
+            }
+            if (importedName in importedNames.classifierNames) {
+                classifierNames += exportedName
+                importedNames.classifierTargets[importedName]?.let { target ->
+                    classifierTargets.putIfAbsent(exportedName, target)
+                }
+            }
+        }
+
+        visiting.remove(packageFqName)
+        val resolved = SourceExportedTopLevelNames(
+            callableNames = callableNames,
+            classifierNames = classifierNames,
+            callableTargets = callableTargets,
+            classifierTargets = classifierTargets,
+        )
+        exportedTopLevelNamesCache.putIfAbsent(packageFqName, resolved)
+        return exportedTopLevelNamesCache[packageFqName] ?: resolved
+    }
+
+    private fun resolveDelegatedTopLevelNames(packageFqName: FqName): SourceExportedTopLevelNames {
+        exportedTopLevelNamesCache[packageFqName]?.let { return it }
+
+        val callableNames = linkedSetOf<Name>()
+        val classifierNames = linkedSetOf<Name>()
+        for (provider in delegatedSymbolProviders()) {
+            callableNames += provider.symbolNamesProvider.getTopLevelCallableNamesInPackage(packageFqName).orEmpty()
+            classifierNames += provider.symbolNamesProvider.getTopLevelClassifierNamesInPackage(packageFqName).orEmpty()
+        }
+
+        val resolved = SourceExportedTopLevelNames(
+            callableNames = callableNames,
+            classifierNames = classifierNames,
+            callableTargets = callableNames.associateWithTo(linkedMapOf()) { name ->
+                SourceExportedTopLevelTarget(packageFqName, name)
+            },
+            classifierTargets = classifierNames.associateWithTo(linkedMapOf()) { name ->
+                SourceExportedTopLevelTarget(packageFqName, name)
+            },
+        )
+        exportedTopLevelNamesCache.putIfAbsent(packageFqName, resolved)
+        return exportedTopLevelNamesCache[packageFqName] ?: resolved
+    }
+
+    private fun delegatedSymbolProviders(): List<CfirSymbolProvider> {
+        val composite = session.symbolProvider as? CfirCompositeSymbolProvider ?: return emptyList()
+        return composite.providers.filterNot { it === symbolProvider }
+    }
+
+    private fun resolveSourcePackageTopLevelClassSymbol(classId: ClassId): CfirClassLikeSymbol<*>? {
+        if (classId.packageFqName !in state.allSubPackages) return null
+        val target = resolveSourcePackageTopLevelNames(classId.packageFqName)
+            .classifierTargets[classId.shortClassName]
+            ?: return null
+        return loadTargetClassLikeSymbol(target)
+    }
+
+    private fun resolveSourcePackageTopLevelCallableSymbols(
+        packageFqName: FqName,
+        name: Name,
+    ): List<CfirCallableSymbol<*>> {
+        if (packageFqName !in state.allSubPackages) return emptyList()
+        val target = resolveSourcePackageTopLevelNames(packageFqName).callableTargets[name] ?: return emptyList()
+        return loadTargetCallableSymbols(target)
+    }
+
+    private fun resolveSourcePackageTopLevelFunctionSymbols(
+        packageFqName: FqName,
+        name: Name,
+    ): List<CfirNamedFunctionSymbol> {
+        if (packageFqName !in state.allSubPackages) return emptyList()
+        val target = resolveSourcePackageTopLevelNames(packageFqName).callableTargets[name] ?: return emptyList()
+        return loadTargetFunctionSymbols(target)
+    }
+
+    private fun resolveSourcePackageTopLevelPropertySymbols(
+        packageFqName: FqName,
+        name: Name,
+    ): List<CfirPropertySymbol> {
+        if (packageFqName !in state.allSubPackages) return emptyList()
+        val target = resolveSourcePackageTopLevelNames(packageFqName).callableTargets[name] ?: return emptyList()
+        return loadTargetPropertySymbols(target)
+    }
+
+    private fun loadTargetClassLikeSymbol(target: SourceExportedTopLevelTarget): CfirClassLikeSymbol<*>? {
+        val classId = ClassId(target.packageFqName, target.name)
+        state.classifierMap[classId]?.let { return it as? CfirClassLikeSymbol<*> }
+        for (provider in delegatedSymbolProviders()) {
+            provider.getClassLikeSymbolByClassId(classId)?.let { return it }
+        }
+        return null
+    }
+
+    @OptIn(CfirSymbolProviderInternals::class)
+    private fun loadTargetCallableSymbols(target: SourceExportedTopLevelTarget): List<CfirCallableSymbol<*>> {
+        val callableId = CallableId(target.packageFqName, target.name)
+        return buildList {
+            addAll(state.callableMap[callableId].orEmpty())
+            for (provider in delegatedSymbolProviders()) {
+                provider.getTopLevelCallableSymbolsTo(this, target.packageFqName, target.name)
+            }
+        }.distinct()
+    }
+
+    @OptIn(CfirSymbolProviderInternals::class)
+    private fun loadTargetFunctionSymbols(target: SourceExportedTopLevelTarget): List<CfirNamedFunctionSymbol> {
+        val callableId = CallableId(target.packageFqName, target.name)
+        return buildList {
+            addAll(state.functionMap[callableId].orEmpty())
+            for (provider in delegatedSymbolProviders()) {
+                provider.getTopLevelFunctionSymbolsTo(this, target.packageFqName, target.name)
+            }
+        }.distinct()
+    }
+
+    @OptIn(CfirSymbolProviderInternals::class)
+    private fun loadTargetPropertySymbols(target: SourceExportedTopLevelTarget): List<CfirPropertySymbol> {
+        val callableId = CallableId(target.packageFqName, target.name)
+        return buildList {
+            addAll(state.propertyMap[callableId].orEmpty())
+            for (provider in delegatedSymbolProviders()) {
+                provider.getTopLevelPropertySymbolsTo(this, target.packageFqName, target.name)
+            }
+        }.distinct()
+    }
+
+    private fun mergeExportTargets(
+        destination: MutableMap<Name, SourceExportedTopLevelTarget>,
+        source: Map<Name, SourceExportedTopLevelTarget>,
+    ) {
+        for ((visibleName, target) in source) {
+            destination.putIfAbsent(visibleName, target)
+        }
     }
 
     private fun recordPackageAndParents(packageName: FqName) {
@@ -478,5 +683,25 @@ class CfirProviderImpl(
         val functionMap: MutableMap<CallableId, MutableList<CfirNamedFunctionSymbol>> = hashMapOf()
         val propertyMap: MutableMap<CallableId, MutableList<CfirPropertySymbol>> = hashMapOf()
         val callableNamesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
+        val exportedImportsInPackage: MutableMap<FqName, MutableList<CfirReexportImportInfo>> = hashMapOf()
+    }
+
+    private data class SourceExportedTopLevelTarget(
+        val packageFqName: FqName,
+        val name: Name,
+    )
+
+    private data class SourceExportedTopLevelNames(
+        val callableNames: Set<Name>,
+        val classifierNames: Set<Name>,
+        val callableTargets: Map<Name, SourceExportedTopLevelTarget> = emptyMap(),
+        val classifierTargets: Map<Name, SourceExportedTopLevelTarget> = emptyMap(),
+    )
+
+    private companion object {
+        val EMPTY_EXPORTED_TOP_LEVEL_NAMES = SourceExportedTopLevelNames(
+            callableNames = emptySet(),
+            classifierNames = emptySet(),
+        )
     }
 }

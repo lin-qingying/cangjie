@@ -1,0 +1,102 @@
+package org.cangnova.cangjie.cfir.serialization.cjo
+
+import PackageFormat.PackageKind
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.io.TempDir
+import java.nio.file.Path
+
+class CjoExportedTopLevelNamesResolverTest {
+    @TempDir
+    lateinit var tempDir: Path
+
+    @Test
+    fun `resolver keeps physical declarations and follows public import reexports`() {
+        writeCjo(
+            fileName = "macro-definition.cjo",
+            packageFqName = "macro_definition",
+            kind = PackageKind.Macro,
+            callableNames = listOf("MakeInt64"),
+        )
+        writeCjo(
+            fileName = "derive.cjo",
+            packageFqName = "std.deriving",
+            kind = PackageKind.Macro,
+            callableNames = listOf("Derive"),
+        )
+        writeCjo(
+            fileName = "facade.cjo",
+            packageFqName = "a",
+            kind = PackageKind.Macro,
+            callableNames = emptyList(),
+            fileImports = listOf(
+                CjoPackageFileImports(
+                    imports = listOf(
+                        CjoPackageImport(
+                            prefixPaths = listOf("std", "deriving"),
+                            identifier = "Derive",
+                            alias = "DeriveAlias",
+                            isDecl = true,
+                            withImplicitExport = true,
+                        ),
+                        CjoPackageImport(
+                            prefixPaths = listOf("std", "deriving"),
+                            identifier = "Derive",
+                            isDecl = true,
+                            withImplicitExport = true,
+                        ),
+                    ),
+                ),
+            ),
+        )
+
+        val resolver = CjoExportedTopLevelNamesResolver(
+            CjoManager(
+                CjoSearchPath { envName ->
+                    when (envName) {
+                        "CANGJIE_LIBRARY", "CANGJIE_STDLIB_MODULE" -> tempDir.toString()
+                        else -> null
+                    }
+                },
+            ),
+        )
+
+        assertEquals(
+            setOf("MakeInt64"),
+            resolver.resolve(FqName("macro_definition")).callableNames.mapTo(linkedSetOf()) { it.asString() },
+        )
+        assertEquals(
+            setOf("DeriveAlias", "Derive"),
+            resolver.resolve(FqName("a")).callableNames.mapTo(linkedSetOf()) { it.asString() },
+        )
+        assertEquals(
+            CjoExportedTopLevelTarget(FqName("std.deriving"), Name.identifier("Derive")),
+            resolver.resolve(FqName("a")).callableTargets[Name.identifier("Derive")],
+        )
+        assertEquals(
+            CjoExportedTopLevelTarget(FqName("std.deriving"), Name.identifier("Derive")),
+            resolver.resolve(FqName("a")).callableTargets[Name.identifier("DeriveAlias")],
+        )
+    }
+
+    private fun writeCjo(
+        fileName: String,
+        packageFqName: String,
+        kind: UByte,
+        callableNames: List<String>,
+        fileImports: List<CjoPackageFileImports> = emptyList(),
+    ) {
+        CjoPackageWriter.write(
+            tempDir.resolve(fileName),
+            CjoPackageMetadata(
+                fullPackageName = packageFqName,
+                moduleName = "cjo-export-test",
+                kind = kind,
+                fileImports = fileImports,
+                declarations = callableNames.map(::CjoPackageDeclaration),
+            ),
+        )
+    }
+}

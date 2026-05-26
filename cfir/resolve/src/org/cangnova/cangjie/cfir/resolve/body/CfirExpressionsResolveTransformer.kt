@@ -99,6 +99,9 @@ open class CfirExpressionsResolveTransformer(
     // ── Literals ─────────────────────────────────────────────────────────────
 
     override fun transformExpression(expression: CfirExpression, data: ResolutionMode): CfirExpression {
+        if (expression is CfirThisReceiverExpression) {
+            return transformThisReceiverExpression(expression, data)
+        }
         if (!expression.hasResolvedType && expression !is CfirWrappedExpression) {
             expression.resultType = ConeErrorType(
                 ConeSimpleDiagnostic(
