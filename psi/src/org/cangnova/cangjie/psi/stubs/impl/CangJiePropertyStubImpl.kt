@@ -36,6 +36,7 @@ class CangJiePropertyStubImpl(
     parent: StubElement<out PsiElement>?,
     private val name: StringRef?,
     private val fqName: FqName?,
+    val origin: CangJieStubOrigin? = null,
 ) : CangJieStubBaseImpl<CjProperty>(parent, CjStubElementTypes.PROPERTY), CangJiePropertyStub {
     override fun getFqName(): FqName? = fqName
 
@@ -45,5 +46,6 @@ class CangJiePropertyStubImpl(
         parent = newParent,
         name = name,
         fqName = fqName,
+        origin = origin,
     )
 }

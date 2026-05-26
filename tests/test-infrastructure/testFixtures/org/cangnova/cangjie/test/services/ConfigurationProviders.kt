@@ -10,6 +10,7 @@ import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
 import org.cangnova.cangjie.config.addCangJieSourceRoot
 import org.cangnova.cangjie.config.create
+import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.messages.CompilerMessageSeverity
 import org.cangnova.cangjie.messages.MessageCollector
 import org.cangnova.cangjie.messages.CompilerMessageSourceLocation
@@ -59,28 +60,9 @@ class CompilerConfigurationProviderImpl(
         configureProject(environment.project, module, configuration)
         return environment
     }
+
     override fun createCompilerConfiguration(module: TestModule): CompilerConfiguration {
-        val messageCollector = TestMessageCollector()
-        val configuration = if (testServices.defaultsProvider.frontendKind == FrontendKinds.CFIR) {
-            CompilerConfiguration.createForCfirFrontend(messageCollector = messageCollector)
-        } else {
-            CompilerConfiguration.create(messageCollector = messageCollector)
-        }
-
-        // TODO: 实现阶段特定的环境配置器调用
-        // 当前 environmentConfigurators 列表已注入但未被使用。
-        // 应遍历 environmentConfigurators，对每个配置器调用其配置方法（例如 configureEnvironment 或 registerExtensions），
-        // 以便在编译环境初始化阶段注入测试所需的自定义行为（如注册插件、设置语言版本等）。
-        configurators.forEach { _ -> }
-
-        module.files.forEach { file ->
-            val realFile = testServices.sourceFileProvider.getOrCreateRealFileForSourceFile(file)
-            configuration.addCangJieSourceRoot(
-                path = realFile.canonicalPath,
-                hmppModuleName = module.name,
-            )
-        }
-        return configuration
+        return createCompilerConfiguration(module, CompilationStage.FIRST)
     }
 
     override fun getCompilerConfiguration(
@@ -108,26 +90,7 @@ class CompilerConfigurationProviderImpl(
 
     @OptIn(TestInfrastructureInternals::class)
     fun createCompilerConfiguration(module: TestModule, compilationStage: CompilationStage): CompilerConfiguration {
-        return createCompilerConfiguration(
-            testServices,
-            module,
-            configurators,
-            compilationStage,
-        ).also { configuration ->
-            // TODO: 实现基于前端门面的插件注册与项目配置回调
-            // 当 testServices.frontendBasedFacadesEnabled 为 true 时，需要：
-            // 1. 通过 TEST_ONLY_PLUGIN_REGISTRATION_CALLBACK 注册编译器扩展（registerCompilerExtensions）
-            // 2. 通过 TEST_ONLY_PROJECT_CONFIGURATION_CALLBACK 触发项目配置（configureProject）
-            // 待前端门面机制（frontendBasedFacades）完善后解除注释：
-            // if (testServices.frontendBasedFacadesEnabled) {
-            //     configuration.put(TEST_ONLY_PLUGIN_REGISTRATION_CALLBACK) { extensionStorage ->
-            //         registerCompilerExtensions(extensionStorage, module, configuration)
-            //     }
-            //     configuration.put(TEST_ONLY_PROJECT_CONFIGURATION_CALLBACK) {
-            //         configureProject(it, module, configuration)
-            //     }
-            // }
-        }
+        return createCompilerConfiguration(testServices, module, configurators, compilationStage)
     }
 }
 
@@ -178,19 +141,38 @@ fun createCompilerConfiguration(
     configurators: List<AbstractEnvironmentConfigurator>,
     compilationStage: CompilationStage,
 ): CompilerConfiguration {
-    val configuration = CompilerConfiguration.create()
+    val messageCollector = TestMessageCollector()
+    val configuration = if (testServices.defaultsProvider.frontendKind == FrontendKinds.CFIR) {
+        CompilerConfiguration.createForCfirFrontend(messageCollector = messageCollector)
+    } else {
+        CompilerConfiguration.create(messageCollector = messageCollector)
+    }
     configuration[CommonConfigurationKeys.MODULE_NAME] = module.name
+    module.languageVersionSettings?.let { configuration.languageVersionSettings = it }
 
-    // TODO: 实现基于 compilationStage 和 configurators 的差异化配置
-    // 当前所有编译阶段均返回同一份基础配置，configurators 参数未被使用。
-    // 应根据 compilationStage（如 FIRST、SECOND 等）的不同，让对应的 configurators
-    // 对 configuration 进行阶段特定的配置（如设置输出目录、启用增量编译、注入依赖路径等）。
-    // 参考 Kotlin 测试框架中 AbstractEnvironmentConfigurator.configureCompilerConfiguration 的实现方式。
+    /**
+     * phased / pipeline facade 也必须复用和普通 CFIR facade 相同的基础编译配置：
+     * - module languageVersionSettings
+     * - source roots
+     * - 对应 compilationStage 的 environment configurators
+     *
+     * 否则 phased 测试拿到的并不是真实前端环境，只会在 without-alias-expansion 之类
+     * 依赖 LanguageVersionSettings 的场景中暴露“假接线”。
+     */
     for (configurator in configurators) {
         if (compilationStage == configurator.compilationStage) {
             configurator.configureCompileConfigurationWithAdditionalConfigurationKeys(configuration, module)
         }
     }
+
+    module.files.forEach { file ->
+        val realFile = testServices.sourceFileProvider.getOrCreateRealFileForSourceFile(file)
+        configuration.addCangJieSourceRoot(
+            path = realFile.canonicalPath,
+            hmppModuleName = module.name,
+        )
+    }
+
     return configuration
 }
 

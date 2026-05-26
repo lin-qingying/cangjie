@@ -60,9 +60,12 @@ fun prepareMacroArtifactDefinitionsForExpansion(
         searchRoots = macroArtifactSearchRoots(configuration) + macroCompilation.artifactSearchPaths,
         explicitArtifacts = configuration.macroArtifactPackages,
     )
+    val artifactSearchRoots = macroArtifactSearchRoots(configuration) + macroCompilation.artifactSearchPaths
     val artifactResolution = MacroArtifactResolver().resolve(
         packages = locatedArtifacts,
         expectedExecutorAbiVersion = configuration.macroExecutorAbiVersion,
+        searchRoots = artifactSearchRoots,
+        sdkHome = configuration.macroSdkHome,
     )
     return MacroExpansionArtifactPreparationResult(
         definitions = artifactResolution.definitions,

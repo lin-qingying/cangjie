@@ -28,14 +28,22 @@ import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.psi.psiUtil.deleteSemicolon
 import org.cangnova.cangjie.psi.psiUtil.parentSubstitute
 import com.intellij.extapi.psi.ASTWrapperPsiElement
+import com.intellij.extapi.psi.StubBasedPsiElementBase
 import com.intellij.lang.ASTNode
 import com.intellij.lang.Language
 import com.intellij.model.psi.PsiSymbolDeclaration
 import com.intellij.model.psi.PsiSymbolReference
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectLocator
 import com.intellij.psi.NavigatablePsiElement
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiElementVisitor
 import com.intellij.psi.PsiReference
+import com.intellij.psi.PsiManager
+import com.intellij.psi.SmartPointerManager
+import com.intellij.psi.StubBasedPsiElement
+import com.intellij.psi.stubs.PsiFileStub
+import com.intellij.psi.stubs.StubElement
 
 
 
@@ -74,6 +82,152 @@ interface CjElement : NavigatablePsiElement, CjPureElement {
      */
     @Deprecated("Don't use getReference() on CjElement for the choice is unpredictable")
     override fun getReference(): PsiReference?
+}
+
+/**
+ * 把缓存里持有的 compiled PSI 恢复到当前 live PSI。
+ *
+ * `.cjo` 的 decompiled view provider / document 可能在 IDE 生命周期里被重建，
+ * 旧的 compiled PSI 即使 `isValid == true`，其 text range 也可能已经对应不上当前文档。
+ * 导航、引用解析、Analysis API 等任何再次把 compiled PSI 暴露回平台的入口，
+ * 都必须先走一次 smart pointer 恢复，禁止继续直接返回旧元素。
+ */
+fun <E : CjElement> E.restoreCurrentCjElement(preferredProject: Project? = null): E? {
+    val containingFile = runCatching { containingCjFile }.getOrNull() ?: return null
+    if (!containingFile.isCompiled) return this
+
+    val currentFile = containingFile.findCurrentCompiledFileForRestore(preferredProject) ?: return null
+
+    /*
+     * compiled PSI 的真实失效模式不是“元素自己 invalid”，而是旧元素仍然挂在旧的
+     * decompiled view provider 上；这时只要把旧 PSI 再喂给 SmartPointerManager，
+     * 平台会先做 provider 一致性校验并直接抛出 `different providers`。
+     *
+     * 因而 compiled 元素的恢复不能再以旧 PSI 本体为入口，而必须先拿到当前 live file，
+     * 再按 stub 树中的结构身份把 live PSI 找回来。
+     */
+    if (containingFile.viewProvider === currentFile.viewProvider) {
+        @Suppress("UNCHECKED_CAST")
+        return this as E
+    }
+
+    if (this === containingFile) {
+        @Suppress("UNCHECKED_CAST")
+        return currentFile as E
+    }
+
+    val restoredByStubPath = restoreCurrentCompiledStubPsi(currentFile)
+    if (restoredByStubPath != null) {
+        @Suppress("UNCHECKED_CAST")
+        return restoredByStubPath as E
+    }
+
+    return null
+}
+
+/**
+ * compiled `.cjo`` 可能跨测试 / 跨项目被 session cache 暂时持有。
+ *
+ * 这时 `containingFile.project` 指向的往往是已经失效的旧 Project，
+ * 继续用它去 `PsiManager.findFile()` 会直接把恢复链断掉，最终让 `symbol.psi` 退化成 `null`。
+ *
+ * 因此 live file 的查找必须先尝试当前元素自带 project，
+ * 再退回平台级 `ProjectLocator`，按 virtual file 找到当前仍然活着的 Project。
+ */
+private fun CjFile.findCurrentCompiledFileForRestore(preferredProject: Project?): CjFile? {
+    val virtualFile = virtualFile ?: return null
+    val candidateProjects = LinkedHashSet<Project>()
+
+    preferredProject
+        ?.takeUnless(Project::isDisposed)
+        ?.let(candidateProjects::add)
+    project.takeUnless(Project::isDisposed)?.let(candidateProjects::add)
+
+    val projectLocator = ProjectLocator.getInstance()
+    projectLocator.guessProjectForFile(virtualFile)
+        ?.takeUnless(Project::isDisposed)
+        ?.let(candidateProjects::add)
+    ProjectLocator.getPreferredProject(virtualFile)
+        ?.takeUnless(Project::isDisposed)
+        ?.let(candidateProjects::add)
+
+    for (candidateProject in candidateProjects) {
+        val liveFile = PsiManager.getInstance(candidateProject).findFile(virtualFile) as? CjFile
+        if (liveFile != null) {
+            return liveFile
+        }
+    }
+
+    return null
+}
+
+/**
+ * 导航链路进入平台前，compiled PSI 必须强制恢复成当前 live PSI。
+ *
+ * 这里不允许再回退到旧元素，否则平台会继续拿过期 text range 去构造 range marker，
+ * 最终把 offset/document 不一致的问题延后到更深层再炸出来。
+ */
+fun <E : CjElement> E.requireCurrentCjElement(): E {
+    val containingFile = runCatching { containingCjFile }.getOrNull()
+    if (containingFile == null || !containingFile.isCompiled) return this
+
+    return checkNotNull(restoreCurrentCjElement()) {
+        "Failed to restore live compiled PSI for navigation: ${this::class.qualifiedName} in ${containingFile.virtualFile.path}"
+    }
+}
+
+private data class CjCompiledStubPathSegment(
+    val childIndex: Int,
+    val stubType: Any?,
+)
+
+/**
+ * 跨 provider 恢复 compiled PSI 时，只认 stub 结构身份。
+ *
+ * 同一个 `.cjo` 在 provider 重建前后，stub 树的父子结构与子节点顺序必须稳定；
+ * 只要沿旧元素的 stub 路径回到当前 live file，就能拿到当前 provider 上的 PSI。
+ */
+private fun CjElement.restoreCurrentCompiledStubPsi(currentFile: CjFile): CjElement? {
+    val stubBasedElement = this as? StubBasedPsiElement<*> ?: return null
+    val elementStub = (stubBasedElement as? StubBasedPsiElementBase<*>)?.greenStub ?: stubBasedElement.stub ?: return null
+    val pathFromFile = elementStub.buildCompiledStubPathFromFile() ?: return null
+    return currentFile.findCompiledPsiByStubPath(pathFromFile)
+}
+
+private fun StubElement<*>.buildCompiledStubPathFromFile(): List<CjCompiledStubPathSegment>? {
+    val path = ArrayDeque<CjCompiledStubPathSegment>()
+    var current: StubElement<*> = this
+
+    while (true) {
+        val parent = current.parentStub ?: return null
+        val childIndex = parent.childrenStubs.indexOfFirst { child -> child === current }
+        if (childIndex < 0) return null
+
+        path.addFirst(
+            CjCompiledStubPathSegment(
+                childIndex = childIndex,
+                stubType = current.stubType,
+            ),
+        )
+
+        if (parent is PsiFileStub<*>) {
+            return path.toList()
+        }
+
+        current = parent
+    }
+}
+
+private fun CjFile.findCompiledPsiByStubPath(path: List<CjCompiledStubPathSegment>): CjElement? {
+    var currentStub: StubElement<*> = stub ?: calcStubTree().root
+
+    for (segment in path) {
+        val nextStub = currentStub.childrenStubs.getOrNull(segment.childIndex) ?: return null
+        if (nextStub.stubType != segment.stubType) return null
+        currentStub = nextStub
+    }
+
+    return currentStub.psi as? CjElement
 }
 
 /**

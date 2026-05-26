@@ -19,6 +19,7 @@ import org.cangnova.cangjie.test.directives.CangjieTestDirectives.IMPORT_PATH
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.NO_PRELUDE
 import org.cangnova.cangjie.test.config.addSourcesForDependsOnClosure
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.WITH_STDLIB
+import org.cangnova.cangjie.test.directives.ConfigurationDirectives
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.CFIR_PARSER
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
@@ -66,6 +67,9 @@ abstract class EnvironmentConfigurator(protected val testServices: TestServices)
 }
 
 class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentConfigurator(testServices) {
+    override val directiveContainers: List<org.cangnova.cangjie.test.directives.model.DirectivesContainer>
+        get() = listOf(ConfigurationDirectives)
+
     override fun provideAdditionalAnalysisFlags(
         directives: RegisteredDirectives,
         languageVersion: LanguageVersion,
@@ -73,6 +77,9 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
         return buildMap {
             if (NO_PRELUDE in directives) {
                 put(AnalysisFlags.noPrelude, true)
+            }
+            if (ConfigurationDirectives.DISABLE_TYPEALIAS_EXPANSION in directives) {
+                put(AnalysisFlags.expandTypeAliasesInTypeResolution, false)
             }
         }
     }

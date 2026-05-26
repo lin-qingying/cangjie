@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
+import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFactoryContext
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.lightTree.LightTree2Cfir
 import org.cangnova.cangjie.cfir.lightTree.LightTreeRawCfirDeclarationBuilder
@@ -101,7 +102,7 @@ object CfirFrontendPipelinePhase : PipelinePhase<ConfigurationPipelineArtifact, 
 
         val rootModuleName = Name.identifier(configuration.moduleName ?: "main")
         val factory = CfirDefaultSessionFactory()
-        val sessionFactoryContext = CfirDefaultSessionFactory.Context()
+        val sessionFactoryContext = createDefaultCfirSessionFactoryContext(configuration)
         val extensionRegistrars = emptyList<CfirExtensionRegistrar>()
         configuration.installDefaultMacroFragmentParserFactory(environment.project)
 

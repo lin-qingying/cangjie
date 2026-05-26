@@ -246,7 +246,10 @@ open class TypeCheckerState(
         /** 仓颉无弹性类型，直接将超类型转为刚性类型 */
         object RigidOnly : SupertypesPolicy() {
             override fun transformType(state: TypeCheckerState, type: CangJieTypeMarker): RigidTypeMarker =
-                type as RigidTypeMarker
+                with(state.typeSystemContext) {
+                    type.asRigidType()
+                        ?: error("仓颉类型系统中所有超类型都应可规约为刚性类型，遇到意外类型：$type")
+                }
         }
     }
 

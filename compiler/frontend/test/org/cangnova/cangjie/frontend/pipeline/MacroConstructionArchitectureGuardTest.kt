@@ -581,11 +581,12 @@ class MacroConstructionArchitectureGuardTest {
         assertTrue(
             "macroRuntimeLoaderEnv" in source &&
                 "macroTargetPlatform" in source &&
+                "entry.executableFqName" in source &&
                 "entry.artifactSignature" in source &&
                 "entry.dynamicLibHash" in source &&
                 "entry.dependenciesBchirHash" in source &&
                 "entry.resolverAlgorithmVersion" in source,
-            "Cache key must include macro artifact signature, dylib/BCHIR hashes, target platform, loader env, and resolver algorithm version.",
+            "Cache key must include executable fqName, macro artifact signature, dylib/BCHIR hashes, target platform, loader env, and resolver algorithm version.",
         )
     }
 

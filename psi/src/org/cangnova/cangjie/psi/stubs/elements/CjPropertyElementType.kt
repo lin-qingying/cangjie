@@ -30,6 +30,8 @@ import org.cangnova.cangjie.psi.psiUtil.safeFqNameForLazyResolve
 import org.cangnova.cangjie.psi.stubs.CangJiePropertyStub
 import org.cangnova.cangjie.psi.stubs.elements.StubIndexService.Companion.getInstance
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieStubOrigin.Companion.deserialize
+import org.cangnova.cangjie.psi.stubs.impl.CangJieStubOrigin.Companion.serialize
 import com.intellij.lang.ASTNode
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.IndexSink
@@ -46,6 +48,9 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
     override fun serialize(stub: CangJiePropertyStub, dataStream: StubOutputStream) {
         dataStream.writeName(stub.name)
         dataStream.writeName(stub.getFqName()?.asString())
+        if (stub is CangJiePropertyStubImpl) {
+            serialize(stub.origin, dataStream)
+        }
     }
 
     override fun deserialize(dataStream: StubInputStream, parentStub: StubElement<*>?): CangJiePropertyStub {
@@ -57,6 +62,7 @@ class CjPropertyElementType(debugName: String) : CjStubElementType<CangJieProper
             parentStub,
             name,
             fqName,
+            deserialize(dataStream),
         )
     }
 

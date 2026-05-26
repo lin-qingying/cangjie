@@ -20,6 +20,7 @@ java {
 }
 
 dependencies {
+    api(project(":utilities"))
     api(project(":gradle-plugins-common"))
     implementation(libs.kotlinGradlePlugin)
     implementation(libs.shadowGradlePlugin)
