@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir
 
+import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.GlobalSearchScope
 import org.cangnova.cangjie.analysis.api.cfir.diagnostics.CJ_DIAGNOSTIC_CONVERTER
@@ -52,14 +53,25 @@ private val allowedFakeElementKinds = setOf(
 )
 
 @OptIn(SuspiciousFakeSourceCheck::class)
-internal fun CfirElement.getAllowedPsi(): PsiElement? = when (val source = source) {
+internal fun CfirElement.getAllowedPsi(preferredProject: Project? = null): PsiElement? = when (val source = source) {
     null -> null
-    is CjRealPsiSourceElement -> source.psi
-    is CjFakePsiSourceElement -> if (source.kind in allowedFakeElementKinds) psi else null
+    is CjRealPsiSourceElement -> source.psi.restoreCurrentCompiledPsi(preferredProject)
+    is CjFakePsiSourceElement -> if (source.kind in allowedFakeElementKinds) source.psi.restoreCurrentCompiledPsi(preferredProject) else null
     else -> null
 }
 
-internal fun CfirElement.findPsi(): PsiElement? = getAllowedPsi()
+internal fun CfirElement.findPsi(preferredProject: Project? = null): PsiElement? = getAllowedPsi(preferredProject)
+
+/**
+ * compiled `.cjo` 的 source psi 可能在 IDE 生命周期里被新的 decompiled view provider 重建。
+ *
+ * low-level / analysis 缓存里的 CFIR 仍然会持有旧 provider 上的 PSI，
+ * 因而所有从 CFIR 往 IDE 暴露 PSI 的出口，都必须先把 compiled 元素恢复到当前 live PSI。
+ */
+internal fun PsiElement.restoreCurrentCompiledPsi(preferredProject: Project? = null): PsiElement? {
+    val cjElement = this as? CjElement ?: return this
+    return cjElement.restoreCurrentCjElement(preferredProject)
+}
 
 /**
  * 直接从 PSI 修饰符读取声明可见性。
@@ -124,11 +136,19 @@ internal val CjDeclaration.location: CaSymbolLocation
  * Kotlin 这里只有 top-level / class / local；仓颉额外补上 extend 成员归属，
  * 并且仍然放在同一层 location 推导入口，而不是散落到各个 symbol 叶子类中。
  */
-internal fun CaCfirSession.getCallableSymbolLocation(
-    cfirSymbol: CfirCallableSymbol<*>,
+internal inline fun CaCfirSession.getCallableSymbolLocation(
     backingPsi: CjDeclaration?,
+    cfirSymbolProvider: () -> CfirCallableSymbol<*>,
 ): CaSymbolLocation {
     backingPsi?.let { return it.location }
+
+    /*
+     * 对齐 Kotlin `KaFirNamedFunctionSymbol.location` 等 source fast-path：
+     * 有源码 PSI 时先直接按 PSI 结构判定 location，不能为了取 location
+     * 反向强制恢复 CFIR symbol。
+     */
+    val cfirSymbol = cfirSymbolProvider()
+
     if (cfirSymbol.rawStatus.visibility == Visibilities.Local) {
         return CaSymbolLocation.LOCAL
     }
@@ -149,11 +169,17 @@ internal fun CaCfirSession.getCallableSymbolLocation(
  * 当前仅 extend 成员需要把该接收者公开为 receiverType。
  */
 internal fun CaCfirSession.getExplicitCallableReceiverType(
-    cfirSymbol: CfirCallableSymbol<*>,
     backingPsi: CjDeclaration?,
     builder: CaSymbolByCfirBuilder,
+    cfirSymbolProvider: () -> CfirCallableSymbol<*>,
 ): CaType? {
-    if (getCallableSymbolLocation(cfirSymbol, backingPsi) != CaSymbolLocation.EXTEND) {
+    val psiLocation = backingPsi?.location
+    if (psiLocation != null && psiLocation != CaSymbolLocation.EXTEND) {
+        return null
+    }
+
+    val cfirSymbol = cfirSymbolProvider()
+    if (psiLocation == null && getCallableSymbolLocation(backingPsi = null) { cfirSymbol } != CaSymbolLocation.EXTEND) {
         return null
     }
 
@@ -204,16 +230,16 @@ internal val CaSymbolModality.isOpenFromInterface: Boolean
     get() = this == CaSymbolModality.OPEN && callable.containingTypeStatement?.isInterface() == true
 
 internal fun CaCfirSymbol<*>.findPsi(): PsiElement? {
-    return cfirSymbol.findPsi(analysisSession.analysisScope)
+    return cfirSymbol.findPsi(analysisSession.analysisScope, analysisSession.project)
 }
-fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope): PsiElement? {
+fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope, preferredProject: Project? = null): PsiElement? {
     val declaration = if (this is CfirCallableSymbol<*>) {
         cfir.unwrapFakeOverridesOrDelegated()
     } else {
         cfir
     }
 
-    return declaration.findPsi()?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
+    return declaration.findPsi(preferredProject)?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
 }
 
 
@@ -222,13 +248,13 @@ fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope): PsiElement? {
  * For data classes & enums generated members like `copy` `componentN`, `values` it will return corresponding enum/data class
  * Otherwise, behaves the same way as [findPsi] returns exact PSI declaration corresponding to passed [CfirDeclaration]
  */
-internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope): PsiElement? {
-    return if (
+internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferredProject: Project? = null): PsiElement? {
+    return (if (
         this is CfirCallableDeclaration /*&&
         !this.symbol.isTypeAliasedConstructor*/ // typealiased constructors should not be unwrapped
     ) {
         unwrapFakeOverridesOrDelegated().psi
     } else {
         psi
-    } /*?: CfirSyntheticFunctionInterfaceSourceProvider.findPsi(this, scope)*/
+    })?.restoreCurrentCompiledPsi(preferredProject) /*?: CfirSyntheticFunctionInterfaceSourceProvider.findPsi(this, scope)*/
 }

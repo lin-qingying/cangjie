@@ -1,0 +1,2 @@
+expression: "hello"
+expectedType: std.core.String

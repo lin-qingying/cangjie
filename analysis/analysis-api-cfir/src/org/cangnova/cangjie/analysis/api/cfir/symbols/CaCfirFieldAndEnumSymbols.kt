@@ -64,7 +64,7 @@ internal class CaCfirFieldSymbol private constructor(
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -76,7 +76,7 @@ internal class CaCfirFieldSymbol private constructor(
         get() = cfirSymbol.getCallableId()
 
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)
@@ -150,7 +150,7 @@ internal class CaCfirEnumConstructorSymbol private constructor(
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -162,7 +162,7 @@ internal class CaCfirEnumConstructorSymbol private constructor(
         get() = cfirSymbol.getCallableId()
 
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)

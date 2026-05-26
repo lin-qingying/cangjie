@@ -33,6 +33,16 @@ abstract class CjDecompiledFile(private val provider: CangJieDecompiledFileViewP
         return decompiledText.get()
     }
 
+    override fun getTextLength(): Int {
+        // Decompiled PSI 的可见文本来自 compiled stub 渲染结果，
+        // 不能再沿用底层 stub/AST 的空长度，否则会和 document 文本失配。
+        return getText().orEmpty().length
+    }
+
+    override fun textToCharArray(): CharArray {
+        return getText().orEmpty().toCharArray()
+    }
+
     override fun onContentReload() {
         super.onContentReload()
 

@@ -2,7 +2,11 @@
 
 package org.cangnova.cangjie.analysis.test.framework.projectStructure
 
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
@@ -39,18 +43,13 @@ interface CaMutableTestModule : CaModule {
  */
 sealed class CaTestModuleBase(
     final override val project: Project,
-    private val scopeRoots: List<PsiFileSystemItem>,
+    override val baseContentScope: GlobalSearchScope,
 ) : CaModuleBase(), CaMutableTestModule {
     final override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
 
     final override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
 
     final override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
-
-    override val baseContentScope: GlobalSearchScope = GlobalSearchScope.filesWithoutLibrariesScope(
-        project,
-        scopeRoots.mapNotNull { it.virtualFile },
-    )
 }
 
 class CaSourceModuleImpl(
@@ -58,7 +57,7 @@ class CaSourceModuleImpl(
     override val languageVersionSettings: LanguageVersionSettings,
     project: Project,
     psiRoots: List<PsiFileSystemItem>,
-) : CaTestModuleBase(project, psiRoots), CaSourceModule {
+) : CaTestModuleBase(project, createSourceRootsContentScope(project, psiRoots)), CaSourceModule {
     override val psiRoots: List<PsiFileSystemItem> = psiRoots.toList()
 
     override fun toString(): String = name
@@ -68,7 +67,7 @@ class CaLibraryModuleImpl(
     override val libraryName: String,
     project: Project,
     binaryRoots: List<PsiFileSystemItem>,
-) : CaTestModuleBase(project, binaryRoots), CaLibraryModule {
+) : CaTestModuleBase(project, TestLibraryRootContentScope(project, binaryRoots)), CaLibraryModule {
     override val binaryRoots: List<PsiFileSystemItem> = binaryRoots.toList()
 
     override val isResolvable: Boolean
@@ -82,7 +81,7 @@ class CaLibrarySourceModuleImpl(
     override val binaryLibraryModule: CaLibraryModule,
     project: Project,
     sourceRoots: List<PsiFileSystemItem>,
-) : CaTestModuleBase(project, sourceRoots), CaLibrarySourceModule {
+) : CaTestModuleBase(project, createSourceRootsContentScope(project, sourceRoots)), CaLibrarySourceModule {
     override val sourceRoots: List<PsiFileSystemItem> = sourceRoots.toList()
 
     override fun toString(): String = libraryName
@@ -92,7 +91,7 @@ class CaBuiltinsModuleImpl(
     project: Project,
     scopeRoots: List<PsiFileSystemItem> = emptyList(),
     override val builtinsName: String = "<test-builtins>",
-) : CaTestModuleBase(project, scopeRoots), CaBuiltinsModule {
+) : CaTestModuleBase(project, createSourceRootsContentScope(project, scopeRoots)), CaBuiltinsModule {
     override val isResolvable: Boolean
         get() = false
 
@@ -107,7 +106,7 @@ class CaNotUnderContentRootModuleImpl(
     override val originalModule: CaModule?,
     project: Project,
     scopeRoots: List<PsiFileSystemItem>,
-) : CaTestModuleBase(project, scopeRoots), CaNotUnderContentRootModule {
+) : CaTestModuleBase(project, createSourceRootsContentScope(project, scopeRoots)), CaNotUnderContentRootModule {
     override fun toString(): String = name
 }
 
@@ -143,7 +142,7 @@ class CaDanglingFileModuleImpl(
     override val languageVersionSettings: LanguageVersionSettings,
     project: Project,
     psiRoots: List<PsiFileSystemItem>,
-) : CaTestModuleBase(project, psiRoots), CaDanglingFileModule {
+) : CaTestModuleBase(project, createSourceRootsContentScope(project, psiRoots)), CaDanglingFileModule {
     private val filePointers: List<SmartPsiElementPointer<CjFile>> =
         psiRoots.map { psiRoot ->
             val file = psiRoot as? CjFile
@@ -180,4 +179,48 @@ class CaDanglingFileModuleImpl(
             }
             return result
         }
+}
+
+private fun createSourceRootsContentScope(
+    project: Project,
+    scopeRoots: List<PsiFileSystemItem>,
+): GlobalSearchScope {
+    return GlobalSearchScope.filesWithoutLibrariesScope(
+        project,
+        scopeRoots.mapNotNull { it.virtualFile },
+    )
+}
+
+/**
+ * 对齐 Kotlin `createLibraryModuleSearchScope(...)` 的职责边界：
+ * library module 的 content scope 必须真实覆盖 binary roots 递归可达的库文件，
+ * 不能沿用 source-style `filesWithoutLibrariesScope()` 把库文件自身排除掉。
+ */
+private class TestLibraryRootContentScope(
+    project: Project,
+    private val scopeRoots: List<PsiFileSystemItem>,
+) : GlobalSearchScope(project) {
+    private val reachableFiles: Set<VirtualFile> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        buildSet {
+            scopeRoots.mapNotNull { it.virtualFile }.forEach { root ->
+                add(root)
+                if (root.isDirectory) {
+                    VfsUtilCore.visitChildrenRecursively(root, object : VirtualFileVisitor<Void>() {
+                        override fun visitFile(file: VirtualFile): Boolean {
+                            add(file)
+                            return true
+                        }
+                    })
+                }
+            }
+        }
+    }
+
+    override fun contains(file: VirtualFile): Boolean = file in reachableFiles
+
+    override fun compare(file1: VirtualFile, file2: VirtualFile): Int = 0
+
+    override fun isSearchInModuleContent(aModule: Module): Boolean = false
+
+    override fun isSearchInLibraries(): Boolean = true
 }

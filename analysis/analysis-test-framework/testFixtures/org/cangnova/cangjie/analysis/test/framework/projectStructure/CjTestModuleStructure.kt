@@ -2,8 +2,13 @@ package org.cangnova.cangjie.analysis.test.framework.projectStructure
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiFile
+import com.intellij.psi.PsiFileSystemItem
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
+import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.model.TestModuleStructure
 import org.cangnova.cangjie.test.services.TestService
@@ -53,8 +58,26 @@ class CjTestModuleStructure(
         )
     }
 
+    val allSourceLikeModules: List<CaModule> by lazy(LazyThreadSafetyMode.NONE) {
+        mainModules.mapNotNull { testModule ->
+            testModule.caModule.takeIf(CaModule::canContainSourceFiles)
+        }
+    }
+
+    /**
+     * 对齐 Kotlin `KtTestModuleStructure.allSourceFiles`：
+     * 这里只暴露真正 source-like 模块的文件，不能把 `LibraryBinaryDecompiled`
+     * 的反编译库文件混进 source providers，否则会在建包/声明 provider 时递归触发 library session。
+     */
+    val allSourceFiles: List<PsiFileSystemItem> by lazy(LazyThreadSafetyMode.NONE) {
+        mainModules
+            .filter { it.caModule.canContainSourceFiles }
+            .flatMap(CjTestModule::psiFiles)
+            .filterIsInstance<PsiFileSystemItem>()
+    }
+
     val allCjFiles: List<CjFile> by lazy(LazyThreadSafetyMode.NONE) {
-        mainModules.flatMap(CjTestModule::cjFiles)
+        allSourceFiles.filterIsInstance<CjFile>()
     }
 
     val allCaModules: List<CaModule> by lazy(LazyThreadSafetyMode.NONE) {
@@ -89,6 +112,16 @@ class CjTestModuleStructure(
         val byVirtualFileUrl: Map<String, CjTestModule>,
     )
 }
+
+private val CaModule.canContainSourceFiles: Boolean
+    get() = when (this) {
+        is CaSourceModule,
+        is CaLibrarySourceModule,
+        is CaDanglingFileModule,
+        is CaNotUnderContentRootModule,
+        -> true
+        else -> false
+    }
 
 abstract class CjTestModuleStructureProvider : TestService {
     protected abstract val testServices: TestServices

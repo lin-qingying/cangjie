@@ -61,7 +61,7 @@ internal class CaCfirConstructorSymbol private constructor(
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi: PsiElement?
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -82,7 +82,7 @@ internal class CaCfirConstructorSymbol private constructor(
         get() = withValidityAssertion { false }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
 
     override val returnType: CaType
         get() = withValidityAssertion { cfirSymbol.returnType(builder) }

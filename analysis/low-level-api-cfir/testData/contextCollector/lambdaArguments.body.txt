@@ -1,0 +1,28 @@
+Tower Data Context:
+    Element 0
+        Scope: CfirLocalScope
+            Variables:
+                CfirValueParameterSymbol offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|
+    Element 1
+        Scope: CfirLocalScope
+    Element 2
+        Scope: CfirLocalScope
+            Variables:
+                CfirValueParameterSymbol offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>
+    Element 3
+        Scope: CfirLocalScope
+
+FILE: lambdaArguments.cj
+    package sample.lowlevel.contextcollector.generated
+    internal? func makePrinter(offset: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            LAMBDA(value: <implicit>) {
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(value)
+                    arguments:
+                        NAMED_ACCESS(offset)
+                }
+            }
+        }
+    }

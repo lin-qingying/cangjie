@@ -6,9 +6,8 @@ import org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings
 /**
  * Analysis API 平台设置的基础实现。
  *
- * 当前项目尚未建立完整的库模块语义，因此先保持与现有模块模型一致，
- * 允许库模块作为 use-site 模块参与分析。后续在模块分层对齐 Kotlin 后，
- * 再由更具体的平台实现覆盖该策略。
+ * 该实现保留二进制 origin 语义，供 standalone / LSP / 测试宿主按需复用；
+ * 产品插件不再通过 shared XML 直接装配它，而是由各宿主显式提供自己的 platform settings。
  */
 internal class CaBasePlatformSettings : CaPlatformSettings {
     override val deserializedDeclarationsOrigin: CaDeserializedDeclarationsOrigin

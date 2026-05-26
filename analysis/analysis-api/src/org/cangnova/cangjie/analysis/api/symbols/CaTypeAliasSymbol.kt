@@ -12,7 +12,8 @@ interface CaTypeAliasSymbol : CaClassLikeSymbol {
     /**
      * 展开后的目标类型。
      *
-     * 这是别名背后真正指向的类型，调用方需要时自行决定是否进一步递归展开。
+     * 这是别名右侧最终解析完成后的目标类型。
+     * 若右侧仍引用其他 typealias，这里返回继续展开后的最终结果。
      */
     val expandedType: CaType
 }

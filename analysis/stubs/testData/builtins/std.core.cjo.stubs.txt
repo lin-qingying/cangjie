@@ -10,6 +10,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -54,6 +56,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/Collection, fqName=std.core.Collection, name=Collection, superNames=[Iterable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -99,6 +103,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/Iterator, fqName=std.core.Iterator, name=Iterator, superNames=[Object, Iterable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -161,6 +167,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/Iterable, fqName=std.core.Iterable, name=Iterable, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=E]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -181,6 +189,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$ENUM[classId=std/core/Option, fqName=std.core.Option, isNonExhaustive=false, name=Option, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$ENUM_BODY
       CangJieStub$ENUM_CONSTRUCTOR[enumFqName=std.core.Option, name=Some, typeCount=1]
         CangJieStub$TYPE_LIST
@@ -244,6 +254,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -299,6 +311,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -336,6 +350,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -365,6 +381,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -406,6 +424,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -426,6 +446,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -456,6 +478,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$STRUCT[classId=std/core/Array, fqName=std.core.Array, name=Array, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=rawptr]
         CangJieStub$ANNOTATIONS
@@ -1055,6 +1079,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -1083,6 +1109,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -1117,6 +1145,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$STRUCT[classId=std/core/CPointerHandle, fqName=std.core.CPointerHandle, name=CPointerHandle, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=pointer]
         CangJieStub$ANNOTATIONS
@@ -1179,6 +1209,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -1205,6 +1237,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -1225,6 +1259,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -1262,6 +1298,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -1293,6 +1331,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/Comparable, fqName=std.core.Comparable, name=Comparable, superNames=[Equatable, Less, Greater, LessOrEqual, GreaterOrEqual]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -1434,6 +1474,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -3608,6 +3650,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -3638,6 +3682,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -3649,6 +3695,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -3664,6 +3712,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4370,6 +4420,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$USER_TYPE
@@ -4377,6 +4429,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4715,6 +4769,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4726,6 +4782,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -4901,6 +4959,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4926,6 +4986,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -4955,6 +5017,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$STRUCT[classId=std/core/Range, fqName=std.core.Range, name=Range, superNames=[Iterable]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5105,6 +5169,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -5130,6 +5196,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/ArrayIterator, fqName=std.core.ArrayIterator, name=ArrayIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5207,6 +5275,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/Equatable, fqName=std.core.Equatable, name=Equatable, superNames=[Equal, NotEqual]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -5249,6 +5319,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/Equal, fqName=std.core.Equal, name=Equal, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -5264,6 +5336,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -5285,6 +5359,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -5310,6 +5386,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/Box, fqName=std.core.Box, name=Box, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
@@ -6098,6 +6176,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/MapIterator, fqName=std.core.MapIterator, name=MapIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6190,6 +6271,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/ZipIterator, fqName=std.core.ZipIterator, name=ZipIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6296,6 +6380,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/EnumerateIterator, fqName=std.core.EnumerateIterator, name=EnumerateIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6376,6 +6462,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/FilterIterator, fqName=std.core.FilterIterator, name=FilterIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6466,6 +6554,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/FilterMapIterator, fqName=std.core.FilterMapIterator, name=FilterMapIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6576,6 +6667,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/StepIterator, fqName=std.core.StepIterator, name=StepIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6657,6 +6750,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/SkipIterator, fqName=std.core.SkipIterator, name=SkipIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6733,6 +6828,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/TakeIterator, fqName=std.core.TakeIterator, name=TakeIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6809,6 +6906,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/ConcatIterator, fqName=std.core.ConcatIterator, name=ConcatIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -6910,6 +7009,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/InspectIterator, fqName=std.core.InspectIterator, name=InspectIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7000,6 +7101,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/FlatMapIterator, fqName=std.core.FlatMapIterator, name=FlatMapIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7134,6 +7238,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/IntersperseIterator, fqName=std.core.IntersperseIterator, name=IntersperseIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -7414,6 +7520,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/Countable, fqName=std.core.Countable, name=Countable, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -7435,6 +7543,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/RangeIterator, fqName=std.core.RangeIterator, name=RangeIterator, superNames=[Iterator]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -8222,6 +8332,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8238,6 +8350,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[static]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -8353,6 +8467,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -9286,6 +9402,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -9422,6 +9540,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=ATOMIC_TYPE]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=TYPE]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -9443,6 +9564,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=ATOMIC_TYPE]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=TYPE]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -9468,6 +9592,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=ATOMIC_TYPE]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=TYPE]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -9494,6 +9621,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=ATOMIC_TYPE]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=TYPE]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -9623,6 +9753,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/AtomicReference, fqName=std.core.AtomicReference, name=AtomicReference, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=true, name=value]
         CangJieStub$ANNOTATIONS
@@ -9660,6 +9792,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/AtomicBox, fqName=std.core.AtomicBox, name=AtomicBox, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=boxRef]
         CangJieStub$ANNOTATIONS
@@ -10014,6 +10148,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -10030,6 +10166,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -10173,6 +10311,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$STRUCT[classId=std/core/CPointerResource, fqName=std.core.CPointerResource, name=CPointerResource, superNames=[Resource]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -11766,6 +11906,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/Less, fqName=std.core.Less, name=Less, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -11781,6 +11923,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/Greater, fqName=std.core.Greater, name=Greater, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -11796,6 +11940,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/LessOrEqual, fqName=std.core.LessOrEqual, name=LessOrEqual, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -11811,6 +11957,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/GreaterOrEqual, fqName=std.core.GreaterOrEqual, name=GreaterOrEqual, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -13726,6 +13874,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$INTERFACE[classId=std/core/NotEqual, fqName=std.core.NotEqual, name=NotEqual, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$INTERFACE_BODY
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
@@ -14195,6 +14345,9 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=From]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=To]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -14352,6 +14505,10 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T1]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T2]
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T3]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -14390,6 +14547,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -14410,6 +14569,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/Future, fqName=std.core.Future, name=Future, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=_thread]
         CangJieStub$ANNOTATIONS
@@ -14532,6 +14693,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -14552,6 +14715,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -14576,6 +14741,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -14609,6 +14776,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/FutureOk, fqName=std.core.FutureOk, name=FutureOk, superNames=[FutureResult]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$SUPER_TYPE_LIST
       CangJieStub$SUPER_TYPE_ENTRY
         CangJieStub$TYPE_REFERENCE
@@ -16223,6 +16392,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -16305,6 +16476,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -16342,6 +16515,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -16487,6 +16662,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -16709,6 +16886,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=R]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -16737,12 +16916,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UIntNative]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UIntNative]
@@ -16786,12 +16969,16 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UIntNative]
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
     CangJieStub$TYPE_REFERENCE
       CangJieStub$BASIC_TYPE[basicType=UIntNative]
@@ -17104,6 +17291,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -17135,6 +17324,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$FUNC
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$VALUE_PARAMETER_LIST
       CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
         CangJieStub$ANNOTATIONS
@@ -17902,6 +18093,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -17927,6 +18120,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
       CangJieStub$FUNC
         CangJieStub$ANNOTATIONS
         CangJieStub$MODIFIER_LIST[]
+        CangJieStub$TYPE_PARAMETER_LIST
+          CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
         CangJieStub$VALUE_PARAMETER_LIST
           CangJieStub$VALUE_PARAMETER[hasDefaultValue=false, hasLetOrVar=false, isMutable=false, isNamed=false]
             CangJieStub$ANNOTATIONS
@@ -18031,6 +18226,8 @@ CangJieFileStubImpl[MultifileClass[packageFqName=std.core, facadeFqName=std.core
   CangJieStub$CLASS[classId=std/core/ThreadLocal, fqName=std.core.ThreadLocal, name=ThreadLocal, superNames=[]]
     CangJieStub$ANNOTATIONS
     CangJieStub$MODIFIER_LIST[]
+    CangJieStub$TYPE_PARAMETER_LIST
+      CangJieStub$TYPE_PARAMETER[fqName=null, name=T]
     CangJieStub$CLASS_BODY
       CangJieStub$FIELD[fqName=null, hasInitializer=false, hasReturnTypeRef=true, isConst=false, isTopLevel=false, isTopLevel=false, isVar=false, name=key]
         CangJieStub$ANNOTATIONS

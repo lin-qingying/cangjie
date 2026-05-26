@@ -56,9 +56,5 @@
         serviceInterface="org.cangnova.cangjie.analysis.api.platform.lifetime.CaLifetimeTokenFactory"
         serviceImplementation="org.cangnova.cangjie.analysis.api.platform.lifetime.CaReadActionConfinementLifetimeTokenFactory"
     />
-    <projectService
-        serviceInterface="org.cangnova.cangjie.analysis.api.platform.CaPlatformSettings"
-        serviceImplementation="org.cangnova.cangjie.analysis.api.impl.base.platform.CaBasePlatformSettings"
-    />
   </extensions>
 </idea-plugin>

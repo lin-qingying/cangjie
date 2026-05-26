@@ -19,6 +19,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -28,7 +29,10 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirStatusComputationSession
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirStatusResolveTransformer
@@ -140,7 +144,7 @@ private class LLCfirStatusTargetResolver(
 
     @Deprecated("Should never be called directly, only for override purposes, please use withClassLike", level = DeprecationLevel.ERROR)
     override fun withContainingClassLike(cfirClassLike: CfirClassLikeDeclaration, action: () -> Unit) {
-        if (cfirClassLike is CfirClass || cfirClassLike is CfirInterface) {
+        if (cfirClassLike is CfirClass || cfirClassLike is CfirInterface || cfirClassLike is CfirStruct || cfirClassLike is CfirEnum) {
             doResolveWithoutLock(cfirClassLike)
             transformer.storeClass(cfirClassLike) {
                 action()
@@ -176,6 +180,24 @@ private class LLCfirStatusTargetResolver(
         }
 
         is CfirInterface -> {
+            if (transformer.statusComputationSession[target].requiresComputation) {
+                target.lazyResolveToPhase(resolverPhase.previous)
+                resolveClassLike(target)
+            }
+
+            true
+        }
+
+        is CfirStruct -> {
+            if (transformer.statusComputationSession[target].requiresComputation) {
+                target.lazyResolveToPhase(resolverPhase.previous)
+                resolveClassLike(target)
+            }
+
+            true
+        }
+
+        is CfirEnum -> {
             if (transformer.statusComputationSession[target].requiresComputation) {
                 target.lazyResolveToPhase(resolverPhase.previous)
                 resolveClassLike(target)
@@ -228,6 +250,18 @@ private class LLCfirStatusTargetResolver(
             true
         }
 
+        is CfirTypeAlias -> {
+            if (checkAnalysisReadiness(target, containingDeclarations, resolverPhase) && target.status is CfirResolvedDeclarationStatus) {
+                true
+            } else {
+                performCustomResolveUnderLock(target) {
+                    transformer.transformTypeAliasStatusWithoutPhaseGuard(target)
+                }
+
+                true
+            }
+        }
+
         is CfirPatternVariable -> {
             performCustomResolveUnderLock(target) {
                 transformer.transformVariableStatusWithoutPhaseGuard(target)
@@ -258,6 +292,8 @@ private class LLCfirStatusTargetResolver(
             when (classLike) {
                 is CfirClass -> transformer.transformClassStatus(classLike)
                 is CfirInterface -> transformer.transformInterfaceStatus(classLike)
+                is CfirStruct -> transformer.transformStructStatus(classLike)
+                is CfirEnum -> transformer.transformEnumStatus(classLike)
                 else -> error("Unexpected class-like declaration ${classLike::class.simpleName} for low-level STATUS resolver")
             }
             transformer.storeClass(classLike) {

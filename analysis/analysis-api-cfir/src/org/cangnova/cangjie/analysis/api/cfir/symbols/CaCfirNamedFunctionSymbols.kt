@@ -84,7 +84,7 @@ internal class CaCfirNamedFunctionSymbol private constructor(
     private val status
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
-    override val psi: PsiElement? get() = withValidityAssertion { backingPsi ?: findPsi() }
+    override val psi: PsiElement? get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
     override val name: Name get() = withValidityAssertion { backingPsi?.nameAsSafeName ?: cfirSymbol.name }
     override val origin get() = withValidityAssertion { psiOrSymbolOrigin() }
 
@@ -110,13 +110,13 @@ internal class CaCfirNamedFunctionSymbol private constructor(
         }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
 
     override val returnType: CaType
         get() = withValidityAssertion { createReturnType() }
 
     override val location: CaSymbolLocation
-        get() = withValidityAssertion { analysisSession.getCallableSymbolLocation(cfirSymbol, backingPsi) }
+        get() = withValidityAssertion { analysisSession.getCallableSymbolLocation(backingPsi) { cfirSymbol } }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion {
@@ -246,13 +246,13 @@ internal class CaCfirMainFunctionSymbol(
         get() = cfirSymbol.getCallableId()
 
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)
 
     override val location: CaSymbolLocation
-        get() = analysisSession.getCallableSymbolLocation(cfirSymbol, backingPsi = null)
+        get() = analysisSession.getCallableSymbolLocation(backingPsi = null) { cfirSymbol }
 
     override val visibility: CaSymbolVisibility
         get() = status?.visibility?.asPublicVisibility() ?: CaSymbolVisibility.PUBLIC
@@ -335,7 +335,7 @@ internal class CaCfirMacroSymbol private constructor(
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
     override val psi: PsiElement?
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -349,13 +349,13 @@ internal class CaCfirMacroSymbol private constructor(
         }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
 
     override val returnType: CaType
         get() = withValidityAssertion { createReturnType() }
 
     override val location: CaSymbolLocation
-        get() = withValidityAssertion { analysisSession.getCallableSymbolLocation(cfirSymbol, backingPsi) }
+        get() = withValidityAssertion { analysisSession.getCallableSymbolLocation(backingPsi) { cfirSymbol } }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion {

@@ -38,7 +38,7 @@ class AnalysisApiTargetExtractionTest : AbstractAnalysisApiExecutionTest(
             anchor = "value: Box = a()",
             offsetInAnchor = "value: ".length,
             expectedDeclarations = emptyList(),
-            expectedReferences = emptyList(),
+            expectedReferences = listOf("Box"),
         )
         assertHasReferenceTargets(
             file = mainFile,

@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
+import org.cangnova.cangjie.analysis.api.cfir.utils.buildAbbreviatedType
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreTypeParameterType
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -29,7 +30,7 @@ internal class CaCfirTypeParameterType(
         get() = withValidityAssertion { emptyTypeAnnotations(token) }
 
     override val abbreviation: org.cangnova.cangjie.analysis.api.types.CaUsualClassType?
-        get() = withValidityAssertion { null }
+        get() = withValidityAssertion { builder.buildAbbreviatedType(coneType) }
 
     override val name: Name
         get() = withValidityAssertion { coneType.lookupTag.name }

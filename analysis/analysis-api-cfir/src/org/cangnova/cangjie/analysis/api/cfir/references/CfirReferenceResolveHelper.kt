@@ -1,11 +1,14 @@
 package org.cangnova.cangjie.analysis.api.cfir.references
 
+import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
 import org.cangnova.cangjie.analysis.api.cfir.buildSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithCandidates
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
@@ -13,12 +16,22 @@ import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.resolve.toSymbol
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.abbreviatedTypeOrSelf
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjCallExpression
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjImportItem
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
+import org.cangnova.cangjie.psi.CjTypeReference
+import org.cangnova.cangjie.psi.CjUserType
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.psiUtil.isImportDirectiveExpression
 
@@ -45,7 +58,12 @@ internal object CfirReferenceResolveHelper {
         val adjustedResolutionExpression = adjustResolutionExpression(expression)
         val cfir = adjustedResolutionExpression.getOrBuildCfir(analysisSession.resolutionFacade)
 
+        if (cfir is CfirQualifierPart) {
+            return getSymbolsByUserTypeQualifierPart(expression, analysisSession, symbolBuilder)
+        }
+
         return when (cfir) {
+            is CfirResolvedTypeRef -> listOfNotNull(cfir.toTargetSymbol(analysisSession, symbolBuilder))
             is CfirResolvable -> getSymbolsByResolvable(cfir, symbolBuilder)
             is CfirResolvedNamedReference -> cfir.toTargetSymbol(symbolBuilder)
             is CfirErrorNamedReference -> cfir.toTargetSymbol(symbolBuilder)
@@ -56,6 +74,31 @@ internal object CfirReferenceResolveHelper {
     private fun adjustResolutionExpression(expression: CjSimpleNameExpression): org.cangnova.cangjie.psi.CjElement {
         val parentAsCall = expression.parent as? CjCallExpression
         return parentAsCall ?: expression
+    }
+
+    private fun getSymbolsByUserTypeQualifierPart(
+        expression: CjSimpleNameExpression,
+        analysisSession: CaCfirSession,
+        symbolBuilder: CaSymbolByCfirBuilder,
+    ): Collection<org.cangnova.cangjie.analysis.api.symbols.CaSymbol> {
+        val userType = expression.parent as? CjUserType ?: return emptyList()
+        if (expression.isPartOfUserTypeRefQualifier()) return emptyList()
+
+        val typeReference = userType.parent as? CjTypeReference ?: return emptyList()
+        val resolvedTypeRef = typeReference.getOrBuildCfir(analysisSession.resolutionFacade) as? CfirResolvedTypeRef
+            ?: return emptyList()
+
+        return listOfNotNull(resolvedTypeRef.toTargetSymbol(analysisSession, symbolBuilder))
+    }
+
+    private fun CjSimpleNameExpression.isPartOfUserTypeRefQualifier(): Boolean {
+        var currentParent = parent
+        while (currentParent is CjUserType) {
+            if (currentParent.referenceExpression == null) break
+            if (currentParent.referenceExpression !== this) return true
+            currentParent = currentParent.parent
+        }
+        return false
     }
 
     /**
@@ -176,6 +219,33 @@ internal object CfirReferenceResolveHelper {
         symbolBuilder: CaSymbolByCfirBuilder,
     ): Collection<org.cangnova.cangjie.analysis.api.symbols.CaSymbol> {
         return cfir.calleeReference.toTargetSymbol(symbolBuilder)
+    }
+
+    private fun CfirResolvedTypeRef.toTargetSymbol(
+        analysisSession: CaCfirSession,
+        symbolBuilder: CaSymbolByCfirBuilder,
+    ): org.cangnova.cangjie.analysis.api.symbols.CaSymbol? {
+        return coneType.toTargetSymbol(analysisSession, symbolBuilder) ?: run {
+            val diagnostic = (this as? CfirErrorTypeRef)?.diagnostic as? ConeUnmatchedTypeArgumentsError
+            diagnostic?.symbol?.buildSymbol(symbolBuilder)
+        }
+    }
+
+    private fun ConeCangJieType.toTargetSymbol(
+        analysisSession: CaCfirSession,
+        symbolBuilder: CaSymbolByCfirBuilder,
+    ): org.cangnova.cangjie.analysis.api.symbols.CaSymbol? {
+        val targetType = abbreviatedTypeOrSelf
+        val resolvedSymbol = when (targetType) {
+            is ConeTypeAliasType -> targetType.classId.toSymbol(analysisSession.cfirSession)
+            is ConeLookupTagBasedType -> targetType.lookupTag.toSymbol(analysisSession.cfirSession)
+            else -> null
+        }
+        val symbol = resolvedSymbol ?: run {
+            val diagnostic = (this as? ConeErrorType)?.diagnostic
+            (diagnostic as? ConeUnmatchedTypeArgumentsError)?.symbol
+        }
+        return symbol?.buildSymbol(symbolBuilder)
     }
 
     private fun CfirReference.toTargetSymbol(

@@ -1,0 +1,83 @@
+Tower Data Context:
+    Element 0
+        Scope: CfirLocalScope
+            Variables:
+                CfirValueParameterSymbol offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|value: R|kotlin.Unit|value: R|kotlin.Unit|
+    Element 1
+        Scope: CfirLocalScope
+
+FILE: simple.cj
+    package sample.lowlevel.contextcollector.generated
+    internal? func readLocal(value: R|kotlin.Unit|): R|kotlin.Unit| {
+        local? let local: R|kotlin.Unit| = ...
+            initializer:
+                FUNCTION_CALL(*operator_plus) {
+                    receiver:
+                        NAMED_ACCESS(value)
+                    arguments:
+                        INT(1)
+                }
+        RETURN {
+            NAMED_ACCESS(local)
+        }
+    }

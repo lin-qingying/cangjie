@@ -11,6 +11,7 @@ import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTra
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProviderBase
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructure
@@ -94,8 +95,8 @@ class CaTestPlatformState(
             CaProjectStructureSnapshot(
                 allModules = allModules,
                 allResolvableModules = allModules.filter(CaModule::isResolvable),
-                allSourceLikeModules = moduleStructure.allCaModules.filterIsInstance<org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule>(),
-                allSourceFiles = moduleStructure.allCjFiles,
+                allSourceLikeModules = moduleStructure.allSourceLikeModules,
+                allSourceFiles = moduleStructure.allSourceFiles,
             )
         }
 
@@ -168,6 +169,39 @@ class CaTestModificationTracker(
 }
 
 /**
+ * 测试环境的静态模块 dependents provider。
+ *
+ * Analysis API 测试中的模块图在单个用例执行期间是静态快照，
+ * 因而这里直接按当前 snapshot 预计算 direct / refinement dependents，
+ * 与 Kotlin `KtStaticModuleDependentsProvider` 保持同一职责边界。
+ */
+class CaTestModuleDependentsProvider(
+    private val project: Project,
+) : CangJieModuleDependentsProviderBase() {
+    private val directDependentsByModule: Map<CaModule, Set<CaModule>>
+        get() = buildDependentsMap(currentModules()) { module ->
+            module.allDirectDependencies.asSequence()
+        }
+
+    private val refinementDependentsByModule: Map<CaModule, Set<CaModule>>
+        get() = buildDependentsMap(currentModules()) { module ->
+            module.transitiveDependsOnDependencies.asSequence()
+        }
+
+    override fun getDirectDependents(module: CaModule): Set<CaModule> {
+        return directDependentsByModule[module].orEmpty()
+    }
+
+    override fun getRefinementDependents(module: CaModule): Set<CaModule> {
+        return refinementDependentsByModule[module].orEmpty()
+    }
+
+    private fun currentModules(): List<CaModule> {
+        return project.getService(CaTestPlatformState::class.java).snapshot.allModules
+    }
+}
+
+/**
  * 测试环境的 session 失效服务。
  *
  * 它先更新测试平台自己的修改计数，再把失效信号转发给真实的 session provider，
@@ -182,6 +216,22 @@ class CaTestSessionInvalidationService(
         val delegatedInvalidationService = project.getService(CaSessionProvider::class.java) as? CaSessionInvalidationService
         if (delegatedInvalidationService != null && delegatedInvalidationService !== this) {
             delegatedInvalidationService.invalidate(modules)
+        }
+    }
+}
+
+private inline fun buildDependentsMap(
+    modules: List<CaModule>,
+    getDependencies: (CaModule) -> Sequence<CaModule>,
+): Map<CaModule, Set<CaModule>> = buildMap {
+    modules.forEach { module ->
+        getDependencies(module).forEach { dependency ->
+            if (dependency == module) return@forEach
+
+            val dependents = (this[dependency] as? MutableSet<CaModule>) ?: linkedSetOf<CaModule>().also {
+                put(dependency, it)
+            }
+            dependents.add(module)
         }
     }
 }

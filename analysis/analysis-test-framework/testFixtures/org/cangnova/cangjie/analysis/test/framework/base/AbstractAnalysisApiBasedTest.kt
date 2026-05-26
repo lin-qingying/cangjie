@@ -12,7 +12,9 @@ import org.cangnova.cangjie.analysis.api.standalone.projectStructure.registerPro
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.registerProjectServices
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.test.framework.TestWithDisposable
+import org.cangnova.cangjie.analysis.test.framework.AnalysisApiTestDirectives
 import org.cangnova.cangjie.analysis.test.framework.analysisApiMainFileName
+import org.cangnova.cangjie.analysis.test.framework.directives.ModificationEventDirectives
 import org.cangnova.cangjie.analysis.test.framework.isAnalysisApiMainModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructureProvider
@@ -31,9 +33,11 @@ import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.CangJieTestInfo
 import org.cangnova.cangjie.test.NonGroupingPhaseTestConfiguration
+import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
 import org.cangnova.cangjie.test.builders.testConfiguration
 import org.cangnova.cangjie.test.model.DependencyKind
 import org.cangnova.cangjie.test.model.FrontendKinds
+import org.cangnova.cangjie.test.model.TestModuleStructure
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.services.TemporaryDirectoryManager
 import org.cangnova.cangjie.test.services.AssertionsService
@@ -222,6 +226,16 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
     }
 
     /**
+     * 允许 configurator 在 TestConfigurationBuilder 层补充配置。
+     */
+    protected open fun configureTest(builder: TestConfigurationBuilder) {
+        configurator.configureTest(builder, disposable)
+        if (additionalDirectives.isNotEmpty()) {
+            builder.useDirectives(*additionalDirectives.toTypedArray())
+        }
+    }
+
+    /**
      * Analysis API 测试统一执行入口。
      *
      * 初始化顺序保持为：
@@ -242,6 +256,12 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
 
         registerBaseTestServices(testServices)
 
+        val testModuleStructure = testConfiguration.moduleStructureExtractor.splitTestDataByModules(
+            testDataPath.toString(),
+            testConfiguration.directives,
+        )
+        testServices.register(TestModuleStructure::class, testModuleStructure)
+
         val environmentManager = CaAnalysisApiEnvironmentManagerImpl(testServices, disposable)
         testServices.register(CaAnalysisApiEnvironmentManager::class, environmentManager)
         environmentManager.initializeEnvironment()
@@ -253,10 +273,9 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
         registrars.registerApplicationServices(application, testServices)
 
         val moduleStructure = configurator.createModules(
-            testDataPath = testDataPath,
+            moduleStructure = testModuleStructure,
             testServices = testServices,
             project = project,
-            additionalDirectives = additionalDirectives,
         )
         testServices.cjTestModuleStructureProvider.registerModuleStructure(moduleStructure)
 
@@ -276,10 +295,12 @@ abstract class AbstractAnalysisApiBasedTest : TestWithDisposable() {
 
     private fun createTestConfiguration(): NonGroupingPhaseTestConfiguration {
         return testConfiguration(testDataPath.toString()) {
+            configureTest(this)
             globalDefaults {
                 frontend = FrontendKinds.CFIR
                 dependencyKind = DependencyKind.Source
             }
+            useDirectives(AnalysisApiTestDirectives, ModificationEventDirectives)
             assertions = JUnit5Assertions
             testInfo = currentTestInfo
             useSourcePreprocessor(

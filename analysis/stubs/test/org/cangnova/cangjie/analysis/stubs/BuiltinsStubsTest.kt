@@ -50,6 +50,8 @@ class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
                     println("BuiltinsStubsTest: ${builtinFile.name} compute")
                     requireIsInstance<CjDecompiledFile>(builtinFile)
                     val fileStub = CjoCompiledStubsTestEngine.compute(builtinFile)
+                    println("BuiltinsStubsTest: ${builtinFile.name} validate")
+                    CjoCompiledStubsTestEngine.validate(builtinFile, fileStub)
                     assertMatchesGolden(
                         actual = CjoCompiledStubsTestEngine.render(fileStub),
                         expectedFile = goldenFile(builtinFile.name, ".stubs.txt"),
@@ -61,8 +63,6 @@ class BuiltinsStubsTest : AbstractAnalysisApiBasedTest() {
                         },
                         expectedFile = goldenFile(builtinFile.name, ".decompiled.text.cj"),
                     )
-                    println("BuiltinsStubsTest: ${builtinFile.name} validate")
-                    CjoCompiledStubsTestEngine.validate(builtinFile, fileStub)
                 }
             }
         }

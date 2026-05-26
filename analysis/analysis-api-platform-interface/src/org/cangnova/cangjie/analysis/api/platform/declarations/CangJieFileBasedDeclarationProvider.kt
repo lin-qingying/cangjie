@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.analysis.api.platform.declarations
 
 import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiManager
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.fileClasses.cangjieFileFacadeFqName
 import org.cangnova.cangjie.name.CallableId
@@ -23,10 +24,44 @@ import org.cangnova.cangjie.utils.yieldIfNotNull
 
 @CaPlatformInterface
 class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDeclarationProvider {
+    private val psiManager: PsiManager = PsiManager.getInstance(cangjieFile.project)
+
+    /**
+     * decompiled `.cjo` 的 PSI provider 在 IDE 生命周期中可能被重建。
+     *
+     * declaration provider 不能长期持有第一次收集到的 compiled PSI，
+     * 否则后续再命中同一 VirtualFile 时就会落到 “different providers” 的陈旧 PSI。
+     */
+    private val currentCangJieFile: CjFile
+        get() {
+            if (!cangjieFile.isCompiled) {
+                return cangjieFile
+            }
+
+            val virtualFile = checkNotNull(cangjieFile.virtualFile) {
+                "Compiled CangJie file should always have a virtual file: $cangjieFile"
+            }
+            return checkNotNull(psiManager.findFile(virtualFile) as? CjFile) {
+                "Cannot restore compiled CangJie PSI for ${virtualFile.path}"
+            }
+        }
+
+    /**
+     * compiled `.cjo` 的 package 判断必须绑定到当前 live PSI。
+     *
+     * `CjFile.packageFqName` 本身已经优先走 green stub，
+     * 这里只需要避免继续读取陈旧 PSI，不能再强制 `calcStubTree()`。
+     */
+    private val filePackageFqName: FqName
+        get() {
+            val file = currentCangJieFile
+            return file.packageFqName
+        }
+
     private val topLevelDeclarations: Sequence<CjDeclaration>
         get() {
             return sequence {
-                for (child in cangjieFile.declarations) {
+                for (child in currentCangJieFile.declarations) {
 
                     yield(child)
 
@@ -46,7 +81,7 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
     }
 
     private fun getClassLikeDeclarationsByClassId(classId: ClassId): Sequence<CjClassLikeDeclaration> {
-        if (cangjieFile.packageFqName != classId.packageFqName) {
+        if (filePackageFqName != classId.packageFqName) {
             return emptySequence()
         }
 
@@ -60,7 +95,7 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
                 tasks.addLast(Task(startingChunks, declaration))
             }
 
-            tasks += Task(startingChunks, cangjieFile)
+            tasks += Task(startingChunks, currentCangJieFile)
 
             while (!tasks.isEmpty()) {
                 val (chunks, element) = tasks.removeFirst()
@@ -115,7 +150,7 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
     }
 
     override fun getTopLevelExtendFiles(): Collection<CjFile> {
-        return if (getTopLevelExtends().isNotEmpty()) listOf(cangjieFile) else emptyList()
+        return if (getTopLevelExtends().isNotEmpty()) listOf(currentCangJieFile) else emptyList()
     }
 
     override fun getTopLevelCallableNamesInPackage(packageFqName: FqName): Set<Name> {
@@ -123,19 +158,20 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
     }
 
     override fun findFilesForFacadeByPackage(packageFqName: FqName): Collection<CjFile> {
-        if (cangjieFile.packageFqName != packageFqName) {
+        if (filePackageFqName != packageFqName) {
             return emptyList()
         }
 
-        return listOf(cangjieFile)
+        return listOf(currentCangJieFile)
     }
 
     override fun findFilesForFacade(facadeFqName: FqName): Collection<CjFile> {
-        if (cangjieFile.cangjieFileFacadeFqName != facadeFqName) return emptyList()
+        val file = currentCangJieFile
+        if (file.cangjieFileFacadeFqName != facadeFqName) return emptyList()
 
         for (declaration in topLevelDeclarations) {
             if (declaration !is CjClassLikeDeclaration) {
-                return listOf(cangjieFile)
+                return listOf(file)
             }
         }
 
@@ -144,7 +180,7 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
 
     override fun findInternalFilesForFacade(facadeFqName: FqName): Collection<CjFile> = emptyList()
 
-    override fun computePackageNames(): Set<String> = setOf(cangjieFile.packageFqName.asString())
+    override fun computePackageNames(): Set<String> = setOf(filePackageFqName.asString())
 
     override val hasSpecificClassifierPackageNamesComputation: Boolean get() = false
     override val hasSpecificCallablePackageNamesComputation: Boolean get() = false
@@ -159,7 +195,7 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         packageFqName: FqName,
         name: Name
     ): Collection<T> {
-        if (cangjieFile.packageFqName != packageFqName) {
+        if (filePackageFqName != packageFqName) {
             return emptyList()
         }
 
@@ -176,7 +212,7 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         packageFqName: FqName,
         predicate: (T) -> Boolean = { true },
     ): Set<Name> {
-        if (cangjieFile.packageFqName != packageFqName) {
+        if (filePackageFqName != packageFqName) {
             return emptySet()
         }
 

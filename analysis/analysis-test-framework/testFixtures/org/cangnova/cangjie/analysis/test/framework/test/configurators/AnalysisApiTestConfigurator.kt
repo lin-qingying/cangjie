@@ -1,10 +1,12 @@
 package org.cangnova.cangjie.analysis.test.framework.test.configurators
 
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.project.Project
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.AnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructure
-import org.cangnova.cangjie.test.directives.model.DirectivesContainer
+import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
+import org.cangnova.cangjie.test.model.TestModuleStructure
 import org.cangnova.cangjie.test.services.TestServices
 import java.nio.file.Path
 
@@ -37,13 +39,21 @@ abstract class AnalysisApiTestConfigurator {
     abstract val serviceRegistrars: List<AnalysisApiServiceRegistrar<TestServices>>
 
     /**
+     * 允许 configurator 在底层 test-infrastructure builder 上追加配置。
+     *
+     * 对齐 Kotlin `AnalysisApiTestConfigurator.configureTest`：
+     * source-like / binary / script 等 configurator 自己决定是否注入额外测试服务、
+     * module-structure transformer 或其它测试期专用设置。
+     */
+    open fun configureTest(builder: TestConfigurationBuilder, disposable: Disposable) {}
+
+    /**
      * 从测试数据路径构建 Analysis API 测试模块结构。
      */
     abstract fun createModules(
-        testDataPath: Path,
+        moduleStructure: TestModuleStructure,
         testServices: TestServices,
         project: Project,
-        additionalDirectives: List<DirectivesContainer>,
     ): CjTestModuleStructure
 
     /**

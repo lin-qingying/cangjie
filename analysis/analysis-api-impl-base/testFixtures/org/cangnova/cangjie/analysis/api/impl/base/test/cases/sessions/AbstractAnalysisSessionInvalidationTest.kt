@@ -39,8 +39,9 @@ internal class AnalysisTestSession(
 
     override val description: String
         get() = buildString {
-            append(underlyingSession.useSiteModule.moduleDescription)
-            if (underlyingSession.useSiteModule is CaLibraryModule) {
+            val useSiteModule = cjTestModule.caModule
+            append(useSiteModule)
+            if (useSiteModule is CaLibraryModule) {
                 append(" (resolvable session)")
             }
         }

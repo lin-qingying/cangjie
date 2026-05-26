@@ -47,6 +47,12 @@ public class CfirStandaloneNormalAnalysisSourceModuleBuiltInTypeTestGenerated ex
   }
 
   @Test
+  @TestMetadata("anyType.cj")
+  public void testAnyType() {
+    run("anyType.cj");
+  }
+
+  @Test
   @TestMetadata("stringType.cj")
   public void testStringType() {
     run("stringType.cj");

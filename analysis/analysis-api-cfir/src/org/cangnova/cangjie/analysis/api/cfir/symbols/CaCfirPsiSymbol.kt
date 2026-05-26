@@ -4,6 +4,7 @@ import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
+import org.cangnova.cangjie.analysis.api.cfir.restoreCurrentCompiledPsi
 import org.cangnova.cangjie.analysis.api.impl.base.symbols.pointers.CaBasePsiSymbolPointer
 import org.cangnova.cangjie.analysis.api.impl.base.util.lazyPub
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -107,6 +108,25 @@ internal inline fun <reified E : CfirElement, reified S : CfirBasedSymbol<*>> la
     crossinline symbol: (E) -> S,
 ): Lazy<S> = lazyPub {
     symbol(element.getOrBuildCfirOfType<E>(session.resolutionFacade))
+}
+
+/**
+ * 统一把符号缓存里的 compiled PSI 恢复到当前 live PSI。
+ *
+ * decompiled `.cjo` 在 IDE 生命周期里可能因为 view provider / document 重建而失效，
+ * 但 Analysis API / CFIR 缓存仍会暂时持有旧的 `backingPsi`。
+ * 任何公开 `symbol.psi` 的出口都必须先经过这里，避免把陈旧 offset 的 compiled PSI
+ * 再次泄漏给导航、文档和 target extraction。
+ */
+internal inline fun CaCfirPsiSymbol<out PsiElement, *>.backingPsiOrFindCurrentPsi(
+    findPsi: () -> PsiElement?,
+): PsiElement? {
+    val currentBackingPsi = when (val psi = backingPsi) {
+        is CjElement -> psi.restoreCurrentCompiledPsi(analysisSession.project)
+        else -> psi
+    }
+
+    return currentBackingPsi ?: findPsi()
 }
 
 internal fun CaCfirPsiSymbol<*, *>.psiOrSymbolHashCode(): Int = backingPsi?.hashCode() ?: cfirSymbol.hashCode()

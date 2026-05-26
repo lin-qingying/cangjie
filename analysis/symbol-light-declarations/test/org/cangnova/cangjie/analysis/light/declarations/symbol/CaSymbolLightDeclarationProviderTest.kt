@@ -141,7 +141,7 @@ class CaSymbolLightDeclarationProviderTest : AbstractAnalysisApiExecutionTest(
     }
 }
 
-private object SymbolLightDeclarationsTestServiceRegistrar : org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar() {
+internal object SymbolLightDeclarationsTestServiceRegistrar : org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar() {
     private const val SYMBOL_LIGHT_DECLARATIONS_PLUGIN_XML = "META-INF/analysis-api/cangjie-symbol-light-declarations.xml"
 
     override fun registerApplicationServices(application: MockApplication, testServices: TestServices) {

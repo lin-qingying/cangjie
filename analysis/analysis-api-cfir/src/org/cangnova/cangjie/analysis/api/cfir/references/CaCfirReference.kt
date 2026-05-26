@@ -91,5 +91,5 @@ internal fun CaSession.getPsiDeclarations(symbol: CaCfirSymbol<*>): Collection<P
 
 private fun CaSymbol.findPsiForReferenceResolve(scope: GlobalSearchScope): PsiElement? {
     require(this is CaCfirSymbol<*>)
-    return cfirSymbol.cfir.findReferencePsi(scope)
+    return cfirSymbol.cfir.findReferencePsi(scope, analysisSession.project)
 }

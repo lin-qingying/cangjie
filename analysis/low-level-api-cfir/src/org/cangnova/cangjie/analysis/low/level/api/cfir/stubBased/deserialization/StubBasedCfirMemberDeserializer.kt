@@ -228,6 +228,7 @@ internal class StubBasedCfirMemberDeserializer(
             moduleData = c.moduleData
             origin = initialOrigin
             attributes = CfirDeclarationAttributes.EMPTY
+            this.scopeProvider = scopeProvider
             this.name = name
             status = buildResolvedStatus(typeAlias.visibility, Modality.FINAL)
             annotations += c.annotationDeserializer.loadAnnotations(typeAlias, aliasSymbol)

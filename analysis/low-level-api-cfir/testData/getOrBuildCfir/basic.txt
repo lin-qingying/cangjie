@@ -1,0 +1,119 @@
+Analysis attempt #0
+CJ element: CjDotQualifiedExpression
+CJ element text:
+box.value
+CFIR element: CfirNamedAccessExpressionImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+NAMED_ACCESS(value) {
+    receiver:
+        NAMED_ACCESS(box)
+}
+
+CFIR FILE:
+NAMED_ACCESS(value) {
+    receiver:
+        NAMED_ACCESS(box)
+}
+FILE: basic.cj
+    package lowlevel.getorbuild
+    internal? class Box<T> {
+        internal? let value: R|kotlin.Unit|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func wrap(value: R|Int64|): R|Box<R|Int64|>| {
+        <element: CfirLazyBlock>
+    }
+    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value) {
+                receiver:
+                    NAMED_ACCESS(box)
+            }
+        }
+    }
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>
+
+=====
+
+Analysis attempt #1
+CJ element: CjCallExpression
+CJ element text:
+wrap(41)
+CFIR element: CfirFunctionCallImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+FUNCTION_CALL(wrap) {
+    INT(41)
+}
+
+CFIR FILE:
+FUNCTION_CALL(wrap) {
+    INT(41)
+}
+FILE: basic.cj
+    package lowlevel.getorbuild
+    internal? class Box<T> {
+        internal? let value: R|kotlin.Unit|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value) {
+                receiver:
+                    NAMED_ACCESS(box)
+            }
+        }
+    }
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>
+
+=====
+
+Analysis attempt #2
+CJ element: CjCallExpression
+CJ element text:
+unwrap(box)
+CFIR element: CfirFunctionCallImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+FUNCTION_CALL(unwrap) {
+    NAMED_ACCESS(box)
+}
+
+CFIR FILE:
+FUNCTION_CALL(unwrap) {
+    NAMED_ACCESS(box)
+}
+FILE: basic.cj
+    package lowlevel.getorbuild
+    internal? class Box<T> {
+        internal? let value: R|kotlin.Unit|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value) {
+                receiver:
+                    NAMED_ACCESS(box)
+            }
+        }
+    }
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>

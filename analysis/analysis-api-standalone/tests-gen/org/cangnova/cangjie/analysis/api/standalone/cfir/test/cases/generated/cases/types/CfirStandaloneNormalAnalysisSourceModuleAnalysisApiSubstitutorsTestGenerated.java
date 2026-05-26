@@ -51,4 +51,10 @@ public class CfirStandaloneNormalAnalysisSourceModuleAnalysisApiSubstitutorsTest
   public void testGenericReturnType() {
     run("genericReturnType.cj");
   }
+
+  @Test
+  @TestMetadata("nestedGenericReturnType.cj")
+  public void testNestedGenericReturnType() {
+    run("nestedGenericReturnType.cj");
+  }
 }

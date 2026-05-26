@@ -51,4 +51,10 @@ public class CfirStandaloneNormalAnalysisSourceModuleTypeByDeclarationReturnType
   public void testFunctionReturnType() {
     run("functionReturnType.cj");
   }
+
+  @Test
+  @TestMetadata("typeAliasReturnType.cj")
+  public void testTypeAliasReturnType() {
+    run("typeAliasReturnType.cj");
+  }
 }

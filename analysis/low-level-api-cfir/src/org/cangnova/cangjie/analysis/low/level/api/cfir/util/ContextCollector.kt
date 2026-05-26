@@ -436,7 +436,19 @@ private class ContextCollectorVisitor(
     }
 
     override fun visitPatternVariable(patternVariable: CfirPatternVariable) {
-        visitVariableLike(patternVariable, patternVariable.symbol, patternVariable.initializer)
+        withProcessor(patternVariable) {
+            dumpContext(patternVariable, ContextKind.SELF)
+            process(patternVariable.returnTypeRef)
+
+            onActive {
+                context.withLocalVariableBodyCompat {
+                    dumpContext(patternVariable, ContextKind.BODY)
+                    process(patternVariable.initializer)
+                    // PatternVariable 只是模式声明容器，真正进入局部作用域的是 pattern 内的 binding variable。
+                    process(patternVariable.pattern)
+                }
+            }
+        }
     }
 
     override fun visitPatternBindingVariable(patternBindingVariable: CfirPatternBindingVariable) {

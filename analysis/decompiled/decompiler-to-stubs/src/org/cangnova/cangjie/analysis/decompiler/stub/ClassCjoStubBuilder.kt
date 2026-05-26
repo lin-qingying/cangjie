@@ -93,6 +93,7 @@ internal fun createClassStub(
         superNames = superTypeRefs.toSuperNameRefs(),
     )
     createEmptyDeclarationHeaderStubs(stub)
+    createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.CLASS_BODY, declaration.declarations, context.child(declaration.name))
 }
@@ -113,6 +114,7 @@ internal fun createInterfaceStub(
         superNames = superTypeRefs.toSuperNameRefs(),
     )
     createEmptyDeclarationHeaderStubs(stub)
+    createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.INTERFACE_BODY, declaration.declarations, context.child(declaration.name))
 }
@@ -133,6 +135,7 @@ internal fun createStructStub(
         superNames = superTypeRefs.toSuperNameRefs(),
     )
     createEmptyDeclarationHeaderStubs(stub)
+    createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.CLASS_BODY, declaration.declarations, context.child(declaration.name))
 }
@@ -154,6 +157,7 @@ internal fun createEnumStub(
         isNonExhaustive = false,
     )
     createEmptyDeclarationHeaderStubs(stub)
+    createTypeParameterListStub(stub, declaration.typeParameters)
     createSuperTypeListStub(stub, superTypeRefs)
     createTypeStatementBodyAndMembers(stub, CjStubElementTypes.ENUM_BODY, declaration.declarations, context.child(declaration.name))
 }
@@ -171,6 +175,7 @@ internal fun createTypeAliasStub(
         classId = context.owningClassFqName?.let { null } ?: ClassId(context.packageFqName, declaration.name),
     )
     createEmptyDeclarationHeaderStubs(stub)
+    createTypeParameterListStub(stub, declaration.typeParameters)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(stub, declaration.expandedTypeRef)
 }
 

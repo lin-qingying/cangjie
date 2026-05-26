@@ -7,6 +7,7 @@ package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserializati
 
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.common.CfirModuleData
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
@@ -62,6 +63,7 @@ internal class StubBasedCfirTypeDeserializer(
                     moduleData = this@StubBasedCfirTypeDeserializer.moduleData
                     resolvePhase = CfirResolvePhase.ANALYZED_DEPENDENCIES
                     origin = initialOrigin
+                    attributes = CfirDeclarationAttributes.EMPTY
                     this.name = name
                     this.symbol = symbol
                     this.containingDeclarationSymbol = containingSymbol ?: errorWithAttachment("Top-level type parameter ???") {

@@ -25,6 +25,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoImportEntry
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
@@ -33,6 +34,7 @@ import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjDeclarationModifierList
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjImportList
+import org.cangnova.cangjie.psi.CjTypeParameterList
 import org.cangnova.cangjie.psi.stubs.CangJieImportDirectiveStub
 import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieImportAliasStubImpl
@@ -41,6 +43,8 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieModifierListStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePackageDirectiveStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieStubOrigin
+import org.cangnova.cangjie.psi.stubs.impl.CangJieTypeParameterStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.util.io.StringRef
@@ -64,13 +68,14 @@ internal fun createDecompiledFileStub(
             it is CfirErrorFunction ||
             it is CfirErrorNamedValue
     }
+    val stubKind = DecompiledFileStubKinds.inferKind(
+        packageFqName = loadedPackage.packageFqName,
+        sourceFiles = loadedPackage.header.allFiles,
+        hasTopLevelCallables = hasTopLevelCallables,
+    )
     val fileStub = CangJieFileStubImpl(
         file = null,
-        kind = DecompiledFileStubKinds.inferKind(
-            packageFqName = loadedPackage.packageFqName,
-            sourceFiles = loadedPackage.header.allFiles,
-            hasTopLevelCallables = hasTopLevelCallables,
-        ),
+        kind = stubKind,
     )
     val packageDirectiveStub = CangJiePackageDirectiveStubImpl(
         parent = fileStub,
@@ -80,11 +85,19 @@ internal fun createDecompiledFileStub(
     val importListStub = CangJiePlaceHolderStubImpl<CjImportList>(fileStub, CjStubElementTypes.IMPORT_LIST)
     createImportDirectiveStubs(importListStub, fileStub.getPackageFqName(), loadedPackage)
 
-    val context = CjoStubBuilderContext(packageFqName = loadedPackage.packageFqName)
+    val context = CjoStubBuilderContext(
+        packageFqName = loadedPackage.packageFqName,
+        packageFacadeOrigin = stubKind.facadeOrigin(),
+    )
     declarations.forEach { declaration ->
         createDeclarationStub(fileStub, declaration, context)
     }
     return fileStub
+}
+
+private fun org.cangnova.cangjie.psi.stubs.CangJieFileStubKind.facadeOrigin(): CangJieStubOrigin.Facade? {
+    val facade = this as? org.cangnova.cangjie.psi.stubs.CangJieFileStubKind.WithPackage.Facade ?: return null
+    return CangJieStubOrigin.Facade(facade.facadeFqName.asString().replace('.', '/'))
 }
 
 private fun createImportDirectiveStubs(
@@ -160,6 +173,20 @@ private fun createNameReferenceStub(parent: StubElement<*>, name: Name) {
 internal fun createEmptyDeclarationHeaderStubs(parent: StubElement<*>, modifierMask: Long = 0) {
     CangJiePlaceHolderStubImpl<CjAnnotations>(parent, CjStubElementTypes.ANNOTATIONS)
     CangJieModifierListStubImpl(parent, modifierMask, CjStubElementTypes.MODIFIER_LIST)
+}
+
+/**
+ * `.cjo` 声明 stub 必须物化源码 PSI 同构的类型参数列表。
+ *
+ * Low-level stub 反序列化会通过 [org.cangnova.cangjie.psi.CjTypeParameterListOwner.typeParameters]
+ * 建立声明局部类型参数作用域；缺失这一层时，签名中的 `T` 会被误判为包名片段。
+ */
+internal fun createTypeParameterListStub(parent: StubElement<*>, typeParameters: List<CfirTypeParameter>) {
+    if (typeParameters.isEmpty()) return
+    val typeParameterListStub = CangJiePlaceHolderStubImpl<CjTypeParameterList>(parent, CjStubElementTypes.TYPE_PARAMETER_LIST)
+    typeParameters.forEach { typeParameter ->
+        CangJieTypeParameterStubImpl(typeParameterListStub, StringRef.fromString(typeParameter.name.asString()))
+    }
 }
 
 internal fun createCallableModifierMask(isOperator: Boolean): Long {

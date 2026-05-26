@@ -206,8 +206,8 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
                 return
             }
             append("func ")
-            withSuffix(" ") { function.typeParameterList?.accept(this) }
             append(function.name?.let(::renderIdentifier).orEmpty())
+            function.typeParameterList?.accept(this)
             function.valueParameterList?.accept(this) ?: append("()")
             withPrefix(": ") { function.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             withPrefix(" ") { function.typeConstraintList?.accept(this) }
@@ -217,8 +217,8 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitMacroDeclaration(function: CjMacroDeclaration) {
             withSuffix(" ") { function.modifierList?.accept(this) }
             append("macro ")
-            withSuffix(" ") { function.typeParameterList?.accept(this) }
             append(function.name?.let(::renderIdentifier).orEmpty())
+            function.typeParameterList?.accept(this)
             function.valueParameterList?.accept(this) ?: append("()")
             withPrefix(": ") { function.typeReference?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
             withPrefix(" ") { function.typeConstraintList?.accept(this) }

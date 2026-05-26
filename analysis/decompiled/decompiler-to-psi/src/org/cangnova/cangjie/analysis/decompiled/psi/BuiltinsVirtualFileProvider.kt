@@ -15,6 +15,8 @@ import java.nio.file.Path
 abstract class BuiltinsVirtualFileProvider {
     abstract fun getBuiltinVirtualFiles(): Set<VirtualFile>
 
+    abstract fun getBuiltinVirtualFiles(project: Project): Set<VirtualFile>
+
     abstract fun createBuiltinsScope(project: Project): GlobalSearchScope
 
     companion object {
@@ -37,13 +39,20 @@ abstract class BuiltinsVirtualFileProvider {
 abstract class BuiltinsVirtualFileProviderBaseImpl : BuiltinsVirtualFileProvider() {
     protected abstract fun getBuiltinRootVirtualFiles(): Set<VirtualFile>
 
+    protected abstract fun getBuiltinRootVirtualFiles(project: Project): Set<VirtualFile>
+
     override fun getBuiltinVirtualFiles(): Set<VirtualFile> {
         return getBuiltinRootVirtualFiles()
             .flatMapTo(linkedSetOf(), ::collectBuiltinFiles)
     }
 
+    override fun getBuiltinVirtualFiles(project: Project): Set<VirtualFile> {
+        return getBuiltinRootVirtualFiles(project)
+            .flatMapTo(linkedSetOf(), ::collectBuiltinFiles)
+    }
+
     override fun createBuiltinsScope(project: Project): GlobalSearchScope {
-        return GlobalSearchScope.filesScope(project, getBuiltinVirtualFiles())
+        return GlobalSearchScope.filesScope(project, getBuiltinVirtualFiles(project))
     }
 
     protected fun collectBuiltinFiles(root: VirtualFile): List<VirtualFile> {
@@ -103,6 +112,8 @@ class BuiltinsVirtualFileProviderCliImpl : BuiltinsVirtualFileProviderBaseImpl()
             }
             .toCollection(linkedSetOf())
     }
+
+    override fun getBuiltinRootVirtualFiles(project: Project): Set<VirtualFile> = getBuiltinRootVirtualFiles()
 
     private fun readPaths(propertyKey: String, envKey: String): List<String> {
         val raw = System.getProperty(propertyKey)

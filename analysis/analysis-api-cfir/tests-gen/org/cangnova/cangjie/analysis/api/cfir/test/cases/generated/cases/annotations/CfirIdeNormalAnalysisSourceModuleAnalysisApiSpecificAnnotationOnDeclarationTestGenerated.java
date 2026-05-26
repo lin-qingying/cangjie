@@ -47,6 +47,12 @@ public class CfirIdeNormalAnalysisSourceModuleAnalysisApiSpecificAnnotationOnDec
   }
 
   @Test
+  @TestMetadata("interfaceMarker.cj")
+  public void testInterfaceMarker() {
+    run("interfaceMarker.cj");
+  }
+
+  @Test
   @TestMetadata("namedAnnotation.cj")
   public void testNamedAnnotation() {
     run("namedAnnotation.cj");

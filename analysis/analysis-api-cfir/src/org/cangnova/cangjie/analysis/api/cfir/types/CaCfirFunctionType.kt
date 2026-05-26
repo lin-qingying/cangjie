@@ -3,6 +3,7 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.utils.asCaType
+import org.cangnova.cangjie.analysis.api.cfir.utils.buildAbbreviatedType
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreFunctionType
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -33,7 +34,7 @@ internal class CaCfirFunctionType(
         get() = withValidityAssertion { emptyTypeAnnotations(token) }
 
     override val abbreviation: org.cangnova.cangjie.analysis.api.types.CaUsualClassType?
-        get() = withValidityAssertion { null }
+        get() = withValidityAssertion { analysisSession.cfirSymbolBuilder.buildAbbreviatedType(coneType) }
 
     override val parameterTypes: List<CaType>
         get() = withValidityAssertion {

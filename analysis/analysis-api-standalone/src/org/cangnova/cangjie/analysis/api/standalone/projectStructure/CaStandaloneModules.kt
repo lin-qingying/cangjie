@@ -2,7 +2,11 @@
 
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
 
+import com.intellij.openapi.module.Module
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.SmartPointerManager
 import com.intellij.psi.SmartPsiElementPointer
@@ -34,7 +38,7 @@ sealed class CaStandaloneModule(
     final override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
 
     override val baseContentScope: GlobalSearchScope =
-        GlobalSearchScope.filesWithoutLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })
+        StandaloneRootContentScope(project, scopeRoots)
 }
 
 class CaStandaloneSourceModule(
@@ -116,3 +120,44 @@ class CaStandaloneNotUnderContentRootModule(
     project: Project,
     scopeRoots: List<PsiFileSystemItem>,
 ) : CaStandaloneModule(project, scopeRoots), CaNotUnderContentRootModule
+
+/**
+ * Standalone 根作用域。
+ *
+ * 默认的 `filesWithoutLibrariesScope()` 能覆盖普通目录与文件 root，
+ * 但不会把“目录 root 下通过目录链接暴露出来的文件”判进 scope。
+ * standalone 的 source roots 明确允许目录 root，因此这里在默认 scope 之外，
+ * 懒加载一份“从 root 递归可达的 VirtualFile 集合”，只在默认判定失败时再做补充。
+ */
+private class StandaloneRootContentScope(
+    project: Project,
+    private val scopeRoots: List<PsiFileSystemItem>,
+) : GlobalSearchScope(project) {
+    private val directScope = GlobalSearchScope.filesWithoutLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })
+
+    private val reachableFilesByTraversal: Set<VirtualFile> by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        buildSet {
+            scopeRoots.mapNotNull { it.virtualFile }.forEach { root ->
+                add(root)
+                if (root.isDirectory) {
+                    VfsUtilCore.visitChildrenRecursively(root, object : VirtualFileVisitor<Void>() {
+                        override fun visitFile(file: VirtualFile): Boolean {
+                            add(file)
+                            return true
+                        }
+                    })
+                }
+            }
+        }
+    }
+
+    override fun contains(file: VirtualFile): Boolean {
+        return directScope.contains(file) || file in reachableFilesByTraversal
+    }
+
+    override fun compare(file1: VirtualFile, file2: VirtualFile): Int = 0
+
+    override fun isSearchInModuleContent(aModule: Module): Boolean = false
+
+    override fun isSearchInLibraries(): Boolean = false
+}
