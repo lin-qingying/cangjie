@@ -373,6 +373,55 @@ class FrontendMacroConstructionExecutionTest {
     }
 
     @Test
+    fun reexportedMacroUsesExecutableIdentityForExecutorCallInfo() {
+        val fixture = macroSurfaceFixture(
+            surface = expressionSurface(
+                surfaceId = 3003L,
+                qualifiedName = FqName("macros.VisibleDerive"),
+                packageFqName = FqName("sample"),
+            ),
+        )
+        val executor = RecordingExecutor(
+            MacroExpansionResult.Success(
+                tokens = listOf(org.cangnova.cangjie.macro.TokenInfo(0u.toUByte(), "42")),
+                "42",
+            ),
+        )
+        val configuration = CompilerConfiguration().apply {
+            macroExecutorFactory = MacroExecutorFactory { executor }
+            macroFragmentParserFactory = MacroFragmentParserFactory { RecordingParser() }
+        }
+
+        val result = FrontendMacroConstructionService(configuration, RecordingSplicer()).expandWithClassification(
+            pre = fixture.pre,
+            context = bindMacroImports(
+                pre = fixture.pre,
+                symbolIndex = buildMacroSymbolIndex(
+                    pre = fixture.pre,
+                    macroArtifactDefinitions = listOf(
+                        MacroDefinitionEntry(
+                            packageFqName = FqName("macros"),
+                            name = Name.identifier("VisibleDerive"),
+                            executablePackageFqName = FqName("upstream.deriving"),
+                            executableName = Name.identifier("Derive"),
+                            source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
+                            libPath = "impl-macro.dylib",
+                        ),
+                    ),
+                ),
+            ),
+            mode = MacroConstructionService.Mode.STRICT,
+        )
+
+        assertTrue(result is MacroConstructionResult.Success)
+        val call = executor.calls.single()
+        assertEquals("VisibleDerive", call.idName)
+        assertEquals("upstream.deriving", call.packageName)
+        assertEquals("macroCall_c_Derive_upstream_deriving", call.methodName)
+        assertEquals("impl-macro.dylib", call.libPath)
+    }
+
+    @Test
     fun parentMacroArgumentsReplaceOnlyDirectChildSurfaceRanges() {
         val packageFqName = FqName("sample")
         val parent = expressionSurface(

@@ -7,14 +7,10 @@ import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.deserialization.ModuleDataProvider
 import org.cangnova.cangjie.cfir.entrypoint.checkers.registerExperimentalCheckers
 import org.cangnova.cangjie.cfir.entrypoint.checkers.registerExtraCommonCheckers
-import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
-import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirDefaultSessionFactory
+import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFactoryContext
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirSessionConfigurator
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
-import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
-import org.cangnova.cangjie.cfir.session.CfirApiLevelProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
@@ -42,7 +38,6 @@ import org.cangnova.cangjie.test.services.service
 import org.cangnova.cangjie.test.services.sourceFileProvider
 import org.cangnova.cangjie.utils.DFS
 import java.io.File
-import java.util.regex.Pattern
 
 /**
  * CFIR frontend facade for test infrastructure.
@@ -74,7 +69,7 @@ open class CfirFrontendFacade(
         val configuration = testServices.compilerConfigurationProvider.getCompilerConfiguration(module)
         configuration.initializeCfirFrontendMacroCompilationConfiguration()
         val extensionRegistrars = emptyList<CfirExtensionRegistrar>()
-        val sessionFactoryContext = createSessionFactoryContext(configuration)
+        val sessionFactoryContext = createDefaultCfirSessionFactoryContext(configuration)
         val librarySession = createLibrarySession(
             module,
             Name.special("<${module.name}>"),
@@ -257,111 +252,7 @@ open class CfirFrontendFacade(
         )
     }
 
-    private fun createSessionFactoryContext(configuration: CompilerConfiguration): CfirDefaultSessionFactory.Context {
-        val classpath = configuration.classpathRoots.map { it.path }.filter { it.isNotBlank() }
-        val cjoManager = CjoManager(
-            CjoSearchPath { key ->
-                when (key) {
-                    "CANGJIE_LIBRARY" -> classpath.takeIf { it.isNotEmpty() }?.joinToString(File.pathSeparator)
-                    else -> System.getenv(key)
-                }
-            }
-        )
-        val apiLevelProvider = createApiLevelProvider(configuration)
-        return CfirDefaultSessionFactory.Context(
-            cjoManager = cjoManager,
-            registerSourceSessionComponents = {
-                if (apiLevelProvider != null) {
-                    register(CfirApiLevelProvider::class, apiLevelProvider)
-                }
-            },
-        )
-    }
-
-    /**
-     * 为 LLT 迁移后的测试数据注入稳定的 API level/syscap 配置。
-     *
-     * 这里显式从测试指令构建 [CfirApiLevelProvider]，避免依赖当前 CFIR
-     * 产物去“倒推”预期诊断。
-     */
-    private fun createApiLevelProvider(configuration: CompilerConfiguration): CfirApiLevelProvider? {
-        val projectApiLevel = configuration.apiLevel
-        val syscapConfigPath = configuration.apiLevelSyscapConfigPath
-
-        if (projectApiLevel == null && syscapConfigPath.isNullOrBlank()) {
-            return null
-        }
-
-        val syscapInfo = syscapConfigPath
-            ?.takeIf { it.isNotBlank() }
-            ?.let(::parseSyscapConfiguration)
-            ?: ParsedSyscapConfiguration.EMPTY
-
-        return object : CfirApiLevelProvider {
-            override val projectApiLevel: Int =
-                projectApiLevel ?: syscapInfo.apiLevel ?: CfirApiLevelProvider.DISABLED
-            override val syscapEnabled: Boolean =
-                syscapInfo.union.isNotEmpty() || syscapInfo.intersection.isNotEmpty()
-            override val syscapUnion: Set<String> = syscapInfo.union
-            override val syscapIntersection: Set<String> = syscapInfo.intersection
-        }
-    }
-
-    private fun parseSyscapConfiguration(rawPath: String): ParsedSyscapConfiguration {
-        val configFile = File(rawPath)
-        if (!configFile.exists() || !configFile.isFile) {
-            return ParsedSyscapConfiguration.EMPTY
-        }
-
-        val content = runCatching { configFile.readText() }.getOrDefault("")
-        if (content.isBlank()) return ParsedSyscapConfiguration.EMPTY
-
-        val apiLevel = API_LEVEL_REGEX.find(content)?.groupValues?.getOrNull(1)?.toIntOrNull()
-        val referencedFiles = SYS_CAP_FILE_REGEX.findAll(content)
-            .mapNotNull { it.groupValues.getOrNull(1) }
-            .map { relativePath -> configFile.parentFile.resolve(relativePath).normalize() }
-            .filter { it.exists() && it.isFile }
-            .toList()
-
-        if (referencedFiles.isEmpty()) {
-            return ParsedSyscapConfiguration(apiLevel = apiLevel)
-        }
-
-        val syscapSets = referencedFiles.mapNotNull(::parseSyscapLeafFile)
-        if (syscapSets.isEmpty()) {
-            return ParsedSyscapConfiguration(apiLevel = apiLevel)
-        }
-
-        val union = linkedSetOf<String>()
-        syscapSets.forEach { union += it }
-
-        val intersection = syscapSets
-            .drop(1)
-            .fold(syscapSets.first().toSet()) { acc, next -> acc intersect next }
-
-        return ParsedSyscapConfiguration(
-            apiLevel = apiLevel,
-            union = union,
-            intersection = intersection,
-        )
-    }
-
-    private fun parseSyscapLeafFile(file: File): Set<String>? {
-        val content = runCatching { file.readText() }.getOrDefault("")
-        if (content.isBlank()) return null
-        val values = SYS_CAP_VALUE_REGEX.findAll(content)
-            .mapNotNull { it.groupValues.getOrNull(1) }
-            .map(String::trim)
-            .filter(String::isNotEmpty)
-            .toCollection(linkedSetOf())
-        return values.takeIf { it.isNotEmpty() }
-    }
-
     companion object {
-        private val API_LEVEL_REGEX = Pattern.compile("\"apiLevel\"\\s*:\\s*(\\d+)").toRegex()
-        private val SYS_CAP_FILE_REGEX = Pattern.compile("\"(\\./[^\"]+\\.json)\"").toRegex()
-        private val SYS_CAP_VALUE_REGEX = Pattern.compile("\"([^\"]+)\"").toRegex()
-
         fun initializeLibraryList(
             @Suppress("UNUSED_PARAMETER") mainModule: TestModule,
             mainModuleName: Name,
@@ -381,16 +272,6 @@ open class CfirFrontendFacade(
         ): Boolean {
             return testServices.defaultsProvider.frontendKind == FrontendKinds.CFIR
         }
-    }
-}
-
-private data class ParsedSyscapConfiguration(
-    val apiLevel: Int? = null,
-    val union: Set<String> = emptySet(),
-    val intersection: Set<String> = emptySet(),
-) {
-    companion object {
-        val EMPTY = ParsedSyscapConfiguration()
     }
 }
 

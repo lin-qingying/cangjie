@@ -74,16 +74,20 @@ abstract class CjDeclarationStub<T : StubElement<*>> : CjModifierListOwnerStub<T
     }
 
     override fun getOriginalElement(): PsiElement {
+        val currentDeclaration = requireCurrentCjElement() as CjDeclaration
         val navigationPolicy = ApplicationManager.getApplication().getService(
             CangJieDeclarationNavigationPolicy::class.java,
         )
-        return navigationPolicy?.getOriginalElement(this) ?: this
+        val navigationTarget = navigationPolicy?.getOriginalElement(currentDeclaration) ?: currentDeclaration
+        return (navigationTarget as? CjElement)?.requireCurrentCjElement() ?: navigationTarget
     }
 
     override fun getNavigationElement(): PsiElement {
+        val currentDeclaration = requireCurrentCjElement() as CjDeclaration
         val navigationPolicy = ApplicationManager.getApplication().getService(
             CangJieDeclarationNavigationPolicy::class.java,
         )
-        return navigationPolicy?.getNavigationElement(this) ?: this
+        val navigationTarget = navigationPolicy?.getNavigationElement(currentDeclaration) ?: currentDeclaration
+        return (navigationTarget as? CjElement)?.requireCurrentCjElement() ?: navigationTarget
     }
 }

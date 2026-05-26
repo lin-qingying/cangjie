@@ -147,6 +147,8 @@ object AbstractTypeChecker {
         subType: CangJieTypeMarker,
         superType: CangJieTypeMarker,
     ): Boolean {
+        val ctx = state.typeSystemContext
+
         // 预处理
         val preparedSubType = state.refineType(state.prepareType(subType))
         val preparedSuperType = state.refineType(state.prepareType(superType))
@@ -160,9 +162,11 @@ object AbstractTypeChecker {
         // 约束传播（类型推断时使用）
         state.addSubtypeConstraint(preparedSubType, preparedSuperType)?.let { return it }
 
-        // 仓颉无弹性类型，直接转为刚性类型
-        val subRigid = preparedSubType as? RigidTypeMarker ?: return false
-        val superRigid = preparedSuperType as? RigidTypeMarker ?: return false
+        // 对齐 Kotlin AbstractTypeChecker：
+        // 进入通用 subtype 算法前，必须经过类型系统上下文的刚性化视图，
+        // 让上下文有机会把 typealias 等语义包装规约成真实类型头。
+        val subRigid = ctx.asRigidType(preparedSubType) ?: return false
+        val superRigid = ctx.asRigidType(preparedSuperType) ?: return false
 
         return isSubtypeOfForSingleClassifierType(state, subRigid, superRigid)
     }
@@ -354,6 +358,9 @@ object AbstractTypeChecker {
 
 /** 桥接 [TypeSystemContext.isError] */
 private fun TypeSystemContext.isError(type: CangJieTypeMarker): Boolean = type.isError()
+
+/** 桥接 [TypeSystemContext.asRigidType] */
+private fun TypeSystemContext.asRigidType(type: CangJieTypeMarker): RigidTypeMarker? = with(type) { asRigidType() }
 
 /** 桥接 [TypeSystemContext.isStubType] */
 private fun TypeSystemContext.isStubType(type: RigidTypeMarker): Boolean = type.isStubType()

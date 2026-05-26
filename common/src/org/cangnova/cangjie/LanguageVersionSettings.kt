@@ -107,6 +107,15 @@ object AnalysisFlags {
     @JvmStatic
     val noPrelude by AnalysisFlag.Delegates.Boolean
 
+    /**
+     * 控制类型解析阶段是否自动展开 type alias。
+     *
+     * 对齐 Kotlin `AnalysisFlags.expandTypeAliasesInTypeResolution`：
+     * 默认开启，仅测试环境会显式关闭，用于覆盖 without-alias-expansion 真实前端路径。
+     */
+    @JvmStatic
+    val expandTypeAliasesInTypeResolution by AnalysisFlag.Delegates.Boolean(defaultValue = true)
+
 }
 
 data class LanguageVersionSettings(

@@ -4,8 +4,12 @@ import PackageFormat.Package
 import PackageFormat.PackageKind
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoExportedTopLevelNamesResolver
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoSearchPath
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.utils.StableHash
 import java.io.File
 import java.nio.ByteBuffer
@@ -59,15 +63,22 @@ data class MacroArtifactResolverResult(
 class MacroArtifactResolver {
     companion object {
         /** Artifact resolver 算法版本；搜索路径、校验规则或签名算法变化时必须递增。 */
-        const val ALGORITHM_VERSION: Int = 1
+        const val ALGORITHM_VERSION: Int = 2
     }
 
     fun resolve(
         packages: List<MacroArtifactPackage>,
         expectedExecutorAbiVersion: String? = null,
+        searchRoots: List<String> = emptyList(),
+        sdkHome: String = DEFAULT_MACRO_SDK_HOME,
     ): MacroArtifactResolverResult {
         val definitions = mutableListOf<MacroDefinitionEntry>()
         val diagnostics = mutableListOf<MacroConstructionDiagnostic>()
+        val exportedTopLevelNamesResolver = buildExportedTopLevelNamesResolver(packages, searchRoots)
+        val artifactLocator = MacroArtifactLocator(sdkHome = sdkHome)
+        val providedArtifactsByPackage = packages.associateBy(MacroArtifactPackage::packageFqName)
+        val executableArtifactCache = mutableMapOf<FqName, MacroArtifactPackage?>()
+        val fileHashCache = mutableMapOf<String, String>()
 
         for (artifact in packages) {
             val packageDiagnostics = validateFiles(artifact, expectedExecutorAbiVersion)
@@ -101,8 +112,12 @@ class MacroArtifactResolver {
                 continue
             }
 
-            val macroNames = header.topLevelCallableNames.sortedBy { it.asString() }
-            if (macroNames.isEmpty()) {
+            val exportedMacros = resolveExportedMacros(
+                artifact = artifact,
+                header = header,
+                exportedTopLevelNamesResolver = exportedTopLevelNamesResolver,
+            )
+            if (exportedMacros.isEmpty()) {
                 diagnostics += artifact.error(
                     kind = MacroConstructionDiagnostic.Kind.MACRO_EXPECT_MACRO_DEFINITION,
                     message = "Macro package `${artifact.packageFqName.asString()}` contains no exported macro definitions.",
@@ -111,38 +126,125 @@ class MacroArtifactResolver {
                 continue
             }
 
-            val cjoHash = hashFile(artifact.cjoPath)
-            val dynamicLibHash = hashFile(artifact.dynamicLibPath)
-            val bchirHash = StableHash.sha256Of(artifact.dependenciesBchirPaths.map(::hashFile))
-            val artifactSignature = artifact.signature ?: StableHash.sha256Of(
-                artifact.packageFqName.asString(),
-                artifact.cjoPath,
-                cjoHash,
-                artifact.dynamicLibPath,
-                dynamicLibHash,
-                bchirHash,
-                artifact.abiVersion.orEmpty(),
-                artifact.origin.name,
-                ALGORITHM_VERSION.toString(),
-            )
+            val visibleCjoHash = hashFile(artifact.cjoPath, fileHashCache)
+            val visibleDynamicLibHash = hashFile(artifact.dynamicLibPath, fileHashCache)
 
-            definitions += macroNames.map { macroName ->
+            definitions += exportedMacros.mapNotNull { exportedMacro ->
+                val executableArtifact = resolveExecutableArtifact(
+                    exportedMacro = exportedMacro,
+                    ownerArtifact = artifact,
+                    providedArtifactsByPackage = providedArtifactsByPackage,
+                    artifactLocator = artifactLocator,
+                    searchRoots = searchRoots,
+                    cache = executableArtifactCache,
+                ) ?: run {
+                    diagnostics += artifact.error(
+                        kind = MacroConstructionDiagnostic.Kind.MACRO_UNDEFINED_PACKAGE,
+                        message = "Re-exported macro `${macroFqName(artifact.packageFqName, exportedMacro.visibleName).asString()}` resolves to `${exportedMacro.executableFqName.asString()}`, but the executable macro artifact package `${exportedMacro.executablePackageFqName.asString()}` was not found.",
+                        relatedTargets = listOf(exportedMacro.executableFqName),
+                    )
+                    return@mapNotNull null
+                }
+
+                val executionDiagnostics = validateExecutableArtifact(
+                    ownerArtifact = artifact,
+                    ownerMacro = exportedMacro,
+                    executableArtifact = executableArtifact,
+                    expectedExecutorAbiVersion = expectedExecutorAbiVersion,
+                )
+                if (executionDiagnostics.any { it.severity == MacroConstructionDiagnostic.Severity.ERROR }) {
+                    diagnostics += executionDiagnostics
+                    return@mapNotNull null
+                }
+
+                val executableCjoHash = hashFile(executableArtifact.cjoPath, fileHashCache)
+                val executableDynamicLibHash = hashFile(executableArtifact.dynamicLibPath, fileHashCache)
+                val executableBchirHash = StableHash.sha256Of(
+                    executableArtifact.dependenciesBchirPaths.map { hashFile(it, fileHashCache) },
+                )
+                val artifactSignature = artifact.signature ?: StableHash.sha256Of(
+                    artifact.packageFqName.asString(),
+                    exportedMacro.visibleName.asString(),
+                    "visibleCjo=${artifact.cjoPath}",
+                    "visibleCjoHash=$visibleCjoHash",
+                    "visibleDylib=${artifact.dynamicLibPath}",
+                    "visibleDylibHash=$visibleDynamicLibHash",
+                    "executableTarget=${exportedMacro.executableFqName.asString()}",
+                    "executableCjo=${executableArtifact.cjoPath}",
+                    "executableCjoHash=$executableCjoHash",
+                    "executableDylib=${executableArtifact.dynamicLibPath}",
+                    "executableDylibHash=$executableDynamicLibHash",
+                    "executableBchirHash=$executableBchirHash",
+                    "executableAbi=${executableArtifact.abiVersion ?: artifact.abiVersion.orEmpty()}",
+                    "ownerOrigin=${artifact.origin.name}",
+                    "executableOrigin=${executableArtifact.origin.name}",
+                    ALGORITHM_VERSION.toString(),
+                )
+
                 MacroDefinitionEntry(
                     packageFqName = artifact.packageFqName,
-                    name = macroName,
+                    name = exportedMacro.visibleName,
+                    executablePackageFqName = exportedMacro.executablePackageFqName,
+                    executableName = exportedMacro.executableName,
                     source = MacroDefinitionEntry.Source.MACRO_ARTIFACT,
-                    libPath = artifact.dynamicLibPath,
-                    executorAbi = artifact.abiVersion,
+                    libPath = executableArtifact.dynamicLibPath,
+                    executorAbi = executableArtifact.abiVersion ?: artifact.abiVersion,
                     artifactSignature = artifactSignature,
-                    cjoHash = cjoHash,
-                    dynamicLibHash = dynamicLibHash,
-                    dependenciesBchirHash = bchirHash,
+                    cjoHash = visibleCjoHash,
+                    dynamicLibHash = executableDynamicLibHash,
+                    dependenciesBchirHash = executableBchirHash,
                     resolverAlgorithmVersion = ALGORITHM_VERSION,
                 )
             }
         }
 
         return MacroArtifactResolverResult(definitions, diagnostics)
+    }
+
+    /**
+     * 物理顶层宏声明和 `public import` 重导出的宏声明都应当计入 artifact surface。
+     */
+    private fun resolveExportedMacros(
+        artifact: MacroArtifactPackage,
+        header: CjoPackageHeader,
+        exportedTopLevelNamesResolver: CjoExportedTopLevelNamesResolver?,
+    ): List<ResolvedExportedMacro> {
+        val exportedNames = exportedTopLevelNamesResolver?.resolve(artifact.packageFqName)
+        return (exportedNames?.callableNames ?: header.topLevelCallableNames)
+            .sortedBy { it.asString() }
+            .map { visibleName ->
+                val executableTarget = exportedNames?.callableTargets?.get(visibleName)
+                ResolvedExportedMacro(
+                    visibleName = visibleName,
+                    executablePackageFqName = executableTarget?.packageFqName ?: artifact.packageFqName,
+                    executableName = executableTarget?.name ?: visibleName,
+                )
+            }
+    }
+
+    private fun buildExportedTopLevelNamesResolver(
+        packages: List<MacroArtifactPackage>,
+        searchRoots: List<String>,
+    ): CjoExportedTopLevelNamesResolver? {
+        val resolvedRoots = (searchRoots + packages.mapNotNull { File(it.cjoPath).parentFile?.absolutePath })
+            .map(String::trim)
+            .filter(String::isNotEmpty)
+            .map(::File)
+            .filter(File::isDirectory)
+            .map(File::getAbsolutePath)
+            .distinct()
+        if (resolvedRoots.isEmpty()) return null
+
+        val joinedRoots = resolvedRoots.joinToString(File.pathSeparator)
+        val manager = CjoManager(
+            CjoSearchPath { envName ->
+                when (envName) {
+                    "CANGJIE_LIBRARY", "CANGJIE_STDLIB_MODULE" -> joinedRoots
+                    else -> null
+                }
+            },
+        )
+        return CjoExportedTopLevelNamesResolver(manager)
     }
 
     private fun validateFiles(
@@ -187,6 +289,117 @@ class MacroArtifactResolver {
         return diagnostics
     }
 
+    private fun resolveExecutableArtifact(
+        exportedMacro: ResolvedExportedMacro,
+        ownerArtifact: MacroArtifactPackage,
+        providedArtifactsByPackage: Map<FqName, MacroArtifactPackage>,
+        artifactLocator: MacroArtifactLocator,
+        searchRoots: List<String>,
+        cache: MutableMap<FqName, MacroArtifactPackage?>,
+    ): MacroArtifactPackage? {
+        if (exportedMacro.executablePackageFqName == ownerArtifact.packageFqName) {
+            return ownerArtifact
+        }
+        cache[exportedMacro.executablePackageFqName]?.let { return it }
+        val provided = providedArtifactsByPackage[exportedMacro.executablePackageFqName]
+        if (provided != null) {
+            cache[exportedMacro.executablePackageFqName] = provided
+            return provided
+        }
+
+        val located = artifactLocator.locate(
+            packageDemands = setOf(exportedMacro.executablePackageFqName),
+            searchRoots = searchRoots,
+            explicitArtifacts = providedArtifactsByPackage.values.toList(),
+        ).singleOrNull { it.packageFqName == exportedMacro.executablePackageFqName }
+        cache[exportedMacro.executablePackageFqName] = located
+        return located
+    }
+
+    private fun validateExecutableArtifact(
+        ownerArtifact: MacroArtifactPackage,
+        ownerMacro: ResolvedExportedMacro,
+        executableArtifact: MacroArtifactPackage,
+        expectedExecutorAbiVersion: String?,
+    ): List<MacroConstructionDiagnostic> {
+        if (executableArtifact.packageFqName == ownerArtifact.packageFqName) return emptyList()
+
+        val diagnostics = mutableListOf<MacroConstructionDiagnostic>()
+        val visibleMacroFqName = macroFqName(ownerArtifact.packageFqName, ownerMacro.visibleName)
+        val executableMacroFqName = ownerMacro.executableFqName
+
+        if (!File(executableArtifact.cjoPath).isFile) {
+            diagnostics += ownerArtifact.error(
+                kind = MacroConstructionDiagnostic.Kind.MACRO_UNDEFINED_PACKAGE,
+                message = "Re-exported macro `${visibleMacroFqName.asString()}` resolves to `${executableMacroFqName.asString()}`, but the executable macro artifact `.cjo` was not found: ${executableArtifact.cjoPath}",
+                artifactPath = executableArtifact.cjoPath,
+                relatedTargets = listOf(executableMacroFqName),
+            )
+            return diagnostics
+        }
+        if (!File(executableArtifact.dynamicLibPath).isFile) {
+            diagnostics += ownerArtifact.error(
+                kind = MacroConstructionDiagnostic.Kind.MACRO_CANNOT_OPEN_LIB,
+                message = "Re-exported macro `${visibleMacroFqName.asString()}` resolves to `${executableMacroFqName.asString()}`, but the executable macro dynamic library was not found: ${executableArtifact.dynamicLibPath}",
+                macroLibraryPath = executableArtifact.dynamicLibPath,
+                relatedTargets = listOf(executableMacroFqName),
+            )
+        }
+        for (bchirPath in executableArtifact.dependenciesBchirPaths) {
+            if (!File(bchirPath).isFile) {
+                diagnostics += ownerArtifact.error(
+                    kind = MacroConstructionDiagnostic.Kind.MACRO_CANNOT_FIND_DEPENDENCY_BCHIR,
+                    message = "Re-exported macro `${visibleMacroFqName.asString()}` resolves to `${executableMacroFqName.asString()}`, but a dependency BCHIR of the executable macro artifact was not found: $bchirPath",
+                    artifactPath = bchirPath,
+                    relatedTargets = listOf(executableMacroFqName),
+                )
+            }
+        }
+        if (diagnostics.any { it.severity == MacroConstructionDiagnostic.Severity.ERROR }) {
+            return diagnostics
+        }
+
+        val header = runCatching { readCjoHeader(File(executableArtifact.cjoPath)) }.getOrElse { error ->
+            diagnostics += ownerArtifact.error(
+                kind = MacroConstructionDiagnostic.Kind.MACRO_EXPECT_MACRO_DEFINITION,
+                message = "Re-exported macro `${visibleMacroFqName.asString()}` resolves to `${executableMacroFqName.asString()}`, but the executable macro artifact `.cjo` cannot be read: ${error.message.orEmpty()}",
+                artifactPath = executableArtifact.cjoPath,
+                relatedTargets = listOf(executableMacroFqName),
+            )
+            return diagnostics
+        }
+        if (header.fullPkgName != ownerMacro.executablePackageFqName.asString()) {
+            diagnostics += ownerArtifact.error(
+                kind = MacroConstructionDiagnostic.Kind.MACRO_UNDEFINED_PACKAGE,
+                message = "Re-exported macro `${visibleMacroFqName.asString()}` resolves to `${executableMacroFqName.asString()}`, but the executable artifact `${executableArtifact.cjoPath}` contains package `${header.fullPkgName}`.",
+                artifactPath = executableArtifact.cjoPath,
+                relatedTargets = listOf(executableMacroFqName),
+            )
+        }
+        if (header.kind != PackageKind.Macro) {
+            diagnostics += ownerArtifact.error(
+                kind = MacroConstructionDiagnostic.Kind.MACRO_EXPECT_MACRO_DEFINITION,
+                message = "Re-exported macro `${visibleMacroFqName.asString()}` resolves to `${executableMacroFqName.asString()}`, but package `${ownerMacro.executablePackageFqName.asString()}` is not a macro package artifact.",
+                artifactPath = executableArtifact.cjoPath,
+                relatedTargets = listOf(executableMacroFqName),
+            )
+        }
+        val resolvedAbi = executableArtifact.abiVersion ?: ownerArtifact.abiVersion
+        if (
+            !resolvedAbi.isNullOrBlank() &&
+            !expectedExecutorAbiVersion.isNullOrBlank() &&
+            resolvedAbi != expectedExecutorAbiVersion
+        ) {
+            diagnostics += ownerArtifact.error(
+                kind = MacroConstructionDiagnostic.Kind.MACRO_EXPECT_MACRO_DEFINITION,
+                message = "Re-exported macro `${visibleMacroFqName.asString()}` resolves to `${executableMacroFqName.asString()}`, but the executable artifact ABI `$resolvedAbi` does not match executor ABI `$expectedExecutorAbiVersion`.",
+                artifactPath = executableArtifact.cjoPath,
+                relatedTargets = listOf(executableMacroFqName),
+            )
+        }
+        return diagnostics
+    }
+
     private fun readCjoHeader(file: File): CjoPackageHeader {
         val bytes = file.readBytes()
         val buffer = ByteBuffer.allocate(bytes.size)
@@ -195,18 +408,20 @@ class MacroArtifactResolver {
         return CjoPackageHeader.fromPackage(Package.getRootAsPackage(buffer))
     }
 
-    private fun hashFile(path: String): String {
-        val file = File(path)
-        return MessageDigest.getInstance("SHA-256")
-            .digest(file.readBytes())
-            .joinToString(separator = "") { byte -> "%02x".format(byte) }
-    }
+    private fun hashFile(path: String, cache: MutableMap<String, String>): String =
+        cache.getOrPut(path) {
+            val file = File(path)
+            MessageDigest.getInstance("SHA-256")
+                .digest(file.readBytes())
+                .joinToString(separator = "") { byte -> "%02x".format(byte) }
+        }
 
     private fun MacroArtifactPackage.error(
         kind: MacroConstructionDiagnostic.Kind,
         message: String,
         artifactPath: String? = null,
         macroLibraryPath: String? = null,
+        relatedTargets: List<FqName> = emptyList(),
     ): MacroConstructionDiagnostic {
         return MacroConstructionDiagnostic(
             severity = MacroConstructionDiagnostic.Severity.ERROR,
@@ -218,6 +433,23 @@ class MacroArtifactResolver {
             diagnosticOrigin = MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER,
             compileInvocationId = compileInvocationId,
             sourceDiagnosticsRef = sourceDiagnosticsRef,
+            relatedTargets = relatedTargets,
         )
+    }
+
+    private fun macroFqName(packageFqName: FqName, name: Name): FqName =
+        if (packageFqName.isRoot) FqName.topLevel(name) else packageFqName.child(name)
+
+    private data class ResolvedExportedMacro(
+        val visibleName: Name,
+        val executablePackageFqName: FqName,
+        val executableName: Name,
+    ) {
+        val executableFqName: FqName
+            get() = if (executablePackageFqName.isRoot) {
+                FqName.topLevel(executableName)
+            } else {
+                executablePackageFqName.child(executableName)
+            }
     }
 }

@@ -27,6 +27,10 @@ package org.cangnova.cangjie.psi.stubs
 object CangJieStubVersions {
 
     /**
+     * 204:
+     * - `.cjo` 顶层 callable stub 持久化 package facade origin
+     * - property stub 持久化 origin，供 stub-based library 反序列化恢复 container source
+     *
      * 203:
      * - package directive stub 持久化 macro package 标记
      *
@@ -34,7 +38,7 @@ object CangJieStubVersions {
      * - extend stub 显式持久化稳定 extendId
      * - decompiled compiled stub 与 source stub 统一使用同一套 extend identity 协议
      */
-    const val SOURCE_STUB_VERSION = 203
+    const val SOURCE_STUB_VERSION = 204
 
     private const val BINARY_STUB_VERSION = SOURCE_STUB_VERSION
 

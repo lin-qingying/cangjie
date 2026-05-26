@@ -4,6 +4,8 @@ import PackageFormat.PackageKind
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroConstructionDiagnostic
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroDefinitionEntry
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageDeclaration
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageFileImports
+import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageImport
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageMetadata
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageWriter
 import org.cangnova.cangjie.name.FqName
@@ -183,6 +185,49 @@ class MacroArtifactResolverTest {
         )
     }
 
+    @Test
+    fun publicImportReexportedMacroDefinitionsAreVisibleToResolver() {
+        val executablePackage = "upstream.deriving"
+        writeCjo(
+            "${toCjoFileName(FqName(executablePackage))}.cjo",
+            executablePackage,
+            PackageKind.Macro,
+            listOf("Derive"),
+        )
+        val executableDylib = writeFile("lib-macro_${toCjoFileName(FqName(executablePackage))}.${dynamicLibraryExtension()}")
+        val facadeCjo = writeCjo(
+            name = "facade.cjo",
+            packageFqName = "a",
+            kind = PackageKind.Macro,
+            callableNames = emptyList(),
+            fileImports = listOf(
+                CjoPackageFileImports(
+                    listOf(
+                        CjoPackageImport(
+                            prefixPaths = listOf("upstream", "deriving"),
+                            identifier = "Derive",
+                            isDecl = true,
+                            withImplicitExport = true,
+                        ),
+                    ),
+                ),
+            ),
+        )
+        val dylib = writeFile("macro.dll")
+
+        val result = MacroArtifactResolver().resolve(
+            packages = listOf(artifact("a", facadeCjo, dylib)),
+            searchRoots = listOf(tempDir.toString()),
+        )
+
+        assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
+        assertEquals(listOf("Derive"), result.definitions.map { it.name.asString() })
+        assertEquals(FqName("a"), result.definitions.single().packageFqName)
+        assertEquals(FqName(executablePackage), result.definitions.single().executablePackageFqName)
+        assertEquals("Derive", result.definitions.single().executableName.asString())
+        assertEquals(executableDylib.toString(), result.definitions.single().libPath)
+    }
+
     private fun artifact(
         packageFqName: String,
         cjoPath: Path,
@@ -217,6 +262,7 @@ class MacroArtifactResolverTest {
         packageFqName: String,
         kind: UByte,
         callableNames: List<String>,
+        fileImports: List<CjoPackageFileImports> = emptyList(),
     ): Path {
         val path = tempDir.resolve(name)
         return CjoPackageWriter.write(
@@ -224,6 +270,7 @@ class MacroArtifactResolverTest {
             CjoPackageMetadata(
                 fullPackageName = packageFqName,
                 moduleName = "macro-test",
+                fileImports = fileImports,
                 kind = kind,
                 declarations = callableNames.map(::CjoPackageDeclaration),
             ),

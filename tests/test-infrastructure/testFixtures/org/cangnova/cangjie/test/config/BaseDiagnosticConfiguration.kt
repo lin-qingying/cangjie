@@ -51,6 +51,28 @@ fun TestConfigurationBuilder.configureDiagnosticTest(parser: CfirParser) {
 }
 
 /**
+ * Shared phased-diagnostics setup.
+ *
+ * Reuses the ordinary CFIR diagnostics handler chain while allowing a phased
+ * frontend facade to provide the artifact under test.
+ */
+fun TestConfigurationBuilder.configurePhasedDiagnosticTest(
+    parser: CfirParser,
+    frontendFacade: Constructor<FrontendFacade<CfirOutputArtifact>>,
+    enableMetaInfoHandler: Boolean = true,
+) {
+    baseCfirDiagnosticTestConfiguration(
+        frontendFacade = frontendFacade,
+        enableMetaInfoHandler = enableMetaInfoHandler,
+    )
+    enableLazyResolvePhaseChecking()
+    configureCfirParser(parser)
+
+    useAdditionalService(::LibraryProvider)
+    useMetaTestConfigurators(::CfirSpecificParserSuppressor)
+}
+
+/**
  * Setups base configuration for diagnostics tests:
  * - CFIR frontend step
  * - source dependency kind between modules
@@ -60,6 +82,7 @@ fun TestConfigurationBuilder.baseCfirDiagnosticTestConfiguration(
     @Suppress("unused") baseDir: String = ".",
     frontendFacade: Constructor<FrontendFacade<CfirOutputArtifact>> = ::CfirFrontendFacade,
     testDataConsistencyHandler: Constructor<AfterAnalysisChecker> = ::CfirTestDataConsistencyHandler,
+    enableMetaInfoHandler: Boolean = true,
 ) {
     globalDefaults {
         frontend = FrontendKinds.CFIR
@@ -70,7 +93,9 @@ fun TestConfigurationBuilder.baseCfirDiagnosticTestConfiguration(
         LANGUAGE + "+EnableDfaWarnings"
     }
 
-    enableMetaInfoHandler()
+    if (enableMetaInfoHandler) {
+        enableMetaInfoHandler()
+    }
 
     useDirectives(
         CfirDiagnosticsDirectives,

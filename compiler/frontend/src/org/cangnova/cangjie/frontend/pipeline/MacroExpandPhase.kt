@@ -1113,7 +1113,7 @@ class FrontendMacroConstructionService(
     private fun computeMacroDependencySignature(context: MacroResolutionContext): String {
         val sourceTargets = context.symbolIndex.sources.map { it.fqName.asString() }
         val foreignTargets = context.symbolIndex.foreigns.map { entry ->
-            "${entry.fqName.asString()}|${entry.source}|lib=${entry.libPath.orEmpty()}|abi=${entry.executorAbi.orEmpty()}|" +
+            "${entry.fqName.asString()}|exec=${entry.executableFqName.asString()}|${entry.source}|lib=${entry.libPath.orEmpty()}|abi=${entry.executorAbi.orEmpty()}|" +
                 "artifact=${entry.artifactSignature.orEmpty()}|cjo=${entry.cjoHash.orEmpty()}|" +
                 "dylib=${entry.dynamicLibHash.orEmpty()}|bchir=${entry.dependenciesBchirHash.orEmpty()}|" +
                 "resolver=${entry.resolverAlgorithmVersion ?: -1}"
@@ -1441,10 +1441,10 @@ private fun MacroSurface.toMacroCallInfo(
     val endOffset = sourceRange?.endOffset?.minus(1)?.coerceAtLeast(sourceRange?.startOffset ?: 0)
     val end = endOffset.toSourcePosition(linesMapping)
     val hasAttrs = refreshedTokens.attrTokens.isNotEmpty()
-    val packageName = entry.packageFqName.asString().takeUnless { it == "<root>" }.orEmpty()
+    val packageName = entry.executablePackageFqName.asString().takeUnless { it == "<root>" }.orEmpty()
     return MacroCallInfo(
         idName = entry.name.asString(),
-        methodName = macroWrapperFunctionName(packageName, hasAttrs, entry.name.asString()),
+        methodName = macroWrapperFunctionName(packageName, hasAttrs, entry.executableName.asString()),
         packageName = packageName,
         libPath = entry.libPath.orEmpty(),
         hasAttrs = hasAttrs,
