@@ -4,11 +4,14 @@ package org.cangnova.cangjie.analysis.api.standalone.base.declarations
 
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
+import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.VirtualFileVisitor
 import com.intellij.psi.PsiDirectory
 import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiFileSystemItem
 import com.intellij.psi.PsiManager
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolver
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieAnnotationsResolverFactory
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieCompositeDeclarationProvider
@@ -18,6 +21,7 @@ import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieDeclaratio
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieEmptyDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.declarations.CangJieFileBasedDeclarationProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.psi.CjAnnotated
@@ -34,12 +38,35 @@ class CangJieStandaloneDeclarationProviderFactory(
     private val project: Project,
 ) : CangJieDeclarationProviderFactory {
     private val fileCollector = CangJieStandaloneSourceFileCollector(project)
+    private val psiManager: PsiManager = PsiManager.getInstance(project)
 
     override fun createDeclarationProvider(scope: GlobalSearchScope, contextualModule: CaModule?): CangJieDeclarationProvider {
-        val files = fileCollector.collect(scope)
-        if (files.isEmpty()) return CangJieEmptyDeclarationProvider
+        val providers = when (contextualModule) {
+            is CaLibraryModule -> createLibraryDeclarationProviders(contextualModule, scope)
+            else -> fileCollector.collect(scope).map(::CangJieFileBasedDeclarationProvider)
+        }
+        if (providers.isEmpty()) return CangJieEmptyDeclarationProvider
 
-        return CangJieCompositeDeclarationProvider.create(files.map(::CangJieFileBasedDeclarationProvider))
+        return CangJieCompositeDeclarationProvider.create(providers)
+    }
+
+    /**
+     * 对齐 Kotlin standalone declaration provider 对 library module 的 owner 边界：
+     * source-like provider 只看 `allSourceFiles`，而 binary library 的声明事实必须绑定到库自己的
+     * binary roots / decompiled PSI，不能继续错误依赖 source-file collector。
+     */
+    private fun createLibraryDeclarationProviders(
+        libraryModule: CaLibraryModule,
+        scope: GlobalSearchScope,
+    ): List<CangJieFileBasedDeclarationProvider> {
+        return CaDecompiledBinaryIndex.getInstance(project)
+            .getBinaryFiles(libraryModule)
+            .asSequence()
+            .filter(scope::contains)
+            .mapNotNull { binaryFile -> psiManager.findFile(binaryFile) as? CjFile }
+            .distinctBy { file -> file.virtualFile?.url ?: file.name }
+            .map(::CangJieFileBasedDeclarationProvider)
+            .toList()
     }
 }
 
@@ -104,16 +131,18 @@ internal class CangJieStandaloneSourceFileCollector(
         scope: GlobalSearchScope,
         destination: MutableList<CjFile>,
     ) {
-        VfsUtilCore.iterateChildrenRecursively(directory.virtualFile, null) { virtualFile ->
-            if (virtualFile.isDirectory || !virtualFile.isCangJieFileType()) {
-                return@iterateChildrenRecursively true
+        VfsUtilCore.visitChildrenRecursively(directory.virtualFile, object : VirtualFileVisitor<Void>() {
+            override fun visitFile(file: VirtualFile): Boolean {
+                if (file.isDirectory || !file.isCangJieFileType()) {
+                    return true
+                }
+                if (!scope.contains(file)) {
+                    return true
+                }
+                (psiManager.findFile(file) as? CjFile)?.let(destination::add)
+                return true
             }
-            if (!scope.contains(virtualFile)) {
-                return@iterateChildrenRecursively true
-            }
-            (psiManager.findFile(virtualFile) as? CjFile)?.let(destination::add)
-            true
-        }
+        })
     }
 
     private fun addIfInScope(

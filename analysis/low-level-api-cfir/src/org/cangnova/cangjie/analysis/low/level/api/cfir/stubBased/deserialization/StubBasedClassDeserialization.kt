@@ -177,6 +177,7 @@ internal fun deserializeClassToSymbol(
             origin = initialOrigin
             attributes = CfirDeclarationAttributes.EMPTY
             deprecationsProvider = EmptyDeprecationsProvider
+            this.scopeProvider = scopeProvider
             name = classId.shortClassName
             this.status = status
             this.symbol = symbol
@@ -193,6 +194,7 @@ internal fun deserializeClassToSymbol(
             origin = initialOrigin
             attributes = CfirDeclarationAttributes.EMPTY
             deprecationsProvider = EmptyDeprecationsProvider
+            this.scopeProvider = scopeProvider
             name = classId.shortClassName
             this.status = status
             this.symbol = symbol
@@ -209,6 +211,7 @@ internal fun deserializeClassToSymbol(
             origin = initialOrigin
             attributes = CfirDeclarationAttributes.EMPTY
             deprecationsProvider = EmptyDeprecationsProvider
+            this.scopeProvider = scopeProvider
             name = classId.shortClassName
             this.status = status
             this.symbol = symbol
@@ -225,6 +228,7 @@ internal fun deserializeClassToSymbol(
             origin = initialOrigin
             attributes = CfirDeclarationAttributes.EMPTY
             deprecationsProvider = EmptyDeprecationsProvider
+            this.scopeProvider = scopeProvider
             name = classId.shortClassName
             this.status = status
             this.symbol = symbol

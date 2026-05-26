@@ -63,6 +63,22 @@ class AnalysisApiReferenceServiceTest : AbstractAnalysisApiExecutionTest(
     }
 
     @Test
+    fun typePositionReference(mainFile: CjFile) {
+        val referenceExpression = PsiTreeUtil.findChildrenOfType(mainFile, CjSimpleNameExpression::class.java)
+            .filter { it.referencedName == "Box" }
+            .sortedBy { it.textOffset }
+            .lastOrNull()
+            ?: error("Cannot locate usage simple-name `Box` in `${mainFile.name}`")
+
+        val references = CangJieReferenceProvidersService.getReferencesFromProviders(referenceExpression)
+        assertFalse(references.isEmpty(), "type-position simple-name 节点没有拿到任何引用实现")
+
+        val resolvedDeclaration = references.singleOrNull()?.resolve() as? CjNamedDeclaration
+        assertNotNull(resolvedDeclaration, "type-position 引用未解析成功")
+        assertEquals("Box", resolvedDeclaration?.name)
+    }
+
+    @Test
     fun declarationNamesDoNotProduceReferences(mainFile: CjFile) {
         val declarationOffset = mainFile.text.indexOf("result")
         assertTrue(declarationOffset >= 0, "Cannot find declaration name `result` in ${mainFile.name}")

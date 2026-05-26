@@ -94,7 +94,7 @@ internal class CaCfirExtendSymbol private constructor(
         }
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val origin: CaSymbolOrigin
         get() = withValidityAssertion { psiOrSymbolOrigin() }

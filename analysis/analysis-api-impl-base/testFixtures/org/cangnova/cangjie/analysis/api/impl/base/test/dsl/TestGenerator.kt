@@ -55,6 +55,7 @@ import org.cangnova.cangjie.analysis.api.impl.base.test.cases.restrictedAnalysis
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.restrictedAnalysis.AbstractRestrictedAnalysisRejectionTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.AbstractAnalysisApiAnnotationsOnDeclarationsTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.AbstractAnalysisApiAnnotationsOnDeclarationsWithMetaTest
+import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.AbstractAnalysisApiAnnotationsOnTypesTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.annotations.AbstractAnalysisApiSpecificAnnotationOnDeclarationTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractAnalysisSessionInvalidationTest
 import org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions.AbstractCodeFragmentContextModificationAnalysisSessionInvalidationTest
@@ -286,6 +287,7 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     }
 
     group("annotations", filter = analysisSessionModeIs(AnalysisSessionMode.Normal) and testModuleKindIs(TestModuleKind.Source)) {
+        test<AbstractAnalysisApiAnnotationsOnTypesTest> { model(it, "annotationsOnTypes") }
         test<AbstractAnalysisApiAnnotationsOnDeclarationsTest> { model(it, "annotationsOnDeclaration") }
         test<AbstractAnalysisApiSpecificAnnotationOnDeclarationTest> { model(it, "specificAnnotations") }
         test<AbstractAnalysisApiAnnotationsOnDeclarationsWithMetaTest> { model(it, "metaAnnotations") }
@@ -305,29 +307,34 @@ fun AnalysisApiTestGroup.generateAnalysisApiTests() {
     group("sessions") {
         test<AbstractSymbolPointerRestoreTest> { model(it, "symbolPointers") }
 
-        group(filter = analysisSessionModeIs(AnalysisSessionMode.Normal) and testModuleKindIs(TestModuleKind.Source)) {
+        group(
+            filter = analysisSessionModeIs(AnalysisSessionMode.Normal) and
+                testModuleKindIs(TestModuleKind.Source) and
+                frontendIs(FrontendKind.Cfir) and
+                analysisApiModeIs(AnalysisApiMode.Ide),
+        ) {
             test<AbstractModuleStateModificationAnalysisSessionInvalidationTest> {
-                model("sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
+                model(it, "sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
             }
 
             test<AbstractModuleOutOfBlockModificationAnalysisSessionInvalidationTest> {
-                model("sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
+                model(it, "sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
             }
 
             test<AbstractGlobalModuleStateModificationAnalysisSessionInvalidationTest> {
-                model("sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
+                model(it, "sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
             }
 
             test<AbstractGlobalSourceModuleStateModificationAnalysisSessionInvalidationTest> {
-                model("sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
+                model(it, "sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
             }
 
             test<AbstractGlobalSourceOutOfBlockModificationAnalysisSessionInvalidationTest> {
-                model("sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
+                model(it, "sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
             }
 
             test<AbstractCodeFragmentContextModificationAnalysisSessionInvalidationTest> {
-                model("sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
+                model(it, "sessionInvalidation", excludeDirsRecursively = AbstractSessionInvalidationTest.TEST_OUTPUT_DIRECTORY_NAMES)
             }
         }
     }

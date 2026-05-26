@@ -6,6 +6,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
+import org.cangnova.cangjie.analysis.api.cfir.utils.buildAbbreviatedType
 import org.cangnova.cangjie.analysis.api.cfir.utils.createPointer
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -43,7 +44,7 @@ internal class CaCfirErrorType(
         }
 
     override val abbreviation: CaUsualClassType?
-        get() = withValidityAssertion { null }
+        get() = withValidityAssertion { builder.buildAbbreviatedType(coneType) }
 
     override fun equals(other: Any?) = typeEquals(other)
     override fun hashCode() = typeHashcode()

@@ -1,0 +1,4 @@
+CjDeclaration: CjInterface Runnable
+annotations: [
+  @sample.annotations.Marker
+]

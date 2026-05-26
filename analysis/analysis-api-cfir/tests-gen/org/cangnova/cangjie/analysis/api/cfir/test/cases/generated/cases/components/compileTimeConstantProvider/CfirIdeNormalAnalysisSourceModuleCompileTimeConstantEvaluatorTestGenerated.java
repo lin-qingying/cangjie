@@ -47,9 +47,21 @@ public class CfirIdeNormalAnalysisSourceModuleCompileTimeConstantEvaluatorTestGe
   }
 
   @Test
+  @TestMetadata("booleanLiteral.cj")
+  public void testBooleanLiteral() {
+    run("booleanLiteral.cj");
+  }
+
+  @Test
   @TestMetadata("collectionLiteral.cj")
   public void testCollectionLiteral() {
     run("collectionLiteral.cj");
+  }
+
+  @Test
+  @TestMetadata("nestedCollectionTuple.cj")
+  public void testNestedCollectionTuple() {
+    run("nestedCollectionTuple.cj");
   }
 
   @Test

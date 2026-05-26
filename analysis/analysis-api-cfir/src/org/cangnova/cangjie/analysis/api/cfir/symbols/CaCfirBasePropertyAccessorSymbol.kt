@@ -75,7 +75,7 @@ internal sealed interface CaCfirBasePropertyAccessorSymbol :
         get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(cfirSymbol, builder) }
 
     val psiImpl: PsiElement?
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     val originImpl
         get() = withValidityAssertion { owningCaProperty.origin }
@@ -84,7 +84,7 @@ internal sealed interface CaCfirBasePropertyAccessorSymbol :
         get() = withValidityAssertion { null }
 
     val receiverTypeImpl: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
 
     val returnTypeImpl: CaType
         get() = withValidityAssertion { cfirSymbol.returnType(builder) }

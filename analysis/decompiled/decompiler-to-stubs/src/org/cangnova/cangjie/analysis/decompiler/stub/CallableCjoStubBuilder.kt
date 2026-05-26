@@ -70,7 +70,7 @@ internal fun createMainFunctionStub(
         element = CjStubElementTypes.MAIN_FUNC,
         nameRef = StringRef.fromString(MAIN.asString()),
         fqName = fqName,
-        origin = null,
+        origin = context.packageFacadeOrigin,
     )
     createEmptyDeclarationHeaderStubs(
         functionStub,
@@ -103,7 +103,7 @@ internal fun createErrorFunctionStub(
         hasBlockBody = false,
         hasBody = false,
         hasTypeParameterListBeforeFunctionName = false,
-        origin = null,
+        origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(functionStub)
 }
@@ -121,6 +121,7 @@ internal fun createErrorNamedValueStub(
         parent = parent,
         name = StringRef.fromString(declaration.name.asString()),
         fqName = callableFqName(parent, context, declaration.name),
+        origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(propertyStub)
 }
@@ -192,12 +193,13 @@ internal fun createFunctionStub(
         hasBlockBody = hasBody,
         hasBody = hasBody,
         hasTypeParameterListBeforeFunctionName = false,
-        origin = null,
+        origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(
         functionStub,
         createDeclarationModifierMask(declaration.status, isOperator = declaration.status.isOperator),
     )
+    createTypeParameterListStub(functionStub, declaration.typeParameters)
     context.typeStubBuilder.createCallableParameterListStub(functionStub, declaration.valueParameters, createEmptyList = true)
     context.typeStubBuilder.createCallableReturnTypeReferenceStub(functionStub, declaration.returnTypeRef)
 }
@@ -217,12 +219,13 @@ internal fun createMacroStub(
         hasBlockBody = hasBody,
         hasBody = hasBody,
         hasTypeParameterListBeforeFunctionName = false,
-        origin = null,
+        origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(
         macroStub,
         createDeclarationModifierMask(declaration.status),
     )
+    createTypeParameterListStub(macroStub, declaration.typeParameters)
     context.typeStubBuilder.createCallableParameterListStub(macroStub, declaration.valueParameters, createEmptyList = true)
     context.typeStubBuilder.createCallableReturnTypeReferenceStub(macroStub, declaration.returnTypeRef)
 }
@@ -236,6 +239,7 @@ internal fun createPropertyStub(
         parent = parent,
         name = StringRef.fromString(declaration.name.asString()),
         fqName = callableFqName(parent, context, declaration.name),
+        origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(
         propertyStub,
@@ -258,7 +262,7 @@ internal fun createFieldStub(
             isTopLevel = true,
             hasInitializer = declaration.initializer != null,
             hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
-            origin = null,
+            origin = context.packageFacadeOrigin,
         )
         createEmptyDeclarationHeaderStubs(variableStub)
         val bindingPatternStub = CangJieBindingPatternStubImpl(
@@ -279,7 +283,7 @@ internal fun createFieldStub(
         isConst = declaration.status.isConst,
         hasInitializer = declaration.initializer != null,
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
-        origin = null,
+        origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(fieldStub)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(fieldStub, declaration.returnTypeRef)
@@ -297,7 +301,7 @@ internal fun createPatternVariableStub(
         isTopLevel = parent is CangJieFileStubImpl,
         hasInitializer = declaration.initializer != null,
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
-        origin = null,
+        origin = context.packageFacadeOrigin.takeIf { parent is CangJieFileStubImpl },
     )
     createEmptyDeclarationHeaderStubs(variableStub)
     context.typeStubBuilder.createDeclaredTypeReferenceStub(variableStub, declaration.returnTypeRef)

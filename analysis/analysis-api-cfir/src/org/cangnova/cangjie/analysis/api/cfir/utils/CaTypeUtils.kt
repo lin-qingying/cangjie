@@ -15,6 +15,7 @@ import org.cangnova.cangjie.analysis.api.types.CaTypePointer
 import org.cangnova.cangjie.analysis.api.types.CaTypeProjection
 import org.cangnova.cangjie.analysis.api.types.CaUnionType
 import org.cangnova.cangjie.analysis.api.types.CaUsualClassType
+import org.cangnova.cangjie.cfir.types.abbreviatedType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
@@ -89,3 +90,16 @@ internal fun ConeTypeProjection.asPublicTypeProjection(analysisSession: CaCfirSe
         type = type.asCaType(analysisSession),
         token = analysisSession.token,
     )
+
+/**
+ * 对齐 Kotlin `KaSymbolByFirBuilder.buildAbbreviatedType`：
+ * 公开类型统一从 cone attribute 读取 typealias 视图，而不是把裸 `ConeTypeAliasType`
+ * 当成 abbreviation 本体。
+ */
+internal fun org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder.buildAbbreviatedType(
+    coneType: ConeCangJieType,
+): CaUsualClassType? {
+    return coneType.abbreviatedType?.let { abbreviatedConeType ->
+        typeBuilder.buildType(abbreviatedConeType) as? CaUsualClassType
+    }
+}

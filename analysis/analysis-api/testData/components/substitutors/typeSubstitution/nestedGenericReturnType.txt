@@ -1,0 +1,3 @@
+originalType: sample.types.substitution.Envelope<sample.types.substitution.Box<T>>
+substitutor.substitute: sample.types.substitution.Envelope<sample.types.substitution.Box<sample.types.substitution.User>>
+substitutor.substituteOrNull: sample.types.substitution.Envelope<sample.types.substitution.Box<sample.types.substitution.User>>

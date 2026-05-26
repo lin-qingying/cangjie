@@ -4,32 +4,60 @@ package org.cangnova.cangjie.analysis.api.standalone.base.packages
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.analysis.api.decompiled.CaDecompiledBinaryIndex
 import org.cangnova.cangjie.analysis.api.platform.packages.CangJieCompositePackageProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.CangJieEmptyPackageProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProvider
 import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderFactory
 import org.cangnova.cangjie.analysis.api.platform.packages.CangJiePackageProviderMerger
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneSourceFileCollector
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjFile
 
 /**
  * Standalone 平台的包 provider 工厂。
  *
  * 对齐 Kotlin `KotlinStandalonePackageProviderFactory` 的框架职责：
- * 工厂基于 standalone 可见源码文件构造包存在性与子包查询视图。
+ * 工厂同时合并：
+ * 1. source-like 文件的包事实；
+ * 2. binary library roots 直接可读的包事实。
  */
 class CangJieStandalonePackageProviderFactory(
     project: Project,
 ) : CangJiePackageProviderFactory {
+    private val project = project
     private val fileCollector = CangJieStandaloneSourceFileCollector(project)
 
     override fun createPackageProvider(searchScope: GlobalSearchScope): CangJiePackageProvider {
-        val files = fileCollector.collect(searchScope)
-        if (files.isEmpty()) return CangJieEmptyPackageProvider
+        val packageNames = buildSet {
+            fileCollector.collect(searchScope).mapTo(this) { it.packageFqName }
+            addAll(collectLibraryPackageNames(searchScope))
+        }
+        if (packageNames.isEmpty()) return CangJieEmptyPackageProvider
 
-        return CangJieStandalonePackageProvider(files)
+        return CangJieStandalonePackageProvider(packageNames)
+    }
+
+    /**
+     * 对齐 Kotlin standalone package provider 对 binary libraries 的处理：
+     * package existence 只需要 package facts，必须直接从 `.cjo` binary header 读取，
+     * 不能退回到 decompiled PSI / source-file collector。
+     */
+    private fun collectLibraryPackageNames(searchScope: GlobalSearchScope): Set<FqName> {
+        val binaryIndex = CaDecompiledBinaryIndex.getInstance(project)
+        return buildSet {
+            CaModuleProvider.getInstance(project).allModules
+                .filterIsInstance<CaLibraryModule>()
+                .forEach { libraryModule ->
+                    binaryIndex.getBinaryFiles(libraryModule)
+                        .asSequence()
+                        .filter(searchScope::contains)
+                        .mapNotNull(binaryIndex::readPackageFqName)
+                        .forEach(::add)
+                }
+        }
     }
 }
 
@@ -43,9 +71,9 @@ class CangJieStandalonePackageProviderMerger : CangJiePackageProviderMerger {
 }
 
 private class CangJieStandalonePackageProvider(
-    files: List<CjFile>,
+    packageNames: Set<FqName>,
 ) : CangJiePackageProvider {
-    private val packageToSubpackages: Map<FqName, Set<Name>> = buildPackageToSubpackages(files)
+    private val packageToSubpackages: Map<FqName, Set<Name>> = buildPackageToSubpackages(packageNames)
 
     override fun doesPackageExist(packageFqName: FqName): Boolean {
         return packageFqName.isRoot || packageFqName in packageToSubpackages
@@ -55,11 +83,11 @@ private class CangJieStandalonePackageProvider(
         return packageToSubpackages[packageFqName].orEmpty()
     }
 
-    private fun buildPackageToSubpackages(files: List<CjFile>): Map<FqName, Set<Name>> {
+    private fun buildPackageToSubpackages(packageNames: Set<FqName>): Map<FqName, Set<Name>> {
         val packages = linkedMapOf<FqName, MutableSet<Name>>()
-        for (file in files) {
+        for (packageName in packageNames) {
             var currentPackage = FqName.ROOT
-            for (subpackage in file.packageFqName.pathSegments()) {
+            for (subpackage in packageName.pathSegments()) {
                 packages.getOrPut(currentPackage, ::linkedSetOf).add(subpackage)
                 currentPackage = currentPackage.child(subpackage)
             }

@@ -54,7 +54,7 @@ internal class CaCfirTypeParameterSymbol private constructor(
         get() = analysisSession.useSiteModule
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val annotations: CaAnnotationList
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }

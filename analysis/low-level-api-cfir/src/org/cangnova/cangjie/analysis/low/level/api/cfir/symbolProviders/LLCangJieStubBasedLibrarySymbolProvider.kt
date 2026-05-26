@@ -438,7 +438,7 @@ internal open class LLCangJieStubBasedLibrarySymbolProvider(
             val propertyStub: CangJiePropertyStubImpl = property.compiledStub
             val containerSource = deserializedContainerSourceProvider.getFacadeContainerSource(
                 file = property.containingCjFile,
-                stubOrigin = null,
+                stubOrigin = propertyStub.origin,
                 declarationOrigin = propertyOrigin,
             )
 

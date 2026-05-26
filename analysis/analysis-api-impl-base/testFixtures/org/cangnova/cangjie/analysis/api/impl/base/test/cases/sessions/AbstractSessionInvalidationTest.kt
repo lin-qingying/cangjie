@@ -1,17 +1,19 @@
 package org.cangnova.cangjie.analysis.api.impl.base.test.cases.sessions
 
+import org.cangnova.cangjie.analysis.api.analyze
 import org.cangnova.cangjie.analysis.api.platform.modification.KotlinModificationEventKind
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryFallbackDependenciesModule
-import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiBasedTest
 import org.cangnova.cangjie.analysis.test.framework.directives.ModificationEventDirectives
 import org.cangnova.cangjie.analysis.test.framework.directives.publishWildcardModificationEventsByDirective
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.cjTestModuleStructure
+import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.test.directives.model.DirectivesContainer
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.assertions
-import org.cangnova.cangjie.analysis.test.services.environmentManager
 
 /**
  * session invalidation 测试的 shared 基类。
@@ -37,7 +39,7 @@ abstract class AbstractSessionInvalidationTest<S> : AbstractAnalysisApiBasedTest
         val testModules = testServices.cjTestModuleStructure.mainModules
 
         val sessionsBeforeModification = getAllSessions(testModules)
-        ensureFallbackDependencySessionsExist(testModules, testServices)
+        ensureFallbackDependencySessionsExist(testModules)
         checkSessionValidityBeforeModification(sessionsBeforeModification, testServices)
 
         testServices.cjTestModuleStructure.publishWildcardModificationEventsByDirective(modificationEventKind)
@@ -61,22 +63,22 @@ abstract class AbstractSessionInvalidationTest<S> : AbstractAnalysisApiBasedTest
 
     /**
      * fallback dependencies 模块不会作为普通测试模块物化出来，
-     * 因此这里显式触发它们的 session 创建，保证失效测试能观察到这条链路。
+     * 因此这里通过库模块上的一次符号查询显式触发依赖 session 创建，
+     * 保证失效测试能观察到这条链路。
      */
     private fun ensureFallbackDependencySessionsExist(
         testModules: List<CjTestModule>,
-        testServices: TestServices,
     ) {
-        val sessionProvider = CaSessionProvider.getInstance(testServices.environmentManager.getProject())
-        testModules
-            .flatMap(CjTestModule::allCaModules)
-            .flatMap { module ->
-                module.directRegularDependencies.filterIsInstance<CaLibraryFallbackDependenciesModule>()
+        testModules.forEach { testModule ->
+            val useSiteModule = testModule.caModule
+            if (useSiteModule.directRegularDependencies.none { it is CaLibraryFallbackDependenciesModule }) {
+                return@forEach
             }
-            .distinct()
-            .forEach { fallbackModule ->
-                sessionProvider.getAnalysisSession(fallbackModule)
+
+            analyze(useSiteModule) {
+                getClassLikeSymbol(ClassId.topLevel(FqName.topLevel(Name.identifier("IDontExistAtAll"))))
             }
+        }
     }
 
     private fun checkInvalidatedSessions(
@@ -136,7 +138,7 @@ abstract class AbstractSessionInvalidationTest<S> : AbstractAnalysisApiBasedTest
     }
 
     companion object {
-        val TEST_OUTPUT_DIRECTORY_NAMES = listOf("analysisSession")
+        val TEST_OUTPUT_DIRECTORY_NAMES = listOf("analysisSession", "cfirSession")
     }
 }
 

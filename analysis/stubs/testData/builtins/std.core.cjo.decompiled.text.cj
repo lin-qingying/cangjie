@@ -5,9 +5,9 @@ package std.core
 
 import std.core
 
-func arrayInitByCollection(array: std.core.Array<T>, elements: std.core.Collection<T>): std.core.Array<T> { /* compiled code */ }
+func arrayInitByCollection<T>(array: std.core.Array<T>, elements: std.core.Collection<T>): std.core.Array<T> { /* compiled code */ }
 
-interface Collection <: std.core.Iterable<T> {
+interface Collection<T> <: std.core.Iterable<T> {
     abstract prop size: Int64
 
     abstract func isEmpty(): Bool
@@ -15,7 +15,7 @@ interface Collection <: std.core.Iterable<T> {
     func toArray(): std.core.Array<T> { /* compiled code */ }
 }
 
-class Iterator <: std.core.Object & std.core.Iterable<T> {
+class Iterator<T> <: std.core.Object & std.core.Iterable<T> {
     abstract func next(): std.core.Option<T>
 
     init() { /* compiled code */ }
@@ -23,11 +23,11 @@ class Iterator <: std.core.Object & std.core.Iterable<T> {
     func iterator(): std.core.Iterator<T> { /* compiled code */ }
 }
 
-interface Iterable {
+interface Iterable<E> {
     abstract func iterator(): std.core.Iterator<E>
 }
 
-enum Option {
+enum Option<T> {
     | Some(T)
 
     | None
@@ -42,22 +42,22 @@ enum Option {
 
     func isSome(): Bool { /* compiled code */ }
 
-    func map(transform: (T) -> R): std.core.Option<R> { /* compiled code */ }
+    func map<R>(transform: (T) -> R): std.core.Option<R> { /* compiled code */ }
 
     func filter(predicate: (T) -> Bool): std.core.Option<T> { /* compiled code */ }
 
-    func flatMap(transform: (T) -> std.core.Option<R>): std.core.Option<R> { /* compiled code */ }
+    func flatMap<R>(transform: (T) -> std.core.Option<R>): std.core.Option<R> { /* compiled code */ }
 }
 
-func arraySet(rawArr: std.core.Array<T>, index: Int64, element: T): Unit { /* compiled code */ }
+func arraySet<T>(rawArr: std.core.Array<T>, index: Int64, element: T): Unit { /* compiled code */ }
 
-func arrayInitByFunction(array: std.core.Array<T>, initElement: (Int64) -> T): std.core.Array<T> { /* compiled code */ }
+func arrayInitByFunction<T>(array: std.core.Array<T>, initElement: (Int64) -> T): std.core.Array<T> { /* compiled code */ }
 
-func arraySize(rawArr: std.core.Array<T>): Int64 { /* compiled code */ }
+func arraySize<T>(rawArr: std.core.Array<T>): Int64 { /* compiled code */ }
 
-func toArray(raw: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
+func toArray<T>(raw: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
-struct Array {
+struct Array<T> {
     let rawptr: std.core.Array<T>
 
     let start: Int64
@@ -126,15 +126,15 @@ struct Array {
 
     func repeat(n: Int64): std.core.Array<T> { /* compiled code */ }
 
-    func map(transform: (T) -> R): std.core.Array<R> { /* compiled code */ }
+    func map<R>(transform: (T) -> R): std.core.Array<R> { /* compiled code */ }
 }
 
-func acquireArrayRawData(arr: std.core.Array<T>): std.core.CPointerHandle<T> { /* compiled code */ }
+func acquireArrayRawData<T>(arr: std.core.Array<T>): std.core.CPointerHandle<T> { /* compiled code */ }
 
 interface CType {
 }
 
-struct CPointerHandle {
+struct CPointerHandle<T> {
     let pointer: CPointer<T>
 
     let array: std.core.Array<T>
@@ -144,17 +144,17 @@ struct CPointerHandle {
     init(ptr: CPointer<T>, arr: std.core.Array<T>) { /* compiled code */ }
 }
 
-func acquireRawData(rawArr: std.core.Array<T>): CPointer<T> { /* compiled code */ }
+func acquireRawData<T>(rawArr: std.core.Array<T>): CPointer<T> { /* compiled code */ }
 
-func releaseArrayRawData(`handle`: std.core.CPointerHandle<T>): Unit { /* compiled code */ }
+func releaseArrayRawData<T>(`handle`: std.core.CPointerHandle<T>): Unit { /* compiled code */ }
 
-func releaseRawData(rawArr: std.core.Array<T>, ptr: CPointer<T>): Unit { /* compiled code */ }
+func releaseRawData<T>(rawArr: std.core.Array<T>, ptr: CPointer<T>): Unit { /* compiled code */ }
 
 let ASCII_UPPER_TO_LOWER_DIFF: UInt8
 
-func max(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
+func max<T>(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
 
-interface Comparable <: std.core.Equatable<T> & std.core.Less<T> & std.core.Greater<T> & std.core.LessOrEqual<T> & std.core.GreaterOrEqual<T> {
+interface Comparable<T> <: std.core.Equatable<T> & std.core.Less<T> & std.core.Greater<T> & std.core.LessOrEqual<T> & std.core.GreaterOrEqual<T> {
     abstract func compare(that: T): std.core.Ordering
 
     operator func ==(rhs: T): Bool { /* compiled code */ }
@@ -168,7 +168,7 @@ interface Comparable <: std.core.Equatable<T> & std.core.Less<T> & std.core.Grea
     operator func >=(rhs: T): Bool { /* compiled code */ }
 }
 
-func min(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
+func min<T>(a: T, b: T, others: std.core.Array<T>): T { /* compiled code */ }
 
 let NS_PER_US: Int64
 
@@ -420,17 +420,17 @@ foreign func CJ_CORE_ErrorPrintUTF8(c: CPointer<UInt8>, len: Int64, newLine: Boo
 
 func eprintln(str: std.core.String): Unit { /* compiled code */ }
 
-func eprint(arg: T, flush: Bool): Unit { /* compiled code */ }
+func eprint<T>(arg: T, flush: Bool): Unit { /* compiled code */ }
 
 interface ToString {
     abstract func toString(): std.core.String
 }
 
-func eprintln(arg: T): Unit { /* compiled code */ }
+func eprintln<T>(arg: T): Unit { /* compiled code */ }
 
-func print(arg: T, flush: Bool): Unit { /* compiled code */ }
+func print<T>(arg: T, flush: Bool): Unit { /* compiled code */ }
 
-func println(arg: T): Unit { /* compiled code */ }
+func println<T>(arg: T): Unit { /* compiled code */ }
 
 func print(b: Bool, flush: Bool): Unit { /* compiled code */ }
 
@@ -576,9 +576,9 @@ let STRING_C_THRESHOLD: Int64
 
 let INVALID_ID: Int64
 
-func zeroValue(): T { /* compiled code */ }
+func zeroValue<T>(): T { /* compiled code */ }
 
-func intrinsicBuiltInCopyTo(src: std.core.Array<T>, dst: std.core.Array<T>, srcStart: Int64, dstStart: Int64, copyLen: Int64): Unit { /* compiled code */ }
+func intrinsicBuiltInCopyTo<T>(src: std.core.Array<T>, dst: std.core.Array<T>, srcStart: Int64, dstStart: Int64, copyLen: Int64): Unit { /* compiled code */ }
 
 class IndexOutOfBoundsException <: std.core.Exception {
     init() { /* compiled code */ }
@@ -631,9 +631,9 @@ class StringBuilder <: std.core.Object & std.core.ToString {
 
     func append(cstr: CString): Unit { /* compiled code */ }
 
-    func append(v: T): Unit { /* compiled code */ }
+    func append<T>(v: T): Unit { /* compiled code */ }
 
-    func append(val: std.core.Array<T>): Unit { /* compiled code */ }
+    func append<T>(val: std.core.Array<T>): Unit { /* compiled code */ }
 
     func append(b: Bool): Unit { /* compiled code */ }
 
@@ -666,11 +666,11 @@ class StringBuilder <: std.core.Object & std.core.ToString {
     func append(cp: CPointer<UInt8>): Unit { /* compiled code */ }
 }
 
-func arrayGetUnchecked(rawArr: std.core.Array<T>, index: Int64): T { /* compiled code */ }
+func arrayGetUnchecked<T>(rawArr: std.core.Array<T>, index: Int64): T { /* compiled code */ }
 
-func arraySetUnchecked(rawArr: std.core.Array<T>, index: Int64, element: T): Unit { /* compiled code */ }
+func arraySetUnchecked<T>(rawArr: std.core.Array<T>, index: Int64, element: T): Unit { /* compiled code */ }
 
-struct Range <: std.core.Iterable<T> {
+struct Range<T> <: std.core.Iterable<T> {
     let start: T
 
     let end: T
@@ -700,9 +700,9 @@ class IllegalArgumentException <: std.core.Exception {
     override func getClassName(): std.core.String { /* compiled code */ }
 }
 
-func arrayGet(rawArr: std.core.Array<T>, index: Int64): T { /* compiled code */ }
+func arrayGet<T>(rawArr: std.core.Array<T>, index: Int64): T { /* compiled code */ }
 
-class ArrayIterator <: std.core.Iterator<T> {
+class ArrayIterator<T> <: std.core.Iterator<T> {
     var myData: std.core.Array<T>
 
     let end: Int64
@@ -714,19 +714,19 @@ class ArrayIterator <: std.core.Iterator<T> {
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
-interface Equatable <: std.core.Equal<T> & std.core.NotEqual<T> {
+interface Equatable<T> <: std.core.Equal<T> & std.core.NotEqual<T> {
     operator func !=(rhs: T): Bool { /* compiled code */ }
 }
 
-interface Equal {
+interface Equal<T> {
     abstract operator func ==(rhs: T): Bool
 }
 
-func readPointer(c: CPointer<T>, idx: Int64): T { /* compiled code */ }
+func readPointer<T>(c: CPointer<T>, idx: Int64): T { /* compiled code */ }
 
-func writePointer(c: CPointer<T>, idx: Int64, value: T): Unit { /* compiled code */ }
+func writePointer<T>(c: CPointer<T>, idx: Int64, value: T): Unit { /* compiled code */ }
 
-class Box {
+class Box<T> {
     var value: T
 
     init(v: T) { /* compiled code */ }
@@ -879,7 +879,7 @@ class Object {
     init() { /* compiled code */ }
 }
 
-class MapIterator <: std.core.Iterator<R> {
+class MapIterator<T, R> <: std.core.Iterator<R> {
     let transform: (T) -> R
 
     let it: std.core.Iterator<T>
@@ -889,7 +889,7 @@ class MapIterator <: std.core.Iterator<R> {
     func next(): std.core.Option<R> { /* compiled code */ }
 }
 
-class ZipIterator <: std.core.Iterator<(T, R)> {
+class ZipIterator<T, R> <: std.core.Iterator<(T, R)> {
     let itt: std.core.Iterator<T>
 
     let itr: std.core.Iterator<R>
@@ -899,7 +899,7 @@ class ZipIterator <: std.core.Iterator<(T, R)> {
     func next(): std.core.Option<(T, R)> { /* compiled code */ }
 }
 
-class EnumerateIterator <: std.core.Iterator<(Int64, T)> {
+class EnumerateIterator<T> <: std.core.Iterator<(Int64, T)> {
     var index: Int64
 
     let it: std.core.Iterator<T>
@@ -909,7 +909,7 @@ class EnumerateIterator <: std.core.Iterator<(Int64, T)> {
     func next(): std.core.Option<(Int64, T)> { /* compiled code */ }
 }
 
-class FilterIterator <: std.core.Iterator<T> {
+class FilterIterator<T> <: std.core.Iterator<T> {
     let predicate: (T) -> Bool
 
     let it: std.core.Iterator<T>
@@ -919,7 +919,7 @@ class FilterIterator <: std.core.Iterator<T> {
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
-class FilterMapIterator <: std.core.Iterator<R> {
+class FilterMapIterator<T, R> <: std.core.Iterator<R> {
     let transform: (T) -> std.core.Option<R>
 
     let it: std.core.Iterator<T>
@@ -929,7 +929,7 @@ class FilterMapIterator <: std.core.Iterator<R> {
     func next(): std.core.Option<R> { /* compiled code */ }
 }
 
-class StepIterator <: std.core.Iterator<T> {
+class StepIterator<T> <: std.core.Iterator<T> {
     let _count: Int64
 
     let it: std.core.Iterator<T>
@@ -941,7 +941,7 @@ class StepIterator <: std.core.Iterator<T> {
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
-class SkipIterator <: std.core.Iterator<T> {
+class SkipIterator<T> <: std.core.Iterator<T> {
     var _count: Int64
 
     let it: std.core.Iterator<T>
@@ -951,7 +951,7 @@ class SkipIterator <: std.core.Iterator<T> {
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
-class TakeIterator <: std.core.Iterator<T> {
+class TakeIterator<T> <: std.core.Iterator<T> {
     var _count: Int64
 
     let it: std.core.Iterator<T>
@@ -961,7 +961,7 @@ class TakeIterator <: std.core.Iterator<T> {
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
-class ConcatIterator <: std.core.Iterator<T> {
+class ConcatIterator<T> <: std.core.Iterator<T> {
     let it: std.core.Iterator<T>
 
     let other: std.core.Iterator<T>
@@ -973,7 +973,7 @@ class ConcatIterator <: std.core.Iterator<T> {
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
-class InspectIterator <: std.core.Iterator<T> {
+class InspectIterator<T> <: std.core.Iterator<T> {
     let action: (T) -> Unit
 
     let it: std.core.Iterator<T>
@@ -983,7 +983,7 @@ class InspectIterator <: std.core.Iterator<T> {
     func next(): std.core.Option<T> { /* compiled code */ }
 }
 
-class FlatMapIterator <: std.core.Iterator<R> {
+class FlatMapIterator<T, R> <: std.core.Iterator<R> {
     var subIt: std.core.Option<std.core.Iterator<R>>
 
     let transform: (T) -> std.core.Iterable<R>
@@ -995,7 +995,7 @@ class FlatMapIterator <: std.core.Iterator<R> {
     func next(): std.core.Option<R> { /* compiled code */ }
 }
 
-class IntersperseIterator <: std.core.Iterator<T> {
+class IntersperseIterator<T> <: std.core.Iterator<T> {
     let separator: T
 
     let it: std.core.Iterator<T>
@@ -1041,13 +1041,13 @@ class Exception <: std.core.Object & std.core.ToString {
     func getStackTrace(): std.core.Array<std.core.StackTraceElement> { /* compiled code */ }
 }
 
-interface Countable {
+interface Countable<T> {
     abstract func next(right: Int64): T
 
     abstract func position(): Int64
 }
 
-class RangeIterator <: std.core.Iterator<T> {
+class RangeIterator<T> <: std.core.Iterator<T> {
     let _last: T
 
     let _step: Int64
@@ -1150,9 +1150,9 @@ class StringLazySplitIterator <: std.core.Iterator<std.core.String> {
 foreign func CJ_CORE_CountAndIndexString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64): CPointer<Int64>
 
 struct LibC {
-    static func malloc(count: Int64): CPointer<T> { /* compiled code */ }
+    static func malloc<T>(count: Int64): CPointer<T> { /* compiled code */ }
 
-    static func free(p: CPointer<T>): Unit { /* compiled code */ }
+    static func free<T>(p: CPointer<T>): Unit { /* compiled code */ }
 
     static func mallocCString(str: std.core.String): CString { /* compiled code */ }
 
@@ -1165,7 +1165,7 @@ foreign func CJ_CORE_StringMemcmp(str1: CPointer<UInt8>, str2: CPointer<UInt8>, 
 
 func vectorCompare32(arr1: std.core.Array<UInt8>, offset1: Int64, arr2: std.core.Array<UInt8>, offset2: Int64): Int64 { /* compiled code */ }
 
-func intrinsicRefEqRawArray(a: std.core.Array<T>, b: std.core.Array<T>): Bool { /* compiled code */ }
+func intrinsicRefEqRawArray<T>(a: std.core.Array<T>, b: std.core.Array<T>): Bool { /* compiled code */ }
 
 foreign func CJ_CORE_LastIndexOfString(orgStr: CPointer<UInt8>, subStr: CPointer<UInt8>, orgSize: Int64, subSize: Int64, start: Int64): Int64
 
@@ -1287,7 +1287,7 @@ extend Array <: Equatable {
     func removeSuffix(suffix: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 }
 
-func arrayClone(rawArr: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
+func arrayClone<T>(rawArr: std.core.Array<T>): std.core.Array<T> { /* compiled code */ }
 
 foreign func CJ_CORE_AtExitCallbackListLock(): Unit
 
@@ -1313,13 +1313,13 @@ enum MemoryOrder {
     | SeqCst
 }
 
-func load(atomicType: ATOMIC_TYPE, memoryOrder: std.core.MemoryOrder): TYPE { /* compiled code */ }
+func load<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, memoryOrder: std.core.MemoryOrder): TYPE { /* compiled code */ }
 
-func store(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.core.MemoryOrder): Unit { /* compiled code */ }
+func store<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.core.MemoryOrder): Unit { /* compiled code */ }
 
-func fetchAdd(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.core.MemoryOrder): TYPE { /* compiled code */ }
+func fetchAdd<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, value: TYPE, memoryOrder: std.core.MemoryOrder): TYPE { /* compiled code */ }
 
-func compareAndSwap(atomicType: ATOMIC_TYPE, oldValue: TYPE, newValue: TYPE, successOrder: std.core.MemoryOrder, failureOrder: std.core.MemoryOrder): Bool { /* compiled code */ }
+func compareAndSwap<ATOMIC_TYPE, TYPE>(atomicType: ATOMIC_TYPE, oldValue: TYPE, newValue: TYPE, successOrder: std.core.MemoryOrder, failureOrder: std.core.MemoryOrder): Bool { /* compiled code */ }
 
 class AtomicBool {
     var value: Int8
@@ -1345,7 +1345,7 @@ class AtomicInt64 {
     func compareAndSwap(old: Int64, new: Int64): Bool { /* compiled code */ }
 }
 
-class AtomicReference {
+class AtomicReference<T> {
     var value: T
 
     init(val: T) { /* compiled code */ }
@@ -1355,7 +1355,7 @@ class AtomicReference {
     func store(val: T): Unit { /* compiled code */ }
 }
 
-class AtomicBox {
+class AtomicBox<T> {
     let boxRef: std.core.AtomicReference<std.core.Box<T>>
 
     init(val: T) { /* compiled code */ }
@@ -1423,9 +1423,9 @@ extend `Unit` {
     func toAsciiLowerCase(): UInt8 { /* compiled code */ }
 }
 
-func getPointerAddress(c: CPointer<T>): UIntNative { /* compiled code */ }
+func getPointerAddress<T>(c: CPointer<T>): UIntNative { /* compiled code */ }
 
-func addPointer(c: CPointer<T>, offset: Int64): CPointer<T> { /* compiled code */ }
+func addPointer<T>(c: CPointer<T>, offset: Int64): CPointer<T> { /* compiled code */ }
 
 extend `Unit` {
     func isNull(): Bool { /* compiled code */ }
@@ -1449,7 +1449,7 @@ extend `Unit` {
     func asResource(): std.core.CPointerResource<T> { /* compiled code */ }
 }
 
-struct CPointerResource <: std.core.Resource {
+struct CPointerResource<T> <: std.core.Resource {
     let value: CPointer<T>
 
     let isFree: std.core.Box<Bool>
@@ -1699,19 +1699,19 @@ func Float64Equal(a: Float64, b: Float64): Bool { /* compiled code */ }
 
 func Float64NotEqual(a: Float64, b: Float64): Bool { /* compiled code */ }
 
-interface Less {
+interface Less<T> {
     abstract operator func <(rhs: T): Bool
 }
 
-interface Greater {
+interface Greater<T> {
     abstract operator func >(rhs: T): Bool
 }
 
-interface LessOrEqual {
+interface LessOrEqual<T> {
     abstract operator func <=(rhs: T): Bool
 }
 
-interface GreaterOrEqual {
+interface GreaterOrEqual<T> {
     abstract operator func >=(rhs: T): Bool
 }
 
@@ -2045,7 +2045,7 @@ enum Endian {
 
 foreign func CJ_PlatformEndian(): UInt8
 
-interface NotEqual {
+interface NotEqual<T> {
     abstract operator func !=(rhs: T): Bool
 }
 
@@ -2117,7 +2117,7 @@ struct StackTraceData {
 
 func getStackTraceImpl(pcArray: std.core.Array<UInt64>): std.core.Array<std.core.StackTraceElement> { /* compiled code */ }
 
-func bitCast(val: From): To { /* compiled code */ }
+func bitCast<From, To>(val: From): To { /* compiled code */ }
 
 interface BitCastRange {
 }
@@ -2158,11 +2158,11 @@ extend `Unit` <: BitCastRange {
 extend `Unit` <: BitCastRange {
 }
 
-func composition(f: (T1) -> T2, g: (T2) -> T3): (T1) -> T3 { /* compiled code */ }
+func composition<T1, T2, T3>(f: (T1) -> T2, g: (T2) -> T3): (T1) -> T3 { /* compiled code */ }
 
-func futureInit(future: std.core.Future<T>): Unit { /* compiled code */ }
+func futureInit<T>(future: std.core.Future<T>): Unit { /* compiled code */ }
 
-class Future {
+class Future<T> {
     let _thread: std.core.Thread
 
     var result: std.core.FutureResult
@@ -2188,17 +2188,17 @@ class Future {
     static func executeClosure(fn: () -> T): Unit { /* compiled code */ }
 }
 
-func futureIsComplete(future: std.core.Future<T>): Bool { /* compiled code */ }
+func futureIsComplete<T>(future: std.core.Future<T>): Bool { /* compiled code */ }
 
-func futureWait(future: std.core.Future<T>, timeout: Int64): Unit { /* compiled code */ }
+func futureWait<T>(future: std.core.Future<T>, timeout: Int64): Unit { /* compiled code */ }
 
-func futureNotifyAll(future: std.core.Future<T>): Unit { /* compiled code */ }
+func futureNotifyAll<T>(future: std.core.Future<T>): Unit { /* compiled code */ }
 
 foreign func CJ_CORE_PrintOomHint(): Unit
 
 let INT64_MAX: Int64
 
-class FutureOk <: std.core.FutureResult {
+class FutureOk<T> <: std.core.FutureResult {
     var value: T
 
     init(v: T) { /* compiled code */ }
@@ -2609,15 +2609,15 @@ extend Iterator {
 }
 
 extend Iterator {
-    func zip(it: std.core.Iterator<R>): std.core.Iterator<(T, R)> { /* compiled code */ }
+    func zip<R>(it: std.core.Iterator<R>): std.core.Iterator<(T, R)> { /* compiled code */ }
 
     func enumerate(): std.core.Iterator<(Int64, T)> { /* compiled code */ }
 
     func filter(predicate: (T) -> Bool): std.core.Iterator<T> { /* compiled code */ }
 
-    func filterMap(transform: (T) -> std.core.Option<R>): std.core.Iterator<R> { /* compiled code */ }
+    func filterMap<R>(transform: (T) -> std.core.Option<R>): std.core.Iterator<R> { /* compiled code */ }
 
-    func map(transform: (T) -> R): std.core.Iterator<R> { /* compiled code */ }
+    func map<R>(transform: (T) -> R): std.core.Iterator<R> { /* compiled code */ }
 
     func step(count: Int64): std.core.Iterator<T> { /* compiled code */ }
 
@@ -2629,7 +2629,7 @@ extend Iterator {
 
     func inspect(action: (T) -> Unit): std.core.Iterator<T> { /* compiled code */ }
 
-    func flatMap(transform: (T) -> std.core.Iterator<R>): std.core.Iterator<R> { /* compiled code */ }
+    func flatMap<R>(transform: (T) -> std.core.Iterator<R>): std.core.Iterator<R> { /* compiled code */ }
 
     func intersperse(separator: T): std.core.Iterator<T> { /* compiled code */ }
 
@@ -2653,12 +2653,12 @@ extend Iterator {
 
     func reduce(operation: (T, T) -> T): std.core.Option<T> { /* compiled code */ }
 
-    func fold(initial: R, operation: (R, T) -> R): R { /* compiled code */ }
+    func fold<R>(initial: R, operation: (R, T) -> R): R { /* compiled code */ }
 }
 
-func sizeOfType(): UIntNative { /* compiled code */ }
+func sizeOfType<T>(): UIntNative { /* compiled code */ }
 
-func alignOfType(): UIntNative { /* compiled code */ }
+func alignOfType<T>(): UIntNative { /* compiled code */ }
 
 foreign func malloc(size: UIntNative): CPointer<Unit>
 
@@ -2666,9 +2666,9 @@ foreign func free(p: CPointer<Unit>): Unit
 
 let SECUREC_MEM_MAX_LEN: Int64
 
-func sizeOf(): UIntNative { /* compiled code */ }
+func sizeOf<T>(): UIntNative { /* compiled code */ }
 
-func alignOf(): UIntNative { /* compiled code */ }
+func alignOf<T>(): UIntNative { /* compiled code */ }
 
 func getCommandLineArgsFromRuntime(): CPointer<CPointer<UInt8>> { /* compiled code */ }
 
@@ -2715,9 +2715,9 @@ func refEq(a: std.core.Object, b: std.core.Object): Bool { /* compiled code */ }
 
 func intrinsicRefEq(a: std.core.Object, b: std.core.Object): Bool { /* compiled code */ }
 
-func ifSome(o: std.core.Option<T>, action: (T) -> Unit): Unit { /* compiled code */ }
+func ifSome<T>(o: std.core.Option<T>, action: (T) -> Unit): Unit { /* compiled code */ }
 
-func ifNone(o: std.core.Option<T>, action: () -> Unit): Unit { /* compiled code */ }
+func ifNone<T>(o: std.core.Option<T>, action: () -> Unit): Unit { /* compiled code */ }
 
 extend Option <: Equatable {
     operator func ==(that: std.core.Option<T>): Bool { /* compiled code */ }
@@ -2840,9 +2840,9 @@ class ThreadLocalMap {
 
     init() { /* compiled code */ }
 
-    func `get`(tlKey: std.core.ThreadLocalKey): std.core.Option<T> { /* compiled code */ }
+    func `get`<T>(tlKey: std.core.ThreadLocalKey): std.core.Option<T> { /* compiled code */ }
 
-    func `set`(tlKey: std.core.ThreadLocalKey, value: T): Unit { /* compiled code */ }
+    func `set`<T>(tlKey: std.core.ThreadLocalKey, value: T): Unit { /* compiled code */ }
 
     func remove(tlKey: std.core.ThreadLocalKey): Unit { /* compiled code */ }
 }
@@ -2857,7 +2857,7 @@ let EMPTY_KEY: std.core.ThreadLocalKey
 
 let DELETED_KEY: std.core.ThreadLocalKey
 
-class ThreadLocal {
+class ThreadLocal<T> {
     let key: std.core.ThreadLocalKey
 
     func `get`(): std.core.Option<T> { /* compiled code */ }

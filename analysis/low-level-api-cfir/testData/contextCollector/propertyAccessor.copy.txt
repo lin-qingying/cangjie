@@ -1,0 +1,131 @@
+Tower Data Context:
+    Element 0
+        Scope: CfirClassStaticScope
+    Element 1
+        Implicit receiver:
+            CfirClassSymbol offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+            Type: sample/lowlevel/contextcollector/generated/Counter
+    Element 2
+        Scope: CfirLocalScope
+            Variables:
+                CfirValueParameterSymbol offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|internal? class Counter {
+    init()
+    internal? mut prop state: R|kotlin.Unit|
+}
+value: R|kotlin.Unit|
+    Element 3
+        Scope: CfirLocalScope
+
+FILE: propertyAccessor.cj
+    package sample.lowlevel.contextcollector.generated
+    internal? class Counter {
+        init()
+        internal? mut prop state: R|kotlin.Unit|
+    }

@@ -1,0 +1,47 @@
+TYPES:
+TARGET:
+[ResolvedTo(TYPES)] internal? func identity([ResolvedTo(TYPES)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+    <element: CfirLazyBlock>
+}
+
+STATUS:
+TARGET:
+[ResolvedTo(STATUS)] internal? func identity([ResolvedTo(STATUS)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+    <element: CfirLazyBlock>
+}
+
+EXTENSIONS:
+TARGET:
+[ResolvedTo(EXTENSIONS)] internal? func identity([ResolvedTo(EXTENSIONS)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+    <element: CfirLazyBlock>
+}
+
+IMPLICIT_TYPES:
+TARGET:
+[ResolvedTo(IMPLICIT_TYPES)] internal? func identity([ResolvedTo(IMPLICIT_TYPES)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+    <element: CfirLazyBlock>
+}
+
+BODY_RESOLVE:
+TARGET:
+[ResolvedTo(BODY_RESOLVE)] internal? func identity([ResolvedTo(BODY_RESOLVE)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+    RETURN {
+        NAMED_ACCESS(value)
+    }
+}
+
+FILE RAW TO BODY:
+[ResolvedTo(BODY_RESOLVE)] FILE: resolveTargetByCall.cj
+    package sample.lowlevel.lazy.ref
+    [ResolvedTo(BODY_RESOLVE)] internal? func identity([ResolvedTo(BODY_RESOLVE)] value: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+    [ResolvedTo(BODY_RESOLVE)] internal? func consume(): R|kotlin.Unit| {
+        RETURN {
+            FUNCTION_CALL(identity) {
+                INT(1)
+            }
+        }
+    }

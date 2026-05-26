@@ -43,7 +43,7 @@ internal open class CaCfirLocalVariableSymbol(
 ) : org.cangnova.cangjie.analysis.api.symbols.CaLocalVariableSymbol(),
     CaCfirSymbol<CfirCallableSymbol<*>> {
     override val psi: PsiElement?
-        get() = withValidityAssertion { cfirSymbol.cfir.getAllowedPsi() ?: findPsi() }
+        get() = withValidityAssertion { cfirSymbol.cfir.getAllowedPsi(analysisSession.project) ?: findPsi() }
 
     override val annotations: CaAnnotationList
         get() = withValidityAssertion { CaCfirAnnotationListForDeclaration.create(cfirSymbol, builder) }
@@ -52,7 +52,7 @@ internal open class CaCfirLocalVariableSymbol(
         get() = null
 
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)
@@ -112,7 +112,9 @@ internal class CaCfirPatternVariableSymbol private constructor(
         get() = analysisSession.useSiteModule
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: cfirSymbol.cfir.getAllowedPsi() }
+        get() = withValidityAssertion {
+            backingPsiOrFindCurrentPsi { cfirSymbol.cfir.getAllowedPsi(analysisSession.project) ?: findPsi() }
+        }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -124,7 +126,7 @@ internal class CaCfirPatternVariableSymbol private constructor(
         get() = null
 
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)
@@ -188,7 +190,9 @@ internal class CaCfirPatternBindingSymbol private constructor(
         get() = analysisSession.useSiteModule
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: cfirSymbol.cfir.getAllowedPsi() }
+        get() = withValidityAssertion {
+            backingPsiOrFindCurrentPsi { cfirSymbol.cfir.getAllowedPsi(analysisSession.project) ?: findPsi() }
+        }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -200,7 +204,7 @@ internal class CaCfirPatternBindingSymbol private constructor(
         get() = null
 
     override val receiverType: CaType?
-        get() = analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi = null, builder)
+        get() = analysisSession.getExplicitCallableReceiverType(backingPsi = null, builder) { cfirSymbol }
 
     override val returnType: CaType
         get() = cfirSymbol.returnType(builder)

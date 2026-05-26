@@ -1,0 +1,5 @@
+CjDeclaration: CjStruct Record
+annotations: [
+  @sample.annotations.First
+  @sample.annotations.Second[value = 3i64]
+]

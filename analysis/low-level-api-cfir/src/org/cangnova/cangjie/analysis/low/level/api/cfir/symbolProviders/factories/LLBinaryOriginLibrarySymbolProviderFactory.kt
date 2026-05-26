@@ -61,7 +61,7 @@ internal object LLBinaryOriginLibrarySymbolProviderFactory : LLLibrarySymbolProv
      * builtins `.cjo` 搜索根对应的反序列化 provider。
      */
     private fun createBuiltinsDeserializedSymbolProvider(session: LLCfirSession): CfirSymbolProvider {
-        val rootPathString = BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles()
+        val rootPathString = BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(session.project)
             .map(::toBuiltinsSearchRoot)
             .distinctBy(File::getAbsolutePath)
             .joinToString(File.pathSeparator) { root -> root.absolutePath }

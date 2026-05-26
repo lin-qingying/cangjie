@@ -75,7 +75,7 @@ internal class CaCfirValueParameterSymbol private constructor(
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }

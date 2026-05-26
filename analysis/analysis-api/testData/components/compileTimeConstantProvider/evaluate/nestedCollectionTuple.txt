@@ -1,0 +1,22 @@
+expression: [(1, 2), (3, 4)]
+constant:
+  kind: COLLECTION
+  renderedText: [(1, 2), (3, 4)]
+  element[0]:
+    kind: TUPLE
+    renderedText: (1, 2)
+    element[0]:
+      kind: SCALAR(INTEGER)
+      renderedText: 1
+    element[1]:
+      kind: SCALAR(INTEGER)
+      renderedText: 2
+  element[1]:
+    kind: TUPLE
+    renderedText: (3, 4)
+    element[0]:
+      kind: SCALAR(INTEGER)
+      renderedText: 3
+    element[1]:
+      kind: SCALAR(INTEGER)
+      renderedText: 4

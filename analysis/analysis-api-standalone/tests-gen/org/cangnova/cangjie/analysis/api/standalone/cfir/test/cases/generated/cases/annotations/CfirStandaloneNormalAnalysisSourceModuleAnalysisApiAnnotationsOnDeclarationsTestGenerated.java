@@ -51,4 +51,10 @@ public class CfirStandaloneNormalAnalysisSourceModuleAnalysisApiAnnotationsOnDec
   public void testClassAnnotations() {
     run("classAnnotations.cj");
   }
+
+  @Test
+  @TestMetadata("structAnnotations.cj")
+  public void testStructAnnotations() {
+    run("structAnnotations.cj");
+  }
 }

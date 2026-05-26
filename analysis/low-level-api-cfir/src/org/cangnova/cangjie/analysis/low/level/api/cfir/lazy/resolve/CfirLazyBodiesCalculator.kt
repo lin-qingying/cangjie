@@ -162,12 +162,17 @@ private fun calculateLazyBodyForProperty(designation: CfirDesignation) {
     }
 }
 
+private fun replaceLazyInitializer(target: CfirVariable, copy: CfirVariable) {
+    if (!needCalculatingLazyInitializerForVariable(target)) return
+    target.replaceInitializer(copy.initializer)
+}
+
 private inline fun <reified V : CfirVariable> calculateLazyInitializerForVariable(designation: CfirDesignation) {
     val variable = designation.target as V
     require(needCalculatingLazyInitializerForVariable(variable))
 
     val recreatedVariable = revive<V>(designation, variable.originalPsi)
-    variable.replaceInitializer(recreatedVariable.initializer)
+    replaceLazyInitializer(variable, recreatedVariable)
 }
 
 private fun needCalculatingLazyBodyForConstructor(constructor: CfirConstructor): Boolean =
@@ -181,6 +186,13 @@ private fun needCalculatingLazyBodyForProperty(property: CfirProperty): Boolean 
             property.setter?.let(::needCalculatingLazyBodyForFunction) == true
 
 private fun needCalculatingLazyInitializerForVariable(variable: CfirVariable): Boolean {
+    if (variable.initializer is CfirLazyExpression) return true
+
+    /*
+     * 对齐 Kotlin 的 LL body-state keeper 语义：未完成的变量 initializer
+     * 可能被回写成 lazy placeholder；同时仓颉 raw build 在 LAZY_BODIES 下
+     * 也可能直接留下 `null`。两种形态都必须触发重建。
+     */
     if (variable.initializer != null) return false
     return (variable.originalPsi as? CjDeclarationWithInitializer)?.hasInitializer() == true
 }

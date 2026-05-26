@@ -35,6 +35,10 @@ internal class BuiltinsVirtualFileProviderTestImpl : BuiltinsVirtualFileProvider
         return builtinRoots
     }
 
+    override fun getBuiltinRootVirtualFiles(project: Project): Set<VirtualFile> {
+        return builtinRoots
+    }
+
     override fun createBuiltinsScope(project: Project): GlobalSearchScope =
         GlobalSearchScope.filesScope(project, files)
 

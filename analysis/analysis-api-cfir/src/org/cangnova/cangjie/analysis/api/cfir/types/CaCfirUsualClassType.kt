@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
 import org.cangnova.cangjie.analysis.api.cfir.utils.asPublicTypeProjections
+import org.cangnova.cangjie.analysis.api.cfir.utils.buildAbbreviatedType
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreUsualClassType
 import org.cangnova.cangjie.analysis.api.lifetime.withValidityAssertion
@@ -42,7 +43,7 @@ internal class CaCfirUsualClassType(
         get() = withValidityAssertion { emptyTypeAnnotations(token) }
 
     override val abbreviation: CaUsualClassType?
-        get() = withValidityAssertion { this.takeIf { coneType is ConeTypeAliasType } }
+        get() = withValidityAssertion { builder.buildAbbreviatedType(coneType) }
 
     override val classId: ClassId
         get() = withValidityAssertion {

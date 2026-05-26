@@ -47,6 +47,12 @@ public class CfirIdeNormalAnalysisSourceModuleAbbreviatedTypeTestGenerated exten
   }
 
   @Test
+  @TestMetadata("transitiveUserBoxAlias.cj")
+  public void testTransitiveUserBoxAlias() {
+    run("transitiveUserBoxAlias.cj");
+  }
+
+  @Test
   @TestMetadata("userBoxAlias.cj")
   public void testUserBoxAlias() {
     run("userBoxAlias.cj");

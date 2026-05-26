@@ -11,6 +11,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleWithDependenciesSymbolProvider
+import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.factories.LLLibrarySymbolProviderFactory
 import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
@@ -80,7 +81,20 @@ internal class LLCfirCommonSessionFactory(project: Project) : LLCfirAbstractSess
         session: LLCfirSession,
         scope: GlobalSearchScope,
     ): List<CfirSymbolProvider> {
-        return emptyList()
+        /**
+         * 对齐 Kotlin `LLFirCommonSessionFactory`：
+         * binary library session 必须通过统一的 library provider factory 产出真实库符号 provider，
+         * 否则依赖侧既拿不到库声明，也无法触发后续 combined-package-delegation merge。
+         *
+         * 仓颉当前没有 Kotlin/JVM 的 package-part provider 语义，这里沿用本地 factory 约定传入占位对象即可。
+         */
+        return LLLibrarySymbolProviderFactory
+            .fromSettings(project)
+            .createCommonLibrarySymbolProvider(
+                session = session,
+                packagePartProvider = Any(),
+                scope = scope,
+            )
     }
 
     private fun LLCfirSession.registerCommonComponents() {

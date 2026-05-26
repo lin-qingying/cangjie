@@ -57,4 +57,16 @@ public class CfirIdeNormalAnalysisCodeFragmentModuleExpectedExpressionTypeTestGe
   public void testPropertyInitializer() {
     run("propertyInitializer.cj");
   }
+
+  @Test
+  @TestMetadata("returnExpression.cj")
+  public void testReturnExpression() {
+    run("returnExpression.cj");
+  }
+
+  @Test
+  @TestMetadata("stringArgument.cj")
+  public void testStringArgument() {
+    run("stringArgument.cj");
+  }
 }

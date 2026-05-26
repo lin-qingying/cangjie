@@ -21,12 +21,15 @@ import org.cangnova.cangjie.analysis.api.symbols.markers.CaDeclarationContainerS
 import org.cangnova.cangjie.analysis.api.symbols.markers.CaTypeParameterOwnerSymbol
 import org.cangnova.cangjie.analysis.api.symbols.pointers.CaSymbolPointer
 import org.cangnova.cangjie.analysis.api.types.CaType
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -72,7 +75,7 @@ internal class CaCfirClassSymbol private constructor(
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi: PsiElement?
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion { status?.visibility?.asPublicVisibility() ?: CaSymbolVisibility.PUBLIC }
@@ -154,7 +157,7 @@ internal class CaCfirTypeAliasSymbol private constructor(
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val psi: PsiElement?
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val visibility: CaSymbolVisibility
         get() = withValidityAssertion { status?.visibility?.asPublicVisibility() ?: CaSymbolVisibility.PUBLIC }
@@ -184,8 +187,11 @@ internal class CaCfirTypeAliasSymbol private constructor(
 
     override val expandedType: CaType
         get() = withValidityAssertion {
-            (cfirSymbol.cfir as CfirTypeAlias).expandedTypeRef.coneTypeOrNull?.let(builder.typeBuilder::buildType)
+            cfirSymbol.lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+            val expandedConeType = (cfirSymbol.cfir as CfirTypeAlias).expandedTypeRef.coneTypeOrNull
+                ?.fullyExpandedType(analysisSession.cfirSession)
                 ?: error("Cannot build expanded type for `${cfirSymbol.classId.asString()}`")
+            builder.typeBuilder.buildType(expandedConeType)
         }
 
     override fun createPointer(): CaSymbolPointer<CaAnnotatedSymbol> = withValidityAssertion {

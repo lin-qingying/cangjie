@@ -12,11 +12,19 @@ import com.intellij.openapi.extensions.LoadingOrder
 import com.intellij.platform.plugins.parser.impl.PluginDescriptorReaderContext
 import com.intellij.platform.plugins.parser.impl.RawPluginDescriptor
 import com.intellij.platform.plugins.parser.impl.ScopedElementsContainer
+import com.intellij.util.messages.impl.MessageBusEx
+import com.intellij.util.messages.impl.PluginListenerDescriptor
 import com.intellij.platform.plugins.parser.impl.elements.ExtensionElement
+import com.intellij.platform.plugins.parser.impl.elements.ListenerElement
 import com.intellij.platform.plugins.parser.impl.elements.OS
+import com.intellij.util.messages.ListenerDescriptor
 import com.intellij.util.containers.ContainerUtil
 import com.intellij.util.xml.dom.NoOpXmlInterner
+import org.cangnova.cangjie.analysis.api.CaPlatformInterface
+import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
+import org.cangnova.cangjie.utils.SmartList
 import java.io.InputStream
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * 为 standalone/headless 容器装配 plugin XML 中声明的结构信息。
@@ -89,6 +97,7 @@ object PluginStructureProvider {
         registerExtensionPoints(project, pluginRelativePath, containerDescriptor)
         registerExtensionPointImplementations(project, pluginRelativePath)
         registerServices(project, pluginRelativePath, containerDescriptor)
+        registerProjectListeners(project, pluginRelativePath)
     }
 
     private inline fun registerExtensionPoints(
@@ -145,6 +154,29 @@ object PluginStructureProvider {
         }
     }
 
+    /**
+     * 对齐 Kotlin standalone `PluginStructureProvider.registerProjectListeners`。
+     *
+     * Analysis API 的 low-level session invalidation、in-block modification 等链路
+     * 依赖 plugin XML 中的 `projectListeners` 把 listener 懒挂到 Analysis API message bus。
+     * 仅注册 service / extension 而忽略 listener，会让修改事件发布成功但无人订阅。
+     */
+    @OptIn(CaPlatformInterface::class)
+    private fun registerProjectListeners(project: MockProject, pluginRelativePath: String) {
+        val pluginDescriptor = getOrCalculatePluginDescriptor(PluginDesignation(pluginRelativePath, project))
+        val listenerDescriptors = pluginDescriptor.projectElementsContainer.listeners.ifEmpty {
+            return
+        }
+
+        val listenersMap = ConcurrentHashMap<String, MutableList<PluginListenerDescriptor>>()
+        for (listenerElement in listenerDescriptors) {
+            val listenerDescriptor = listenerElement.toPluginListenerDescriptor()
+            listenersMap.computeIfAbsent(listenerDescriptor.descriptor.topicClassName) { SmartList() }.add(listenerDescriptor)
+        }
+
+        (project.analysisMessageBus as MessageBusEx).setLazyListeners(listenersMap)
+    }
+
     private fun getOrCalculatePluginDescriptor(
         designation: PluginDesignation,
     ): RawPluginDescriptor {
@@ -172,6 +204,24 @@ object PluginStructureProvider {
             element,
             hasExtraAttributes,
         )
+    }
+
+    /**
+     * 253 版插件解析器把 listener 保存在 parser 层的 `ListenerElement`，
+     * message bus 懒注册则要求 runtime 层的 `PluginListenerDescriptor`。
+     *
+     * 这里保持与 Kotlin 相同的职责边界：XML 解析留在 `RawPluginDescriptor`，
+     * standalone 容器负责把 parser model 投影为运行时 descriptor。
+     */
+    private fun ListenerElement.toPluginListenerDescriptor(): PluginListenerDescriptor {
+        val listenerDescriptor = ListenerDescriptor(
+            os?.toPlatformOs(),
+            listenerClassName,
+            topicClassName,
+            activeInTestMode,
+            activeInHeadlessMode,
+        )
+        return PluginListenerDescriptor(listenerDescriptor, fakePluginDescriptor)
     }
 
     private fun OS.toPlatformOs(): ExtensionDescriptor.Os {

@@ -1,0 +1,60 @@
+Tower Data Context:
+    Element 0
+        Scope: CfirClassStaticScope
+    Element 1
+        Scope: CfirTypeParameterScopeImpl
+            Opaque scope
+    Element 2
+        Implicit receiver:
+            CfirClassSymbol offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+internal? class Box<T> {
+    public prop value: R|kotlin.Unit|
+    init(value: R|kotlin.Unit|) {
+        <element: CfirLazyBlock>
+    }
+    public func unwrap(): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value)
+        }
+    }
+}
+            Type: sample/lowlevel/contextcollector/generated/Box
+    Element 3
+        Scope: CfirLocalScope
+    Element 4
+        Scope: CfirLocalScope
+
+FILE: class.cj
+    package sample.lowlevel.contextcollector.generated
+    internal? class Box<T> {
+        public prop value: R|T|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+        public func unwrap(): R|kotlin.Unit| {
+            RETURN {
+                NAMED_ACCESS(value)
+            }
+        }
+    }

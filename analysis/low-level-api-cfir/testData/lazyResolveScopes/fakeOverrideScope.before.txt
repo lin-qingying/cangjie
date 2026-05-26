@@ -1,0 +1,11 @@
+CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Document.render
+[ResolvedTo(IMPORTS)] public func render(): R|String| {
+    <element: CfirLazyBlock>
+}
+overridden:
+  CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Document.render
+
+CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Printable.render
+[ResolvedTo(IMPORTS)] public? func render(): R|String|
+overridden:
+  CfirNamedFunctionSymbol: sample/lowlevel/lazy/scopes/Document.render

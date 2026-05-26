@@ -44,7 +44,67 @@ public class CfirIdeNormalAnalysisSourceModuleGlobalModuleStateModificationAnaly
 
   @Test
   public void testAllFilesPresentInSessionInvalidation() {
-    CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/sessions/sessionInvalidation"), Pattern.compile("^(.+)\\.kt$"), null, true, "analysisSession");
+    CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/sessions/sessionInvalidation"), Pattern.compile("^(.+)\\.cj$"), null, true, "analysisSession", "cfirSession");
+  }
+
+  @Nested
+  @TestMetadata("analysis/analysis-api/testData/sessions/sessionInvalidation/binaryTreeInvalidateA")
+  @TestDataPath("$PROJECT_ROOT")
+  public class BinaryTreeInvalidateA {
+    private void run(String fileName) {
+      runTest("analysis/analysis-api/testData/sessions/sessionInvalidation/binaryTreeInvalidateA/" + fileName);
+    }
+
+    @Test
+    public void testAllFilesPresentInBinaryTreeInvalidateA() {
+      CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/sessions/sessionInvalidation/binaryTreeInvalidateA"), Pattern.compile("^(.+)\\.cj$"), null, true, "analysisSession", "cfirSession");
+    }
+
+    @Test
+    @TestMetadata("binaryTreeInvalidateA.cj")
+    public void testBinaryTreeInvalidateA() {
+      run("binaryTreeInvalidateA.cj");
+    }
+  }
+
+  @Nested
+  @TestMetadata("analysis/analysis-api/testData/sessions/sessionInvalidation/binaryTreeInvalidateNone")
+  @TestDataPath("$PROJECT_ROOT")
+  public class BinaryTreeInvalidateNone {
+    private void run(String fileName) {
+      runTest("analysis/analysis-api/testData/sessions/sessionInvalidation/binaryTreeInvalidateNone/" + fileName);
+    }
+
+    @Test
+    public void testAllFilesPresentInBinaryTreeInvalidateNone() {
+      CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/sessions/sessionInvalidation/binaryTreeInvalidateNone"), Pattern.compile("^(.+)\\.cj$"), null, true, "analysisSession", "cfirSession");
+    }
+
+    @Test
+    @TestMetadata("binaryTreeInvalidateNone.cj")
+    public void testBinaryTreeInvalidateNone() {
+      run("binaryTreeInvalidateNone.cj");
+    }
+  }
+
+  @Nested
+  @TestMetadata("analysis/analysis-api/testData/sessions/sessionInvalidation/linearInvalidateC")
+  @TestDataPath("$PROJECT_ROOT")
+  public class LinearInvalidateC {
+    private void run(String fileName) {
+      runTest("analysis/analysis-api/testData/sessions/sessionInvalidation/linearInvalidateC/" + fileName);
+    }
+
+    @Test
+    public void testAllFilesPresentInLinearInvalidateC() {
+      CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/sessions/sessionInvalidation/linearInvalidateC"), Pattern.compile("^(.+)\\.cj$"), null, true, "analysisSession", "cfirSession");
+    }
+
+    @Test
+    @TestMetadata("linearInvalidateC.cj")
+    public void testLinearInvalidateC() {
+      run("linearInvalidateC.cj");
+    }
   }
 
   @Nested
@@ -57,7 +117,13 @@ public class CfirIdeNormalAnalysisSourceModuleGlobalModuleStateModificationAnaly
 
     @Test
     public void testAllFilesPresentInSourceModuleSelf() {
-      CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/sessions/sessionInvalidation/sourceModuleSelf"), Pattern.compile("^(.+)\\.kt$"), null, true, "analysisSession");
+      CjTestUtil.assertAllTestsPresentByMetadataWithExcluded(this.getClass(), new File("analysis/analysis-api/testData/sessions/sessionInvalidation/sourceModuleSelf"), Pattern.compile("^(.+)\\.cj$"), null, true, "analysisSession", "cfirSession");
+    }
+
+    @Test
+    @TestMetadata("sourceModuleSelf.cj")
+    public void testSourceModuleSelf() {
+      run("sourceModuleSelf.cj");
     }
   }
 }

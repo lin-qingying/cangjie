@@ -64,7 +64,9 @@ internal class CaCfirAnonymousFunctionSymbol private constructor(
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
     override val psi: PsiElement?
-        get() = withValidityAssertion { backingPsi ?: cfirSymbol.cfir.getAllowedPsi() }
+        get() = withValidityAssertion {
+            backingPsiOrFindCurrentPsi { cfirSymbol.cfir.getAllowedPsi(analysisSession.project) ?: findPsi() }
+        }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -73,7 +75,7 @@ internal class CaCfirAnonymousFunctionSymbol private constructor(
         get() = withValidityAssertion { psiOrSymbolAnnotationList() }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
 
     override val returnType: CaType
         get() = withValidityAssertion { createReturnType() }
@@ -171,7 +173,7 @@ internal class CaCfirFinalizerSymbol private constructor(
         get() = (cfirSymbol.cfir as? CfirMemberDeclaration)?.status
 
     override val psi: PsiElement?
-        get() = withValidityAssertion { backingPsi ?: findPsi() }
+        get() = withValidityAssertion { backingPsiOrFindCurrentPsi { findPsi() } }
 
     override val origin
         get() = withValidityAssertion { psiOrSymbolOrigin() }
@@ -186,7 +188,7 @@ internal class CaCfirFinalizerSymbol private constructor(
         }
 
     override val receiverType: CaType?
-        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(cfirSymbol, backingPsi, builder) }
+        get() = withValidityAssertion { analysisSession.getExplicitCallableReceiverType(backingPsi, builder) { cfirSymbol } }
 
     override val returnType: CaType
         get() = withValidityAssertion { createReturnType() }

@@ -90,7 +90,7 @@ class DecompiledBinaryIndexImpl(
 
     private fun builtinsIndex(): ModuleBinaryIndex {
         builtinsIndex?.let { return it }
-        return buildIndex(BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles().toList())
+        return buildIndex(BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(project).toList())
             .also { builtinsIndex = it }
     }
 

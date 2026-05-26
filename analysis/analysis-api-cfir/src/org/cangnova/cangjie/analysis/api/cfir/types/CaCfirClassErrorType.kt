@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.cfir.types
 
 import org.cangnova.cangjie.analysis.api.annotations.CaAnnotationList
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
+import org.cangnova.cangjie.analysis.api.cfir.utils.buildAbbreviatedType
 import org.cangnova.cangjie.analysis.api.cfir.utils.createTypePointer
 import org.cangnova.cangjie.analysis.api.cfir.utils.restoreClassErrorType
 import org.cangnova.cangjie.analysis.api.lifetime.CaLifetimeToken
@@ -12,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.types.CaClassTypeQualifier
 import org.cangnova.cangjie.analysis.api.types.CaTypePointer
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithCandidates
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedError
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -39,7 +41,7 @@ internal class CaCfirClassErrorType(
         get() = withValidityAssertion { emptyTypeAnnotations(token) }
 
     override val abbreviation: org.cangnova.cangjie.analysis.api.types.CaUsualClassType?
-        get() = withValidityAssertion { null }
+        get() = withValidityAssertion { builder.buildAbbreviatedType(coneType) }
 
     override val errorMessage: String
         get() = withValidityAssertion { coneDiagnostic.reason }
@@ -69,7 +71,15 @@ internal class CaCfirClassErrorType(
 
     override val qualifiers: List<CaClassTypeQualifier>
         get() = withValidityAssertion {
-            ErrorClassTypeQualifierBuilder.buildQualifiers(coneType, coneDiagnostic, builder)
+            when (coneDiagnostic) {
+                is ConeUnresolvedError ->
+                    ErrorClassTypeQualifierBuilder.createQualifiersForUnresolvedType(coneDiagnostic, builder)
+
+                is ConeUnmatchedTypeArgumentsError ->
+                    ErrorClassTypeQualifierBuilder.createQualifiersForUnmatchedTypeArgumentsType(coneDiagnostic, builder)
+
+                else -> error("Unsupported ${coneDiagnostic::class}")
+            }
         }
 
     override val candidateSymbols: Collection<CaClassLikeSymbol>

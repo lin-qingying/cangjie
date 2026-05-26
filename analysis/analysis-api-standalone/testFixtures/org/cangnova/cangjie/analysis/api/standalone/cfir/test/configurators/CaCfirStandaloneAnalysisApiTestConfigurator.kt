@@ -4,6 +4,7 @@ import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirConfigure
 import org.cangnova.cangjie.analysis.api.cfir.test.configurators.CaCfirConfiguredAnalysisApiTestConfigurator.CaCfirAnalysisApiServiceRegistrar
 import org.cangnova.cangjie.analysis.api.impl.base.test.configurators.CaAnalysisApiBaseTestServiceRegistrar
 import org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneSessionServiceRegistrar
+import org.cangnova.cangjie.analysis.test.framework.test.configurators.TestModuleKind
 
 /**
  * 默认的 CFIR standalone 测试配置器。
@@ -12,6 +13,7 @@ import org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneSessionS
  * standalone 模式的 concrete configurator 归 `analysis-api-standalone` 模块持有。
  */
 object CaCfirStandaloneAnalysisApiTestConfigurator : CaCfirConfiguredAnalysisApiTestConfigurator(
+    moduleKind = TestModuleKind.Source,
     serviceRegistrars = listOf(
         CaAnalysisApiBaseTestServiceRegistrar,
         CaCfirAnalysisApiServiceRegistrar(),
