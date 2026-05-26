@@ -1165,6 +1165,12 @@ class CfirAnalysisDiagnosticsPsiTestGenerated : AbstractCfirPsiDiagnosticTest() 
         fun testA() {
             runTest("cfir/analysis-tests/testData/diagnostics/typealias/a.cj")
         }
+
+        @TestMetadata("crossPackageImportedAliasInFunctionSignature.cj")
+        @Test
+        fun testCrossPackageImportedAliasInFunctionSignature() {
+            runTest("cfir/analysis-tests/testData/diagnostics/typealias/crossPackageImportedAliasInFunctionSignature.cj")
+        }
     }
 
     @TestMetadata("unresolved")

@@ -4,9 +4,7 @@ import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.serialization.cjo.CjoManager
-import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeclDeserializer
 import org.cangnova.cangjie.cfir.serialization.deserialize.CfirDeserializationContext
-import org.cangnova.cangjie.cfir.serialization.deserialize.CfirTypeDeserializer
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.name.FqName
 
@@ -38,8 +36,6 @@ class CfirDeserializedSymbolProvider(
             moduleData = libraryModuleData,
             cjoManager = cjoManager,
         )
-        val typeDeserializer = CfirTypeDeserializer(context)
-        val declDeserializer = CfirDeclDeserializer(context, typeDeserializer)
-        return PackageDeserializers(header, typeDeserializer, declDeserializer)
+        return PackageDeserializers(header, context)
     }
 }

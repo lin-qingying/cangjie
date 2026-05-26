@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
-import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.diff.FlyweightCapableTreeStructure
@@ -13,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.providers.isReexportingSourceImport
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
@@ -38,6 +38,7 @@ object CfirImportsChecker : CfirFileChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirFile) {
         val resolvedImports = context.session.importBindingStoreOrNull?.getBindings(declaration)?.imports.orEmpty()
+        val importBindingsByImport = resolvedImports.associateBy { it.importDirective }
         val conflictingNameImports = resolvedImports
             .filter { it.targets.isNotEmpty() && it.importDirective.aliasName == null }
             .groupBy { it.effectiveName }
@@ -49,7 +50,7 @@ object CfirImportsChecker : CfirFileChecker() {
 
         declaration.imports.forEach { import ->
             if (import.source?.kind?.shouldSkipErrorTypeReporting == true) return@forEach
-            reportImportResolutionDiagnostic(import)
+            reportImportResolutionDiagnostic(import, importBindingsByImport)
 
             if (import in conflictingNameImports) {
                 val effectiveName = import.importedFqName?.shortName()
@@ -94,7 +95,10 @@ object CfirImportsChecker : CfirFileChecker() {
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun reportImportResolutionDiagnostic(import: CfirImport) {
+    private fun reportImportResolutionDiagnostic(
+        import: CfirImport,
+        importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
+    ) {
         val importedFqName = import.importedFqName?.takeUnless { it.isRoot } ?: return
         val pathSegments = importedFqName.pathSegments()
         if (pathSegments.isEmpty()) return
@@ -107,7 +111,7 @@ object CfirImportsChecker : CfirFileChecker() {
             return
         }
 
-        if (!import.isAllUnder && !canResolveTerminalImportTarget(importedFqName)) {
+        if (!import.isAllUnder && !hasResolvedTerminalImportTarget(import, importedFqName, importBindingsByImport)) {
             reporter.reportOn(import.source, CfirErrors.UNRESOLVED_IMPORT, importedFqName.shortName().asString())
             return
         }
@@ -140,9 +144,10 @@ object CfirImportsChecker : CfirFileChecker() {
         for (import in declaration.imports) {
             if (import in duplicateImports) continue
             if (import.isAllUnder) continue
+            if (import.isReexportingSourceImport()) continue
 
             val importedFqName = import.importedFqName?.takeUnless { it.isRoot } ?: continue
-            if (!canResolveTerminalImportTarget(importedFqName)) continue
+            if (!hasResolvedTerminalImportTarget(import, importedFqName, importBindingsByImport)) continue
 
             val importedName = import.aliasName ?: importedFqName.shortName()
             if (importedName in referencedNames) continue
@@ -150,6 +155,24 @@ object CfirImportsChecker : CfirFileChecker() {
 
             reporter.reportOn(import.source, CfirErrors.UNUSED_IMPORT, importedFqName)
         }
+    }
+
+    /**
+     * IMPORTS 阶段已经产出的 binding 是本文件 import 可解析性的唯一事实来源。
+     * checker 仅在缺失 binding 时才回退到 symbolProvider 直接查询，避免与宏导入、
+     * re-export 等已解析目标再次脱节。
+     */
+    context(context: CheckerContext)
+    private fun hasResolvedTerminalImportTarget(
+        import: CfirImport,
+        importedFqName: FqName,
+        importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
+    ): Boolean {
+        val resolvedBinding = importBindingsByImport[import]
+        if (resolvedBinding != null) {
+            return resolvedBinding.targets.any { target -> target !is CfirResolvedImportTarget.Package }
+        }
+        return canResolveTerminalImportTarget(importedFqName)
     }
 
     private fun CfirFile.collectReferencedClassIds(): Set<ClassId> {
@@ -207,7 +230,7 @@ object CfirImportsChecker : CfirFileChecker() {
         val importedName = importedFqName.shortName()
         if (!packageFqName.isRoot && !symbolProvider.hasPackage(packageFqName)) return false
 
-        return symbolProvider.getClassLikeSymbolByClassId(org.cangnova.cangjie.name.ClassId(packageFqName, importedName)) != null ||
+        return symbolProvider.getClassLikeSymbolByClassId(ClassId(packageFqName, importedName)) != null ||
             symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName).isNotEmpty()
     }
 

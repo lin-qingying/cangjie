@@ -24,6 +24,20 @@ data class MacroDefinitionEntry(
     val packageFqName: FqName,
     /** 宏名（与 `@<name>` / `@<name>()` 调用形式一致）。 */
     val name: Name,
+    /**
+     * 宏真实定义所在包。
+     *
+     * 对 `public import` / alias 重导出的宏，lookup 仍然使用 [packageFqName] + [name]，
+     * 但 executor 必须按真实宏定义包去构造 wrapper 方法名和 packageName。
+     */
+    val executablePackageFqName: FqName = packageFqName,
+    /**
+     * 宏真实定义名。
+     *
+     * 对 alias 重导出，源码可见名与真实定义名可能不同；`MacroCallInfo.idName`
+     * 保持源码可见名，而 `methodName` 必须使用这里的真实定义名。
+     */
+    val executableName: Name = name,
     /** Entry 来源类别。 */
     val source: Source,
     /**
@@ -70,6 +84,12 @@ data class MacroDefinitionEntry(
     }
 
     val fqName: FqName get() = if (packageFqName.isRoot) FqName.topLevel(name) else packageFqName.child(name)
+    val executableFqName: FqName
+        get() = if (executablePackageFqName.isRoot) {
+            FqName.topLevel(executableName)
+        } else {
+            executablePackageFqName.child(executableName)
+        }
 }
 
 /**

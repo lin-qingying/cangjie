@@ -1,8 +1,11 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
@@ -30,6 +33,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
 import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
+import org.cangnova.cangjie.cfir.references.CfirThisReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
@@ -218,6 +222,35 @@ object CfirUnsafeFuncReferenceChecker : CfirQualifiedAccessChecker() {
             is CfirNamedReferenceWithCandidateBase -> reference.candidateSymbol as? CfirNamedFunctionSymbol
             else -> null
         }
+    }
+}
+
+/**
+ * finalizer 中禁止把 `this` 当值直接使用，但允许把它当作成员访问接收者。
+ *
+ * 对齐 `class_finalizer2.cj` 语义：
+ * - `this.x` / 通过隐式 receiver 访问 `x` 合法；
+ * - `f(this)`、裸 `this` 非法。
+ *
+ * `CfirThisReceiverExpression` 不是 `CfirQualifiedAccessExpression`，因此这里必须挂在
+ * basic expression 分发上，而不能挂在 qualified access 分发上。
+ */
+object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirStatement) {
+        if (expression !is CfirThisReceiverExpression) return
+        val containingFunction = context.findClosestDeclaration<CfirFunction>() ?: return
+        if (containingFunction !is CfirFinalizer) return
+
+        val parent = context.callsOrAssignments
+            .lastOrNull() as? CfirQualifiedAccessExpression
+        if (parent?.explicitReceiver === expression) return
+
+        reporter.reportOn(
+            source = expression.source ?: expression.calleeReference.source,
+            factory = CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER,
+            a = "function",
+        )
     }
 }
 

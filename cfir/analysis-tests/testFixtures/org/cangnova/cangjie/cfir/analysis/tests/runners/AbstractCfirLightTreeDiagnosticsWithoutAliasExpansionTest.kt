@@ -17,6 +17,8 @@ open class AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest :
     override fun configure(builder: TestConfigurationBuilder) {
         super.configure(builder)
         with(builder) {
+            baseCfirSpecDiagnosticTestConfiguration()
+
             defaultDirectives {
                 +ConfigurationDirectives.DISABLE_TYPEALIAS_EXPANSION
             }

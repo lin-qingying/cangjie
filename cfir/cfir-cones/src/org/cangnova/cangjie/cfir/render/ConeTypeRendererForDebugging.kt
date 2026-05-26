@@ -1,7 +1,6 @@
 package org.cangnova.cangjie.cfir.render
 
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 
 class ConeTypeRendererForDebugging() : ConeTypeRenderer() {
 
@@ -11,5 +10,7 @@ class ConeTypeRendererForDebugging() : ConeTypeRenderer() {
         idRenderer.builder = builder
     }
 
-
+    override fun ConeCangJieType.renderAttributes() {
+        renderNonCompilerAttributes()
+    }
 }

@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -14,6 +15,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
@@ -36,6 +38,7 @@ import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
@@ -86,6 +89,8 @@ class CfirTypeResolverImpl(
     private val session: CfirSession,
 ) : CfirTypeResolver() {
     private val cFuncName = Name.identifier("CFunc")
+    private val aliasedTypeExpansionGloballyDisabled: Boolean =
+        !session.languageVersionSettings.getFlag(AnalysisFlags.expandTypeAliasesInTypeResolution)
 
     override fun resolveType(
         typeRef: CfirTypeRef,
@@ -100,7 +105,7 @@ class CfirTypeResolverImpl(
             is CfirResolvedTypeRef -> typeRef.coneType
             is CfirImplicitTypeRef -> ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage"))
             is CfirBasicTypeRef -> resolveBasicType(typeRef, configuration)
-            is CfirUserTypeRef -> resolveUserType(typeRef, configuration)
+            is CfirUserTypeRef -> resolveUserType(typeRef, configuration, expandTypeAliases)
             is CfirOptionTypeRef -> resolveOptionType(typeRef, configuration, expandTypeAliases)
             is CfirFunctionTypeRef -> {
                 val parameterTypes = typeRef.parameterTypeRefs.map { resolveType(it, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type }
@@ -421,12 +426,19 @@ class CfirTypeResolverImpl(
                         supertypeSupplier = SupertypeSupplier.Default,
                         expandTypeAliases = true,
                     ).type
-                if (expandTypeAliases) expandedType
-                else ConeTypeAliasType(
-                    classId = classId,
-                    expandedType = expandedType,
-                    typeArguments = resolvedArguments,
-                )
+                if (expandTypeAliases && !aliasedTypeExpansionGloballyDisabled) {
+                    ConeTypeAliasType(
+                        classId = classId,
+                        expandedType = expandedType,
+                        typeArguments = resolvedArguments,
+                    ).fullyExpandedType(session)
+                } else {
+                    ConeTypeAliasType(
+                        classId = classId,
+                        expandedType = expandedType,
+                        typeArguments = resolvedArguments,
+                    )
+                }
             }
         }
     }

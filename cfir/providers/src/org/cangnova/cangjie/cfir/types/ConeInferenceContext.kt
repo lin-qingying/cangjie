@@ -738,7 +738,7 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
             isStubTypeEqualsToAnything = stubTypesEqualToAnything,
             allowedTypeVariable = false,
             typeSystemContext = this,
-            cangjieTypePreparator = AbstractTypePreparator.Default,
+            cangjieTypePreparator = ConeTypePreparator(session),
             cangjieTypeRefiner = AbstractTypeRefiner.Default,
         )
     }

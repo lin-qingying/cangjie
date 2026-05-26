@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
@@ -25,6 +26,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
+import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -293,6 +295,30 @@ open class AbstractCfirStatusResolveTransformer(
         }
     }
 
+    override fun transformStruct(struct: CfirStruct, data: Nothing?): CfirStruct {
+        val outerClass = containingClass
+        return withResolvedStatusPhase(struct) {
+            storeClass(struct) {
+                statusComputationSession.forceResolveStatusesOfSupertypes(struct)
+                struct.transformTypeParameters(this, null)
+                transformStructStatus(struct, outerClass)
+                transformClassLikeMembers(struct)
+            }
+        }
+    }
+
+    override fun transformEnum(enum: CfirEnum, data: Nothing?): CfirEnum {
+        val outerClass = containingClass
+        return withResolvedStatusPhase(enum) {
+            storeClass(enum) {
+                statusComputationSession.forceResolveStatusesOfSupertypes(enum)
+                enum.transformTypeParameters(this, null)
+                transformEnumStatus(enum, outerClass)
+                transformClassLikeMembers(enum)
+            }
+        }
+    }
+
     /**
      * 只计算并发布 class 自身 STATUS。
      *
@@ -319,11 +345,48 @@ open class AbstractCfirStatusResolveTransformer(
         interfaceDeclaration.replaceStatus(statusResolver.resolveStatus(interfaceDeclaration, containingClass, isLocal = false))
     }
 
+    /**
+     * 只计算并发布 struct 自身 STATUS。
+     *
+     * struct 在仓颉语义里是独立 class-like 节点，但 STATUS 阶段仍需和 Kotlin regular class
+     * 使用同一条 class-like 发布链，不能回落到 generic declaration children transform。
+     */
+    fun transformStructStatus(
+        struct: CfirStruct,
+        containingClass: CfirClassLikeDeclaration? = this.containingClass,
+    ) {
+        struct.replaceStatus(statusResolver.resolveStatus(struct, containingClass, isLocal = false))
+    }
+
+    /**
+     * 只计算并发布 enum 自身 STATUS。
+     *
+     * enum 和 struct 一样属于仓颉额外拆出的 class-like 节点，必须在 STATUS 阶段显式发布
+     * resolved status，后续 enum constructor / 成员解析才能读取稳定的宿主状态。
+     */
+    fun transformEnumStatus(
+        enum: CfirEnum,
+        containingClass: CfirClassLikeDeclaration? = this.containingClass,
+    ) {
+        enum.replaceStatus(statusResolver.resolveStatus(enum, containingClass, isLocal = false))
+    }
+
     override fun transformTypeAlias(typeAlias: CfirTypeAlias, data: Nothing?): CfirTypeAlias {
         return withResolvedStatusPhase(typeAlias) {
-            typeAlias.transformTypeParameters(this, null)
-            typeAlias.replaceStatus(statusResolver.resolveStatus(typeAlias, containingClass, isLocal = false))
+            transformTypeAliasStatusWithoutPhaseGuard(typeAlias)
         }
+    }
+
+    /**
+     * 只计算并发布 typealias 自身 STATUS。
+     *
+     * 仓颉 low-level STATUS resolver 会像 `extend` / 非 `CfirNamedFunction` 一样，
+     * 对某些声明直接走“写锁下的专用入口”，避免 generic `transformSingle` 路径
+     * 在 phase 已被推进时跳过真实的 status 发布。
+     */
+    fun transformTypeAliasStatusWithoutPhaseGuard(typeAlias: CfirTypeAlias) {
+        typeAlias.transformTypeParameters(this, null)
+        typeAlias.replaceStatus(statusResolver.resolveStatus(typeAlias, containingClass, isLocal = false))
     }
 
     override fun transformExtend(extend: CfirExtend, data: Nothing?): CfirExtend {
@@ -652,6 +715,34 @@ class CfirStatusResolver(
     }
 
     fun resolveStatus(
+        declaration: CfirStruct,
+        containingClass: CfirClassLikeDeclaration?,
+        isLocal: Boolean,
+    ): CfirResolvedDeclarationStatus {
+        return resolveStatus(
+            declaration = declaration,
+            status = declaration.status,
+            containingClass = containingClass,
+            containingProperty = null,
+            isLocal = isLocal,
+        )
+    }
+
+    fun resolveStatus(
+        declaration: CfirEnum,
+        containingClass: CfirClassLikeDeclaration?,
+        isLocal: Boolean,
+    ): CfirResolvedDeclarationStatus {
+        return resolveStatus(
+            declaration = declaration,
+            status = declaration.status,
+            containingClass = containingClass,
+            containingProperty = null,
+            isLocal = isLocal,
+        )
+    }
+
+    fun resolveStatus(
         declaration: CfirTypeAlias,
         containingClass: CfirClassLikeDeclaration?,
         isLocal: Boolean,
@@ -852,7 +943,7 @@ class CfirStatusResolver(
     ): Modality {
         return when (declaration) {
             is CfirInterface -> Modality.ABSTRACT
-            is CfirClass -> Modality.FINAL
+            is CfirClass, is CfirStruct, is CfirEnum -> Modality.FINAL
             is CfirCallableDeclaration -> {
                 val containingPropertyModality = containingProperty?.status?.modality
                 when {
@@ -880,6 +971,8 @@ private fun CfirDeclaration.statusOrNull(): CfirDeclarationStatus? {
     return when (this) {
         is CfirClass -> status
         is CfirInterface -> status
+        is CfirStruct -> status
+        is CfirEnum -> status
         is CfirFunction -> status
         is CfirProperty -> status
         is CfirEnumConstructor -> status

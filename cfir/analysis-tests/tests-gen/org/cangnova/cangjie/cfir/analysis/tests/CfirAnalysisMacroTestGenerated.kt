@@ -55,6 +55,24 @@ class CfirAnalysisMacroTestGenerated : AbstractCfirLightTreeMacroDiagnosticsTest
         runTest("cfir/analysis-tests/testData/macro/sameProjectMacroPackageExpressionAutoCompileDisabled.cj")
     }
 
+    @TestMetadata("sameProjectMacroPackageExpressionRootPackage.cj")
+    @Test
+    fun testSameProjectMacroPackageExpressionRootPackage() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroPackageExpressionRootPackage.cj")
+    }
+
+    @TestMetadata("sameProjectMacroPackageImportOnly.cj")
+    @Test
+    fun testSameProjectMacroPackageImportOnly() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroPackageImportOnly.cj")
+    }
+
+    @TestMetadata("sameProjectMacroPackagePublicImportExpression.cj")
+    @Test
+    fun testSameProjectMacroPackagePublicImportExpression() {
+        runTest("cfir/analysis-tests/testData/macro/sameProjectMacroPackagePublicImportExpression.cj")
+    }
+
     @TestMetadata("diagnostics")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested

@@ -138,6 +138,7 @@ class CfirTypeResolveTransformer(
             .withAdditionalTypeParameters(declaration.typeParametersForResolution())
         declaration.transformTypeParameters(this, configuration)
         declaration.transformSuperTypeRefs(this, configuration)
+        declaration.transformAnnotations(this, configuration)
         declaration.transformDeclarations(this, configuration)
     }
 
@@ -148,6 +149,7 @@ class CfirTypeResolveTransformer(
         extend.transformTypeParameters(this, configuration)
         extend.transformExtendedTypeRef(this, configuration)
         extend.transformSuperTypeRefs(this, configuration)
+        extend.transformAnnotations(this, configuration)
         extend.transformDeclarations(this, configuration)
         bumpPhase(extend)
         return extend
@@ -184,6 +186,7 @@ class CfirTypeResolveTransformer(
         function.transformTypeParameters(this, configuration)
         function.transformReturnTypeRef(this, configuration)
         function.transformValueParameters(this, configuration)
+        function.transformAnnotations(this, configuration)
         // TYPES 阶段不解析函数体
         bumpPhase(function)
         return function
@@ -205,6 +208,7 @@ class CfirTypeResolveTransformer(
             constructor.transformReturnTypeRef(this, configuration)
         }
         constructor.transformValueParameters(this, configuration)
+        constructor.transformAnnotations(this, configuration)
         bumpPhase(constructor)
         return constructor
     }
@@ -231,6 +235,7 @@ class CfirTypeResolveTransformer(
             enumConstructor.transformReturnTypeRef(this, configuration)
         }
         enumConstructor.transformValueParameters(this, configuration)
+        enumConstructor.transformAnnotations(this, configuration)
         bumpPhase(enumConstructor)
         return enumConstructor
     }
@@ -243,6 +248,7 @@ class CfirTypeResolveTransformer(
         property.transformReturnTypeRef(this, configuration)
         property.transformGetter(this, configuration)
         property.transformSetter(this, configuration)
+        property.transformAnnotations(this, configuration)
         bumpPhase(property)
         return property
     }
@@ -262,6 +268,7 @@ class CfirTypeResolveTransformer(
         data: CfirTypeResolutionConfiguration,
     ): CfirFieldVariable {
         fieldVariable.transformReturnTypeRef(this, data)
+        fieldVariable.transformAnnotations(this, data)
         bumpPhase(fieldVariable)
         return fieldVariable
     }
@@ -271,22 +278,26 @@ class CfirTypeResolveTransformer(
         data: CfirTypeResolutionConfiguration,
     ): CfirPatternBindingVariable {
         patternBindingVariable.transformReturnTypeRef(this, data)
+        patternBindingVariable.transformAnnotations(this, data)
         bumpPhase(patternBindingVariable)
         return patternBindingVariable
     }
 
     override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: CfirTypeResolutionConfiguration): CfirPatternVariable {
         patternVariable.transformReturnTypeRef(this, data)
+        patternVariable.transformAnnotations(this, data)
         bumpPhase(patternVariable)
         return patternVariable
     }
 
     override fun transformValueParameter(valueParameter: CfirValueParameter, data: CfirTypeResolutionConfiguration): CfirValueParameter {
         valueParameter.transformReturnTypeRef(this, data)
+        valueParameter.transformAnnotations(this, data)
         return valueParameter
     }
 
     override fun transformTypeParameter(typeParameter: CfirTypeParameter, data: CfirTypeResolutionConfiguration): CfirTypeParameter {
+        typeParameter.transformAnnotations(this, data)
         typeParameter.transformBounds(this, data)
         return typeParameter
     }
@@ -297,6 +308,7 @@ class CfirTypeResolveTransformer(
             .withAdditionalTypeParameters(typeAlias.typeParameters)
         typeAlias.transformTypeParameters(this, configuration)
         typeAlias.transformExpandedTypeRef(this, configuration)
+        typeAlias.transformAnnotations(this, configuration)
         bumpPhase(typeAlias)
         return typeAlias
     }

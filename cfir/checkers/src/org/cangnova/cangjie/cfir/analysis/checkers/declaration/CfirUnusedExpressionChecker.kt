@@ -23,7 +23,7 @@ import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
 object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirDeclaration) {
-        val visitor = UsageVisitor(context, reporter)
+        val visitor = UsageVisitor(context, reporter, declaration)
         when (declaration) {
             is CfirCodeFragment -> declaration.block.accept(visitor, UsageState.Used)
             is CfirAnonymousFunction -> Unit
@@ -49,6 +49,7 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
     private class UsageVisitor(
         private val context: CheckerContext,
         private val reporter: DiagnosticReporter,
+        private val declaration: CfirDeclaration,
     ) : CfirDefaultVisitor<Unit, UsageState>() {
         override fun visitDeclaration(declaration: CfirDeclaration, data: UsageState) {
             // 嵌套声明由诊断收集器单独驱动对应的 declaration checker，不在这里重复扫描。
@@ -121,6 +122,8 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
         private fun checkExpression(expression: CfirExpression, data: UsageState) {
             if (!data.isUnused()) return
             if (expression.hasSideEffect()) return
+            if (expression is CfirAnonymousFunctionExpression) return
+            if (expression is CfirThisReceiverExpression && declaration is CfirFinalizer) return
             with(context) {
                 reporter.reportOn(expression.source, CfirErrors.UNUSED_EXPRESSION)
             }

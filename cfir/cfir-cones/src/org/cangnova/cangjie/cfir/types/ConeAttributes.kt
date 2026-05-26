@@ -219,5 +219,6 @@ class ConeAttributes private constructor(attributes: List<ConeAttribute<*>>) : A
         return newList?.let(Companion::create)
     }
 
-    override val typeRegistry: TypeRegistry<ConeAttribute<*>, ConeAttribute<*>> = Companion
+    override val typeRegistry: TypeRegistry<ConeAttribute<*>, ConeAttribute<*>>
+        get() = Companion
 }

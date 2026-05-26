@@ -555,7 +555,10 @@ class CfirCallResolver(
                             ) -> ConeCannotRefToPackageNameError(
                                 org.cangnova.cangjie.name.FqName.topLevel(name)
                             )
-                            else -> ConeUnresolvedNameError(name, operatorToken, receiverType, argumentTypes)
+                            // 保留 unresolved 兜底分类；macro/finalizer 等 function-like 声明
+                            // 的局部可见性由 BODY_RESOLVE 入口建立作用域，这里不再为其做补丁判定。
+                            else ->
+                                ConeUnresolvedNameError(name, operatorToken, receiverType, argumentTypes)
                         }
                     }
                 }

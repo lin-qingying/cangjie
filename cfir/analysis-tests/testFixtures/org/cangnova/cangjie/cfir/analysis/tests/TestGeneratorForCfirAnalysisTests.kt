@@ -21,6 +21,13 @@ object TestGeneratorForCfirAnalysisTests {
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
             relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated.kt",
+            generatedClassName = "CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated",
+            baseClassName = "AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest",
+        )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics",
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnosticsPsiTestGenerated.kt",
             generatedClassName = "CfirAnalysisDiagnosticsPsiTestGenerated",
             baseClassName = "AbstractCfirPsiDiagnosticTest",
@@ -30,6 +37,13 @@ object TestGeneratorForCfirAnalysisTests {
             relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics2",
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2TestGenerated.kt",
             generatedClassName = "CfirAnalysisDiagnostics2TestGenerated",
+        )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics2",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated.kt",
+            generatedClassName = "CfirAnalysisDiagnostics2WithoutAliasExpansionTestGenerated",
+            baseClassName = "AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest",
         )
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
