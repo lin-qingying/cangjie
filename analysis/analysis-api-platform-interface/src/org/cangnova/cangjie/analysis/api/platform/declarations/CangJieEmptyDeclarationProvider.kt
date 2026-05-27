@@ -8,6 +8,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeAlias
@@ -21,6 +22,7 @@ object CangJieEmptyDeclarationProvider : CangJieDeclarationProvider {
     override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name> = emptySet()
     override fun getTopLevelProperties(callableId: CallableId): List<CjProperty> = emptyList()
     override fun getTopLevelFunctions(callableId: CallableId): List<CjNamedFunction> = emptyList()
+    override fun getTopLevelMacros(callableId: CallableId): List<CjMacroDeclaration> = emptyList()
     override fun getTopLevelCallableFiles(callableId: CallableId): List<CjFile> = emptyList()
     override fun getTopLevelExtends(): List<CjExtend> = emptyList()
     override fun getTopLevelExtendFiles(): List<CjFile> = emptyList()

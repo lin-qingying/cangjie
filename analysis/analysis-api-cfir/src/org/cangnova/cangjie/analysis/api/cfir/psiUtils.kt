@@ -233,13 +233,12 @@ internal fun CaCfirSymbol<*>.findPsi(): PsiElement? {
     return cfirSymbol.findPsi(analysisSession.analysisScope, analysisSession.project)
 }
 fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope, preferredProject: Project? = null): PsiElement? {
-    val declaration = if (this is CfirCallableSymbol<*>) {
-        cfir.unwrapFakeOverridesOrDelegated()
+    return (if (this is CfirCallableSymbol<*>) {
+        cfir.unwrapFakeOverridesOrDelegated().findPsi(preferredProject)
     } else {
-        cfir
-    }
-
-    return declaration.findPsi(preferredProject)?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
+        cfir.findPsi(preferredProject)
+    })?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
+        ?: CfirSyntheticDeclarationSourceProvider.findPsi(cfir, scope, preferredProject)
 }
 
 
@@ -256,5 +255,6 @@ internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferre
         unwrapFakeOverridesOrDelegated().psi
     } else {
         psi
-    })?.restoreCurrentCompiledPsi(preferredProject) /*?: CfirSyntheticFunctionInterfaceSourceProvider.findPsi(this, scope)*/
+    })?.restoreCurrentCompiledPsi(preferredProject)
+        ?: CfirSyntheticDeclarationSourceProvider.findPsi(this, scope, preferredProject)
 }

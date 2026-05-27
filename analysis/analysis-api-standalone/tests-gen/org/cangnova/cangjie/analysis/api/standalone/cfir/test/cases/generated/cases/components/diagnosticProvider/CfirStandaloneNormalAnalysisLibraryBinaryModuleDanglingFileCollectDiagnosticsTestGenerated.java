@@ -71,6 +71,12 @@ public class CfirStandaloneNormalAnalysisLibraryBinaryModuleDanglingFileCollectD
   }
 
   @Test
+  @TestMetadata("sameProjectLowercaseMacroImport.cj")
+  public void testSameProjectLowercaseMacroImport() {
+    run("sameProjectLowercaseMacroImport.cj");
+  }
+
+  @Test
   @TestMetadata("topLevelInterface.cj")
   public void testTopLevelInterface() {
     run("topLevelInterface.cj");

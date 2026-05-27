@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.analysis.api.cfir.references
 
+import com.intellij.openapi.util.TextRange
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.analysis.api.CaImplementationDetail
 import org.cangnova.cangjie.analysis.api.CaSession
@@ -30,6 +31,8 @@ internal class CaCfirBasicTypeReference(
 ) : CjSimpleReference<CjBasicType>(basicType), CaCfirReference {
     override val resolver get() = CaCfirReferenceResolver
 
+    override fun getRangeInElement(): TextRange = TextRange(0, element.textLength)
+
     override fun isReferenceToImportAlias(alias: CjImportAlias): Boolean = false
 
     override fun CaCfirSession.computeSymbols(): Collection<CaSymbol> {
@@ -41,6 +44,13 @@ internal class CaCfirBasicTypeReference(
             ?: return emptyList()
 
         return listOfNotNull(cfirSymbolBuilder.classifierBuilder.buildClassLikeSymbolByClassId(classId))
+    }
+
+    override fun getResolvedToPsi(analysisSession: CaSession): Collection<PsiElement> = with(analysisSession) {
+        val referenceTargetSymbols = resolveToSymbols()
+        val psiOfReferenceTarget = super.getResolvedToPsi(analysisSession, referenceTargetSymbols)
+        if (psiOfReferenceTarget.isNotEmpty()) return psiOfReferenceTarget
+        referenceTargetSymbols.mapNotNull { symbol -> symbol.psi }
     }
 
     override fun resolveTargetElements(): Collection<PsiElement> {

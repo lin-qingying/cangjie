@@ -10,6 +10,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeAlias
@@ -42,6 +43,10 @@ class CangJieCompositeDeclarationProvider private constructor(
 
     override fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction> {
         return providers.flatMapTo(mutableListOf()) { it.getTopLevelFunctions(callableId) }
+    }
+
+    override fun getTopLevelMacros(callableId: CallableId): Collection<CjMacroDeclaration> {
+        return providers.flatMapTo(mutableListOf()) { it.getTopLevelMacros(callableId) }
     }
 
     override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile> {

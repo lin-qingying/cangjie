@@ -14,6 +14,7 @@ import org.cangnova.cangjie.psi.CjDeclaration
 import org.cangnova.cangjie.psi.CjDeclarationContainer
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
@@ -138,10 +139,15 @@ class CangJieFileBasedDeclarationProvider(val cangjieFile: CjFile) : CangJieDecl
         return getTopLevelCallables(callableId)
     }
 
+    override fun getTopLevelMacros(callableId: CallableId): Collection<CjMacroDeclaration> {
+        return getTopLevelCallables(callableId)
+    }
+
     override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile> {
         return buildSet {
             getTopLevelProperties(callableId).mapTo(this) { it.containingCjFile }
             getTopLevelFunctions(callableId).mapTo(this) { it.containingCjFile }
+            getTopLevelMacros(callableId).mapTo(this) { it.containingCjFile }
         }
     }
 

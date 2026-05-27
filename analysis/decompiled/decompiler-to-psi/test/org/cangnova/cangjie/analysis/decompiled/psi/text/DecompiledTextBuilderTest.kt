@@ -13,10 +13,10 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjAnnotations
 import org.cangnova.cangjie.psi.CjAbstractClassBody
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.stubs.impl.CangJieClassStubImpl
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
-import org.cangnova.cangjie.psi.stubs.impl.CangJieStructStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieBasicTypeStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieMacroStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieMainFunctionStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJieModifierListStubImpl
@@ -25,6 +25,7 @@ import org.cangnova.cangjie.psi.stubs.impl.CangJieParameterStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyAccessorStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.CangJieStructStubImpl
 import org.cangnova.cangjie.psi.stubs.impl.ModifierMaskUtils
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -155,6 +156,48 @@ class DecompiledTextBuilderTest {
 
             assertTrue(rendered.contains("func toString(): Int64"), rendered)
             assertFalse(rendered.contains("func toString(): Int64 { /* compiled code */ }"), rendered)
+        }
+    }
+
+    @Test
+    fun compiledAbstractClassAndOpenMemberRenderModalityModifiers() {
+        withCoreEnvironment {
+            val rendered = renderManualFileStub { fileStub ->
+                val classStub = CangJieClassStubImpl(
+                    type = CjStubElementTypes.CLASS,
+                    parent = fileStub,
+                    qualifiedName = StringRef.fromString(sampleClassFqName.asString()),
+                    classId = null,
+                    name = StringRef.fromString(sampleClassName.asString()),
+                    superNames = emptyArray(),
+                )
+                createEmptyHeader(
+                    classStub,
+                    modifierMask = computeModifierMask(abstract = true),
+                )
+                val classBodyStub = CangJiePlaceHolderStubImpl<CjAbstractClassBody>(
+                    classStub,
+                    CjStubElementTypes.CLASS_BODY,
+                )
+                val functionStub = CangJieNamedFunctionStubImpl(
+                    parent = classBodyStub,
+                    element = CjStubElementTypes.FUNCTION,
+                    nameRef = StringRef.fromString("grow"),
+                    isTopLevel = false,
+                    fqName = null,
+                    hasBlockBody = true,
+                    hasBody = true,
+                    hasTypeParameterListBeforeFunctionName = false,
+                    origin = null,
+                )
+                createEmptyHeader(
+                    functionStub,
+                    modifierMask = computeModifierMask(open = true),
+                )
+            }
+
+            assertTrue(rendered.contains("abstract class Widget {"), rendered)
+            assertTrue(rendered.contains("open func grow() { /* compiled code */ }"), rendered)
         }
     }
 
@@ -309,12 +352,16 @@ class DecompiledTextBuilderTest {
         operator: Boolean = false,
         foreign: Boolean = false,
         mut: Boolean = false,
+        open: Boolean = false,
+        abstract: Boolean = false,
     ): Long {
         return ModifierMaskUtils.computeMask(
             hasModifier = { modifier ->
                 when (modifier) {
                     CjTokens.OPERATOR_KEYWORD -> operator
                     CjTokens.MUT_KEYWORD -> mut
+                    CjTokens.OPEN_KEYWORD -> open
+                    CjTokens.ABSTRACT_KEYWORD -> abstract
                     else -> false
                 }
             },
@@ -326,6 +373,8 @@ class DecompiledTextBuilderTest {
 
     private companion object {
         val samplePackage: FqName = FqName("sample")
+        val sampleClassName: Name = Name.identifier("Widget")
+        val sampleClassFqName: FqName = samplePackage.child(sampleClassName)
         val sampleStructName: Name = Name.identifier("Box")
         val sampleStructFqName: FqName = samplePackage.child(sampleStructName)
     }

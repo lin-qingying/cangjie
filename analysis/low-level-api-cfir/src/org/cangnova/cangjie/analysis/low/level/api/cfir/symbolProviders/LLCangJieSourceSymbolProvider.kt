@@ -24,7 +24,6 @@ import org.cangnova.cangjie.cfir.caches.cfirCachesFactory
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeCachedSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProviderInternals
@@ -187,14 +186,13 @@ internal class LLCangJieSourceSymbolProvider(
     }
 
     private fun getTopLevelCallableSymbols(callableId: CallableId, callableFiles: Collection<CjFile>?): List<CfirCallableSymbol<*>> {
-        val functions = getTopLevelFunctionSymbols(callableId, callableFiles)
-        val properties = getTopLevelPropertySymbols(callableId, callableFiles)
-
-        return buildList(functions.size + properties.size) {
-            addAll(functions)
-            addAll(properties)
-        }
+        return callableCache.getValue(callableId, callableFiles)
     }
+
+    private val callableCache: CfirCache<CallableId, List<CfirCallableSymbol<*>>, Collection<CjFile>?> =
+        session.cfirCachesFactory.createCache { callableId, context ->
+            computeCallableSymbolsByCallableId<CfirCallableSymbol<*>>(callableId, context)
+        }
 
     override fun getTopLevelFunctionSymbols(packageFqName: FqName, name: Name): List<CfirNamedFunctionSymbol> {
         if (!symbolNamesProvider.mayHaveTopLevelCallable(packageFqName, name)) return emptyList()

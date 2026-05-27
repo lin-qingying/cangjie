@@ -59,6 +59,12 @@ public class CfirStandaloneNormalAnalysisLibraryBinaryModuleCollectDiagnosticsTe
   }
 
   @Test
+  @TestMetadata("sameProjectLowercaseMacroImport.cj")
+  public void testSameProjectLowercaseMacroImport() {
+    run("sameProjectLowercaseMacroImport.cj");
+  }
+
+  @Test
   @TestMetadata("unresolvedImport.cj")
   public void testUnresolvedImport() {
     run("unresolvedImport.cj");

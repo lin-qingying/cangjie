@@ -20,7 +20,6 @@ import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLCangJi
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
 import org.cangnova.cangjie.analysis.low.level.api.cfir.statistics.LLStatisticsService
 import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.LLModuleSpecificSymbolProviderAccess
-import org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders.mayHaveTopLevelClassifier
 import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolNamesProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
@@ -84,6 +83,12 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
             .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderCallableCacheStatsCounter)
             .build<CallableId, List<CfirPropertySymbol>>()
 
+    private val macroCache =
+        Caffeine.newBuilder()
+            .expireAfterAccess(Duration.ofSeconds(5))
+            .withStatsCounter(LLStatisticsService.getInstance(project)?.symbolProviders?.combinedSymbolProviderCallableCacheStatsCounter)
+            .build<CallableId, List<CfirCallableSymbol<*>>>()
+
     override fun getClassLikeSymbolByClassId(classId: ClassId): CfirClassLikeSymbol<*>? {
         if (!symbolNamesProvider.mayHaveTopLevelClassifier(classId)) return null
 
@@ -106,9 +111,10 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
         val callableId = CallableId(packageFqName, name)
 
         // Callables are provided very rarely (compared to functions/variables individually), so it's acceptable to hit caches and indices
-        // twice here.
+        // for each CangJie top-level callable kind.
         destination.addAll(getTopLevelFunctionSymbolsFromCache(callableId))
         destination.addAll(getTopLevelPropertySymbolsFromCache(callableId))
+        destination.addAll(getTopLevelMacroSymbolsFromCache(callableId))
     }
 
     @CfirSymbolProviderInternals
@@ -143,6 +149,16 @@ internal class LLCombinedCangJieSymbolProvider private constructor(
             declarationProvider::getTopLevelProperties,
         ) { destination, callableId, properties ->
             getTopLevelPropertySymbolsTo(destination, callableId, properties)
+        }
+
+    @OptIn(CfirSymbolProviderInternals::class)
+    private fun getTopLevelMacroSymbolsFromCache(callableId: CallableId): List<CfirCallableSymbol<*>> =
+        getCallablesFromCache(
+            callableId,
+            macroCache,
+            declarationProvider::getTopLevelMacros,
+        ) { destination, callableId, macros ->
+            getTopLevelCallableSymbolsTo(destination, callableId, macros)
         }
 
     /**
