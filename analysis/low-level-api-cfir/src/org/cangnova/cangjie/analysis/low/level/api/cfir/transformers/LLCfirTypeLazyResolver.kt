@@ -141,6 +141,7 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
     private fun buildConfiguration(topContainer: CfirDeclaration): CfirTypeResolutionConfiguration {
         val containingFile = containingDeclarations.lastOrNull { it is CfirFile } as? CfirFile ?: resolveTarget.cfirFile
         val containingClasses = containingDeclarations.filterIsInstance<CfirClass>()
+        val containingClassLikes = containingDeclarations.filterIsInstance<CfirClassLikeDeclaration>()
 
         var configuration = CfirTypeResolutionConfiguration.EMPTY.withTopContainer(topContainer)
         if (containingFile != null) {
@@ -150,11 +151,26 @@ private class LLCfirTypeTargetResolver(target: LLCfirResolveTarget) : LLCfirTarg
         }
         if (containingClasses.isNotEmpty()) {
             configuration = configuration.withContainingClassDeclarations(containingClasses)
-            for (containingClass in containingClasses) {
-                configuration = configuration.withAdditionalTypeParameters(containingClass.typeParameters)
+        }
+        if (containingClassLikes.isNotEmpty()) {
+            for (containingClassLike in containingClassLikes) {
+                configuration = configuration.withAdditionalTypeParameters(containingClassLike.typeParametersForResolution())
             }
         }
         return configuration
+    }
+
+    /**
+     * low-level TYPES 需要和主 TYPES 解析器保持相同的外层类型参数可见性：
+     * interface / struct / enum 的成员签名同样可以引用所属 class-like 的类型参数。
+     */
+    private fun CfirClassLikeDeclaration.typeParametersForResolution(): List<CfirTypeParameter> = when (this) {
+        is CfirClass -> typeParameters
+        is org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration -> emptyList()
+        is CfirInterface -> typeParameters
+        is CfirStruct -> typeParameters
+        is CfirEnum -> typeParameters
+        is CfirTypeAlias -> typeParameters
     }
 
     private fun createImportingScopes(file: CfirFile): List<CfirScope> {

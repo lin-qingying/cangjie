@@ -15,6 +15,7 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration
 import org.cangnova.cangjie.psi.CjExtend
 import org.cangnova.cangjie.psi.CjFile
+import org.cangnova.cangjie.psi.CjMacroDeclaration
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.psi.CjProperty
 import org.cangnova.cangjie.psi.CjTypeAlias
@@ -31,6 +32,13 @@ interface CangJieDeclarationProvider : CangJieComposableProvider {
 
     fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty>
     fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction>
+
+    /**
+     * 返回指定 [CallableId] 对应的顶层宏声明。
+     *
+     * 宏在仓颉中参与顶层 callable 导入解析，不能只通过函数/属性集合间接建模。
+     */
+    fun getTopLevelMacros(callableId: CallableId): Collection<CjMacroDeclaration>
 
     fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile>
 

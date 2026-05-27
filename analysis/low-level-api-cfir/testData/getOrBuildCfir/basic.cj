@@ -3,6 +3,7 @@ package lowlevel.getorbuild
 
 class Box<T> {
     let value: T
+    let count: <expr_3>Int64</expr_3> = 0
     init(value: T) {
         this.value = value
     }

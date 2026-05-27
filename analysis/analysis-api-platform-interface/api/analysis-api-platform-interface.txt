@@ -81,6 +81,7 @@ CangJieDeclarationProvider.public fun getAllTypeAliasesByClassId(classId: ClassI
 CangJieDeclarationProvider.public fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
 CangJieDeclarationProvider.public fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty>
 CangJieDeclarationProvider.public fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction>
+CangJieDeclarationProvider.public fun getTopLevelMacros(callableId: CallableId): Collection<CjMacroDeclaration>
 CangJieDeclarationProvider.public fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile>
 CangJieDeclarationProvider.public fun getTopLevelExtends(): Collection<CjExtend>
 CangJieDeclarationProvider.public fun getTopLevelExtendFiles(): Collection<CjFile>
@@ -117,6 +118,7 @@ CangJieEmptyDeclarationProvider.public override fun getAllTypeAliasesByClassId(c
 CangJieEmptyDeclarationProvider.public override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelProperties(callableId: CallableId): List<CjProperty>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelFunctions(callableId: CallableId): List<CjNamedFunction>
+CangJieEmptyDeclarationProvider.public override fun getTopLevelMacros(callableId: CallableId): List<CjMacroDeclaration>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelCallableFiles(callableId: CallableId): List<CjFile>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelExtends(): List<CjExtend>
 CangJieEmptyDeclarationProvider.public override fun getTopLevelExtendFiles(): List<CjFile>
@@ -136,6 +138,7 @@ CangJieFileBasedDeclarationProvider.public override fun getAllTypeAliasesByClass
 CangJieFileBasedDeclarationProvider.public override fun getTopLevelCangJieClassLikeDeclarationNamesInPackage(packageFqName: FqName): Set<Name>
 CangJieFileBasedDeclarationProvider.public override fun getTopLevelProperties(callableId: CallableId): Collection<CjProperty>
 CangJieFileBasedDeclarationProvider.public override fun getTopLevelFunctions(callableId: CallableId): Collection<CjNamedFunction>
+CangJieFileBasedDeclarationProvider.public override fun getTopLevelMacros(callableId: CallableId): Collection<CjMacroDeclaration>
 CangJieFileBasedDeclarationProvider.public override fun getTopLevelCallableFiles(callableId: CallableId): Collection<CjFile>
 CangJieFileBasedDeclarationProvider.public override fun getTopLevelExtends(): Collection<CjExtend>
 CangJieFileBasedDeclarationProvider.public override fun getTopLevelExtendFiles(): Collection<CjFile>

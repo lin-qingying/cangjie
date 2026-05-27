@@ -206,6 +206,7 @@ internal fun createDeclarationModifierMask(
         hasModifier = { modifier ->
             when (modifier) {
                 CjTokens.ABSTRACT_KEYWORD -> status.isAbstract
+                CjTokens.OPEN_KEYWORD -> status.isOpen
                 CjTokens.STATIC_KEYWORD -> status.isStatic
                 CjTokens.MUT_KEYWORD -> status.isMut
                 CjTokens.OVERRIDE_KEYWORD -> status.isOverride
@@ -224,6 +225,7 @@ internal fun createDeclarationModifierMask(
 internal fun createCallableModifierMask(
     isOperator: Boolean = false,
     isAbstract: Boolean = false,
+    isOpen: Boolean = false,
     isStatic: Boolean = false,
     isForeign: Boolean = false,
 ): Long {
@@ -232,6 +234,7 @@ internal fun createCallableModifierMask(
             when (modifier) {
                 CjTokens.OPERATOR_KEYWORD -> isOperator
                 CjTokens.ABSTRACT_KEYWORD -> isAbstract
+                CjTokens.OPEN_KEYWORD -> isOpen
                 CjTokens.STATIC_KEYWORD -> isStatic
                 else -> false
             }

@@ -3443,7 +3443,10 @@ class CangJieParsing private constructor(
             if (isForeign) {
                 error(CangJieParsingBundle.message("parsing.error.foreign.function.no.body"))
             }
-        } else if (!(isInterfaceMethod || (classdetector?.isAbstractDetected == true)) && (detector?.isForeignDetected != true)) {
+        } else if (
+            !(isInterfaceMethod || (detector?.isAbstractDetected == true)) &&
+            (detector?.isForeignDetected != true)
+        ) {
             error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{")) // 应该为'{'
         }
 

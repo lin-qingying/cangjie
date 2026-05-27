@@ -64,4 +64,24 @@ class OptionalSyntaxParsingTest : CjParsingTestCase(
         val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
         assertTrue(errors.isNotEmpty())
     }
+
+    @Test
+    fun testAbstractFunctionWithoutBodyDoesNotProduceParseError() {
+        val file = createPsiFile(
+            "abstractFunctionWithoutBody",
+            """
+            class AstNode {
+                abstract func dump(indent: UInt16): std.core.String
+            }
+            """.trimIndent(),
+        ) as CjFile
+
+        val errors = PsiTreeUtil.findChildrenOfType(file, PsiErrorElement::class.java)
+        assertTrue(
+            errors.isEmpty(),
+            "abstract function without body should parse without PsiErrorElement, but got: ${
+                errors.joinToString { it.errorDescription }
+            }",
+        )
+    }
 }

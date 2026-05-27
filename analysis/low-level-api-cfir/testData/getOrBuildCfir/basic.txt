@@ -20,6 +20,7 @@ FILE: basic.cj
     package lowlevel.getorbuild
     internal? class Box<T> {
         internal? let value: R|kotlin.Unit|
+        internal? let count: R|Int64|
         init(value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -60,6 +61,7 @@ FILE: basic.cj
     package lowlevel.getorbuild
     internal? class Box<T> {
         internal? let value: R|kotlin.Unit|
+        internal? let count: R|Int64|
         init(value: R|T|) {
             <element: CfirLazyBlock>
         }
@@ -100,6 +102,43 @@ FILE: basic.cj
     package lowlevel.getorbuild
     internal? class Box<T> {
         internal? let value: R|kotlin.Unit|
+        internal? let count: R|Int64|
+        init(value: R|T|) {
+            <element: CfirLazyBlock>
+        }
+    }
+    internal? func wrap(value: R|kotlin.Unit|): R|kotlin.Unit| {
+        <element: CfirLazyBlock>
+    }
+    internal? func unwrap(box: R|kotlin.Unit|): R|kotlin.Unit| {
+        RETURN {
+            NAMED_ACCESS(value) {
+                receiver:
+                    NAMED_ACCESS(box)
+            }
+        }
+    }
+    internal? func <no name provided>(): <implicit>
+    <element: CfirMainFunction>
+
+=====
+
+Analysis attempt #3
+CJ element: CjTypeReference
+CJ element text:
+Int64
+CFIR element: CfirResolvedTypeRefImpl
+CFIR source kind: CjRealSourceElementKind
+
+CFIR element rendered:
+R|kotlin.Unit|
+
+CFIR FILE:
+R|kotlin.Unit|FILE: basic.cj
+    package lowlevel.getorbuild
+    internal? class Box<T> {
+        internal? let value: R|kotlin.Unit|
+        internal? let count: R|kotlin.Unit|
         init(value: R|T|) {
             <element: CfirLazyBlock>
         }
