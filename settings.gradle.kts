@@ -34,9 +34,11 @@ include(":prepare:analysis-test-framework")
 // IDE 插件依赖（按功能分组的 fat jar，对齐 Kotlin prepare/ide-plugin-dependencies）
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-common-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-psi-for-ide")
+include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-formatting-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-folding-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-highlighting-for-ide")
+include(":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-refactoring-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-cfir-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-for-ide")
 include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-cfir-for-ide")
@@ -47,9 +49,11 @@ include(":prepare:ide-plugin-dependencies:cangjie-frontend-analysis-api-standalo
 include("prepare:ide-plugin-dependencies-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-psi-for-ide-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-common-for-ide-module")
+include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-for-ide-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-formatting-for-ide-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-folding-for-ide-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-highlighting-for-ide-module")
+include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-refactoring-for-ide-module")
 
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-cfir-for-ide-module")
 include(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-for-ide-module")
@@ -64,9 +68,13 @@ include(":psi")
 
 // Code Insight，共享 IDE 与 LSP 的编辑器能力
 include(":code-insight")
+include(":code-insight:api")
+include(":code-insight:fixes-k2")
 include(":code-insight:formatting")
 include(":code-insight:folding")
 include(":code-insight:highlighting")
+include(":code-insight:override-implement-k2")
+include(":code-insight:refactoring")
 
 
 

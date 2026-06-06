@@ -1,0 +1,5 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="org.cangnova.cangjie">
+        <codeinsight.quickfix.registrar implementation="org.cangnova.cangjie.ide.k2.codeInsight.fixes.CangJieK2QuickFixRegistrar"/>
+    </extensions>
+</idea-plugin>

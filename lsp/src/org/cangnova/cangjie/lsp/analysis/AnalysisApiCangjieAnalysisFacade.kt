@@ -48,6 +48,7 @@ class AnalysisApiCangjieAnalysisFacade(
 ) : AbstractCangjieAnalysisFacade() {
     private val psiDocumentFactory = AnalysisApiPsiDocumentFactory(lifecycleContext)
     private val semanticSupport = AnalysisApiLspSemanticSupport(lifecycleContext, psiDocumentFactory)
+    private val renameSupport = AnalysisApiLspRenameSupport(semanticSupport)
 
     override val supportedFeatures: CangjieLspFeatureSet = CangjieLspFeatureSet(
         completion = true,
@@ -61,6 +62,7 @@ class AnalysisApiCangjieAnalysisFacade(
         documentHighlight = true,
         documentSymbol = true,
         workspaceSymbol = true,
+        rename = true,
         formatting = true,
         foldingRange = true,
         selectionRange = true,
@@ -317,7 +319,9 @@ class AnalysisApiCangjieAnalysisFacade(
                 .mapNotNull(semanticSupport::targetKeyFor)
                 .toSet()
         }
-        if (targetKeys.isEmpty()) return emptyList()
+        if (targetKeys.isEmpty()) {
+            return emptyList()
+        }
 
         val locations = linkedSetOf<Location>()
         semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
@@ -331,12 +335,25 @@ class AnalysisApiCangjieAnalysisFacade(
                         semanticSupport.toLocation(locationElement)?.let(locations::add)
                     }
                 }
+            }
+        }
 
-                if (params.context.isIncludeDeclaration) {
-                    workspaceFile.psiFile.collectDescendantsOfType<CjNamedDeclaration>().forEach { declaration ->
-                        if (semanticSupport.targetKeyFor(declaration) in targetKeys) {
-                            semanticSupport.toLocation(declaration.nameIdentifier ?: declaration)?.let(locations::add)
-                        }
+        if (!params.context.isIncludeDeclaration) {
+            return locations.toList()
+        }
+
+        val existingKeys = locations.mapTo(linkedSetOf()) { location ->
+            "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
+        }
+        semanticSupport.workspaceFiles(context).forEach { workspaceFile ->
+            semanticSupport.analyzeFile(workspaceFile.psiFile) {
+                workspaceFile.psiFile.collectDescendantsOfType<CjNamedDeclaration>().forEach { declaration ->
+                    if (semanticSupport.targetKeyFor(declaration) !in targetKeys) return@forEach
+                    val location = semanticSupport.toLocation(declaration.nameIdentifier ?: declaration) ?: return@forEach
+                    val locationKey =
+                        "${location.uri}:${location.range.start.line}:${location.range.start.character}:${location.range.end.line}:${location.range.end.character}"
+                    if (existingKeys.add(locationKey)) {
+                        locations += location
                     }
                 }
             }
@@ -449,13 +466,13 @@ class AnalysisApiCangjieAnalysisFacade(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: RenameParams,
-    ): WorkspaceEdit? = null
+    ): WorkspaceEdit? = renameSupport.rename(context, document, params)
 
     override fun prepareRename(
         context: CangjieAnalysisRequestContext,
         document: LspTextDocument,
         params: RenameParams,
-    ): Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>? = null
+    ): Either3<Range, PrepareRenameResult, PrepareRenameDefaultBehavior>? = renameSupport.prepareRename(document, params)
 
     override fun foldingRanges(
         context: CangjieAnalysisRequestContext,

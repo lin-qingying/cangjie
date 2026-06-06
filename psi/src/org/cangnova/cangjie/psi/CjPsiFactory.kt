@@ -501,10 +501,10 @@ class CjPsiFactory private constructor(
     ): CjFieldVariable {
 
         val text = StringBuilder().apply {
-            append("class abc")
-            append("{")
-            modifiers.let { append("$it ") }
-            append((if (isVar) " var " else " let ") + name)
+            append("class abc {")
+            modifiers?.let { append(it).append(' ') }
+            append(if (isVar) "var " else "let ")
+            append(name)
             append(if (type != null) ":$type" else "")
             if (initializer == null) {
                 append(";")
@@ -513,7 +513,9 @@ class CjPsiFactory private constructor(
             }
             append("}")
         }
-        return createFieldVariable(text.toString())
+        val klass = createClass(text.toString())
+        return klass.variables.singleOrNull()
+            ?: error("Failed to create field variable: `$text`")
     }
 
     fun createPatternVariable(
