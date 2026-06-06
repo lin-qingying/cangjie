@@ -24,7 +24,7 @@ class DecompiledCjoModuleDataProvider(
 ) : CjoModuleDataProvider {
     override fun getModuleData(binaryFile: VirtualFile): CfirModuleData? {
         return when (val ownerModule = CaDecompiledBinaryIndex.getInstance(project).findOwningModule(binaryFile)) {
-            is CaBuiltinsModule -> LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession().moduleData
+            is CaBuiltinsModule -> LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(ownerModule.targetPlatform).moduleData
             is CaLibraryModule -> LLCfirSessionCache.getInstance(project).getSession(ownerModule, preferBinary = true).moduleData
             else -> null
         }

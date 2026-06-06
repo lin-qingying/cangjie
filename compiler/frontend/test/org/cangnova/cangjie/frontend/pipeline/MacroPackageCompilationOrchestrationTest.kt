@@ -32,8 +32,10 @@ import org.cangnova.cangjie.CjIoFileSourceFile
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.addCangJieSourceRoot
 import org.cangnova.cangjie.config.addClasspathRoot
+import org.cangnova.cangjie.config.targetPlatform
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -75,7 +77,7 @@ class MacroPackageCompilationOrchestrationTest {
             compilerOptionsFingerprint = "options",
             debugFlagsFingerprint = "debug",
             parallelFlagsFingerprint = "parallel",
-            targetPlatform = "windows-x64",
+            targetPlatform = CangJiePlatforms.cjvm,
             runtimeLoaderEnvironmentFingerprint = "loader-env",
         )
         val request = MacroSourcePackageCompilationRequest(
@@ -104,6 +106,15 @@ class MacroPackageCompilationOrchestrationTest {
 
         assertTrue(result.diagnostics.isEmpty())
         assertTrue(result.artifactPackages.isEmpty())
+    }
+
+    @Test
+    fun defaultMacroCacheContextInheritsConfigurationTargetPlatformPlaceholder() {
+        val configuration = CompilerConfiguration().apply {
+            targetPlatform = CangJiePlatforms.cjvm
+        }
+
+        assertSame(CangJiePlatforms.cjvm, configuration.macroCompilationCacheContext.targetPlatform)
     }
 
     @Test
@@ -244,7 +255,10 @@ class MacroPackageCompilationOrchestrationTest {
     fun expansionDemandDiscoversSameProjectMacroSourcePackageRoot() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
         val macroSource = sourceRoot.resolve("macros.cj")
-        Files.writeString(macroSource, "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n")
+        Files.writeString(
+            macroSource,
+            "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n"
+        )
         val fixture = macroDemandFixture(
             imports = listOf(macroImport("macros.pkg.Generated")),
             surface = macroSurface("Generated"),
@@ -282,7 +296,10 @@ class MacroPackageCompilationOrchestrationTest {
     fun expansionDemandCompilesMissingSameProjectMacroPackageThenRelocatesAndResolvesArtifact() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
         val macroSource = sourceRoot.resolve("macros.cj")
-        Files.writeString(macroSource, "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n")
+        Files.writeString(
+            macroSource,
+            "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n"
+        )
         val outputDir = Files.createDirectories(tempDir.resolve("compiled"))
         val fixture = macroDemandFixture(
             imports = listOf(macroImport("macros.pkg.Generated")),
@@ -307,7 +324,10 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(result.diagnostics.isEmpty(), "Unexpected diagnostics: ${result.diagnostics}")
         assertEquals(listOf("Generated"), result.definitions.map { it.name.asString() })
         assertEquals(MacroDefinitionEntry.Source.MACRO_ARTIFACT, result.definitions.single().source)
-        assertEquals(outputDir.resolve("lib-macro_macros.pkg.${dynamicLibraryExtension()}").toString(), result.definitions.single().libPath)
+        assertEquals(
+            outputDir.resolve("lib-macro_macros.pkg.${dynamicLibraryExtension()}").toString(),
+            result.definitions.single().libPath
+        )
         assertEquals(listOf(FqName("macros.pkg")), result.locatedArtifacts.map { it.packageFqName })
     }
 
@@ -315,7 +335,10 @@ class MacroPackageCompilationOrchestrationTest {
     fun expansionDemandAutoCompilationDisabledReportsMissingArtifactWithoutCallingOrchestrator() {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
         val macroSource = sourceRoot.resolve("macros.cj")
-        Files.writeString(macroSource, "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n")
+        Files.writeString(
+            macroSource,
+            "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n"
+        )
         val fixture = macroDemandFixture(
             imports = listOf(macroImport("macros.pkg.Generated")),
             surface = macroSurface("Generated"),
@@ -372,7 +395,10 @@ class MacroPackageCompilationOrchestrationTest {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
         val artifactRoot = Files.createDirectories(tempDir.resolve("artifacts"))
         val macroSource = sourceRoot.resolve("macros.cj")
-        Files.writeString(macroSource, "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n")
+        Files.writeString(
+            macroSource,
+            "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n"
+        )
         writeCompiledMacroArtifact(artifactRoot, "macros.pkg")
         val fixture = macroDemandFixture(
             imports = listOf(macroImport("macros.pkg.Generated")),
@@ -402,7 +428,10 @@ class MacroPackageCompilationOrchestrationTest {
         val sourceRoot = Files.createDirectories(tempDir.resolve("src"))
         val artifactRoot = Files.createDirectories(tempDir.resolve("artifacts"))
         val macroSource = sourceRoot.resolve("macros.cj")
-        Files.writeString(macroSource, "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n")
+        Files.writeString(
+            macroSource,
+            "macro package macros.pkg\npublic macro Generated(input: Tokens): Tokens { input }\n"
+        )
         writeCompiledMacroArtifact(
             outputDir = artifactRoot,
             packageFqName = "macros.pkg",
@@ -435,8 +464,10 @@ class MacroPackageCompilationOrchestrationTest {
     @Test
     fun sdkStdMacroPackageIsResolvedFromSdkWithoutSameProjectCompilation() {
         val sdkHome = Files.createDirectories(tempDir.resolve("sdk"))
-        val modulesDir = Files.createDirectories(sdkHome.resolve("modules").resolve("windows_x86_64_cjnative").resolve("std"))
-        val runtimeDir = Files.createDirectories(sdkHome.resolve("runtime").resolve("lib").resolve("windows_x86_64_cjnative"))
+        val modulesDir =
+            Files.createDirectories(sdkHome.resolve("modules").resolve("windows_x86_64_cjnative").resolve("std"))
+        val runtimeDir =
+            Files.createDirectories(sdkHome.resolve("runtime").resolve("lib").resolve("windows_x86_64_cjnative"))
         CjoPackageWriter.write(
             modulesDir.resolve("std.core.cjo"),
             CjoPackageMetadata(
@@ -728,7 +759,9 @@ class MacroPackageCompilationOrchestrationTest {
         assertTrue(result.artifactPackages.isEmpty())
         assertTrue(result.artifactSearchPaths.isEmpty())
         assertEquals(2, result.diagnostics.size)
-        assertEquals(listOf("compile-empty.pkg", "compile-multi.pkg"), result.diagnostics.map { it.compileInvocationId })
+        assertEquals(
+            listOf("compile-empty.pkg", "compile-multi.pkg"),
+            result.diagnostics.map { it.compileInvocationId })
         assertTrue(result.diagnostics[0].message.contains("has no source roots"))
         assertTrue(result.diagnostics[1].message.contains("exactly one package source root"))
     }
@@ -824,6 +857,7 @@ class MacroPackageCompilationOrchestrationTest {
             name = Name.identifier("test"),
             dependencies = emptyList(),
             refinementDependencies = emptyList(),
+            targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
             platform = CfirPlatform.DEFAULT,
         ).also {
             it.bindSession(session)
@@ -861,6 +895,7 @@ class MacroPackageCompilationOrchestrationTest {
             name = Name.identifier("test"),
             dependencies = emptyList(),
             refinementDependencies = emptyList(),
+            targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
             platform = CfirPlatform.DEFAULT,
         )
         resolvePhase = CfirResolvePhase.RAW_CFIR
@@ -877,13 +912,14 @@ class MacroPackageCompilationOrchestrationTest {
         sourceFileLinesMapping = null
     }
 
-    private fun macroImport(fqName: String, isAllUnder: Boolean = false, alias: String? = null): CfirImport = buildImport {
-        source = null
-        importedFqName = FqName(fqName)
-        this.isAllUnder = isAllUnder
-        aliasName = alias?.let(Name::identifier)
-        aliasSource = null
-    }
+    private fun macroImport(fqName: String, isAllUnder: Boolean = false, alias: String? = null): CfirImport =
+        buildImport {
+            source = null
+            importedFqName = FqName(fqName)
+            this.isAllUnder = isAllUnder
+            aliasName = alias?.let(Name::identifier)
+            aliasSource = null
+        }
 
     private fun macroSurface(qualifiedName: String): MacroSurfaceExpr = MacroSurfaceExpr(
         surfaceId = 1,
@@ -929,7 +965,8 @@ class MacroPackageCompilationOrchestrationTest {
     }
 
     private fun writeCjcExecutable(root: Path, alreadyBinDirectory: Boolean = false): Path {
-        val executableName = if (System.getProperty("os.name").contains("Windows", ignoreCase = true)) "cjc.exe" else "cjc"
+        val executableName =
+            if (System.getProperty("os.name").contains("Windows", ignoreCase = true)) "cjc.exe" else "cjc"
         val binDirectory = if (alreadyBinDirectory) root else root.resolve("bin")
         val cjc = binDirectory.resolve(executableName)
         Files.createDirectories(cjc.parent)

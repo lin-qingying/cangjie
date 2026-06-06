@@ -9,7 +9,7 @@ import com.intellij.util.messages.Topic
  * 宿主侧的 tree-change 处理器、cache invalidation 和重建流程就必须显式重置上下文，
  * 否则同一写动作内后续修改可能继续复用已过期状态。
  */
-interface KotlinAnalysisInWriteActionListener {
+interface CangJieAnalysisInWriteActionListener {
     /**
      * 在写动作中即将进入分析时触发，发生在 `analyze(...)` 的用户动作执行之前。
      */
@@ -21,8 +21,8 @@ interface KotlinAnalysisInWriteActionListener {
     fun afterLeavingAnalysisInWriteAction()
 
     companion object {
-        val TOPIC: Topic<KotlinAnalysisInWriteActionListener> = Topic(
-            KotlinAnalysisInWriteActionListener::class.java,
+        val TOPIC: Topic<CangJieAnalysisInWriteActionListener> = Topic(
+            CangJieAnalysisInWriteActionListener::class.java,
             Topic.BroadcastDirection.TO_CHILDREN,
             true,
         )

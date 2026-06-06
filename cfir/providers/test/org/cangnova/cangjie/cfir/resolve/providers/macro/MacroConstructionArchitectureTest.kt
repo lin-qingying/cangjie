@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -236,6 +237,7 @@ class MacroConstructionArchitectureTest {
             name = Name.identifier("<macro-test>"),
             dependencies = emptyList(),
             refinementDependencies = emptyList(),
+            targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
             platform = CfirPlatform.DEFAULT,
         ).also {
             it.bindSession(session)

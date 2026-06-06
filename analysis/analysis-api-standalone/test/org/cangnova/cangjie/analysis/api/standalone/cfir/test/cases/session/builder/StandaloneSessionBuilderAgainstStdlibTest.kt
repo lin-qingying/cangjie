@@ -19,12 +19,12 @@ import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandalon
 import org.cangnova.cangjie.analysis.api.standalone.session.CaStandaloneSessionBuilder
 import org.cangnova.cangjie.analysis.api.components.CaDiagnosticCheckerFilter
 import org.cangnova.cangjie.analysis.api.symbols.CaNamedFunctionSymbol
-import org.cangnova.cangjie.analysis.api.symbols.symbol
 import org.cangnova.cangjie.analysis.api.types.CaClassLikeType
 import org.cangnova.cangjie.analysis.test.framework.base.AbstractAnalysisApiExecutionTest
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModule
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNamedFunction
 import org.cangnova.cangjie.test.services.TestServices
@@ -120,12 +120,14 @@ class StandaloneSessionBuilderAgainstStdlibTest : AbstractAnalysisApiExecutionTe
              * 1. builtins contentScope 统一来自 `BuiltinsVirtualFileProvider`
              * 2. `equals/hashCode` 以 `CaBuiltinsModule` 语义收敛，而不是实例身份
              */
-            val builtinsModule = CaBuiltinsModuleImpl(mainFile.project)
+            val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
+            val builtinsModule = CaBuiltinsModuleImpl(targetPlatform, mainFile.project)
             val sourceModule = CaStandaloneSourceModule(
                 name = "source",
                 languageVersionSettings = languageVersionSettings,
                 project = mainFile.project,
                 psiRoots = listOf(sourceRootItem),
+                targetPlatform = targetPlatform,
             ).apply {
                 directRegularDependencies += builtinsModule
             }

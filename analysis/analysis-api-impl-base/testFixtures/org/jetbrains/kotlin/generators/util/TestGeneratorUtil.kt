@@ -16,6 +16,11 @@ object TestGeneratorUtil {
     val String.canFreezeIDE: String
         get() = """${substringBeforeLast('$')}(\.can-freeze-ide)?$"""
 
+    /**
+     * 将测试数据文件名转成 Java 源码可直接使用的标识符。
+     *
+     * `.cj` 测试文件可能来自官方数据集，文件名允许以数字开头；生成 Java 类名或方法名时必须补齐合法首字符。
+     */
     @JvmStatic
     fun escapeForJavaIdentifier(fileName: String): String {
         val result = StringBuilder()
@@ -25,6 +30,9 @@ object TestGeneratorUtil {
             } else {
                 result.append("_")
             }
+        }
+        if (result.isEmpty() || !Character.isJavaIdentifierStart(result[0])) {
+            result.insert(0, "_")
         }
         return result.toString()
     }

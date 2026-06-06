@@ -16,6 +16,8 @@ import org.cangnova.cangjie.cfir.serialization.cjo.CjoPackageHeader
 import org.cangnova.cangjie.cfir.symbols.CfirMacroDeclarationSymbol
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.TargetPlatform
 import org.cangnova.cangjie.source.CjSourceElement
 import PackageFormat.Package
 import java.io.File
@@ -52,13 +54,13 @@ data class MacroSourcePackageCompilationRequest(
  * 外部 macro 编译调度的 cache 环境。
  *
  * 这些字段由 build/CLI 层提供；前端把它们合入 macro expansion cache key，
- * 避免 PATH/动态库加载环境、target platform、并行/debug flag 变化时复用旧展开结果。
+ * 避免 PATH/动态库加载环境、高层 target platform 身份、并行/debug flag 变化时复用旧展开结果。
  */
 data class MacroCompilationCacheContext(
     val compilerOptionsFingerprint: String = "",
     val debugFlagsFingerprint: String = "",
     val parallelFlagsFingerprint: String = "",
-    val targetPlatform: String = "",
+    val targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
     val runtimeLoaderEnvironmentFingerprint: String = "",
 )
 
@@ -131,8 +133,8 @@ internal fun collectMacroExpansionPackageDemandSurfacesFromPreResults(
                     ?.parent()
                     ?.takeUnless {
                         it.isRoot ||
-                            it == surface.scopeContext.packageFqName ||
-                            it == preFile.cfirFile.packageDirective.packageFqName
+                                it == surface.scopeContext.packageFqName ||
+                                it == preFile.cfirFile.packageDirective.packageFqName
                     }
                 if (packageFqName != null) {
                     addDemand(packageFqName, surface)
@@ -150,7 +152,7 @@ internal fun collectMacroExpansionPackageDemandSurfacesFromPreResults(
                 if (packageFqName.isRoot) continue
 
                 val importCanBindMacroSurface = import.isAllUnder ||
-                    (import.aliasName ?: importedFqName.shortName()) in macroSurfacesByName.keys
+                        (import.aliasName ?: importedFqName.shortName()) in macroSurfacesByName.keys
                 if (importCanBindMacroSurface) {
                     val matchedSurfaces = if (import.isAllUnder) {
                         callableSurfaces
@@ -184,7 +186,7 @@ private fun MacroSurface.isMacroDefinitionSignatureSurface(): Boolean {
     val carrier = replaceHandle.carrier
     if (carrier is CfirMacroDeclaration) return true
     return carrier is CfirValueParameter &&
-        carrier.containingDeclarationSymbol is CfirMacroDeclarationSymbol
+            carrier.containingDeclarationSymbol is CfirMacroDeclarationSymbol
 }
 
 private fun MacroSurface.isMacroExpansionDemandSurface(): Boolean {
@@ -279,7 +281,12 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
             val execution = runCatching { commandRunner.run(command) }.getOrElse { error ->
                 diagnostics += request.compilationError(
                     message = "Macro package `${request.packageFqName.asString()}` invocation failed before completion: ${error.message.orEmpty()}",
-                    sourceDiagnosticsRef = persistDiagnosticsOutput(request, outputDirectory, "", error.stackTraceToString()),
+                    sourceDiagnosticsRef = persistDiagnosticsOutput(
+                        request,
+                        outputDirectory,
+                        "",
+                        error.stackTraceToString()
+                    ),
                 )
                 continue
             }
@@ -403,11 +410,11 @@ class ExternalCjcMacroPackageCompilationOrchestrator(
             outputDirectory.resolve(cjoName),
         ).firstOrNull { path ->
             path.toFile().isFile &&
-                runCatching {
-                    val header = readCjoHeader(path)
-                    header.fullPkgName == packageFqName.asString() &&
-                        header.kind == PackageFormat.PackageKind.Macro
-                }.getOrDefault(false)
+                    runCatching {
+                        val header = readCjoHeader(path)
+                        header.fullPkgName == packageFqName.asString() &&
+                                header.kind == PackageFormat.PackageKind.Macro
+                    }.getOrDefault(false)
         }
     }
 

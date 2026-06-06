@@ -171,7 +171,7 @@ object CjTestModuleStructureFactory {
                 )
                 TestModuleSet(
                     primaryModule = libraryModule,
-                    binaryArtifactModule = libraryModule,
+                    binaryArtifactModule = null,
                     psiFiles = psiFiles,
                 )
             }
@@ -190,7 +190,7 @@ object CjTestModuleStructureFactory {
 
                 TestModuleSet(
                     primaryModule = libraryModule,
-                    binaryArtifactModule = libraryModule,
+                    binaryArtifactModule = null,
                     psiFiles = decompiledPsiFiles,
                 )
             }

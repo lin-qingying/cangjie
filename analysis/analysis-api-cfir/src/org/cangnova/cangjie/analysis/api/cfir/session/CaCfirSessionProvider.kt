@@ -8,7 +8,7 @@ import org.cangnova.cangjie.analysis.api.CaSession
 import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.impl.base.sessions.CaBaseSessionProvider
 import org.cangnova.cangjie.analysis.api.permissions.CaAnalysisPermissionRegistry
-import org.cangnova.cangjie.analysis.api.platform.KotlinAnalysisInWriteActionListener
+import org.cangnova.cangjie.analysis.api.platform.CangJieAnalysisInWriteActionListener
 import org.cangnova.cangjie.analysis.api.platform.analysisMessageBus
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
@@ -163,13 +163,13 @@ class CaCfirSessionProvider(
     @OptIn(CaPlatformInterface::class)
     private fun publishEnteringAnalysisInWriteActionIfNeeded() {
         if (!isAnalysisInWriteAction()) return
-        project.analysisMessageBus.syncPublisher(KotlinAnalysisInWriteActionListener.TOPIC).onEnteringAnalysisInWriteAction()
+        project.analysisMessageBus.syncPublisher(CangJieAnalysisInWriteActionListener.TOPIC).onEnteringAnalysisInWriteAction()
     }
 
     @OptIn(CaPlatformInterface::class)
     private fun publishAfterLeavingAnalysisInWriteActionIfNeeded() {
         if (!isAnalysisInWriteAction()) return
-        project.analysisMessageBus.syncPublisher(KotlinAnalysisInWriteActionListener.TOPIC).afterLeavingAnalysisInWriteAction()
+        project.analysisMessageBus.syncPublisher(CangJieAnalysisInWriteActionListener.TOPIC).afterLeavingAnalysisInWriteAction()
     }
 
     private fun isAnalysisInWriteAction(): Boolean {

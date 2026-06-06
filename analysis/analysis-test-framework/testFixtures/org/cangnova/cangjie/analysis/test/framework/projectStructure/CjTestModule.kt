@@ -43,7 +43,8 @@ class CjTestModule(
      */
     fun moduleForDependency(kind: DependencyKind): CaModule = when (kind) {
         DependencyKind.Source -> caModule
-        DependencyKind.Binary -> binaryArtifactModule
-            ?: error("Test module `$name` does not expose a binary artifact module.")
+        DependencyKind.Binary -> caModule as? CaLibraryModule
+            ?: binaryArtifactModule
+            ?: error("Test module `$name` does not expose a binary dependency module.")
     }
 }

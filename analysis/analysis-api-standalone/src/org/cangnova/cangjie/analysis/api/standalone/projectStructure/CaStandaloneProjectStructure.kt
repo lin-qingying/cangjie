@@ -9,13 +9,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiElement
 import com.intellij.psi.PsiFileSystemItem
+import com.intellij.psi.PsiFile
+import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.modification.CaModificationTracker
 import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalidationService
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScope
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaResolutionScopeProvider
+import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBaseResolutionScopeProvider
+import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
@@ -23,6 +27,8 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootM
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.api.standalone.base.projectStructure.CangJieStaticProjectStructureProvider
+import org.cangnova.cangjie.platform.TargetPlatform
+import org.cangnova.cangjie.platform.presentableDescription
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 
@@ -59,6 +65,22 @@ class CaStandaloneProjectStructure(
     private val globalModificationCount = AtomicLong(0)
     private val moduleModificationCounts = ConcurrentHashMap<CaModule, AtomicLong>()
     private val resolutionScopeProvider = CaBaseResolutionScopeProvider()
+    private val platform: TargetPlatform = inferStandaloneTargetPlatform(allModules)
+    private val notUnderContentRootModuleWithoutPsiFile: CaNotUnderContentRootModule by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        CaStandaloneNotUnderContentRootModule(
+            name = "unnamed-outside-content-root",
+            originalModule = null,
+            project = project,
+            scopeRoots = emptyList(),
+            targetPlatform = platform,
+        )
+    }
+    private val builtinsModule: CaBuiltinsModule by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        allModules
+            .filterIsInstance<CaBuiltinsModule>()
+            .firstOrNull { module -> module.targetPlatform == platform }
+            ?: CaBuiltinsModuleImpl(platform, project)
+    }
     private val rootEntries = buildList {
         allModules.forEach { module ->
             when (module) {
@@ -89,21 +111,27 @@ class CaStandaloneProjectStructure(
         get() = globalModificationCount.get()
 
     override fun getModule(element: PsiElement, useSiteModule: CaModule?): CaModule {
-        val containingFile = element.containingFile
-        if (containingFile != null) {
-            computeSpecialModule(containingFile)?.let { return it }
-        }
+        val containingFile = element.containingFile ?: return notUnderContentRootModuleWithoutPsiFile
+        resolveBuiltinsModule(containingFile)?.let { return it }
+        computeSpecialModule(containingFile)?.let { return it }
 
         useSiteModule?.let { return it }
 
         val containingItem = containingFile as? PsiFileSystemItem
-        if (containingFile != null) {
+        if (containingItem != null) {
             findModuleFor(containingItem)?.let { return it }
         }
-
-        val availableModules = allModules.joinToString { module ->
-            module.stableModuleName ?: module.moduleDescription
+        if (containingItem != null) {
+            return CaStandaloneNotUnderContentRootModule(
+                name = "unnamed-outside-content-root",
+                originalModule = null,
+                project = project,
+                scopeRoots = listOf(containingItem),
+                targetPlatform = platform,
+            )
         }
+
+        val availableModules = allModules.joinToString { module -> module.stableModuleName ?: module.moduleDescription }
         error(
             "Standalone 项目结构无法为 `${element.javaClass.simpleName}` 解析 use-site module。" +
                 " 当前模块图：[$availableModules]",
@@ -115,12 +143,7 @@ class CaStandaloneProjectStructure(
     }
 
     override fun getNotUnderContentRootModule(project: Project): CaNotUnderContentRootModule {
-        return CaStandaloneNotUnderContentRootModule(
-            name = "unnamed-outside-content-root",
-            originalModule = null,
-            project = project,
-            scopeRoots = emptyList(),
-        )
+        return notUnderContentRootModuleWithoutPsiFile
     }
 
     override fun getResolutionScope(module: CaModule): CaResolutionScope {
@@ -146,7 +169,7 @@ class CaStandaloneProjectStructure(
         val delegatedInvalidationService =
             project.getService(CaSessionProvider::class.java) as? CaSessionInvalidationService
 
-        if (delegatedInvalidationService != null && delegatedInvalidationService !== this) {
+        if (delegatedInvalidationService != null) {
             delegatedInvalidationService.invalidate(modules)
         }
     }
@@ -160,6 +183,11 @@ class CaStandaloneProjectStructure(
     private fun findModuleFor(fileSystemItem: PsiFileSystemItem?): CaModule? {
         if (fileSystemItem == null) return null
         return rootEntries.firstOrNull { entry -> entry.contains(fileSystemItem) }?.module
+    }
+
+    private fun resolveBuiltinsModule(file: PsiFile): CaBuiltinsModule? {
+        val virtualFile = file.virtualFile ?: return null
+        return builtinsModule.takeIf { module -> virtualFile in module.contentScope }
     }
 
     private data class ModuleRootEntry(
@@ -185,5 +213,20 @@ class CaStandaloneProjectStructure(
         LIBRARY_BINARY(0),
         LIBRARY_SOURCE(1),
         SOURCE(2),
+    }
+
+    companion object {
+        /**
+         * Standalone project-structure 对位 Kotlin `KotlinStandaloneProjectStructureProvider`：
+         * 一张模块图只承载一个高层 targetPlatform。
+         */
+        private fun inferStandaloneTargetPlatform(allModules: List<CaModule>): TargetPlatform {
+            val distinctPlatforms = allModules.map(CaModule::targetPlatform).distinct()
+            check(distinctPlatforms.size == 1) {
+                "Standalone Analysis API 模块图中的模块必须全部属于同一个 targetPlatform，" +
+                    "实际得到：${distinctPlatforms.joinToString { it.presentableDescription }}"
+            }
+            return distinctPlatforms.single()
+        }
     }
 }

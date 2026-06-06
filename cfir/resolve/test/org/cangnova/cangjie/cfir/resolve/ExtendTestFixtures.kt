@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
 
 internal object ExtendTestFixtures {
     class TestSession : CfirSession(Kind.Source) {
@@ -47,6 +48,7 @@ internal object ExtendTestFixtures {
             name = Name.identifier(moduleName),
             dependencies = emptyList(),
             refinementDependencies = emptyList(),
+            targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
             platform = CfirPlatform.DEFAULT,
         )
         moduleData.bindSession(session)

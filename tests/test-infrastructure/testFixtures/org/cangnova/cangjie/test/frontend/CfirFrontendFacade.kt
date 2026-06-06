@@ -15,8 +15,10 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
 import org.cangnova.cangjie.config.languageVersionSettings
+import org.cangnova.cangjie.config.targetPlatform
 import org.cangnova.cangjie.frontend.pipeline.initializeCfirFrontendMacroCompilationConfiguration
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
@@ -129,6 +131,7 @@ open class CfirFrontendFacade(
                 name = Name.special("<${module.name}>"),
                 dependencies = regularModules,
                 refinementDependencies = dependsOnModules,
+                targetPlatform = configuration.targetPlatform ?: CangJiePlatforms.defaultCangJiePlatform,
                 platform = CfirPlatform.DEFAULT,
                 isCommon = false,
             )

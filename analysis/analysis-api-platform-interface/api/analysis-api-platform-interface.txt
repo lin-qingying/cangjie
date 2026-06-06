@@ -32,7 +32,7 @@ CangJieMessageBusProvider.public fun getMessageBus(): MessageBus
 CangJieMessageBusProvider.public companion object
 CangJieMessageBusProvider.Companion.public fun getInstance(project: Project): CangJieMessageBusProvider
 public val Project.analysisMessageBus: MessageBus
-## org/cangnova/cangjie/analysis/api/platform/KotlinAnalysisInWriteActionListener.kt
+## org/cangnova/cangjie/analysis/api/platform/CangJieAnalysisInWriteActionListener.kt
 package org.cangnova.cangjie.analysis.api.platform
 public interface KotlinAnalysisInWriteActionListener
 KotlinAnalysisInWriteActionListener.public fun onEnteringAnalysisInWriteAction()
@@ -322,6 +322,7 @@ CaDanglingFileModuleImpl.public override val name: String
 CaDanglingFileModuleImpl.public override val languageVersionSettings: LanguageVersionSettings
 CaDanglingFileModuleImpl.public override val psiRoots: List<CjFile>
 CaDanglingFileModuleImpl.public override val project: Project
+CaDanglingFileModuleImpl.public override val targetPlatform: TargetPlatform
 CaDanglingFileModuleImpl.public override val baseContentScope: GlobalSearchScope
 CaDanglingFileModuleImpl.public val virtualFiles
 CaDanglingFileModuleImpl.public override val directRegularDependencies: List<CaModule>

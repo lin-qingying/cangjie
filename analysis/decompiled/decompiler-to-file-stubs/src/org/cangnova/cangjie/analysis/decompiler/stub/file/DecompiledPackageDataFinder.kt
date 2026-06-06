@@ -10,6 +10,7 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaBuiltinsModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.decompiler.stub.LoadedCjoPackage
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.platform.presentableDescription
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -36,7 +37,12 @@ class DecompiledPackageDataFinder(
         val module = binaryIndex.findOwningModule(binaryFile) ?: return null
         return when (module) {
             is CaLibraryModule -> loadPackageData(module, packageFqName)
-            is CaBuiltinsModule -> loadPackageData(packageFqName, binaryFile, listOf(binaryFile))
+            is CaBuiltinsModule -> loadPackageData(
+                moduleKey = "<builtins:${module.targetPlatform.presentableDescription}>",
+                packageFqName = packageFqName,
+                binaryFile = binaryFile,
+                rootFiles = listOf(binaryFile),
+            )
             else -> null
         }
     }
@@ -56,10 +62,16 @@ class DecompiledPackageDataFinder(
     fun loadPackageData(module: CaBuiltinsModule, packageFqName: FqName): LoadedCjoPackage? {
         refreshIfNeeded()
         val binaryFile = binaryIndex.findBinaryFile(module, packageFqName) ?: return null
-        return loadPackageData(packageFqName, binaryFile, listOf(binaryFile))
+        return loadPackageData(
+            moduleKey = "<builtins:${module.targetPlatform.presentableDescription}>",
+            packageFqName = packageFqName,
+            binaryFile = binaryFile,
+            rootFiles = listOf(binaryFile),
+        )
     }
 
     private fun loadPackageData(
+        moduleKey: String,
         packageFqName: FqName,
         binaryFile: VirtualFile,
         rootFiles: List<VirtualFile>,
@@ -68,7 +80,7 @@ class DecompiledPackageDataFinder(
             .map(::toRootFile)
             .map(::normalizeRoot)
             .distinctBy(File::getAbsolutePath)
-        return repositoryFor("<builtins>", roots).loadPackageData(packageFqName, binaryFile, roots)
+        return repositoryFor(moduleKey, roots).loadPackageData(packageFqName, binaryFile, roots)
     }
 
     private fun repositoryFor(moduleKey: String, roots: List<File>): DecompiledCjoRepository {

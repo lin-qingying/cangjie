@@ -67,6 +67,7 @@ import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.CompilerConfigurationKey
 import org.cangnova.cangjie.config.languageVersionSettings
 import org.cangnova.cangjie.config.moduleName
+import org.cangnova.cangjie.config.targetPlatform
 import org.cangnova.cangjie.config.useLightTree
 import org.cangnova.cangjie.macro.MacroCallInfo
 import org.cangnova.cangjie.macro.MacroDiagnosticSeverity
@@ -80,6 +81,8 @@ import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.macro.TokenInfo
 import org.cangnova.cangjie.macro.protocol.MacroMsgCodec
 import org.cangnova.cangjie.name.CallableId
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.presentableDescription
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.text
 import java.util.IdentityHashMap
@@ -199,7 +202,10 @@ var CompilerConfiguration.macroPackageCompilationOrchestrator: MacroPackageCompi
     }
 
 var CompilerConfiguration.macroCompilationCacheContext: MacroCompilationCacheContext
-    get() = get(FrontendMacroConfigurationKeys.MACRO_COMPILATION_CACHE_CONTEXT, MacroCompilationCacheContext())
+    get() = get(FrontendMacroConfigurationKeys.MACRO_COMPILATION_CACHE_CONTEXT)
+        ?: MacroCompilationCacheContext(
+            targetPlatform = targetPlatform ?: CangJiePlatforms.defaultCangJiePlatform,
+        )
     set(value) {
         put(FrontendMacroConfigurationKeys.MACRO_COMPILATION_CACHE_CONTEXT, value)
     }
@@ -304,7 +310,8 @@ class FrontendMacroConstructionService(
         }
         val expansionDecisions = pre.files.flatMap { preFile ->
             preFile.surfaces.mapNotNull { surface ->
-                val decision = classification.finalDecisions.firstOrNull { it.surface === surface } ?: return@mapNotNull null
+                val decision =
+                    classification.finalDecisions.firstOrNull { it.surface === surface } ?: return@mapNotNull null
                 if (!decision.localConstruction) return@mapNotNull null
                 if ((preFile.isMacroPackage && surface !is MacroSurfaceExpr) || surface.isMacroDefinitionSignatureSurface()) {
                     return@mapNotNull null
@@ -366,7 +373,9 @@ class FrontendMacroConstructionService(
                 if (node.hasUnresolvedChildPayloadChannel(childResults)) {
                     reportError(
                         registry = registry,
-                        message = "Nested macro surface inside `${surface.qualifiedName?.asString().orEmpty()}` cannot be mapped to attr or input token payload.",
+                        message = "Nested macro surface inside `${
+                            surface.qualifiedName?.asString().orEmpty()
+                        }` cannot be mapped to attr or input token payload.",
                         kind = MacroConstructionDiagnostic.Kind.MACRO_REEVALUATION_FAILED,
                         originSurfaceId = surface.surfaceId,
                     )
@@ -425,7 +434,9 @@ class FrontendMacroConstructionService(
             for (slot in slots) {
                 reportError(
                     registry = registry,
-                    message = "Macro call `${slot.origin.qualifiedName?.asString().orEmpty()}` produced a fragment, but stable splicer is not configured.",
+                    message = "Macro call `${
+                        slot.origin.qualifiedName?.asString().orEmpty()
+                    }` produced a fragment, but stable splicer is not configured.",
                     kind = MacroConstructionDiagnostic.Kind.MACRO_NOT_EXPANDED,
                     originSurfaceId = slot.origin.surfaceId,
                 )
@@ -473,6 +484,7 @@ class FrontendMacroConstructionService(
                 reportSamePackageMacroDefinition(surface, resolution.sourceEntry, registry)
                 null
             }
+
             is MacroResolution.Unresolved -> {
                 val name = resolution.name
                 reportError(
@@ -483,6 +495,7 @@ class FrontendMacroConstructionService(
                 )
                 null
             }
+
             is MacroResolution.KindMismatch -> {
                 val (kind, reason) = resolution.toConstructionDiagnostic()
                 reportError(
@@ -493,6 +506,7 @@ class FrontendMacroConstructionService(
                 )
                 null
             }
+
             is MacroResolution.BuiltinNonMacro -> tokensForBuiltinNonMacro(surface, refreshedTokens)
             is MacroResolution.CustomAnnotation -> {
                 val snapshot = decision.annotationCarrier
@@ -508,6 +522,7 @@ class FrontendMacroConstructionService(
                     null
                 }
             }
+
             is MacroResolution.Builtin -> evaluateBuiltinMacro(surface, resolution.entry, preFile, registry)
             is MacroResolution.Resolved -> evaluateExternalMacro(
                 surface = surface,
@@ -530,13 +545,17 @@ class FrontendMacroConstructionService(
     ): List<MacroSurfaceToken>? {
         val text = when (entry.name) {
             BuiltinMacroRegistry.sourcePackage -> stringLiteral(surface.scopeContext.packageFqName.asString())
-            BuiltinMacroRegistry.sourceFile -> stringLiteral(preFile?.cfirFile?.sourceFile?.name ?: preFile?.cfirFile?.name.orEmpty())
+            BuiltinMacroRegistry.sourceFile -> stringLiteral(
+                preFile?.cfirFile?.sourceFile?.name ?: preFile?.cfirFile?.name.orEmpty()
+            )
+
             BuiltinMacroRegistry.sourceLine -> {
                 val offset = surface.sourceRange?.startOffset ?: 0
                 val mappedLine = preFile?.cfirFile?.sourceFileLinesMapping?.getLineByOffset(offset)
                 val line = mappedLine?.takeIf { it >= 0 }?.plus(1) ?: 0
                 line.toString()
             }
+
             else -> {
                 reportError(
                     registry = registry,
@@ -593,6 +612,7 @@ class FrontendMacroConstructionService(
                 recordMacroDiagReports(surface, result.diagnostics, registry)
                 result.tokens.toMacroSurfaceTokens()
             }
+
             is MacroExpansionResult.Failure -> {
                 recordMacroDiagReports(surface, result.diagnostics, registry)
                 reportError(
@@ -645,15 +665,16 @@ class FrontendMacroConstructionService(
     }
 
     private fun MacroResolution.KindMismatch.toConstructionDiagnostic():
-        Pair<MacroConstructionDiagnostic.Kind, String> {
+            Pair<MacroConstructionDiagnostic.Kind, String> {
         val macroName = entry.name.asString()
         return when (reason) {
             MacroResolution.KindMismatch.Reason.FORCED_KIND_NOT_SUPPORTED ->
                 MacroConstructionDiagnostic.Kind.MACRO_EXPAND_ATEXCL to
-                    "Macro call `@$macroName` does not support `@!` forced invocation."
+                        "Macro call `@$macroName` does not support `@!` forced invocation."
+
             MacroResolution.KindMismatch.Reason.PLAIN_ATTR_OVERLOAD_NOT_SUPPORTED ->
                 MacroConstructionDiagnostic.Kind.MACRO_EXPECT_PLAIN_MACRO to
-                    "Macro call `@$macroName` requires parenthesized plain macro invocation."
+                        "Macro call `@$macroName` requires parenthesized plain macro invocation."
         }
     }
 
@@ -689,6 +710,7 @@ class FrontendMacroConstructionService(
                 )
                 null
             }
+
             is MacroFragmentResult.Success,
             is MacroFragmentResult.CustomAnnotation -> fragment
         }
@@ -772,6 +794,7 @@ class FrontendMacroConstructionService(
             MacroConstructionDiagnostic.Kind.MACRO_SAME_PACKAGE_DEF_CALL,
             MacroConstructionDiagnostic.Kind.MACRO_CANNOT_OPEN_LIB,
             MacroConstructionDiagnostic.Kind.MACRO_CYCLE -> false
+
             MacroConstructionDiagnostic.Kind.GENERIC,
             MacroConstructionDiagnostic.Kind.MACRO_NOT_EXPANDED,
             MacroConstructionDiagnostic.Kind.MACRO_EXPANSION_FAILED,
@@ -789,11 +812,11 @@ class FrontendMacroConstructionService(
     private fun MacroSurface.hasBlockingPreConstructionDiagnostic(registry: MacroExpansionRegistry): Boolean {
         return registry.diagnostics.any { diagnostic ->
             diagnostic.originSurfaceId == surfaceId &&
-                diagnostic.severity == MacroConstructionDiagnostic.Severity.ERROR &&
-                diagnostic.diagnosticOrigin in setOf(
-                    MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER,
-                    MacroConstructionDiagnostic.Origin.ORCHESTRATION,
-                )
+                    diagnostic.severity == MacroConstructionDiagnostic.Severity.ERROR &&
+                    diagnostic.diagnosticOrigin in setOf(
+                MacroConstructionDiagnostic.Origin.ARTIFACT_RESOLVER,
+                MacroConstructionDiagnostic.Origin.ORCHESTRATION,
+            )
         }
     }
 
@@ -820,9 +843,14 @@ class FrontendMacroConstructionService(
                 originSurfaceId = surface.surfaceId,
             )
             when (val carrier = surface.replaceHandle.carrier) {
-                is CfirValueParameter -> parameterPlaceholders[carrier] = buildParameterMacroErrorPlaceholder(surface, carrier)
-                is CfirDeclaration -> declarationPlaceholders[carrier] = buildDeclarationMacroErrorPlaceholder(surface, carrier)
-                is CfirExpression -> expressionPlaceholders[carrier] = buildExpressionMacroErrorPlaceholder(surface, carrier)
+                is CfirValueParameter -> parameterPlaceholders[carrier] =
+                    buildParameterMacroErrorPlaceholder(surface, carrier)
+
+                is CfirDeclaration -> declarationPlaceholders[carrier] =
+                    buildDeclarationMacroErrorPlaceholder(surface, carrier)
+
+                is CfirExpression -> expressionPlaceholders[carrier] =
+                    buildExpressionMacroErrorPlaceholder(surface, carrier)
             }
         }
         for (file in files) {
@@ -849,9 +877,19 @@ class FrontendMacroConstructionService(
             replaceDegradedParameterPlaceholders(current, parameterPlaceholders)
             when (current) {
                 is CfirClassLikeDeclaration ->
-                    replaceDegradedDeclarationPlaceholders(current.declarations, declarationPlaceholders, parameterPlaceholders)
+                    replaceDegradedDeclarationPlaceholders(
+                        current.declarations,
+                        declarationPlaceholders,
+                        parameterPlaceholders
+                    )
+
                 is CfirExtend ->
-                    replaceDegradedDeclarationPlaceholders(current.declarations, declarationPlaceholders, parameterPlaceholders)
+                    replaceDegradedDeclarationPlaceholders(
+                        current.declarations,
+                        declarationPlaceholders,
+                        parameterPlaceholders
+                    )
+
                 else -> Unit
             }
         }
@@ -971,7 +1009,7 @@ class FrontendMacroConstructionService(
     private fun macroPlaceholderDiagnostic(surface: MacroSurface): ConeSimpleDiagnostic {
         return ConeSimpleDiagnostic(
             "Macro call `${surface.capturedRawSyntax ?: surface.qualifiedName?.asString().orEmpty()}` " +
-                "was not expanded during macro construction.",
+                    "was not expanded during macro construction.",
         )
     }
 
@@ -1036,7 +1074,7 @@ class FrontendMacroConstructionService(
             "macroCompilerOptions=${configuration.macroCompilationCacheContext.compilerOptionsFingerprint}",
             "macroDebugFlags=${configuration.macroCompilationCacheContext.debugFlagsFingerprint}",
             "macroParallelFlags=${configuration.macroCompilationCacheContext.parallelFlagsFingerprint}",
-            "macroTargetPlatform=${configuration.macroCompilationCacheContext.targetPlatform}",
+            "macroTargetPlatform=${configuration.macroCompilationCacheContext.targetPlatform.presentableDescription}",
             "macroRuntimeLoaderEnv=${configuration.macroCompilationCacheContext.runtimeLoaderEnvironmentFingerprint}",
         )
         val executorAbi = configuration.macroExecutorFactory
@@ -1092,8 +1130,8 @@ class FrontendMacroConstructionService(
             val snapshot = surface.replaceHandle.annotationCarrier
                 ?.let { annotationMetadataRegistry?.snapshot(it) }
             "${surface.qualifiedName?.asString().orEmpty()}|" +
-                "${range?.startOffset ?: -1}|${range?.endOffset ?: -1}|${surface.kind}|" +
-                "slot=${snapshot?.stableCacheText().orEmpty()}"
+                    "${range?.startOffset ?: -1}|${range?.endOffset ?: -1}|${surface.kind}|" +
+                    "slot=${snapshot?.stableCacheText().orEmpty()}"
         }
         return org.cangnova.cangjie.utils.StableHash.sha256Of(parts)
     }
@@ -1101,7 +1139,7 @@ class FrontendMacroConstructionService(
     private fun hashImports(file: CfirFile, context: MacroResolutionContext): String {
         val importParts = file.imports.map { import ->
             "${import.importedFqName?.asString().orEmpty()}|" +
-                "wildcard=${import.isAllUnder}|alias=${import.aliasName?.asString().orEmpty()}"
+                    "wildcard=${import.isAllUnder}|alias=${import.aliasName?.asString().orEmpty()}"
         }
         val defaultParts = context.defaultMacroImports.map { it.asString() }
         val bindingParts = context.importBindings.map { binding ->
@@ -1114,9 +1152,9 @@ class FrontendMacroConstructionService(
         val sourceTargets = context.symbolIndex.sources.map { it.fqName.asString() }
         val foreignTargets = context.symbolIndex.foreigns.map { entry ->
             "${entry.fqName.asString()}|exec=${entry.executableFqName.asString()}|${entry.source}|lib=${entry.libPath.orEmpty()}|abi=${entry.executorAbi.orEmpty()}|" +
-                "artifact=${entry.artifactSignature.orEmpty()}|cjo=${entry.cjoHash.orEmpty()}|" +
-                "dylib=${entry.dynamicLibHash.orEmpty()}|bchir=${entry.dependenciesBchirHash.orEmpty()}|" +
-                "resolver=${entry.resolverAlgorithmVersion ?: -1}"
+                    "artifact=${entry.artifactSignature.orEmpty()}|cjo=${entry.cjoHash.orEmpty()}|" +
+                    "dylib=${entry.dynamicLibHash.orEmpty()}|bchir=${entry.dependenciesBchirHash.orEmpty()}|" +
+                    "resolver=${entry.resolverAlgorithmVersion ?: -1}"
         }
         return org.cangnova.cangjie.utils.StableHash.sha256Of(sourceTargets + foreignTargets)
     }
@@ -1168,6 +1206,7 @@ class FrontendMacroConstructionService(
                     }
                     "${annotation.typeRef.source?.text?.toString().orEmpty()}[$args]"
                 }
+
                 else -> annotation.source?.text?.toString().orEmpty()
             }
         }
@@ -1248,7 +1287,8 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         val expressionSlotsWithCarrier = IdentityHashMap<CfirExpression, MacroReplaceSlot>()
         val declarationSlotsWithCarrier = IdentityHashMap<CfirDeclaration, MacroReplaceSlot>()
         val parameterSlotsWithCarrier = IdentityHashMap<CfirValueParameter, MacroReplaceSlot>()
-        val annotationSlotsWithCarrier = linkedMapOf<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier, MacroReplaceSlot>()
+        val annotationSlotsWithCarrier =
+            linkedMapOf<org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier, MacroReplaceSlot>()
         val unsupportedSlots = mutableListOf<MacroReplaceSlot>()
 
         for (slot in slots) {
@@ -1268,6 +1308,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                         unsupportedSlots += slot
                     }
                 }
+
                 is MacroSurfaceParam -> {
                     val carrier = slot.handle.carrier
                     if (carrier is CfirValueParameter) {
@@ -1276,6 +1317,7 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                         unsupportedSlots += slot
                     }
                 }
+
                 is MacroSurfaceDecl, is MacroSurfaceNode, is BuiltinNonMacroSurface -> {
                     val carrier = origin.replaceHandle.carrier
                     if (carrier is CfirDeclaration) {
@@ -1294,12 +1336,12 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         }
         require(ownerConflicts.isEmpty()) {
             "Stable splice cannot replace an owner/parameter and one of its annotation slots in the same batch: " +
-                ownerConflicts.joinToString { it.symbol.toString() }
+                    ownerConflicts.joinToString { it.symbol.toString() }
         }
 
         require(unsupportedSlots.isEmpty()) {
             "Stable splice is not implemented for macro surface(s) without typed carrier: " +
-                unsupportedSlots.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
+                    unsupportedSlots.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
 
         for (file in files) {
@@ -1321,19 +1363,19 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
 
         require(expressionSlotsWithCarrier.isEmpty()) {
             "Stable splice could not find expression carrier for macro surface(s): " +
-                expressionSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
+                    expressionSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
         require(declarationSlotsWithCarrier.isEmpty()) {
             "Stable splice could not find declaration carrier for macro surface(s): " +
-                declarationSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
+                    declarationSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
         require(parameterSlotsWithCarrier.isEmpty()) {
             "Stable splice could not find parameter carrier for macro surface(s): " +
-                parameterSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
+                    parameterSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
         require(annotationSlotsWithCarrier.isEmpty()) {
             "Stable splice could not find annotation carrier for macro surface(s): " +
-                annotationSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
+                    annotationSlotsWithCarrier.values.joinToString { it.origin.qualifiedName?.asString().orEmpty() }
         }
         return files
     }
@@ -1348,7 +1390,11 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
                 "Stable splice annotation carrier no longer matches owner/index ${carrier.annotationIndex}."
             }
             val replacement = (slot.fragment as? MacroFragmentResult.CustomAnnotation)?.payload
-                ?: error("Annotation macro surface `${slot.origin.qualifiedName?.asString().orEmpty()}` did not produce a CfirAnnotationCall payload.")
+                ?: error(
+                    "Annotation macro surface `${
+                        slot.origin.qualifiedName?.asString().orEmpty()
+                    }` did not produce a CfirAnnotationCall payload."
+                )
             val mutableAnnotations = annotations.toMutableList()
             mutableAnnotations[carrier.annotationIndex] = replacement
             carrier.owner.replaceAnnotations(mutableAnnotations)
@@ -1383,7 +1429,12 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         parameterSlots: IdentityHashMap<CfirValueParameter, MacroReplaceSlot>,
     ) {
         when (declaration) {
-            is CfirClassLikeDeclaration -> replaceDeclarationSlots(declaration.declarations, declarationSlots, parameterSlots)
+            is CfirClassLikeDeclaration -> replaceDeclarationSlots(
+                declaration.declarations,
+                declarationSlots,
+                parameterSlots
+            )
+
             is CfirExtend -> replaceDeclarationSlots(declaration.declarations, declarationSlots, parameterSlots)
             else -> Unit
         }
@@ -1404,21 +1455,33 @@ private object CfirExpressionMacroStableSplicer : MacroStableSplicer {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
         return success.payload as? CfirExpression
-            ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not produce a CfirExpression payload.")
+            ?: error(
+                "Macro fragment for `${
+                    origin.qualifiedName?.asString().orEmpty()
+                }` did not produce a CfirExpression payload."
+            )
     }
 
     private fun MacroReplaceSlot.toDeclarationPayload(): CfirDeclaration {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
         return success.payload as? CfirDeclaration
-            ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not produce a CfirDeclaration payload.")
+            ?: error(
+                "Macro fragment for `${
+                    origin.qualifiedName?.asString().orEmpty()
+                }` did not produce a CfirDeclaration payload."
+            )
     }
 
     private fun MacroReplaceSlot.toValueParameterPayload(): CfirValueParameter {
         val success = fragment as? MacroFragmentResult.Success
             ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not parse successfully.")
         return success.payload as? CfirValueParameter
-            ?: error("Macro fragment for `${origin.qualifiedName?.asString().orEmpty()}` did not produce a CfirValueParameter payload.")
+            ?: error(
+                "Macro fragment for `${
+                    origin.qualifiedName?.asString().orEmpty()
+                }` did not produce a CfirValueParameter payload."
+            )
     }
 }
 
@@ -1468,7 +1531,7 @@ private fun MacroSurface.isMacroDefinitionSignatureSurface(): Boolean {
     val carrier = replaceHandle.carrier
     if (carrier is CfirMacroDeclaration) return true
     return carrier is CfirValueParameter &&
-        carrier.containingDeclarationSymbol is CfirMacroDeclarationSymbol
+            carrier.containingDeclarationSymbol is CfirMacroDeclarationSymbol
 }
 
 /**
@@ -1519,12 +1582,12 @@ private fun List<MacroSurfaceToken>.replaceChildMacroRanges(
     val replacements = childResults.entries.asSequence()
         .filter { (child, _) -> child.parent?.childEdges.orEmpty().any { it.child === child && it.channel == channel } }
         .sortedWith(
-        compareBy(
-            { it.key.surface.sourceRange?.startOffset ?: Int.MAX_VALUE },
-            { it.key.surface.sourceRange?.endOffset ?: Int.MAX_VALUE },
-            { it.key.surface.surfaceId },
-        ),
-    ).toList()
+            compareBy(
+                { it.key.surface.sourceRange?.startOffset ?: Int.MAX_VALUE },
+                { it.key.surface.sourceRange?.endOffset ?: Int.MAX_VALUE },
+                { it.key.surface.surfaceId },
+            ),
+        ).toList()
 
     for ((child, replacement) in replacements) {
         val range = child.surface.sourceRange ?: continue

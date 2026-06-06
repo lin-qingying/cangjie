@@ -85,7 +85,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
     ): List<CfirSymbolProvider>
 
     fun createNotUnderContentRootResolvableSession(module: CaNotUnderContentRootModule): LLCfirNotUnderContentRootResolvableModuleSession {
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = projectStructureProvider.globalLanguageVersionSettings
         val scopeProvider = CfirCangJieScopeProvider()
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
@@ -157,7 +157,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         scopeProvider: CfirCangJieScopeProvider = CfirCangJieScopeProvider(),
         additionalSessionConfiguration: LLCfirSourcesSession.(context: SourceSessionCreationContext) -> Unit,
     ): LLCfirSourcesSession {
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = wrapLanguageVersionSettings(module.languageVersionSettings)
 
         val components = LLCfirModuleResolveComponents(module, globalResolveComponents, scopeProvider)
@@ -235,7 +235,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
             }
         }
 
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = projectStructureProvider.libraryLanguageVersionSettings
 
         val scopeProvider = CfirCangJieScopeProvider()
@@ -317,7 +317,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                     "`${CaLibraryFallbackDependenciesModule::class.simpleName}`. Instead got: `${module::class.simpleName}`."
         }
 
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
 
         val session = LLCfirLibrarySession(module, builtinsSession.builtinTypes)
 
@@ -362,7 +362,7 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         contextSession: LLCfirSession,
         additionalSessionConfiguration: LLCfirDanglingFileSession.(DanglingFileSessionCreationContext) -> Unit,
     ): LLCfirSession {
-        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
+        val builtinsSession = LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
         val languageVersionSettings = wrapLanguageVersionSettings(contextSession.languageVersionSettings)
         val scopeProvider = CfirCangJieScopeProvider()
 

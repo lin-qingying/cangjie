@@ -565,6 +565,7 @@ CaModule.public val allDirectDependencies: List<CaModule>
 CaModule.public val baseContentScope: GlobalSearchScope
 CaModule.public val contentScope: GlobalSearchScope
 CaModule.public val project: Project
+CaModule.public val targetPlatform: TargetPlatform
 CaModule.public val moduleDescription: String
 CaModule.public class.simpleName ?: "CaModule"
 CaModule.public val stableModuleName: String?

@@ -69,6 +69,8 @@ import org.cangnova.cangjie.macro.SourcePosition
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.isCommon
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertSame
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -1486,8 +1488,9 @@ class FrontendMacroConstructionExecutionTest {
         override val dependencies: List<CfirModuleData> = emptyList()
         override val refinementDependencies: List<CfirModuleData> = emptyList()
         override val allRefinementDependencies: List<CfirModuleData> = emptyList()
+        override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
         override val platform: CfirPlatform = CfirPlatform.DEFAULT
-        override val isCommon: Boolean = true
+        override val isCommon: Boolean = targetPlatform.isCommon()
         override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty
         override val stableModuleName: String = "frontend-macro-construction-execution-test"
         override val session: CfirSession = session

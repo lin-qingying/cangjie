@@ -1,7 +1,4 @@
-/*
- * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure
 
@@ -16,6 +13,8 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.TargetPlatform
+import org.cangnova.cangjie.platform.isCommon
 
 val CfirElementWithResolveState.llCfirModuleData: LLCfirModuleData
     get() = moduleData as LLCfirModuleData
@@ -51,11 +50,14 @@ open class LLCfirModuleData internal constructor(val caModule: CaModule) : CfirM
         caModule.transitiveDependsOnDependencies.map(::LLCfirModuleData)
     }
 
+    override val targetPlatform: TargetPlatform
+        get() = caModule.targetPlatform
+
     override val platform: CfirPlatform
-        get() = CfirPlatform.DEFAULT
+        get() = targetPlatform.toCfirPlatform()
 
     override val isCommon: Boolean
-        get() = platform == CfirPlatform.DEFAULT
+        get() = targetPlatform.isCommon()
 
     override val session: LLCfirSession
         get() = boundSession?.let { it as LLCfirSession }
@@ -74,3 +76,11 @@ open class LLCfirModuleData internal constructor(val caModule: CaModule) : CfirM
     override fun equals(other: Any?): Boolean = this === other || other is LLCfirModuleData && caModule == other.caModule
     override fun hashCode(): Int = caModule.hashCode()
 }
+
+/**
+ * 当前仓颉前端尚未按后端细分 CFIR 平台实现。
+ *
+ * 因此 `cjnative` 与 `cjvm` 在 frontend / analysis 层都会先落到同一套默认 CFIR 平台，
+ * 只保留高层 `targetPlatform` 身份，等待未来真正的后端分流接入。
+ */
+private fun TargetPlatform.toCfirPlatform(): CfirPlatform = CfirPlatform.DEFAULT

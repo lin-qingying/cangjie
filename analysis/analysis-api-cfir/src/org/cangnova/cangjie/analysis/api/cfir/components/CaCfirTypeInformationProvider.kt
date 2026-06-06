@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.api.types.CaPrimitiveType
 import org.cangnova.cangjie.analysis.api.types.CaType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.toClassLikeSymbol
+import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 
 /**
  * 对齐 Kotlin `KaFirTypeInformationProvider` 的职责边界。
@@ -35,7 +36,10 @@ internal class CaCfirTypeInformationProvider(
     override val CaType.fullyExpandedType: CaType
         get() = withValidityAssertion {
             when (this@fullyExpandedType) {
-                is CaCfirType -> coneType.fullyExpandedType(analysisSession.cfirSession).asCaType(analysisSession)
+                is CaCfirType -> coneType
+                    .fullyExpandedType(analysisSession.cfirSession)
+                    .withoutAbbreviation()
+                    .asCaType(analysisSession)
                 else -> error("Only CFIR public types can expose fullyExpandedType: ${this@fullyExpandedType::class.simpleName}")
             }
         }

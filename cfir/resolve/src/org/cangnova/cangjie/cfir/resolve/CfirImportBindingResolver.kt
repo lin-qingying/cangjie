@@ -48,6 +48,13 @@ internal class CfirImportBindingResolver(
             }
         }
 
+        if (importedFqName?.asString() == "untitled89.b.a11") {
+            System.err.println(
+                "DEBUG_A11 importBinding targets=${targets.joinToString { it::class.simpleName ?: it::class.java.name }} " +
+                    "count=${targets.size}"
+            )
+        }
+
         return CfirResolvedImportBinding(
             importDirective = importDirective,
             effectiveName = effectiveName,
@@ -55,4 +62,3 @@ internal class CfirImportBindingResolver(
         )
     }
 }
-

@@ -7,6 +7,7 @@ import com.intellij.codeInsight.lookup.LookupManager
 import com.intellij.codeInsight.lookup.impl.LookupManagerImpl
 import com.intellij.codeInsight.multiverse.EditorContextManager
 import com.intellij.core.CoreApplicationEnvironment
+import com.intellij.lang.ASTNode
 import com.intellij.lang.MetaLanguage
 import com.intellij.lang.LanguageExtensionPoint
 import com.intellij.mock.MockApplication
@@ -34,12 +35,18 @@ import com.intellij.openapi.util.ThrowableComputable
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileSet
 import com.intellij.openapi.vfs.VirtualFileSetFactory
+import com.intellij.pom.PomModel
+import com.intellij.pom.core.impl.PomModelImpl
+import com.intellij.pom.tree.TreeAspect
 import com.intellij.psi.FileContextProvider
+import com.intellij.psi.PsiFile
 import com.intellij.psi.PsiReferenceContributor
 import com.intellij.psi.PsiTreeChangeListener
 import com.intellij.psi.impl.PsiTreeChangePreprocessor
 import com.intellij.psi.impl.search.PsiSearchHelperImpl
 import com.intellij.psi.impl.smartPointers.SmartPointerAnchorProvider
+import com.intellij.psi.impl.source.codeStyle.IndentHelper
+import com.intellij.psi.impl.source.tree.TreeCopyHandler
 import com.intellij.psi.impl.source.resolve.reference.PsiReferenceContributorEP
 import com.intellij.psi.meta.MetaDataContributor
 import com.intellij.psi.search.UseScopeEnlarger
@@ -66,6 +73,13 @@ import java.util.function.Consumer
  * - headless 鍦烘櫙涓嬬己澶便€佷絾 Analysis API 浼氱洿鎺ヨ姹傜殑搴旂敤绾ф湇鍔? * - 浠撻璇█鑷繁鐨?FileType / ParserDefinition 鍩虹璁炬柦
  */
 internal object CangJieHeadlessPlatformBootstrap {
+    private const val HEADLESS_STATISTICS_DEVICE_ID_PROPERTY = "idea.headless.statistics.device.id"
+    private const val HEADLESS_STATISTICS_SALT_PROPERTY = "idea.headless.statistics.salt"
+    private const val HEADLESS_STATISTICS_MAX_FILES_TO_SEND_PROPERTY = "idea.headless.statistics.max.files.to.send"
+    private const val HEADLESS_STATISTICS_DEVICE_ID = "000000000000000-0000-0000-0000-000000000000"
+    private const val HEADLESS_STATISTICS_SALT = "cangjie-headless-statistics-salt"
+    private const val HEADLESS_STATISTICS_MAX_FILES_TO_SEND = "0"
+
     fun initializeApplicationEnvironment(
         applicationEnvironment: CangjieCoreApplicationEnvironment,
     ) {
@@ -92,6 +106,7 @@ internal object CangJieHeadlessPlatformBootstrap {
         if (project.getService(LookupManager::class.java) == null) {
             project.registerService(LookupManager::class.java, LookupManagerImpl::class.java)
         }
+        registerModifiablePsiProjectServices(project)
         registerEditorContextManagerIfMissing(project)
     }
 
@@ -101,6 +116,7 @@ internal object CangJieHeadlessPlatformBootstrap {
         registerExtensionPoint(area, "com.intellij.containerProvider", ContainerProvider::class.java)
         registerExtensionPoint(area, "com.intellij.metaLanguage", MetaLanguage::class.java)
         registerExtensionPoint(area, "com.intellij.smartPointer.anchorProvider", SmartPointerAnchorProvider::class.java)
+        registerExtensionPoint(area, TreeCopyHandler.EP_NAME.name, TreeCopyHandler::class.java)
 
         // References / Symbol / Target 提取链路直接依赖的 IntelliJ 平台扩展点。
         registerExtensionPoint(area, PsiReferenceContributor.EP_NAME.name, PsiReferenceContributorEP::class.java)
@@ -127,9 +143,13 @@ internal object CangJieHeadlessPlatformBootstrap {
     ) {
         val application = applicationEnvironment.application
 
+        ensureHeadlessStatisticsProperties()
         registerApplicationServiceIfMissing(application, TransactionGuard::class.java, TransactionGuardImpl::class.java)
         registerApplicationServiceIfMissing(application, AsyncExecutionService::class.java, CangJieTestAsyncExecutionService::class.java)
         registerApplicationServiceIfMissing(application, PsiSymbolService::class.java, CangJieHeadlessPsiSymbolService::class.java)
+        registerApplicationServiceIfMissing(application, IndentHelper::class.java, CangJieHeadlessIndentHelper::class.java)
+        registerApplicationCoroutineScopeServiceIfMissing(application)
+        registerStatisticsApplicationServicesIfMissing(application)
         registerApplicationServiceIfMissing(
             application,
             PsiSymbolReferenceService::class.java,
@@ -157,6 +177,68 @@ internal object CangJieHeadlessPlatformBootstrap {
         }
     }
 
+    /**
+     * IntelliJ statistics 在 headless 环境允许通过系统属性提供稳定的 device id 与 salt。
+     *
+     * 这保持 `RenameUtil` 的原始统计调用链可执行，同时避免 `DeviceIdManager` 退回到完整 IDE
+     * `ApplicationInfo.xml` / 用户偏好存储路径。属性只在宿主未显式提供时补齐。
+     */
+    private fun ensureHeadlessStatisticsProperties() {
+        setHeadlessStatisticsPropertyIfMissing(HEADLESS_STATISTICS_DEVICE_ID_PROPERTY, HEADLESS_STATISTICS_DEVICE_ID)
+        setHeadlessStatisticsPropertyIfMissing(HEADLESS_STATISTICS_SALT_PROPERTY, HEADLESS_STATISTICS_SALT)
+        setHeadlessStatisticsPropertyIfMissing(
+            HEADLESS_STATISTICS_MAX_FILES_TO_SEND_PROPERTY,
+            HEADLESS_STATISTICS_MAX_FILES_TO_SEND,
+        )
+    }
+
+    private fun setHeadlessStatisticsPropertyIfMissing(name: String, value: String) {
+        if (System.getProperty(name) == null) {
+            System.setProperty(name, value)
+        }
+    }
+
+    /**
+     * IntelliJ 253 平台的若干无 UI service 通过构造函数注入 application-level CoroutineScope。
+     *
+     * `MockApplication` 本身已经持有受 parentDisposable 管理的 scope；这里把它暴露到 Pico service 容器，
+     * 使 refactoring/statistics 等平台服务按原始构造路径初始化，而不是在调用点规避平台逻辑。
+     */
+    private fun registerApplicationCoroutineScopeServiceIfMissing(application: MockApplication) {
+        val coroutineScopeClass = Class.forName("kotlinx.coroutines.CoroutineScope")
+        if (application.getService(coroutineScopeClass) != null) return
+
+        val coroutineScope = application::class.java.getMethod("getCoroutineScope").invoke(application)
+        @Suppress("UNCHECKED_CAST")
+        application.registerService(coroutineScopeClass as Class<Any>, coroutineScope)
+    }
+
+    /**
+     * IntelliJ refactoring 会记录 rename usage 统计；headless 容器没有加载完整 platform plugin.xml，
+     * 因此需要补齐统计链路中通过 `getInstance()` 访问的 application services。
+     */
+    private fun registerStatisticsApplicationServicesIfMissing(application: MockApplication) {
+        registerReflectiveApplicationServiceIfMissing(
+            application,
+            "com.intellij.internal.statistic.eventLog.validator.storage.persistence.EventLogMetadataSettingsPersistence",
+        )
+        registerReflectiveApplicationServiceIfMissing(
+            application,
+            "com.intellij.internal.statistic.eventLog.EventLogConfigOptionsService",
+        )
+    }
+
+    private fun registerReflectiveApplicationServiceIfMissing(
+        application: MockApplication,
+        className: String,
+    ) {
+        val serviceClass = Class.forName(className)
+        if (application.getService(serviceClass) != null) return
+
+        @Suppress("UNCHECKED_CAST")
+        application.registerService(serviceClass as Class<Any>)
+    }
+
     private fun registerProjectExtensionPoints(area: ExtensionsArea) {
         registerExtensionPoint(area, PsiTreeChangePreprocessor.EP.name, PsiTreeChangePreprocessor::class.java)
         registerExtensionPoint(area, PsiTreeChangeListener.EP.name, PsiTreeChangeListener::class.java)
@@ -176,6 +258,15 @@ internal object CangJieHeadlessPlatformBootstrap {
      * `EditorContextManagerImpl` 是 IntelliJ 平台 internal 类，
      * headless 宿主仍需按平台构造签名 `(Project, CoroutineScope)` 物化该 project service。
      */
+    private fun registerModifiablePsiProjectServices(project: MockProject) {
+        if (project.getService(TreeAspect::class.java) == null) {
+            project.registerService(TreeAspect::class.java)
+        }
+        if (project.getService(PomModel::class.java) == null) {
+            project.registerService(PomModel::class.java, PomModelImpl::class.java)
+        }
+    }
+
     private fun registerEditorContextManagerIfMissing(project: MockProject) {
         if (project.getService(EditorContextManager::class.java) != null) return
 
@@ -354,6 +445,15 @@ private class CangJieTransferredWriteActionService : TransferredWriteActionServi
     override fun runOnEdtWithTransferredWriteActionAndWait(action: Runnable) {
         action.run()
     }
+}
+
+/**
+ * Headless PSI mutation 只需要稳定保存空白信息；真实格式化由 code-insight formatter 负责。
+ */
+private class CangJieHeadlessIndentHelper : IndentHelper() {
+    override fun getIndent(file: PsiFile, element: ASTNode): Int = 0
+
+    override fun getIndent(file: PsiFile, element: ASTNode, includeNonSpace: Boolean): Int = 0
 }
 
 private class CangJieHeadlessStubInconsistencyReporter : StubInconsistencyReporter {

@@ -12,6 +12,7 @@ import com.intellij.psi.PsiElementResolveResult
 import com.intellij.util.IncorrectOperationException
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.CjElement
 import org.cangnova.cangjie.psi.CjImportAlias
 import org.cangnova.cangjie.psi.CjSimpleNameExpression
@@ -110,6 +111,11 @@ abstract class CjMultiReference<T : CjElement>(expression: T) : AbstractCjRefere
 abstract class CjSimpleNameReference(
     expression: CjSimpleNameExpression,
 ) : CjSimpleReference<CjSimpleNameExpression>(expression) {
+    override fun canRename(): Boolean {
+        val elementType = expression.referencedNameElementType
+        return elementType != CjTokens.PLUSPLUS && elementType != CjTokens.MINUSMINUS
+    }
+
     override fun getRangeInElement(): TextRange {
         val element = element.referencedNameElement
         val startOffset = getElement().startOffset

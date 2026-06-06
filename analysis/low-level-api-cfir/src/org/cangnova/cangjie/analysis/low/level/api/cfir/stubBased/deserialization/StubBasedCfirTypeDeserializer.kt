@@ -1,7 +1,4 @@
-/*
- * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.stubBased.deserialization
 
@@ -12,6 +9,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.builder.CfirTypeParameterBuilder
+import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -20,7 +18,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.withConeTypeEntry
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -81,7 +78,6 @@ internal class StubBasedCfirTypeDeserializer(
             for ((index, typeParameter) in typeParameters.withIndex()) {
                 val builder = builders[index]
                 builder.apply {
-                    typeParameter.extendsBound?.let { bounds.add(typeRef(it)) }
                     owner.typeConstraints
                         .filter { it.subjectTypeParameterName?.referencedNameAsName == typeParameter.nameAsName }
                         .forEach { typeConstraint -> typeConstraint.boundTypeReference?.let { bounds += typeRef(it) } }
@@ -217,17 +213,6 @@ internal class StubBasedCfirTypeDeserializer(
         }
         return type.classId().toLookupTag()
     }
-}
-
-/**
- * 对齐 Kotlin `FirTypeParameterBuilder.addDefaultBoundIfNecessary` 的职责：
- * 当反序列化出的类型参数没有显式上界时，为其补上仓颉主干的默认顶层约束 `std.core.Any`。
- */
-private fun CfirTypeParameterBuilder.addDefaultBoundIfNecessary() {
-    if (bounds.isNotEmpty()) return
-
-    val defaultBound = ConeClassLikeType(StdlibClassIds.Any.toLookupTag(), isInterface = true)
-    bounds += defaultBound.toCfirResolvedTypeRef()
 }
 
 /**

@@ -19,6 +19,9 @@ import com.intellij.psi.impl.smartPointers.SmartPointerAnchorProvider
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.lang.CangJieLanguage
 import org.cangnova.cangjie.lang.declarations.CangJieBuiltInFileType
+import org.cangnova.cangjie.config.CompilerConfiguration
+import org.cangnova.cangjie.config.targetPlatform
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.psi.CjFile
 import java.awt.GraphicsEnvironment
 import org.junit.jupiter.api.Assertions.assertFalse
@@ -96,6 +99,16 @@ class CangJieCoreEnvironmentTest {
             assertSame("true", System.getProperty("java.awt.headless"))
             assertTrue(GraphicsEnvironment.isHeadless())
         }
+    }
+
+    @Test
+    @OptIn(CompilerConfiguration.Internals::class)
+    fun `compiler configuration stores cjvm target platform placeholder`() {
+        val configuration = CompilerConfiguration()
+
+        configuration.targetPlatform = CangJiePlatforms.cjvm
+
+        assertSame(CangJiePlatforms.cjvm, configuration.targetPlatform)
     }
 
     private fun withEnvironment(

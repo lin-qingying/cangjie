@@ -23,6 +23,7 @@ import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.psi.CjFile
 import java.nio.file.Path
 import java.io.File
@@ -51,6 +52,7 @@ abstract class AbstractRawCfirBuilderTestCase : CjParsingTestCase(
                 name = Name.identifier("<test>"),
                 dependencies = emptyList(),
                 refinementDependencies = emptyList(),
+                targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
                 platform = CfirPlatform.DEFAULT,
             ).apply {
                 bindSession(session)
