@@ -34,17 +34,17 @@ func Test() {
         callback: Option<(Int64, Int64) -> Unit>.Some(
             {
                 start: Int64, end: Int64 =>
-                let a = Some<bbb>(bbb.cente)
+                let a = Some<bbb>(bbb.<!sema_not_member_of!>cente<!>)
                 return
             }
         )
     )
 
-    aaa(ccc(Int16(1)))
-    aaa(ccc(r'a'))
-    aaa(ccc(a: r'a', 1))
-    aaa(ccc(a: r'a', a: 1))
-    aaa(ccc(a: r'a', b: 1))
+    aaa(<!sema_mismatched_types!>ccc(Int16(1))<!>)
+    aaa(ccc(<!sema_cannot_convert_literal!>r<!>'a'))
+    aaa(ccc(a: r'a', <!sema_unordered_arguments!>1<!>))
+    aaa(ccc(a: r'a', <!sema_multiple_named_argument!>a<!>: 1))
+    aaa(ccc(a: <!sema_cannot_convert_literal!>r<!>'a', b: 1))
     return 0
 }
 
@@ -52,49 +52,3 @@ main() {
     Test()
     return 10
 }
-
-/* SCAN
-error: 'cente' is not a member of enum 'bbb'
-  ==> depth_call.cj:37:39:
-   | 
-37 |                 let a = Some<bbb>(bbb.cente)
-   |                                       ^^^^^ 
-   | 
-
-error: mismatched types
-  ==> depth_call.cj:43:9:
-   | 
-43 |     aaa(ccc(Int16(1)))
-   |         ^^^^^^^^^^^^^ expected 'Int32', found 'Int16'
-   | 
-
-error: cannot convert a character literal to type 'Int16'
-  ==> depth_call.cj:44:13:
-   | 
-44 |     aaa(ccc(r'a'))
-   |             ^ 
-   | 
-
-error: positional argument cannot appear after named argument
-  ==> depth_call.cj:45:22:
-   | 
-45 |     aaa(ccc(a: r'a', 1))
-   |                      ^ 
-   | 
-
-error: named argument prefix 'a:' cannot appeared more than once in call
-  ==> depth_call.cj:46:22:
-   | 
-46 |     aaa(ccc(a: r'a', a: 1))
-   |                      ^ 
-   | 
-
-error: cannot convert a character literal to type 'Int32'
-  ==> depth_call.cj:47:16:
-   | 
-47 |     aaa(ccc(a: r'a', b: 1))
-   |                ^ 
-   | 
-
-6 errors generated, 6 errors printed.
-*/

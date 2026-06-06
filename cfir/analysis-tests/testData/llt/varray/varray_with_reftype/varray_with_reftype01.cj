@@ -8,52 +8,13 @@
 
 class A {}
 
-func foo(a: VArray<A, $1>): VArray<A, $1> { // error x2
+func foo(a: VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>A<!>, $1>): VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>A<!>, $1> { // error x2
     return [A()]
 }
 
 main() {
-    var a: VArray<A, $1> = [A()] // error
-    var b = VArray<A, $1>(repeat: A()) // error
-    var c = VArray<A, $1> {i => A()} // error
+    var a: VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>A<!>, $1> = [A()] // error
+    var b = VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>A<!>, $1>(repeat: A()) // error
+    var c = VArray<<!VARRAY_ARG_TYPE_WITH_REFTYPE!>A<!>, $1> {i => A()} // error
     0
 }
-
-/* SCAN
-error: 'Class-A' directly or indirectly contains an unsupported type
-  ==> varray_with_reftype01.cj:11:36:
-   | 
-11 | func foo(a: VArray<A, $1>): VArray<A, $1> { // error x2
-   |                                    ^ contain unsupported instance member variable with type 'Class-A'
-   | 
-
-error: 'Class-A' directly or indirectly contains an unsupported type
-  ==> varray_with_reftype01.cj:11:20:
-   | 
-11 | func foo(a: VArray<A, $1>): VArray<A, $1> { // error x2
-   |                    ^ contain unsupported instance member variable with type 'Class-A'
-   | 
-
-error: 'Class-A' directly or indirectly contains an unsupported type
-  ==> varray_with_reftype01.cj:16:19:
-   | 
-16 |     var a: VArray<A, $1> = [A()] // error
-   |                   ^ contain unsupported instance member variable with type 'Class-A'
-   | 
-
-error: 'Class-A' directly or indirectly contains an unsupported type
-  ==> varray_with_reftype01.cj:17:20:
-   | 
-17 |     var b = VArray<A, $1>(repeat: A()) // error
-   |                    ^ contain unsupported instance member variable with type 'Class-A'
-   | 
-
-error: 'Class-A' directly or indirectly contains an unsupported type
-  ==> varray_with_reftype01.cj:18:20:
-   | 
-18 |     var c = VArray<A, $1> {i => A()} // error
-   |                    ^ contain unsupported instance member variable with type 'Class-A'
-   | 
-
-5 errors generated, 5 errors printed.
-*/

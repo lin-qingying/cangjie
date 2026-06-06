@@ -7,8 +7,8 @@
 // EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
 
 open class Base<U> {
-    public var a: T
-    public init(x: T) {
+    public var a: <!sema_undeclared_type_name!>T<!>
+    public init(x: <!sema_undeclared_type_name!>T<!>) {
         a = x
     }
 }
@@ -16,7 +16,7 @@ open class Base<U> {
 class Data<T> <: Base<Int32> {
     public var f: T
     public init(input: T) {
-        super(0)
+        <!sema_no_match_function_declaration_for_call!>s<!>uper(0)
         f = input
     }
 }
@@ -34,28 +34,3 @@ func run(): Int64 {
 main(): Int64 {
     return run()
 }
-
-/* SCAN
-error: undeclared type name 'T'
-  ==> generic_parameters1.cj:10:19:
-   | 
-10 |     public var a: T
-   |                   ^ 
-   | 
-
-error: undeclared type name 'T'
-  ==> generic_parameters1.cj:11:20:
-   | 
-11 |     public init(x: T) {
-   |                    ^ 
-   | 
-
-error: no matching function declaration for function call 'super'
-  ==> generic_parameters1.cj:19:9:
-   | 
-19 |         super(0)
-   |         ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

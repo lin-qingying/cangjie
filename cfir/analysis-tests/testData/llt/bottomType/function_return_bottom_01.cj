@@ -13,23 +13,7 @@ main(): Int64 {
 }
 
 func case01() {
-    while (return ()) {
+    <!chir_dce_unreachable_expression_hint!>while (return ()) {
         print("yes")
-    }
+    }<!>
 }
-
-/* SCAN
-warning: unreachable expression
-  ==> function_return_bottom_01.cj:16:5:
-   | 
-16 |       while (return ()) {
-   |       ^      ~~~~~~~~~ any code following this expression is unreachable
-   |  _____|
-17 | |         print("yes")
-18 | |     }
-   | |_____^ unreachable expression
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-1 warning generated, 1 warning printed.
-*/

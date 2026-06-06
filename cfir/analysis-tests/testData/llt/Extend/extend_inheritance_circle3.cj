@@ -6,32 +6,14 @@
 
 // EXEC: %frontendCompiler %typecheck %noColor %f 2>&1 | compare %f
 
-interface A <: B {}
+<!sema_inheritance_cycle!>i<!>nterface A <: B {}
 
 interface C <: A {}
 
 interface B <: C {}
 
-extend A <: C {}
+extend <!sema_illegal_extended_type!>A<!> <: C {}
 
 main() {
     0
 }
-
-/* SCAN
-error: extending type 'Interface-A' is not allowed
-  ==> extend_inheritance_circle3.cj:15:8:
-   | 
-15 | extend A <: C {}
-   |        ^ 
-   | 
-
-error: inheritance cycle detected: 'A->B->C->A'
- ==> extend_inheritance_circle3.cj:9:1:
-  | 
-9 | interface A <: B {}
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

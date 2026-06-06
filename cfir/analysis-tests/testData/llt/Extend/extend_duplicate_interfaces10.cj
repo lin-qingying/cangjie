@@ -8,7 +8,7 @@
 
 main(): Int64 {
     var a = B<String, Int32>() // ok
-    var b = B<String, String>() // error
+    var b = <!SUPER_TYPES_DUPLICATE!>B<String, String><!>() // error
     return 0
 }
 
@@ -17,14 +17,3 @@ interface I<T> {}
 class B<T, V> {}
 
 extend<T, V> B<T, V> <: I<T> & I<V> {}
-
-/* SCAN
-error: class 'B' inherits or implements duplicate interface 'I'
-  ==> extend_duplicate_interfaces10.cj:11:13:
-   | 
-11 |     var b = B<String, String>() // error
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

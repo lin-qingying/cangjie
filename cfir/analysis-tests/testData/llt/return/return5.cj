@@ -6,7 +6,6 @@
 
 // EXEC: %compiler %f -o %n.%suffix
 // EXEC: %run %run_opt %n.%suffix | compare %f
-// ASSERT: regex Hello\n
 
 func RuntimeUnitTest() {
     print("Hello\n")

@@ -7,26 +7,6 @@
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 struct A<T>{
-    public operator func []<b:Float32):Bool {true}
+    public operator func []<b<!parse_expected_right_delimiter!>:<!>Float32<!parse_expected_decl!>)<!>:Bool {true}
 }
 main() {}
-
-/* SCAN
-error: unclosed delimiter: '<'
-  ==> func_paramlist_error.cj:10:30:
-   | 
-10 |     public operator func []<b:Float32):Bool {true}
-   |                            ~ ^ expected '>' here
-   |                            |
-   |                            to match this opening '<'
-   | 
-
-error: expected declaration, found ')'
-  ==> func_paramlist_error.cj:10:38:
-   | 
-10 |     public operator func []<b:Float32):Bool {true}
-   |                                      ^ expected declaration here
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -7,25 +7,6 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    (Some(1 + true) ?? 2(false)) + true
+    (Some(1 <!INVALID_BINARY_OPERATOR!>+<!> true) ?? <!NO_MATCHING_OPERATOR_INVOKE!>2<!>(false)) + true
     0
 }
-
-/* SCAN
-error: invalid binary operator '+' on type 'Int64' and 'Bool'
-  ==> coalescing_1.cj:10:13:
-   | 
-10 |     (Some(1 + true) ?? 2(false)) + true
-   |             ^ 
-   | 
-   # note: you may want to implement 'operator func +(right: Bool)' for type 'Int64'
-
-error: no matching function for operator '()' function call
-  ==> coalescing_1.cj:10:24:
-   | 
-10 |     (Some(1 + true) ?? 2(false)) + true
-   |                        ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

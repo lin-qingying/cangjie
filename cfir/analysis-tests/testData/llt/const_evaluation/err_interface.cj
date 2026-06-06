@@ -18,10 +18,10 @@ const func g<T>(i: T) where T <: I {
 class A {}
 
 extend A <: I {
-    public func f() {
+    public func <!INHERIT_MEMBER_KIND_INCONSISTENT!>f<!>() {
         0
     }
-    public static func f2() {
+    public static func <!INHERIT_MEMBER_KIND_INCONSISTENT!>f2<!>() {
         1
     }
     public func f(a: Int64) {
@@ -30,43 +30,6 @@ extend A <: I {
 }
 
 main() {
-    const a = A()
+    const a = <!EXPECT_CONST!>A<!>()
     g(a)
 }
-
-/* SCAN
-error: non-constant function member 'f' cannot have the same name with 'const' function member in extended type
-  ==> err_interface.cj:21:17:
-   | 
-21 |     public func f() {
-   |                 ^ 
-   | 
-note: found 'const' function here
-  ==> err_interface.cj:10:16:
-   | 
-10 |     const func f(): Int64
-   |                ^ 
-   | 
-
-error: non-constant function member 'f2' cannot have the same name with 'const' function member in extended type
-  ==> err_interface.cj:24:24:
-   | 
-24 |     public static func f2() {
-   |                        ^^ 
-   | 
-note: found 'const' function here
-  ==> err_interface.cj:11:23:
-   | 
-11 |     static const func f2(): Int64
-   |                       ^^ 
-   | 
-
-error: expected 'const' expression guaranteed to be evaluated at compile time
-  ==> err_interface.cj:33:15:
-   | 
-33 |     const a = A()
-   |               ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

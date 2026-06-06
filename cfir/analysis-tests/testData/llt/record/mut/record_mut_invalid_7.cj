@@ -13,7 +13,7 @@ interface I1<T> {
 }
 
 struct R1<T> <: I1<T> {
-    public mut func foo1(x: T) {
+    <!sema_incompatible_mut_modifier_between_struct_and_interface!>p<!>ublic mut func foo1(x: T) {
         return x
     }
 }
@@ -25,7 +25,7 @@ interface I2<T> {
 }
 
 struct R2<T> <: I2<T> {
-    public func foo2(x: T) {
+    <!sema_incompatible_mut_modifier_between_struct_and_interface!>p<!>ublic func foo2(x: T) {
         return x
     }
 }
@@ -35,7 +35,7 @@ interface I3<T> {
 }
 
 struct R3<T> <: I3<T> {
-    public mut func foo3(x: T): Unit {
+    <!sema_incompatible_mut_modifier_between_struct_and_interface!>p<!>ublic mut func foo3(x: T): Unit {
     }
 }
 
@@ -44,42 +44,10 @@ interface I4<T> {
 }
 
 struct R4<T> <: I4<T> {
-    public func foo4(x: T): Unit {
+    <!sema_incompatible_mut_modifier_between_struct_and_interface!>p<!>ublic func foo4(x: T): Unit {
     }
 }
 
 main() {
     return 1
 }
-
-/* SCAN
-error: 'mut' modifier of 'foo1' is incompatible with that in interface 'I1'
-  ==> record_mut_invalid_7.cj:16:5:
-   | 
-16 |     public mut func foo1(x: T) {
-   |     ^ 
-   | 
-
-error: 'mut' modifier of 'foo2' is incompatible with that in interface 'I2'
-  ==> record_mut_invalid_7.cj:28:5:
-   | 
-28 |     public func foo2(x: T) {
-   |     ^ 
-   | 
-
-error: 'mut' modifier of 'foo3' is incompatible with that in interface 'I3'
-  ==> record_mut_invalid_7.cj:38:5:
-   | 
-38 |     public mut func foo3(x: T): Unit {
-   |     ^ 
-   | 
-
-error: 'mut' modifier of 'foo4' is incompatible with that in interface 'I4'
-  ==> record_mut_invalid_7.cj:47:5:
-   | 
-47 |     public func foo4(x: T): Unit {
-   |     ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

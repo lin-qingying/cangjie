@@ -13,13 +13,10 @@ class A <: Object {}
 class B <: Object {}
 
 main() {
-    let a = if (true) {
+    let <!chir_dce_unused_variable!>a<!> = if (true) {
         A()
-    } else {
+    } else <!chir_dce_unreachable_block_in_expression!>{
         B()
-    }
+    }<!>
     0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

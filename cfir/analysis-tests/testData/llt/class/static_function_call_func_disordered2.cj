@@ -18,7 +18,7 @@ func xxx() {
 
 class Test <: A {
     public static func test() {
-        return xxx(10)
+        return <!sema_static_function_cannot_access_non_static_member!>x<!>xx(10)
     }
 }
 
@@ -29,5 +29,3 @@ main() {
     }
     return 0
 }
-
-// ASSERT: scan 'xxx' is non-static member, cannot be accessed by static function 'test'

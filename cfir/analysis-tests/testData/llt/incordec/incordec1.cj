@@ -8,17 +8,6 @@
 
 main(): Int64 {
     var tuple = (1, 2, 3)
-    tuple[0]++
+    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>tuple[0]<!>++
     return tuple[0]
 }
-
-/* SCAN
-error: 'tuple element' can not be assigned
-  ==> incordec1.cj:11:5:
-   | 
-11 |     tuple[0]++
-   |     ^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

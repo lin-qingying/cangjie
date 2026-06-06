@@ -12,14 +12,3 @@ abstract class A {
 }
 
 main() {}
-
-/* SCAN
-error: abstract generic function is not allowed in abstract class
- ==> generic_func_limitation_2.cj:4:5:
-  |
-4 |     public func f<T>(a: T):T
-  |     ^
-  |
-
-1 error generated, 1 error printed.
- */

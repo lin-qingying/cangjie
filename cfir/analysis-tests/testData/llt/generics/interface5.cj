@@ -8,17 +8,6 @@
 
 interface A<U> where U <: A<U> {}
 
-extend<U> A<U> {}
+extend<U> <!ILLEGAL_EXTENDED_TYPE!>A<U><!> {}
 
 main() {}
-
-/* SCAN
-error: extending type 'Interface-A<Generics-U>' is not allowed
-  ==> interface5.cj:11:11:
-   | 
-11 | extend<U> A<U> {}
-   |           ^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

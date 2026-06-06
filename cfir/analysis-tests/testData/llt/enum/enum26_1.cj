@@ -10,21 +10,16 @@ enum A<T> {
     a(T)
 
     public static func foo() {
-        test()
+        <!sema_static_function_cannot_access_non_static_member!>t<!>est()
     }
     public func test() {}
 }
 
 class B {}
 
-func test<T>() where T <: Option<B> {}
+func test<<!sema_upper_bound_must_be_class_or_interface!>T<!>>() where T <: Option<B> {}
 
 main(): Int64 {
-    test<B>()
+    test<<!sema_generic_type_argument_not_match_constraint!>B<!>>()
     return 1
 }
-
-// ASSERT: scan-1 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan-1 sema_static_function_cannot_access_non_static_member
-// ASSERT: scan-1 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 3

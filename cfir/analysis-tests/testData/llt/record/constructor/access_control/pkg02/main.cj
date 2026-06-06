@@ -6,9 +6,8 @@
 
 // DEPENDENCE: pkg
 // EXEC: %compiler %cmp_opt %pkg_opt %compile_lib_opt pkg 2>&1 | compare %f
-// ASSERT: scan value type recursive detected: 'A->C->B->A'
 
-internal import pkg.*
+internal import <!package_search_error!>pkg<!>.*
 
 main(): Int64 {
     return 0

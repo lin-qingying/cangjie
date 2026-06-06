@@ -14,7 +14,7 @@ open class C1 {
 
 class C2 <: C1 {
     public func foo1():Int64 {
-        var f = super<C1>.foo() 
+        var f = super<C1<!parse_chained_none_associative!>><!><!parse_expected_expression!>.<!>foo()
         return 0
     }
 }
@@ -22,21 +22,3 @@ class C2 <: C1 {
 main(): Int64 {
     return 1
 }
-
-/* SCAN
-error: comparison operators cannot be chained
-  ==> class_super_access_invalid_1.cj:17:25:
-   | 
-17 |         var f = super<C1>.foo() 
-   |                      ~  ^ 
-   | 
-
-error: expected expression after '>', found '.'
-  ==> class_super_access_invalid_1.cj:17:26:
-   | 
-17 |         var f = super<C1>.foo() 
-   |                          ^ expected expression here
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -4,24 +4,11 @@
 // EXEC-PIPE: %compiler %cmp_opt b.%middle a.%middle %f -o %output 2>&1 | compare %f
 
 package c
-import b.*
+import <!package_search_error!>b<!>.*
 
 main() {
     var a : ArrayList<Int64>
 }
-
-/* SCAN
-warning: unused variable:'a'
-  ==> unused014.cj:10:9:
-   | 
-10 |     var a : ArrayList<Int64>
-   |         ^ unused variable
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-1 warning generated, 1 warning printed.
-*/
-
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

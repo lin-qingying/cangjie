@@ -6,8 +6,6 @@
 
 // EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
 // EXEC: %run %run_opt %n.%suffix
-// ASSERT: scan -3
-// ASSERT: scan 9
 
 interface ExprSYM<repr> {
     func add(t2: repr): repr

@@ -6,15 +6,4 @@
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
-foreign func asserts<T>(input:T):Int32
-
-/* SCAN
-error: foreign function should not be generic function
- ==> foreign_1.cj:9:21:
-  | 
-9 | foreign func asserts<T>(input:T):Int32
-  |                     ^^^ 
-  | 
-
-1 error generated, 1 error printed.
-*/
+foreign func asserts<!parse_foreign_func_should_not_be_generic!><T><!>(input:T):Int32

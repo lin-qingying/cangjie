@@ -29,12 +29,9 @@ func Foo<U>(a: U) where U <: C & I<U> & I2<U> {
     return b
 }
 
-class C1 <: C & I<C1> & I2<C1> {}
+<!sema_interface_member_must_be_implemented!>c<!>lass C1 <: C & I<C1> & I2<C1> {}
 
 main() {
     var a: C1 = Foo<C1>(C1())
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

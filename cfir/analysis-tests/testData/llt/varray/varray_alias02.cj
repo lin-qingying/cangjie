@@ -6,45 +6,8 @@
 
 // EXEC: %compiler %cmp_opt %f  -o %output 2>&1 | compare %f
 
-
-type varr2 = VArray
-
+type varr2 = VArray<!parse_varray_type_parameter!>
+<!>
 main() {
-  var c: varr2<Int64, $3> = varr2<Int64, $3>(repeat: 0)
-}
-
-/* SCAN
-error: expected type parameters after 'VArray' keyword
-  ==> varray_alias02.cj:10:20:
-   | 
-10 | type varr2 = VArray
-   |                    ^ 
-   | 
-
-error: unclosed delimiter: '<'
-  ==> varray_alias02.cj:13:22:
-   | 
-13 |   var c: varr2<Int64, $3> = varr2<Int64, $3>(repeat: 0)
-   |               ~      ^ expected '>' here
-   |               |
-   |               to match this opening '<'
-   | 
-
-error: expected type name after ',', found '$'
-  ==> varray_alias02.cj:13:23:
-   | 
-13 |   var c: varr2<Int64, $3> = varr2<Int64, $3>(repeat: 0)
-   |                     ~ ^ expected type name here
-   |                     |
-   |                     after ','
-   | 
-
-error: expected expression or declaration, found '}'
-  ==> varray_alias02.cj:14:1:
-   | 
-14 | }
-   | ^ expected expression or declaration here
-   | 
-
-4 errors generated, 4 errors printed.
-*/
+  var c: varr2<Int64,<!parse_expected_right_delimiter!> <!><!parse_expected_type!>$<!>3> = varr2<Int64, $3>(repeat: 0)
+<!parse_expected_expr_or_decl_in!>}<!>

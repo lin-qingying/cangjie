@@ -7,10 +7,7 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    let err = 1 && false
+    let err = 1 <!sema_invalid_binary_expr!>&&<!> false
     err ~> err
     0
 }
-
-// ASSERT: scan-not :5:
-// ASSERT: scan 1 error generated

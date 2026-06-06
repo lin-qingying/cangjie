@@ -7,24 +7,13 @@
 
 package c
 
-import b.{MyClass,I1}
+import <!package_search_error!>b<!>.{MyClass,I1}
 
 main() {
     var myClassImpl = MyClass()
     myClassImpl.test1()
     myClassImpl.test2()
 }
-
-/* SCAN
-error: no matching function declaration for function call 'test2'
-  ==> test_a03_03.cj:15:17:
-   | 
-15 |     myClassImpl.test2()
-   |                 ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

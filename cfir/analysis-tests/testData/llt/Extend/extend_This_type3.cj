@@ -10,7 +10,7 @@ main() : Int64 {
     return 0
 }
 
-type A = This
+type A = <!parse_this_type_not_allow!>This<!>
 
 extend A {
     public operator func ==(right:Rune):Bool  {
@@ -21,15 +21,3 @@ extend A {
         }
     }
 }
-
-/* SCAN
-error: 'This' type is not allowed
-  ==> extend_This_type3.cj:13:10:
-   | 
-13 | type A = This
-   |          ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-1 error generated, 1 error printed.
-*/

@@ -5,14 +5,10 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%compiler %cmp_opt %f -o %output
-// ASSERT: %output
 
 main(): Int64 {
-    if (false) {
+    if (false) <!chir_dce_unreachable_block_in_expression!>{
         return 1
-    }
+    }<!>
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

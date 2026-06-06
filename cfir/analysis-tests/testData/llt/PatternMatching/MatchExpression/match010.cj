@@ -10,7 +10,7 @@ func test(): Int64 {
     var i : Int32 = 2
     let a = 3
     match (i) {
-        case a@t =>
+        case a<!parse_expected_double_arrow_in_case!>@<!>t =>
             print(t.toString()+",")
             print(a.toString())
             1
@@ -22,14 +22,3 @@ func test(): Int64 {
 main(): Int64 {
     return test()
 }
-
-/* SCAN
-error: expected '=>' in case, found '@'
-  ==> match010.cj:13:15:
-   | 
-13 |         case a@t =>
-   |         ~~~~  ^ expected '=>' here
-   | 
-
-1 error generated, 1 error printed.
-*/

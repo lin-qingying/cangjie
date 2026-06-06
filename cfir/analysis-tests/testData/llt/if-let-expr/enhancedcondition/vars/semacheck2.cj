@@ -7,46 +7,14 @@
 // EXEC-PIPE-1: %compiler %f %cmp_opt 2>&1 | compare %f
 
 main() {
-    if (let ) {
+    if (let <!parse_expected_pattern!>)<!> {
 
     }
-    while (let  <-) {
+    while (let  <!parse_expected_pattern!><-<!><!parse_expected_expression!>)<!> {
 
     }
 
-    if (let a) {
-        
+    if (let a<!parse_expected_backarrow_in_let_cond!>)<!> {
+
     }
 }
-
-/* SCAN
-error: expected pattern, found ')'
-  ==> semacheck2.cj:10:13:
-   | 
-10 |     if (let ) {
-   |             ^ expected pattern here
-   | 
-
-error: expected pattern, found '<-'
-  ==> semacheck2.cj:13:17:
-   | 
-13 |     while (let  <-) {
-   |                 ^^ expected pattern here
-   | 
-
-error: expected expression after '<-', found ')'
-  ==> semacheck2.cj:13:19:
-   | 
-13 |     while (let  <-) {
-   |                   ^ expected expression here
-   | 
-
-error: expected '<-' in if-let expression, found ')'
-  ==> semacheck2.cj:17:14:
-   | 
-17 |     if (let a) {
-   |              ^ expected '<-' here
-   | 
-
-4 errors generated, 4 errors printed.
-*/

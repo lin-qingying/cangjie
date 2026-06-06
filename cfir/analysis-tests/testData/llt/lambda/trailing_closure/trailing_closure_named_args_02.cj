@@ -10,17 +10,6 @@ main(): Int64 {
     func g(h!: (Int64) -> Int64, a!: (Int64) -> Int64) {
         h(0) - a(2)
     }
-    var t = g(a: {t => t + 1}) {t => t + 1}
+    var t = g(a: {t => t + 1}) <!ARGUMENT_PASSED_TWICE!>{<!>t => t + 1}
     return 0
 }
-
-/* SCAN
-error: named argument prefix 'a:' cannot appeared more than once in call
-  ==> trailing_closure_named_args_02.cj:13:32:
-   | 
-13 |     var t = g(a: {t => t + 1}) {t => t + 1}
-   |                                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

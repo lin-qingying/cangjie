@@ -11,15 +11,4 @@ open class A<T> {}
 
 class B<T> <: A<T> & I<T> {}
 
-foreign func assert(input: B<Int32>): Int32
-
-/* SCAN
-error: arguments type of CFunc must be instantiated with CType
-  ==> foreign_2.cj:14:21:
-   | 
-14 | foreign func assert(input: B<Int32>): Int32
-   |                     ^^^^^^^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/
+foreign func assert(input: <!INVALID_CFUNC_PARAMETER_TYPE!>B<Int32><!>): Int32

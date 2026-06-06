@@ -12,7 +12,7 @@ func foo() {
     var i = 0
     while (i < 5) {
         i++
-        var arr1: VArray<Nothing, $5> = VArray<Nothing, $5>(repeat: continue)
+        <!chir_dce_unreachable_expression_hint!>var <!chir_dce_unused_variable!>arr1<!>: VArray<Nothing, $5> = VArray<Nothing, $5>(repeat: continue)<!>
     }
     return 0
 }
@@ -20,25 +20,3 @@ func foo() {
 main() {
     return foo()
 }
-
-/* SCAN
-warning: unreachable expression
-  ==> varray13.cj:14:9:
-   | 
-14 |         var arr1: VArray<Nothing, $5> = VArray<Nothing, $5>(repeat: continue)
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^any code following this expression is unreachable
-   |         |
-   |         unreachable expression
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unused variable:'arr1'
-  ==> varray13.cj:14:13:
-   | 
-14 |         var arr1: VArray<Nothing, $5> = VArray<Nothing, $5>(repeat: continue)
-   |             ^^^^ unused variable
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-2 warnings generated, 2 warnings printed.
-*/

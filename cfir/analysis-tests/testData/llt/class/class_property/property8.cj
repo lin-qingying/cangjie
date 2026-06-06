@@ -16,7 +16,7 @@ open class A {
 }
 
 class B <: A {
-    public mut prop i: Int64 {
+    public mut prop <!sema_cannot_override!>i<!>: Int64 {
         get() {
             return 1
         }
@@ -52,7 +52,7 @@ abstract class A2 {
 }
 
 class B2 <: A2 {
-    public mut prop i: Int64 {
+    public mut prop <!sema_cannot_override!>i<!>: Int64 {
         get() {
             return 1
         }
@@ -87,8 +87,8 @@ abstract class A4 {
     }
 }
 
-class B2 <: A4 {
-    public mut prop i: Int64 {
+class <!sema_redefinition!>B2<!> <: A4 {
+    public mut prop <!sema_cannot_override!>i<!>: Int64 {
         get() {
             return 1
         }
@@ -99,59 +99,3 @@ class B2 <: A4 {
 main() {
     0
 }
-
-/* SCAN
-error: redefinition of declaration 'B2'
-  ==> property8.cj:90:7:
-   | 
-90 | class B2 <: A4 {
-   |       ^^ 
-   | 
-note: 'B2' is previously declared here
-  ==> property8.cj:54:7:
-   | 
-54 | class B2 <: A2 {
-   |       ^^ 
-   | 
-
-error: cannot override property 'i'
-  ==> property8.cj:19:21:
-   | 
-19 |     public mut prop i: Int64 {
-   |                     ^ 
-   | 
-note: the parent property is not modified by 'open'
-  ==> property8.cj:10:21:
-   | 
-10 |     public mut prop i: Int64 {
-   |                     ^ 
-   | 
-
-error: cannot override property 'i'
-  ==> property8.cj:55:21:
-   | 
-55 |     public mut prop i: Int64 {
-   |                     ^ 
-   | 
-note: the parent property is not modified by 'open'
-  ==> property8.cj:46:21:
-   | 
-46 |     public mut prop i: Int64 {
-   |                     ^ 
-   | 
-
-error: cannot override property 'i'
-  ==> property8.cj:91:21:
-   | 
-91 |     public mut prop i: Int64 {
-   |                     ^ 
-   | 
-note: the parent property is not modified by 'open'
-  ==> property8.cj:82:21:
-   | 
-82 |     public mut prop i: Int64 {
-   |                     ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

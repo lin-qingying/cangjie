@@ -11,7 +11,7 @@ open class Base {
 }
 
 class Data <: Base {
-    public let val: Int32 = 1
+    <!sema_member_variable_can_not_shadow!>p<!>ublic let val: Int32 = 1
 }
 
 open class DataI {
@@ -19,7 +19,7 @@ open class DataI {
 }
 
 class DataIDerived <: DataI {
-    public let val: Int32 = 5
+    <!sema_static_and_non_static_member_cannot_have_same_name!>p<!>ublic let val: Int32 = 5
 }
 
 main(): Int64 {
@@ -35,21 +35,3 @@ main(): Int64 {
     }
     return 0
 }
-
-/* SCAN
-error: the variable 'val' must not shadow a member variable of the supertype
-  ==> class_shadow3.cj:14:5:
-   | 
-14 |     public let val: Int32 = 1
-   |     ^ 
-   | 
-
-error: non-static member 'val' cannot have the same name with static member in parent class or interfaces
-  ==> class_shadow3.cj:22:5:
-   | 
-22 |     public let val: Int32 = 5
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

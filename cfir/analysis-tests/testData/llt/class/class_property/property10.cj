@@ -11,28 +11,8 @@ main(): Int64 {
 }
 
 open class Boo {
-    public mut override prop a6: Int64 {
-    }
+    <!PROPERTY_MUST_HAVE_ACCESSORS!>public mut <!NOTHING_TO_OVERRIDE!>override<!> prop a6: Int64 {
+    }<!>
 }
 
 class Coo <: Boo {}
-
-/* SCAN
-error: property must have accessors
-  ==> property10.cj:14:5:
-   | 
-14 |       public mut override prop a6: Int64 {
-   |  _____^
-15 | |     }
-   | |_____^
-   | 
-
-error: 'override' property 'a6' does not have an overridden property in its supertype
-  ==> property10.cj:14:5:
-   | 
-14 |     public mut override prop a6: Int64 {
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

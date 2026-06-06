@@ -1,5 +1,4 @@
 // EXEC: %compiler %f | compare %f
-// ASSERT: regex-not core dump
 
 // All global variable need to be defined before use!
  var variable87 : int8 = int8(10);
@@ -14,9 +13,9 @@ public let variable202 : Class147 = Class147();
 
  let variable224 : Class167 = Class167();
 
-public let variable303 : (float64*Enum52) = ((-51.0), Enum52.defaultValue);
+public let variable303 : (float64<!parse_expected_right_delimiter!>*<!>Enum52) = ((-51.0), Enum52.defaultValue);
 
-public let variable330 : (Enum52*(int64*char*float64*(int8*int32))*int8) = (Enum52.defaultValue, (22, 'M', (-53.0), (int8(-94), int32(113))), int8(10));
+public let variable330 : (Enum52<!parse_expected_right_delimiter!>*<!>(int64*char*float64*(int8*int32))*int8) = (Enum52.defaultValue, (22, 'M', (-53.0), (int8(-94), int32(113))), int8(10));
 
  var variable568 : bool = false;
 
@@ -28,11 +27,11 @@ public var variable635 : float32 = float32(-5.0);
 
  let variable651 : bool = false;
 
- var variable690 : (bool*int64) = (false, 12);
+ var variable690 : (bool<!parse_expected_right_delimiter!>*<!>int64) = (false, 12);
 
  var variable723 : bool = false;
 
-public let variable833 : (unit*bool) = ((), true);
+public let variable833 : (unit<!parse_expected_right_delimiter!>*<!>bool) = ((), true);
 
 public var variable849 : Enum52 = Enum52.defaultValue;
 
@@ -44,7 +43,7 @@ public let variable900 : int16 = int16(122);
 
 public let variable999 : Class8 = Class8();
 
- let variable1239 : (float32*(int64*char*float64*(int8*int32))) = (float32(66.0), ((-43), 'E', 116.0, (int8(-28), int32(-7))));
+ let variable1239 : (float32<!parse_expected_right_delimiter!>*<!>(int64*char*float64*(int8*int32))) = (float32(66.0), ((-43), 'E', 116.0, (int8(-28), int32(-7))));
 
  let variable1308 : float64 = 125.0;
 
@@ -52,7 +51,7 @@ public let variable999 : Class8 = Class8();
 
 public var variable1340 : unit = ();
 
- var variable1357 : (char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool)) = ('2', (22, 'G', (-57.0), (int8(-43), int32(-14))), (Enum52.defaultValue, (92, 'V', 75.0, (int8(-86), int32(-31))), int8(119)), Class167(), ((), false));
+ var variable1357 : (char<!parse_expected_right_delimiter!>*<!>(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool)) = ('2', (22, 'G', (-57.0), (int8(-43), int32(-14))), (Enum52.defaultValue, (92, 'V', 75.0, (int8(-86), int32(-31))), int8(119)), Class167(), ((), false));
 
  let variable1443 : Class1423 = Class1423();
 
@@ -78,35 +77,35 @@ public let variable2128 : bool = false;
 
 public var variable2484 : Record16 = Record16();
 
- let variable2551 : ((float64*Enum52)*bool*float32) = ((66.0, Enum52.defaultValue), false, float32(-116.0));
+ let variable2551 : ((float64<!parse_expected_right_delimiter!>*<!>Enum52)*bool*float32) = ((66.0, Enum52.defaultValue), false, float32(-116.0));
 
- let variable2587 : ((unit*bool)*Enum558*(int64*char*float64*(int8*int32))) = (((), false), Enum558.defaultValue, ((-77), 'X', (-32.0), (int8(-120), int32(114))));
+ let variable2587 : ((unit<!parse_expected_right_delimiter!>*<!>bool)*Enum558*(int64*char*float64*(int8*int32))) = (((), false), Enum558.defaultValue, ((-77), 'X', (-32.0), (int8(-120), int32(114))));
 
 public let variable2646 : Class167 = Class167();
 
 public let variable2787 : int32 = int32(-30);
 
-public let variable2831 : (Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52))) = (Enum591.defaultValue, '9', ('N', ((), false), ((-22.0), Enum52.defaultValue), ((-23.0), Enum52.defaultValue)));
+public let variable2831 : (Enum591<!parse_expected_right_delimiter!>*<!>char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52))) = (Enum591.defaultValue, '9', ('N', ((), false), ((-22.0), Enum52.defaultValue), ((-23.0), Enum52.defaultValue)));
 
  var variable2852 : Class147 = Class147();
 
  let variable2880 : float32 = float32(-116.0);
 
- var variable2962 : (char*(unit*bool)*(float64*Enum52)*(float64*Enum52)) = ('I', ((), false), ((-49.0), Enum52.defaultValue), ((-109.0), Enum52.defaultValue));
+ var variable2962 : (char<!parse_expected_right_delimiter!>*<!>(unit*bool)*(float64*Enum52)*(float64*Enum52)) = ('I', ((), false), ((-49.0), Enum52.defaultValue), ((-109.0), Enum52.defaultValue));
 
 public let variable2975 : Record16 = Record16();
 
- let variable3016 : ((char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(float64*Enum52)) = (('J', (1, 'b', (-1.0), (int8(-28), int32(115))), (Enum52.defaultValue, (120, 'y', 1.0, (int8(7), int32(104))), int8(-86)), Class167(), ((), true)), (105.0, Enum52.defaultValue));
+ let variable3016 : ((char<!parse_expected_right_delimiter!>*<!>(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(float64*Enum52)) = (('J', (1, 'b', (-1.0), (int8(-28), int32(115))), (Enum52.defaultValue, (120, 'y', 1.0, (int8(7), int32(104))), int8(-86)), Class167(), ((), true)), (105.0, Enum52.defaultValue));
 
-public let variable3030 : ((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit) = ((Enum591.defaultValue, 'k', ('2', ((), false), ((-120.0), Enum52.defaultValue), ((-57.0), Enum52.defaultValue))), ('g', ((-111), 'B', 111.0, (int8(54), int32(-82))), (Enum52.defaultValue, ((-103), '0', 82.0, (int8(-57), int32(115))), int8(-110)), Class167(), ((), false)), ());
+public let variable3030 : ((Enum591<!parse_expected_right_delimiter!>*<!>char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit) = ((Enum591.defaultValue, 'k', ('2', ((), false), ((-120.0), Enum52.defaultValue), ((-57.0), Enum52.defaultValue))), ('g', ((-111), 'B', 111.0, (int8(54), int32(-82))), (Enum52.defaultValue, ((-103), '0', 82.0, (int8(-57), int32(115))), int8(-110)), Class167(), ((), false)), ());
 
-public let variable3065 : ((unit*bool)*int16) = (((), false), int16(112));
+public let variable3065 : ((unit<!parse_expected_right_delimiter!>*<!>bool)*int16) = (((), false), int16(112));
 
  let variable3124 : bool = false;
 
- var variable3165 : (((unit*bool)*int16)*(float32*(int64*char*float64*(int8*int32)))) = ((((), true), int16(13)), (float32(-112.0), (51, 'C', 12.0, (int8(113), int32(41)))));
+ var variable3165 : (((unit<!parse_expected_right_delimiter!>*<!>bool)*int16)*(float32*(int64*char*float64*(int8*int32)))) = ((((), true), int16(13)), (float32(-112.0), (51, 'C', 12.0, (int8(113), int32(41)))));
 
- let variable3328 : (((float64*Enum52)*bool*float32)*Enum591*(bool*int64)) = (((48.0, Enum52.defaultValue), false, float32(-82.0)), Enum591.defaultValue, (true, 62));
+ let variable3328 : (((float64<!parse_expected_right_delimiter!>*<!>Enum52)*bool*float32)*Enum591*(bool*int64)) = (((48.0, Enum52.defaultValue), false, float32(-82.0)), Enum591.defaultValue, (true, 62));
 
  let variable3396 : int64 = (-10);
 
@@ -116,15 +115,15 @@ public var variable3445 : bool = true;
 
  let variable3502 : Record16 = Record16();
 
-public var variable3570 : ((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit) = ((Enum591.defaultValue, 'J', ('u', ((), false), ((-30.0), Enum52.defaultValue), ((-63.0), Enum52.defaultValue))), ('B', (89, 'n', 107.0, (int8(16), int32(-63))), (Enum52.defaultValue, (21, '7', 74.0, (int8(-125), int32(88))), int8(-22)), Class167(), ((), false)), ());
+public var variable3570 : ((Enum591<!parse_expected_right_delimiter!>*<!>char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit) = ((Enum591.defaultValue, 'J', ('u', ((), false), ((-30.0), Enum52.defaultValue), ((-63.0), Enum52.defaultValue))), ('B', (89, 'n', 107.0, (int8(16), int32(-63))), (Enum52.defaultValue, (21, '7', 74.0, (int8(-125), int32(88))), int8(-22)), Class167(), ((), false)), ());
 
-public let variable3616 : (int64*char*float64*(int8*int32)) = (53, 'G', 43.0, (int8(-85), int32(-69)));
+public let variable3616 : (int64<!parse_expected_right_delimiter!>*<!>char*float64*(int8*int32)) = (53, 'G', 43.0, (int8(-85), int32(-69)));
 
  let variable3684 : bool = true;
 
- var variable3700 : ((int64*char*float64*(int8*int32))*Enum52) = ((77, 'W', (-126.0), (int8(-2), int32(0))), Enum52.defaultValue);
+ var variable3700 : ((int64<!parse_expected_right_delimiter!>*<!>char*float64*(int8*int32))*Enum52) = ((77, 'W', (-126.0), (int8(-2), int32(0))), Enum52.defaultValue);
 
- let variable3732 : (float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64))) = ((-36.0), ('B', ((-26), '6', 22.0, (int8(-69), int32(82))), (Enum52.defaultValue, (39, 'v', 50.0, (int8(29), int32(-2))), int8(-52)), Class167(), ((), false)), ((((-57.0), Enum52.defaultValue), true, float32(-118.0)), Enum591.defaultValue, (false, 97)));
+ let variable3732 : (float64<!parse_expected_right_delimiter!>*<!>(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64))) = ((-36.0), ('B', ((-26), '6', 22.0, (int8(-69), int32(82))), (Enum52.defaultValue, (39, 'v', 50.0, (int8(29), int32(-2))), int8(-52)), Class167(), ((), false)), ((((-57.0), Enum52.defaultValue), true, float32(-118.0)), Enum591.defaultValue, (false, 97)));
 
 public var variable3774 : bool = false;
 
@@ -138,13 +137,13 @@ public let variable3880 : Class1423 = Class1423();
 
 public var variable3925 : bool = false;
 
- var variable4100 : ((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit) = ((Enum591.defaultValue, 'C', ('o', ((), true), ((-92.0), Enum52.defaultValue), (47.0, Enum52.defaultValue))), ('o', ((-60), '9', (-23.0), (int8(-83), int32(-47))), (Enum52.defaultValue, ((-5), 'z', (-95.0), (int8(-72), int32(1))), int8(-22)), Class167(), ((), true)), ());
+ var variable4100 : ((Enum591<!parse_expected_right_delimiter!>*<!>char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit) = ((Enum591.defaultValue, 'C', ('o', ((), true), ((-92.0), Enum52.defaultValue), (47.0, Enum52.defaultValue))), ('o', ((-60), '9', (-23.0), (int8(-83), int32(-47))), (Enum52.defaultValue, ((-5), 'z', (-95.0), (int8(-72), int32(1))), int8(-22)), Class167(), ((), true)), ());
 
 public let variable4150 : Enum558 = Enum558.defaultValue;
 
  open class Class8 {
     public init() {}
-    public static let variable11 : (int8*int32) = (int8(14), int32(12));
+    public static let variable11 : (int8<!parse_expected_right_delimiter!>*<!>int32) = (int8(14), int32(12));
 
     public let variable28 : char = 'C';
 
@@ -158,10 +157,9 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
 
     public static var variable280 : Class167 = Class167();
 
-
-    protected func function227(parameter228 ! : Enum52 = if { // block id: 232
+    protected func function227(parameter228 ! : Enum52 = if <!parse_expected_left_paren_after!>{<!> // block id: 232
         (false, 19);
-    }._0 { variable193 } else { { // block id: 236
+    }._0 { variable193 }<!parse_expected_right_delimiter!> <!><!parse_expected_character!>else<!> { { // block id: 236
         let variable243 : int32 = int32(-90);
 
         { // block id: 238
@@ -199,13 +197,12 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
 
     private static var variable394 : float64 = (-63.0);
 
-
-    protected static func function219(parameter220 ! : Enum52 = if variable224.function227(parameter228 : Class147.variable294, parameter264 : variable266) { // block id: 297
+    protected static func function219(parameter220 ! : Enum52 = if <!parse_expected_left_paren_after!>variable224<!>.function227(parameter228 : Class147.variable294, parameter264 : variable266) { // block id: 297
         match variable303._1 {
             case caseVar307@ .defaultValue  => caseVar307
             case _ => variable266
         };
-    } else if Class147.function313() { // block id: 317
+    }<!parse_expected_right_delimiter!> <!><!parse_expected_decl!>else<!> if Class147.function313() { // block id: 317
         variable202.variable322;
 
         { // block id: 325
@@ -287,14 +284,13 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
         };
     }
 
-    public static var variable473 : (int64*char*float64*(int8*int32)) = ((-87), 'd', 64.0, (int8(9), int32(-127)));
+    public static var variable473 : (int64<!parse_expected_right_delimiter!>*<!>char*float64*(int8*int32)) = ((-87), 'd', 64.0, (int8(9), int32(-127)));
 
     private static let variable478 : int32 = int32(-8);
 
     protected var variable503 : Record16 = Record16();
 
-
-    public open func function179(parameter180 ! : Class147 = if variable183 { (if ((), false)._1 { Class147() } else { if match variable193 {
+    public open func function179(parameter180 ! : Class147 = if <!parse_expected_left_paren_after!>variable183<!> { (if ((), false)._1 { Class147() } else { if match variable193 {
         case .defaultValue  => variable183
         case _ => variable183
     } { // block id: 199
@@ -307,7 +303,7 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
         variable156;
 
         variable202;
-    } } ) } else { Class147() } , parameter214 ! : int32 = if Class8.function219() { // block id: 457
+    } } ) }<!parse_expected_right_delimiter!> <!><!parse_expected_character!>else<!> { Class147() } , parameter214 ! : int32 = if Class8.function219() { // block id: 457
         (-variable394);
 
         (Enum52.defaultValue, { // block id: 464
@@ -347,14 +343,13 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
 
     protected let variable542 : bool = true;
 
-
     protected open func function172() : Class147 { // block id: 173
         var variable532 : int64 = 112;
 
-        match variable156.function179() {
-            case _ if false => if variable183 { // block id: 524
+        match <!parse_selector_or_match_expression_body!>variable156<!>.function179() {
+            case _ <!parse_expected_double_arrow_in_case!>if<!> false => if <!parse_expected_left_paren_after!>variable183<!> { // block id: 524
                     variable183;
-                } else { // block id: 527
+                } <!parse_expected_expr_or_decl_in!>else<!> { // block id: 527
                     variable11;
 
                     variable532;
@@ -380,7 +375,7 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
 
     public static let variable1008 : int8 = int8(-56);
 
-    static var variable1023 : (char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool)) = ('8', (28, 'L', 118.0, (int8(-41), int32(102))), (Enum52.defaultValue, (44, 'a', (-98.0), (int8(-6), int32(-20))), int8(112)), Class167(), ((), true));
+    static var variable1023 : (char<!parse_expected_right_delimiter!>*<!>(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool)) = ('8', (28, 'L', 118.0, (int8(-41), int32(102))), (Enum52.defaultValue, (44, 'a', (-98.0), (int8(-6), int32(-20))), int8(112)), Class167(), ((), true));
 
     public static let variable1113 : int32 = int32(-54);
 
@@ -410,10 +405,9 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
 
     static var variable1962 : bool = false;
 
-    public static var variable2020 : ((float64*Enum52)*bool*float32) = (((-88.0), Enum52.defaultValue), false, float32(72.0));
+    public static var variable2020 : ((float64<!parse_expected_right_delimiter!>*<!>Enum52)*bool*float32) = (((-88.0), Enum52.defaultValue), false, float32(72.0));
 
-
-    protected open func function1676(parameter1677 ! : Enum558 = Class147.variable954, parameter1681 ! : Enum558 = match (if Class1423.variable1687 { Enum591.defaultValue } else { (if Class147.variable1694 { match {
+    protected open func function1676(parameter1677 ! : Enum558 = Class147.variable954, parameter1681 ! : Enum558 = match (if <!parse_expected_left_paren_after!>Class1423<!>.variable1687 { Enum591.defaultValue }<!parse_expected_right_delimiter!> <!><!parse_expected_left_brace!>else<!> { (if Class147.variable1694 { match {
             case variable1276 => { // block id: 1698
                 variable123;
 
@@ -512,7 +506,6 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
         };
     }
 
-
     protected open func function2103(parameter2104 ! : (float32*(int64*char*float64*(int8*int32))) = match Record1938(if match variable503 {
             case caseVar2126 => variable2128
             case _ => variable651
@@ -575,7 +568,6 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
 
     public static var variable2906 : (int64*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)*char*unit) = (78, ((Enum591.defaultValue, 'T', ('D', ((), true), ((-51.0), Enum52.defaultValue), (123.0, Enum52.defaultValue))), ('j', (58, '0', (-46.0), (int8(116), int32(-3))), (Enum52.defaultValue, ((-27), 'C', (-16.0), (int8(95), int32(-87))), int8(-45)), Class167(), ((), true)), ()), '3', ());
 
-
     public func function1420(parameter1421 ! : Class167 = variable1425.variable1428, parameter1430 ! : Class167 = if variable1276 { Class167() } else { variable1425.function1437(parameter1438 : Class8()) } ) : float64 { // block id: 2820
         var variable2841 : Class8 = Class8();
 
@@ -633,7 +625,6 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
             variable1308;
         };
     }
-
 
     static func function1101(parameter1102 ! : (unit*bool) = if { // block id: 1104
         match variable473 {
@@ -848,7 +839,7 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
     }
 
     init (parameter3117 : bool){ // block id: 3118
-        this() 
+        this()
         (-35.0);
 
         (if variable3124 { Class147() } else { (if true { variable202 } else { (if variable1984 { variable202 } else { variable202 } ) } ) } );
@@ -872,8 +863,7 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
                 };
             };
         };
-    }// lxj 
-
+    }// lxj
 
     protected func function553(parameter554 ! : Enum52 = if match {
         case match variable560 {
@@ -1075,9 +1065,9 @@ public let variable4150 : Enum558 = Enum558.defaultValue;
             case _ => parameter989.function1089(parameter1090 : variable1718, parameter3282 : variable2962, parameter3284 : variable2360)
         };
     }
-}
-
-struct Record16 {
+<!parse_expected_case!>}<!><!parse_expected_right_delimiter!>
+<!>
+<!parse_unexpected_declaration_in_scope!>struct<!> Record16 {
     public init() {}
     private static var variable25 : Class8 = Class8();
 
@@ -1095,12 +1085,11 @@ struct Record16 {
 
     public static var variable945 : int8 = int8(-69);
 
-    public static let variable1599 : (unit*bool) = ((), false);
+    public static let variable1599 : (unit<!parse_expected_right_delimiter!>*<!>bool) = ((), false);
 
     public static let variable1723 : Enum591 = Enum591.defaultValue;
 
     public static var variable2072 : bool = true;
-
 
     public static let variable2992 : int64 = (-85);
 
@@ -1108,22 +1097,21 @@ struct Record16 {
 
     public static let variable3055 : Record1938 = Record1938();
 
-    public static var variable3095 : (int64*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)*char*unit) = (25, ((Enum591.defaultValue, 'v', ('z', ((), false), ((-33.0), Enum52.defaultValue), ((-84.0), Enum52.defaultValue))), ('1', ((-35), 'k', (-117.0), (int8(64), int32(-123))), (Enum52.defaultValue, ((-36), 'E', 97.0, (int8(-89), int32(34))), int8(-36)), Class167(), ((), true)), ()), 'm', ());
-
+    public static var variable3095 : (int64<!parse_expected_right_delimiter!>*<!>((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)*char*unit) = (25, ((Enum591.defaultValue, 'v', ('z', ((), false), ((-33.0), Enum52.defaultValue), ((-84.0), Enum52.defaultValue))), ('1', ((-35), 'k', (-117.0), (int8(64), int32(-123))), (Enum52.defaultValue, ((-36), 'E', 97.0, (int8(-89), int32(34))), int8(-36)), Class167(), ((), true)), ()), 'm', ());
 
     public static func function1094(parameter1095 ! : Enum591 = Enum591.defaultValue, parameter1097 ! : Record16 = Class8.function1101(parameter1246 : { // block id: 2977
-        (variable87 * variable945);
+        <!parse_expected_double_arrow_in_lambda!>(<!>variable87 * variable945);
     }, parameter2947 : { // block id: 2982
-        (variable1308 * variable1308);
+        <!parse_expected_double_arrow_in_lambda!>(<!>variable1308 * variable1308);
 
         variable1308;
 
-        let variable2995 : ((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit) = ((Enum591.defaultValue, 'g', ('I', ((), true), (72.0, Enum52.defaultValue), (48.0, Enum52.defaultValue))), ('j', ((-121), 'R', 28.0, (int8(89), int32(-39))), (Enum52.defaultValue, (35, 'c', (-27.0), (int8(9), int32(63))), int8(7)), Class167(), ((), false)), ());
+        let variable2995 : ((Enum591<!parse_expected_right_delimiter!>*<!>char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit) = ((Enum591.defaultValue, 'g', ('I', ((), true), (72.0, Enum52.defaultValue), (48.0, Enum52.defaultValue))), ('j', ((-121), 'R', 28.0, (int8(89), int32(-39))), (Enum52.defaultValue, (35, 'c', (-27.0), (int8(9), int32(63))), int8(7)), Class167(), ((), false)), ());
 
         (variable2992, variable2995, variable123, variable2999);
-    }), parameter3001 ! : Enum558 = match match Enum558.enumValue3005((if variable905 { variable2975 } else { parameter1097 } )) {
-            case .defaultValue  => variable3016._0
-            case caseVar3020 : Enum558 if { // block id: 3021
+    }), parameter3001 ! : Enum558 = <!parse_trailing_closure_only_follow_name!>match <!parse_selector_or_match_expression_body!>match<!> Enum558.enumValue3005((if variable905 { variable2975 } else { parameter1097 } )) {
+            case <!parse_expected_pattern!>.<!>defaultValue  => variable3016._0
+            case caseVar3020 : Enum558 <!parse_expected_double_arrow_in_case!>if<!> { // block id: 3021
                     variable2992;
 
                     variable1239;
@@ -1131,11 +1119,11 @@ struct Record16 {
                     variable1617;
                 } => variable3030._1
             case _ => { // block id: 3032
-                ('n', ((-107), 'J', (-12.0), (int8(-88), int32(-97))), (Enum52.defaultValue, ((-86), 'n', (-125.0), (int8(-74), int32(-107))), int8(-110)), Class167(), ((), false));
+                <!parse_expected_double_arrow_in_lambda!>(<!>'n', ((-107), 'J', (-12.0), (int8(-88), int32(-97))), (Enum52.defaultValue, ((-86), 'n', (-125.0), (int8(-74), int32(-107))), int8(-110)), Class167(), ((), false));
             }
-        } {
-        case caseVar3037 : (char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool)) => (if true { Enum558.enumValue3005(variable2484) } else { (if variable1617 { variable2283 } else { variable1660 } ) } )
-        case _ => if variable1323 { // block id: 3048
+        }<!> {
+        <!parse_expected_expr_or_decl_in!>case<!> caseVar3037 : (char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool)) => (if true { Enum558.enumValue3005(variable2484) } else { (if variable1617 { variable2283 } else { variable1660 } ) } )
+        <!parse_expected_expr_or_decl_in!>case<!> _ => if variable1323 { // block id: 3048
             let variable3059 : Enum558 = Enum558.defaultValue;
 
             let variable3074 : ((unit*bool)*Enum558*(int64*char*float64*(int8*int32))) = (((), true), Enum558.defaultValue, ((-110), 'F', (-47.0), (int8(-68), int32(39))));
@@ -1179,18 +1167,18 @@ struct Record16 {
         }
     }) : Enum591 { // block id: 3109
         { // block id: 3111
-            let variable3169 : ((int8*int32)*((float64*Enum52)*bool*float32)) = ((int8(16), int32(-70)), ((80.0, Enum52.defaultValue), false, float32(6.0)));
+            <!parse_expected_double_arrow_in_lambda!>let<!> variable3169 : ((int8<!parse_expected_right_delimiter!>*<!>int32)*((float64*Enum52)*bool*float32)) = ((int8(16), int32(-70)), ((80.0, Enum52.defaultValue), false, float32(6.0)));
 
             { // block id: 3113
-                Class8(variable1984);
+                <!parse_expected_double_arrow_in_lambda!>Class8<!>(variable1984);
 
-                if variable568 { // block id: 3162
+                if <!parse_expected_left_paren_after!>variable568<!> { // block id: 3162
                     variable3165;
 
                     variable3169;
 
                     variable2962;
-                } else { // block id: 3173
+                } <!parse_expected_expr_or_decl_in!>else<!> { // block id: 3173
                     variable945;
 
                     variable2962;
@@ -1203,26 +1191,25 @@ struct Record16 {
 
     private static let variable3509 : int16 = int16(13);
 
-    public static let variable3542 : ((Enum52*(int64*char*float64*(int8*int32))*int8)*Class2685*(Enum52*(int64*char*float64*(int8*int32))*int8)) = ((Enum52.defaultValue, (95, 'z', 50.0, (int8(-118), int32(29))), int8(-56)), Class2685(), (Enum52.defaultValue, ((-72), 'm', 68.0, (int8(77), int32(-99))), int8(111)));
+    public static let variable3542 : ((Enum52<!parse_expected_right_delimiter!>*<!>(int64*char*float64*(int8*int32))*int8)*Class2685*(Enum52*(int64*char*float64*(int8*int32))*int8)) = ((Enum52.defaultValue, (95, 'z', 50.0, (int8(-118), int32(29))), int8(-56)), Class2685(), (Enum52.defaultValue, ((-72), 'm', 68.0, (int8(77), int32(-99))), int8(111)));
 
     static let variable3609 : bool = true;
 
-
     static func function91(parameter92 ! : int32 = { // block id: 93
-        variable25;
+        <!parse_expected_double_arrow_in_lambda!>variable25<!>;
 
         var variable115 : float64 = 18.0;
 
         let variable133 : int8 = int8(-30);
 
         match (-(variable101 - variable101)) {
-            case caseVar106@ _ if variable56 => if variable56 { // block id: 110
+            case caseVar106<!parse_expected_double_arrow_in_case!>@<!> _ if variable56 => if <!parse_expected_left_paren_after!>variable56<!> { // block id: 110
                     variable25;
 
                     variable115;
 
                     variable87;
-                } else if variable56 { // block id: 120
+                } <!parse_expected_expr_or_decl_in!>else<!> if variable56 { // block id: 120
                     variable123;
 
                     variable87;
@@ -1233,35 +1220,35 @@ struct Record16 {
         };
 
         int32(79);
-    }, parameter140 ! : int32 = match Enum52.enumValue143(variable149.function152(parameter153 : variable624, parameter165 : variable2852), (-match variable2962 {
+    }, parameter140 ! : int32 = match <!parse_selector_or_match_expression_body!>Enum52<!>.enumValue143(variable149.function152(parameter153 : variable624, parameter165 : variable2852), (-match variable2962 {
             case (caseVar3468 : char,caseVar3469,caseVar3470,_ : (float64*Enum52)) => variable900
             case _ => variable101
         })) {
-        case caseVar3476@ caseVar3475 : Enum52 => variable927
-        case .defaultValue  => variable2787
+        case caseVar3476<!parse_expected_double_arrow_in_case!>@<!> caseVar3475 : Enum52 => variable927
+        case <!parse_expected_pattern!>.<!>defaultValue  => variable2787
         case _ => match ({ // block id: 3483
-                variable690;
+                <!parse_expected_double_arrow_in_lambda!>variable690<!>;
 
                 variable2551;
 
                 variable900;
-            } * match variable1723 {
-                case .defaultValue  => variable101
+            } * match <!parse_selector_or_match_expression_body!>variable1723<!> {
+                case <!parse_expected_pattern!>.<!>defaultValue  => variable101
                 case _ => variable900
             }) {
             case caseVar3498 : int16 => { // block id: 3499
-                    variable3502;
+                    <!parse_expected_double_arrow_in_lambda!>variable3502<!>;
 
                     variable2787;
                 }
             case 40 | variable3509 | 47 => parameter92
-            case _ => match (variable303, variable1984, variable2880) {
+            case _ => match (variable303<!parse_expected_right_delimiter!>,<!> variable1984, variable2880) {
                 case ((_ : float64,caseVar3519@ .defaultValue ),caseVar3520,_) if variable2128 => variable927
                 case _ => variable136
                 case _ => variable136
             }
-        }
-    }, parameter3527 ! : (((unit*bool)*int16)*(float32*(int64*char*float64*(int8*int32)))) = variable3165) : bool { // block id: 3529
+        <!parse_expected_case!>}<!>
+    }<!parse_expected_character!>,<!> parameter3527 ! : (((unit*bool)*int16)*(float32*(int64*char*float64*(int8*int32)))) = variable3165) : bool { // block id: 3529
         if (true && true) { // block id: 3535
             (((-105), 'I', (-121.0), (int8(-77), int32(-20))), Enum52.defaultValue);
 
@@ -1312,26 +1299,25 @@ struct Record16 {
         variable3609;
     }
 
-    static var variable3640 : Class8 = Class8();
+    <!parse_illegal_modifier_in_scope!>static<!> var variable3640 : Class8 = Class8();
 
-
-    static func function46(parameter47 ! : float32 = float32(-88.0), parameter49 ! : Class8 = match {
-        case match match (if variable56 { variable59 } else { variable59 } ) {
-                case caseVar64@ .defaultValue  => variable66
+    <!parse_illegal_modifier_in_scope!>static<!> func function46(parameter47 ! : float32 = float32(-88.0), parameter49 ! : Class8 = match {
+        case <!parse_trailing_closure_only_follow_name!>match <!parse_selector_or_match_expression_body!>match<!> (if variable56 { variable59 } else { variable59 } ) {
+                case caseVar64<!parse_expected_double_arrow_in_case!>@<!> .defaultValue  => variable66
                 case _ => Enum52.defaultValue
-            } {
-            case caseVar71 => match caseVar71 {
+            }<!> {
+            <!parse_expected_expr_or_decl_in!>case<!> caseVar71 => match caseVar71 {
                     case caseVar77@ caseVar76@ .defaultValue  => variable56
                     case caseVar81 : Enum52 => variable56
                     case _ => variable56
                 }
-            case _ => { // block id: 84
+            <!parse_expected_expr_or_decl_in!>case<!> _ => { // block id: 84
                 variable87;
 
                 function91();
             }
         } => { // block id: 3611
-            (if match variable3616 {
+            <!parse_expected_double_arrow_in_lambda!>(<!>if <!parse_expected_left_paren_after!>match<!> variable3616 {
                 case _ => variable183
                 case _ => variable568
             } { (if variable905 { variable156 } else { variable156 } ) } else { if variable2072 { // block id: 3628
@@ -1347,11 +1333,11 @@ struct Record16 {
             } } );
         }
         case _ => { // block id: 3642
-            { // block id: 3644
-                variable303;
+            <!parse_expected_double_arrow_in_lambda!>{<!> // block id: 3644
+                <!parse_expected_double_arrow_in_lambda!>variable303<!>;
 
                 { // block id: 3648
-                    variable3016;
+                    <!parse_expected_double_arrow_in_lambda!>variable3016<!>;
 
                     variable3055;
                 };
@@ -1367,30 +1353,28 @@ struct Record16 {
         ((variable1308 % (variable1308 + variable1308)) ** float64(int32(variable3666) & 3));
     }
 
-    public var variable3673 : ((int8*int32)*((float64*Enum52)*bool*float32)) = ((int8(-32), int32(-27)), (((-74.0), Enum52.defaultValue), false, float32(28.0)));
+    <!parse_illegal_modifier_in_scope!>public<!> var variable3673 : ((int8<!parse_expected_right_delimiter!>*<!>int32)*((float64*Enum52)*bool*float32)) = ((int8(-32), int32(-27)), (((-74.0), Enum52.defaultValue), false, float32(28.0)));
 
-    public let variable3727 : (int8*int32) = (int8(70), int32(-17));
+    <!parse_illegal_modifier_in_scope!>public<!> let variable3727 : (int8<!parse_expected_right_delimiter!>*<!>int32) = (int8(70), int32(-17));
 
     var variable3846 : bool = true;
 
-    static let variable3868 : bool = false;
+    <!parse_illegal_modifier_in_scope!>static<!> let variable3868 : bool = false;
 
-    public static let variable3903 : (Enum591*((Enum52*(int64*char*float64*(int8*int32))*int8)*Class2685*(Enum52*(int64*char*float64*(int8*int32))*int8))*(float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64)))*Enum558) = (Enum591.defaultValue, ((Enum52.defaultValue, (94, 'Q', (-50.0), (int8(-104), int32(75))), int8(10)), Class2685(), (Enum52.defaultValue, ((-57), 'R', 95.0, (int8(5), int32(-90))), int8(-43))), ((-69.0), ('9', (119, 'p', 82.0, (int8(100), int32(30))), (Enum52.defaultValue, (56, 'J', (-4.0), (int8(11), int32(-78))), int8(111)), Class167(), ((), false)), (((108.0, Enum52.defaultValue), true, float32(120.0)), Enum591.defaultValue, (false, 40))), Enum558.defaultValue);
+    <!parse_illegal_modifier_in_scope!>public<!> <!parse_illegal_modifier_in_scope!>static<!> let variable3903 : (Enum591<!parse_expected_right_delimiter!>*<!>((Enum52*(int64*char*float64*(int8*int32))*int8)*Class2685*(Enum52*(int64*char*float64*(int8*int32))*int8))*(float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64)))*Enum558) = (Enum591.defaultValue, ((Enum52.defaultValue, (94, 'Q', (-50.0), (int8(-104), int32(75))), int8(10)), Class2685(), (Enum52.defaultValue, ((-57), 'R', 95.0, (int8(5), int32(-90))), int8(-43))), ((-69.0), ('9', (119, 'p', 82.0, (int8(100), int32(30))), (Enum52.defaultValue, (56, 'J', (-4.0), (int8(11), int32(-78))), int8(111)), Class167(), ((), false)), (((108.0, Enum52.defaultValue), true, float32(120.0)), Enum591.defaultValue, (false, 40))), Enum558.defaultValue);
 
-    public var variable3916 : Enum1777 = Enum1777.defaultValue;
+    <!parse_illegal_modifier_in_scope!>public<!> var variable3916 : Enum1777 = Enum1777.defaultValue;
 
-    public static let variable3998 : ((Enum591*((Enum52*(int64*char*float64*(int8*int32))*int8)*Class2685*(Enum52*(int64*char*float64*(int8*int32))*int8))*(float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64)))*Enum558)*((unit*bool)*Enum558*(int64*char*float64*(int8*int32)))*(Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))) = ((Enum591.defaultValue, ((Enum52.defaultValue, ((-67), 'T', (-116.0), (int8(-86), int32(1))), int8(-105)), Class2685(), (Enum52.defaultValue, ((-110), 'Z', 82.0, (int8(104), int32(-20))), int8(32))), ((-72.0), ('h', ((-36), '7', 2.0, (int8(-55), int32(-108))), (Enum52.defaultValue, (3, 'c', (-82.0), (int8(-79), int32(37))), int8(13)), Class167(), ((), false)), (((101.0, Enum52.defaultValue), false, float32(39.0)), Enum591.defaultValue, (true, (-48)))), Enum558.defaultValue), (((), false), Enum558.defaultValue, (39, '2', 57.0, (int8(-42), int32(78)))), (Enum591.defaultValue, '5', ('r', ((), true), ((-67.0), Enum52.defaultValue), ((-36.0), Enum52.defaultValue))));
+    <!parse_illegal_modifier_in_scope!>public<!> <!parse_illegal_modifier_in_scope!>static<!> let variable3998 : ((Enum591<!parse_expected_right_delimiter!>*<!>((Enum52*(int64*char*float64*(int8*int32))*int8)*Class2685*(Enum52*(int64*char*float64*(int8*int32))*int8))*(float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64)))*Enum558)*((unit*bool)*Enum558*(int64*char*float64*(int8*int32)))*(Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))) = ((Enum591.defaultValue, ((Enum52.defaultValue, ((-67), 'T', (-116.0), (int8(-86), int32(1))), int8(-105)), Class2685(), (Enum52.defaultValue, ((-110), 'Z', 82.0, (int8(104), int32(-20))), int8(32))), ((-72.0), ('h', ((-36), '7', 2.0, (int8(-55), int32(-108))), (Enum52.defaultValue, (3, 'c', (-82.0), (int8(-79), int32(37))), int8(13)), Class167(), ((), false)), (((101.0, Enum52.defaultValue), false, float32(39.0)), Enum591.defaultValue, (true, (-48)))), Enum558.defaultValue), (((), false), Enum558.defaultValue, (39, '2', 57.0, (int8(-42), int32(78)))), (Enum591.defaultValue, '5', ('r', ((), true), ((-67.0), Enum52.defaultValue), ((-36.0), Enum52.defaultValue))));
 
     let variable4049 : int64 = (-4);
 
-    public var variable4186 : int16 = int16(-47);
+    <!parse_illegal_modifier_in_scope!>public<!> var variable4186 : int16 = int16(-47);
 
-
-    public func function21(parameter22 ! : char = variable25.variable28, parameter30 ! : Class8 = if { // block id: 32
+    <!parse_illegal_modifier_in_scope!>public<!> func function21(parameter22 ! : char = variable25.variable28, parameter30 ! : Class8 = if <!parse_expected_left_paren_after!>{<!> // block id: 32
         let variable43 : (int64*char*float64*(int8*int32)) = (109, 'o', (-110.0), (int8(61), int32(-27)));
 
         let variable3681 : bool = true;
-
 
         func function35(parameter36 ! : (int8*int32) = (match (variable43._2 + function46()) {
             case $variable1308 if match variable3673 {
@@ -1424,23 +1408,23 @@ struct Record16 {
 
             variable3727;
         });
-    } { // block id: 3736
+    }<!parse_expected_right_delimiter!> <!>{ // block id: 3736
         Enum591.enumValue996(Class8());
 
         { // block id: 3741
-            Enum591.defaultValue;
+            <!parse_expected_double_arrow_in_lambda!>Enum591<!>.defaultValue;
 
-            match variable3616 {
-                case (89,caseVar3749@ _,_ : float64,_ : (int8*int32)) => variable2962
+            match <!parse_selector_or_match_expression_body!>variable3616<!> {
+                case (89,caseVar3749<!parse_expected_right_delimiter!>@<!> _,_ : float64,_ : (int8*int32)) => variable2962
                 case _ => variable2962
             };
 
             { // block id: 3753
-                variable1443;
+                <!parse_expected_double_arrow_in_lambda!>variable1443<!>;
             };
         };
 
-        if false { // block id: 3759
+        if <!parse_expected_left_paren_after!>false<!> { // block id: 3759
             variable3732;
 
             var variable3764 : Class2685 = Class2685();
@@ -1448,10 +1432,10 @@ struct Record16 {
             variable3764;
 
             variable156;
-        } else { // block id: 3768
+        } <!parse_expected_expr_or_decl_in!>else<!> { // block id: 3768
             variable999;
         };
-    } else if if if variable3774 { // block id: 3776
+    } <!parse_expected_expr_or_decl_in!>else<!> if if if variable3774 { // block id: 3776
         variable3779;
     } else if match variable1239 {
         case caseVar3785 => variable905
@@ -1688,14 +1672,14 @@ struct Record16 {
             };
         };
     }
-}
-
-enum Enum52 {
+}<!parse_expected_right_delimiter!>
+<!>
+<!parse_unexpected_declaration_in_scope!>enum<!> Enum52 {
     defaultValue |
     enumValue143(Class8, int16) |
-    enumValue368(Enum52, (bool*int64), unit)
+    enumValue368(Enum52, (bool<!parse_expected_right_delimiter!>*<!><!parse_expected_decl!>int64<!><!parse_expected_decl!>)<!>, <!parse_expected_decl!>unit<!><!parse_expected_decl!>)<!>
 }
- open class Class147 <: Class8 {
+ open <!parse_unexpected_declaration_in_scope!>class<!> Class147 <: Class8 {
     public init() {}
     private static var variable163 : int64 = 7;
 
@@ -1703,12 +1687,11 @@ enum Enum52 {
 
     public static let variable294 : Enum52 = Enum52.defaultValue;
 
-
     public static func function313() : bool { // block id: 314
         variable183;
     }
 
-    public let variable322 : (int8*int32) = (int8(123), int32(55));
+    public let variable322 : (int8<!parse_expected_right_delimiter!>*<!>int32) = (int8(123), int32(55));
 
     public var variable341 : Enum52 = Enum52.defaultValue;
 
@@ -1720,10 +1703,9 @@ enum Enum52 {
 
     public static let variable739 : int16 = int16(12);
 
-
-    public func function609(parameter610 ! : float32 = if variable568 { // block id: 614
+    public func function609(parameter610 ! : float32 = if <!parse_expected_left_paren_after!>variable568<!> { // block id: 614
         float32(-45.0);
-    } else { // block id: 617
+    }<!parse_expected_right_delimiter!> <!><!parse_expected_decl!>else<!> { // block id: 617
         if variable183 { // block id: 621
             variable624;
         } else if variable183 { // block id: 627
@@ -1808,14 +1790,13 @@ enum Enum52 {
 
     public static var variable987 : int32 = int32(84);
 
-    public static var variable1160 : (int8*int32) = (int8(-101), int32(-50));
+    public static var variable1160 : (int8<!parse_expected_right_delimiter!>*<!>int32) = (int8(-101), int32(-50));
 
     public static let variable1335 : bool = false;
 
     public static let variable1694 : bool = false;
 
-
-    public static func function1810(parameter1811 ! : (bool*int64) = (false, 29)) : Enum591 { // block id: 1813
+    public static func function1810(parameter1811 ! : (bool<!parse_expected_right_delimiter!>*<!>int64) = (false, 29)) : Enum591 { // block id: 1813
         Enum591.enumValue996(variable1443.function1819(parameter1820 : variable1482, parameter1822 : variable303));
     }
 
@@ -1823,7 +1804,7 @@ enum Enum52 {
 
     private static var variable2079 : bool = true;
 
-    public static let variable2086 : (int64*char*float64*(int8*int32)) = (45, 's', (-38.0), (int8(-70), int32(-10)));
+    public static let variable2086 : (int64<!parse_expected_right_delimiter!>*<!>char*float64*(int8*int32)) = (45, 's', (-38.0), (int8(-70), int32(-10)));
 
     public static let variable2330 : Record1938 = Record1938();
 
@@ -1831,13 +1812,13 @@ enum Enum52 {
 
     private static let variable2427 : Enum591 = Enum591.defaultValue;
 
-    private var variable2500 : (char*(unit*bool)*(float64*Enum52)*(float64*Enum52)) = ('f', ((), false), ((-102.0), Enum52.defaultValue), (81.0, Enum52.defaultValue));
+    private var variable2500 : (char<!parse_expected_right_delimiter!>*<!>(unit*bool)*(float64*Enum52)*(float64*Enum52)) = ('f', ((), false), ((-102.0), Enum52.defaultValue), (81.0, Enum52.defaultValue));
 
-    public static var variable2558 : (Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52))) = (Enum591.defaultValue, 't', ('g', ((), true), (43.0, Enum52.defaultValue), (68.0, Enum52.defaultValue)));
+    public static var variable2558 : (Enum591<!parse_expected_right_delimiter!>*<!>char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52))) = (Enum591.defaultValue, 't', ('g', ((), true), (43.0, Enum52.defaultValue), (68.0, Enum52.defaultValue)));
 
-    public static var variable2725 : (bool*int64) = (false, 11);
+    public static var variable2725 : (bool<!parse_expected_right_delimiter!>*<!>int64) = (false, 11);
 
-    public static var variable2744 : (char*(unit*bool)*(float64*Enum52)*(float64*Enum52)) = ('4', ((), true), ((-34.0), Enum52.defaultValue), (68.0, Enum52.defaultValue));
+    public static var variable2744 : (char<!parse_expected_right_delimiter!>*<!>(unit*bool)*(float64*Enum52)*(float64*Enum52)) = ('4', ((), true), ((-34.0), Enum52.defaultValue), (68.0, Enum52.defaultValue));
 
     public static let variable2765 : int64 = 25;
 
@@ -1845,8 +1826,7 @@ enum Enum52 {
 
     public static let variable2783 : float64 = 36.0;
 
-
-    public static func function1590(parameter1591 ! : unit = if match { // block id: 1594
+    public static func function1590(parameter1591 ! : unit = if <!parse_expected_left_paren_after!>match<!> { // block id: 1594
             Record16.variable1599;
 
             let variable1605 : (int64*char*float64*(int8*int32)) = ((-53), 'L', 50.0, (int8(82), int32(78)));
@@ -1854,19 +1834,19 @@ enum Enum52 {
             (variable635, variable1605);
 
             Enum591.enumValue996(variable999);
-        } {
-        case .defaultValue  => if variable183 { // block id: 1614
+        }<!parse_expected_right_delimiter!> <!>{
+        <!parse_expected_expr_or_decl_in!>case<!> .defaultValue  => if variable183 { // block id: 1614
                 variable1617;
             } else { // block id: 1619
                 variable651;
             }
-        case _ => variable1617
-        case _ => { // block id: 1625
+        <!parse_expected_expr_or_decl_in!>case<!> _ => variable1617
+        <!parse_expected_expr_or_decl_in!>case<!> _ => { // block id: 1625
             Class147();
 
             variable999.variable542;
         }
-    } { // block id: 1632
+    } <!parse_expected_character!>{<!> // block id: 1632
         if (variable1323 ^^ variable905) { // block id: 1638
             variable656;
         } else if { // block id: 1641
@@ -2104,7 +2084,7 @@ enum Enum52 {
     }
 
     init (parameter1582 : float64){ // block id: 1583
-        this() 
+        this()
         { // block id: 1585
             Class147.function1590(parameter1591 : variable1340, parameter2313 : variable2330);
 
@@ -2112,14 +2092,12 @@ enum Enum52 {
         };
 
         Class147();
-    }// lxj 
+    }// lxj
 
     init (parameter1575 : char, parameter1576 : (int64*char*float64*(int8*int32)), parameter1577 : int16){ // block id: 1578
-        this() 
+        this()
         Class147(43.0);
-    }// lxj 
-
-
+    }// lxj
 
     public open func function152(parameter153 ! : float32 = variable156.variable159, parameter161 ! : int64 = variable163, parameter165 ! : Class147 = variable169.function172()) : Class8 { // block id: 548
         variable169.function553(parameter554 : Enum52.defaultValue);
@@ -2130,9 +2108,9 @@ enum Enum52 {
     }
 }
 
-public open class Class167 <: Class8 {
+public open <!parse_unexpected_declaration_in_scope!>class<!> Class167 <: Class8 {
     public init() {}
-    public let variable283 : (unit*bool) = ((), true);
+    public let variable283 : (unit<!parse_expected_right_delimiter!>*<!>bool) = ((), true);
 
     public var variable289 : bool = false;
 
@@ -2148,12 +2126,12 @@ public open class Class167 <: Class8 {
 
     public static let variable1802 : Enum558 = Enum558.defaultValue;
 
-    public let variable2092 : (bool*int64) = (false, 31);
+    public let variable2092 : (bool<!parse_expected_right_delimiter!>*<!>int64) = (false, 31);
 
     private static var variable2203 : int32 = int32(72);
 
     public init (parameter2192 : int16){ // block id: 2193
-        this() 
+        this()
         variable1357;
 
         var variable2208 : int64 = (-45);
@@ -2164,9 +2142,9 @@ public open class Class167 <: Class8 {
 
         let variable2239 : bool = true;
 
-        var variable2246 : (int64*char*float64*(int8*int32)) = (75, 'q', (-100.0), (int8(-113), int32(28)));
+        var variable2246 : (int64<!parse_expected_right_delimiter!>*<!>char*float64*(int8*int32)) = (75, 'q', (-100.0), (int8(-113), int32(28)));
 
-        (if true { if (variable927 > variable2203) { // block id: 2205
+        (if <!parse_expected_left_paren_after!>true<!> { if (variable927 > variable2203) { // block id: 2205
             variable2208;
 
             variable123;
@@ -2200,7 +2178,7 @@ public open class Class167 <: Class8 {
             variable123;
         } } );
 
-        (if true { variable224 } else { match if variable905 { // block id: 2265
+        (if <!parse_expected_left_paren_after!>true<!> { variable224 } else { match if variable905 { // block id: 2265
                 variable2268;
 
                 variable1802;
@@ -2219,52 +2197,50 @@ public open class Class167 <: Class8 {
             case caseVar2292@ 'd' => variable224
             case _ => Class167()
         } } );
-    }// lxj 
+    }// lxj
 
     public init (parameter2186 : char, parameter2187 : unit){ // block id: 2188
-        this() 
+        this()
         Class167(variable900);
-    }// lxj 
+    }// lxj
 
+    public static var variable3194 : ((bool<!parse_expected_right_delimiter!>*<!>int64)*Class167*(unit*bool)*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)) = ((true, (-121)), Class167(), ((), false), ((Enum591.defaultValue, 'j', ('V', ((), false), (122.0, Enum52.defaultValue), ((-28.0), Enum52.defaultValue))), ('D', ((-27), 'y', 55.0, (int8(70), int32(111))), (Enum52.defaultValue, ((-59), 'C', (-32.0), (int8(8), int32(88))), int8(74)), Class167(), ((), false)), ()));
 
-    public static var variable3194 : ((bool*int64)*Class167*(unit*bool)*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)) = ((true, (-121)), Class167(), ((), false), ((Enum591.defaultValue, 'j', ('V', ((), false), (122.0, Enum52.defaultValue), ((-28.0), Enum52.defaultValue))), ('D', ((-27), 'y', 55.0, (int8(70), int32(111))), (Enum52.defaultValue, ((-59), 'C', (-32.0), (int8(8), int32(88))), int8(74)), Class167(), ((), false)), ()));
-
-    private static var variable3209 : (float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64))) = (62.0, ('T', ((-4), 'u', 105.0, (int8(82), int32(73))), (Enum52.defaultValue, ((-74), 'B', (-40.0), (int8(102), int32(85))), int8(-42)), Class167(), ((), true)), (((93.0, Enum52.defaultValue), false, float32(-31.0)), Enum591.defaultValue, (true, 71)));
+    private static var variable3209 : (float64<!parse_expected_right_delimiter!>*<!>(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64))) = (62.0, ('T', ((-4), 'u', 105.0, (int8(82), int32(73))), (Enum52.defaultValue, ((-74), 'B', (-40.0), (int8(102), int32(85))), int8(-42)), Class167(), ((), true)), (((93.0, Enum52.defaultValue), false, float32(-31.0)), Enum591.defaultValue, (true, 71)));
 
     private static let variable3246 : int64 = 112;
 
-    private static let variable3251 : (int8*int32) = (int8(97), int32(-23));
+    private static let variable3251 : (int8<!parse_expected_right_delimiter!>*<!>int32) = (int8(97), int32(-23));
 
     public var variable3274 : bool = true;
 
     protected var variable3359 : Enum1777 = Enum1777.defaultValue;
 
-
-    public func function1089(parameter1090 ! : Enum591 = Record16.function1094(parameter1095 : match variable2283 {
+    public func function1089(parameter1090 ! : Enum591 = Record16.function1094(parameter1095 : match <!parse_selector_or_match_expression_body!>variable2283<!> {
         case _ => variable1718
         case _ => variable1718
-    }, parameter3001 : Enum558.defaultValue), parameter3187 ! : Enum1777 = if { // block id: 3189
+    }, parameter3001 : Enum558.defaultValue), parameter3187 ! : Enum1777 = if <!parse_expected_left_paren_after!>{<!> // block id: 3189
         variable3194._2;
 
         variable1984;
-    } { // block id: 3198
+    }<!parse_expected_right_delimiter!> <!>{ // block id: 3198
         { // block id: 3200
-            (variable833, variable900);
+            <!parse_expected_double_arrow_in_lambda!>(<!>variable833, variable900);
 
             variable3209._2;
         };
 
         let variable3229 : unit = ();
 
-        match match variable712 {
+        <!parse_trailing_closure_only_follow_name!>match <!parse_selector_or_match_expression_body!>match<!> variable712 {
                 case variable712 | -12 | variable712 => variable1340
                 case 31 | 34 | variable712 | variable712 => variable1340
                 case _ => variable1340
-            } {
-            case variable3229 | variable3229 => variable1953
-            case _ => Enum1777.enumValue1779
+            }<!> {
+            <!parse_expected_expr_or_decl_in!>case<!> variable3229 | variable3229 => variable1953
+            <!parse_expected_expr_or_decl_in!>case<!> _ => Enum1777.enumValue1779
         };
-    } else { // block id: 3234
+    } <!parse_expected_character!>else<!> { // block id: 3234
         ({ // block id: 3237
             variable2646;
 
@@ -2362,19 +2338,19 @@ public open class Class167 <: Class8 {
     }
 }
 
-public enum Enum558 {
+public <!parse_unexpected_declaration_in_scope!>enum<!> Enum558 {
     defaultValue |
     enumValue3005(Record16)
 }
-public enum Enum591 {
+public <!parse_unexpected_declaration_in_scope!>enum<!> Enum591 {
     defaultValue |
     enumValue996(Class8)
 }
-public open class Class1423 <: Class8 {
+public open <!parse_unexpected_declaration_in_scope!>class<!> Class1423 <: Class8 {
     public init() {}
     protected let variable1446 : Enum591 = Enum591.defaultValue;
 
-    public let variable1555 : (char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool)) = ('X', ((-18), '3', (-98.0), (int8(13), int32(52))), (Enum52.defaultValue, ((-122), 'W', 13.0, (int8(118), int32(-41))), int8(-72)), Class167(), ((), true));
+    public let variable1555 : (char<!parse_expected_right_delimiter!>*<!>(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool)) = ('X', ((-18), '3', (-98.0), (int8(13), int32(52))), (Enum52.defaultValue, ((-122), 'W', 13.0, (int8(118), int32(-41))), int8(-72)), Class167(), ((), true));
 
     public static let variable1687 : bool = true;
 
@@ -2384,8 +2360,7 @@ public open class Class1423 <: Class8 {
 
     public let variable1904 : bool = false;
 
-
-    public open func function1819(parameter1820 ! : Enum591 = variable1482, parameter1822 ! : (float64*Enum52) = match float32(-33.0) {
+    public open func function1819(parameter1820 ! : Enum591 = variable1482, parameter1822 ! : (float64<!parse_expected_right_delimiter!>*<!>Enum52) = match float32(-33.0) {
         case caseVar1827 => { // block id: 1828
                 let variable1839 : int16 = int16(-91);
 
@@ -2468,38 +2443,38 @@ public open class Class1423 <: Class8 {
     public static let variable2677 : Class167 = Class167();
 
     init (parameter2607 : Record1938){ // block id: 2608
-        this() 
+        this()
         'e';
 
         { // block id: 2612
-            variable900;
+            <!parse_expected_double_arrow_in_lambda!>variable900<!>;
 
             { // block id: 2616
-                let variable2621 : (int64*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)*char*unit) = ((-122), ((Enum591.defaultValue, '5', ('3', ((), false), (74.0, Enum52.defaultValue), ((-38.0), Enum52.defaultValue))), ('m', (72, 't', 10.0, (int8(49), int32(70))), (Enum52.defaultValue, ((-32), 'h', (-121.0), (int8(-122), int32(-79))), int8(-69)), Class167(), ((), false)), ()), 'b', ());
+                <!parse_expected_double_arrow_in_lambda!>let<!> variable2621 : (int64<!parse_expected_right_delimiter!>*<!>((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)*char*unit) = ((-122), ((Enum591.defaultValue, '5', ('3', ((), false), (74.0, Enum52.defaultValue), ((-38.0), Enum52.defaultValue))), ('m', (72, 't', 10.0, (int8(49), int32(70))), (Enum52.defaultValue, ((-32), 'h', (-121.0), (int8(-122), int32(-79))), int8(-69)), Class167(), ((), false)), ()), 'b', ());
 
                 variable2621._1;
 
                 { // block id: 2624
-                    variable1308;
+                    <!parse_expected_double_arrow_in_lambda!>variable1308<!>;
                 };
             };
 
             { // block id: 2628
-                { // block id: 2630
-                    variable1443;
+                <!parse_expected_double_arrow_in_lambda!>{<!> // block id: 2630
+                    <!parse_expected_double_arrow_in_lambda!>variable1443<!>;
 
                     variable690;
 
                     variable2587;
                 };
 
-                (if variable1687 { variable2283 } else { variable1660 } );
+                (if <!parse_expected_left_paren_after!>variable1687<!> { variable2283 } else { variable1660 } );
 
-                (if variable2128 { variable2646 } else { variable2646 } );
+                (if <!parse_expected_left_paren_after!>variable2128<!> { variable2646 } else { variable2646 } );
             };
         };
 
-        if match variable202 {
+        if <!parse_expected_left_paren_after!>match<!> variable202 {
             case caseVar2655@ _ if variable2128 => variable183
             case _ => match variable1899 {
                 case caseVar2662 if variable905 => variable1687
@@ -2507,12 +2482,12 @@ public open class Class1423 <: Class8 {
                 case _ => variable1617
             }
         } { // block id: 2670
-            (float32(-78.0), ((-43), 'H', 66.0, (int8(19), int32(-108))));
+            <!parse_expected_double_arrow_in_lambda!>(<!>float32(-78.0), ((-43), 'H', 66.0, (int8(19), int32(-108))));
 
             Class1423.variable2677;
 
             Class1423();
-        } else if false { // block id: 2682
+        } <!parse_expected_character!>else<!> if false { // block id: 2682
             Class2685.variable2688;
         } else { // block id: 2690
             let variable2695 : Class2685 = Class2685();
@@ -2521,40 +2496,39 @@ public open class Class1423 <: Class8 {
 
             (if variable1904 { variable1443 } else { variable1443 } );
         };
-    }// lxj 
-
+    <!parse_expected_expr_or_decl_in!>}<!>// lxj
 
     public func function1437(parameter1438 ! : Class8 = variable156, parameter1440 ! : Enum591 = variable1443.variable1446) : Class167 { // block id: 1448
         Class167();
     }
 }
 
-enum Enum1777 {
+<!parse_unexpected_declaration_in_scope!>enum<!> Enum1777 {
     defaultValue |
     enumValue1779
 }
-public struct Record1938 {
+public <!parse_unexpected_declaration_in_scope!>struct<!> Record1938 {
     public init() {}
     public static let variable1941 : Class8 = Class8();
 
     private let variable2117 : Class147 = Class147();
 
     public init (parameter2108 : Enum1777, parameter2109 : float32){ // block id: 2110
-        this() 
+        this()
         let variable2114 : Record1938 = Record1938();
 
         variable2114.variable2117;
 
         Record1938();
-    }// lxj 
+    }// lxj
 }
 
- open class Class2685 {
+ open <!parse_unexpected_declaration_in_scope!>class<!> Class2685 {
     public init() {}
     public static let variable2688 : Class1423 = Class1423();
 }
 
-main(): int64 {
+<!parse_unexpected_declaration_in_scope!>main<!>(): int64 {
     Class8.variable11._1;
 
     var variable18 : Record16 = Record16();
@@ -2565,35 +2539,35 @@ main(): int64 {
 
     let variable4208 : bool = false;
 
-    var variable4213 : ((int8*int32)*((float64*Enum52)*bool*float32)) = ((int8(-25), int32(55)), (((-65.0), Enum52.defaultValue), true, float32(-13.0)));
+    var variable4213 : ((int8<!parse_expected_right_delimiter!>*<!>int32)*((float64*Enum52)*bool*float32)) = ((int8(-25), int32(55)), (((-65.0), Enum52.defaultValue), true, float32(-13.0)));
 
     let variable4222 : float64 = 11.0;
 
-    let variable4242 : ((bool*int64)*((bool*int64)*Class167*(unit*bool)*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit))*(float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64)))*(int64*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)*char*unit)*Enum558) = ((true, (-88)), ((false, 126), Class167(), ((), true), ((Enum591.defaultValue, 'L', ('c', ((), true), (50.0, Enum52.defaultValue), ((-55.0), Enum52.defaultValue))), ('T', (78, 'W', 72.0, (int8(36), int32(12))), (Enum52.defaultValue, (66, '2', (-77.0), (int8(-53), int32(15))), int8(-2)), Class167(), ((), true)), ())), (14.0, ('e', (46, 'F', 6.0, (int8(-31), int32(-118))), (Enum52.defaultValue, ((-47), 'r', (-97.0), (int8(-6), int32(-122))), int8(-49)), Class167(), ((), true)), ((((-14.0), Enum52.defaultValue), false, float32(60.0)), Enum591.defaultValue, (true, 109))), ((-90), ((Enum591.defaultValue, 'O', ('f', ((), false), (103.0, Enum52.defaultValue), (20.0, Enum52.defaultValue))), ('i', ((-99), '2', 115.0, (int8(-98), int32(117))), (Enum52.defaultValue, (110, 'I', (-26.0), (int8(93), int32(-120))), int8(-79)), Class167(), ((), true)), ()), 'G', ()), Enum558.defaultValue);
+    let variable4242 : ((bool<!parse_expected_right_delimiter!>*<!>int64)*((bool*int64)*Class167*(unit*bool)*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit))*(float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64)))*(int64*((Enum591*char*(char*(unit*bool)*(float64*Enum52)*(float64*Enum52)))*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*unit)*char*unit)*Enum558) = ((true, (-88)), ((false, 126), Class167(), ((), true), ((Enum591.defaultValue, 'L', ('c', ((), true), (50.0, Enum52.defaultValue), ((-55.0), Enum52.defaultValue))), ('T', (78, 'W', 72.0, (int8(36), int32(12))), (Enum52.defaultValue, (66, '2', (-77.0), (int8(-53), int32(15))), int8(-2)), Class167(), ((), true)), ())), (14.0, ('e', (46, 'F', 6.0, (int8(-31), int32(-118))), (Enum52.defaultValue, ((-47), 'r', (-97.0), (int8(-6), int32(-122))), int8(-49)), Class167(), ((), true)), ((((-14.0), Enum52.defaultValue), false, float32(60.0)), Enum591.defaultValue, (true, 109))), ((-90), ((Enum591.defaultValue, 'O', ('f', ((), false), (103.0, Enum52.defaultValue), (20.0, Enum52.defaultValue))), ('i', ((-99), '2', 115.0, (int8(-98), int32(117))), (Enum52.defaultValue, (110, 'I', (-26.0), (int8(93), int32(-120))), int8(-79)), Class167(), ((), true)), ()), 'G', ()), Enum558.defaultValue);
 
     let variable4257 : bool = true;
 
-    var variable4264 : (unit*bool) = ((), true);
+    var variable4264 : (unit<!parse_expected_right_delimiter!>*<!>bool) = ((), true);
 
-    match match {
-            case { // block id: 4203
+    <!parse_trailing_closure_only_follow_name!>match <!parse_selector_or_match_expression_body!>match<!> {
+            case <!parse_expected_pattern!>{<!> // block id: 4203
                 variable202;
 
                 variable4208;
             } => { // block id: 4210
-                variable4213;
+                <!parse_expected_double_arrow_in_lambda!>variable4213<!>;
 
                 variable3328;
             }
             case _ => { // block id: 4217
-                variable1443;
+                <!parse_expected_double_arrow_in_lambda!>variable1443<!>;
 
                 variable4222;
 
                 variable3328;
             }
-        } {
-        case ((caseVar4229@ (_,caseVar4228),true | $variable905,_),.defaultValue ,(false | $variable3124,caseVar4232 : int64)) if if variable1617 { // block id: 4235
+        }<!> {
+        <!parse_expected_expr_or_decl_in!>case<!> ((caseVar4229@ (_,caseVar4228),true | $variable905,_),.defaultValue ,(false | $variable3124,caseVar4232 : int64)) if if variable1617 { // block id: 4235
                 let variable4238 : ((int8*int32)*(Enum591*((Enum52*(int64*char*float64*(int8*int32))*int8)*Class2685*(Enum52*(int64*char*float64*(int8*int32))*int8))*(float64*(char*(int64*char*float64*(int8*int32))*(Enum52*(int64*char*float64*(int8*int32))*int8)*Class167*(unit*bool))*(((float64*Enum52)*bool*float32)*Enum591*(bool*int64)))*Enum558)) = ((int8(-126), int32(-78)), (Enum591.defaultValue, ((Enum52.defaultValue, (46, '8', (-84.0), (int8(-30), int32(4))), int8(22)), Class2685(), (Enum52.defaultValue, (87, '5', 4.0, (int8(-22), int32(88))), int8(-110))), (49.0, ('f', (115, 'h', 41.0, (int8(-101), int32(-52))), (Enum52.defaultValue, (59, 'O', 79.0, (int8(-100), int32(95))), int8(111)), Class167(), ((), true)), (((15.0, Enum52.defaultValue), true, float32(-22.0)), Enum591.defaultValue, (true, (-90)))), Enum558.defaultValue));
 
                 variable4238;
@@ -2618,7 +2592,7 @@ main(): int64 {
 
                 variable3396;
             }
-        case _ => (-90)
+        <!parse_expected_expr_or_decl_in!>case<!> _ => (-90)
     };
 
     // CRC Check All Variables
@@ -2636,10 +2610,10 @@ main(): int64 {
     return 0;
 }
 
-class CrcCheck {
-    public var buffer: int64[]
-    public var poly: int64[]
-    public var crc_output: int64[]
+<!parse_unexpected_declaration_in_scope!>class<!> CrcCheck {
+    public var buffer: int64<!parse_expected_character!>[<!>]
+    public var poly: int64<!parse_expected_character!>[<!>]
+    public var crc_output: int64<!parse_expected_character!>[<!>]
     public var poly_n: int64
     public var buffer_index: int64
     public var crc_output_n: int64
@@ -2647,13 +2621,13 @@ class CrcCheck {
     public init(buffer_n: int64, crc_n: int64) {
         buffer_index = 0
         crc_output_n = 0
-        crc_output = int64[] (crc_output_n, 0)
-        buffer = int64[] (buffer_n, 0)
+        crc_output = int64[<!parse_expected_expression!>]<!> (crc_output_n, 0)
+        buffer = int64[<!parse_expected_expression!>]<!> (buffer_n, 0)
         poly_n = crc_n + 1
-        poly = int64[] (poly_n, 0)
-        if crc_n == 32 {
+        poly = int64[<!parse_expected_expression!>]<!> (poly_n, 0)
+        if <!parse_expected_left_paren_after!>crc_n<!> == 32 {
             poly = [1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 1]
-        } else if crc_n == 16 {
+        } <!parse_expected_expr_or_decl_in!>else<!> if crc_n == 16 {
             poly = [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1]
         } else if crc_n == 8 {
             poly = [1, 0, 0, 0, 0, 0, 1, 1, 1]
@@ -2664,20 +2638,20 @@ class CrcCheck {
 
     public func updateBuffer(input: uint64, byte_n: int64): unit {
         var value = input
-        if byte_n == 64 {
+        if <!parse_expected_left_paren_after!>byte_n<!> == 64 {
             value = value & 0xffffffffffffffff
-        } else if byte_n == 32 {
+        } <!parse_expected_expr_or_decl_in!>else<!> if byte_n == 32 {
             value = value & 0xffffffff
         } else if byte_n == 16 {
             value = value & 0xffff
         } else {
             value = value & 0xff
         }
-        var byteArray = int64[] (byte_n, 0)
+        var byteArray = int64[<!parse_expected_expression!>]<!> (byte_n, 0)
         var byte_c = 1
         var byte_index = 0
         while(value != 0) {
-            if value % 2 == 1 {
+            if <!parse_expected_left_paren_after!>value<!> % 2 == 1 {
                 byte_index = byte_n - byte_c
                 byteArray[byte_index] = 1
             }
@@ -2694,7 +2668,7 @@ class CrcCheck {
 
     public func crcCheck(): unit {
         crc_output_n = buffer_index + poly_n - 1
-        var crc_buffer = int64[] (crc_output_n, 0)
+        var crc_buffer = int64[<!parse_expected_expression!>]<!> (crc_output_n, 0)
         var i = 0
         while (i < buffer_index) {
             crc_buffer[i] = buffer[i]
@@ -2702,7 +2676,7 @@ class CrcCheck {
         }
         i = 0
         while (i < buffer_index) {
-            if crc_buffer[i] == 1 {
+            if <!parse_expected_left_paren_after!>crc_buffer<!>[i] == 1 {
                 var j = 0
                 while (j < poly_n) {
                     crc_buffer[j + i] = crc_buffer[j + i] ^ poly[j]
@@ -2711,15 +2685,15 @@ class CrcCheck {
             }
             i++
         }
-        let check_code = crc_buffer[buffer_index...]
+        let check_code = crc_buffer[buffer_index<!parse_expected_character!><!parse_expected_right_delimiter!>.<!>..<!>]
         var byte_add = 4 - crc_output_n % 4
         crc_output_n = byte_add + crc_output_n
-        crc_output = int64[] (crc_output_n, 0)
+        crc_output = int64[<!parse_expected_expression!>]<!> (crc_output_n, 0)
         i = 0
         while (i < crc_output_n - byte_add) {
-            if i < buffer_index {
+            if <!parse_expected_left_paren_after!>i<!> < buffer_index {
                 crc_output[i + byte_add] = buffer[i]
-            } else {
+            } <!parse_expected_expr_or_decl_in!>else<!> {
                 crc_output[i + byte_add] = check_code[i - buffer_index]
             }
             i++
@@ -2734,8 +2708,8 @@ class CrcCheck {
             i = i + 4
         }
     }
-}
-
+}<!parse_expected_right_delimiter!>
+<!>
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

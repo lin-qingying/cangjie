@@ -14,19 +14,8 @@ enum TokenID {
 }
 main():Int64 {
     var isbinary : Bool = match (id) {
-        case .ADD => true 
+        case <!parse_expected_pattern!>.<!>ADD => true
         case _ => false
     }
     return 0
 }
-
-/* SCAN
-error: expected pattern, found '.'
-  ==> enum15.cj:17:14:
-   | 
-17 |         case .ADD => true 
-   |              ^ expected pattern here
-   | 
-
-1 error generated, 1 error printed.
-*/

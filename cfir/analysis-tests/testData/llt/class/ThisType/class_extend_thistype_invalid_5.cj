@@ -11,11 +11,11 @@ class R{
 }
 
 extend R {
-    public static func a2() : This{ 
+    public static func a2() : <!parse_this_type_not_allow!>This<!>{
 
     }
 
-	func foo(): This {
+	func foo(): <!parse_this_type_not_allow!>This<!> {
 		return this
 	}
 }
@@ -23,23 +23,3 @@ extend R {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: 'This' type is not allowed
-  ==> class_extend_thistype_invalid_5.cj:14:31:
-   | 
-14 |     public static func a2() : This{ 
-   |                               ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-error: 'This' type is not allowed
-  ==> class_extend_thistype_invalid_5.cj:18:14:
-   | 
-18 |     func foo(): This {
-   |                 ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-2 errors generated, 2 errors printed.
-*/

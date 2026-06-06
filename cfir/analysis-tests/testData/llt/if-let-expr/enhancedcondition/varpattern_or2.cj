@@ -8,7 +8,7 @@
 
 main() {
     let a = Some(15)
-    if (false || let Some(b) <- a || let Some(c) <- a) {
+    if (false || let Some(<!VAR_IN_OR_CONDITION!>b<!>) <- a || let Some(c) <- a) {
         return b - 1
     }
 
@@ -20,25 +20,7 @@ enum A {
 }
 
 func foo(a: A) {
-    if (let B | C(v) | D(d) <- a || false) {
+    if (let B | C(<!VAR_IN_OR_CONDITION!>v<!>) | D(d) <- a || false) {
         1
     }
 }
-
-/* SCAN
-error: cannot introduce variables in conditions connected by '||'
-  ==> varpattern_or2.cj:11:27:
-   | 
-11 |     if (false || let Some(b) <- a || let Some(c) <- a) {
-   |                           ^                   ~ 
-   | 
-
-error: cannot introduce variables in conditions connected by '||'
-  ==> varpattern_or2.cj:23:19:
-   | 
-23 |     if (let B | C(v) | D(d) <- a || false) {
-   |                   ^      ~ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

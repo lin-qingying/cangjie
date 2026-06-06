@@ -14,7 +14,7 @@ struct B<X,Y> {
 }
 
 struct C {
-    private C( var z: Int64 = 3){ }
+    private C( var z: Int64 <!parse_expected_dot_lparen!>=<!> 3){ }
 }
 
 struct D {
@@ -26,41 +26,41 @@ struct E {
 }
 
 struct F {
-     public F( static var z!: Int64 = 3){ }
+     public F( <!parse_illegal_modifier_in_scope!>static<!> var z!: Int64 = 3){ }
 }
 
 struct G{
-    public A(var z: Int64 = 3) {}
+    public <!parse_expected_decl!>A<!>(var z: Int64 <!parse_expected_dot_lparen!>=<!> 3) {}
 }
 
 struct H{
-    public H(var z: Int64 = 3) {}
-    public H(var x: String = "3") {}
+    public H(var z: Int64 <!parse_expected_dot_lparen!>=<!> 3) {}
+    public H(var x: String <!parse_expected_dot_lparen!>=<!> "3") {}
 }
 
 struct J{
-    public J(z: Int64, var z: Int64 = 1)
-}
+    public J(z: Int64, var z: Int64 <!parse_expected_dot_lparen!>=<!> 1)<!parse_missing_body!>
+<!>}
 
 struct K{
-    public K(var k: Int64, var k: Int64 = 1)
-}
+    public K(var k: Int64, var k: Int64 <!parse_expected_dot_lparen!>=<!> 1)<!parse_missing_body!>
+<!>}
 
 struct L{
-    public L(var z: Int64 = 3){
+    public L(var z: Int64 <!parse_expected_dot_lparen!>=<!> 3){
       this("ww")
     }
-    public init(a:String = "1"){
+    public init(a:String <!parse_expected_dot_lparen!>=<!> "1"){
        this.z = "a"
     }
 }
 
 class M {
-     public M  // class's constructor or finalizer should have function body
+     public <!parse_expected_decl!>M<!>  // class's constructor or finalizer should have function body
 }
 
 struct N {
-     public N( private z: Int64 = 3){ }
+     public N( <!parse_expected_no_modifier!>private<!> z: Int64 <!parse_expected_dot_lparen!>=<!> 3){ }
 }
 
 main():Int64 {
@@ -72,129 +72,3 @@ main():Int64 {
     F()
     return 0
 }
-
-/* SCAN
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:17:29:
-   | 
-17 |     private C( var z: Int64 = 3){ }
-   |                             ^ expected ',' or ')' here
-   | 
-
-error: unexpected modifier 'static' on variable declaration in primary constructor
-  ==> primaryConstructor2.cj:29:16:
-   | 
-29 |      public F( static var z!: Int64 = 3){ }
-   |             ~  ^^^^^^ ~~~ on variable declaration
-   |             |  |
-   |             |  unexpected modifier
-   |             |
-   |             in primary constructor
-   | 
-
-error: expected declaration, found 'A'
-  ==> primaryConstructor2.cj:33:12:
-   | 
-33 |     public A(var z: Int64 = 3) {}
-   |            ^ expected declaration here
-   | 
-   # help: probably you want a primary constructor name: 'G'
-
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:33:27:
-   | 
-33 |     public A(var z: Int64 = 3) {}
-   |                           ^ expected ',' or ')' here
-   | 
-
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:37:27:
-   | 
-37 |     public H(var z: Int64 = 3) {}
-   |                           ^ expected ',' or ')' here
-   | 
-
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:38:28:
-   | 
-38 |     public H(var x: String = "3") {}
-   |                            ^ expected ',' or ')' here
-   | 
-
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:42:37:
-   | 
-42 |     public J(z: Int64, var z: Int64 = 1)
-   |                                     ^ expected ',' or ')' here
-   | 
-
-error: body of main constructor 'J' is missing
-  ==> primaryConstructor2.cj:42:41:
-   | 
-42 |     public J(z: Int64, var z: Int64 = 1)
-   |                                         ^ missing main constructor body here
-   | 
-
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:46:41:
-   | 
-46 |     public K(var k: Int64, var k: Int64 = 1)
-   |                                         ^ expected ',' or ')' here
-   | 
-
-error: body of main constructor 'K' is missing
-  ==> primaryConstructor2.cj:46:45:
-   | 
-46 |     public K(var k: Int64, var k: Int64 = 1)
-   |                                             ^ missing main constructor body here
-   | 
-
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:50:27:
-   | 
-50 |     public L(var z: Int64 = 3){
-   |                           ^ expected ',' or ')' here
-   | 
-
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:53:26:
-   | 
-53 |     public init(a:String = "1"){
-   |                          ^ expected ',' or ')' here
-   | 
-
-error: expected declaration, found 'M'
-  ==> primaryConstructor2.cj:59:13:
-   | 
-59 |      public M  // class's constructor or finalizer should have function body
-   |             ^ expected declaration here
-   | 
-
-error: expected no modifier before non-member variable parameter, found 'private'
-  ==> primaryConstructor2.cj:63:16:
-   | 
-63 |      public N( private z: Int64 = 3){ }
-   |                ^^^^^^^ ~~~~~~~~~~~~ before non-member variable parameter
-   |                |
-   |                expected no modifier here
-   | 
-help: if you want an immutable member variable, use 'let':
-   | 
-63 |      public N( private let z: Int64 = 3){ }
-   |                        ~~~~~~~~~~~~~~~~ 
-   | 
-help: or 'var' to get a mutable member variable:
-   | 
-63 |      public N( private var z: Int64 = 3){ }
-   |                        ~~~~~~~~~~~~~~~~ 
-   | 
-
-error: expected ',' or ')', found '='
-  ==> primaryConstructor2.cj:63:33:
-   | 
-63 |      public N( private z: Int64 = 3){ }
-   |                                 ^ expected ',' or ')' here
-   | 
-
-15 errors generated, 15 errors printed.
-*/

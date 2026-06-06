@@ -8,9 +8,9 @@
 // EXEC: %run %run_opt %n.%suffix %run_args | compare %f
 
 func test1() {
-    let newNum = if (false) {
+    let newNum = if (false) <!chir_dce_unreachable_block_in_expression!>{
         "let x = 1"
-    } else {
+    }<!> else {
         "\"仓颉\""
     }
     println(newNum)
@@ -18,9 +18,9 @@ func test1() {
 }
 
 func test2() {
-    let newNum = if (false) {
+    let newNum = if (false) <!chir_dce_unreachable_block_in_expression!>{
         2
-    } else {
+    }<!> else {
         0
     }
     println(newNum)
@@ -29,18 +29,18 @@ func test2() {
 
 func test3() {
     let newNum = if (true) {
-        let x = 2
-    } else {
+        let <!chir_dce_unused_variable!>x<!> = 2
+    } else <!chir_dce_unreachable_block_in_expression!>{
         let y = 0.0
-    }
+    }<!>
     println(newNum)
     println(newNum is Unit)
 }
 
 func test4() {
-    let newNum = if (false) {
+    let newNum = if (false) <!chir_dce_unreachable_block_in_expression!>{
         [true]
-    } else {
+    }<!> else {
         [false]
     }
     println(newNum)
@@ -53,14 +53,3 @@ main() {
     test3()
     test4()
 }
-
-/* SCAN
-"仓颉"
-true
-0
-true
-()
-true
-[false]
-true
-*/

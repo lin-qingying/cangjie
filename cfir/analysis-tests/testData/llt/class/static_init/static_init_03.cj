@@ -10,21 +10,10 @@ class A {
     var a: Int64 = 1
     static var b: Int64 = 1
     static init() {
-        println(a)
+        println(<!sema_static_function_cannot_access_non_static_member!>a<!>)
     }
 }
 
 main() {
     return 0
 }
-
-/* SCAN
-error: 'a' is non-static member, cannot be accessed by static function 'init'
-  ==> static_init_03.cj:13:17:
-   | 
-13 |         println(a)
-   |                 ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -12,21 +12,10 @@ struct A {
 
 main() {
     let a = Some(A())
-    let x = a?.c
+    let x = a?.<!NOT_MEMBER_OF!>c<!>
     match (x) {
         case Some(t) => t
         case None => 1
     }
     ()
 }
-
-/* SCAN
-error: 'c' is not a member of struct 'A'
-  ==> member_access_04.cj:15:16:
-   | 
-15 |     let x = a?.c
-   |                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

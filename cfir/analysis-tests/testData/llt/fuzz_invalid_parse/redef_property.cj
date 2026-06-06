@@ -2,7 +2,7 @@
 
 // Was ICE, should quit normally
 abstract class Boo{
-    public mut prop m: blic mut prop m: Int32 {
+    public mut prop m: blic <!parse_expected_character!>mut<!> prop m: Int32 {
         get() {
             return 2
         }
@@ -16,18 +16,6 @@ abstract class Boo{
 }
 
 main() {}
-
-/* SCAN
-error: expected ';' or '<NL>', found keyword 'mut'
- ==> redef_property.cj:5:29:
-  | 
-5 |     public mut prop m: blic mut prop m: Int32 {
-  |                             ^^^ expected ';' or '<NL>' here
-  | 
-
-1 error generated, 1 error printed.
-*/
-
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

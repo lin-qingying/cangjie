@@ -6,7 +6,7 @@
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 class A {
-    public let a = () => {
+    public let a = () <!parse_expected_character!>=><!> {
         foo()
     }
     public func foo() {
@@ -14,6 +14,3 @@ class A {
     }
     public let c = 321
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

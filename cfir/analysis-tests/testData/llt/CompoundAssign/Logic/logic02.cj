@@ -9,25 +9,7 @@
 main(): Int64 {
     var a = 2
     var b = 15
-    a &&= b
-    a ||= b
+    <!sema_type_incompatible!>a<!> &&= b
+    <!sema_type_incompatible!>a<!> ||= b
     return 0
 }
-
-/* SCAN
-error: type incompatible in this compound assignment expression
-  ==> logic02.cj:12:5:
-   | 
-12 |     a &&= b
-   |     ^ 
-   | 
-
-error: type incompatible in this compound assignment expression
-  ==> logic02.cj:13:5:
-   | 
-13 |     a ||= b
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

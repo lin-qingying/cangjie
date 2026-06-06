@@ -6,18 +6,15 @@
 
 // EXEC:%frontendCompiler %typecheck %diag_json %f 2>&1 | compare %f
 
-class C<X> where X <: C<C<C<C<Int32>>>> {
+<!sema_generic_type_argument_not_match_constraint!>c<!>lass C<X> where X <: C<C<C<C<<!sema_generic_type_argument_not_match_constraint!>I<!>nt32>>>> {
     func foo() {}
     public init(input: X) {
         let a: Unit = input.foo()
     }
 }
 
-interface I<X> where X <: I<I<I<I<Int32>>>> {}
+<!sema_generic_type_argument_not_match_constraint!>i<!>nterface I<X> where X <: I<I<I<I<<!sema_generic_type_argument_not_match_constraint!>I<!>nt32>>>> {}
 
 main(): Int64 {
     return 0
 }
-
-// ASSERT: scan-4 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan "Errors": 4

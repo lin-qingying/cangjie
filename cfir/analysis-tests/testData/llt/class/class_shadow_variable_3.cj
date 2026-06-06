@@ -15,20 +15,9 @@ open class B <: A {
 }
 
 class C <: B {
-    public var a = 20
+    <!sema_member_variable_can_not_shadow!>p<!>ublic var a = 20
 }
 
 main() {
     return 1
 }
-
-/* SCAN
-error: the variable 'a' must not shadow a member variable of the supertype
-  ==> class_shadow_variable_3.cj:18:5:
-   | 
-18 |     public var a = 20
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

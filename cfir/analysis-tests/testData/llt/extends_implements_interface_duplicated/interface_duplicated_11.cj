@@ -14,6 +14,3 @@ class A <: I<Bool> & I<Int32> {}
 main(): Int64 {
     return 0;
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -18,26 +18,8 @@ func func657(): UInt64 {
     x ?? try {
         UInt64(1)
     } catch (_) {
-        [Option<UInt64>.None, Option<UInt64>.NonZ];
+        [Option<UInt64>.None, Option<UInt64>.<!sema_not_member_of!>NonZ<!>];
         f(G())
         UInt64(2)
     }
 }
-
-/* SCAN
-error: 'NonZ' is not a member of enum 'Option<UInt64>'
-  ==> binaryexpr_and_funcargoverload.cj:21:46:
-   | 
-21 |         [Option<UInt64>.None, Option<UInt64>.NonZ];
-   |                                              ^^^^ 
-   | 
-
-error: 'main' is missing
- ==> binaryexpr_and_funcargoverload.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

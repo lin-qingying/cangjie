@@ -7,7 +7,7 @@
 // EXEC-PIPE-1: %compiler %f %cmp_opt -o %output 2>&1 | compare %f
 
 func foo(a: ?Int64, b: ?Int64) {
-    while (let Some(_) <- a | let None <- b) {
+    while (let Some(_) <- a<!parse_expected_right_delimiter!> <!>| let None <- b) {
         return 1
     }
     8
@@ -21,16 +21,3 @@ main() {
     println(foo(Some(15), Some(3))) // -1
     println(foo(Some(8), None)) // 8
 }
-
-/* SCAN
-error: unclosed delimiter: '('
-  ==> bitor.cj:10:28:
-   | 
-10 |     while (let Some(_) <- a | let None <- b) {
-   |           ~                ^ expected ')' here
-   |           |
-   |           to match this opening '('
-   | 
-
-1 error generated, 1 error printed.
-*/

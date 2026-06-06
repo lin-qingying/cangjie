@@ -19,6 +19,3 @@ main(): Int64 {
     var b = B()
     return b.foo()
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

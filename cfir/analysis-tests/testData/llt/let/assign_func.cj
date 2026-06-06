@@ -39,45 +39,13 @@ var testA = A()
 
 func run(): Int64 {
     test.b = 1
-    test.foo = a
-    Test.foo1 = a
-    testA.foo = a
-    A.foo1 = a
+    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>test.foo<!> = a
+    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>Test.foo1<!> = a
+    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>testA.foo<!> = a
+    <!UNQUALIFIED_LEFT_VALUE_ASSIGNED!>A.foo1<!> = a
     return Int64(test.b + test.foo() - 6)
 }
 
 main(): Int64 {
     return run()
 }
-
-/* SCAN
-error: 'func' can not be assigned
-  ==> assign_func.cj:42:5:
-   | 
-42 |     test.foo = a
-   |     ^^^^^^^^ 
-   | 
-
-error: 'func' can not be assigned
-  ==> assign_func.cj:43:5:
-   | 
-43 |     Test.foo1 = a
-   |     ^^^^^^^^^ 
-   | 
-
-error: 'func' can not be assigned
-  ==> assign_func.cj:44:5:
-   | 
-44 |     testA.foo = a
-   |     ^^^^^^^^^ 
-   | 
-
-error: 'func' can not be assigned
-  ==> assign_func.cj:45:5:
-   | 
-45 |     A.foo1 = a
-   |     ^^^^^^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

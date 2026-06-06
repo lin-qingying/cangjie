@@ -6,7 +6,6 @@
 
 // EXEC: %compiler %cmp_opt %f -o %output
 // EXEC: %run %run_opt %n.%suffix %run_args | compare %f
-// ASSERT: regex-6 true
 
 interface I1 {}
 

@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -19,32 +19,7 @@ extend<T> A<T> where T <: EQ {
 
 class B<E> <: A<E> { // generic-E does not satisfy the constraint T <: EQ
     func test(a: E) {
-        soo()
-        add(a)
+        <!sema_undeclared_identifier!>s<!>oo()
+        <!sema_undeclared_identifier!>a<!>dd(a)
     }
 }
-
-/* SCAN
-error: undeclared identifier 'soo'
-  ==> extend_generic5.cj:22:9:
-   | 
-22 |         soo()
-   |         ^ 
-   | 
-
-error: undeclared identifier 'add'
-  ==> extend_generic5.cj:23:9:
-   | 
-23 |         add(a)
-   |         ^ 
-   | 
-
-error: 'main' is missing
- ==> extend_generic5.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-3 errors generated, 3 errors printed.
-*/

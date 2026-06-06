@@ -6,9 +6,6 @@
 
 // EXEC: %compiler %cmp_opt  %f  -o %output
 // EXEC: %run %run_opt %output %run_args
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-// ASSERT: regex-not Segementation
 
 main(): Int64 {
     var a = "\r !'#$%&()*+,}~\f-./012345678\v9:;<=>?@ABCDEFGHIJKLM\nNOPQRSTUVWXYZ[]^_`\tabcdefghi\bjklmn\0opqrs\\tu\''vwxyz{|\""
@@ -22,9 +19,9 @@ main(): Int64 {
         if (a[i] != b[i]) {
             return 1
         }
-        if (!(a[i] is UInt8)) {
+        if (!(a[i] is UInt8)) <!chir_dce_unreachable_block_in_expression!>{
             return 2
-        }
+        }<!>
     }
     return 0
 }

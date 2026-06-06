@@ -21,11 +21,11 @@ struct Data {
 
     public operator func -(): Data {
         var left: Int32 = width
-        var right: Int32 = length
+        <!sema_mismatched_types!>var right: Int32 = length<!>
     }
 
     public static func g() {
-        var x = width
+        var x = <!sema_static_function_cannot_access_non_static_member!>w<!>idth
         return x
     }
 }
@@ -35,22 +35,3 @@ func run(): Int64 {
     var dd = -data
     return 0
 }
-
-/* SCAN
-error: mismatched types
-  ==> record_static_call_non_static1.cj:24:9:
-   | 
-24 |         var right: Int32 = length
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^ expected 'Struct-Data', found 'Unit'
-   | 
-   # note: definitions and declarations are always of type 'Unit'
-
-error: 'width' is non-static member, cannot be accessed by static function 'g'
-  ==> record_static_call_non_static1.cj:28:17:
-   | 
-28 |         var x = width
-   |                 ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

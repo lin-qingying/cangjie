@@ -10,19 +10,8 @@ open class A<T> <: B<C<T>> {}
 
 interface B<T> where T <: A<T> {}
 
-open class C<T> <: A<C<T>> & B<C<T>> {}
+open class C<T> <: <!sema_generic_infinite_instantiation!>A<!><C<T>> & B<C<T>> {}
 
 main() {
     return 0
 }
-
-/* SCAN
-error: generic infinite instantiation
-  ==> generic_infinite_init_06.cj:13:20:
-   | 
-13 | open class C<T> <: A<C<T>> & B<C<T>> {}
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

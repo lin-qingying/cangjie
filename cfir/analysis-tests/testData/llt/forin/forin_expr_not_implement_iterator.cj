@@ -9,19 +9,8 @@
 internal import std.collection.*
 
 main() {
-    for (num in 10) {
+    for (num in <!sema_expr_in_forin_must_has_iterator!>1<!>0) {
         println(num)
     }
     return 0
 }
-
-/* SCAN
-error: the type Int64 of expression in for-in expression does not implement Iterator
-  ==> forin_expr_not_implement_iterator.cj:12:17:
-   | 
-12 |     for (num in 10) {
-   |                 ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

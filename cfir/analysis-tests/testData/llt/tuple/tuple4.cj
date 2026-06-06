@@ -8,25 +8,7 @@
 
 main(): Int64 {
     var (a, b, c) = (0, 1, 2)
-    var d = (3, 4, (a, b, c)[3])
-    var (one, two, three): (Int32, Int32, Int32) = (5, 6, 7, 8)
+    var d = (3, 4, (a, b, c)[<!sema_builtin_index_in_bound!>3<!>])
+    var (one, two, three): (Int32, Int32, Int32) = <!sema_mismatched_types!>(5, 6, 7, 8)<!>
     return 0
 }
-
-/* SCAN
-error: tuple index must be in bounds
-  ==> tuple4.cj:11:30:
-   | 
-11 |     var d = (3, 4, (a, b, c)[3])
-   |                              ^ 
-   | 
-
-error: mismatched types
-  ==> tuple4.cj:12:52:
-   | 
-12 |     var (one, two, three): (Int32, Int32, Int32) = (5, 6, 7, 8)
-   |                                                    ^^^^^^^^^^^^ expected 'Tuple<Int32, Int32, Int32>', found 'Tuple<Int64, Int64, Int64, Int64>'
-   | 
-
-2 errors generated, 2 errors printed.
-*/

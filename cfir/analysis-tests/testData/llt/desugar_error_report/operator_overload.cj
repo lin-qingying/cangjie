@@ -14,17 +14,6 @@ open class A {
 
 main(): Int64 {
     var a: A = A()
-    a -= a
+    <!sema_type_incompatible!>a<!> -= a
     return 0
 }
-
-/* SCAN
-error: type incompatible in this compound assignment expression
-  ==> operator_overload.cj:17:5:
-   | 
-17 |     a -= a
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

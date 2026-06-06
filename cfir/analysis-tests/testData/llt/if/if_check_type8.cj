@@ -16,16 +16,5 @@ main() {
     } else {
         f2
     }
-    f(fp)
+    <!NO_MATCHING_OPERATOR_INVOKE!>f<!>(fp)
 }
-
-/* SCAN
-error: no matching function for operator '()' function call
-  ==> if_check_type8.cj:19:5:
-   | 
-19 |     f(fp)
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

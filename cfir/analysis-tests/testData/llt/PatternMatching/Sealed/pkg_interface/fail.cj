@@ -8,7 +8,7 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt pkga.cj -o pkga.%middle
 // ERRCHECK: %compiler %cmp_opt pkga.%middle %f -o %output
 
-internal import pkga.*
+internal import <!package_search_error!>pkga<!>.*
 
 class C <: I { // error
     public func f() {
@@ -27,31 +27,3 @@ extend D <: I { // error
 }
 
 main() {}
-
-/* SCAN
-error: cannot implement imported 'sealed' interface 'I'
-  ==> fail.cj:13:7:
-   | 
-13 | class C <: I { // error
-   |       ^    ~ sealed interface declared in package 'pkga'
-   | 
-
-error: cannot inherit imported 'sealed' interface 'I'
-  ==> fail.cj:19:11:
-   | 
-19 | interface J <: I {} // error
-   |           ^    ~ sealed interface declared in package 'pkga'
-   | 
-
-error: cannot implement imported 'sealed' interface 'I'
-  ==> fail.cj:21:7:
-   | 
-21 | class D {}
-   |       ^ 
-22 | 
-23 | extend D <: I { // error
-   |             ~ sealed interface declared in package 'pkga'
-   | 
-
-3 errors generated, 3 errors printed.
-*/

@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 
 interface Graph<G, E, V> where G <: Graph<G, E, V>, E <: Edge<G, E, V>, V <: Vertex<G, E, V> {
     // func getVertices(): List<V>;
@@ -39,6 +37,6 @@ class CCity <: City {}
 func f<X, Y, Z>(a: X, b: Y, c: Z) where X <: Graph<X, Y, Z>, Y <: Edge<X, Y, Z>, Z <: Vertex<X, Y, Z> {}
 
 main() {
-    f(MMap(), RRoad(), CCity());
+    <!sema_unable_to_infer_generic_func!>f<!>(MMap(), RRoad(), CCity());
     0
 }

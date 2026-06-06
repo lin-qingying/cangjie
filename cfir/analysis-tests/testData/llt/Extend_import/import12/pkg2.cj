@@ -11,8 +11,8 @@
 
 package pkg2
 
-internal import pkg0.A
-internal import pkg1.I
+internal import <!package_search_error!>pkg0<!>.A
+internal import <!package_search_error!>pkg1<!>.I
 
 public interface K {}
 
@@ -21,16 +21,3 @@ extend A <: K {
         this.fj() + 1
     } // pkg1.J not import, cannot access 'fj'.
 }
-
-/* SCAN
-error: no matching function declaration for function call 'fj'
-  ==> pkg2.cj:21:14:
-   | 
-21 |         this.fj() + 1
-   |              ^ 
-   | 
-note: to use the following extension, import 'Interface-J'
-  ==> (package pkg1)pkg1.cj:19:1:
-
-1 error generated, 1 error printed.
-*/

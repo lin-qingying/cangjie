@@ -7,9 +7,6 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    synchronized () { }
+    synchronized (<!parse_expected_expression!>)<!> { }
     0
 }
-
-// ASSERT: scan-not Segmentation fault
-// ASSERT: regex-not no position error occurred

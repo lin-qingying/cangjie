@@ -6,45 +6,10 @@
 
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
-type D<T> = F<Int32>
+<!sema_typealias_cycle, typealias_unused_type_parameters!>t<!>ype D<T> = F<Int32>
 
-type F<U> = D<Rune>
+<!sema_typealias_cycle, typealias_unused_type_parameters!>t<!>ype F<U> = D<Rune>
 
 main() {
     return 0
 }
-
-/* SCAN
-error: type cycle detected: 'D->F->D'
- ==> typealias7.cj:9:1:
-  | 
-9 | type D<T> = F<Int32>
-  | ^ 
-  | 
-
-error: type cycle detected: 'F->D->F'
-  ==> typealias7.cj:11:1:
-   | 
-11 | type F<U> = D<Rune>
-   | ^ 
-   | 
-
-warning: type arg(s) Generics-T are not used
- ==> typealias7.cj:9:1:
-  | 
-9 | type D<T> = F<Int32>
-  | ^ 
-  | 
-  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: type arg(s) Generics-U are not used
-  ==> typealias7.cj:11:1:
-   | 
-11 | type F<U> = D<Rune>
-   | ^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-2 errors generated, 2 errors printed.
-2 warnings generated, 2 warnings printed.
-*/

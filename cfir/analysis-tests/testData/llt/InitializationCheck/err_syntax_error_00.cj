@@ -10,7 +10,7 @@ class Data
     public var a : Int32  = 100
     public var b :)Float32
     public init()  {
-        b = 3var a : Int32  c run(): Int64 {
+        b = 3<!lex_unknown_suffix!>var<!> a : Int32  c run(): Int64 {
     var value : Data = Data();
     if ((value.a == 100) && (value.b == 3.0)) {        return 0
     }
@@ -22,14 +22,3 @@ class Data
 main(): Int64 {
     return run()
 }
-
-/* SCAN
-error: unknown suffix 'var' for number literal
-  ==> err_syntax_error_00.cj:13:14:
-   | 
-13 |         b = 3var a : Int32  c run(): Int64 {
-   |              ^^^ unknown suffix 'var'
-   | 
-
-1 error generated, 1 error printed.
-*/

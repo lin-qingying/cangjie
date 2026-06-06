@@ -17,26 +17,8 @@ interface I1 {
 }
 
 interface I2 <: I1 {
-    mut static prop a: Int64
-    static func f(): Unit
+    <!sema_invalid_override_or_redefine_member_in_interface!>m<!>ut static prop a: Int64
+    <!sema_invalid_override_or_redefine_member_in_interface!>s<!>tatic func f(): Unit
 }
 
 main() {}
-
-/* SCAN
-error: cannot override implemented interface property 'a' with abstract property
-  ==> interface_conflict_inheritance_05.cj:20:5:
-   | 
-20 |     mut static prop a: Int64
-   |     ^ 
-   | 
-
-error: cannot override implemented interface function 'f' with abstract function
-  ==> interface_conflict_inheritance_05.cj:21:5:
-   | 
-21 |     static func f(): Unit
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

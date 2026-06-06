@@ -7,7 +7,7 @@
 // EXEC:%frontendCompiler %cmp_opt %typecheck %cmp_opt %f 2>&1 | compare %f
 
 interface I {
-    let a = 0    
+    <!parse_unexpected_declaration_in_scope!>let<!> a = 0
 }
 
 func Foo<U>(a:U) where U <: I {
@@ -20,18 +20,3 @@ class C1 <: I {}
 main() {
     return Foo<C1>(C1())
 }
-
-/* SCAN
-[33mwarning[0m: '--error-count-limit' is specified multiple times. The last one is chosen.
-[33mwarning[0m: '--diagnostic-format' is specified multiple times. The last one is chosen.
-error: unexpected variable declaration in interface body
-  ==> access_by_parameter_interface_1_2.cj:10:5:
-   | 
-9  | interface I {
-   | ~~~~~~~~~ in interface
-10 |     let a = 0    
-   |     ^^^ unexpected variable declaration
-   | 
-
-1 error generated, 1 error printed.
-*/

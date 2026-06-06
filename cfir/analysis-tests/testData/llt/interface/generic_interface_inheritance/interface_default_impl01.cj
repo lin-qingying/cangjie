@@ -6,8 +6,6 @@
 
 // EXEC: %compiler %cmp_opt %f -o %output
 // EXEC: %run %run_opt %output | compare %f
-// ASSERT: scan a
-// ASSERT: scan 1
 
 interface I<T> {
     func f1(a: T): Unit
@@ -17,7 +15,7 @@ interface I<T> {
 }
 
 class A <: I<Int64> & I<String> {
-    public func f1(a: Int64): Unit {
+    public func f1(<!chir_dce_unused_variable!>a<!>: Int64): Unit {
         println("a")
     }
     public func f1(a: String): Unit {

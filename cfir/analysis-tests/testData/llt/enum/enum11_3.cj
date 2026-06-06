@@ -19,8 +19,8 @@ enum Time<T> {
 }
 
 func run(): Int64 {
-    var time1 = Time.Day(getTime<Int32>)
-    var time = Time.Day(getTime)
+    var time1 = <!sema_ambiguous_arg_type!>T<!>ime.Day(getTime<Int32>)
+    var time = Time.Day(<!sema_generic_type_without_type_argument!>g<!>etTime)
     var res: Int32 = match (time) {
         case Day(x) => x(3)
     }
@@ -33,21 +33,3 @@ func run(): Int64 {
 main(): Int64 {
     return run()
 }
-
-/* SCAN
-error: ambiguous arguments type in call expression
-  ==> enum11_3.cj:22:17:
-   | 
-22 |     var time1 = Time.Day(getTime<Int32>)
-   |                 ^ 
-   | 
-
-error: generic type should be used with type argument
-  ==> enum11_3.cj:23:25:
-   | 
-23 |     var time = Time.Day(getTime)
-   |                         ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

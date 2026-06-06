@@ -8,24 +8,6 @@
 
 main(): Int64 {
     let b = [[1u8, 2u8, 3u8]]
-    b[1.01][0] != 1
+    <!sema_parameters_and_arguments_mismatch!>b<!>[<!sema_cannot_convert_literal!>1<!>.01][0] != 1
     return 0
 }
-
-/* SCAN
-error: cannot convert a floating-point literal to type 'Int64'
-  ==> subscribe_in_binary.cj:11:7:
-   | 
-11 |     b[1.01][0] != 1
-   |       ^ 
-   | 
-
-error: parameters and arguments mismatch
-  ==> subscribe_in_binary.cj:11:5:
-   | 
-11 |     b[1.01][0] != 1
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

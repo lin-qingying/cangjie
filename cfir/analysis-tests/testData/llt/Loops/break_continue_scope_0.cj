@@ -11,15 +11,11 @@ main() {
     while (true) {
         println("outer")
         do {
-            while (continue) {
+            <!chir_dce_unreachable_expression_hint!>while (continue) {
                 println("here")
-            }
+            }<!>
             println("inner")
         } while (break)
     }
     0
 }
-
-// ASSERT: regex-1 outer
-// ASSERT: scan-not here
-// ASSERT: scan-not inner

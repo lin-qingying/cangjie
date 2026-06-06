@@ -16,27 +16,12 @@ interface A {
 }
 
 interface B <: A {
-    mut static prop v: Int64 {
+    <!PROPERTY_MUST_HAVE_ACCESSORS!><!PROPERTY_MUST_IMPLEMENT_BOTH!>mut<!> static prop v: Int64 {
         set(v) {
         }
-    }
+    }<!>
 }
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: property must have accessors
-  ==> interface_property1.cj:19:5:
-   | 
-19 |       mut static prop v: Int64 {
-   |  _____^
-20 | |         set(v) {
-   | | ...
-22 | |     }
-   | |_____^
-   | 
-
-1 error generated, 1 error printed.
-*/

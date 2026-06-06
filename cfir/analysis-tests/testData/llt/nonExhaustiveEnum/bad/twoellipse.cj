@@ -6,13 +6,11 @@
 
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 enum A {
-    | B | ... | ...
+    | B | ... <!parse_expected_decl!>|<!><!parse_expected_right_delimiter!> <!><!parse_expected_character!>...<!>
 }
 
 enum B {
-    B | ... | C | ...
+    B | ... <!parse_expected_decl!>|<!><!parse_expected_right_delimiter!> <!><!parse_expected_character!>C<!> | ...
 }
 main() {
 }
-
-// ASSERT: scan-2 error: expected declaration, found '|'

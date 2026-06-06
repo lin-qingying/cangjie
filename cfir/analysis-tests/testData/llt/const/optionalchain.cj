@@ -29,18 +29,7 @@ class B4 {
 
 const func foo() {
     let b = Some(B1())
-    return b?.v?.v?.v?.a
+    return <!EXPECT_CONST!>b?.v?.v?.v?.a<!>
 }
 
 main() {}
-
-/* SCAN
-error: expected 'const' expression
-  ==> optionalchain.cj:32:12:
-   | 
-32 |     return b?.v?.v?.v?.a
-   |            ^^^^^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

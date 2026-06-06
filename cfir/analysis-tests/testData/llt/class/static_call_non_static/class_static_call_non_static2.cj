@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -16,99 +16,25 @@ class Base {
         return 1
     }
     public static func get(): Int32 {
-        func a(x1!: Int32 = f(), x2!: Int32 = x): Int32 {
-            f()
+        func a(x1!: Int32 = <!sema_static_function_cannot_access_non_static_member!>f<!>(), x2!: Int32 = <!sema_static_function_cannot_access_non_static_member!>x<!>): Int32 {
+            <!sema_static_function_cannot_access_non_static_member!>f<!>()
             f1()
             test
-            x
-            var lambda1 = {=> f()}
-            return f()
+            <!sema_static_function_cannot_access_non_static_member!>x<!>
+            var lambda1 = {=> <!sema_static_lambdaExpr_cannot_access_non_static!>f<!>()}
+            return <!sema_static_function_cannot_access_non_static_member!>f<!>()
         }
-        var lambda = {=> f()}
+        var lambda = {=> <!sema_static_lambdaExpr_cannot_access_non_static!>f<!>()}
         return a()
     }
     public static var lam = {
         =>
-        f();
+        <!sema_static_lambdaExpr_cannot_access_non_static!>f<!>();
         0
     }
     public static var lam1 = {
         =>
-        x;
+        <!sema_static_lambdaExpr_cannot_access_non_static!>x<!>;
         0
     }
 }
-
-/* SCAN
-error: 'f' is non-static member, cannot be accessed by static function 'a'
-  ==> class_static_call_non_static2.cj:19:29:
-   | 
-19 |         func a(x1!: Int32 = f(), x2!: Int32 = x): Int32 {
-   |                             ^ 
-   | 
-
-error: 'f' is non-static member, cannot be accessed by static function 'a'
-  ==> class_static_call_non_static2.cj:20:13:
-   | 
-20 |             f()
-   |             ^ 
-   | 
-
-error: invalid use of non-static member 'f' in static lambda expression
-  ==> class_static_call_non_static2.cj:24:31:
-   | 
-24 |             var lambda1 = {=> f()}
-   |                               ^ 
-   | 
-
-error: 'f' is non-static member, cannot be accessed by static function 'a'
-  ==> class_static_call_non_static2.cj:25:20:
-   | 
-25 |             return f()
-   |                    ^ 
-   | 
-
-error: invalid use of non-static member 'f' in static lambda expression
-  ==> class_static_call_non_static2.cj:27:26:
-   | 
-27 |         var lambda = {=> f()}
-   |                          ^ 
-   | 
-
-error: invalid use of non-static member 'f' in static lambda expression
-  ==> class_static_call_non_static2.cj:32:9:
-   | 
-32 |         f();
-   |         ^ 
-   | 
-
-error: 'x' is non-static member, cannot be accessed by static function 'a'
-  ==> class_static_call_non_static2.cj:19:47:
-   | 
-19 |         func a(x1!: Int32 = f(), x2!: Int32 = x): Int32 {
-   |                                               ^ 
-   | 
-
-error: 'x' is non-static member, cannot be accessed by static function 'a'
-  ==> class_static_call_non_static2.cj:23:13:
-   | 
-23 |             x
-   |             ^ 
-   | 
-
-error: invalid use of non-static member 'x' in static lambda expression
-  ==> class_static_call_non_static2.cj:37:9:
-   | 
-37 |         x;
-   |         ^ 
-   | 
-
-error: 'main' is missing
- ==> class_static_call_non_static2.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-10 errors generated, 10 errors printed.
-*/

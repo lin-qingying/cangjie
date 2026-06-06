@@ -17,58 +17,10 @@ main() {
     let x = A
     match (x) {
         case E.A => 0
-        case A => 0
-        case E.A => 0
+        case <!sema_unreachable_pattern!>A<!> => 0
+        case <!sema_unreachable_pattern!>E.A<!> => 0
         case B => 1
-        case E.B => 1
-        case E.B => 1
+        case <!sema_unreachable_pattern!>E.B<!> => 1
+        case <!sema_unreachable_pattern!>E.B<!> => 1
     }
 }
-
-/* SCAN
-warning: unreachable pattern
-  ==> usertype_00.cj:20:14:
-   | 
-20 |         case A => 0
-   |              ^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unreachable pattern
-  ==> usertype_00.cj:21:14:
-   | 
-21 |         case E.A => 0
-   |              ^^^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unreachable pattern
-  ==> usertype_00.cj:23:14:
-   | 
-23 |         case E.B => 1
-   |              ^^^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unreachable pattern
-  ==> usertype_00.cj:24:14:
-   | 
-24 |         case E.B => 1
-   |              ^^^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unused function:'main'
-  ==> usertype_00.cj:16:1:
-   | 
-16 |   main() {
-   |  _^
-17 | |     let x = A
-   | | ...
-26 | | }
-   | |_^ unused function
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-5 warnings generated, 5 warnings printed.
-*/

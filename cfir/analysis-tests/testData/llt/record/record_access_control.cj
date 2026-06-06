@@ -21,12 +21,12 @@ struct A {
     }
     private func l() {}
     public static func n() {
-        a
-        b
+        <!sema_static_function_cannot_access_non_static_member!>a<!>
+        <!sema_static_function_cannot_access_non_static_member!>b<!>
         c // ok
         d // ok
-        l()
-        m()
+        <!sema_static_function_cannot_access_non_static_member!>l<!>()
+        <!sema_static_function_cannot_access_non_static_member!>m<!>()
         o() // ok
     }
     private static func o() {}
@@ -45,190 +45,32 @@ struct A {
 
 main() {
     A().a // ok
-    A.a
+    <!sema_illegal_access_non_static_member!>A<!>.a
 
-    A().b
-    A.b
+    <!sema_invalid_access_control!>A<!>().b
+    <!sema_illegal_access_non_static_member!>A<!>.b
 
-    A().c
+    <!sema_object_cannot_access_static_member!>A<!>().c
     A.c // ok
 
-    A().d
-    A.d
+    <!sema_object_cannot_access_static_member!>A<!>().d
+    <!sema_invalid_access_control!>A<!>.d
 
     A().m()
-    A.m()
+    <!sema_illegal_access_non_static_member!>A<!>.m()
 
-    A().l()
-    A.l()
+    A().<!sema_no_match_function_declaration_for_call!>l<!>()
+    <!sema_illegal_access_non_static_member!>A<!>.l()
 
-    A().n()
+    <!sema_object_cannot_access_static_member!>A<!>().n()
     A.n() // ok
 
-    A().o()
-    A.o()
+    <!sema_object_cannot_access_static_member!>A<!>().o()
+    A.<!sema_no_match_function_declaration_for_call!>o<!>()
 
-    A + A
+    <!sema_ref_not_be_type!>A<!> <!sema_invalid_binary_expr!>+<!> <!sema_ref_not_be_type!>A<!>
     A() + A()
 
-    A() - A()
+    A() <!sema_invalid_binary_expr!>-<!> A()
     return 0
 }
-
-/* SCAN
-error: 'l' is non-static member, cannot be accessed by static function 'n'
-  ==> record_access_control.cj:28:9:
-   | 
-28 |         l()
-   |         ^ 
-   | 
-
-error: 'm' is non-static member, cannot be accessed by static function 'n'
-  ==> record_access_control.cj:29:9:
-   | 
-29 |         m()
-   |         ^ 
-   | 
-
-error: 'a' is non-static member, cannot access by type name
-  ==> record_access_control.cj:48:5:
-   | 
-48 |     A.a
-   |     ^ 
-   | 
-
-error: 'b' is non-static member, cannot access by type name
-  ==> record_access_control.cj:51:5:
-   | 
-51 |     A.b
-   |     ^ 
-   | 
-
-error: object cannot access static member 'c'
-  ==> record_access_control.cj:53:5:
-   | 
-53 |     A().c
-   |     ^ 
-   | 
-
-error: object cannot access static member 'd'
-  ==> record_access_control.cj:56:5:
-   | 
-56 |     A().d
-   |     ^ 
-   | 
-
-error: 'm' is non-static member, cannot access by type name
-  ==> record_access_control.cj:60:5:
-   | 
-60 |     A.m()
-   |     ^ 
-   | 
-
-error: no matching function declaration for function call 'l'
-  ==> record_access_control.cj:62:9:
-   | 
-62 |     A().l()
-   |         ^ 
-   | 
-
-error: 'l' is non-static member, cannot access by type name
-  ==> record_access_control.cj:63:5:
-   | 
-63 |     A.l()
-   |     ^ 
-   | 
-
-error: object cannot access static member 'n'
-  ==> record_access_control.cj:65:5:
-   | 
-65 |     A().n()
-   |     ^ 
-   | 
-
-error: object cannot access static member 'o'
-  ==> record_access_control.cj:68:5:
-   | 
-68 |     A().o()
-   |     ^ 
-   | 
-
-error: no matching function declaration for function call 'o'
-  ==> record_access_control.cj:69:7:
-   | 
-69 |     A.o()
-   |       ^ 
-   | 
-
-error: invalid binary operator '+' on type 'Struct-A' and 'Struct-A'
-  ==> record_access_control.cj:71:7:
-   | 
-71 |     A + A
-   |       ^ 
-   | 
-   # note: you may want to implement 'operator func +(right: Struct-A)' for type 'Struct-A'
-
-error: invalid binary operator '-' on type 'Struct-A' and 'Struct-A'
-  ==> record_access_control.cj:74:9:
-   | 
-74 |     A() - A()
-   |         ^ 
-   | 
-   # note: you may want to implement 'operator func -(right: Struct-A)' for type 'Struct-A'
-
-error: 'a' is non-static member, cannot be accessed by static function 'n'
-  ==> record_access_control.cj:24:9:
-   | 
-24 |         a
-   |         ^ 
-   | 
-
-error: 'b' is non-static member, cannot be accessed by static function 'n'
-  ==> record_access_control.cj:25:9:
-   | 
-25 |         b
-   |         ^ 
-   | 
-
-error: can not access field 'b'
-  ==> record_access_control.cj:50:5:
-   | 
-50 |     A().b
-   |     ^ 
-   | 
-
-error: can not access field 'd'
-  ==> record_access_control.cj:57:5:
-   | 
-57 |     A.d
-   |     ^ 
-   | 
-
-error: expected member name or constructor call after 'A' type name
-  ==> record_access_control.cj:71:5:
-   | 
-71 |     A + A
-   |     ^ 
-   | 
-note: found candidate
- ==> record_access_control.cj:9:1:
-  | 
-9 | struct A {
-  | ^ 
-  | 
-
-error: expected member name or constructor call after 'A' type name
-  ==> record_access_control.cj:71:9:
-   | 
-71 |     A + A
-   |         ^ 
-   | 
-note: found candidate
- ==> record_access_control.cj:9:1:
-  | 
-9 | struct A {
-  | ^ 
-  | 
-
-20 errors generated, 20 errors printed.
-*/

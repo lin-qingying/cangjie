@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -13,24 +13,6 @@ open class Base {
     }
 }
 
-class Test<T> <: Base {
+class <!sema_no_non_param_constructor_in_super_class!>Test<!><T> <: Base {
     public var a: Int32 = 3
 }
-
-/* SCAN
-error: there is no non-parameter constructor in super class, please invoke super call explicitly
-  ==> super_error_02.cj:16:7:
-   | 
-16 | class Test<T> <: Base {
-   |       ^^^^ 
-   | 
-
-error: 'main' is missing
- ==> super_error_02.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

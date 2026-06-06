@@ -13,7 +13,7 @@ class Data {
         b = 4
     }
     public init(x: T){
-        init()
+        <!parse_expected_expr_or_decl_in!>init<!>()
     }
 }
 
@@ -30,14 +30,3 @@ func run(): Int64 {
 main(): Int64 {
     return run()
 }
-
-/* SCAN
-error: expected expression or declaration, found keyword 'init'
-  ==> class10.cj:16:9:
-   | 
-16 |         init()
-   |         ^^^^ expected expression or declaration here
-   | 
-
-1 error generated, 1 error printed.
-*/

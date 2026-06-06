@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -17,22 +17,4 @@ interface B {
 
 class S {}
 
-extend S <: A & B {}
-
-/* SCAN
-error: interface function 'add' must be implemented in 'extend S'
-  ==> extend_interface2.cj:20:1:
-   | 
-20 | extend S <: A & B {}
-   | ^ 
-   | 
-
-error: 'main' is missing
- ==> extend_interface2.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/
+<!sema_interface_member_must_be_implemented!>e<!>xtend S <: A & B {}

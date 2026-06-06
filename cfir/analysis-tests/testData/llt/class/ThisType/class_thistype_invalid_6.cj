@@ -14,11 +14,11 @@ class Data<T>{
     }
 
     public func f1(a: T): This{
-        func f2() : This { 
+        func f2() : <!parse_this_type_not_allow!>This<!> {
             this
         }
 
-        func f2(c: This) { 
+        func f2(c: <!parse_this_type_not_allow!>This<!>) {
 
         }
         f2()
@@ -32,23 +32,3 @@ main():Int64{
     }
     return 1
 }
-
-/* SCAN
-error: 'This' type is not allowed
-  ==> class_thistype_invalid_6.cj:17:21:
-   | 
-17 |         func f2() : This { 
-   |                     ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-error: 'This' type is not allowed
-  ==> class_thistype_invalid_6.cj:21:20:
-   | 
-21 |         func f2(c: This) { 
-   |                    ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-2 errors generated, 2 errors printed.
-*/

@@ -10,48 +10,9 @@
 var a = 1
 
 main(): Int64 {
-    func g() {
-        var x = {=> a}
-    }
-    let a = true
+    <!chir_dce_unused_function!>func g() {
+        var <!chir_dce_unused_variable!>x<!> = {=> <!sema_capture_has_shadow_variable!>a<!>}
+    }<!>
+    let <!chir_dce_unused_variable!>a<!> = true
     return 0
 }
-
-/* SCAN
-warning: the variable 'a' actually captures this decl capture8.cj:10:1, can not captures the decl capture8.cj:16:5
-  ==> capture8.cj:14:21:
-   | 
-14 |         var x = {=> a}
-   |                     ^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff semantics`
-
-warning: unused function:'g'
-  ==> capture8.cj:13:5:
-   | 
-13 |       func g() {
-   |  _____^
-14 | |         var x = {=> a}
-15 | |     }
-   | |_____^ unused function
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unused variable:'x'
-  ==> capture8.cj:14:13:
-   | 
-14 |         var x = {=> a}
-   |             ^ unused variable
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unused variable:'a'
-  ==> capture8.cj:16:9:
-   | 
-16 |     let a = true
-   |         ^ unused variable
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-4 warnings generated, 4 warnings printed.
-*/

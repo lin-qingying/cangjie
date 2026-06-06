@@ -36,6 +36,3 @@ main(): Int64 {
     }
     return 1
 }
-
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace

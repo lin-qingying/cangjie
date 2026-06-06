@@ -10,21 +10,10 @@ enum My {
 }
 
 main() {
-    let a = A 
+    let a = A
 
-    while (let B(value) <- a where value > 0) {
+    while (let B(value) <- a <!parse_expected_if_let_andand!>where<!> value > 0) {
         return value + 1
     }
     return -1
 }
-
-/* SCAN
-error: expected '&&', '||', or ')', got 'where'
-  ==> whileletwhere.cj:15:30:
-   | 
-15 |     while (let B(value) <- a where value > 0) {
-   |                              ^^^^^ did you mean to write '&&'
-   | 
-
-1 error generated, 1 error printed.
-*/

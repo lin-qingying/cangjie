@@ -7,7 +7,7 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt %n.cj 2>&1 | compare %f
 
 main() {
-    var b = R(a: 6)
+    var b = R<!sema_wrong_number_of_arguments!>(a: 6)<!>
     b.c(7)
     return Int64(b.a - 8)
 }
@@ -20,39 +20,14 @@ interface I {
 struct R {
     public var a: Int32 = 8
     public mut func c(b: Int32): Int32 {
-        let c = cc
+        let c = <!sema_undeclared_identifier!>c<!>c
         a = c() + b
         return a
     }
 }
 
-extend R <: I {
+<!sema_incompatible_mut_modifier_between_struct_and_interface!>e<!>xtend R <: I {
     public func cc(): Int32 {
         return 1
     }
 }
-
-/* SCAN
-error: extra argument given for parameter list '()' in call
-  ==> extend_mutable_function_invalid_1.cj:10:14:
-   | 
-10 |     var b = R(a: 6)
-   |              ^^^^^^ expected 0 arguments, found 1
-   | 
-
-error: undeclared identifier 'cc'
-  ==> extend_mutable_function_invalid_1.cj:23:17:
-   | 
-23 |         let c = cc
-   |                 ^ 
-   | 
-
-error: 'mut' modifier of 'c' is incompatible with that in interface 'I'
-  ==> extend_mutable_function_invalid_1.cj:29:1:
-   | 
-29 | extend R <: I {
-   | ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

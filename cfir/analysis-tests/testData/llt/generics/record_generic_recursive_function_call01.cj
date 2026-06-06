@@ -5,11 +5,10 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT:scan expected declaration here
 
 struct A<T>{
     private func foo(input:T){}
-    return 1;    func test(input:T){ 
+    <!parse_expected_decl!>return<!> 1;    func test(input:T){
         var a : A<T> = A<T>()
         a(input)
    }

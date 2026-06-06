@@ -7,17 +7,6 @@
 // ERRCHECK: %compiler %noColor %f -o %output
 
 main() {
-    let Int_literal:Int33 = 1suffix;
+    let Int_literal:Int33 = 1<!lex_unknown_suffix!>suffix<!>;
     return 0;
 }
-
-/* SCAN
-error: unknown suffix 'suffix' for number literal
-  ==> 013.cj:10:30:
-   | 
-10 |     let Int_literal:Int33 = 1suffix;
-   |                              ^^^^^^ unknown suffix 'suffix'
-   | 
-
-1 error generated, 1 error printed.
-*/

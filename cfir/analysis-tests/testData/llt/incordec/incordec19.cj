@@ -17,7 +17,7 @@ open class Base{
 class COO <: Base{
     public var a: Int32 = 1
     public var b: Int32 = 2
-    public operator func ++():Int32{ 
+    public operator func <!parse_invalid_overloaded_operator!>++<!>():Int32{
         this.a = this.a + 1
         return this.a
     }
@@ -29,15 +29,3 @@ func run(): Int64 {
     if (res != 2) { return 1}
     return 0
 }
-
-/* SCAN
-error: cannot overload operator '++' 
-  ==> incordec19.cj:20:26:
-   | 
-20 |     public operator func ++():Int32{ 
-   |                          ^^ cannot overload this operator
-   | 
-   # note: only operator '+', '-', ... can be overloaded
-
-1 error generated, 1 error printed.
-*/

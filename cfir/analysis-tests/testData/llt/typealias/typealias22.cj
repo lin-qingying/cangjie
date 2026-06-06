@@ -7,16 +7,15 @@
 // DEPENDENCE: typealias22.expect
 // EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 // EXEC: %run %output | compare typealias22.expect
-// ASSERT: regex-not warning.*are not used
 
 type Parse<T, Result> = ((Array<T>, Result)) -> ?Array<T>
 
 func f<T, U>(a: ((Array<T>, U))): ?Array<T> {
-    var (x, y) = a
+    var (x, <!chir_dce_unused_variable!>y<!>) = a
 
-    if (false) {
+    if (false) <!chir_dce_unreachable_block_in_expression!>{
         return None
-    } else {
+    }<!> else {
         return x
     }
 }

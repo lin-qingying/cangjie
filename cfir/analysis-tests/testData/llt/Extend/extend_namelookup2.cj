@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -9,28 +9,10 @@
 // class cannot access member functions defined in its extend
 class A {
     func foo() {
-        go()
+        <!sema_undeclared_identifier!>g<!>o()
     }
 }
 
 extend A {
     func go() {}
 }
-
-/* SCAN
-error: undeclared identifier 'go'
-  ==> extend_namelookup2.cj:12:9:
-   | 
-12 |         go()
-   |         ^ 
-   | 
-
-error: 'main' is missing
- ==> extend_namelookup2.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

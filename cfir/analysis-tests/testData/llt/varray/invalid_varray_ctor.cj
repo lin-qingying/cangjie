@@ -8,25 +8,7 @@
 
 // Was ICE, should quit normally
 main() {
-    VArray<Int64, $3>6([1, 2, 3, 4])
-    let a = VArray<Int64, $3>
-    0
+    VArray<Int64, $3><!parse_varray_with_paren!>6<!>([1, 2, 3, 4])
+    let a = VArray<Int64, $3><!parse_varray_with_paren!>
+<!>    0
 }
-
-/* SCAN
-error: expected '(' or '{' after 'VArray' for 'VArray' constructor
-  ==> invalid_varray_ctor.cj:11:22:
-   | 
-11 |     VArray<Int64, $3>6([1, 2, 3, 4])
-   |                      ^ 
-   | 
-
-error: expected '(' or '{' after 'VArray' for 'VArray' constructor
-  ==> invalid_varray_ctor.cj:12:30:
-   | 
-12 |     let a = VArray<Int64, $3>
-   |                              ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

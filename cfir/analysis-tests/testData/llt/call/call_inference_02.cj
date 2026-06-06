@@ -16,25 +16,7 @@ extend<T> A<T> {
 
 main(): Int64 {
     var a = A<Int64>()
-    a.test<Int64>(1)
-    a.test<Rune>()
+    <!sema_non_generic_function_with_type_argument!>a<!>.test<Int64>(1)
+    <!sema_non_generic_function_with_type_argument!>a<!>.test<Rune>()
     return 0
 }
-
-/* SCAN
-error: non-generic function should not be used with type argument
-  ==> call_inference_02.cj:19:5:
-   | 
-19 |     a.test<Int64>(1)
-   |     ^ 
-   | 
-
-error: non-generic function should not be used with type argument
-  ==> call_inference_02.cj:20:5:
-   | 
-20 |     a.test<Rune>()
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

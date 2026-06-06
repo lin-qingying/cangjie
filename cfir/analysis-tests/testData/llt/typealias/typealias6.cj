@@ -6,28 +6,10 @@
 
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
-type D = F
+<!sema_typealias_cycle!>t<!>ype D = F
 
-type F = D
+<!sema_typealias_cycle!>t<!>ype F = D
 
 main() {
     return 0
 }
-
-/* SCAN
-error: type cycle detected: 'D->F->D'
- ==> typealias6.cj:9:1:
-  | 
-9 | type D = F
-  | ^ 
-  | 
-
-error: type cycle detected: 'F->D->F'
-  ==> typealias6.cj:11:1:
-   | 
-11 | type F = D
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

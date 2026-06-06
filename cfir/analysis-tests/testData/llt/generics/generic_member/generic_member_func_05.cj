@@ -18,11 +18,11 @@ open class A<X> {
 }
 
 class B<X> <: A<X> {
-    public static redef func test<T>(x: T): T {
+    <!sema_missing_redefined_func!>p<!>ublic static redef func test<T>(x: T): T {
         println("b");
         x
     }
-    public func goo<Y>(x: Y): Y {
+    public func <!sema_cannot_override!>goo<!><Y>(x: Y): Y {
         println("b");
         x
     }
@@ -31,27 +31,3 @@ class B<X> <: A<X> {
 main() {
     0
 }
-
-/* SCAN
-error: cannot override function 'goo'
-  ==> generic_member_func_05.cj:25:17:
-   | 
-25 |     public func goo<Y>(x: Y): Y {
-   |                 ^^^ 
-   | 
-note: the parent function is not modified by 'open'
-  ==> generic_member_func_05.cj:14:17:
-   | 
-14 |     public func goo<T>(x: T): T {
-   |                 ^^^ 
-   | 
-
-error: 'redef' function 'test' does not have a redefined 'static' function in its supertype
-  ==> generic_member_func_05.cj:21:5:
-   | 
-21 |     public static redef func test<T>(x: T): T {
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

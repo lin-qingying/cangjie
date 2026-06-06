@@ -15,26 +15,8 @@ public class APILevel {
 }
 
 @APILevel[11]
-type P<T> = Array<T>
+<!parse_illegal_macro_expand_input_args_without_paren!>t<!>ype P<T> = Array<T>
 @APILevel[12] @APILevel[255]
-type Rk = UIntNative
+<!parse_illegal_macro_expand_input_args_without_paren!>t<!>ype Rk = UIntNative
 
 main() {}
-
-/* SCAN
-error: unexpected parameters for macro invocation here
-  ==> type.cj:18:1:
-   | 
-18 | type P<T> = Array<T>
-   | ^ expected declaration like: function, enum, class, interface, variable, property, extend ...
-   | 
-
-error: unexpected parameters for macro invocation here
-  ==> type.cj:20:1:
-   | 
-20 | type Rk = UIntNative
-   | ^ expected declaration like: function, enum, class, interface, variable, property, extend ...
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -27,31 +27,14 @@ class B{
 }
 
 extend B {
-    protected prop f: String { 
+    protected prop f: String {
         get() {
             return "C"
         }
     }
-       public open prop f1: String { 
+       public <!parse_illegal_modifier_in_scope!>open<!> prop f1: String {
         get() {
             return "C"
         }
     }
 }
-
-/* SCAN
-error: unexpected modifier 'open' on property declaration in extend body
-  ==> extend_property3.cj:35:15:
-   | 
-29 | extend B {
-   | ~~~~~~ in extend
-30 |     protected prop f: String { 
-   | ...
-35 |        public open prop f1: String { 
-   |               ^^^^ ~~~~ on property declaration
-   |               |
-   |               unexpected modifier
-   | 
-
-1 error generated, 1 error printed.
-*/

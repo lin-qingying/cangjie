@@ -20,26 +20,9 @@ func test(Green: Int32) {
 }
 
 main() {
-    var t0 = Green
+    var t0 = <!sema_ref_not_be_type!>G<!>reen
     var t1 = Red
     var t2 = Blue
 
     return 0
 }
-
-/* SCAN
-error: expected member name or constructor call after 'Green' type name
-  ==> enum15_1.cj:23:14:
-   | 
-23 |     var t0 = Green
-   |              ^ 
-   | 
-note: found candidate
-  ==> enum15_1.cj:13:1:
-   | 
-13 | class Green {}
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

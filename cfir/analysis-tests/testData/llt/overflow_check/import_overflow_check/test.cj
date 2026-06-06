@@ -7,9 +7,8 @@
 // DEPENDENCE: p1
 // EXEC: %compiler %compile_lib_opt p1/pkg_1.cj -o p1.%middle
 // EXEC: %compiler p1.%middle test.cj -o %output
-// ASSERT: regex-not error
 
-internal import p1.*
+internal import <!package_search_error!>p1<!>.*
 
 main() {
     var varCO2 = fun_1(1, 1)

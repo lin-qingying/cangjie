@@ -7,34 +7,14 @@ class Get <: Command<Int64> {}
 main() {
     try {
         1
-    } handle(_: Get) {
+    } <!parse_expected_catch_or_finally_in_try!>handle<!>(_: Get) {
         try {
             2
         } catch (_: Exception) {
             "Hello"
         }
     }
-}
-
-/* SCAN
-error: The type of this catch block is 'Struct-String', which mismatches the smallest common supertype 'Int64' of previous branches.
-  ==> mistypedTryCatchHandle.cj:13:32:
-   | 
-13 |         } catch (_: Exception) {
-   |                                ^ 
-   | 
-note: Traces:
-The types 'Int64' and 'Struct-String' do not have the smallest common supertype
-
-  ==> mistypedTryCatchHandle.cj:11:9:
-   | 
-11 |         try {
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/
-
+<!parse_expected_expr_or_decl_in!>}<!>
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

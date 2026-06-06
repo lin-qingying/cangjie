@@ -13,11 +13,11 @@ enum E1 {
         }
     }
     <!PROPERTY_MUST_HAVE_ACCESSORS!>public prop b: Int64 {
-    }
+    }<!>
     <!IMMUTABLE_PROPERTY_WITH_SETTER!>public prop c: Int64 {
         get() <!TYPE_MISMATCH!>{}<!>
         set(v) {}
-    }
+    }<!>
 }
 
 main(): Int64 {

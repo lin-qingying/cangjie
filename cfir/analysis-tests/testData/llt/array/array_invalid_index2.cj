@@ -8,10 +8,7 @@
 
 main(): Int64 {
     let arr = [2, 1, 0]
-    arr[1..2] = arr[0..1] // EXPECTED: regex-auto type Array<Int64> does not have operator func [](index, value) for index type
-    arr[1..2] += arr[0..1] // EXPECTED: regex-auto invalid binary operator '+' on type 'Array<Int64>' and 'Array<Int64>'
+    arr[1..2] = arr[0..1]
+    <!sema_cannot_assign_to_subscript!>arr[1..2]<!> += arr[0..1]
     return 0
 }
-
-// ASSERT: regex :5:.* type Array<Int64> does not have operator func [](index, value) for index type Struct-RangeInt64>
-// ASSERT: regex :6:.* type incompatible in this compound assignment expression

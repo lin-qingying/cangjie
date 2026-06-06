@@ -6,10 +6,10 @@
 
 // EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
 
-interface I<T> where T <: UIntNative {
+interface I<<!sema_upper_bound_must_be_class_or_interface!>T<!>> where T <: UIntNative {
     prop b1: T {
         get() {
-            1
+            <!sema_cannot_convert_literal!>1<!>
         }
     }
 }
@@ -20,21 +20,3 @@ main() {
     var u1: I<UIntNative> = Some(1)
     return u1.b1 - 1
 }
-
-/* SCAN
-error: the upper bound 'UIntNative' of generic parameter 'Generics-T' must be class or interface
- ==> generic_default_impl_prop.cj:9:13:
-  | 
-9 | interface I<T> where T <: UIntNative {
-  |             ^ 
-  | 
-
-error: cannot convert an integer literal to type 'Generics-T'
-  ==> generic_default_impl_prop.cj:12:13:
-   | 
-12 |             1
-   |             ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

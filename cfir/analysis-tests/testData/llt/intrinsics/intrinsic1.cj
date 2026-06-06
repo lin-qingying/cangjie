@@ -6,7 +6,6 @@
 
 // EXEC-0: %compiler %n.cj -o %output
 // EXEC-0: %output 2>&1 | compare %f
-// ASSERT: scan error: the input is SomeTensor.
 
 public class LazyTensorHandle {
     public var lazyTensorHandleId: Int32
@@ -25,7 +24,7 @@ public struct Tensor {
     }
 }
 
-public func SwitchOp(input0: Tensor, input1: Tensor, input2: Tensor) {
+public func SwitchOp(input0: Tensor, <!chir_dce_unused_variable!>input1<!>: Tensor, <!chir_dce_unused_variable!>input2<!>: Tensor) {
     match (input0.handle_) {
         case Some(v) => print("error: the input is SomeTensor.\n")
         case None => print("error: the input is NoneTensor.\n")

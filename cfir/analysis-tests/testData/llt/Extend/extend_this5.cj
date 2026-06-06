@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -8,7 +8,7 @@
 
 extend Int64 {
     public static func foo() {
-        return this
+        return <!sema_static_members_cannot_call_members!>t<!>his
     }
 }
 
@@ -18,7 +18,7 @@ class A {
 
 extend A {
     public static func foo() {
-        return this.f()
+        return <!sema_static_members_cannot_call_members!>t<!>his.f()
     }
 }
 
@@ -28,38 +28,6 @@ struct B {
 
 extend B {
     public static func foo() {
-        return this.item
+        return <!sema_static_members_cannot_call_members!>t<!>his.item
     }
 }
-
-/* SCAN
-error: non-static variable 'this' cannot be referenced from a static context
-  ==> extend_this5.cj:11:16:
-   | 
-11 |         return this
-   |                ^ 
-   | 
-
-error: non-static variable 'this' cannot be referenced from a static context
-  ==> extend_this5.cj:21:16:
-   | 
-21 |         return this.f()
-   |                ^ 
-   | 
-
-error: non-static variable 'this' cannot be referenced from a static context
-  ==> extend_this5.cj:31:16:
-   | 
-31 |         return this.item
-   |                ^ 
-   | 
-
-error: 'main' is missing
- ==> extend_this5.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-4 errors generated, 4 errors printed.
-*/

@@ -5,12 +5,9 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC: %compiler %n.cj 2>&1 | compare %f
-// ASSERT: scan macro declaration name 'ConstSafe' is conflicted with builtin annotation identifier
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace
 
 package std.example
 
 internal import std.ast.*
 
-public macro ConstSafe(inpt: Tokens): Tokens { inpt }
+public macro <!parse_macro_define_conflicted_with_builtin!>ConstSafe<!>(inpt: Tokens): Tokens { inpt }

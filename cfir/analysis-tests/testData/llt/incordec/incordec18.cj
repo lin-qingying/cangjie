@@ -6,21 +6,7 @@
 
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
-
 main():Int64 {
-    var a  = {x:Int64=>x}(1)++ 
+    var a  = {x:Int64=>x}(1)<!parse_invalid_incre_expr!>++<!>
     return 0
 }
-
-/* SCAN
-error: cannot increment a un-assignable expression
-  ==> incordec18.cj:11:29:
-   | 
-11 |     var a  = {x:Int64=>x}(1)++ 
-   |              ~~~~~~~~~~~~~~~^^ 
-   |              |
-   |              cannot assign to this expression
-   | 
-
-1 error generated, 1 error printed.
-*/

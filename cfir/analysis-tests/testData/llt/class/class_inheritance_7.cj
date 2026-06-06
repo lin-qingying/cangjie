@@ -6,7 +6,6 @@
 
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
-
 main(): Int64 {
     if ( C().a != 1 ){
         return 1
@@ -20,24 +19,5 @@ open class A<T> {
     }
 }
 
-class C <: A<Int6
-
-/* SCAN
-error: expected '{', found '<EOF>'
-  ==> class_inheritance_7.cj:23:18:
-   | 
-23 | class C <: A<Int6
-   |                  ^ expected '{' here
-   | 
-
-error: unclosed delimiter: '<'
-  ==> class_inheritance_7.cj:23:18:
-   | 
-23 | class C <: A<Int6
-   |             ~    ^ expected '>' here
-   |             |
-   |             to match this opening '<'
-   | 
-
-2 errors generated, 2 errors printed.
-*/
+class C <: A<Int6<!parse_expected_left_brace, parse_expected_right_delimiter!>
+<!>

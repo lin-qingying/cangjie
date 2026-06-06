@@ -10,11 +10,6 @@ main() {
     let future: Future<Unit> = spawn {
         var future: Future<Unit> = 0
         return future
-        main() {}
+        <!parse_unexpected_declaration_in_scope!>main<!>() {}
     }
 }
-
-// ASSERT: regex unexpected main function in block
-// ASSERT: regex 1 error generated, 1 error printed.
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

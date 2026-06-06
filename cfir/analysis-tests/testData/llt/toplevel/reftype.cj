@@ -12,7 +12,7 @@ struct re {
    public let a : Int32
 }
 class A {
-    public class B {}
+    public <!parse_unexpected_declaration_in_scope!>class<!> B {}
 }
 
 var a1 : B = 1
@@ -23,18 +23,3 @@ var a5 : C.D =1
 var a6 : F.E = 1
 var a7 : I = 1
 var a8 : R = 1
-
-/* SCAN
-[33mwarning[0m: '--error-count-limit' is specified multiple times. The last one is chosen.
-[33mwarning[0m: '--diagnostic-format' is specified multiple times. The last one is chosen.
-error: unexpected class declaration in class body
-  ==> reftype.cj:15:12:
-   | 
-14 | class A {
-   | ~~~~~ in class
-15 |     public class B {}
-   |            ^^^^^ unexpected class declaration
-   | 
-
-1 error generated, 1 error printed.
-*/

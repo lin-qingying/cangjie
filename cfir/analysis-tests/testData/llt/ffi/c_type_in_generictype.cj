@@ -6,7 +6,6 @@
 
 // EXEC: %compiler %cmp_opt %f -o %output
 // EXEC: %run %output | compare %f
-// ASSERT: scan foo
 
 func Call(foo: CFunc<() -> Unit>): Unit {
     println("Call")

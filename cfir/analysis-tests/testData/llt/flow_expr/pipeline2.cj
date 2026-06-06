@@ -12,7 +12,7 @@ func g(b: Bool) {
 }
 
 func run(): Bool {
-    let res = true || true |> g
+    let res = true || <!chir_dce_unreachable_expression!>true<!> |> g
     return res
 }
 
@@ -23,6 +23,3 @@ main(): Int64 {
     }
     return 1
 }
-
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace

@@ -10,7 +10,7 @@ struct Base12 {
     public var x: Int64 = 1
     public static prop a: Int64 {
         get() {
-            return x
+            return <!sema_static_function_cannot_access_non_static_member!>x<!>
         }
     }
 }
@@ -19,14 +19,3 @@ main() {
     var x = Base12()
     return 0
 }
-
-/* SCAN
-error: 'x' is non-static member, cannot be accessed by static function 'get'
-  ==> record_7.cj:13:20:
-   | 
-13 |             return x
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

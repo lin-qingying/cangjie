@@ -5,11 +5,10 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // ERRCHECK: %compiler %cmp_opt %f -o %output
-// ASSERT: regex expected 'Enum-Option<Generics-T>', found 'Enum-Option<Enum-Option<Generics-T>>'
 
 func doSth<T>(): Option<T> {
     let a = 0
-    a as Option<T>
+    <!sema_mismatched_types!>a as Option<T><!>
 }
 
 main() {

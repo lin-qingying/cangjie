@@ -7,7 +7,7 @@
 // EXEC:%frontendCompiler %cmp_opt %typecheck %f 2>&1 | compare %f
 
 interface A {
-    let a: Int64 = 1 
+    <!parse_unexpected_declaration_in_scope!>let<!> a: Int64 = 1
 }
 interface B <: A{
 }
@@ -15,16 +15,3 @@ main():Int64 {
     var b: Int64 = B.a
     return 0
 }
-
-/* SCAN
-error: unexpected variable declaration in interface body
-  ==> interface_static_member_cannot_inherited1.cj:10:5:
-   | 
-9  | interface A {
-   | ~~~~~~~~~ in interface
-10 |     let a: Int64 = 1 
-   |     ^^^ unexpected variable declaration
-   | 
-
-1 error generated, 1 error printed.
-*/

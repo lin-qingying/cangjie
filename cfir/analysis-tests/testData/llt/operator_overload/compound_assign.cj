@@ -9,7 +9,7 @@
 internal import std.collection.*
 
 func IncBuf<T>(data: ArrayList<T>) {
-    data[0] += 1
+    data[0] <!sema_invalid_binary_expr!>+<!>= 1
     return 0
 }
 
@@ -18,9 +18,3 @@ main() {
     IncBuf<Int8>(gStateBufI8)
     return 0
 }
-
-// ASSERT: regex-not core dump
-// ASSERT: regex-not stack trace
-
-// ASSERT: regex-auto :6:.* type Class-ArrayList<Generics-T> does not have both operator func [](index) and operator func [](index, value) for index type Int64
-// ASSERT: regex-auto :6:.* type incompatible in this compound assignment expression

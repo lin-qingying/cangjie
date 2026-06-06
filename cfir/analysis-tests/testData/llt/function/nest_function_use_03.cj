@@ -7,14 +7,14 @@
 // EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 class A {
-    func foo<T>(a: T) {
+    func <!sema_unable_to_infer_return_type!>foo<!><T>(a: T) {
         bar<Int64>(1)
         a
     }
 }
 
 func bar<T>(a: T) {
-    let b = {a: Any => ()}(A().foo<Int64>) // Use obj func unknown as reference
+    let b = {a: Any => ()}(<!sema_no_match_function_declaration_for_ref!>A<!>().foo<Int64>) // Use obj func unknown as reference
     a
 }
 
@@ -25,27 +25,3 @@ func baz<T>(a: T): T {
 main(): Unit {
     bar(1)
 }
-
-/* SCAN
-error: unable to infer return type, please add type annotation
-  ==> nest_function_use_03.cj:10:10:
-   | 
-10 |     func foo<T>(a: T) {
-   |          ^^^ 
-   | 
-note: with recursive usage from
-  ==> nest_function_use_03.cj:17:28:
-   | 
-17 |     let b = {a: Any => ()}(A().foo<Int64>) // Use obj func unknown as reference
-   |                            ^^^^^^^^^^^^^ 
-   | 
-
-error: no matching function declaration for function reference 'foo'
-  ==> nest_function_use_03.cj:17:28:
-   | 
-17 |     let b = {a: Any => ()}(A().foo<Int64>) // Use obj func unknown as reference
-   |                            ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

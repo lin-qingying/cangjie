@@ -8,17 +8,17 @@
 
 struct A {
     public let a: Int32
-    public A(x: Int32) {
+    <!sema_class_uninitialized_field!>p<!>ublic A(x: Int32) {
     }
 }
 
-struct Data {
+<!sema_value_type_recursive!>s<!>truct Data {
     public Data() {}
-    public var b = Data()
+    public var b = <!RECURSIVE_CONSTRUCTOR_CALL!>Data<!>()
 }
 
-struct Data2 {
-    public var b: Data2 = Data2()
+<!sema_value_type_recursive!>s<!>truct Data2 {
+    public var b: Data2 = <!RECURSIVE_CONSTRUCTOR_CALL!>Data2<!>()
 }
 
 struct GenRec {
@@ -28,7 +28,7 @@ struct GenRec {
         this(x)
         this.b = y
     }
-    private GenRec(x: Int64) {
+    <!sema_class_uninitialized_field!>p<!>rivate GenRec(x: Int64) {
         this.a = x
     }
 }
@@ -40,73 +40,3 @@ main(): Int64 {
     }
     return 1
 }
-
-/* SCAN
-error: recursive constructor calling detected
-  ==> primaryConstructor8.cj:17:20:
-   | 
-17 |     public var b = Data()
-   |                    ^^^^ 
-   | 
-note: depends on
-  ==> primaryConstructor8.cj:16:12:
-   | 
-16 |     public Data() {}
-   |            ^^^^ 
-   | 
-note: depends on
-  ==> primaryConstructor8.cj:17:20:
-   | 
-17 |     public var b = Data()
-   |                    ^^^^ 
-   | 
-
-error: recursive constructor calling detected
-  ==> primaryConstructor8.cj:21:27:
-   | 
-21 |     public var b: Data2 = Data2()
-   |                           ^^^^^ 
-   | 
-note: depends on
-  ==> primaryConstructor8.cj:20:8:
-   | 
-20 | struct Data2 {
-   |        ^^^^^ 
-   | 
-note: depends on
-  ==> primaryConstructor8.cj:21:27:
-   | 
-21 |     public var b: Data2 = Data2()
-   |                           ^^^^^ 
-   | 
-
-error: value type recursive detected: 'Data->Data'
-  ==> primaryConstructor8.cj:15:1:
-   | 
-15 | struct Data {
-   | ^ 
-   | 
-
-error: value type recursive detected: 'Data2->Data2'
-  ==> primaryConstructor8.cj:20:1:
-   | 
-20 | struct Data2 {
-   | ^ 
-   | 
-
-error: the uninitialized member variable 'a' is not initialized in the constructor of class or struct
-  ==> primaryConstructor8.cj:11:5:
-   | 
-11 |     public A(x: Int32) {
-   |     ^ 
-   | 
-
-error: the uninitialized member variable 'b' is not initialized in the constructor of class or struct
-  ==> primaryConstructor8.cj:31:5:
-   | 
-31 |     private GenRec(x: Int64) {
-   |     ^ 
-   | 
-
-6 errors generated, 6 errors printed.
-*/

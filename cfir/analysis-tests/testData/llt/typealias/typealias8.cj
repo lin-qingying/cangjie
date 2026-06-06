@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 // EXEC: %run %run_opt %n.%suffix %run_args
 
 type A<T> = Cl<T>

@@ -11,14 +11,14 @@ var f: () -> Int64 = {=> 1}
 open class A {
     var x: Int64 = 123
     init() {
-        f = {=> this.x}
+        f = {=> <!sema_illegal_capture_this!>t<!>his.x}
     }
 }
 
 abstract class B {
     var x: Int64 = 123
     init() {
-        f = {=> this.x}
+        f = {=> <!sema_illegal_capture_this!>t<!>his.x}
     }
 }
 
@@ -30,21 +30,3 @@ class C {
 }
 
 main() {}
-
-/* SCAN
-error: 'this' is not allowed to be captured in constructor of inheritable class
-  ==> super_this_12.cj:14:17:
-   | 
-14 |         f = {=> this.x}
-   |                 ^ 
-   | 
-
-error: 'this' is not allowed to be captured in constructor of inheritable class
-  ==> super_this_12.cj:21:17:
-   | 
-21 |         f = {=> this.x}
-   |                 ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

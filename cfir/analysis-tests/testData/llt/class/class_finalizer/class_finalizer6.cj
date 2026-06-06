@@ -6,12 +6,10 @@
 
 // EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
 
-
-
 class C {}
 
 extend C {
-    ~init(){}
+    <!parse_unexpected_declaration_in_scope!>~init<!>(){}
 }
 
 class D {
@@ -19,40 +17,11 @@ class D {
 }
 
 class B {
- ~ 
+ <!parse_expected_decl!>~<!>
  init(){}
 }
 
 main() {
-    D().~init()
+    D().<!parse_expected_name!>~<!>init()
     0
 }
-
-/* SCAN
-error: unexpected finalizer in extend body
-  ==> class_finalizer6.cj:14:5:
-   | 
-13 | extend C {
-   | ~~~~~~ in extend
-14 |     ~init(){}
-   |     ^^^^^ unexpected finalizer
-   | 
-
-error: expected declaration, found '~'
-  ==> class_finalizer6.cj:22:2:
-   | 
-22 |  ~ 
-   |  ^ expected declaration here
-   | 
-
-error: expected a member name after '.' in qualified name, found '~'
-  ==> class_finalizer6.cj:27:9:
-   | 
-27 |     D().~init()
-   |        ~^ expected a member name here
-   |        |
-   |        after '.' in qualified name
-   | 
-
-3 errors generated, 3 errors printed.
-*/

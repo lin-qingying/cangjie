@@ -15,7 +15,7 @@ class Test1 <: FaTest {
     public var fPtr: () -> Int32
     public init(x: Int32) {
         a = x
-        fPtr = super.f
+        fPtr = <!sema_abstract_method_cannot_be_accessed_directly!>s<!>uper.f
     }
     public func f(): Int32 {
         return a
@@ -30,14 +30,3 @@ main() {
     print("${ins.get()}\n")
     return 0
 }
-
-/* SCAN
-error: abstract method 'f' cannot be accessed directly
-  ==> super_this_07.cj:18:16:
-   | 
-18 |         fPtr = super.f
-   |                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

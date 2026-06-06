@@ -7,33 +7,8 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    let x = _
-    let y = _ + 1
-    _ = _ + 1
+    let x = <!parse_unexpected_expected_found!>_<!>
+    let y = <!parse_unexpected_expected_found!>_<!> + 1
+    _ = <!parse_unexpected_expected_found!>_<!> + 1
     println(x)
 }
-
-/* SCAN
-error: unexpected _ wildcard
-  ==> wildcard_00.cj:10:13:
-   | 
-10 |     let x = _
-   |             ^ expected expression, found wildcard
-   | 
-
-error: unexpected _ wildcard
-  ==> wildcard_00.cj:11:13:
-   | 
-11 |     let y = _ + 1
-   |             ^ expected expression, found wildcard
-   | 
-
-error: unexpected _ wildcard
-  ==> wildcard_00.cj:12:9:
-   | 
-12 |     _ = _ + 1
-   |         ^ expected expression, found wildcard
-   | 
-
-3 errors generated, 3 errors printed.
-*/

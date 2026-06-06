@@ -7,7 +7,7 @@
 // EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 class A<T> {
-    func test(a: B<A<T>>) {}
+    func test(a: <!sema_generic_infinite_instantiation!>B<!><A<T>>) {}
 }
 
 class B<T> {
@@ -18,14 +18,3 @@ main() {
     A<Int32>()
     0
 }
-
-/* SCAN
-error: generic infinite instantiation
-  ==> generic_infinite_init_02.cj:10:18:
-   | 
-10 |     func test(a: B<A<T>>) {}
-   |                  ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -9,29 +9,21 @@
 class C {}
 
 main() {
-    let err = 1 + false
+    let err = 1 <!sema_invalid_binary_expr!>+<!> false
     let optLam: Option<() -> Unit> = {=>}
-    let a = optLam?(1)
+    let a = optLam?<!sema_wrong_number_of_arguments!>(1)<!>
     a + 1
     (err)?(1)
 
     let optTup = Some((1, true))
-    let b = optTup?[2]
+    let b = optTup?[<!sema_builtin_index_in_bound!>2<!>]
     b - 2
     (err)?[1]
 
     let optC = Some(C())
-    let c = optC?.x
+    let c = optC?.<!sema_not_member_of!>x<!>
     c * 3
     (err)?.x
 
     0
 }
-
-// ASSERT: scan-not 15 |
-// ASSERT: scan-not 16 |
-// ASSERT: scan-not 20 |
-// ASSERT: scan-not 21 |
-// ASSERT: scan-not 25 |
-// ASSERT: scan-not 26 |
-// ASSERT: scan 4 errors generated

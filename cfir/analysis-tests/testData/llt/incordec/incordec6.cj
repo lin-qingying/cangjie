@@ -17,6 +17,3 @@ main(): Int64 {
     }
     return 1
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

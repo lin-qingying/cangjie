@@ -17,27 +17,9 @@ main(): Int64 {
     var l_a = LA(false)
     var r_a = true
     var r_b = true
-    l_a.a[0][] = r_a || r_b
- 0   if (l_a.a[0][0] == true) {
+    l_a.a[0][<!parse_expected_expression!>]<!> = r_a || r_b
+ 0   <!parse_expected_character!>if<!> (l_a.a[0][0] == true) {
         return 0
     }
     return 1
 }
-
-/* SCAN
-error: expected expression after '[', found ']'
-  ==> empty_index.cj:20:14:
-   | 
-20 |     l_a.a[0][] = r_a || r_b
-   |              ^ expected expression here
-   | 
-
-error: expected ';' or '<NL>', found keyword 'if'
-  ==> empty_index.cj:21:6:
-   | 
-21 |  0   if (l_a.a[0][0] == true) {
-   |      ^^ expected ';' or '<NL>' here
-   | 
-
-2 errors generated, 2 errors printed.
-*/

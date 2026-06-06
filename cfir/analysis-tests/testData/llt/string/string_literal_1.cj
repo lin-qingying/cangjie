@@ -6,12 +6,11 @@
 
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix
 // EXEC: %run %run_opt %n.%suffix  | compare %f
-// ASSERT: scan ghi
 
 internal import std.collection.*
 
 main() {
-    var x: Collection<Rune> = "abc".toRuneArray()
+    var <!chir_dce_unused_variable!>x<!>: Collection<Rune> = "abc".toRuneArray()
 
     var y = "def"
     let st1 = HashSet<Rune>(y.toRuneArray())

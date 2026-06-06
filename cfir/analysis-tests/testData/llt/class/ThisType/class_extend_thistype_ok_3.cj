@@ -15,7 +15,7 @@ class Data{
 }
 
 extend Data{
-    public func f1(): This{
+    public func f1(): <!parse_this_type_not_allow!>This<!>{
         this
     }
 }
@@ -27,15 +27,3 @@ main():Int64{
     }
     return 1
 }
-
-/* SCAN
-error: 'This' type is not allowed
-  ==> class_extend_thistype_ok_3.cj:18:23:
-   | 
-18 |     public func f1(): This{
-   |                       ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-1 error generated, 1 error printed.
-*/

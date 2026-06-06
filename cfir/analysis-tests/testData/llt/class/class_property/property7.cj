@@ -27,7 +27,7 @@ class A {
 
 main() {
     var a = A()
-    a.a.b
+    <!UNUSED_EXPRESSION!>a.a.b<!>
     if (a.a.b == 3) {
         print("${a.a.b}\n")
         return 0
@@ -36,15 +36,3 @@ main() {
     a.f()
     return 1
 }
-
-/* SCAN
-warning: unused expression
-  ==> property7.cj:30:5:
-   | 
-30 |     a.a.b
-   |     ^^^^^ unused expression
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-1 warning generated, 1 warning printed.
-*/

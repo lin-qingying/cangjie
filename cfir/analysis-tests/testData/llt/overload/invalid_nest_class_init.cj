@@ -8,7 +8,7 @@
 
 class A {
   static init() {
-    class B {
+    <!parse_unexpected_declaration_in_scope!>class<!> B {
       static init(){}
     }
   }
@@ -16,16 +16,3 @@ class A {
 
 main() {
 }
-
-/* SCAN
-error: unexpected class declaration in function body
-  ==> invalid_nest_class_init.cj:11:5:
-   | 
-10 |   static init() {
-   |          ~~~~ in function
-11 |     class B {
-   |     ^^^^^ unexpected class declaration
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -6,33 +6,26 @@
 
 // EXEC: %compiler %cmp_opt -c %n.cj 2>&1 | compare %f
 
-
-
 main() {
     let a: Bool = true
 
     if (a) {
-        true + 0
+        true <!sema_invalid_binary_expr!>+<!> 0
     } else {
-        false + 1
+        false <!sema_invalid_binary_expr!>+<!> 1
     }
 
     let b: Bool = if (a) {
-        true + 0
+        true <!sema_invalid_binary_expr!>+<!> 0
     } else {
-        false + 1
+        false <!sema_invalid_binary_expr!>+<!> 1
     }
 
     if (a) {
-        true + 0
+        true <!sema_invalid_binary_expr!>+<!> 0
     }
     let c: Bool = if (a) {
-        true + 0
+        true <!sema_invalid_binary_expr!>+<!> 0
     }
     0
 }
-
-/* SCAN
-[31merror[0m: invalid option: '-c'.
-Invalid options. Try: 'cjc --help' for more information.
-*/

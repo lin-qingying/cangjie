@@ -11,14 +11,14 @@ struct S {
 
     init() {
         func g() {
-            x += 1
+            <!sema_illegal_capture_this!>x<!> += 1
         }
         g()
     }
 
     mut func f() {
         func g() {
-            x += 1
+            <!sema_capture_this_or_instance_field_in_func!>x<!> += 1
         }
         g()
         x += 1
@@ -30,21 +30,3 @@ main() {
     x.f()
     x.x
 }
-
-/* SCAN
-error: 'this' is not allowed to be captured in constructor of struct
-  ==> mut_function_03.cj:14:13:
-   | 
-14 |             x += 1
-   |             ^ 
-   | 
-
-error: 'x' cannot be captured in the mutable function 'f'
-  ==> mut_function_03.cj:21:13:
-   | 
-21 |             x += 1
-   |             ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

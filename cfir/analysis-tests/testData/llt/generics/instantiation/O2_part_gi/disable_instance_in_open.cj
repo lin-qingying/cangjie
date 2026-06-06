@@ -25,5 +25,3 @@ main() {
     let tst = A()
     tst.check_instance()
 }
-
-// ASSERT: scan 6

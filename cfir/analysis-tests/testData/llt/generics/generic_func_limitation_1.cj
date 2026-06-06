@@ -12,14 +12,3 @@ interface A {
 }
 
 main() {}
-
-/* SCAN
-error: non-static generic function is not allowed in interface
- ==> generic_func_limitation_1.cj:4:5:
-  |
-4 |     func f<T>(a: T):T
-  |     ^
-  |
-
-1 error generated, 1 error printed.
- */

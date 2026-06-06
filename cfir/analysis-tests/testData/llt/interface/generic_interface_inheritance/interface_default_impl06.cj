@@ -8,7 +8,7 @@
 // EXEC: %run %run_opt %output | compare %f
 
 interface I<T> {
-    func f1(a: T): Unit {
+    func f1(<!chir_dce_unused_variable!>a<!>: T): Unit {
         println("I")
     }
     func f2(a: T): Unit {
@@ -17,10 +17,10 @@ interface I<T> {
 }
 
 open class A<T, K> {
-    public func f1(a: T): Unit {
+    public func f1(<!chir_dce_unused_variable!>a<!>: T): Unit {
         println("a")
     }
-    public func f1(a: K): Unit {
+    public func f1(<!chir_dce_unused_variable!>a<!>: K): Unit {
         println("b")
     }
 }
@@ -37,10 +37,3 @@ main() {
     c.f2(1)
     c.f2("1")
 }
-
-/* SCAN
-a
-b
-a
-b
-*/

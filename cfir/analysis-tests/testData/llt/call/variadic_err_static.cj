@@ -14,16 +14,5 @@ class A<T> {
 }
 
 main() {
-    let x = A<Int64>(true).f() == 0
+    let x = <!sema_object_cannot_access_static_member!>A<!><Int64>(true).f() == 0
 }
-
-/* SCAN
-error: object cannot access static member 'f'
-  ==> variadic_err_static.cj:17:13:
-   | 
-17 |     let x = A<Int64>(true).f() == 0
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

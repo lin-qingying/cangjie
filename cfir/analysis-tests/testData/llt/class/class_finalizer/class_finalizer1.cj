@@ -15,20 +15,20 @@ class B {
 }
 
 class C {
-    ~init()() {}
+    ~init<!sema_cannot_currying!>(<!>)() {}
 }
 
 class D {
     ~init() {}
-    ~init() {}
+    <!sema_overload_conflicts!>~init<!>() {}
 }
 
 open class E {
-    ~init() {}
+    <!sema_finalizer_forbidden_in_class!>~<!>init() {}
 }
 
 open class F {
-    ~init() {}
+    <!sema_finalizer_forbidden_in_class!>~<!>init() {}
     public open func f() {
         0
     }
@@ -47,41 +47,3 @@ class Children {
 main() {
     0
 }
-
-/* SCAN
-error: finalizer is forbidden in class 'E' that is open
-  ==> class_finalizer1.cj:27:5:
-   | 
-27 |     ~init() {}
-   |     ^ 
-   | 
-
-error: finalizer is forbidden in class 'F' that is open
-  ==> class_finalizer1.cj:31:5:
-   | 
-31 |     ~init() {}
-   |     ^ 
-   | 
-
-error: function '~init' has overload conflicts
-  ==> class_finalizer1.cj:23:5:
-   | 
-23 |     ~init() {}
-   |     ^^^^^ 
-   | 
-note: conflict with the declaration
-  ==> class_finalizer1.cj:22:5:
-   | 
-22 |     ~init() {}
-   |     ^^^^^ 
-   | 
-
-error: finalizer cannot have more than one parameter list
-  ==> class_finalizer1.cj:18:10:
-   | 
-18 |     ~init()() {}
-   |          ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

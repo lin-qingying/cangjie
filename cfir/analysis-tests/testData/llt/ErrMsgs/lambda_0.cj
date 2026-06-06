@@ -7,7 +7,7 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    let err = 1 + false
+    let err = 1 <!sema_invalid_binary_expr!>+<!> false
 
     let lam = {
         =>
@@ -25,9 +25,5 @@ main() {
 }
 
 // Errors:
-// ASSERT: scan :10:
 
 // No errors:
-// ASSERT: scan-not :14:
-// ASSERT: scan-not :19:
-// ASSERT: scan-not :22:

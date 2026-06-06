@@ -6,11 +6,10 @@
 
 // EXEC: %compiler %cmp_opt %f -o %output
 // RUN-EXEC-PIPE-1: %run %run_opt %output %run_args 2>&1 | compare %f
-// ASSERT: regex Exception
 
 class A <: Exception {}
 
 main() {
-    (throw A())..=(throw A()) : (throw A())
+    (throw A())..=(throw <!chir_dce_unreachable_expression_hint!>A()<!>) : (throw A())
     return 0
 }

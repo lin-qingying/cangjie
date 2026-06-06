@@ -5,13 +5,11 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // ERRCHECK: %compiler %cmp_opt %f -o %output
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 
 // _EXEC: %compi I<T,K>{
   func a(a:A<T,K>){a}
   func b(){1}
-}
+<!parse_expected_decl!>}<!>
 
 extend<T,K> A<T,K> <: I<T,K>{
   public func a(a:A<T,K>){a}
@@ -35,7 +33,7 @@ extend B{
   }
 }
 
-main(): Int64  ler %cmp_opt %f -o %output
+main(): Int64<!parse_missing_body!> <!> <!parse_expected_character!>ler<!> %cmp_opt %f -o %output
 // _EXEC: %run %run_opt %output %run_args
 
 type A<T,K> = enumA<T,K>

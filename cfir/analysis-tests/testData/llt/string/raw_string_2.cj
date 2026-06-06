@@ -6,15 +6,4 @@
 
 // EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
-var a = ##" "###""#
-
-/* SCAN
-error: expected ';' or '<NL>', found ''
- ==> raw_string_2.cj:9:16:
-  | 
-9 | var a = ##" "###""#
-  |                ^^^^ expected ';' or '<NL>' here
-  | 
-
-1 error generated, 1 error printed.
-*/
+var a = ##" "##<!parse_expected_character!>#""#<!>

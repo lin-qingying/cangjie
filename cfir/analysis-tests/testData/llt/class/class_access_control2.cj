@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -21,26 +21,8 @@ class DateTime {
     public static func MaxValue(): DateTime {
         var d = DateTime()
         d.SetTick(MinTickValue)
-        SetTick(MinTickValue)
-        var a = Ticks
+        <!sema_static_function_cannot_access_non_static_member!>S<!>etTick(MinTickValue)
+        var a = <!sema_static_function_cannot_access_non_static_member!>T<!>icks
         return d
     }
 }
-
-/* SCAN
-error: 'SetTick' is non-static member, cannot be accessed by static function 'MaxValue'
-  ==> class_access_control2.cj:24:9:
-   | 
-24 |         SetTick(MinTickValue)
-   |         ^ 
-   | 
-
-error: 'Ticks' is non-static member, cannot be accessed by static function 'MaxValue'
-  ==> class_access_control2.cj:25:17:
-   | 
-25 |         var a = Ticks
-   |                 ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

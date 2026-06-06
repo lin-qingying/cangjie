@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -14,24 +14,6 @@ class B <: A {}
 
 extend B {
     public func foo(): Int64 {
-        return super.x
+        return <!sema_extend_use_super!>super<!>.x
     }
 }
-
-/* SCAN
-error: 'super' is not allowed inside an extend declaration
-  ==> extend_invalid_super.cj:17:16:
-   | 
-17 |         return super.x
-   |                ^^^^^ 
-   | 
-
-error: 'main' is missing
- ==> extend_invalid_super.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

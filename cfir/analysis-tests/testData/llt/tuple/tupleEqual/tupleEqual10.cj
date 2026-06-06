@@ -14,19 +14,8 @@ class A {
 
 main(): Int64 {
     let x = (A(), 1);
-    if (x == (A(), 1)) {
+    if (<!sema_tuple_element_cmp_not_bool!>x<!> == (A(), 1)) {
         return 0;
     }
     return 1;
 }
-
-/* SCAN
-error: the '==' operation between type 'Class-A' and type 'Class-A' is not evaluated to a Bool
-  ==> tupleEqual10.cj:17:9:
-   | 
-17 |     if (x == (A(), 1)) {
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

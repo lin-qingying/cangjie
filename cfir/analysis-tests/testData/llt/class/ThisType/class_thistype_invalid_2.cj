@@ -8,7 +8,7 @@
 
 class C1 {
     public func foo(): This {
-        var a: This = this  
+        var a: <!parse_this_type_not_allow!>This<!> = this
         return this
     }
 }
@@ -16,15 +16,3 @@ class C1 {
 main() {
     return 1
 }
-
-/* SCAN
-error: 'This' type is not allowed
-  ==> class_thistype_invalid_2.cj:11:16:
-   | 
-11 |         var a: This = this  
-   |                ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-1 error generated, 1 error printed.
-*/

@@ -14,26 +14,6 @@ main(): Int64 {
 }
 
 extend String {
-    public mut static prop n: Int32 {
-    }
+    <!PROPERTY_MUST_HAVE_ACCESSORS!>public <!EXTEND_IMMUTABLE_MUT_PROPERTY!>mut<!> static prop n: Int32 {
+    }<!>
 }
-
-/* SCAN
-error: property must have accessors
-  ==> property28.cj:17:5:
-   | 
-17 |       public mut static prop n: Int32 {
-   |  _____^
-18 | |     }
-   | |_____^
-   | 
-
-error: there cannot have mutable property in immutable type
-  ==> property28.cj:17:12:
-   | 
-17 |     public mut static prop n: Int32 {
-   |            ^^^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

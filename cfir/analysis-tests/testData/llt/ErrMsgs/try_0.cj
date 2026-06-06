@@ -5,26 +5,24 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC: %compiler %cmp_opt %compile_lib_opt %n.cj 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 
 main() {
-    let err = 1 + true
+    let err = 1 <!sema_invalid_binary_expr!>+<!> true
 
     try (x = err) {
-        let b = 1 + false
+        let b = 1 <!sema_invalid_binary_expr!>+<!> false
     } catch (_: Exception) {
-        let b = 1 + false
+        let b = 1 <!sema_invalid_binary_expr!>+<!> false
     } finally {
-        let b = 1 + false
+        let b = 1 <!sema_invalid_binary_expr!>+<!> false
     }
 
     let b: Unit = try (x = err) {
         true
     } catch (_: Exception) {
-        let b = 1 + false
+        let b = 1 <!sema_invalid_binary_expr!>+<!> false
     } finally {
-        let b = 1 + false
+        let b = 1 <!sema_invalid_binary_expr!>+<!> false
     }
 
     if (err.isClosed) {}
@@ -33,14 +31,5 @@ main() {
 }
 
 // No errors:
-// ASSERT: scan-not :14:
-// ASSERT: scan-not :22:
-// ASSERT: scan-not :30:
 
 // Errors:
-// ASSERT: scan :12:
-// ASSERT: scan :15:
-// ASSERT: scan :17:
-// ASSERT: scan :19:
-// ASSERT: scan :25:
-// ASSERT: scan :27:

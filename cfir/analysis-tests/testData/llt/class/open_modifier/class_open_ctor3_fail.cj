@@ -21,10 +21,10 @@ extend A {
 open class B <: A {
     public init() {
         { // lambda
-            => this
+            => <!sema_use_this_as_an_expression_in_func!>t<!>his
         }
-        let v = this
-        test(this)
+        let v = <!sema_use_this_as_an_expression_in_func!>t<!>his
+        test(<!sema_use_this_as_an_expression_in_func!>t<!>his)
     }
 }
 
@@ -35,28 +35,3 @@ func test(v: B) {
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: 'this' cannot be used as an expression in the constructor of open class
-  ==> class_open_ctor3_fail.cj:24:16:
-   | 
-24 |             => this
-   |                ^ 
-   | 
-
-error: 'this' cannot be used as an expression in the constructor of open class
-  ==> class_open_ctor3_fail.cj:26:17:
-   | 
-26 |         let v = this
-   |                 ^ 
-   | 
-
-error: 'this' cannot be used as an expression in the constructor of open class
-  ==> class_open_ctor3_fail.cj:27:14:
-   | 
-27 |         test(this)
-   |              ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

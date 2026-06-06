@@ -2,20 +2,8 @@
 
 import {std.collection.ArrayList}
 main() {
-  var a : ArrayList<Int64>
+  var <!chir_dce_unused_variable!>a<!> : ArrayList<Int64>
 }
-
-/* SCAN
-warning: unused variable:'a'
- ==> unused006.cj:5:7:
-  | 
-5 |   var a : ArrayList<Int64>
-  |       ^ unused variable
-  | 
-  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-1 warning generated, 1 warning printed.
-*/
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

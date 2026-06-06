@@ -2,29 +2,10 @@
 
 // Was ICE, should quit normally
 package pkgs2
-public import public var varpkg2= 20
-public import public var varpkg2= 20
+public import public <!parse_expected_character!>var<!> varpkg2= 20
+public import public <!parse_expected_character!>var<!> varpkg2= 20
 
 main() {}
-
-/* SCAN
-error: expected ';' or '<NL>', found keyword 'var'
- ==> invalid_import.cj:5:22:
-  | 
-5 | public import public var varpkg2= 20
-  |                      ^^^ expected ';' or '<NL>' here
-  | 
-
-error: expected ';' or '<NL>', found keyword 'var'
- ==> invalid_import.cj:6:22:
-  | 
-6 | public import public var varpkg2= 20
-  |                      ^^^ expected ';' or '<NL>' here
-  | 
-
-2 errors generated, 2 errors printed.
-*/
-
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

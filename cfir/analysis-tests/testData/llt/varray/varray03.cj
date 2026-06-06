@@ -7,17 +7,6 @@
 // EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 main() {
-    let a: VArray<Int64, $-1> = [1, 2, 3] //error
+    let a: VArray<Int64, <!parse_expect_integer_literal_varray!>$<!>-1> = [1, 2, 3] //error
     0
 }
-
-/* SCAN
-error: expected an integer literal than or equal to 0 after '$' to specificate the size of 'VArray' type
-  ==> varray03.cj:10:26:
-   | 
-10 |     let a: VArray<Int64, $-1> = [1, 2, 3] //error
-   |                          ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

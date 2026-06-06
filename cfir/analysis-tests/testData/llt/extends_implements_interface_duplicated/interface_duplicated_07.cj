@@ -16,17 +16,6 @@ interface I3<P> <: I2<Int32> {}
 
 main() {
     var i2: I2<Int64>
-    var i1: I1<Rune>
+    var i1: <!SUPER_TYPES_DUPLICATE!>I1<Rune><!>
     return 0
 }
-
-/* SCAN
-error: interface 'I1' inherits or implements duplicate interface 'I0'
-  ==> interface_duplicated_07.cj:19:13:
-   | 
-19 |     var i1: I1<Rune>
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

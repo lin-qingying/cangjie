@@ -13,55 +13,9 @@ extend<T, T> A<T, T> { }
 extend<T> A<T> { }
 extend A { }
 extend<T, R, P> A<T, R, P> { }
-extend<Int64, R> A<Int64, R> { }
+extend<<!parse_expected_name!>Int64<!>, R> A<Int64, R> { }
 
 class B { }
 extend<T> B<T> { }
-extend<Int64> B<Int64> { }
-extend<T, Int64> B<T, Int64> { }
-
-/* SCAN
-error: expected a generic type name after '<' in generic, found keyword 'Int64'
-  ==> extend_not_match_type_arg.cj:16:8:
-   | 
-16 | extend<Int64, R> A<Int64, R> { }
-   |       ~^^^^^ expected a generic type name here
-   |       |
-   |       after '<' in generic
-   | 
-help: you could escape keyword as a generic type name using '`':
-   | 
-16 | extend<`Int64`, R> A<Int64, R> { }
-   |        ~~~~~~~ 
-   | 
-
-error: expected a generic type name after '<' in generic, found keyword 'Int64'
-  ==> extend_not_match_type_arg.cj:20:8:
-   | 
-20 | extend<Int64> B<Int64> { }
-   |       ~^^^^^ expected a generic type name here
-   |       |
-   |       after '<' in generic
-   | 
-help: you could escape keyword as a generic type name using '`':
-   | 
-20 | extend<`Int64`> B<Int64> { }
-   |        ~~~~~~~ 
-   | 
-
-error: expected a generic type name after ',' in generic, found keyword 'Int64'
-  ==> extend_not_match_type_arg.cj:21:11:
-   | 
-21 | extend<T, Int64> B<T, Int64> { }
-   |         ~ ^^^^^ expected a generic type name here
-   |         |
-   |         after ',' in generic
-   | 
-help: you could escape keyword as a generic type name using '`':
-   | 
-21 | extend<T, `Int64`> B<T, Int64> { }
-   |           ~~~~~~~ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/
+extend<<!parse_expected_name!>Int64<!>> B<Int64> { }
+extend<T, <!parse_expected_name!>Int64<!>> B<T, Int64> { }

@@ -12,7 +12,7 @@ interface I0 {
     }
 
     func foo1(): Int64 {
-        var res = this.foo()
+        var res = <!sema_object_cannot_access_static_member!>t<!>his.foo()
         return res
     }
 }
@@ -22,14 +22,3 @@ class C0 <: I0 {}
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: object cannot access static member 'foo'
-  ==> interface_this_invalid_1.cj:15:19:
-   | 
-15 |         var res = this.foo()
-   |                   ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

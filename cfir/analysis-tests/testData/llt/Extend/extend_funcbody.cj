@@ -11,20 +11,9 @@ class A{
 }
 
 extend A {
-    public func foo1():Int64 
+    public func foo1():Int64<!parse_missing_body!> <!>
 }
 
 main(): Int64 {
     return A().foo1()
 }
-
-/* SCAN
-error: body of function 'foo1' is missing
-  ==> extend_funcbody.cj:14:29:
-   | 
-14 |     public func foo1():Int64 
-   |                             ^ missing function body here
-   | 
-
-1 error generated, 1 error printed.
-*/

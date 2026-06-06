@@ -13,18 +13,7 @@ open class A {
 class B <: A {}
 
 main(): Int64 {
-    var b: Int64 = B().a
+    var b: Int64 = <!sema_object_cannot_access_static_member!>B<!>().a
     B.a
     return 0
 }
-
-/* SCAN
-error: object cannot access static member 'a'
-  ==> class_static_member_access_invalid.cj:16:20:
-   | 
-16 |     var b: Int64 = B().a
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

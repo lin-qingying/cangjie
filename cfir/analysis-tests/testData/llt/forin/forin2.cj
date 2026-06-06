@@ -6,7 +6,6 @@
 
 // EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
 // EXEC: %run %run_opt %n.%suffix %run_args 2>&1 | compare %f
-// ASSERT: regex 2323
 
 internal import std.collection.*
 

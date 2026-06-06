@@ -2,7 +2,7 @@
 
 // Was segv, should quit normally
 interface A{
-    prop@b: Int64
+    prop<!parse_expected_name!>@<!>b<!parse_expected_decl!>:<!> Int64
 }
 
 struct B <: A{
@@ -17,27 +17,6 @@ main():Int64 {
     let a = B()
     return a.b
 }
-
-/* SCAN
-error: expected a property name after keyword 'prop' in property definition, found '@'
- ==> property_abstract_interface_12.cj:5:9:
-  | 
-5 |     prop@b: Int64
-  |     ~~~~^ expected a property name here
-  |     |
-  |     after keyword 'prop' in property definition
-  | 
-
-error: expected declaration, found ':'
- ==> property_abstract_interface_12.cj:5:11:
-  | 
-5 |     prop@b: Int64
-  |           ^ expected declaration here
-  | 
-
-2 errors generated, 2 errors printed.
-*/
-
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

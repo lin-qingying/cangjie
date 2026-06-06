@@ -8,21 +8,10 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt pkgs.cj -o pkgs.%middle
 // ERRCHECK: %compiler %cmp_opt pkgs.%middle %f -o %output
 
-import pkgs.*
+import <!package_search_error!>pkgs<!>.*
 
 struct A <: I {}
 
 main(): Int64 {
     return A.f() - 1
 }
-
-/* SCAN
-error: cannot inherit imported 'sealed' interface 'I'
-  ==> fail_2.cj:13:8:
-   | 
-13 | struct A <: I {}
-   |        ^    ~ sealed interface declared in package 'pkgs'
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -47,8 +47,3 @@ main() {
     test("rangem1e", rangem1e, min, min + 1)
     test("rangem2e", rangem2e, min, min + 1)
 }
-
-/* SCAN
-rangem1e: ok
-rangem2e: ok
-*/

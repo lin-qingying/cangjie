@@ -53,19 +53,3 @@ main() {
     A.stm = A.stm + 2
     A.stm += 2
 }
-
-/* SCAN
-right
-a=1
-left
-a=1 value=2
-left
-a=2
-right
-a=2
-a=2 value=4
-sta=3
-sta=3 value=5
-sta=5
-sta=5 value=7
- */

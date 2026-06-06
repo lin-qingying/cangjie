@@ -10,26 +10,8 @@ struct A {}
 
 @C
 struct S {
-    var a = VArray<VArray<VArray<VArray<A, $1>, $1>, $1>, $1>(repeat: [[[A()]]]) // error
-    var b = VArray<A, $1>(repeat: A()) // error
+    var <!sema_illegal_member_of_cstruct!>a<!> = VArray<VArray<VArray<VArray<A, $1>, $1>, $1>, $1>(repeat: [[[A()]]]) // error
+    var <!sema_illegal_member_of_cstruct!>b<!> = VArray<A, $1>(repeat: A()) // error
 }
 
 main() {}
-
-/* SCAN
-error: member variable 'a' of struct 'S' with @C must be instantiated with CType
-  ==> varray_cstruct01.cj:13:9:
-   | 
-13 |     var a = VArray<VArray<VArray<VArray<A, $1>, $1>, $1>, $1>(repeat: [[[A()]]]) // error
-   |         ^ 
-   | 
-
-error: member variable 'b' of struct 'S' with @C must be instantiated with CType
-  ==> varray_cstruct01.cj:14:9:
-   | 
-14 |     var b = VArray<A, $1>(repeat: A()) // error
-   |         ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/
