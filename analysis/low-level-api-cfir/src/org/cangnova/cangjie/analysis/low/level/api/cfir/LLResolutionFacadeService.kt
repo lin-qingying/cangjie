@@ -35,8 +35,6 @@ class LLResolutionFacadeService(project: Project) {
 
     private fun createResolutionStrategyProvider(module: CaModule, moduleProvider: LLModuleProvider): LLModuleResolutionStrategyProvider {
         return when (module) {
-            is CaSourceModule -> LLSourceModuleResolutionStrategyProvider(module)
-            is CaLibraryModule, is CaBuiltinsModule, is CaLibrarySourceModule -> LLBinaryModuleResolutionStrategyProvider(module)
             is CaDanglingFileModule -> {
                 val contextModule = requireNotNull(module.contextModule) {
                     "Dangling file module must have a context module"
@@ -44,6 +42,8 @@ class LLResolutionFacadeService(project: Project) {
                 val contextResolutionStrategyProvider = createResolutionStrategyProvider(contextModule, moduleProvider)
                 LLDanglingFileResolutionStrategyProvider(contextResolutionStrategyProvider)
             }
+            is CaSourceModule -> LLSourceModuleResolutionStrategyProvider(module)
+            is CaLibraryModule, is CaBuiltinsModule, is CaLibrarySourceModule -> LLBinaryModuleResolutionStrategyProvider(module)
             is CaNotUnderContentRootModule -> LLSimpleResolutionStrategyProvider(module)
             else -> {
                 errorWithCfirSpecificEntries(

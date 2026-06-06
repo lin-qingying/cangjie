@@ -23,5 +23,6 @@ enum class DiagnosticKind {
     GenericTypeWithoutTypeArgument,
     ReturnInStaticInit,
     CaptureBeforeInitialization,
+    ThisTypeNotAllowed,
     Other,
 }

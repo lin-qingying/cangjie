@@ -2,8 +2,8 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
+import org.cangnova.cangjie.cfir.analysis.checkers.diagnosticFactoryForReturnTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -60,7 +60,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
         if (!isSubtypeForTypeMismatch(context.session, context.session.typeContext, actualType, expectedType)) {
             reporter.reportOn(
                 source = tailExpression.source,
-                factory = CfirErrors.RETURN_TYPE_MISMATCH,
+                factory = diagnosticFactoryForReturnTypeMismatch(context.session, expectedType),
                 a = expectedType,
                 b = actualType,
                 c = false,

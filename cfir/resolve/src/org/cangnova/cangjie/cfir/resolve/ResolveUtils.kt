@@ -136,9 +136,8 @@ private fun BodyResolveComponents.typeFromNamedValueCandidate(candidate: Candida
         runCatching { candidate.substitutor.substituteOrSelf(resolvedType) }.getOrDefault(resolvedType)
     }
 
-    val returnType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
-        ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function return type", DiagnosticKind.Other))
-    val substitutedReturnType = runCatching { candidate.substitutor.substituteOrSelf(returnType) }.getOrDefault(returnType)
+    returnTypeCalculator.tryCalculateReturnType(declaration)
+    val substitutedReturnType = candidate.substitutedReturnType()
 
     return ConeFunctionType(parameterTypes, substitutedReturnType)
 }

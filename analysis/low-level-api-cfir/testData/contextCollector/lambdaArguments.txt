@@ -8,7 +8,7 @@ Tower Data Context:
     Element 2
         Scope: CfirLocalScope
             Variables:
-                CfirValueParameterSymbol offset: R|kotlin.Unit|value: <implicit>
+                CfirValueParameterSymbol value: <implicit>
     Element 3
         Scope: CfirLocalScope
 

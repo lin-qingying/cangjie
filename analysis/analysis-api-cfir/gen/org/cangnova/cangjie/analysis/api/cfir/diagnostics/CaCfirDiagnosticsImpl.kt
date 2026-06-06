@@ -658,6 +658,11 @@ internal class GenericTypeShouldBeUsedWithTypeArgumentImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.GenericTypeShouldBeUsedWithTypeArgument
 
+internal class ParseThisTypeNotAllowImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.ParseThisTypeNotAllow
+
 internal class InvisibleMemberImpl(
     override val member: String,
     override val visibility: String,

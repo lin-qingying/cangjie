@@ -177,6 +177,16 @@ class CfirRendererAnnotationRenderingTest {
         assertEquals("@R|UserAnn|() R|demo.Box<R|Int|>|", CfirRenderer.withGoldenCompat().renderElementAsString(userType))
     }
 
+    @Test
+    fun `reused renderer renders each element independently`() {
+        val renderer = CfirRenderer.withGoldenCompat()
+        val first = renderer.renderElementAsString(annotation("FirstAnn"))
+        val second = renderer.renderElementAsString(annotation("SecondAnn"))
+
+        assertEquals("@R|FirstAnn|()", first)
+        assertEquals("@R|SecondAnn|()", second)
+    }
+
     private fun annotation(name: String, arguments: List<CfirElement> = emptyList()): CfirAnnotationCall =
         buildAnnotationCall {
             source = TestBinarySourceElement("@$name")

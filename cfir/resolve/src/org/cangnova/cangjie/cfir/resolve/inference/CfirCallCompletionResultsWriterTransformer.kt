@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithPostponedChild
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.toErrorReference
@@ -100,7 +101,9 @@ class CfirCallCompletionResultsWriterTransformer(
 
         val declaration = subCandidate.symbol.cfir
 
-        val type = if (declaration is CfirCallableDeclaration) {
+        val type = if (declaration is CfirFunction && subCandidate.callInfo.callKind == CallKind.NamedValueAccess) {
+            computeNamedValueFunctionType(declaration, subCandidate)
+        } else if (declaration is CfirCallableDeclaration) {
             val calculated = typeCalculator.tryCalculateReturnType(declaration)
             if (calculated !is CfirErrorTypeRef) {
                 calculated.coneType
@@ -132,6 +135,26 @@ class CfirCallCompletionResultsWriterTransformer(
 
         runPCLARelatedTasksForCandidate(subCandidate)
         return qualifiedAccessExpression
+    }
+
+    /**
+     * 仓颉允许把函数名作为值使用，例如 `let f = obj.foo`。
+     * 这种访问完成后表达式类型应是函数类型，而不是 `foo` 的返回值类型；
+     * 否则后续 `f()` 无法进入函数类型 `invoke` 的 tower level。
+     */
+    private fun computeNamedValueFunctionType(
+        declaration: CfirFunction,
+        candidate: Candidate,
+    ): ConeCangJieType {
+        val parameterTypes = declaration.valueParameters.map { parameter ->
+            val parameterType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
+                ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function parameter type"))
+            parameterType.substituteType(candidate)
+        }
+
+        typeCalculator.tryCalculateReturnType(declaration)
+        val returnType = finallySubstituteOrSelf(candidate.substitutedReturnType())
+        return ConeFunctionType(parameterTypes, returnType)
     }
 
     private fun ConeCangJieType.substituteType(

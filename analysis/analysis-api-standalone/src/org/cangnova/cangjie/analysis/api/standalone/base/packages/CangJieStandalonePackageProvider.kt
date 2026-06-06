@@ -51,6 +51,9 @@ class CangJieStandalonePackageProviderFactory(
             CaModuleProvider.getInstance(project).allModules
                 .filterIsInstance<CaLibraryModule>()
                 .forEach { libraryModule ->
+                    fileCollector.collectFromRoots(libraryModule.binaryRoots, searchScope)
+                        .mapTo(this) { it.packageFqName }
+
                     binaryIndex.getBinaryFiles(libraryModule)
                         .asSequence()
                         .filter(searchScope::contains)

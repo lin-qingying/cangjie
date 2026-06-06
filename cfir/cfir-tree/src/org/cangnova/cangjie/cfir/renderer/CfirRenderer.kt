@@ -17,8 +17,8 @@ import org.cangnova.cangjie.utils.Printer
 // Printer
 // ─────────────────────────────────────────────────────────────────────────────
 
-open class CfirPrinter(builder: StringBuilder = StringBuilder()) {
-    private val printer = Printer(builder)
+open class CfirPrinter(private val builder: StringBuilder = StringBuilder()) {
+    private var printer = Printer(builder)
     private var lineBeginning = true
 
     fun print(vararg objects: Any) {
@@ -40,6 +40,18 @@ open class CfirPrinter(builder: StringBuilder = StringBuilder()) {
     internal fun popIndent() = printer.popIndent()
 
     fun newLine() = println()
+
+    /**
+     * 重置单次渲染的文本和缩进状态。
+     *
+     * `CfirRenderer.renderElementAsString()` 是“一个元素 -> 一个字符串”的公共入口，
+     * 因此复用 renderer 时不能继承上一次渲染的 builder 内容或缩进状态。
+     */
+    fun reset() {
+        builder.setLength(0)
+        printer = Printer(builder)
+        lineBeginning = true
+    }
 
     fun renderInBraces(leftBrace: String = "{", rightBrace: String = "}", block: () -> Unit) {
         println(" ", leftBrace)
@@ -175,6 +187,7 @@ class CfirRenderer(
     }
 
     fun renderElementAsString(element: CfirElement, trim: Boolean = true): String {
+        printer.reset()
         element.accept(visitor)
         val normalized = printer.toString().replace("\r\n", "\n")
         return if (trim) normalized.trimEnd() else normalized

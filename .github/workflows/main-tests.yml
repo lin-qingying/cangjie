@@ -1,0 +1,61 @@
+name: main-tests
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths-ignore:
+      - "intellij-ide/**"
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - "intellij-ide/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: main-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Ensure Gradle wrapper is executable
+        shell: bash
+        run: chmod +x ./gradlew
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Run main repository tests
+        shell: bash
+        run: |
+          ./gradlew \
+            test \
+            --continue \
+            --no-daemon \
+            --stacktrace
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: main-test-results
+          if-no-files-found: warn
+          retention-days: 14
+          path: |
+            **/build/test-results/**/*.xml
+            **/build/reports/tests/**
+            !intellij-ide/**

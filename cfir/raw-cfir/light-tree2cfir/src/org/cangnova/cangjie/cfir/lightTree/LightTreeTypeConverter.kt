@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.builder.*
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
@@ -69,6 +70,7 @@ private fun convertTypeElement(
     CjNodeTypes.OPTIONAL_TYPE -> convertOptionalType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.TUPLE_TYPE -> convertTupleType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.VARRAY_TYPE -> convertVArrayType(typeElement, typeRefNode, tree, source, toSource)
+    CjNodeTypes.THIS_TYPE -> convertThisType(typeElement, typeRefNode, toSource)
     CjNodeTypes.PARENTHESIZED_TYPE -> {
         // 括号内嵌套一个 TYPE_REFERENCE
         val innerTypeRef = tree.findChildByType(typeElement, CjNodeTypes.TYPE_REFERENCE)
@@ -144,6 +146,25 @@ private fun convertUserType(
     return buildUserTypeRef {
         this.source = typeRefNode.toCjSourceElement(toSource)
         this.qualifier += qualifier
+    }
+}
+
+/**
+ * THIS_TYPE → CfirUserTypeRef("This")
+ *
+ * `This` 的合法性依赖声明上下文，raw-cfir 只保留语法身份。
+ */
+private fun convertThisType(
+    typeElement: LighterASTNode,
+    typeRefNode: LighterASTNode,
+    toSource: (LighterASTNode) -> AbstractCjSourceElement,
+): CfirUserTypeRef {
+    return buildUserTypeRef {
+        this.source = typeRefNode.toCjSourceElement(toSource)
+        qualifier += buildQualifierPart {
+            source = typeElement.toCjSourceElement(toSource)
+            name = Name.identifier("This")
+        }
     }
 }
 

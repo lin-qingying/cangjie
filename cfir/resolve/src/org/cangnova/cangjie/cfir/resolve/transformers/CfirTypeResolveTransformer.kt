@@ -185,12 +185,23 @@ class CfirTypeResolveTransformer(
             .withTopContainer(function)
             .withAdditionalTypeParameters(function.typeParameters)
         function.transformTypeParameters(this, configuration)
-        function.transformReturnTypeRef(this, configuration)
+        function.transformReturnTypeRef(
+            this,
+            configuration.withThisTypeOwner(thisTypeOwnerForFunctionReturn(function, data.topContainer)),
+        )
         function.transformValueParameters(this, configuration)
         function.transformAnnotations(this, configuration)
         // TYPES 阶段不解析函数体
         bumpPhase(function)
         return function
+    }
+
+    private fun thisTypeOwnerForFunctionReturn(
+        function: CfirFunction,
+        containingDeclaration: CfirDeclaration?,
+    ): CfirClass? {
+        if (function !is CfirNamedFunction || function.status.isStatic) return null
+        return containingDeclaration as? CfirClass
     }
 
     override fun transformConstructor(constructor: CfirConstructor, data: CfirTypeResolutionConfiguration): CfirConstructor {

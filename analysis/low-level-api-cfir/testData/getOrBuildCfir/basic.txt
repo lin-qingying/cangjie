@@ -12,10 +12,6 @@ NAMED_ACCESS(value) {
 }
 
 CFIR FILE:
-NAMED_ACCESS(value) {
-    receiver:
-        NAMED_ACCESS(box)
-}
 FILE: basic.cj
     package lowlevel.getorbuild
     internal? class Box<T> {
@@ -54,9 +50,6 @@ FUNCTION_CALL(wrap) {
 }
 
 CFIR FILE:
-FUNCTION_CALL(wrap) {
-    INT(41)
-}
 FILE: basic.cj
     package lowlevel.getorbuild
     internal? class Box<T> {
@@ -95,9 +88,6 @@ FUNCTION_CALL(unwrap) {
 }
 
 CFIR FILE:
-FUNCTION_CALL(unwrap) {
-    NAMED_ACCESS(box)
-}
 FILE: basic.cj
     package lowlevel.getorbuild
     internal? class Box<T> {
@@ -134,7 +124,7 @@ CFIR element rendered:
 R|kotlin.Unit|
 
 CFIR FILE:
-R|kotlin.Unit|FILE: basic.cj
+FILE: basic.cj
     package lowlevel.getorbuild
     internal? class Box<T> {
         internal? let value: R|kotlin.Unit|

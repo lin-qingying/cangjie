@@ -69,7 +69,35 @@ class ConeClassLikeType(
     /** 从 lookupTag 中直接提取 ClassId，方便调用方使用。 */
     val classId: ClassId get() = lookupTag.classId
 
+    /**
+     * 类、接口与 `This` 视图共享 ClassId，但语言语义不同。
+     * 因此除 lookupTag / typeArguments / attributes 外，还必须比较这两个标记。
+     */
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is ConeClassLikeType) return false
+        return super.equals(other) &&
+                isInterface == other.isInterface &&
+                isThisType == other.isThisType
+    }
 
+    override fun hashCode(): Int {
+        var result = super.hashCode()
+        result = 31 * result + isInterface.hashCode()
+        result = 31 * result + isThisType.hashCode()
+        return result
+    }
+}
+
+/**
+ * 把顶层 `This` 视图类型恢复成普通 class 类型。
+ *
+ * `This` 是 class 实例成员函数返回类型的特殊视图；普通声明（如局部变量、字段）
+ * 不能承载动态 `This` 语义，否则 `var a = this; return a` 会错误地满足 `This` 返回类型。
+ */
+fun ConeCangJieType.approximateThisTypeForDeclaration(): ConeCangJieType {
+    if (this !is ConeClassLikeType || !isThisType) return this
+    return ConeClassLikeType(lookupTag, typeArguments, attributes, isInterface)
 }
 
 /**
