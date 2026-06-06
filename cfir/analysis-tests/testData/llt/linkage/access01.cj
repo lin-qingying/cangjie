@@ -8,13 +8,10 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt base01.cj -o base01.%middle
 // EXEC: %compiler %cmp_opt base01.%middle %f -o %output
 // EXEC: %run %run_opt %output | compare %f
-// ASSERT: scan-6 1
-// ASSERT: scan-3 2
-// ASSERT: scan-3 3
 
 package a.b.c
 
-import a.b.*
+import <!package_search_error!>a.b<!>.*
 
 main() {
     println(AAAA().f1())

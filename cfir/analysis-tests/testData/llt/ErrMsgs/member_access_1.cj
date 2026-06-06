@@ -7,13 +7,13 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    let err = 1 + false
+    let err = 1 <!sema_invalid_binary_expr!>+<!> false
 
-    err<Bool>
-    err<Bool>.e2
-    err<Bool>.e2(e3)
-    err<Bool>.e2<Bool>
-    err<Bool>.e2<Bool>(e3)
+    <!sema_generic_argument_no_match!>err<Bool><!>
+    <!sema_generic_argument_no_match!>err<Bool><!>.e2
+    <!sema_generic_argument_no_match!>err<Bool><!>.e2(e3)
+    <!sema_generic_argument_no_match!>err<Bool><!>.e2<Bool>
+    <!sema_generic_argument_no_match!>err<Bool><!>.e2<Bool>(e3)
 
     err.e2
     err.e2(e3)
@@ -24,15 +24,5 @@ main() {
 }
 
 // Errors:
-// ASSERT: scan :10:
-// ASSERT: scan :12:
-// ASSERT: scan :13:
-// ASSERT: scan :14:
-// ASSERT: scan :15:
-// ASSERT: scan :16:
 
 // No errors:
-// ASSERT: scan-not :18:
-// ASSERT: scan-not :19:
-// ASSERT: scan-not :20:
-// ASSERT: scan-not :21:

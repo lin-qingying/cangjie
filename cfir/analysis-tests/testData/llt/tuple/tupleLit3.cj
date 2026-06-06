@@ -6,23 +6,10 @@
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
-
 main(): Int64 {
     let a : Int32 = 1
     var MyTuple = (
     try
-    )
+    <!parse_expected_character!>)<!>
     return 0
 }
-
-/* SCAN
-error: expected '{' or '(', found ')'
-  ==> tupleLit3.cj:14:5:
-   | 
-14 |     )
-   |     ^ expected '{' or '(' here
-   | 
-   # note: try expression must have block or resources
-
-1 error generated, 1 error printed.
-*/

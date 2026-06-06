@@ -10,7 +10,7 @@ abstract class A {
     var b: B
     init() {
         b = B()
-        b.bind(this)
+        b.bind(<!sema_use_this_as_an_expression_in_func!>t<!>his)
     }
 }
 
@@ -24,14 +24,3 @@ class B {
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: 'this' cannot be used as an expression in the constructor of abstract class
-  ==> class_open_ctor4_fail.cj:13:16:
-   | 
-13 |         b.bind(this)
-   |                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

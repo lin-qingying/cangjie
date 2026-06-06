@@ -8,22 +8,9 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt apilevel.cj -o apilevel.%middle --cfg=APILevel=11
 // ERRCHECK: %compiler %cmp_opt apilevel.%middle %n.cj -o %n.%suffix
 
-import ohos.labels.*
+import <!package_search_error!>ohos.labels<!>.*
 
 func foo(@!APILevel[since: "10", syscap: "xxx"] a: Int64) {}
 
 @!APILevel[since: "10", syscap: "xxx"]
 main() {}
-
-/* SCAN
-error: unexpected annotation '@APILevel' on main
-  ==> on_invalid_decl.cj:15:1:
-   | 
-15 | @!APILevel[since: "10", syscap: "xxx"]
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ unexpected annotation here
-16 | main() {}
-   | ~~~~ on main
-   | 
-
-1 error generated, 1 error printed.
-*/

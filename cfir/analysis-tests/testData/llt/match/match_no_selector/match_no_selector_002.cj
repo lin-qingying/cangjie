@@ -5,14 +5,10 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex-auto at least one default case, such as wildcard pattern, variable pattern or '[...]' for sequence pattern in match case
 
 main(): Int64 {
-    var b: Int64 = match {
+    var b: Int64 = <!sema_match_case_must_have_default!>m<!>atch {
         case false => 0
     }
     return b
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

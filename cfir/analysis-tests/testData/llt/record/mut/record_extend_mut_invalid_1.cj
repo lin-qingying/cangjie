@@ -11,7 +11,7 @@ class C1 {
 }
 
 extend C1 {
-    public mut func foo() {
+    public <!sema_invalid_mut_modifier_extend_of_struct!>mut<!> func foo() {
         this.i = 1
     }
 }
@@ -19,14 +19,3 @@ extend C1 {
 main() {
     return 1
 }
-
-/* SCAN
-error: 'mut' modifier is illegal in extend body of 'C1'
-  ==> record_extend_mut_invalid_1.cj:14:12:
-   | 
-14 |     public mut func foo() {
-   |            ^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

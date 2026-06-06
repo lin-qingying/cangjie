@@ -7,24 +7,6 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 struct S {
-    const init
-}
+    const init<!parse_missing_body!>
+<!><!parse_expected_lt_paren!>}<!>
 main() {}
-
-/* SCAN
-error: body of constructor is missing
-  ==> err_invalid_ctor.cj:10:15:
-   | 
-10 |     const init
-   |               ^ missing constructor body here
-   | 
-
-error: expected '(' or '<', found '}'
-  ==> err_invalid_ctor.cj:11:1:
-   | 
-11 | }
-   | ^ expected '(' or '<' here
-   | 
-
-2 errors generated, 2 errors printed.
-*/

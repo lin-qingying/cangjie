@@ -9,20 +9,9 @@
 class Data{
     public static let a = 1
     public var b = 2
-return }    
+<!parse_expected_decl!>return<!> }
 
 main(): Int64 {
     Data.a
     return 0
 }
-
-/* SCAN
-error: expected declaration, found keyword 'return'
-  ==> class_static02.cj:12:1:
-   | 
-12 | return }    
-   | ^^^^^^ expected declaration here
-   | 
-
-1 error generated, 1 error printed.
-*/

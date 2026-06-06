@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -13,25 +13,7 @@ class A {
 
 extend A {
     func foo() {
-        goo()
+        <!sema_no_match_function_declaration_for_call!>g<!>oo()
         0
     }
 }
-
-/* SCAN
-error: no matching function declaration for function call 'goo'
-  ==> extend_access_control2.cj:16:9:
-   | 
-16 |         goo()
-   |         ^ 
-   | 
-
-error: 'main' is missing
- ==> extend_access_control2.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

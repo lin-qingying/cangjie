@@ -12,6 +12,3 @@ var a: Range<Int64> = 1..2
 main() {
     return 1
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

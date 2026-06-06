@@ -7,7 +7,7 @@
 // EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 class A {
-    public operator func [](index: Int64, value!: Int64): Int64 {
+    public operator func [](index: Int64, value!: Int64): <!INVALID_SUBSCRIPT_ASSIGN_RETURN!>Int64<!> {
         return 1;
     }
 }
@@ -15,14 +15,3 @@ class A {
 main(): Int64 {
     return 1;
 }
-
-/* SCAN
-error: the return type of subscript assignment must be 'Unit'
-  ==> operatorOverload_indexSet2.cj:10:59:
-   | 
-10 |     public operator func [](index: Int64, value!: Int64): Int64 {
-   |                                                           ^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

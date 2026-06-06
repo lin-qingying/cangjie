@@ -6,15 +6,13 @@
 
 // EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
-
-
 struct Data<T1, T2, T3> {
     public func area(width: T1, length: T2, height: T3): T3{
         return  height
 }
-return 1;}  
+<!parse_expected_decl!>return<!> 1;}
 
-return 1;func run(): Int64 {    
+<!parse_expected_decl!>return<!> 1;<!parse_expected_character!>func<!> run(): Int64 {
     var a: Int64 = 1
     var b: Float64 = 2.2
     var c: Int32 = 2
@@ -29,29 +27,3 @@ return 1;func run(): Int64 {
 main(): Int64 {
     return run()
 }
-
-/* SCAN
-error: expected declaration, found keyword 'return'
-  ==> record_generic_recursive_function_call02.cj:15:1:
-   | 
-15 | return 1;}  
-   | ^^^^^^ expected declaration here
-   | 
-
-error: expected declaration, found keyword 'return'
-  ==> record_generic_recursive_function_call02.cj:17:1:
-   | 
-17 | return 1;func run(): Int64 {    
-   | ^^^^^^ expected declaration here
-   | 
-   # note: only declarations or macro expressions can be used in the top-level
-
-error: expected ';' or '<NL>', found keyword 'func'
-  ==> record_generic_recursive_function_call02.cj:17:10:
-   | 
-17 | return 1;func run(): Int64 {    
-   |          ^^^^ expected ';' or '<NL>' here
-   | 
-
-3 errors generated, 3 errors printed.
-*/

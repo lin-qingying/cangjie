@@ -22,9 +22,9 @@ let A3 = 1
 
 main(): Int64 {
     var a = A1
-    var A2 = A2
+    var A2 = <!sema_ref_not_be_type!>A<!>2
     var b = match (A2) {
-        case A1(x) => 0
+        case <!sema_pattern_not_match!>A<!>1(x) => 0
         case _ => -1
     }
     let A4 = 1
@@ -46,27 +46,3 @@ main(): Int64 {
 
     return 0
 }
-
-/* SCAN
-error: enum pattern is not matched
-  ==> enum16_1.cj:27:14:
-   | 
-27 |         case A1(x) => 0
-   |              ^ 
-   | 
-
-error: expected member name or constructor call after 'A2' type name
-  ==> enum16_1.cj:25:14:
-   | 
-25 |     var A2 = A2
-   |              ^ 
-   | 
-note: found candidate
- ==> enum16_1.cj:9:1:
-  | 
-9 | class A2 {}
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

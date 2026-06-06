@@ -17,8 +17,8 @@ main():Int64 {
     var d = match (time) {
         case Year(a) => a
         case Month(a, b) => a+b
-        case Year(a)|Day(a, b, c) => { 
-            a+b+c
+        case Year(a)|Day(a, b, c) => {
+            <!parse_expected_double_arrow_in_lambda!>a<!>+b+c
         }
         case _ => -1
     }
@@ -27,14 +27,3 @@ main():Int64 {
     }
     return 1
 }
-
-/* SCAN
-error: expected '=>' in lambda expression, found 'a'
-  ==> enum06.cj:21:13:
-   | 
-21 |             a+b+c
-   |             ^ expected '=>' here
-   | 
-
-1 error generated, 1 error printed.
-*/

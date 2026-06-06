@@ -7,48 +7,16 @@
 // ERRCHECK: %compiler %f %cmp_opt
 
 func f1() {
-    @IfAvailable(APILevel:11, { => println(0) })
+    @IfAvailable(APILevel:11, { => println(0) }<!parse_expected_character!>)<!>
 }
 
 func f2() {
-    @IfAvailable(APILevel:11, )
+    @IfAvailable(APILevel:11, <!parse_expected_expression, parse_ifavailable_not_lambda!>)<!>
 }
 
 func f3() {
-    @IfAvailable()
+    @IfAvailable(<!parse_expected_expression!>)<!>
 }
 
 main() {
 }
-
-/* SCAN
-error: expected ',', found ')'
-  ==> err_too_few_args.cj:10:48:
-   | 
-10 |     @IfAvailable(APILevel:11, { => println(0) })
-   |                                                ^ expected ',' here
-   | 
-
-error: @IfAvailable expect a literal lambda here
-  ==> err_too_few_args.cj:14:31:
-   | 
-14 |     @IfAvailable(APILevel:11, )
-   |                               ^ 
-   | 
-
-error: expected expression after ',', found ')'
-  ==> err_too_few_args.cj:14:31:
-   | 
-14 |     @IfAvailable(APILevel:11, )
-   |                               ^ expected expression here
-   | 
-
-error: expected expression after '(', found ')'
-  ==> err_too_few_args.cj:18:18:
-   | 
-18 |     @IfAvailable()
-   |                  ^ expected expression here
-   | 
-
-4 errors generated, 4 errors printed.
-*/

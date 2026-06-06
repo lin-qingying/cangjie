@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%frontendCompiler %noColor %diag_json %f 2>&1 | compare %f
-// ASSERT: scan sema_assignment_of_member_variable_cannot_use_this_or_super
-// ASSERT: scan "Errors": 1,
 
 open class A {
     let x: A
@@ -17,7 +15,7 @@ open class A {
 
 class B <: A {
     public B() {
-        super(this.x)
+        super(this.<!sema_assignment_of_member_variable_cannot_use_this_or_super!>x<!>)
     }
 }
 

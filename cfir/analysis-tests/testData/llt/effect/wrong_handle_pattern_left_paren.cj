@@ -4,14 +4,11 @@ import stdx.effect.Command
 main():Int64 {
     try {
 
-    } handle {
+    } <!parse_expected_catch_or_finally_in_try!>handle<!> {
 
     }
     return 0
 }
-
-// ASSERT: scan parse_expected_left_paren_after
-
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

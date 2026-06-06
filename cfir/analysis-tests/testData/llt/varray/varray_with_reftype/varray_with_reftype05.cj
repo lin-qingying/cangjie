@@ -5,9 +5,8 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// ASSERT: scan 'Struct-S1' directly or indirectly contains an unsupported type
 
-struct S1 {
+<!sema_value_type_recursive!>s<!>truct S1 {
     var a: S2
     init(a1: S2) {
         a = a1
@@ -31,5 +30,5 @@ struct S3 {
 }
 
 main() {
-    var a: VArray<S1, $1>
+    var a: VArray<<!sema_varray_arg_type_with_reftype!>S1<!>, $1>
 }

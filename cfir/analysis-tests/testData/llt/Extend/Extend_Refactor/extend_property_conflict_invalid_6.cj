@@ -24,8 +24,8 @@ interface I2 {
 
 class C1 {}
 
-extend C1 <: I1 & I2 {
-    public prop foo: Int64 {
+<!sema_inherit_member_type_inconsistent!>e<!>xtend C1 <: I1 & I2 {
+    <!sema_property_override_implement_type_diff!>p<!>ublic prop foo: Int64 {
         get() {
             return 2
         }
@@ -35,22 +35,3 @@ extend C1 <: I1 & I2 {
 main() {
     return -1
 }
-
-/* SCAN
-error: type of the inherited property members 'foo' are not identical and not in subtype relation
-  ==> extend_property_conflict_invalid_6.cj:27:1:
-   | 
-27 | extend C1 <: I1 & I2 {
-   | ^ 
-   | 
-   # note: conflict types are 'Int32', 'Int64'
-
-error: The type of the override/implement property must be the same
-  ==> extend_property_conflict_invalid_6.cj:28:5:
-   | 
-28 |     public prop foo: Int64 {
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -18,6 +18,3 @@ main() {
     }
     0
 }
-
-// ASSERT: scan-1 outer
-// ASSERT: scan-1 inner

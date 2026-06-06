@@ -12,23 +12,5 @@ enum E {
 
 main() {
     let arr = [A, B(0)]
-    for (E.A(x) in arr) {}
+    <!sema_forin_pattern_must_be_irrefutable!>f<!>or (<!ENUM_PATTERN_PARAM_SIZE_ERROR!>E<!>.A(x) in arr) {}
 }
-
-/* SCAN
-error: enum pattern's parameters size is wrong
-  ==> forin13.cj:15:10:
-   | 
-15 |     for (E.A(x) in arr) {}
-   |          ^ 
-   | 
-
-error: the pattern in for-in expression must be irrefutable
-  ==> forin13.cj:15:5:
-   | 
-15 |     for (E.A(x) in arr) {}
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

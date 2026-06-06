@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -20,7 +20,7 @@ interface B {
 }
 
 class C <: A & B {
-    public mut override prop i: Int64 {
+    <!sema_property_override_implement_type_diff!>p<!>ublic mut override prop i: Int64 {
         get() {
             return 1
         }
@@ -42,35 +42,10 @@ interface B1 {
 }
 
 class C1 <: A1 & B1 {
-    public mut override prop i: Int64 {
+    <!sema_property_override_implement_type_diff!>p<!>ublic mut override prop i: Int64 {
         get() {
             return 1
         }
         set(v) {}
     }
 }
-
-/* SCAN
-error: The type of the override/implement property must be the same
-  ==> property9.cj:23:5:
-   | 
-23 |     public mut override prop i: Int64 {
-   |     ^ 
-   | 
-
-error: The type of the override/implement property must be the same
-  ==> property9.cj:45:5:
-   | 
-45 |     public mut override prop i: Int64 {
-   |     ^ 
-   | 
-
-error: 'main' is missing
- ==> property9.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-3 errors generated, 3 errors printed.
-*/

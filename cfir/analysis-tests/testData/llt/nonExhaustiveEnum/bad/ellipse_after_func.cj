@@ -7,11 +7,9 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 enum A {
-    M 
+    M
     func foo() {0 }
-    | ...
+    <!parse_expected_decl!>|<!><!parse_expected_right_delimiter!> <!><!parse_expected_character!>...<!>
 }
 main() {
 }
-
-// ASSERT: scan-1 error: expected declaration, found '|'

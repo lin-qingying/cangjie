@@ -17,16 +17,5 @@ func f<T>(): Unit where T <: I2 {
 }
 
 main() {
-    f<I2>()
+    f<<!sema_cannot_instantiated_by_incomplete_type!>I<!>2>()
 }
-
-/* SCAN
-error: can not instantiate 'Generics-T' by interface or abstract class 'Interface-I2' for it has unimplemented static member
-  ==> generic_call_static_impl01.cj:20:7:
-   | 
-20 |     f<I2>()
-   |       ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

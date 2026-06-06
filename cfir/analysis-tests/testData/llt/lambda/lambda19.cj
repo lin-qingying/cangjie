@@ -5,9 +5,8 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // ERRCHECK: %compiler %cmp_opt %f -o %output
-// ASSERT: regex-not Internal Compiler Error
 
-let _ = o%n.% { =>
+let _ = o%n.<!parse_expected_name!>%<!> { =>
     func f(x: Int) {
         { => f() }
         .x

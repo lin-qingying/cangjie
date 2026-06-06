@@ -12,6 +12,3 @@ main(): Int64 {
     array[0] = array[0] + 1
     return array[0] - 2
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

@@ -16,7 +16,7 @@ interface I {
     func foo(): String
 }
 
-func bar<T>(x: T) where T <: C & I {
+func bar<T>(x: T) where <!sema_inherit_member_type_inconsistent!>T <: C & I<!> {
     return x.foo()
 }
 
@@ -34,6 +34,3 @@ main() {
     }
     return 1
 }
-
-// ASSERT: scan-1 sema_inherit_member_type_inconsistent
-// ASSERT: scan "Errors": 1

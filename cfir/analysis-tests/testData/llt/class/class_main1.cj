@@ -21,17 +21,6 @@ class Child <: Parent {
     }
 }
 
-main(a: Int32): Int64 {
+<!sema_unexpected_param_for_entry!>m<!>ain(a: Int32): Int64 {
     return Child().main1()
 }
-
-/* SCAN
-error: 'main' cannot be defined with parameter whose type is not 'Array<String>'
-  ==> class_main1.cj:24:1:
-   | 
-24 | main(a: Int32): Int64 {
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

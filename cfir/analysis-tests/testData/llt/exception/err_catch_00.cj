@@ -7,16 +7,5 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    try {} catch (_: Nothing) {}
+    try {} catch (_: <!CATCH_TYPE_MUST_EXTEND_EXCEPTION!>Nothing<!>) {}
 }
-
-/* SCAN
-error: the exception catch type must be class and extends from core.Exception or core.Error
-  ==> err_catch_00.cj:10:22:
-   | 
-10 |     try {} catch (_: Nothing) {}
-   |                      ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

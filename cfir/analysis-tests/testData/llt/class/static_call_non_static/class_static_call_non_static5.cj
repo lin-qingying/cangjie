@@ -42,7 +42,7 @@ open class Clazz_1 {
         return map_fs1
     }
 
-    public open func fun_c1(par_1: HashMap<Int32, Rune>, par_2!: Rune = r'J'): HashMap<Int32, Rune> {
+    public open func fun_c1(par_1: HashMap<Int32, Rune>, <!sema_cannot_have_default_param!>par_2!: Rune = r'J'<!>): HashMap<Int32, Rune> {
         var map_f1: HashMap<Int32, Rune> = par_1
         map_f1.add(Int32(map_f1.size), par_2)
         map_f1[12] = r'H'
@@ -63,7 +63,7 @@ open class Class_sub_1 <: Clazz_1 {
     public var map_subCla_1: HashMap<UInt16, Int64> = HashMap<UInt16, Int64>([(12, 17750), (23, 1836), (56, 3594)])
 
     public static func fun_sub_cs1(par_1: Rune): HashMap<Int32, Rune> {
-        var map_subcla_fun_s1: HashMap<Int32, Rune> = Clazz_1.fun_cs1(Int32(map_subCla_1[23]), r'Z')
+        var map_subcla_fun_s1: HashMap<Int32, Rune> = Clazz_1.fun_cs1(Int32(<!sema_static_function_cannot_access_non_static_member!>m<!>ap_subCla_1[23]), r'Z')
         map_subcla_fun_s1.add(Int32(map_subcla_fun_s1.size), par_1)
         return map_subcla_fun_s1
     }
@@ -75,21 +75,3 @@ open class Class_sub_1 <: Clazz_1 {
         return map_cla_fun_sub1
     }
 }
-
-/* SCAN
-error: optional parameter cannot be used in 'open' function
-  ==> class_static_call_non_static5.cj:45:58:
-   | 
-45 |     public open func fun_c1(par_1: HashMap<Int32, Rune>, par_2!: Rune = r'J'): HashMap<Int32, Rune> {
-   |                                                          ^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-error: 'map_subCla_1' is non-static member, cannot be accessed by static function 'fun_sub_cs1'
-  ==> class_static_call_non_static5.cj:66:77:
-   | 
-66 |         var map_subcla_fun_s1: HashMap<Int32, Rune> = Clazz_1.fun_cs1(Int32(map_subCla_1[23]), r'Z')
-   |                                                                             ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

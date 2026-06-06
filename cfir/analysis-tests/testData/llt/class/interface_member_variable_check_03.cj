@@ -7,45 +7,11 @@
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
 interface I {
-    let a: Int64 = 1 
-    let b: Int64 = 1 
-    let c: Int64 = 1 
+    <!parse_unexpected_declaration_in_scope!>let<!> a: Int64 = 1
+    <!parse_unexpected_declaration_in_scope!>let<!> b: Int64 = 1
+    <!parse_unexpected_declaration_in_scope!>let<!> c: Int64 = 1
 }
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: unexpected variable declaration in interface body
-  ==> interface_member_variable_check_03.cj:10:5:
-   | 
-9  | interface I {
-   | ~~~~~~~~~ in interface
-10 |     let a: Int64 = 1 
-   |     ^^^ unexpected variable declaration
-   | 
-
-error: unexpected variable declaration in interface body
-  ==> interface_member_variable_check_03.cj:11:5:
-   | 
-9  | interface I {
-   | ~~~~~~~~~ in interface
-10 |     let a: Int64 = 1 
-11 |     let b: Int64 = 1 
-   |     ^^^ unexpected variable declaration
-   | 
-
-error: unexpected variable declaration in interface body
-  ==> interface_member_variable_check_03.cj:12:5:
-   | 
-9  | interface I {
-   | ~~~~~~~~~ in interface
-10 |     let a: Int64 = 1 
-   | ...
-12 |     let c: Int64 = 1 
-   |     ^^^ unexpected variable declaration
-   | 
-
-3 errors generated, 3 errors printed.
-*/

@@ -11,13 +11,13 @@ class A {
         get() {
             1
         }
-        set(v)(x) {}
+        <!sema_cannot_currying!>s<!>et(v)(x) {}
     }
 }
 
 class B {
     public mut prop a: Int64 {
-        get(v) {
+        <!sema_cannot_have_parameter!>g<!>et(v) {
             1
         }
         set(v) {}
@@ -26,7 +26,7 @@ class B {
 
 class C {
     public mut prop a: Int64 {
-        get()() {
+        <!sema_cannot_currying!>g<!>et()() {
             1
         }
         set(v) {}
@@ -36,28 +36,3 @@ class C {
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: setter cannot have more than one parameter list
-  ==> property15.cj:14:9:
-   | 
-14 |         set(v)(x) {}
-   |         ^ 
-   | 
-
-error: getter cannot have parameter
-  ==> property15.cj:20:9:
-   | 
-20 |         get(v) {
-   |         ^ 
-   | 
-
-error: getter cannot have more than one parameter list
-  ==> property15.cj:29:9:
-   | 
-29 |         get()() {
-   |         ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

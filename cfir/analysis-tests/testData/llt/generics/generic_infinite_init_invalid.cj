@@ -9,20 +9,7 @@
 // generic recursive checking for invalid type. was stackoverflow, should terminate normally
 
 struct A<X,Y>{
-    public operator func <=(b:A<Int32,(Int32,A<Int32,Int32)>):Bool {true}
+    public operator func <=(b:A<Int32,(Int32,A<Int32,Int32<!parse_expected_right_delimiter!>)<!>>):Bool {true}
 }
 
 main() {}
-
-/* SCAN
-error: unclosed delimiter: '<'
-  ==> generic_infinite_init_invalid.cj:12:59:
-   | 
-12 |     public operator func <=(b:A<Int32,(Int32,A<Int32,Int32)>):Bool {true}
-   |                                               ~           ^ expected '>' here
-   |                                               |
-   |                                               to match this opening '<'
-   | 
-
-1 error generated, 1 error printed.
-*/

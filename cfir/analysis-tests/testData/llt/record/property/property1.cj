@@ -8,7 +8,7 @@
 
 struct A {
     public mut prop a: Int64 {
-        get(b) {
+        <!sema_cannot_have_parameter!>g<!>et(b) {
             1
         }
         set(v) {}
@@ -18,14 +18,3 @@ struct A {
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: getter cannot have parameter
-  ==> property1.cj:11:9:
-   | 
-11 |         get(b) {
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

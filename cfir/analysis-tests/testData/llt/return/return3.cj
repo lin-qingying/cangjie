@@ -4,11 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 main() {
-    var a = () =>{
+    var a = () <!parse_expected_character!>=><!>{
         if true{
             return 1
         }

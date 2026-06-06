@@ -5,9 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-// ASSERT: regex-not Segementation
 
 internal import std.ast.*
 

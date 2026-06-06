@@ -13,19 +13,8 @@ open class CI<T> <: A<C<T>> {}
 
 interface A<T> <: B<C<T>> {}
 
-open class C<T> <: A<C<T>> {}
+open class C<T> <: <!sema_generic_infinite_instantiation!>A<!><C<T>> {}
 
 main() {
     return 0
 }
-
-/* SCAN
-error: generic infinite instantiation
-  ==> generic_infinite_init_07.cj:16:20:
-   | 
-16 | open class C<T> <: A<C<T>> {}
-   |                    ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

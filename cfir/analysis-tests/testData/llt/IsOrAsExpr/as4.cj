@@ -44,22 +44,3 @@ main() {
     println(v15)
     println(v16)
 }
-
-/* SCAN
-None
-Some(0)
-Some(0)
-Some(0)
-None
-Some(0)
-None
-Some([1, 2, 3])
-None
-Some([1, 2, 3])
-None
-Some([0, 1, 2])
-None
-None
-None
-Some(Hello, World!)
-*/

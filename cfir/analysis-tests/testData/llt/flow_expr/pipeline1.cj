@@ -17,9 +17,9 @@ func run() {
     let z: Float32 = 22.0
     let res = if (x > 0.0) {
         y
-    } else {
+    } else <!chir_dce_unreachable_block_in_expression!>{
         z |> f
-    }
+    }<!>
     return res
 }
 
@@ -30,6 +30,3 @@ main(): Int64 {
     }
     return 1
 }
-
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace

@@ -10,7 +10,7 @@ open class A {
     public var a: Int64
     public var b: Int64
     public init(n: Int64) {
-        init(n, n)
+        <!parse_expected_expr_or_decl_in!>init<!>(n, n)
         a = n
     }
     public init(n: Int64, m: Int64) {
@@ -25,14 +25,3 @@ class B <: A {
         c = 0
     }
 }
-
-/* SCAN
-error: expected expression or declaration, found keyword 'init'
-  ==> class_init_constructor2.cj:13:9:
-   | 
-13 |         init(n, n)
-   |         ^^^^ expected expression or declaration here
-   | 
-
-1 error generated, 1 error printed.
-*/

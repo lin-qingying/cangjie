@@ -6,10 +6,8 @@
 
 // EXEC: %compiler %cmp_opt -c %n.cj 2>&1 | compare %f
 
-
-
 main() {
-    var b = 1 + true
+    var b = 1 <!sema_invalid_binary_expr!>+<!> true
     var a = b
 
     a **= 1
@@ -28,8 +26,3 @@ main() {
 
     0
 }
-
-/* SCAN
-[31merror[0m: invalid option: '-c'.
-Invalid options. Try: 'cjc --help' for more information.
-*/

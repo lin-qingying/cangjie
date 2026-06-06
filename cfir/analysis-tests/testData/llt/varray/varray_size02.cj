@@ -14,17 +14,6 @@ struct S {
 
 unsafe main() {
     var a = VArray<Int64, $3>(repeat: 0)
-    foo1(inout a.size)
+    foo1(inout <!INOUT_MUST_BE_VAR_VARIABLE!>a.size<!>)
     return 0
 }
-
-/* SCAN
-error: 'inout' can only qualify variable defined with 'var'
-  ==> varray_size02.cj:17:16:
-   | 
-17 |     foo1(inout a.size)
-   |                ^^^^^^ is a immutable variable
-   | 
-
-1 error generated, 1 error printed.
-*/

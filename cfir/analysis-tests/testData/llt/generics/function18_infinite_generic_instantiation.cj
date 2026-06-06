@@ -10,7 +10,7 @@ class Base<T> {}
 
 func buildList<T>(n: Int32): Int64 {
     if (n > 0) {
-        buildList<Base<T>>(n - 1)
+        <!sema_generic_infinite_instantiation!>b<!>uildList<Base<T>>(n - 1)
     } else {
         buildList<Base<T>>(0)
     }
@@ -20,14 +20,3 @@ func buildList<T>(n: Int32): Int64 {
 main(): Int64 {
     return buildList<Int32>(10)
 }
-
-/* SCAN
-error: generic infinite instantiation
-  ==> function18_infinite_generic_instantiation.cj:13:9:
-   | 
-13 |         buildList<Base<T>>(n - 1)
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

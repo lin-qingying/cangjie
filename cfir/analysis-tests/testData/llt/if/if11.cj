@@ -8,7 +8,7 @@
 
 interface a<b, c> where b <: Int8, c <: d<UInt8, Range<UInt16>> {
     static func e<b, c>(f!: Float64) where b <: UInt64, c <: Int64 {
-        {} is d<UInt8, Range<UInt16>>
+        {<!parse_expected_double_arrow_in_lambda!>}<!> is d<UInt8, Range<UInt16>>
     }
 }
 interface d<b, g> {}
@@ -17,7 +17,7 @@ class i <: h<UInt16, UInt16> {
     static var m = i()
     var j: Int32 = 4
     static func k<b>(): Int32 {
-        if (e(f: 52.0)~ {
+        if (e(f: 52.0)<!parse_expected_right_delimiter!>~<!> {
             1
         } else {
             m.j
@@ -32,6 +32,3 @@ main() {
     l()
     0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

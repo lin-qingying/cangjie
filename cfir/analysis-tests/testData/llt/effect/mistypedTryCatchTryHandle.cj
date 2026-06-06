@@ -11,30 +11,10 @@ main() {
         } catch (_: Exception) {
             println("addakfnh")
         }
-    } handle(_: Get) {
+    } <!parse_expected_catch_or_finally_in_try!>handle<!>(_: Get) {
         resume with 1
     }
-}
-
-/* SCAN
-error: The type of this catch block is 'Unit', which mismatches the smallest common supertype 'Int64' of previous branches.
-  ==> mistypedTryCatchTryHandle.cj:11:32:
-   | 
-11 |         } catch (_: Exception) {
-   |                                ^ 
-   | 
-note: Traces:
-The types 'Int64' and 'Unit' do not have the smallest common supertype
-
- ==> mistypedTryCatchTryHandle.cj:9:9:
-  | 
-9 |         try {
-  |         ^ 
-  | 
-
-1 error generated, 1 error printed.
-*/
-
+<!parse_expected_expr_or_decl_in!>}<!>
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

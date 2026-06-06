@@ -8,11 +8,11 @@
 
 type A<T, k> = structA<T, k>
 
-type TI<T, K> = I<T, O>
+type TI<T, K> = <!sema_not_a_type!>I<!><T, <!sema_undeclared_type_name!>O<!>>
 
 var d = r'#'
 
-extend<T, K> structA<T, K> <: TI<T, K> where T <: Rune, K <: String {
+extend<<!sema_upper_bound_must_be_class_or_interface!>T<!>, <!sema_upper_bound_must_be_class_or_interface!>K<!>> structA<T, K> <: <!sema_extend_not_interface!>TI<T, K><!> where T <: Rune, K <: String {
     mut static prop i: Rune {
         get() {
             d
@@ -34,7 +34,7 @@ interface I<T, K> {
     }
 }
 
-struct structA<T, K> where T <: Rune, K <: String {
+struct structA<<!sema_upper_bound_must_be_class_or_interface!>T<!>, <!sema_upper_bound_must_be_class_or_interface!>K<!>> where T <: Rune, K <: String {
     var a: T
     var b: K
     structA(x: T, y: K) {
@@ -56,56 +56,3 @@ main(): Int64 {
         return 1
     }
 }
-
-/* SCAN
-error: undeclared type name 'O'
-  ==> undeclared_type.cj:11:22:
-   | 
-11 | type TI<T, K> = I<T, O>
-   |                      ^ 
-   | 
-
-error: 'I' is not a type
-  ==> undeclared_type.cj:11:17:
-   | 
-11 | type TI<T, K> = I<T, O>
-   |                 ^ 
-   | 
-
-error: expected an interface, found non-interface type
-  ==> undeclared_type.cj:15:31:
-   | 
-15 | extend<T, K> structA<T, K> <: TI<T, K> where T <: Rune, K <: String {
-   |                               ^^^^^^^^ expected an interface here
-   | 
-
-error: the upper bound 'Rune' of generic parameter 'Generics-T' must be class or interface
-  ==> undeclared_type.cj:15:8:
-   | 
-15 | extend<T, K> structA<T, K> <: TI<T, K> where T <: Rune, K <: String {
-   |        ^ 
-   | 
-
-error: the upper bound 'Struct-String' of generic parameter 'Generics-K' must be class or interface
-  ==> undeclared_type.cj:15:11:
-   | 
-15 | extend<T, K> structA<T, K> <: TI<T, K> where T <: Rune, K <: String {
-   |           ^ 
-   | 
-
-error: the upper bound 'Rune' of generic parameter 'Generics-T' must be class or interface
-  ==> undeclared_type.cj:37:16:
-   | 
-37 | struct structA<T, K> where T <: Rune, K <: String {
-   |                ^ 
-   | 
-
-error: the upper bound 'Struct-String' of generic parameter 'Generics-K' must be class or interface
-  ==> undeclared_type.cj:37:19:
-   | 
-37 | struct structA<T, K> where T <: Rune, K <: String {
-   |                   ^ 
-   | 
-
-7 errors generated, 7 errors printed.
-*/

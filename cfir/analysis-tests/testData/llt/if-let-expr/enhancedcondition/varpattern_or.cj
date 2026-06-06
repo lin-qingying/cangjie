@@ -8,31 +8,13 @@
 
 main() {
     let a = Some(15)
-    if (let Some(b) <- a || true) {
+    if (let Some(<!VAR_IN_OR_CONDITION!>b<!>) <- a || true) {
         return 0
     }
 
-    if (false || let Some(b) <- a) {
+    if (false || let Some(<!VAR_IN_OR_CONDITION!>b<!>) <- a) {
         return b - 1
     }
 
     return 2
 }
-
-/* SCAN
-error: cannot introduce variables in conditions connected by '||'
-  ==> varpattern_or.cj:11:18:
-   | 
-11 |     if (let Some(b) <- a || true) {
-   |                  ^ 
-   | 
-
-error: cannot introduce variables in conditions connected by '||'
-  ==> varpattern_or.cj:15:27:
-   | 
-15 |     if (false || let Some(b) <- a) {
-   |                           ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

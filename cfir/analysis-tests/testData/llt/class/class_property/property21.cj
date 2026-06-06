@@ -19,7 +19,7 @@ open class A {
 }
 
 class B <: A {
-    public mut static redef prop v: Int64 {
+    public mut static <!NOTHING_TO_OVERRIDE!>redef<!> prop v: Int64 {
         set(x) {
         }
     }
@@ -28,14 +28,3 @@ class B <: A {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: 'redef' property 'v' does not have a redefined 'static' property in its supertype
-  ==> property21.cj:22:5:
-   | 
-22 |     public mut static redef prop v: Int64 {
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

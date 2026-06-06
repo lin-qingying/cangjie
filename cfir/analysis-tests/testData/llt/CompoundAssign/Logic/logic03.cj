@@ -7,8 +7,7 @@
 // EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
 // EXEC: %run %run_opt %n.%suffix | compare %f
 
-
-func f(a: Bool) {
+func f(<!chir_dce_unused_variable!>a<!>: Bool) {
     println("f")
     false
 }
@@ -18,7 +17,7 @@ class A {
         get() {
             false
         }
-        set(v) {
+        set(<!chir_dce_unused_variable!>v<!>) {
             ()
         }
     }
@@ -28,6 +27,3 @@ main() {
     var x = A()
     x.a &&= f(true)
 }
-
-/* SCAN
-*/

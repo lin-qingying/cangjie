@@ -31,19 +31,8 @@ class A {
         b.use<A>(A(), register)
     }
     public static func register(name: String, fn: (Array<Any>, () -> Any) -> Any): Unit {
-        a[name] = fn
+        <!USED_BEFORE_INITIALIZATION!>a<!>[name] = fn
     }
 }
 
 main() {}
-
-/* SCAN
-error: global/static variable 'a' is used before initialization during initializing 'a'
-  ==> nest_function_use_05.cj:34:9:
-   | 
-34 |         a[name] = fn
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

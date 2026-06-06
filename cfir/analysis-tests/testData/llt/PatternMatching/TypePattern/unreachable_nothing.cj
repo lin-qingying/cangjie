@@ -9,45 +9,11 @@
 
 func f(x: Int64) {
     match (x) {
-        case _: Nothing => -1 // unreachable
+        case <!sema_unreachable_pattern!>_: Nothing<!> => -1 // unreachable
         case _: ToString => 0
     }
 }
 
 main() {
-    f(return 0)
+    <!chir_dce_unreachable!>f<!>(return 0)
 }
-
-/* SCAN
-warning: unreachable pattern
-  ==> unreachable_nothing.cj:12:14:
-   | 
-12 |         case _: Nothing => -1 // unreachable
-   |              ^^^^^^^^^^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unused function:'f'
-  ==> unreachable_nothing.cj:10:1:
-   | 
-10 |   func f(x: Int64) {
-   |  _^
-11 | |     match (x) {
-   | | ...
-15 | | }
-   | |_^ unused function
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unreachable 'call'
-  ==> unreachable_nothing.cj:18:5:
-   | 
-18 |     f(return 0)
-   |     ^ ~~~~~~~~ any code following this expression is unreachable
-   |     |
-   |     unreachable 'call'
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-3 warnings generated, 3 warnings printed.
-*/

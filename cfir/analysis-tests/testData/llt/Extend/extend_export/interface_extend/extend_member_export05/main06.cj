@@ -11,8 +11,8 @@
 
 package b.d
 
-import a.*
-import b.c.*
+import <!package_search_error!>a<!>.*
+import <!package_search_error!>b.c<!>.*
 
 main() {
     Foo<Int64>().f0() // ok
@@ -20,25 +20,3 @@ main() {
     Foo<Int64>().f2() // error
     Foo<Int64>().f3() // ok
 }
-
-/* SCAN
-error: no matching function declaration for function call 'f1'
-  ==> main06.cj:19:18:
-   | 
-19 |     Foo<Int64>().f1() // error
-   |                  ^ 
-   | 
-note: to use the following extension, import 'Interface-I1'
-  ==> (package b.c)testb4.cj:27:1:
-
-error: no matching function declaration for function call 'f2'
-  ==> main06.cj:20:18:
-   | 
-20 |     Foo<Int64>().f2() // error
-   |                  ^ 
-   | 
-note: to use the following extension, import 'Interface-I2'
-  ==> (package b.c)testb4.cj:27:1:
-
-2 errors generated, 2 errors printed.
-*/

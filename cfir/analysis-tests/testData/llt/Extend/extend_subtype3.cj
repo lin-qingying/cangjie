@@ -33,18 +33,7 @@ func subFunc2(a: B<Int32>): Int64 {
 }
 
 main() {
-    test(subFunc)
+    test(<!sema_no_match_function_declaration_for_ref!>s<!>ubFunc)
     test2(subFunc2)
     0
 }
-
-/* SCAN
-error: no matching function declaration for function reference 'subFunc'
-  ==> extend_subtype3.cj:36:10:
-   | 
-36 |     test(subFunc)
-   |          ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

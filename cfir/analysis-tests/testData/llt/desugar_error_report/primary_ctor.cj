@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -8,36 +8,5 @@
 
 struct Test {
     private Test(var name: String) {}
-    init(name: String) {}
+    <!sema_class_uninitialized_field!><!sema_overload_conflicts!>i<!>nit<!>(name: String) {}
 }
-
-/* SCAN
-error: constructor 'init' has overload conflicts
-  ==> primary_ctor.cj:11:5:
-   | 
-11 |     init(name: String) {}
-   |     ^^^^ 
-   | 
-note: conflict with the declaration
-  ==> primary_ctor.cj:10:13:
-   | 
-10 |     private Test(var name: String) {}
-   |             ^^^^ 
-   | 
-
-error: the uninitialized member variable 'name' is not initialized in the constructor of class or struct
-  ==> primary_ctor.cj:11:5:
-   | 
-11 |     init(name: String) {}
-   |     ^ 
-   | 
-
-error: 'main' is missing
- ==> primary_ctor.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-3 errors generated, 3 errors printed.
-*/

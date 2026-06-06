@@ -12,20 +12,20 @@ func f() {
     func g() {
         print("${x}")
     }
-    let b = g
-    g
+    let b = <!sema_use_func_capture_var_alone!>g<!>
+    <!sema_use_func_capture_var_alone!>g<!>
     g()
     func g2() {
         g()
     }
-    let c = g2
+    let c = <!sema_func_capture_var_cannot_assign!>g<!>2
     func h() {
         print("${y}")
     }
     let d = h
-    let e = {=> print("${x}")}
+    let e = <!sema_use_func_capture_var_alone!>{=> print("${x}")}<!>
     let i = {=> x * x}()
-    return g
+    return <!sema_use_func_capture_var_alone!>g<!>
 }
 
 let x = 4
@@ -34,7 +34,7 @@ func f2() {
     var a = x
     let x: Int64
     func f1() {
-        x
+        <!sema_capture_before_initialization!>x<!>
     }
     x = 99
     f1()
@@ -43,73 +43,3 @@ func f2() {
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: cannot capture variable 'x' before initialization
-  ==> function_capture2.cj:37:9:
-   | 
-37 |         x
-   |         ^ 
-   | 
-
-error: function capturing mutable variables needs to be called directly
-  ==> function_capture2.cj:15:13:
-   | 
-15 |     let b = g
-   |             ^ 
-   | 
-note: 'x' is mutable
-  ==> function_capture2.cj:13:18:
-   | 
-13 |         print("${x}")
-   |                  ^ 
-   | 
-
-error: function capturing mutable variables needs to be called directly
-  ==> function_capture2.cj:16:5:
-   | 
-16 |     g
-   |     ^ 
-   | 
-note: 'x' is mutable
-  ==> function_capture2.cj:13:18:
-   | 
-13 |         print("${x}")
-   |                  ^ 
-   | 
-
-error: g2 captured a mutable variable transitively, g2 cannot be assigned to a variable
-  ==> function_capture2.cj:21:13:
-   | 
-21 |     let c = g2
-   |             ^ 
-   | 
-
-error: lambda capturing mutable variables needs to be called directly
-  ==> function_capture2.cj:26:13:
-   | 
-26 |     let e = {=> print("${x}")}
-   |             ^^^^^^^^^^^^^^^^^^ 
-   | 
-note: 'x' is mutable
-  ==> function_capture2.cj:26:26:
-   | 
-26 |     let e = {=> print("${x}")}
-   |                          ^ 
-   | 
-
-error: function capturing mutable variables needs to be called directly
-  ==> function_capture2.cj:28:12:
-   | 
-28 |     return g
-   |            ^ 
-   | 
-note: 'x' is mutable
-  ==> function_capture2.cj:13:18:
-   | 
-13 |         print("${x}")
-   |                  ^ 
-   | 
-
-6 errors generated, 6 errors printed.
-*/

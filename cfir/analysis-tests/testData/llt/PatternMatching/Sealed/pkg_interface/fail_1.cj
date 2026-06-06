@@ -8,7 +8,7 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt pkga.cj -o pkga.%middle
 // ERRCHECK: %compiler %cmp_opt pkga.%middle %f -o %output
 
-internal import pkga.*
+internal import <!package_search_error!>pkga<!>.*
 
 enum Color <: I { // error
     RED | GREEN | BLUE
@@ -19,14 +19,3 @@ enum Color <: I { // error
 }
 
 main() {}
-
-/* SCAN
-error: cannot inherit imported 'sealed' interface 'I'
-  ==> fail_1.cj:13:6:
-   | 
-13 | enum Color <: I { // error
-   |      ^^^^^    ~ sealed interface declared in package 'pkga'
-   | 
-
-1 error generated, 1 error printed.
-*/

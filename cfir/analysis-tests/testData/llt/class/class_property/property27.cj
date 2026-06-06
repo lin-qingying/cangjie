@@ -11,24 +11,6 @@ main(): Int64 {
 }
 
 abstract class Boo {
-    private mut prop l: Int32
-    public mut static prop m: Int32
+    private mut prop <!sema_invalid_member_visibility_in_class!>l<!>: Int32
+    <!sema_missing_func_body!>p<!>ublic mut static prop m: Int32
 }
-
-/* SCAN
-error: the visibility of an 'abstract' property must be 'public' or 'protected'
-  ==> property27.cj:14:22:
-   | 
-14 |     private mut prop l: Int32
-   |                      ^ 
-   | 
-
-error: property 'm' can not be abstract
-  ==> property27.cj:15:5:
-   | 
-15 |     public mut static prop m: Int32
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

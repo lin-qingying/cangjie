@@ -5,11 +5,10 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %output 2>&1 | compare %f
-// ASSERT: regex-not core dump
 
 var input:Int32 = 1
 var f = match ( input ){
-    case x => var a: Int32 = 1;var x1 = {a}
+    case x => var a: Int32 = 1;var x1 = {<!parse_expected_double_arrow_in_lambda!>a<!>}
 }
 
 main():Int64 {

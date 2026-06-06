@@ -5,15 +5,12 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT:regex : expected a type name after '.' in qualified name, found '<EOF>'
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
-
 
 class C1 {
-  public interface I1 {}
-  public class C2 {
-    public interface I2 {}
+  public <!parse_unexpected_declaration_in_scope!>interface<!> I1 {}
+  public <!parse_unexpected_declaration_in_scope!>class<!> C2 {
+    public <!parse_unexpected_declaration_in_scope!>interface<!> I2 {}
  }
 }
-class C3 <: C1.
+class C3 <: C1.<!parse_expected_name!>
+<!>

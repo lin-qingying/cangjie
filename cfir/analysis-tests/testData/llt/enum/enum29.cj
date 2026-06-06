@@ -24,37 +24,12 @@ enum EE {
 }
 
 main(): Int64 {
-    EE.a1
+    <!sema_illegal_access_non_static_member!>E<!>E.a1
     EE.A
     EE.a2
-    EE.test()
-    EE.test
+    <!sema_illegal_access_non_static_member!>E<!>E.test()
+    <!sema_illegal_access_non_static_member!>E<!>E.test
     EE.test1
     EE.test1()
     0
 }
-
-/* SCAN
-error: 'a1' is non-static member, cannot access by type name
-  ==> enum29.cj:27:5:
-   | 
-27 |     EE.a1
-   |     ^ 
-   | 
-
-error: 'test' is non-static member, cannot access by type name
-  ==> enum29.cj:30:5:
-   | 
-30 |     EE.test()
-   |     ^ 
-   | 
-
-error: 'test' is non-static member, cannot access by type name
-  ==> enum29.cj:31:5:
-   | 
-31 |     EE.test
-   |     ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

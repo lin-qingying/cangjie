@@ -11,18 +11,5 @@ public class APILevel {
     public const init() {}
 }
 
-@APILevel
+<!parse_unexpected_anno_on!>@APILevel<!>
 main() {}
-
-/* SCAN
-error: unexpected annotation '@APILevel' on main
-  ==> main.cj:14:1:
-   | 
-14 | @APILevel
-   | ^^^^^^^^^ unexpected annotation here
-15 | main() {}
-   | ~~~~ on main
-   | 
-
-1 error generated, 1 error printed.
-*/

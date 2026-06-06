@@ -7,15 +7,10 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    let err = 1(false)
+    let err = <!sema_no_match_operator_function_call!>1<!>(false)
     spawn {err} && false
     spawn {err}.x
 
     spawn {err}
     0
 }
-
-// ASSERT: scan-not :5:
-// ASSERT: scan-not :6:
-// ASSERT: scan-not :8:
-// ASSERT: scan 1 error generated

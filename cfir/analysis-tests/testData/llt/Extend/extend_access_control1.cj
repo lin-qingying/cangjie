@@ -20,18 +20,7 @@ extend A {
 
 main() {
     let a: A = A()
-    a.test()
+    a.<!sema_no_match_function_declaration_for_call!>t<!>est()
     a.foo()
     0
 }
-
-/* SCAN
-error: no matching function declaration for function call 'test'
-  ==> extend_access_control1.cj:23:7:
-   | 
-23 |     a.test()
-   |       ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

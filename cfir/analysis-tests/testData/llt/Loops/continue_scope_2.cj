@@ -8,14 +8,11 @@
 // EXEC: %run %run_opt %n.%suffix %run_args | compare %f
 
 main() {
-    for (i in 1..5) {
+    for (<!chir_dce_unused_variable!>i<!> in 1..5) {
         println("outer")
-        while (continue) {
+        <!chir_dce_unreachable_expression_hint!>while (continue) {
             println("inner")
-        }
+        }<!>
     }
     0
 }
-
-// ASSERT: scan-4 outer
-// ASSERT: scan-not inner

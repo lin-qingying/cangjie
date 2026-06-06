@@ -12,13 +12,10 @@ main() {
     while (iter > 0) {
         println("outer")
         iter--
-        while (continue) {
+        <!chir_dce_unreachable_expression_hint!>while (continue) {
             println("inner")
             break
-        }
+        }<!>
     }
     0
 }
-
-// ASSERT: scan-5 outer
-// ASSERT: scan-not inner

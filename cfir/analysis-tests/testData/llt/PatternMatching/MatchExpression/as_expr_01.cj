@@ -10,20 +10,9 @@ struct Foo {}
 
 main() {
     let any: Any = Foo()
-    let x = any as Foo as Option<Foo>
+    let x = any as Foo <!parse_chained_none_associative!>as<!> Option<Foo>
     match (x) {
         case Some(Some(_: Foo)) => 0
         case _ => 1
     }
 }
-
-/* SCAN
-error: `is` and `as` operators cannot be chained
-  ==> as_expr_01.cj:13:24:
-   | 
-13 |     let x = any as Foo as Option<Foo>
-   |                 ~~     ^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

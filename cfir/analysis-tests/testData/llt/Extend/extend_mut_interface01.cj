@@ -15,82 +15,22 @@ interface I {
     }
 }
 
-extend Int64 <: I {}
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend Int64 <: I {}<!>
 
-extend Bool <: I {}
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend Bool <: I {}<!>
 
-extend Unit <: I {}
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend Unit <: I {}<!>
 
-extend Nothing <: I {}
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend Nothing <: I {}<!>
 
-extend String <: I {}
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend String <: I {}<!>
 
-extend<T> Range<T> <: I {}
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend<T> Range<T> <: I {}<!>
 
 enum A {
     | AAA
 }
 
-extend A <: I {}
+<!EXTEND_INTERFACE_NOT_EXTENDABLE!>extend A <: I {}<!>
 
 main() {}
-
-/* SCAN
-error: interface 'I' is not able to be extended
-  ==> extend_mut_interface01.cj:18:1:
-   | 
-18 | extend Int64 <: I {}
-   | ^^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-error: interface 'I' is not able to be extended
-  ==> extend_mut_interface01.cj:20:1:
-   | 
-20 | extend Bool <: I {}
-   | ^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-error: interface 'I' is not able to be extended
-  ==> extend_mut_interface01.cj:22:1:
-   | 
-22 | extend Unit <: I {}
-   | ^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-error: interface 'I' is not able to be extended
-  ==> extend_mut_interface01.cj:24:1:
-   | 
-24 | extend Nothing <: I {}
-   | ^^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-error: interface 'I' is not able to be extended
-  ==> extend_mut_interface01.cj:26:1:
-   | 
-26 | extend String <: I {}
-   | ^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-error: interface 'I' is not able to be extended
-  ==> extend_mut_interface01.cj:28:1:
-   | 
-28 | extend<T> Range<T> <: I {}
-   | ^^^^^^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-error: interface 'I' is not able to be extended
-  ==> extend_mut_interface01.cj:34:1:
-   | 
-34 | extend A <: I {}
-   | ^^^^^^^^^^^^^^^^ 
-   | 
-   # note: interface 'I' contains mutable member 'p'
-
-7 errors generated, 7 errors printed.
-*/

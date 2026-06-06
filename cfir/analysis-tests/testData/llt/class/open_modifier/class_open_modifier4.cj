@@ -18,10 +18,10 @@ open class A {
 
 open class B <: A {
     public init() {
-        f
-        var a = {=> f}
-        func f3(c!: Int32 = f) {
-            f
+        <!sema_illegal_member_used_in_open_constructor!>f<!>
+        var a = {=> <!sema_illegal_member_used_in_open_constructor!>f<!>}
+        func f3(c!: Int32 = <!sema_illegal_member_used_in_open_constructor!>f<!>) {
+            <!sema_illegal_member_used_in_open_constructor!>f<!>
         }
         a()
     }
@@ -47,35 +47,3 @@ class C <: B {
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: instance member property 'f' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_modifier4.cj:21:9:
-   | 
-21 |         f
-   |         ^ 
-   | 
-
-error: instance member property 'f' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_modifier4.cj:22:21:
-   | 
-22 |         var a = {=> f}
-   |                     ^ 
-   | 
-
-error: instance member property 'f' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_modifier4.cj:23:29:
-   | 
-23 |         func f3(c!: Int32 = f) {
-   |                             ^ 
-   | 
-
-error: instance member property 'f' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_modifier4.cj:24:13:
-   | 
-24 |             f
-   |             ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

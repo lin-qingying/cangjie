@@ -6,16 +6,15 @@
 
 // EXEC-PIPE-0: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 // EXEC: %run %run_opt %output %run_args
-// ASSERT: regex-not error
 
 class A {}
 
 func test() {
     let a = if (true) {
         0
-    } else {
+    } else <!chir_dce_unreachable_block_in_expression!>{
         A()
-    }
+    }<!>
     return a as Int64 ?? -1
 }
 

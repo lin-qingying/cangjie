@@ -8,31 +8,13 @@
 // (CJNATIVE) EXEC: %frontendCompiler %f
 
 abstract class A {
-    public open func a<T>(c: T) {}
+    public open func a<T>(<!chir_dce_unused_variable!>c<!>: T) {}
 }
 
 open class B {
-    public open func b<T>(c: T) {}
+    public open func b<T>(<!chir_dce_unused_variable!>c<!>: T) {}
 }
 
 main() {
     return 0
 }
-
-/* SCAN
-error: generic function cannot have 'open' modifier
- ==> generic_func_limitation_3.cj:4:5:
-  |
-4 |     public open func a<T>(c: T) {}
-  |     ^
-  |
-
-error: generic function cannot have 'open' modifier
- ==> generic_func_limitation_3.cj:8:5:
-  |
-8 |     public open func b<T>(c: T) {}
-  |     ^
-  |
-
-2 errors generated, 2 errors printed.
- */

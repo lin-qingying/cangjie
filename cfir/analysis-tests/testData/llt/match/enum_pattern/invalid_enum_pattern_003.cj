@@ -8,16 +8,5 @@
 
 main() {
     let a: Array<UInt8> = Array<UInt8>(1, repeat: 0)
-    a[match (0) { case x => 1; case _ => 0 }] *= match (0) { case x =>  }
+    a[match (0) { case x => 1; case _ => 0 }] *= match (0) { case x =><!parse_case_body_cannot_be_empty!> <!> }
 }
-
-/* SCAN
-error: match case cannot be empty
-  ==> invalid_enum_pattern_003.cj:11:71:
-   | 
-11 |     a[match (0) { case x => 1; case _ => 0 }] *= match (0) { case x =>  }
-   |                                                              ~~~~     ^ match case cannot be empty
-   | 
-
-1 error generated, 1 error printed.
-*/

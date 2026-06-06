@@ -50,17 +50,17 @@ main() {
         return 1
     }
 
-    let z09 = 0f16
+    let z09 = 0<!lex_unknown_suffix!>f16<!>
     let t09 : Float16 = 0.0
     if (z09 != t09) {
         return 1
     }
-    let z10 = 0f32
+    let z10 = 0<!lex_unknown_suffix!>f32<!>
     let t10 : Float32 = 0.0
     if (z10 != t10) {
         return 1
     }
-    let z11 = 0_f64
+    let z11 = 0_<!lex_unknown_suffix!>f64<!>
     let t11 : Float64 = 0.0
     if (z11 != t11) {
         return 1
@@ -115,7 +115,7 @@ main() {
     let z22 = 0.0e-6f64
     let z23 = 0.0_e-6_f64
     let z25 = 0.0_f64
-    let z26 = 0_f64
+    let z26 = 0_<!lex_unknown_suffix!>f64<!>
     let z27 = .0f64
     let z28 = .0e10f64
 
@@ -160,17 +160,17 @@ main() {
     if (p08 != o08) {
         return 1
     }
-    let o09 = 1f16
+    let o09 = 1<!lex_unknown_suffix!>f16<!>
     let p09 : Float16 = 1.0
     if (p09 != o09) {
         return 1
     }
-    let o10 = 1f32
+    let o10 = 1<!lex_unknown_suffix!>f32<!>
     let p10 : Float32 = 1.0
     if (p10 != o10) {
         return 1
     }
-    let o11 = 1f64
+    let o11 = 1<!lex_unknown_suffix!>f64<!>
     let p11 : Float64 = 1.0
     if (p11 != o11) {
         return 1
@@ -281,56 +281,3 @@ main() {
     }
     return 0;
 }
-
-/* SCAN
-error: unknown suffix 'f16' for number literal
-  ==> 001.cj:53:16:
-   | 
-53 |     let z09 = 0f16
-   |                ^^^ unknown suffix 'f16'
-   | 
-
-error: unknown suffix 'f32' for number literal
-  ==> 001.cj:58:16:
-   | 
-58 |     let z10 = 0f32
-   |                ^^^ unknown suffix 'f32'
-   | 
-
-error: unknown suffix 'f64' for number literal
-  ==> 001.cj:63:17:
-   | 
-63 |     let z11 = 0_f64
-   |                 ^^^ unknown suffix 'f64'
-   | 
-
-error: unknown suffix 'f64' for number literal
-   ==> 001.cj:118:17:
-    | 
-118 |     let z26 = 0_f64
-    |                 ^^^ unknown suffix 'f64'
-    | 
-
-error: unknown suffix 'f16' for number literal
-   ==> 001.cj:163:16:
-    | 
-163 |     let o09 = 1f16
-    |                ^^^ unknown suffix 'f16'
-    | 
-
-error: unknown suffix 'f32' for number literal
-   ==> 001.cj:168:16:
-    | 
-168 |     let o10 = 1f32
-    |                ^^^ unknown suffix 'f32'
-    | 
-
-error: unknown suffix 'f64' for number literal
-   ==> 001.cj:173:16:
-    | 
-173 |     let o11 = 1f64
-    |                ^^^ unknown suffix 'f64'
-    | 
-
-7 errors generated, 7 errors printed.
-*/

@@ -8,18 +8,7 @@
 
 main() {
     match (1) {
-        case a@@b => 1  
+        case a<!parse_expected_double_arrow_in_case!>@<!>@b => 1
     }
     return 0
 }
-
-/* SCAN
-error: expected '=>' in case, found '@'
-  ==> matchcase_fuzz_01.cj:11:15:
-   | 
-11 |         case a@@b => 1  
-   |         ~~~~  ^ expected '=>' here
-   | 
-
-1 error generated, 1 error printed.
-*/

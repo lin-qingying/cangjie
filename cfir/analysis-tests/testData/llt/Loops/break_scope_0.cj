@@ -11,14 +11,11 @@ main() {
     var iter = 5
     while (iter > 0) {
         println("outer")
-        while (break) {
+        <!chir_dce_unreachable_expression_hint!>while (break) {
             println("inner")
             break
-        }
+        }<!>
         iter--
     }
     0
 }
-
-// ASSERT: scan outer
-// ASSERT: scan-not inner

@@ -8,11 +8,9 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt typealias36_dep.cj -o pkga.%middle
 // EXEC-PIPE-0: %compiler %cmp_opt pkga.%middle %f -o %output 2>&1 | compare %f
 
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 // EXEC: %run %run_opt %output %run_args
 
-import pkga
+import <!package_search_error!>pkga<!>
 
 main() {
     var a = pkga.AA<Int64>()

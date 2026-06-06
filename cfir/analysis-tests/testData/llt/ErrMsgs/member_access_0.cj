@@ -5,13 +5,11 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC: %compiler %cmp_opt %compile_lib_opt %n.cj 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 
 main() {
-    let a = 1 + true
+    let a = 1 <!sema_invalid_binary_expr!>+<!> true
 
-    (false + 2).f()
+    (false <!sema_invalid_binary_expr!>+<!> 2).f()
     a.f()
     a.x
 
@@ -19,9 +17,5 @@ main() {
 }
 
 // No errors:
-// ASSERT: scan-not :16:
-// ASSERT: scan-not :18:
 
 // Errors:
-// ASSERT: scan :12:
-// ASSERT: scan :14:

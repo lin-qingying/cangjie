@@ -7,7 +7,7 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    var err = 1 + false
+    var err = 1 <!sema_invalid_binary_expr!>+<!> false
 
     match (err) {
         case x => 1 + false
@@ -20,11 +20,5 @@ main() {
 }
 
 // Errors:
-// ASSERT: scan :10:
 
 // No errors:
-// ASSERT: scan-not :12:
-// ASSERT: scan-not :13:
-// ASSERT: scan-not :14:
-// ASSERT: scan-not :15:
-// ASSERT: scan-not :16:

@@ -12,23 +12,9 @@ main() {
     let x = 0
     match (x) {
         case 0 => 0
-        case _ => match (x) {
+        case _ => <!sema_type_incompatible!>m<!>atch (x) {
             case 0 => 1
             case _ => "a"
         }
     }
 }
-
-/* SCAN
-error: type incompatible in this MatchCase
-  ==> match029.cj:15:19:
-   | 
-15 |         case _ => match (x) {
-   |                   ^ 
-   | 
-   # note: Traces:
-The types 'Int64' and 'Struct-String' do not have the smallest common supertype
-
-
-1 error generated, 1 error printed.
-*/

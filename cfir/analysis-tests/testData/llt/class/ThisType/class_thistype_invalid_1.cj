@@ -7,7 +7,7 @@
 // EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
 
 class C1 {
-    public func foo(a: This): This { 
+    public func foo(a: <!parse_this_type_not_allow!>This<!>): This {
         return this
     }
 }
@@ -15,15 +15,3 @@ class C1 {
 main() {
     return 1
 }
-
-/* SCAN
-error: 'This' type is not allowed
-  ==> class_thistype_invalid_1.cj:10:24:
-   | 
-10 |     public func foo(a: This): This { 
-   |                        ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-1 error generated, 1 error printed.
-*/

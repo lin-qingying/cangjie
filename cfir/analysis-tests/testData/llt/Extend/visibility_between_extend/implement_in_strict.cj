@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -20,28 +20,4 @@ extend<T> A<T> where T <: C2 {
     public func f() {}
 }
 
-extend<T> A<T> <: I where T <: C1 {}
-
-/* SCAN
-error: implementation of function or property is needed in 'extend A'
-  ==> implement_in_strict.cj:23:1:
-   | 
-23 | extend<T> A<T> <: I where T <: C1 {}
-   | ^ 
-   | 
-note: unimplemented interface function 'f'
-  ==> implement_in_strict.cj:10:5:
-   | 
-10 |     func f(): Unit
-   |     ^ 
-   | 
-
-error: 'main' is missing
- ==> implement_in_strict.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/
+<!sema_need_member_implementation!>e<!>xtend<T> A<T> <: I where T <: C1 {}

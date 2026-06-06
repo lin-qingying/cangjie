@@ -17,8 +17,8 @@ class Test <: Base<Int32> {
     public var i1: Int32
     public var i2: Int32
     public init() {
-        i1 = super.i
-        i2 = super.foo()
+        i1 = <!sema_object_cannot_access_static_member!>s<!>uper.i
+        i2 = <!sema_object_cannot_access_static_member!>s<!>uper.foo()
     }
 }
 
@@ -26,8 +26,8 @@ class Data<T> <: Base<T> {
     public var i1: Int32
     public var i2: Int32
     public init() {
-        i1 = super.i + 1
-        i2 = super.foo() + 1
+        i1 = <!sema_object_cannot_access_static_member!>s<!>uper.i + 1
+        i2 = <!sema_object_cannot_access_static_member!>s<!>uper.foo() + 1
     }
 }
 
@@ -40,35 +40,3 @@ func run(): Int64 {
 main(): Int64 {
     return run()
 }
-
-/* SCAN
-error: object cannot access static member 'i'
-  ==> binary_error_report_02.cj:20:14:
-   | 
-20 |         i1 = super.i
-   |              ^ 
-   | 
-
-error: object cannot access static member 'foo'
-  ==> binary_error_report_02.cj:21:14:
-   | 
-21 |         i2 = super.foo()
-   |              ^ 
-   | 
-
-error: object cannot access static member 'i'
-  ==> binary_error_report_02.cj:29:14:
-   | 
-29 |         i1 = super.i + 1
-   |              ^ 
-   | 
-
-error: object cannot access static member 'foo'
-  ==> binary_error_report_02.cj:30:14:
-   | 
-30 |         i2 = super.foo() + 1
-   |              ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

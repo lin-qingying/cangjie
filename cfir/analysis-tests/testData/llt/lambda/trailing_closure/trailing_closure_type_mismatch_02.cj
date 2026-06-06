@@ -9,23 +9,6 @@
 func test(a: Any) {}
 
 main(): Int64 {
-    test {=> 1}
+    test <!TRAILING_LAMBDA_CANNOT_USED_FOR_NON_FUNCTION!>{=> 1}<!>
     return 0
 }
-
-/* SCAN
-error: trailing lambda cannot be used for non-function type
-  ==> trailing_closure_type_mismatch_02.cj:12:10:
-   | 
-12 |     test {=> 1}
-   |          ^^^^^^ declaration type of parameter: 'Interface-Any'
-   | 
-note: found candidate
- ==> trailing_closure_type_mismatch_02.cj:9:6:
-  | 
-9 | func test(a: Any) {}
-  |      ^^^^ 
-  | 
-
-1 error generated, 1 error printed.
-*/

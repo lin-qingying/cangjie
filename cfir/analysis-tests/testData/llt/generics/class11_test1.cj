@@ -9,7 +9,7 @@
 struct B<T> {}
 
 class A<T> {
-    public operator func [](b: A<B<T>>): Bool {
+    public operator func [](b: <!sema_generic_infinite_instantiation!>A<!><B<T>>): Bool {
         true
     }
     public func test(a: A<T>, b: A<B<T>>): Bool {
@@ -24,14 +24,3 @@ main(): Int64 {
     A<Int32>().test(b, a)
     1
 }
-
-/* SCAN
-error: generic infinite instantiation
-  ==> class11_test1.cj:12:32:
-   | 
-12 |     public operator func [](b: A<B<T>>): Bool {
-   |                                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

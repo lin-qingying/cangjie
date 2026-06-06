@@ -7,11 +7,11 @@
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 main(): Int64 {
-    if (Data.n != 1) {
+    if (<!sema_illegal_access_non_static_member!>D<!>ata.n != 1) {
         return 1
     }
-    Data.m = 10
-    if (Data.m != 2) {
+    <!sema_illegal_access_non_static_member!>D<!>ata.m = 10
+    if (<!sema_illegal_access_non_static_member!>D<!>ata.m != 2) {
         return 2
     }
     return 0
@@ -22,7 +22,7 @@ enum Data {
 }
 
 extend Data {
-    public mut prop m: Int64 {
+    public <!sema_immutable_type_illegal_property!>mut<!> prop m: Int64 {
         get() {
             return 2
         }
@@ -34,35 +34,3 @@ extend Data {
         }
     }
 }
-
-/* SCAN
-error: 'n' is non-static member, cannot access by type name
-  ==> extend_enum_property1.cj:10:9:
-   | 
-10 |     if (Data.n != 1) {
-   |         ^ 
-   | 
-
-error: 'm' is non-static member, cannot access by type name
-  ==> extend_enum_property1.cj:13:5:
-   | 
-13 |     Data.m = 10
-   |     ^ 
-   | 
-
-error: 'm' is non-static member, cannot access by type name
-  ==> extend_enum_property1.cj:14:9:
-   | 
-14 |     if (Data.m != 2) {
-   |         ^ 
-   | 
-
-error: there cannot have mutable property in immutable type
-  ==> extend_enum_property1.cj:25:12:
-   | 
-25 |     public mut prop m: Int64 {
-   |            ^^^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

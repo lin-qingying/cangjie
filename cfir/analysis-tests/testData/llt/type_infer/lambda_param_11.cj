@@ -5,8 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%compiler %cmp_opt --diagnostic-format=json %f 2>&1 | compare %f
-// ASSERT: regex sema_lambdaExpr_must_have_type_annotation
 
 main() {
-    let f1 = {a, b => a + (a ?? 0)}
+    let f1 = {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a + (a ?? 0)}
 }

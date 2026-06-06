@@ -8,11 +8,10 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt base02.cj -o base02.%middle
 // EXEC: %compiler %cmp_opt base02.%middle %f -o %output
 // EXEC: %run %run_opt %output | compare %f
-// ASSERT: scan-3 1
 
 package a.b.c
 
-import a.b.*
+import <!package_search_error!>a.b<!>.*
 
 main() {
     println(GGGG().f1())

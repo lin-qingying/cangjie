@@ -8,7 +8,7 @@
 // EXEC: %run %run_opt %n.%suffix
 
 extend Unit {
-    public operator func ()(y: Unit): Unit {}
+    public operator func ()(<!chir_dce_unused_variable!>y<!>: Unit): Unit {}
 }
 
 var a = 1
@@ -21,6 +21,3 @@ func run() {
 main(): Int64 {
     return run()
 }
-
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace

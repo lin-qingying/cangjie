@@ -7,57 +7,15 @@
 // EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 // test type recursive.
-struct S1 {
+<!sema_value_type_recursive!>s<!>truct S1 {
     var a: S2 = S2()
 }
 
 struct S2 {
-    var a: VArray<S1, $1> = [S1()]
+    var a: VArray<S1, $1> = [<!RECURSIVE_CONSTRUCTOR_CALL!>S1<!>()]
 }
 
 main() {
     var a: S2 = S2()
     0
 }
-
-/* SCAN
-error: recursive constructor calling detected
-  ==> varray14.cj:15:30:
-   | 
-15 |     var a: VArray<S1, $1> = [S1()]
-   |                              ^^ 
-   | 
-note: depends on
-  ==> varray14.cj:10:8:
-   | 
-10 | struct S1 {
-   |        ^^ 
-   | 
-note: depends on
-  ==> varray14.cj:11:17:
-   | 
-11 |     var a: S2 = S2()
-   |                 ^^ 
-   | 
-note: depends on
-  ==> varray14.cj:14:8:
-   | 
-14 | struct S2 {
-   |        ^^ 
-   | 
-note: depends on
-  ==> varray14.cj:15:30:
-   | 
-15 |     var a: VArray<S1, $1> = [S1()]
-   |                              ^^ 
-   | 
-
-error: value type recursive detected: 'S1->S2->S1'
-  ==> varray14.cj:10:1:
-   | 
-10 | struct S1 {
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

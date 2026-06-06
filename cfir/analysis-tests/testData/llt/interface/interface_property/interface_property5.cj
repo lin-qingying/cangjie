@@ -26,27 +26,8 @@ interface I2 {
     }
 }
 
-class C <: I1 & I2 {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class <!INHERIT_MEMBER_TYPE_INCONSISTENT!>C<!><!> <: I1 & I2 {}
 
 main() {
     return 0
 }
-
-/* SCAN
-error: type of the inherited property members 'a' are not identical and not in subtype relation
-  ==> interface_property5.cj:29:7:
-   | 
-29 | class C <: I1 & I2 {}
-   |       ^ 
-   | 
-   # note: conflict types are 'Class-A', 'Class-B'
-
-error: interface property 'a' must be implemented in 'C'
-  ==> interface_property5.cj:29:1:
-   | 
-29 | class C <: I1 & I2 {}
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

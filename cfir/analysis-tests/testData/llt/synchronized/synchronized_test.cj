@@ -5,13 +5,11 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC-PIPE-0: %frontendCompiler %typecheck %f 2>&1 | compare %f
-// ASSERT: regex-not core dump
-// ASSERT: regex-not internal Compiler Error: exist invalid sema ty
 
 internal import std.sync.*
 
 var arr: Array<Int64> = Array<Int64>(10, repeat: 10)
-let lock = ReentrantMutex()
+let lock = <!sema_deprecated_warning!>ReentrantMutex<!>()
 
 func foo() {
     synchronized(lock) {

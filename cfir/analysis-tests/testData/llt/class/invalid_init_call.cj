@@ -41,10 +41,10 @@ class m {
         }
     }
     public func fff() {
-        init().c++ // ASSERT: regex 'init' is not allowed in block, expected expression or declaration here
+        <!parse_expected_expr_or_decl_in!>init<!>().c++
     }
     public static func ff() {
-        init().c++ // ASSERT: regex 'init' is not allowed in block, expected expression or declaration here
+        <!parse_expected_expr_or_decl_in!>init<!>().c++
     }
 }
 
@@ -66,18 +66,18 @@ struct k {
         this().c
     }
     public init(a:Int64, b: Int64, c: Int64) {
-        init().c++ // ASSERT: regex 'init' is not allowed in block, expected expression or declaration here
+        <!parse_expected_expr_or_decl_in!>init<!>().c++
     }
     public func fff() {
-        init // ASSERT: regex 'init' is not allowed in block, expected expression or declaration here
-        init() // ASSERT: regex 'init' is not allowed in block, expected expression or declaration here
-        init().c
-        init().c++
+        <!parse_expected_expr_or_decl_in!>init<!>
+        <!parse_expected_expr_or_decl_in!>init<!>()
+        <!parse_expected_expr_or_decl_in!>init<!>().c
+        <!parse_expected_expr_or_decl_in!>init<!>().c++
     }
     public static func ff() {
-        init
-        init()
-        init().c
-        init().c++
+        <!parse_expected_expr_or_decl_in!>init<!>
+        <!parse_expected_expr_or_decl_in!>init<!>()
+        <!parse_expected_expr_or_decl_in!>init<!>().c
+        <!parse_expected_expr_or_decl_in!>init<!>().c++
     }
 }

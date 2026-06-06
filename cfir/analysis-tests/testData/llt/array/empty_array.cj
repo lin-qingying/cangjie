@@ -8,18 +8,7 @@
 
 main(): Int64 {
     var myArray1: Array<Int32>
-    []
+    <!sema_empty_arrayLit_type_undefined!>[<!>]
     var myArray2: Array<Array<Int32>> = [[]]
     return 0
 }
-
-/* SCAN
-error: array literal type cannot be inferred
-  ==> empty_array.cj:11:5:
-   | 
-11 |     []
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

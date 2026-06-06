@@ -8,18 +8,6 @@
 // EXEC: %run %run_opt %output %run_args
 
 main() {
-    ()
+    <!UNUSED_EXPRESSION!>()<!>
     () // this unit is not unused!
 }
-
-/* SCAN
-warning: unused expression
-  ==> no_insert_unit_01.cj:11:5:
-   | 
-11 |     ()
-   |     ^^ unused expression
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-1 warning generated, 1 warning printed.
-*/

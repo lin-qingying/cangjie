@@ -11,16 +11,5 @@ enum E {
 }
 
 main() {
-    let _: E = A(A) + A
+    let _: E = <!NO_MATCHING_OPERATOR_INVOKE!>A<!>(A) + A
 }
-
-/* SCAN
-error: no matching function for operator '()' function call
-  ==> err_binary_01.cj:14:16:
-   | 
-14 |     let _: E = A(A) + A
-   |                ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

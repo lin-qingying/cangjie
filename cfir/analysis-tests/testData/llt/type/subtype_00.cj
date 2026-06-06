@@ -12,17 +12,6 @@ class A<X> {}
 
 extend<V> A<V> <: I where V <: I {}
 
-func f<T>() where T <: A<T> & A<Int64> {}
+func f<<!ONLY_ONE_CLASS_BOUND_ALLOWED!>T<!>>() where T <: A<T> & A<Int64> {}
 
 main() {}
-
-/* SCAN
-error: generic parameter 'T' cannot have two or more class upper bounds 'Class-A<Generics-T>, Class-A<Int64>' without subtype relation
-  ==> subtype_00.cj:15:8:
-   | 
-15 | func f<T>() where T <: A<T> & A<Int64> {}
-   |        ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

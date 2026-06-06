@@ -11,7 +11,7 @@ class C1 {
 }
 
 extend C1 {
-    public func foo(): This {
+    public func foo(): <!parse_this_type_not_allow!>This<!> {
         x = 1
         return this
     }
@@ -24,15 +24,3 @@ main() {
     }
     return 1
 }
-
-/* SCAN
-error: 'This' type is not allowed
-  ==> class_extend_thistype_ok_1.cj:14:24:
-   | 
-14 |     public func foo(): This {
-   |                        ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-1 error generated, 1 error printed.
-*/

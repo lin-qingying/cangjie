@@ -6,7 +6,6 @@
 
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
-
 struct Rectangle {
     public let width: Int64
     public let length: Int64
@@ -17,7 +16,7 @@ struct Rectangle {
     }
 
     public init(width: Int64, length: Int64) {
-        init()
+        <!parse_expected_expr_or_decl_in!>init<!>()
         this.width = width
         this.length = length
     }
@@ -28,14 +27,3 @@ main(): Int64 {
     rec = Rectangle(100, 200)
     return 0
 }
-
-/* SCAN
-error: expected expression or declaration, found keyword 'init'
-  ==> record_member_var_multi_assign_check_04.cj:20:9:
-   | 
-20 |         init()
-   |         ^^^^ expected expression or declaration here
-   | 
-
-1 error generated, 1 error printed.
-*/

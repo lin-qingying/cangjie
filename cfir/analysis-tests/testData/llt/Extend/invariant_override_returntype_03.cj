@@ -7,15 +7,9 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 public interface I {
-    func append(_: String): Any
+    func <!sema_return_type_invariance!>append<!>(_: String): Any
 }
 
 extend StringBuilder <: I {}
 
 main() {}
-
-// ASSERT: scan error: return type of 'append' can only be class/interface type which implements or inherits the interface type 'Interface-Any'
-// ASSERT: scan    ==> (package std.core)string_builder.cj
-// ASSERT: scan note: cannot override/implement the following function
-// ASSERT: scan  ==> invariant_override_returntype_03.cj:10:5:
-// ASSERT: scan 1 error generated, 1 error printed.

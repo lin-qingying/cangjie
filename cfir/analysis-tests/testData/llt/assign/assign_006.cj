@@ -8,19 +8,6 @@
 
 main():Int64 {
     var i2: Int64 = 0
-    print("indexOf('?', 5)=" += Int32(i2).toString() + "\n")
+    print("indexOf('?', 5)=" <!parse_invalid_left_hand_expr!>+=<!> Int32(i2).toString() + "\n")
     return 0
 }
-
-/* SCAN
-error: invalid left-hand expression of assignment '+='
-  ==> assign_006.cj:11:30:
-   | 
-11 |     print("indexOf('?', 5)=" += Int32(i2).toString() + "\n")
-   |           ~~~~~~~~~~~~~~~~~~ ^^ 
-   |           |
-   |           cannot assign to this expression
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -12,24 +12,6 @@ class A {
 
 extend A {
     public func foo(): Int64 {
-        return this.y
+        return this.<!sema_not_member_of!>y<!>
     }
 }
-
-/* SCAN
-error: 'y' is not a member of class 'A'
-  ==> extend_this2.cj:15:21:
-   | 
-15 |         return this.y
-   |                     ^ 
-   | 
-
-error: 'main' is missing
- ==> extend_this2.cj:1:1:
-  | 
-1 | // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
-  | ^ 
-  | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -8,21 +8,10 @@
 
 open class C1 {
     public func foo1() {
-        this = C1()
+        <!sema_invalid_assignment_to_this_expr!>t<!>his = C1()
     }
 }
 
 main() {
     return 1
 }
-
-/* SCAN
-error: cannot assign a value to 'this'
-  ==> this_error_01.cj:11:9:
-   | 
-11 |         this = C1()
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

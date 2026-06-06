@@ -27,15 +27,15 @@ class G {
 
 class H {
     public H(var z!: Int64 = 3) {}
-    public H(var x!: String = "3") {}
+    <!sema_multiple_primary_constructors!>p<!>ublic H(var x!: String = "3") {}
 }
 
 class J {
-    public J(z: Int64, var z!: Int64 = 1) {}
+    public J(z: Int64, var <!sema_redefinition!>z<!>!: Int64 = 1) {}
 }
 
 class K {
-    public K(var k: Int64, var k!: Int64 = 1) {}
+    <!sema_class_uninitialized_field!>p<!>ublic K(var k: Int64, var <!sema_redefinition!>k<!>!: Int64 = 1) {}
 }
 
 open class D {
@@ -43,144 +43,30 @@ open class D {
 }
 
 class E <: D {
-    public E(var z!: Int64 = 3) {
+    public E(<!sema_member_variable_can_not_shadow!>v<!>ar z!: Int64 = 3) {
         var c: Int64 = 2
-        super()
+        <!sema_illegal_place_of_calling_this_or_super!>s<!>uper()
     }
 }
 
 class L <: D {
-    public L(var z!: Int64 = 3) {
-        this("ww")
+    public L(<!sema_member_variable_can_not_shadow!>v<!>ar z!: Int64 = 3) {
+        <!sema_illegal_place_of_calling_this_primary_constructor!>t<!>his(<!NEED_NAMED_ARGUMENT!>"ww"<!>)
     }
     public init(a!: String = "1") {
-        this.z = "a"
+        <!sema_type_incompatible!>t<!>his.z = <!sema_mismatched_types!>"a"<!>
     }
 }
 
 class N <: B<Int64, Int64> {
-    public N(c: Int64) {}
+    public <!sema_no_non_param_constructor_in_super_class!>N<!>(c: Int64) {}
 }
 
 main(): Int64 {
-    B<Int64, Int64>(4).z
-    C()
+    <!sema_invalid_access_control!>B<!><Int64, Int64>(4).z
+    <!sema_no_match_constructor!>C<!>()
     D()
     E()
     F()
     return 0
 }
-
-/* SCAN
-error: class 'H' cannot have more than one primary constructor
-  ==> primaryConstructor2.cj:30:5:
-   | 
-30 |     public H(var x!: String = "3") {}
-   |     ^ 
-   | 
-
-error: redefinition of declaration 'z'
-  ==> primaryConstructor2.cj:34:28:
-   | 
-34 |     public J(z: Int64, var z!: Int64 = 1) {}
-   |                            ^ 
-   | 
-note: 'z' is previously declared here
-  ==> primaryConstructor2.cj:34:14:
-   | 
-34 |     public J(z: Int64, var z!: Int64 = 1) {}
-   |              ^ 
-   | 
-
-error: redefinition of declaration 'k'
-  ==> primaryConstructor2.cj:38:32:
-   | 
-38 |     public K(var k: Int64, var k!: Int64 = 1) {}
-   |                                ^ 
-   | 
-note: 'k' is previously declared here
-  ==> primaryConstructor2.cj:38:18:
-   | 
-38 |     public K(var k: Int64, var k!: Int64 = 1) {}
-   |                  ^ 
-   | 
-
-error: call to 'super' must be first expression in constructor of class 'E'
-  ==> primaryConstructor2.cj:48:9:
-   | 
-48 |         super()
-   |         ^ 
-   | 
-
-error: mismatched types
-  ==> primaryConstructor2.cj:57:18:
-   | 
-57 |         this.z = "a"
-   |                  ^^^ expected 'Int64', found 'Struct-String'
-   | 
-
-error: type incompatible in this assignment
-  ==> primaryConstructor2.cj:57:9:
-   | 
-57 |         this.z = "a"
-   |         ^ 
-   | 
-
-error: invalid calling 'this' in primary constructor 
-  ==> primaryConstructor2.cj:54:9:
-   | 
-54 |         this("ww")
-   |         ^ 
-   | 
-
-error: missing argument prefix 'z:' for named parameter
-  ==> primaryConstructor2.cj:54:14:
-   | 
-54 |         this("ww")
-   |              ^^^^ 
-   | 
-
-error: there is no non-parameter constructor in super class, please invoke super call explicitly
-  ==> primaryConstructor2.cj:62:12:
-   | 
-62 |     public N(c: Int64) {}
-   |            ^ 
-   | 
-
-error: no matching constructor for call 'C'
-  ==> primaryConstructor2.cj:67:5:
-   | 
-67 |     C()
-   |     ^ 
-   | 
-
-error: can not access field 'z'
-  ==> primaryConstructor2.cj:66:5:
-   | 
-66 |     B<Int64, Int64>(4).z
-   |     ^ 
-   | 
-
-error: the uninitialized member variable 'k' is not initialized in the constructor of class or struct
-  ==> primaryConstructor2.cj:38:5:
-   | 
-38 |     public K(var k: Int64, var k!: Int64 = 1) {}
-   |     ^ 
-   | 
-
-error: the variable 'z' must not shadow a member variable of the supertype
-  ==> primaryConstructor2.cj:46:14:
-   | 
-46 |     public E(var z!: Int64 = 3) {
-   |              ^ 
-   | 
-
-error: the variable 'z' must not shadow a member variable of the supertype
-  ==> primaryConstructor2.cj:53:14:
-   | 
-53 |     public L(var z!: Int64 = 3) {
-   |              ^ 
-   | 
-
-14 errors generated, 14 errors printed.
-*/

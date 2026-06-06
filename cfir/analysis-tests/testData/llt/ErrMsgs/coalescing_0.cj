@@ -7,35 +7,10 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    (Some(1(true)) ?? false) + true
-    (Some(true) ?? 1) * false
+    (Some(<!sema_no_match_operator_function_call!>1<!>(true)) ?? false) + true
+    (Some(true) ?? <!sema_cannot_convert_literal!>1<!>) * false
 
-    let err = 1(true)
+    let err = <!sema_no_match_operator_function_call!>1<!>(true)
     err ?? err
     0
 }
-
-/* SCAN
-error: no matching function for operator '()' function call
-  ==> coalescing_0.cj:10:11:
-   | 
-10 |     (Some(1(true)) ?? false) + true
-   |           ^ 
-   | 
-
-error: cannot convert an integer literal to type 'Bool'
-  ==> coalescing_0.cj:11:20:
-   | 
-11 |     (Some(true) ?? 1) * false
-   |                    ^ 
-   | 
-
-error: no matching function for operator '()' function call
-  ==> coalescing_0.cj:13:15:
-   | 
-13 |     let err = 1(true)
-   |               ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

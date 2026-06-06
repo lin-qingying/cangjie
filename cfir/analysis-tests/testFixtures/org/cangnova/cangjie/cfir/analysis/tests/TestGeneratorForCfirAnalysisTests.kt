@@ -54,6 +54,22 @@ object TestGeneratorForCfirAnalysisTests {
         )
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/llt",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTTestGenerated.kt",
+            generatedClassName = "CfirAnalysisLLTTestGenerated",
+
+        )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
+            relativeTestDataRoot = "cfir/analysis-tests/testData/llt",
+            outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTPsiTestGenerated.kt",
+            generatedClassName = "CfirAnalysisLLTPsiTestGenerated",
+            baseClassName = "AbstractCfirPsiDiagnosticTest",
+
+
+        )
+        generateDiagnosticsSuite(
+            projectRoot = projectRoot,
             relativeTestDataRoot = "cfir/analysis-tests/testData/macro",
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisMacroTestGenerated.kt",
             generatedClassName = "CfirAnalysisMacroTestGenerated",
@@ -293,7 +309,11 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("${indent}}")
     }
 
-    private fun StringBuilder.appendTestMethod(file: File, projectRoot: File, indent: String) {
+    private fun StringBuilder.appendTestMethod(
+        file: File,
+        projectRoot: File,
+        indent: String,
+    ) {
         val testName = fileNameToTestName(file.nameWithoutExtension)
         val rel = projectRoot.toPath().relativize(file.toPath()).toString().replace('\\', '/')
         appendLine("${indent}@TestMetadata(\"${file.name}\")")
@@ -304,16 +324,42 @@ object TestGeneratorForCfirAnalysisTests {
     }
 
     private fun fileNameToTestName(nameWithoutExtension: String): String {
-        return "test" + nameWithoutExtension
-            .split(Regex("[^A-Za-z0-9]+"))
-            .filter { it.isNotBlank() }
-            .joinToString("") { token -> token.replaceFirstChar { ch -> ch.uppercaseChar() } }
+        return "test" + nameToPascalCase(nameWithoutExtension)
     }
 
     private fun dirNameToPascalCase(dirName: String): String {
-        return dirName
+        return nameToKotlinIdentifier(nameToPascalCase(dirName))
+    }
+
+    private fun nameToPascalCase(name: String): String {
+        return name
             .split(Regex("[^A-Za-z0-9]+"))
             .filter { it.isNotBlank() }
             .joinToString("") { token -> token.replaceFirstChar { ch -> ch.uppercaseChar() } }
+            .ifEmpty { "Generated" }
     }
+
+    /**
+     * 将测试数据目录名规整为 Kotlin 源码可直接声明的类名。
+     *
+     * LLT 官方用例中存在 `01_diff_file` 这类数字开头目录，生成嵌套测试类时保留原始信息并补 `_` 前缀。
+     */
+    private fun nameToKotlinIdentifier(name: String): String {
+        val result = StringBuilder()
+        for (ch in name) {
+            if (ch == '_' || ch.isLetterOrDigit()) {
+                result.append(ch)
+            } else {
+                result.append('_')
+            }
+        }
+        if (result.isEmpty()) {
+            result.append("Generated")
+        }
+        if (result.first().isDigit()) {
+            result.insert(0, "_")
+        }
+        return result.toString()
+    }
+
 }

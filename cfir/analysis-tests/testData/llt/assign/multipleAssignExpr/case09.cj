@@ -8,16 +8,5 @@
 
 main() {
     var a: Array<Int64> = [1, 2]
-    (a[0], a[1], a[2]) = (100, 200, 300)
+    (a[0], a[1], <!chir_idx_out_of_bounds!>a[2]<!>) = (100, 200, 300)
 }
-
-/* SCAN
-error: array index is out of bounds
-  ==> case09.cj:11:18:
-   | 
-11 |     (a[0], a[1], a[2]) = (100, 200, 300)
-   |                  ^^^^ array index 2 is past the end of array (which contains 2 elements)
-   | 
-
-1 error generated, 1 error printed.
-*/

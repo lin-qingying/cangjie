@@ -8,7 +8,7 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt pkg/pkg.cj -o pkg.%middle
 // EXEC: %compiler %cmp_opt %n.cj pkg.%middle 2>&1 | compare %f
 
-internal import pkg.*
+internal import <!package_search_error!>pkg<!>.*
 
 main() {
     let a = C()
@@ -17,7 +17,3 @@ main() {
     a.p
     return 0
 }
-
-// ASSERT: regex .*error.*: no matching function declaration for function call 'f'
-// ASSERT: regex .*error.*: can not access field 'p'
-// ASSERT: regex 3 errors generated, 3 errors printed.

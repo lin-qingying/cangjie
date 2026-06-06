@@ -8,8 +8,6 @@
 
 interface I {}
 
-class A<T> <: I where T <: A<T> & A<Int64> {}
+<!sema_generic_type_argument_not_match_constraint!>c<!>lass A<<!sema_multiple_class_upperbounds!>T<!>> <: I where T <: A<T> & A<<!sema_generic_type_argument_not_match_constraint!>I<!>nt64> {}
 
 main() {}
-
-// ASSERT: regex generics type arguments do not match the constraint of 'Class-A<Generics-T>'

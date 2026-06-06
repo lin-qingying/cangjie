@@ -11,14 +11,10 @@ class C {
 }
 
 main() {
-    let err = 1 + false
+    let err = 1 <!sema_invalid_binary_expr!>+<!> false
     1 |> C()
     err |> err
 
     (err |> err) + false
     0
 }
-
-// ASSERT: scan-not :10:
-// ASSERT: scan-not :12:
-// ASSERT: scan 1 error generated

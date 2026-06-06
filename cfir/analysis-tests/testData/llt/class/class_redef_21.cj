@@ -9,13 +9,13 @@
 class C<T> {}
 
 open class A<T> {
-    public static func foo<T>(a: C<T>) where T <: Int32 {
+    public static func foo<<!sema_upper_bound_must_be_class_or_interface!>T<!>>(a: C<T>) where T <: Int32 {
         return 1
     }
 }
 
 public open class B<T> <: A<T> {
-    public static redef func foo<T>(a: C<T>) where T <: Int64 {
+    public static redef func <!sema_accessibility!>foo<!><<!sema_upper_bound_must_be_class_or_interface!>T<!>>(a: C<T>) where <!sema_generic_constraint_not_looser!>T <: Int64<!> {
         return 1
     }
 }
@@ -23,8 +23,3 @@ public open class B<T> <: A<T> {
 main() {
     return 0
 }
-
-// ASSERT: scan-1 sema_accessibility
-// ASSERT: scan-1 sema_generic_constraint_not_looser
-// ASSERT: scan-2 sema_upper_bound_must_be_class_or_interface
-// ASSERT: scan "Errors": 4

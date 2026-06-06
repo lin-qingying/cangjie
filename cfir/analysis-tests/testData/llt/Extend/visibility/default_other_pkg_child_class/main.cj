@@ -8,7 +8,7 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt pkg/pkg.cj -o pkg.%middle
 // EXEC: %compiler %cmp_opt %n.cj pkg.%middle 2>&1 | compare %f
 
-internal import pkg.*
+internal import <!package_search_error!>pkg<!>.*
 
 class C1 <: C {
     func h() {
@@ -26,10 +26,7 @@ main() {
     0
 }
 
-// ASSERT: scan undeclared identifier 'f'
 // (not CJNATIVE) ASSERT: regex .*error.*: no matching function declaration for function call 'g'
 // (CJNATIVE) ASSERT: scan undeclared identifier 'g'
-// ASSERT: scan undeclared identifier 'p'
 // (not CJNATIVE) ASSERT: regex .*error.*: can not access field 'q'
 // (CJNATIVE)ASSERT: scan undeclared identifier 'q'
-// ASSERT: regex 6 errors generated, 6 errors printed

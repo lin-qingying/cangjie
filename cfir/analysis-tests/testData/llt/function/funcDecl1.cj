@@ -6,20 +6,9 @@
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
-func bar(b:Int32):Int32
-main() {
+func bar(b:Int32):Int32<!parse_missing_body!>
+<!>main() {
     let b: Int32 = 1
     bar(b)
     return 0
 }
-
-/* SCAN
-error: body of function 'bar' is missing
- ==> funcDecl1.cj:9:24:
-  | 
-9 | func bar(b:Int32):Int32
-  |                        ^ missing function body here
-  | 
-
-1 error generated, 1 error printed.
-*/

@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 // EXEC: %run %n.%suffix
 
 type F<T, U> = (T) -> U
@@ -14,7 +12,7 @@ type F<T, U> = (T) -> U
 type U<X, Y> = F<X, Y>
 
 func foo(): U<Int32, Bool> {
-    return {i: Int32 => true}
+    return {<!chir_dce_unused_variable!>i<!>: Int32 => true}
 }
 
 main() {

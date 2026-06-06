@@ -6,21 +6,8 @@
 
 // ERRCHECK: %compiler %f %cmp_opt
 func f1() {
-    @IfAvailable(APILevel:11, { => println(0) }, { => println(0) }, { => println(0) })
+    @IfAvailable(APILevel:11, { => println(0) }, { => println(0) }<!parse_expected_right_delimiter!>,<!> { => println(0) })
 }
 
 main() {
 }
-
-/* SCAN
-error: unclosed delimiter: '('
- ==> err_too_many_args.cj:9:67:
-  | 
-9 |     @IfAvailable(APILevel:11, { => println(0) }, { => println(0) }, { => println(0) })
-  |                 ~                                                 ^ expected ')' here
-  |                 |
-  |                 to match this opening '('
-  | 
-
-1 error generated, 1 error printed.
-*/

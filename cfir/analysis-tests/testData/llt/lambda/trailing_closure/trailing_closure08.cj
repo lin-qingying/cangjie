@@ -13,17 +13,6 @@ main(): Int64 {
         }
         g
     }
-    var t = (if (true) {f(1)} else {f(2)}){ t => t + 1 }
+    var t = <!parse_trailing_closure_only_follow_name!>(if (true) {f(1)} else {f(2)})<!>{ t => t + 1 }
     return 0
 }
-
-/* SCAN
-error: trailing closure can only be used on function calls with function or variable names
-  ==> trailing_closure08.cj:16:13:
-   | 
-16 |     var t = (if (true) {f(1)} else {f(2)}){ t => t + 1 }
-   |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

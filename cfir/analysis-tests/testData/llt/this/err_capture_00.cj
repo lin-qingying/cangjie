@@ -11,20 +11,9 @@ struct S {
         false
     }
     S() {
-        let g = {=> f()}
+        let g = {=> <!sema_illegal_capture_this!>f<!>()}
         print("${g()}")
     }
 }
 
 main() {}
-
-/* SCAN
-error: 'this' is not allowed to be captured in constructor of struct
-  ==> err_capture_00.cj:14:21:
-   | 
-14 |         let g = {=> f()}
-   |                     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

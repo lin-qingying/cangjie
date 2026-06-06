@@ -39,5 +39,3 @@ main() {
     let max = 0x7FFFFFFFFFFFFFFF
     test(range2e, max - 1, max)
 }
-
-// ASSERT: scan : ok

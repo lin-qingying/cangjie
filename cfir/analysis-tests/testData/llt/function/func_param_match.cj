@@ -11,24 +11,6 @@ func foo(a: Float32) {
 }
 
 main() {
-    let a: Float32 = 1
-    return foo(1)
+    let a: Float32 = <!sema_cannot_convert_literal!>1<!>
+    return foo(<!sema_cannot_convert_literal!>1<!>)
 }
-
-/* SCAN
-error: cannot convert an integer literal to type 'Float32'
-  ==> func_param_match.cj:14:22:
-   | 
-14 |     let a: Float32 = 1
-   |                      ^ 
-   | 
-
-error: cannot convert an integer literal to type 'Float32'
-  ==> func_param_match.cj:15:16:
-   | 
-15 |     return foo(1)
-   |                ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

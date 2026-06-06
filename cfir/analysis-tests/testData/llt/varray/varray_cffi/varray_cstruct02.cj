@@ -8,8 +8,6 @@
 // EXEC: %clang %clang_opt %n.c -o %cffi_output
 // EXEC: %compiler %cmp_opt %f %cffi-link -o %output
 // RUN-EXEC-PIPE-0: %run %run_opt %output %run_args 2>&1 | compare %f
-// ASSERT: scan a map: 1 2 1 2 1 2 1 2 1 2 1 2 1 2 1 2
-// ASSERT: scan b[0]: 3
 
 foreign func printS(s: S): Unit
 

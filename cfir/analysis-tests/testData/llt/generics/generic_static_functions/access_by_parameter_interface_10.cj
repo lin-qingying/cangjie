@@ -16,14 +16,14 @@ interface I {
     }
 }
 
-class D<T> where T <: C1 & I {
+class D<T> where <!sema_inherit_member_type_inconsistent!>T <: C1 & I<!> {
     public func foo() {
         return T.foo()
     }
 }
 
 class C1 <: I {
-    public static func foo(): E2 {
+    public static func <!sema_return_type_incompatible!>foo<!>(): E2 {
         return E2()
     }
 }
@@ -32,7 +32,3 @@ main() {
     let obj = D<C1>().foo()
     return 1
 }
-
-// ASSERT: scan-1 sema_inherit_member_type_inconsistent
-// ASSERT: scan-1 sema_return_type_incompatible
-// ASSERT: scan "Errors": 2

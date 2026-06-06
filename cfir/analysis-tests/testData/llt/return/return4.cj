@@ -8,7 +8,7 @@
 
 func f() {
   {
-    func xx(p!:Float64 = 0.1):Float64 {
+    <!parse_expected_double_arrow_in_lambda!>func<!> xx(p!:Float64 = 0.1):Float64 {
       1.0
     }
   }
@@ -18,6 +18,3 @@ main() {
   f()
   return 1
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

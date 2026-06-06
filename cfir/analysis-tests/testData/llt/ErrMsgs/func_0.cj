@@ -8,27 +8,6 @@
 
 // Should not have ICE
 
-func ( { #
-func ( { #
-
-/* SCAN
-error: expected '#' or '"' in raw string, found 'new line character'
-  ==> func_0.cj:11:11:
-   | 
-11 | func ( { #
-   |          ~^ expected '#' or '"'
-   |          |
-   |          because it is raw string prefix
-   | 
-
-error: expected '#' or '"' in raw string, found 'new line character'
-  ==> func_0.cj:12:11:
-   | 
-12 | func ( { #
-   |          ~^ expected '#' or '"'
-   |          |
-   |          because it is raw string prefix
-   | 
-
-2 errors generated, 2 errors printed.
-*/
+func ( { #<!lex_expected_quote_in_raw_string!>
+<!>func ( { #<!lex_expected_quote_in_raw_string!>
+<!>

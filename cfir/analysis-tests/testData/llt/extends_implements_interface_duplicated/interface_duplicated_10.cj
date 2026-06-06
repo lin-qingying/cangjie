@@ -24,6 +24,3 @@ open class E<U> <: D<Int32> {}
 main() {
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

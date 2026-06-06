@@ -35,42 +35,10 @@ enum ET {
 main() {
     let e1: ET = ET.A
     let e2: ET = ET.B("one")
-    e1.foo2()
-    e2.foo3()
-    ET.foo1()
-    ET.foo1(1)
+    e1.<!sema_no_match_function_declaration_for_call!>f<!>oo2()
+    <!sema_object_cannot_access_static_member!>e<!>2.foo3()
+    <!sema_illegal_access_non_static_member!>E<!>T.foo1()
+    <!sema_illegal_access_non_static_member!>E<!>T.foo1(1)
 
     return 0
 }
-
-/* SCAN
-error: no matching function declaration for function call 'foo2'
-  ==> enum16_memberFunc.cj:38:8:
-   | 
-38 |     e1.foo2()
-   |        ^ 
-   | 
-
-error: object cannot access static member 'foo3'
-  ==> enum16_memberFunc.cj:39:5:
-   | 
-39 |     e2.foo3()
-   |     ^ 
-   | 
-
-error: 'foo1' is non-static member, cannot access by type name
-  ==> enum16_memberFunc.cj:40:5:
-   | 
-40 |     ET.foo1()
-   |     ^ 
-   | 
-
-error: 'foo1' is non-static member, cannot access by type name
-  ==> enum16_memberFunc.cj:41:5:
-   | 
-41 |     ET.foo1(1)
-   |     ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

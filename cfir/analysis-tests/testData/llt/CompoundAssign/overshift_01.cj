@@ -8,25 +8,7 @@
 
 main(): Int64 {
     var a: Int8 = 1
-    a <<= 9
-    a >>= 9
+    a <<= <!CONST_EVAL_SHIFT_COUNT_OVERFLOW!>9<!>
+    a >>= <!CONST_EVAL_SHIFT_COUNT_OVERFLOW!>9<!>
     return 1
 }
-
-/* SCAN
-error: shift count overflow
-  ==> overshift_01.cj:11:11:
-   | 
-11 |     a <<= 9
-   |           ^ 
-   | 
-
-error: shift count overflow
-  ==> overshift_01.cj:12:11:
-   | 
-12 |     a >>= 9
-   |           ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

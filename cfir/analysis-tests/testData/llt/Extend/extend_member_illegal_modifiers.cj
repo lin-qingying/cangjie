@@ -9,23 +9,7 @@
 class A { }
 
 extend A {
-    protected func foo() { } 
-    public open func boo() { } 
+    protected func foo() { }
+    public <!parse_illegal_modifier_in_scope!>open<!> func boo() { }
 
 }
-
-/* SCAN
-error: unexpected modifier 'open' on function declaration in extend body
-  ==> extend_member_illegal_modifiers.cj:13:12:
-   | 
-11 | extend A {
-   | ~~~~~~ in extend
-12 |     protected func foo() { } 
-13 |     public open func boo() { } 
-   |            ^^^^ ~~~~ on function declaration
-   |            |
-   |            unexpected modifier
-   | 
-
-1 error generated, 1 error printed.
-*/

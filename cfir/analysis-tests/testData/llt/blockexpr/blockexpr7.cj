@@ -7,27 +7,9 @@
 // EXEC-PIPE-1: %compiler %noColor %cmp_opt_chir2hlir %f -o %n.%suffix 2>&1 | compare %f
 
 func foo(): CString {
-    return  {}
+    return  {<!parse_expected_double_arrow_in_lambda!>}<!>
 }
 
 main() {
-    var c: CString =  {}
+    var c: CString =  {<!parse_expected_double_arrow_in_lambda!>}<!>
 }
-
-/* SCAN
-error: expected '=>' in lambda expression, found '}'
-  ==> blockexpr7.cj:10:14:
-   | 
-10 |     return  {}
-   |              ^ expected '=>' here
-   | 
-
-error: expected '=>' in lambda expression, found '}'
-  ==> blockexpr7.cj:14:24:
-   | 
-14 |     var c: CString =  {}
-   |                        ^ expected '=>' here
-   | 
-
-2 errors generated, 2 errors printed.
-*/

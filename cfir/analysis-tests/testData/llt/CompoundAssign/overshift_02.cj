@@ -8,17 +8,6 @@
 
 main(): Int64 {
     var a: Int8 = 1
-    a <<= 8
+    a <<= <!CONST_EVAL_SHIFT_COUNT_OVERFLOW!>8<!>
     return 0
 }
-
-/* SCAN
-error: shift count overflow
-  ==> overshift_02.cj:11:11:
-   | 
-11 |     a <<= 8
-   |           ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

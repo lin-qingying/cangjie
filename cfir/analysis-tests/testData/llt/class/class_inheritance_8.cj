@@ -18,26 +18,8 @@ open class A {
 }
 
 abstract class B <: A {
-    public func f(): String
-    public prop a: Int
+    <!sema_invalid_override_member_in_class!>p<!>ublic func f(): String
+    <!sema_invalid_override_member_in_class!>p<!>ublic prop a: Int
 }
 
 main() {}
-
-/* SCAN
-error: cannot override non-abstract function 'f' with abstract function
-  ==> class_inheritance_8.cj:21:5:
-   | 
-21 |     public func f(): String
-   |     ^ 
-   | 
-
-error: cannot override non-abstract property 'a' with abstract property
-  ==> class_inheritance_8.cj:22:5:
-   | 
-22 |     public prop a: Int
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

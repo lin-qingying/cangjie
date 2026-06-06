@@ -7,7 +7,7 @@
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
-    let err = 1 + false
+    let err = 1 <!sema_invalid_binary_expr!>+<!> false
     let range11 = err..10 : 1
     let range12 = 0..err : 1
     let range13 = 0..10 : err
@@ -26,22 +26,3 @@ main() {
     range11(true)
     0
 }
-
-// ASSERT: scan-not :11:
-// ASSERT: scan-not :12:
-// ASSERT: scan-not :13:
-// ASSERT: scan-not :14:
-// ASSERT: scan-not :15:
-// ASSERT: scan-not :16:
-
-// ASSERT: scan-not :18:
-// ASSERT: scan-not :19:
-// ASSERT: scan-not :20:
-// ASSERT: scan-not :21:
-// ASSERT: scan-not :22:
-
-// ASSERT: scan-not :24:
-// ASSERT: scan-not :25:
-// ASSERT: scan-not :29:
-
-// ASSERT: scan 1 error generated

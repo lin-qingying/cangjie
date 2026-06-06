@@ -10,36 +10,36 @@
 func test1() {
     let newNum = if (true) {
         "let x = 1"
-    } else {
+    } else <!chir_dce_unreachable_block_in_expression!>{
         "\"仓颉\""
-    }
+    }<!>
     println(newNum is ToString)
 }
 
 func test2() {
     let newNum = if (true) {
         2
-    } else {
+    } else <!chir_dce_unreachable_block_in_expression!>{
         0
-    }
+    }<!>
     println(newNum is ToString)
 }
 
 func test3() {
     let newNum = if (true) {
         0.00
-    } else {
+    } else <!chir_dce_unreachable_block_in_expression!>{
         0.0
-    }
+    }<!>
     println(newNum is ToString)
 }
 
 func test4() {
     let newNum = if (true) {
         [true]
-    } else {
+    } else <!chir_dce_unreachable_block_in_expression!>{
         [false]
-    }
+    }<!>
     println(newNum is ToString)
 }
 
@@ -49,5 +49,3 @@ main() {
     test3()
     test4()
 }
-
-// ASSERT: scan-4 true

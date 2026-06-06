@@ -31,7 +31,7 @@ interface Boo {
         get() {
             return 1
         }
-        set(input) {
+        set(<!chir_dce_unused_variable!>input<!>) {
             ()
         }
     }
@@ -48,7 +48,7 @@ interface Coo <: Boo {
         get() {
             return (10)
         }
-        set(input) {
+        set(<!chir_dce_unused_variable!>input<!>) {
             ()
         }
     }
@@ -60,23 +60,3 @@ interface Coo <: Boo {
 }
 
 class Doo <: Coo {}
-
-/* SCAN
-warning: unused variable:'input'
-  ==> property12.cj:34:13:
-   | 
-34 |         set(input) {
-   |             ^^^^^ unused variable
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unused variable:'input'
-  ==> property12.cj:51:13:
-   | 
-51 |         set(input) {
-   |             ^^^^^ unused variable
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-2 warnings generated, 2 warnings printed.
-*/

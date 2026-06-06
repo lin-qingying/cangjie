@@ -13,13 +13,13 @@ class C<T> <: c & i where T <: c {
     public var i : Int64 = 1
 }
 interface I<T> <: i where T <: i {
-    let i : Int64 = 1
+    <!parse_unexpected_declaration_in_scope!>let<!> i : Int64 = 1
 }
 
-class E<T> <: T { 
+class E<T> <: T {
     public var T:Int32 = 1
 }
-class F<T> <: T { 
+class F<T> <: T {
     public var T: Int32 = 1
 }
 
@@ -27,16 +27,3 @@ main() {
     var a = C<c>().c + I<i>.i
     return 0
 }
-
-/* SCAN
-error: unexpected variable declaration in interface body
-  ==> class_ref.cj:16:5:
-   | 
-15 | interface I<T> <: i where T <: i {
-   | ~~~~~~~~~ in interface
-16 |     let i : Int64 = 1
-   |     ^^^ unexpected variable declaration
-   | 
-
-1 error generated, 1 error printed.
-*/

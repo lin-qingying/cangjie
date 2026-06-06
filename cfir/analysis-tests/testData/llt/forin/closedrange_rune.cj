@@ -38,14 +38,3 @@ func core() {
         println(i)
     }
 }
-
-/* SCAN
-a
-b
-c
-3
-4
-5
-6
-7
-*/

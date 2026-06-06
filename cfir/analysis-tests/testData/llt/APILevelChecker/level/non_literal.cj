@@ -7,10 +7,8 @@
 // DEPENDENCE: apilevel.cj
 // EXEC: %compiler %cmp_opt %diag_json %compile_lib_opt apilevel.cj -o apilevel.%middle
 // ERRCHECK: %compiler %cmp_opt apilevel.%middle %n.cj -o %n.%suffix
-// ASSERT: scan 
-// ASSERT: scan 
 
-import ohos.labels.*
+import <!package_search_error!>ohos.labels<!>.*
 
 const a: UInt8 = 10
 const b = "xxx"

@@ -5,17 +5,17 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f  2>&1 | compare %f
-// ASSERT: regex-not core dumped
 
-macro papackage define
+<!parse_expected_public_before_macro_decl!>macro<!> <!parse_expected_macro_decl_define_in_macro_package!>papackage<!> <!parse_expected_left_paren!>define<!><!parse_missing_body!>
+<!>
+internal <!parse_expected_decl!>import<!> std.ast.*
 
-internal import std.ast.*
+public macro <!parse_expected_macro_decl_define_in_macro_package!>M<!>(input:Tokens){
+   eturn <!parse_expected_character!>ickage<!> define
 
-public macro M(input:Tokens){
-   eturn ickage define
+internal <!parse_expected_decl!>import<!> <!parse_expected_character!>std<!>.ast.*
 
-internal import std.ast.*
-
-public macro M(input:Tokens){
-   eturn!input
-}
+public <!parse_unexpected_declaration_in_scope!>macro<!> <!parse_expected_macro_decl_define_in_macro_package!>M<!>(input:Tokens){
+   eturn<!parse_expected_character!>!<!>input
+<!parse_expected_expr_or_decl_in!>}<!><!parse_expected_right_delimiter!>
+<!>

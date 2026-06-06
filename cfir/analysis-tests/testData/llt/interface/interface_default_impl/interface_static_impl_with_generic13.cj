@@ -43,7 +43,7 @@ extend<M> C1<M> where M <: Z1 {
     }
 }
 
-type T2<M> = C1<M>
+type T2<M> = C1<<!sema_cannot_instantiated_by_incomplete_type!>M<!>>
 
 main() {
     var a = T2<Nothing>()
@@ -53,15 +53,3 @@ main() {
     }
     return 1
 }
-
-/* SCAN
-error: can not instantiate 'Generics-M' by 'Nothing' for it has unimplemented static member
-  ==> interface_static_impl_with_generic13.cj:46:17:
-   | 
-46 | type T2<M> = C1<M>
-   |                 ^ 
-   | 
-   # note: 'Nothing' type has no members
-
-1 error generated, 1 error printed.
-*/

@@ -14,17 +14,6 @@ main(): Int64 {
     func g() {
         return f() + 1
     }
-    {a: Int64 => g}
+    {a: Int64 => <!sema_func_capture_var_cannot_expr!>g<!>}
     return 0
 }
-
-/* SCAN
-error: g captured a mutable variable transitively, g cannot be used as a expression
-  ==> capture_transitive.cj:17:18:
-   | 
-17 |     {a: Int64 => g}
-   |                  ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

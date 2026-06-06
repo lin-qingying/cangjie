@@ -11,8 +11,8 @@ internal import std.sync.*
 var count: Int64 = 0
 
 class Test
-    public var mtx: ReentrantMutex
-    public init() {
+    <!parse_expected_lt_brace!>public<!> var mtx: ReentrantMutex<!parse_var_must_be_initialized!>
+<!>    public <!parse_unexpected_declaration_in_scope!>init<!>() {
         this.mtx = ReentrantMutex()
     }
 
@@ -21,41 +21,8 @@ class Test
             count = count + 1
         }
     }
-}
+<!parse_expected_decl!>}<!>
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: expected '{' or '<', found keyword 'public'
-  ==> synchronized1.cj:14:5:
-   | 
-14 |     public var mtx: ReentrantMutex
-   |     ^^^^^^ expected '{' or '<' here
-   | 
-
-error: variable in top-level scope must be initialized 
-  ==> synchronized1.cj:14:35:
-   | 
-14 |     public var mtx: ReentrantMutex
-   |            ~~~~~~~~~~~~~~~~~~~~~~~^ expected '=' here
-   | 
-
-error: unexpected constructor in 'top-level' scope
-  ==> synchronized1.cj:15:12:
-   | 
-15 |     public init() {
-   |            ^^^^ unexpected constructor in 'top-level' scope
-   | 
-
-error: expected declaration, found '}'
-  ==> synchronized1.cj:24:1:
-   | 
-24 | }
-   | ^ expected declaration here
-   | 
-   # note: only declarations or macro expressions can be used in the top-level
-
-4 errors generated, 4 errors printed.
-*/

@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -10,26 +10,8 @@ open class A {}
 
 open class B {}
 
-class C <: A & B {}
+class C <: A & <!sema_illegal_multi_inheritance!>B<!> {}
 
 interface I {}
 
-class D <: I & A {}
-
-/* SCAN
-error: only one super class may appear in supertype list of class 'C'
-  ==> syntax.cj:13:16:
-   | 
-13 | class C <: A & B {}
-   |                ^ 
-   | 
-
-error: super class 'A' must be placed at the beginning of supertype list
-  ==> syntax.cj:17:16:
-   | 
-17 | class D <: I & A {}
-   |                ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/
+class D <: I & <!sema_superclass_must_be_placed_at_first!>A<!> {}

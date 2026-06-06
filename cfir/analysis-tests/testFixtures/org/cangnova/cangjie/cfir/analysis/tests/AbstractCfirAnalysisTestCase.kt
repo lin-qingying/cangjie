@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.lang.CangJieFileType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.test.testFramework.CjParsingTestCase
 import java.io.File
@@ -44,6 +45,7 @@ abstract class AbstractCfirAnalysisTestCase : CjParsingTestCase(
                 name = Name.identifier("<analysis-test>"),
                 dependencies = emptyList(),
                 refinementDependencies = emptyList(),
+                targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
                 platform = CfirPlatform.DEFAULT,
             ).apply {
                 bindSession(session)

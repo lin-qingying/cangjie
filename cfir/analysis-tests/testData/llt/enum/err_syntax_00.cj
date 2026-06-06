@@ -19,71 +19,32 @@ func f(a: Int64, b: Int64) {
     return a + b
 }
 
-
 main() {
     let num1: Int64 = p.f(1) // ok
-    let num
-}
+    let num<!parse_expected_one_of_type_or_initializer!>
+<!>}
 func f(a: Int64, b: Int64) {
     return a + b
 }
-
 
 main() {
     let num1: Int64 = p.f+ b
 }
 
-
 main() {
     let num1: Int64 = p.f(1) // ok
-    let num
-}
+    let num<!parse_expected_one_of_type_or_initializer!>
+<!>}
 func f(a: Int64, b: Int64) {
     return a + b
 }
 
-
 main() {
-    let num1: Int64 = p.(1) // ok
+    let num1: Int64 = p.<!parse_expected_name!>(<!>1) // ok
     let num2 = E.f(1) // ok
     let num3: Int64 = f(1, 2) // ok, find f(a: Int64, b: Int64)
     let num4 = f(1, 2, 3) // ok, find E.f(Int64, Int64,  _ => 0
     }
 
-    return 0
+    <!parse_expected_decl!>return<!> 0
 }
-
-/* SCAN
-error: variable declaration 'num' needs either type or initializer
-  ==> err_syntax_00.cj:25:12:
-   | 
-25 |     let num
-   |     ~~~~~~~^ expected ':' or '=' after variable name
-   | 
-
-error: variable declaration 'num' needs either type or initializer
-  ==> err_syntax_00.cj:39:12:
-   | 
-39 |     let num
-   |     ~~~~~~~^ expected ':' or '=' after variable name
-   | 
-
-error: expected a member name after '.' in qualified name, found '('
-  ==> err_syntax_00.cj:47:25:
-   | 
-47 |     let num1: Int64 = p.(1) // ok
-   |                        ~^ expected a member name here
-   |                        |
-   |                        after '.' in qualified name
-   | 
-
-error: expected declaration, found keyword 'return'
-  ==> err_syntax_00.cj:53:5:
-   | 
-53 |     return 0
-   |     ^^^^^^ expected declaration here
-   | 
-   # note: only declarations or macro expressions can be used in the top-level
-
-4 errors generated, 4 errors printed.
-*/

@@ -12,7 +12,7 @@ func foo() {
     var i = 0
     while (i < 5) {
         i++;
-        let arr1: VArray<Nothing, $3> = [continue, break, return 0]
+        let arr1: VArray<Nothing, $3> = [continue, <!chir_dce_unreachable_expression_hint!>break<!>, return 0]
         arr1[0]
     }
     if (i != 5) {
@@ -25,47 +25,15 @@ func foo1() {
     var i = 0
     while (i < 5) {
         i++;
-        let arr1: VArray<Int64, $3> = [1, break, return 0]
+        let arr1: VArray<Int64, $3> = [<!chir_dce_unused_expression!>1<!>, break, <!chir_dce_unreachable_expression_hint!>return 0<!>]
         arr1[0]
     }
-    if (i != 1) {
+    if (i != 1) <!chir_dce_unreachable_block_in_expression!>{
         return 1
-    }
+    }<!>
     return 0
 }
 
 main() {
     return foo() + foo1()
 }
-
-/* SCAN
-warning: unreachable 'expression'
- ==> varray12.cj:8:48:
-  |
-8 |     let arr1: VArray<Nothing, $3> = [continue, break, return 0]
-  |                                      ~~~~~~~~  ^^^^^ unreachable 'expression'
-  |                                      |
-  |                                      any code following this expression is unreachable
-  |
-  # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unused expression
-  ==> varray12.cj:21:36:
-   |
-21 |     let arr1: VArray<Int64, $3> = [1, break, return 0]
-   |                                    ^ unused expression
-   |
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-warning: unreachable 'expression'
-  ==> varray12.cj:21:46:
-   |
-21 |     let arr1: VArray<Int64, $3> = [1, break, return 0]
-   |                                       ~~~~~  ^^^^^^^^ unreachable 'expression'
-   |                                       |
-   |                                       any code following this expression is unreachable
-   |
-   # note: this warning can be suppressed by setting the compiler option `-Woff unused`
-
-3 warnings generated, 3 warnings printed.
- */

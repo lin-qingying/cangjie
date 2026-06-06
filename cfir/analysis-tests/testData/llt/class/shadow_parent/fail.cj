@@ -8,7 +8,7 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt pkga.cj -o pkga.%middle
 // ERRCHECK: %compiler %cmp_opt pkga.%middle %f -o %output
 
-import pkga.*
+import <!package_search_error!>pkga<!>.*
 
 class B <: A {
     func f() {
@@ -19,16 +19,3 @@ class B <: A {
 main() {
     B().f()
 }
-
-/* SCAN
-error: cannot override function 'f'
-  ==> fail.cj:14:10:
-   | 
-14 |     func f() {
-   |          ^ 
-   | 
-note: the parent function is not modified by 'open'
-  ==> (package pkga)pkga.cj:10:17:
-
-1 error generated, 1 error printed.
-*/

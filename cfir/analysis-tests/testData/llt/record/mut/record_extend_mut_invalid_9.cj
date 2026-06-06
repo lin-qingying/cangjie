@@ -15,24 +15,9 @@ extend R1 {
         i += 1
     }
 
-    var fn = {=> foo()} 
+    <!parse_unexpected_declaration_in_scope!>var<!> fn = {=> foo()}
 }
 
 main() {
     return 1
 }
-
-/* SCAN
-error: unexpected variable declaration in extend body
-  ==> record_extend_mut_invalid_9.cj:18:5:
-   | 
-13 | extend R1 {
-   | ~~~~~~ in extend
-14 |     public mut func foo(): Unit {
-   | ...
-18 |     var fn = {=> foo()} 
-   |     ^^^ unexpected variable declaration
-   | 
-
-1 error generated, 1 error printed.
-*/

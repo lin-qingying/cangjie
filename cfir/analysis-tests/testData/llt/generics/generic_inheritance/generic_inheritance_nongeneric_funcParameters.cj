@@ -19,30 +19,12 @@ interface I<T> {
     }
 }
 
-interface J<T, V> <: I<T> & I<V> {}
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>interface J<T, V><!> <: I<T> & I<V> {}
 
-class B<T, V> <: I<T> & I<V> {
+<!ABSTRACT_MEMBER_NOT_IMPLEMENTED!>class B<T, V><!> <: I<T> & I<V> {
     public prop m: Int64 {
         get() {
             return foo()
         }
     }
 }
-
-/* SCAN
-error: interface function 'foo' must be implemented in 'J'
-  ==> generic_inheritance_nongeneric_funcParameters.cj:22:1:
-   | 
-22 | interface J<T, V> <: I<T> & I<V> {}
-   | ^ 
-   | 
-
-error: interface function 'foo' must be implemented in 'B'
-  ==> generic_inheritance_nongeneric_funcParameters.cj:24:1:
-   | 
-24 | class B<T, V> <: I<T> & I<V> {
-   | ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -5,7 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex expected 'Interface-B<Int64>', found 'Class-A<Int64>'
 
 interface EQ {}
 
@@ -19,6 +18,6 @@ extend<T> A<T> <: B<T> where T <: EQ {}
 
 main() {
     let a: B<Int32> = A<Int32>()
-    let s: B<Int64> = A<Int64>()
+    let s: B<Int64> = <!sema_mismatched_types!>A<Int64>()<!>
     0
 }

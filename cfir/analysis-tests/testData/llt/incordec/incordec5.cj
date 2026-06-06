@@ -26,6 +26,3 @@ class B {
         array[0] = array[0] + 1
     }
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

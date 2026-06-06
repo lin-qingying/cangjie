@@ -8,17 +8,6 @@
 
 main() {
     var a = VArray<Int64, $3>(repeat: 0)
-    a.size()
+    <!NO_MATCHING_OPERATOR_INVOKE!>a<!>.size()
     return 0
 }
-
-/* SCAN
-error: no matching function for operator '()' function call
-  ==> varray_size03.cj:11:5:
-   | 
-11 |     a.size()
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

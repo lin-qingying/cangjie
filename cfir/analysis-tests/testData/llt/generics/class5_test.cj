@@ -16,12 +16,12 @@ class Data<T> {
     public let width: T
 
     public init(x: C) {
-        width = C
+        width = <!sema_mismatched_types!>C<!>
     }
 }
 
 func run(): Int32 {
-    let data: Data<(Int64) -> Int64> = Data<(Int64) -> Int64>(getHeight)
+    let data: Data<(Int64) -> Int64> = <!sema_parameters_and_arguments_mismatch!>D<!>ata<(Int64) -> Int64>(<!sema_mismatched_types!>getHeight<!>)
     var res = data.width(5)
     if (res == 10) {
         return 0
@@ -32,28 +32,3 @@ func run(): Int32 {
 main(): Int32 {
     return run()
 }
-
-/* SCAN
-error: mismatched types
-  ==> class5_test.cj:19:17:
-   | 
-19 |         width = C
-   |                 ^ expected 'Generics-T', found 'Class-C'
-   | 
-
-error: mismatched types
-  ==> class5_test.cj:24:63:
-   | 
-24 |     let data: Data<(Int64) -> Int64> = Data<(Int64) -> Int64>(getHeight)
-   |                                                               ^^^^^^^^^ expected 'Class-C', found '(Int64) -> Int64'
-   | 
-
-error: parameters and arguments mismatch
-  ==> class5_test.cj:24:40:
-   | 
-24 |     let data: Data<(Int64) -> Int64> = Data<(Int64) -> Int64>(getHeight)
-   |                                        ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

@@ -10,9 +10,9 @@ func a(input: Int64): Int64 {
     input
 }
 
-func test(input: Int64) {}
+func test(<!chir_dce_unused_variable!>input<!>: Int64) {}
 
-func test(input: (Int64) -> Int64) {}
+func test(<!chir_dce_unused_variable!>input<!>: (Int64) -> Int64) {}
 
 func foo() {
     test(a ~> a)
@@ -22,5 +22,3 @@ main(): Int64 {
     foo()
     return 0
 }
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace

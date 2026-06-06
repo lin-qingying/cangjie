@@ -8,7 +8,7 @@
 // EXEC: %compiler %cmp_opt %compile_lib_opt pkga.cj -o pkga.%middle
 // ERRCHECK: %compiler %cmp_opt pkga.%middle %f -o %output
 
-internal import pkga.*
+internal import <!package_search_error!>pkga<!>.*
 
 class C <: A {} // error
 
@@ -22,14 +22,3 @@ func f(x: A) {
 main() {
     f(B())
 }
-
-/* SCAN
-error: cannot inherit imported 'sealed' class 'A'
-  ==> fail.cj:13:7:
-   | 
-13 | class C <: A {} // error
-   |       ^    ~ sealed class declared in package 'pkga'
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -21,38 +21,8 @@ class C2 <: C1 & I2 {
 }
 
 func f<T>(a: T): Unit where T <: C1 & C2 {
-    var lam1 = a.h
-    var lam2: (I0) -> Unit = a.h
+    var lam1 = <!sema_ambiguous_use!>a.h<!>
+    var lam2: (I0) -> Unit = <!sema_no_match_function_declaration_for_ref!>a<!>.h
 }
 
 main() {}
-
-/* SCAN
-error: ambiguous use of 'h'
-  ==> expose6.cj:24:16:
-   | 
-24 |     var lam1 = a.h
-   |                ^^^ 
-   | 
-note: found candidate
-  ==> expose6.cj:16:10:
-   | 
-16 |     func h(a: I1): Unit {}
-   |          ^ 
-   | 
-note: found candidate
-  ==> expose6.cj:20:10:
-   | 
-20 |     func h(a: I2): Unit {}
-   |          ^ 
-   | 
-
-error: no matching function declaration for function reference 'h'
-  ==> expose6.cj:25:30:
-   | 
-25 |     var lam2: (I0) -> Unit = a.h
-   |                              ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

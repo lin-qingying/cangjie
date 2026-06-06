@@ -6,31 +6,11 @@
 
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 enum A {
-    | ...
+    | <!parse_expected_name!>...<!>
 }
 
 enum B {
-    ...
+    <!parse_expected_name!>...<!>
 }
 main() {
 }
-
-/* SCAN
-error: expected an enum name at beginning of enum body, found '...'
- ==> only_ellipse.cj:9:7:
-  | 
-9 |     | ...
-  |       ^^^ expected an enum constructor name here
-  | 
-  # note: ellipse cannot be the only constructor of an enum decl
-
-error: expected an enum name at beginning of enum body, found '...'
-  ==> only_ellipse.cj:13:5:
-   | 
-13 |     ...
-   |     ^^^ expected an enum constructor name here
-   | 
-   # note: ellipse cannot be the only constructor of an enum decl
-
-2 errors generated, 2 errors printed.
-*/

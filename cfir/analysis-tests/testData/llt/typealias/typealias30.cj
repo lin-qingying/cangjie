@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC-PIPE-0: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 // EXEC: %run %run_opt %output %run_args
 
 class GennericClassA<T, V> {}
@@ -29,6 +27,6 @@ main() {
     var a: A = A()
     var b: B<Int64> = B<Int64>()
     var c: C<Int64> = GennericClassA<Array<Int64>, Array<Int64>>()
-    var i: InterfaceI<Int64> = C<Int64>()
+    var i: InterfaceI<Int64> = <!sema_mismatched_types!>C<Int64>()<!>
     0
 }

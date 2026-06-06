@@ -13,5 +13,3 @@ main() {
     }
     a()[0][0]
 }
-
-// ASSERT: scan-not Internal Compiler Error

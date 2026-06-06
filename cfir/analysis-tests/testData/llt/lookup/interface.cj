@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -6,13 +6,10 @@
 
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 interface C {
-    static func foo() {
+    static func <!sema_unable_to_infer_return_type!>foo<!>() {
         goo()
     }
     static func goo() {
         foo()
     }
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

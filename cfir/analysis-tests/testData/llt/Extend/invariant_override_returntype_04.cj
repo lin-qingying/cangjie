@@ -7,7 +7,6 @@
 // LEVEL: 0
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 // (CJNATIVE) ASSERT: scan (package std.core)string.cj
-// ASSERT: scan invariant_override_returntype_04.cj
 
 public interface Cloneable {
     func clone(): Cloneable

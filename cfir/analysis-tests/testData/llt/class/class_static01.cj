@@ -9,21 +9,10 @@
 class Data {
     public static let a = 1
     public var b = 2
-1}  
+<!parse_expected_decl!>1<!>}
 
 main(): Int64 {
     Data().b
     Data.a
     return 0
 }
-
-/* SCAN
-error: expected declaration, found literal '1'
-  ==> class_static01.cj:12:1:
-   | 
-12 | 1}  
-   | ^ expected declaration here
-   | 
-
-1 error generated, 1 error printed.
-*/

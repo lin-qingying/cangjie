@@ -11,11 +11,9 @@
 package test
 
 main(): Int64 {
-    let a: Foos = Foos()
+    let a: <!sema_undeclared_type_name!>F<!>oos = <!sema_undeclared_identifier!>F<!>oos()
 
     a.foos.toArray()
     a.foos.contains(Foo("1"))
     return 0
 }
-
-// ASSERT: scan error: no matching function declaration for function call 'contains'

@@ -11,7 +11,7 @@ main() {
     while (true) {
         println("outer")
         do {
-            while ((continue, println("baka"))[0]) {
+            while ((continue, <!chir_dce_unreachable_expression_hint!>println("baka")<!>)[0]) {
                 println("here")
             }
             println("inner")
@@ -19,9 +19,3 @@ main() {
     }
     0
 }
-
-// ASSERT: scan outer
-// ASSERT: scan-not baka
-// ASSERT: scan-not here
-// ASSERT: scan-not inner
-// ASSERT: scan-1 aho

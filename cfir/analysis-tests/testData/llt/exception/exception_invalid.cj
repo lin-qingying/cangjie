@@ -8,32 +8,7 @@
 
 main() {
     try {
-    } catch ((a, b)) {
+    } catch (<!parse_expected_wildcard_or_exception_pattern!>(<!>a, b)<!parse_unmatched_right_delimiter!>)<!> {
         println(a, b)
     }
-}
-
-/* SCAN
-error: expected wildcard or exception type pattern, found '('
-  ==> exception_invalid.cj:11:14:
-   | 
-11 |     } catch ((a, b)) {
-   |              ^ expected wildcard or exception type pattern here
-   | 
-
-error: unmatched delimiter: ')'
-  ==> exception_invalid.cj:11:20:
-   | 
-11 |     } catch ((a, b)) {
-   |                    ^ unmatched delimiter
-   | 
-
-error: expected expression or declaration, found '}'
-  ==> exception_invalid.cj:14:1:
-   | 
-14 | }
-   | ^ expected expression or declaration here
-   | 
-
-3 errors generated, 3 errors printed.
-*/
+<!parse_expected_expr_or_decl_in!>}<!>

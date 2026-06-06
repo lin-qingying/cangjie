@@ -10,20 +10,9 @@ enum My {
 }
 
 main() {
-    let a = A 
+    let a = A
 
-    if (let B(value) <- a where value > 0) {
+    if (let B(value) <- a <!parse_expected_if_let_andand!>where<!> value > 0) {
         value + 1
     } else { -1 }
 }
-
-/* SCAN
-error: expected '&&', '||', or ')', got 'where'
-  ==> ifletwhere.cj:15:27:
-   | 
-15 |     if (let B(value) <- a where value > 0) {
-   |                           ^^^^^ did you mean to write '&&'
-   | 
-
-1 error generated, 1 error printed.
-*/

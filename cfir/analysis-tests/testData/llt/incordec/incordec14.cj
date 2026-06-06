@@ -11,7 +11,7 @@ struct R{
     public init(x:Int32) {
         r = x
     }
-    public operator func ++():R{       
+    public operator func <!parse_invalid_overloaded_operator!>++<!>():R{
         return R(this.r + 1)
     }
 }
@@ -21,15 +21,3 @@ main():Int64 {
     var r1: R = r++
     return Int64(r1.r)
 }
-
-/* SCAN
-error: cannot overload operator '++' 
-  ==> incordec14.cj:14:26:
-   | 
-14 |     public operator func ++():R{       
-   |                          ^^ cannot overload this operator
-   | 
-   # note: only operator '+', '-', ... can be overloaded
-
-1 error generated, 1 error printed.
-*/

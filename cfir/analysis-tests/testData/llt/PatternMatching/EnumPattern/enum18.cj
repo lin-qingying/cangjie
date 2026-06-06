@@ -11,10 +11,9 @@ enum TimeUnit1<T> {
 }
 
 enum TimeUnit2<T> {
-       Two(TimeUnit1<T>) | ne(Two(Day(x))) =>  x+2
-        case Day(x) Day
+       Two(TimeUnit1<T>) | ne(Two<!parse_expected_right_delimiter!>(<!>Day(x))) =>  <!parse_expected_decl!>x<!><!parse_expected_decl!>+<!>2
+        case <!parse_expected_decl!>Day<!>(x) <!parse_expected_decl!>Day<!>
 }
-
 
 main(): Int64 {
     var time = TimeUnit1<Int32>.One(Two<Int32>(Day<Int32>(3)))
@@ -30,44 +29,3 @@ main(): Int64 {
     return 1
 
 }
-
-/* SCAN
-error: unclosed delimiter: '('
-  ==> enum18.cj:14:34:
-   | 
-14 |        Two(TimeUnit1<T>) | ne(Two(Day(x))) =>  x+2
-   |                              ~   ^ expected ')' here
-   |                              |
-   |                              to match this opening '('
-   | 
-
-error: expected declaration, found x
-  ==> enum18.cj:14:48:
-   | 
-14 |        Two(TimeUnit1<T>) | ne(Two(Day(x))) =>  x+2
-   |                                                ^ expected declaration here
-   | 
-
-error: expected declaration, found '+'
-  ==> enum18.cj:14:49:
-   | 
-14 |        Two(TimeUnit1<T>) | ne(Two(Day(x))) =>  x+2
-   |                                                 ^ expected declaration here
-   | 
-
-error: expected declaration, found Day
-  ==> enum18.cj:15:14:
-   | 
-15 |         case Day(x) Day
-   |              ^^^ expected declaration here
-   | 
-
-error: expected declaration, found Day
-  ==> enum18.cj:15:21:
-   | 
-15 |         case Day(x) Day
-   |                     ^^^ expected declaration here
-   | 
-
-5 errors generated, 5 errors printed.
-*/

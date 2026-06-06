@@ -7,7 +7,7 @@
 // EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
 
 class Data {
-    public Data(let a!: Bool = x, var x!: Bool = a) {}
+    public Data(let a!: Bool = <!sema_assignment_of_member_variable_cannot_use_this_or_super, sema_capture_has_shadow_variable!>x<!>, var x!: Bool = a) {}
 }
 
 func run(): Int32 {
@@ -24,23 +24,3 @@ func run(): Int32 {
 main(): Int64 {
     return Int64(run())
 }
-
-/* SCAN
-error: 'x' is not allowed to be used in default parameter value of the constructor
-  ==> primaryConstructor10.cj:10:32:
-   | 
-10 |     public Data(let a!: Bool = x, var x!: Bool = a) {}
-   |                                ^ 
-   | 
-
-warning: the variable 'x' actually captures this decl primaryConstructor10.cj:10:35, can not captures the decl primaryConstructor10.cj:10:35
-  ==> primaryConstructor10.cj:10:32:
-   | 
-10 |     public Data(let a!: Bool = x, var x!: Bool = a) {}
-   |                                ^ 
-   | 
-   # note: this warning can be suppressed by setting the compiler option `-Woff semantics`
-
-1 error generated, 1 error printed.
-1 warning generated, 1 warning printed.
-*/

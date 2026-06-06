@@ -14,19 +14,8 @@ interface C <: A {}
 
 interface B <: C {}
 
-extend D <: C {}
+<!sema_inheritance_cycle!>e<!>xtend D <: C {}
 
 main() {
     0
 }
-
-/* SCAN
-error: inheritance cycle detected: 'C->A->B->C'
-  ==> extend_inheritance_circle4.cj:17:1:
-   | 
-17 | extend D <: C {}
-   | ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

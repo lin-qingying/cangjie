@@ -10,7 +10,7 @@ class Z<T> {
     public func foo() {}
 }
 
-class C<X> where X <: Z<C<Int32>> {
+<!sema_generic_type_argument_not_match_constraint!>c<!>lass C<X> where X <: Z<C<<!sema_generic_type_argument_not_match_constraint!>I<!>nt32>> {
     init(input: X) {
         let a: Unit = input.foo()
     }
@@ -19,6 +19,3 @@ class C<X> where X <: Z<C<Int32>> {
 main(): Int64 {
     return 0
 }
-
-// ASSERT: scan-2 sema_generic_type_argument_not_match_constraint
-// ASSERT: scan "Errors": 2

@@ -20,53 +20,14 @@ extend A {
 
 open class B <: A {
     public init() {
-        foo()
-        goo()
-        let f1 = foo
-        goo
-        this.coo
+        <!sema_illegal_member_used_in_open_constructor!>f<!>oo()
+        <!sema_illegal_member_used_in_open_constructor!>g<!>oo()
+        let f1 = <!sema_illegal_member_used_in_open_constructor!>f<!>oo
+        <!sema_illegal_member_used_in_open_constructor!>g<!>oo
+        this.<!sema_illegal_member_used_in_open_constructor!>c<!>oo
     }
 }
 
 main(): Int64 {
     0
 }
-
-/* SCAN
-error: instance member function 'foo' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_ctor1_fail.cj:23:9:
-   | 
-23 |         foo()
-   |         ^ 
-   | 
-
-error: instance member function 'goo' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_ctor1_fail.cj:24:9:
-   | 
-24 |         goo()
-   |         ^ 
-   | 
-
-error: instance member function 'foo' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_ctor1_fail.cj:25:18:
-   | 
-25 |         let f1 = foo
-   |                  ^ 
-   | 
-
-error: instance member function 'goo' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_ctor1_fail.cj:26:9:
-   | 
-26 |         goo
-   |         ^ 
-   | 
-
-error: instance member function 'coo' cannot be accessed in the constructor of open class 'B'
-  ==> class_open_ctor1_fail.cj:27:14:
-   | 
-27 |         this.coo
-   |              ^ 
-   | 
-
-5 errors generated, 5 errors printed.
-*/

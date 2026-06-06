@@ -29,44 +29,17 @@ class Data {
 
     operator func -(operand: Data): Data {
         var left: Int32 = getWidth() - 1
-        var right: Int32 = getLength() - 1
+        <!sema_mismatched_types!>var right: Int32 = getLength() - 1<!>
     }
 
     static func g() {
-        var x = width
+        var x = <!sema_static_function_cannot_access_non_static_member!>w<!>idth
         return x
     }
 }
 
 func run(): Int64 {
     var data: Data = Data(1, 2)
-    var dd = -data
+    var dd = <!sema_invalid_unary_expr!>-data<!>
     return 0
 }
-
-/* SCAN
-error: mismatched types
-  ==> class_static_call_non_static1.cj:32:9:
-   | 
-32 |         var right: Int32 = getLength() - 1
-   |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected 'Class-Data', found 'Unit'
-   | 
-   # note: definitions and declarations are always of type 'Unit'
-
-error: invalid unary operator '-' on type 'Class-Data'
-  ==> class_static_call_non_static1.cj:43:14:
-   | 
-43 |     var dd = -data
-   |              ^^^^^ 
-   | 
-   # note: you may want to implement 'operator func -()' for type 'Class-Data'
-
-error: 'width' is non-static member, cannot be accessed by static function 'g'
-  ==> class_static_call_non_static1.cj:36:17:
-   | 
-36 |         var x = width
-   |                 ^ 
-   | 
-
-3 errors generated, 3 errors printed.
-*/

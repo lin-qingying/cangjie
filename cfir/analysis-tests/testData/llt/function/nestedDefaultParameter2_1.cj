@@ -37,7 +37,7 @@ class Class {
             func test3(b!: Bool = {
                     =>
                     Class().var1
-                    true && test()
+                    true && <!sema_static_lambdaExpr_cannot_access_non_static!>t<!>est()
                 }()): Bool {
                 b;
             }
@@ -71,14 +71,3 @@ func test(): Int64 {
 main(): Int64 {
     return 0;
 }
-
-/* SCAN
-error: invalid use of non-static member 'test' in static lambda expression
-  ==> nestedDefaultParameter2_1.cj:40:29:
-   | 
-40 |                     true && test()
-   |                             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

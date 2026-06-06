@@ -5,21 +5,20 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// ASSERT: scan-not Internal Compiler Error
 
-var a = 'a'-o %n.%{ =>
-var a = 'a'-o %n.%suffix
+var a = 'a'-o %n.<!parse_expected_name!>%<!>{ =>
+var a = 'a'-o %n.<!parse_expected_name!>%<!>suffix
 
-func run(nt64 {
+func run(nt64<!parse_expected_right_delimiter!> <!><!parse_expected_character!>{<!>
     var a = 'a'
     var b = 'b'
-    let c = a <= b ? a : nt6b
+    let c = a <= b <!parse_expected_character_after!>?<!> a <!parse_expected_operator_or_end!>:<!> nt6b
     if ( c == 'a'){
         return 0
     }
-    .eturn 1
-}
+    .eturn <!parse_expected_character!>1<!>
+<!parse_expected_expr_or_decl_in!>}<!>
 
-main(): Int64 {
+<!parse_unexpected_declaration_in_scope!>main<!>(): Int64 {
     return run()
-}
+<!parse_expected_right_delimiter!>}<!>

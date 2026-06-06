@@ -22,7 +22,7 @@ class A {
             return y
         }
         set(v) {
-            X = v
+            <!sema_static_function_cannot_access_non_static_member!>X<!> = v
         }
     }
 }
@@ -30,14 +30,3 @@ class A {
 main() {
     return 0
 }
-
-/* SCAN
-error: 'X' is non-static member, cannot be accessed by static function 'set'
-  ==> property_call_03.cj:25:13:
-   | 
-25 |             X = v
-   |             ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

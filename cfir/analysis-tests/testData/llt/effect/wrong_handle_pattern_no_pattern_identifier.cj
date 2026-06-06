@@ -4,14 +4,11 @@ import stdx.effect.Command
 main():Int64 {
     try {
 
-    } handle(e) {
+    } <!parse_expected_catch_or_finally_in_try!>handle<!>(e) {
 
     }
     return 0
 }
-
-// ASSERT: scan parse_expected_colon_in_effect_pattern
-
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

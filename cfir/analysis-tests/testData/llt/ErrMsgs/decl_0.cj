@@ -6,16 +6,14 @@
 
 // ERRCHECK: %compiler %cmp_opt %f -o %output
 
-// ASSERT: scan-not cannot convert an integer literal to type 'Class-C<Unit>'
-
 interface I {}
 
 class C<T> where T <: I {}
 
-func foo(x: C<Unit>) {}
+func foo(x: C<<!sema_generic_type_argument_not_match_constraint!>U<!>nit>) {}
 
 main() {
-    let v: C<Unit> = 1
+    let v: C<<!sema_generic_type_argument_not_match_constraint!>U<!>nit> = 1
     foo(1)
     ()
 }

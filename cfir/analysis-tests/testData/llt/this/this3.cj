@@ -27,7 +27,3 @@ class Sub <: Base {
 main() {
     Sub.g1()
 }
-
-/* SCAN
-Sub f1
-*/

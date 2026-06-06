@@ -8,12 +8,12 @@
 
 main():Int64{
     var score: Int64 = 90
-    var result: String = match score { 
-        case 0 => "fail" 
-        case 60 => "pass"  
-        case 80 => "good"  
-        case 90 => "excellent"  
-        case _ => ""  
+    var result: String = match <!parse_selector_or_match_expression_body!>score<!> {
+        case 0 => "fail"
+        case 60 => "pass"
+        case 80 => "good"
+        case 90 => "excellent"
+        case _ => ""
     }
 
     if (result == "excellent") {
@@ -22,14 +22,3 @@ main():Int64{
     return 1
 
 }
-
-/* SCAN
-error: expected '(' or '{' after 'match', found 'score'
-  ==> match018.cj:11:32:
-   | 
-11 |     var result: String = match score { 
-   |                          ~~~~~ ^^^^^ expected '(' or '{' here
-   | 
-
-1 error generated, 1 error printed.
-*/

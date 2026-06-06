@@ -9,11 +9,11 @@
 class C <: A {
     public init() {
         a = 0
-        b = 0
+        <!sema_cannot_assign_to_immutable!>b = 0<!>
     }
     public init(c: Int32) {
         a = 0
-        b = 0
+        <!sema_cannot_assign_to_immutable!>b = 0<!>
     }
 }
 
@@ -30,60 +30,10 @@ open class A {
         }
     }
     public init() {
-        b = 1
+        <!sema_cannot_assign_to_immutable!><!sema_illegal_member_used_in_open_constructor!>b<!> = 1<!>
     }
 }
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: instance member property 'b' cannot be accessed in the constructor of open class 'A'
-  ==> let_in_init13-1.cj:33:9:
-   | 
-33 |         b = 1
-   |         ^ 
-   | 
-
-error: cannot assign to immutable value
-  ==> let_in_init13-1.cj:33:9:
-   | 
-33 |         b = 1
-   |         ^^^^^ 
-   | 
-note: property 'b' is immutable
-  ==> let_in_init13-1.cj:27:17:
-   | 
-27 |     public prop b: Int64 {
-   |                 ^ 
-   | 
-
-error: cannot assign to immutable value
-  ==> let_in_init13-1.cj:12:9:
-   | 
-12 |         b = 0
-   |         ^^^^^ 
-   | 
-note: property 'b' is immutable
-  ==> let_in_init13-1.cj:27:17:
-   | 
-27 |     public prop b: Int64 {
-   |                 ^ 
-   | 
-
-error: cannot assign to immutable value
-  ==> let_in_init13-1.cj:16:9:
-   | 
-16 |         b = 0
-   |         ^^^^^ 
-   | 
-note: property 'b' is immutable
-  ==> let_in_init13-1.cj:27:17:
-   | 
-27 |     public prop b: Int64 {
-   |                 ^ 
-   | 
-
-4 errors generated, 4 errors printed.
-*/

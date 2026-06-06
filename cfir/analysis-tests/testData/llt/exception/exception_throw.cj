@@ -9,7 +9,7 @@ internal import std.core.*
 main(): Int64 {
     try {
         throw IllegalArgumentException();
-        var a = 1
+        <!chir_dce_unreachable_expression_hint!>var a = 1<!>
     } catch (e: IllegalArgumentException) {
         print("in catch block!")
     } finally {
@@ -17,6 +17,3 @@ main(): Int64 {
     }
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

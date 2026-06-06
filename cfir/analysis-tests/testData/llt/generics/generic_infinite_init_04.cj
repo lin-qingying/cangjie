@@ -18,7 +18,7 @@ struct A<X, Y> {
     public operator func [](b: A<X, E<X>>): Bool {
         true
     }
-    public operator func +(b: A<Y, E<X>>): Bool {
+    public operator func +(b: <!sema_generic_infinite_instantiation!>A<!><Y, E<X>>): Bool {
         true
     }
 }
@@ -27,14 +27,3 @@ main(): Int64 {
     var a: A<Int32, Int32>
     return 0
 }
-
-/* SCAN
-error: generic infinite instantiation
-  ==> generic_infinite_init_04.cj:21:31:
-   | 
-21 |     public operator func +(b: A<Y, E<X>>): Bool {
-   |                               ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

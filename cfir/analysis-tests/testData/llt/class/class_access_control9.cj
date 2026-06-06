@@ -12,28 +12,10 @@ open class A {
 }
 
 class B <: A {
-    private var a: Int32 = 2
-    protected let d: Int32 = 3
+    <!sema_member_variable_can_not_shadow!>p<!>rivate var a: Int32 = 2
+    <!sema_member_variable_can_not_shadow!>p<!>rotected let d: Int32 = 3
 }
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: the variable 'a' must not shadow a member variable of the supertype
-  ==> class_access_control9.cj:15:5:
-   | 
-15 |     private var a: Int32 = 2
-   |     ^ 
-   | 
-
-error: the variable 'd' must not shadow a member variable of the supertype
-  ==> class_access_control9.cj:16:5:
-   | 
-16 |     protected let d: Int32 = 3
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

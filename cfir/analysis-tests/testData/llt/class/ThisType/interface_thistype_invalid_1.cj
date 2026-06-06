@@ -7,7 +7,7 @@
 // EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
 
 interface I1 {
-    func foo(a: This): This { 
+    func foo(a: <!parse_this_type_not_allow!>This<!>): <!parse_this_type_not_allow!>This<!> {
         return a
     }
 }
@@ -15,23 +15,3 @@ interface I1 {
 main() {
     return 1
 }
-
-/* SCAN
-error: 'This' type is not allowed
-  ==> interface_thistype_invalid_1.cj:10:17:
-   | 
-10 |     func foo(a: This): This { 
-   |                 ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-error: 'This' type is not allowed
-  ==> interface_thistype_invalid_1.cj:10:24:
-   | 
-10 |     func foo(a: This): This { 
-   |                        ^^^^ 
-   | 
-   # note: 'This' type can only be used as the return type of an instance member function in class
-
-2 errors generated, 2 errors printed.
-*/

@@ -8,7 +8,7 @@
 
 class A {
     static func f() {
-        g()
+        <!sema_static_function_cannot_access_non_static_member!>g<!>()
     }
 
     func g(_: Array<Int64>) {}
@@ -17,14 +17,3 @@ class A {
 main() {
     A.f()
 }
-
-/* SCAN
-error: 'g' is non-static member, cannot be accessed by static function 'f'
-  ==> variadic_err_static_call_non.cj:11:9:
-   | 
-11 |         g()
-   |         ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

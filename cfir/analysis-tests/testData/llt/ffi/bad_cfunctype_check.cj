@@ -7,10 +7,8 @@
 // EXEC-PIPE-1: %compiler %f %cmp_opt -o %output 2>&1 | compare %f
 
 @C
-foreign func get_cptr6(cb2: CFunc<(CPointer<Int8CPointer<Int8>>): CPointer<Int8><(CPointer<Int8>)->CPointer<Int8>>): CPointer<Int8>
+foreign func get_cptr6(cb2: CFunc<(CPointer<Int8CPointer<Int8>>)<!parse_expected_right_delimiter!>:<!> CPointer<Int8><!parse_expected_character!><<!>(CPointer<Int8>)->CPointer<Int8>>): CPointer<Int8>
 
 unsafe main():Int64 {
     return 0
 }
-
-// ASSERT: scan error: unclosed delimiter: '<'

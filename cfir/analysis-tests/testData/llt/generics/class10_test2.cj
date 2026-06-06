@@ -7,7 +7,7 @@
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 class A<T> {
-    public func test(a: A<T>, b: A<(A<T>, A<T>)>): Bool {
+    public func test(a: A<T>, b: <!sema_generic_infinite_instantiation!>A<!><(A<T>, A<T>)>): Bool {
         true
     }
 }
@@ -18,14 +18,3 @@ main(): Int64 {
     A<Int32>().test(a, b)
     return 0
 }
-
-/* SCAN
-error: generic infinite instantiation
-  ==> class10_test2.cj:10:34:
-   | 
-10 |     public func test(a: A<T>, b: A<(A<T>, A<T>)>): Bool {
-   |                                  ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

@@ -7,28 +7,10 @@
 // EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 func A() {
-    {i => i}
-    {i, j => i + j}
+    {<!LAMBDA_MUST_HAVE_TYPE_ANNOTATION!>i<!> => i}
+    {<!LAMBDA_MUST_HAVE_TYPE_ANNOTATION!>i<!>, j => i + j}
 }
 
 main() {
     return 0
 }
-
-/* SCAN
-error: parameters of this lambda expression must have type annotations
-  ==> lambda04.cj:10:6:
-   | 
-10 |     {i => i}
-   |      ^ 
-   | 
-
-error: parameters of this lambda expression must have type annotations
-  ==> lambda04.cj:11:6:
-   | 
-11 |     {i, j => i + j}
-   |      ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

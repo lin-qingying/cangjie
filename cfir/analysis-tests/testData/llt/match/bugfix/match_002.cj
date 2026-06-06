@@ -1,6 +1,4 @@
 // EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 
 enum TimeUnit2 {
 | Year(Float32)
@@ -14,10 +12,9 @@ func test() {
     match (T1) {
     case Day(x) => match (x) {
     case
-    }
+    <!parse_expected_pattern!>}<!>
     }
 }
-
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0

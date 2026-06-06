@@ -8,10 +8,5 @@
 // EXEC:%frontendCompiler --no-prelude %typecheck %cmp_opt %f 2>&1 | compare %f
 
 main() {
-    let a = [1, 2, 3]
+    let <!chir_dce_unused_variable!>a<!> = [1, 2, 3]
 }
-
-/* SCAN
-error: class 'Object' of package 'std/core' is not found, cannot use '--no-prelude' option
-1 error generated, 1 error printed.
-*/

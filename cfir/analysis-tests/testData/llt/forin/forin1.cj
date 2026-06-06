@@ -28,14 +28,8 @@ func run(): Int64 {
 
 main(): Int64 {
     for
-    return run() 
+    <!parse_expected_left_paren!>return<!> run()
 }
 
-/* SCAN-IN
-error: expected '(', found keyword 'return'
-  ==> forin1.cj:31:5:
-   | 
-31 |     return run() 
-   |     ^^^^^^ expected '(' here
-   | 
-*/
+<!parse_expected_right_delimiter!>
+<!>

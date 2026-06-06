@@ -7,9 +7,6 @@
 // EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 let t = while(true) {
-    +true
+    <!parse_expected_expr_or_decl_in!>+<!>true
     !10
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

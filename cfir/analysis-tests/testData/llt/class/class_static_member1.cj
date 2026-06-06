@@ -9,27 +9,9 @@
 open class A {
     public static var a: Int64 = 1
     public var b: Int64 = 2
-    public static var c: Int64 = a + b
+    <!sema_static_variable_cannot_access_non_static_member!>p<!>ublic static var c: Int64 = a + <!USED_BEFORE_INITIALIZATION!>b<!>
 }
 
 main(): Int64 {
     return 0
 }
-
-/* SCAN
-error: 'b' is non-static member, cannot be accessed by static variable
-  ==> class_static_member1.cj:12:5:
-   | 
-12 |     public static var c: Int64 = a + b
-   |     ^ 
-   | 
-
-error: variable 'b' is used before initialization
-  ==> class_static_member1.cj:12:38:
-   | 
-12 |     public static var c: Int64 = a + b
-   |                                      ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

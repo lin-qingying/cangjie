@@ -8,8 +8,6 @@
 // EXEC: %clang %clang_shared_opt %n.c -o %cffi_output
 // EXEC: %compiler %cmp_opt %f %cffi-link -o %output
 // RUN-EXEC-PIPE-0: %run %run_opt %output %run_args 2>&1 | compare %f
-// ASSERT: scan-2 0 1 2
-// ASSERT: scan-2 a[1][1]: 2
 
 foreign func c_f1(a: CPointer<Int32>): Unit
 

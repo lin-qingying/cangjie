@@ -31,27 +31,9 @@ struct D <: ToString {
 }
 
 main() {
-    print("${A()}")
-    print("${B()}")
+    print("$<!sema_invalid_string_implementation!>{<!>A()}")
+    print("$<!sema_invalid_string_implementation!>{<!>B()}")
     print("${C()}")
     print("${D()}")
     return 0
 }
-
-/* SCAN
-error: the type 'Class-A' should implement interface 'ToString' in the 'core' package
-  ==> string1.cj:34:13:
-   | 
-34 |     print("${A()}")
-   |             ^ 
-   | 
-
-error: the type 'Struct-B' should implement interface 'ToString' in the 'core' package
-  ==> string1.cj:35:13:
-   | 
-35 |     print("${B()}")
-   |             ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

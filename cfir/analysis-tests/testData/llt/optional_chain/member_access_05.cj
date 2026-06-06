@@ -16,16 +16,5 @@ struct B {
 
 main() {
     let a = Some(A())
-    let x = a?.b?.c
+    let x = <!OPTIONAL_CHAIN_NON_OPTIONAL!>a?.b<!>?.c
 }
-
-/* SCAN
-error: cannot use optional chaining
-  ==> member_access_05.cj:19:13:
-   | 
-19 |     let x = a?.b?.c
-   |             ^^^^ cannot use optional chaining on non-optional value of type 'Struct-B'
-   | 
-
-1 error generated, 1 error printed.
-*/

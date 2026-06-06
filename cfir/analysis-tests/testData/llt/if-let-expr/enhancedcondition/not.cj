@@ -6,18 +6,8 @@
 // EXEC-PIPE-1: %compiler %f %cmp_opt -o %output 2>&1 | compare %f
 main(){
     let a = Some(3)
-    if(!(let Some(e) <- a)){
+    if(!(<!parse_expected_expression!>let<!> Some(e) <- a)){
         print("test")
     }
     return 0
 }
-/* SCAN
-error: expected expression after '(', found keyword 'let'
- ==> not.cj:9:10:
-  | 
-9 |     if(!(let Some(e) <- a)){
-  |          ^^^ expected expression here
-  | 
-
-1 error generated, 1 error printed.
-*/

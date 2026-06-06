@@ -18,17 +18,6 @@ class Cls {
 
 main() {
     var cls = Cls()
-    cls.c += 2
+    <!sema_type_incompatible!>c<!>ls.c += 2
     return 0
 }
-
-/* SCAN
-error: type incompatible in this compound assignment expression
-  ==> compound_assign.cj:21:5:
-   | 
-21 |     cls.c += 2
-   |     ^ 
-   | 
-
-1 error generated, 1 error printed.
-*/

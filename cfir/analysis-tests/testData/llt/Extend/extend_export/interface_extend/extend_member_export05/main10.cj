@@ -11,8 +11,8 @@
 
 package b.c.d
 
-import a.*
-import b.c.*
+import <!package_search_error!>a<!>.*
+import <!package_search_error!>b.c<!>.*
 
 main() {
     Foo<Int64>().f0() // ok
@@ -21,16 +21,3 @@ main() {
     Foo<Int64>().f3() // ok
     Foo<Int64>().f4() // ok
 }
-
-/* SCAN
-error: no matching function declaration for function call 'f1'
-  ==> main10.cj:19:18:
-   | 
-19 |     Foo<Int64>().f1() // error
-   |                  ^ 
-   | 
-note: to use the following extension, import 'Interface-I1'
-  ==> (package b.c)testb5.cj:27:1:
-
-1 error generated, 1 error printed.
-*/

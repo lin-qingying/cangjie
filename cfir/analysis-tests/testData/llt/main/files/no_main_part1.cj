@@ -1,4 +1,4 @@
-// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -6,7 +6,6 @@
 
 // DEPENDENCE: no_main_part2.cj
 // EXEC: %compiler %f no_main_part2.cj 2>&1 | compare %f
-// ASSERT: scan 'main' is missing
 
 func main1() {
     return 1

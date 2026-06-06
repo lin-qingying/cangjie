@@ -20,11 +20,8 @@ open class B<P> <: A<P> {}
 class D<T> <: A<T> & I0<Int32> & I0<Int64> {}
 
 main() {
-    var b = B<Int64>()
-    var d1 = D<Int64>()
-    var d2 = D<Int32>()
+    var <!chir_dce_unused_variable!>b<!> = B<Int64>()
+    var <!chir_dce_unused_variable!>d1<!> = D<Int64>()
+    var <!chir_dce_unused_variable!>d2<!> = D<Int32>()
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 
 interface I<X> {}
 
@@ -14,7 +12,7 @@ open class C <: I<C> {}
 
 class D <: C {}
 
-func f<Y, Z>(a: Y) where Y <: Z, Z <: I<Y> {}
+func f<<!sema_upper_bound_must_be_class_or_interface!>Y<!>, Z>(a: Y) where Y <: Z, Z <: I<Y> {}
 
 main() {
     f(D()) // see below

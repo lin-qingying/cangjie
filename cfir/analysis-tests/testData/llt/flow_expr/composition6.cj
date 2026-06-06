@@ -11,8 +11,6 @@ func a(input: Int64): Int64 {
 }
 
 main(): Int64 {
-    var x: (Int64) -> Int64 = a ~> a
+    var <!chir_dce_unused_variable!>x<!>: (Int64) -> Int64 = a ~> a
     return 0
 }
-// ASSERT: scan-not core dumped
-// ASSERT: scan-not stack trace

@@ -18,9 +18,6 @@ class A<Q> <: I1<Q> & I1<Int64> {
 }
 
 main() {
-    var k = A<Int32>()
+    var <!chir_dce_unused_variable!>k<!> = A<Int32>()
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

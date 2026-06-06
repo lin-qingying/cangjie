@@ -8,7 +8,7 @@ internal import std.core.*
 
 main(): Int64 {
     try {
-        throw gumentException();
+        throw <!sema_undeclared_identifier!>g<!>umentException();
     } catch (e: IllegalArgumentException) {
         print("in catch block!")
     } finally {
@@ -16,6 +16,3 @@ main(): Int64 {
     }
     return 0
 }
-
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace

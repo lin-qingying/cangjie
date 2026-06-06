@@ -5,15 +5,13 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%compiler %cmp_opt %f -o %n.%suffix
-// ASSERT: regex-not core dumped
-// ASSERT: regex-not stack trace
 // EXEC: %run %n.%suffix
 
-type A<T> = Int64
+<!typealias_unused_type_parameters!>t<!>ype A<T> = Int64
 
 main() {
     var a: A<Bool> = 10;
     var b: A<Int64> = 20;
-    var c = a + b
+    var <!chir_dce_unused_variable!>c<!> = a + b
     return 0
 }

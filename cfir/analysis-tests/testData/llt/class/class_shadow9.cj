@@ -11,8 +11,8 @@ open class Base {
 }
 
 class Data <: Base {
-    public let val: Int32 = 1
-    public let f: Int32 = super.val
+    <!sema_member_variable_can_not_shadow!>p<!>ublic let val: Int32 = 1
+    public let f: Int32 = <!sema_this_or_super_not_allowed_to_initialize_non_static_member!>s<!>uper.val
 }
 
 main(): Int64 {
@@ -24,21 +24,3 @@ main(): Int64 {
     }
     return 0
 }
-
-/* SCAN
-error: 'super' is not allowed to initialize non-static member
-  ==> class_shadow9.cj:15:27:
-   | 
-15 |     public let f: Int32 = super.val
-   |                           ^ 
-   | 
-
-error: the variable 'val' must not shadow a member variable of the supertype
-  ==> class_shadow9.cj:14:5:
-   | 
-14 |     public let val: Int32 = 1
-   |     ^ 
-   | 
-
-2 errors generated, 2 errors printed.
-*/

@@ -8,20 +8,7 @@
 main() {
     let a1 = 18
     let a2: Any = a1
-    if (let b <- a2 as Int64) {
+    if (let b <- a2<!parse_expected_right_delimiter!> <!>as Int64) {
         println(b)
     }
 }
-
-/* SCAN
-error: unclosed delimiter: '('
-  ==> as.cj:11:20:
-   | 
-11 |     if (let b <- a2 as Int64) {
-   |        ~           ^ expected ')' here
-   |        |
-   |        to match this opening '('
-   | 
-
-1 error generated, 1 error printed.
-*/

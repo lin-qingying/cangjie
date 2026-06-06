@@ -5,47 +5,45 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 // EXEC:%compiler %cmp_opt --diagnostic-format=json %f 2>&1 | compare %f
-// ASSERT: regex sema_lambdaExpr_must_have_type_annotation
-// ASSERT: regex "Errors": 37
 
 // should fail for op with no info
 main() {
-    {a => !a}
-    {a => a + a}
-    {a => a - a}
-    {a => a * a}
-    {a => a / a}
-    {a => a % a}
-    {a => a(a)}
-    {a => a[a]}
-    {a => a << a}
-    {a => a >> a}
-    {a => a > a}
-    {a => a < a}
-    {a => a >= a}
-    {a => a <= a}
-    {a => a == a}
-    {a => a & a}
-    {a => a ^ a}
-    {a => a | a}
-    {a, b => a + b}
-    {a, b => a - b}
-    {a, b => a * b}
-    {a, b => a / b}
-    {a, b => a % b}
-    {a, b => a ** b}
-    {a, b => a(b)}
-    {a, b => a[b]}
-    {a, b => a << b}
-    {a, b => a >> b}
-    {a, b => a > b}
-    {a, b => a < b}
-    {a, b => a >= b}
-    {a, b => a <= b}
-    {a, b => a == b}
-    {a, b => a & b}
-    {a, b => a ^ b}
-    {a, b => a | b}
-    {a, b, c, d => (a ^ (b & c)) | d}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => !a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a + a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a - a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a * a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a / a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a % a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a(a)}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a[a]}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a << a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a >> a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a > a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a < a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a >= a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a <= a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a == a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a & a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a ^ a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!> => a | a}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a + b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a - b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a * b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a / b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a % b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a ** b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a(b)}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a[b]}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a << b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a >> b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a > b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a < b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a >= b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a <= b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a == b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a & b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a ^ b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a | b}
+    {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b, c, d => (a ^ (b & c)) | d}
     ()
 }
