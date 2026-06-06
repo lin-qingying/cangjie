@@ -21,6 +21,8 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.decompiler.stub.file.CjoBinaryFileReader
 import org.cangnova.cangjie.analysis.low.level.api.cfir.projectStructure.LLCfirBuiltinsSessionFactory
 import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.TargetPlatform
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -36,7 +38,7 @@ class DecompiledBinaryIndexImpl(
     private var knownModificationCount: Long = Long.MIN_VALUE
 
     private val libraryIndexes = ConcurrentHashMap<String, ModuleBinaryIndex>()
-    private var builtinsIndex: ModuleBinaryIndex? = null
+    private val builtinsIndexes = ConcurrentHashMap<TargetPlatform, ModuleBinaryIndex>()
 
     override fun getBinaryFiles(module: CaLibraryModule): List<VirtualFile> {
         refreshIfNeeded()
@@ -45,7 +47,7 @@ class DecompiledBinaryIndexImpl(
 
     override fun getBinaryFiles(module: CaBuiltinsModule): List<VirtualFile> {
         refreshIfNeeded()
-        return builtinsIndex().files
+        return builtinsIndex(module.targetPlatform).files
     }
 
     override fun readPackageFqName(binaryFile: VirtualFile): FqName? {
@@ -59,21 +61,31 @@ class DecompiledBinaryIndexImpl(
 
     override fun findBinaryFile(module: CaBuiltinsModule, packageFqName: FqName): VirtualFile? {
         refreshIfNeeded()
-        return builtinsIndex().packageFiles[packageFqName]
+        return builtinsIndex(module.targetPlatform).packageFiles[packageFqName]
     }
 
     override fun findBuiltinsBinaryFile(packageFqName: FqName): VirtualFile? {
         refreshIfNeeded()
-        return builtinsIndex().packageFiles[packageFqName]
+        val projectStructure = CaModuleProvider.getInstance(project)
+        knownBuiltinsModules(projectStructure).forEach { module ->
+            builtinsIndex(module.targetPlatform).packageFiles[packageFqName]?.let { return it }
+        }
+        return builtinsIndex(CangJiePlatforms.defaultCangJiePlatform).packageFiles[packageFqName]
     }
 
     override fun findOwningModule(binaryFile: VirtualFile): CaModule? {
         refreshIfNeeded()
-        if (builtinsIndex().files.any { it.url == binaryFile.url }) {
-            return LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsModule()
+        val projectStructure = CaModuleProvider.getInstance(project)
+        knownBuiltinsModules(projectStructure).firstOrNull { module ->
+            builtinsIndex(module.targetPlatform).files.any { it.url == binaryFile.url }
+        }?.let { return it }
+
+        if (builtinsIndex(CangJiePlatforms.defaultCangJiePlatform).files.any { it.url == binaryFile.url }) {
+            // 当前 builtins 二进制索引本身不携带高层 targetPlatform 身份，因此这里只能退回默认平台。
+            // 一旦 decompiled/index 层能区分 builtins 文件归属的平台，再把这里接成真实 targetPlatform。
+            return LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsModule(CangJiePlatforms.defaultCangJiePlatform)
         }
 
-        val projectStructure = CaModuleProvider.getInstance(project)
         projectStructure.allModules.filterIsInstance<CaLibraryModule>()
             .firstOrNull { module -> indexFor(module).files.any { it.url == binaryFile.url } }
             ?.let { return it }
@@ -88,11 +100,16 @@ class DecompiledBinaryIndexImpl(
         }
     }
 
-    private fun builtinsIndex(): ModuleBinaryIndex {
-        builtinsIndex?.let { return it }
-        return buildIndex(BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(project).toList())
-            .also { builtinsIndex = it }
-    }
+    private fun builtinsIndex(targetPlatform: TargetPlatform): ModuleBinaryIndex =
+        builtinsIndexes.computeIfAbsent(targetPlatform) {
+            buildIndex(BuiltinsVirtualFileProvider.getInstance().getBuiltinVirtualFiles(project).toList())
+        }
+
+    private fun knownBuiltinsModules(projectStructure: CaModuleProvider): Sequence<CaBuiltinsModule> =
+        projectStructure.allModules
+            .asSequence()
+            .filterIsInstance<CaBuiltinsModule>()
+            .distinctBy { module -> module.targetPlatform }
 
     private fun buildIndex(files: List<VirtualFile>): ModuleBinaryIndex {
         val packageFiles = linkedMapOf<FqName, VirtualFile>()
@@ -131,7 +148,7 @@ class DecompiledBinaryIndexImpl(
         val modificationCount = project.getService(CaModificationTracker::class.java)?.modificationCount ?: 0L
         if (knownModificationCount == modificationCount) return
         libraryIndexes.clear()
-        builtinsIndex = null
+        builtinsIndexes.clear()
         knownModificationCount = modificationCount
     }
 }

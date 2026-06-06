@@ -14,6 +14,7 @@ import org.cangnova.cangjie.analysis.api.standalone.platform.CaStandalonePlatfor
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.CaStandaloneProjectStructure
 import org.cangnova.cangjie.analysis.api.standalone.projectStructure.PluginStructureProvider
 import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.analysis.test.framework.test.configurators.AnalysisApiTestServiceRegistrar
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.test.services.TestServices
@@ -28,6 +29,7 @@ internal object CjoCompiledTestEnvironment {
         val builtinsModule = object : CaModuleBase(), CaBuiltinsModule {
             override val project = project
             override val builtinsName: String = "<stubs-test-builtins>"
+            override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
             override val isResolvable: Boolean
                 get() = true
             override val baseContentScope: GlobalSearchScope

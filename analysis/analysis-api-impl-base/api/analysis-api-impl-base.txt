@@ -131,7 +131,7 @@ public class CaBaseResolutionScopeProvider : CaResolutionScopeProvider
 CaBaseResolutionScopeProvider.public override fun getResolutionScope(module: CaModule): CaResolutionScope
 ## org/cangnova/cangjie/analysis/api/impl/base/projectStructure/CaBuiltinsModuleImpl.kt
 package org.cangnova.cangjie.analysis.api.impl.base.projectStructure
-public class CaBuiltinsModuleImpl( override val project: Project, ) : CaModuleBase(), CaBuiltinsModule
+public class CaBuiltinsModuleImpl( override val targetPlatform: TargetPlatform, override val project: Project, ) : CaModuleBase(), CaBuiltinsModule
 CaBuiltinsModuleImpl.public override val baseContentScope: GlobalSearchScope
 CaBuiltinsModuleImpl.public override fun equals(other: Any?): Boolean
 CaBuiltinsModuleImpl.public override fun hashCode(): Int

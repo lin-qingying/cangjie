@@ -22,6 +22,8 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.isCommon
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertInstanceOf
 import org.junit.jupiter.api.Test
@@ -340,8 +342,9 @@ class CjoFullIdResolverTest {
             override val dependencies: List<CfirModuleData> = emptyList()
             override val refinementDependencies: List<CfirModuleData> = emptyList()
             override val allRefinementDependencies: List<CfirModuleData> = emptyList()
+            override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
             override val platform: CfirPlatform = CfirPlatform.DEFAULT
-            override val isCommon: Boolean = true
+            override val isCommon: Boolean = targetPlatform.isCommon()
             override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty
             override val stableModuleName: String = "cfir-serialization-test"
             override val session: CfirSession

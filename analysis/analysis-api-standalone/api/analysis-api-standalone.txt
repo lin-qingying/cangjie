@@ -61,19 +61,19 @@ ApplicationServiceRegistration.public fun <DATA> registerWithCustomRegistration(
 ApplicationServiceRegistration.public class.qualifiedName ?: error("A service registrar should have a qualified name.")
 ## org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneModules.kt
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
-public class CaStandaloneSourceModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, project: Project, override val psiRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, psiRoots), CaSourceModule
-public class CaStandaloneLibraryModule( override val libraryName: String, project: Project, override val binaryRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, binaryRoots), CaLibraryModule
-public class CaStandaloneLibrarySourceModule( override val libraryName: String, override val binaryLibraryModule: CaLibraryModule, project: Project, override val sourceRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, sourceRoots), CaLibrarySourceModule
-public class CaStandaloneLibraryFallbackDependenciesModule( override val dependencyOwnerName: String, project: Project, scopeRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, scopeRoots), CaLibraryFallbackDependenciesModule
-public class CaStandaloneBuiltinsModule( project: Project, scopeRoots: List<PsiFileSystemItem> = emptyList(), override val builtinsName: String = "<builtins>", ) : CaStandaloneModule(project, scopeRoots), CaBuiltinsModule
+public class CaStandaloneSourceModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, project: Project, override val psiRoots: List<PsiFileSystemItem>, targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform, ) : CaStandaloneModule(project, psiRoots, targetPlatform), CaSourceModule
+public class CaStandaloneLibraryModule( override val libraryName: String, project: Project, override val binaryRoots: List<PsiFileSystemItem>, targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform, ) : CaStandaloneModule(project, binaryRoots, targetPlatform), CaLibraryModule
+public class CaStandaloneLibrarySourceModule( override val libraryName: String, override val binaryLibraryModule: CaLibraryModule, project: Project, override val sourceRoots: List<PsiFileSystemItem>, targetPlatform: TargetPlatform = binaryLibraryModule.targetPlatform, ) : CaStandaloneModule(project, sourceRoots, targetPlatform), CaLibrarySourceModule
+public class CaStandaloneLibraryFallbackDependenciesModule( override val dependencyOwnerName: String, project: Project, scopeRoots: List<PsiFileSystemItem>, targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform, ) : CaStandaloneModule(project, scopeRoots, targetPlatform), CaLibraryFallbackDependenciesModule
+public class CaStandaloneBuiltinsModule( project: Project, scopeRoots: List<PsiFileSystemItem> = emptyList(), override val builtinsName: String = "<builtins>", targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform, ) : CaStandaloneModule(project, scopeRoots, targetPlatform), CaBuiltinsModule
 CaStandaloneBuiltinsModule.public override val contentScope: GlobalSearchScope
-public class CaStandaloneDanglingFileModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, override val contextModule: CaModule, override val resolutionMode: CaDanglingFileResolutionMode = CaDanglingFileResolutionMode.PREFER_SELF, project: Project, override val psiRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, psiRoots), CaDanglingFileModule
+public class CaStandaloneDanglingFileModule( override val name: String, override val languageVersionSettings: LanguageVersionSettings, override val contextModule: CaModule, override val resolutionMode: CaDanglingFileResolutionMode = CaDanglingFileResolutionMode.PREFER_SELF, project: Project, override val psiRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, psiRoots, contextModule.targetPlatform), CaDanglingFileModule
 CaStandaloneDanglingFileModule.public override val files: List<CjFile>
 CaStandaloneDanglingFileModule.public override val isCodeFragment: Boolean
 CaStandaloneDanglingFileModule.public override val isValid: Boolean
 CaStandaloneDanglingFileModule.public override val baseContentScope: GlobalSearchScope
 CaStandaloneDanglingFileModule.public val result
-public class CaStandaloneNotUnderContentRootModule( override val name: String, override val originalModule: CaModule?, project: Project, scopeRoots: List<PsiFileSystemItem>, ) : CaStandaloneModule(project, scopeRoots), CaNotUnderContentRootModule
+public class CaStandaloneNotUnderContentRootModule( override val name: String, override val originalModule: CaModule?, project: Project, scopeRoots: List<PsiFileSystemItem>, targetPlatform: TargetPlatform = originalModule?.targetPlatform ?: CangJiePlatforms.defaultCangJiePlatform, ) : CaStandaloneModule(project, scopeRoots, targetPlatform), CaNotUnderContentRootModule
 ## org/cangnova/cangjie/analysis/api/standalone/projectStructure/CaStandaloneProjectStructure.kt
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
 public class, org.cangnova.cangjie.analysis.api.CaPlatformInterface::class, )

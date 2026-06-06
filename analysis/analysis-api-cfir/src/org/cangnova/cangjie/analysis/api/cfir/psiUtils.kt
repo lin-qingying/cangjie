@@ -238,7 +238,6 @@ fun CfirBasedSymbol<*>.findPsi(scope: GlobalSearchScope, preferredProject: Proje
     } else {
         cfir.findPsi(preferredProject)
     })?.takeIf { psi -> scope.contains(psi.containingFile.virtualFile) }
-        ?: CfirSyntheticDeclarationSourceProvider.findPsi(cfir, scope, preferredProject)
 }
 
 
@@ -256,5 +255,4 @@ internal fun CfirDeclaration.findReferencePsi(scope: GlobalSearchScope, preferre
     } else {
         psi
     })?.restoreCurrentCompiledPsi(preferredProject)
-        ?: CfirSyntheticDeclarationSourceProvider.findPsi(this, scope, preferredProject)
 }

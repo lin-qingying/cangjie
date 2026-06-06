@@ -3,6 +3,8 @@
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.TargetPlatform
+import org.cangnova.cangjie.platform.isCommon
 import org.cangnova.cangjie.utils.shouldNotBeCalled
 
 /**
@@ -18,6 +20,20 @@ abstract class CfirModuleData : CfirSessionComponent {
     /** Transitive closure over [refinementDependencies]. */
     abstract val allRefinementDependencies: List<CfirModuleData>
 
+    /**
+     * 前端层面的高层目标平台身份。
+     *
+     * 对齐 Kotlin FIR 的 `FirModuleData.targetPlatform` 语义，当前仅用于承载
+     * `cjnative` / `cjvm` 占位，不替代现有 [platform] 的 native 细节职责。
+     */
+    abstract val targetPlatform: TargetPlatform
+
+    /**
+     * 现有 CFIR 依赖的底层平台细节。
+     *
+     * 这层目前仍然服务于 native 语义与 OS 相关差异，不能直接拿来表达
+     * `cjnative` / `cjvm` 这样的高层后端身份。
+     */
     abstract val platform: CfirPlatform
     abstract val isCommon: Boolean
 
@@ -51,8 +67,9 @@ class CfirSourceModuleData(
     override val name: Name,
     override val dependencies: List<CfirModuleData>,
     override val refinementDependencies: List<CfirModuleData>,
+    override val targetPlatform: TargetPlatform,
     override val platform: CfirPlatform,
-    override val isCommon: Boolean = platform.isCommon(),
+    override val isCommon: Boolean = targetPlatform.isCommon(),
 ) : CfirModuleData() {
     override val session: CfirSession
         get() = boundSession ?: sessionNotBoundError()
@@ -79,6 +96,8 @@ class CfirBinaryDependenciesModuleData(
         get() = emptyList()
 
     // platform info is meaningless for synthetic "all dependencies" module
+    override val targetPlatform: TargetPlatform
+        get() = shouldNotBeCalled()
     override val platform: CfirPlatform
         get() = shouldNotBeCalled()
     override val isCommon: Boolean
@@ -96,8 +115,6 @@ enum class CfirPlatform {
     WINDOWS,
     MACOS,
 }
-
-private fun CfirPlatform.isCommon(): Boolean = this == CfirPlatform.DEFAULT
 
 private fun CfirModuleData.sessionNotBoundError(): Nothing {
     error("module data ${this::class.simpleName}:$name not bound to session")
@@ -139,4 +156,3 @@ private fun topologicallySortedDependsOn(rootDependencies: List<CfirModuleData>)
 
     return result
 }
-

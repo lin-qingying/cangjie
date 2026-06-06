@@ -10,7 +10,10 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.allowAnyScriptsInSourceRoots
 import org.cangnova.cangjie.config.dontSortSourceFiles
+import org.cangnova.cangjie.config.targetPlatform
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.TargetPlatform
 
 data class SessionWithSources<F>(
     val session: CfirSession,
@@ -43,6 +46,7 @@ object CfirSessionConstructionUtils {
         } else {
             emptyList<F>() to orderedFiles
         }
+        val targetPlatform = configuration.targetPlatform ?: CangJiePlatforms.defaultCangJiePlatform
         val sessionConfigurator: CfirSessionConfigurator.() -> Unit = {}
 
         val sharedSession = createSharedLibrarySession()
@@ -52,6 +56,7 @@ object CfirSessionConstructionUtils {
             files = nonScriptFiles,
             rootModuleName = rootModuleName,
             dependencyList = dependencyList,
+            targetPlatform = targetPlatform,
             sessionConfigurator = sessionConfigurator,
             sourceSessionProducer = createSourceSession,
         )
@@ -66,6 +71,7 @@ object CfirSessionConstructionUtils {
                 dependsOnDependencies = dependencyList.dependsOnDependencies + nonScriptSession.session.moduleData,
                 moduleDataProvider = dependencyList.moduleDataProvider,
             ),
+            targetPlatform = targetPlatform,
             sessionConfigurator = sessionConfigurator,
             sourceSessionProducer = createSourceSession,
         )
@@ -80,6 +86,7 @@ object CfirSessionConstructionUtils {
         files: List<F>,
         rootModuleName: Name,
         dependencyList: DependencyListForCliModule,
+        targetPlatform: TargetPlatform,
         sessionConfigurator: CfirSessionConfigurator.() -> Unit,
         sourceSessionProducer: CfirSessionProducer<F>,
     ): SessionWithSources<F> {
@@ -87,6 +94,7 @@ object CfirSessionConstructionUtils {
             name = rootModuleName,
             dependencies = dependencyList.regularDependencies,
             refinementDependencies = dependencyList.dependsOnDependencies,
+            targetPlatform = targetPlatform,
             platform = CfirPlatform.DEFAULT,
         )
 

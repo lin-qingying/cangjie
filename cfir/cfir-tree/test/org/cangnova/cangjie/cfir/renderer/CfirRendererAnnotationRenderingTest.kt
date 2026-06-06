@@ -39,6 +39,8 @@ import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.isCommon
 import org.cangnova.cangjie.source.CjBinarySourceElement
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
@@ -222,8 +224,9 @@ class CfirRendererAnnotationRenderingTest {
         override val dependencies: List<CfirModuleData> = emptyList()
         override val refinementDependencies: List<CfirModuleData> = emptyList()
         override val allRefinementDependencies: List<CfirModuleData> = emptyList()
+        override val targetPlatform = CangJiePlatforms.defaultCangJiePlatform
         override val platform: CfirPlatform = CfirPlatform.DEFAULT
-        override val isCommon: Boolean = true
+        override val isCommon: Boolean = targetPlatform.isCommon()
         override val capabilities: CfirModuleCapabilities = CfirModuleCapabilities.Empty
         override val stableModuleName: String = "cfir-renderer-annotation-test"
         override val session: CfirSession

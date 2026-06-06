@@ -5,6 +5,7 @@ import org.cangnova.cangjie.analysis.api.cfir.CaCfirSession
 import org.cangnova.cangjie.analysis.api.cfir.CaSymbolByCfirBuilder
 import org.cangnova.cangjie.analysis.api.cfir.buildSymbol
 import org.cangnova.cangjie.analysis.low.level.api.cfir.api.getOrBuildCfir
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithCandidates
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
@@ -64,6 +65,7 @@ internal object CfirReferenceResolveHelper {
 
         return when (cfir) {
             is CfirResolvedTypeRef -> listOfNotNull(cfir.toTargetSymbol(analysisSession, symbolBuilder))
+            is CfirTypeParameter -> listOf(symbolBuilder.buildSymbol(cfir.symbol))
             is CfirResolvable -> getSymbolsByResolvable(cfir, symbolBuilder)
             is CfirResolvedNamedReference -> cfir.toTargetSymbol(symbolBuilder)
             is CfirErrorNamedReference -> cfir.toTargetSymbol(symbolBuilder)

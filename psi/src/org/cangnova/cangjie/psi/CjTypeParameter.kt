@@ -24,11 +24,9 @@
 
 package org.cangnova.cangjie.psi
 
-import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.stubs.CangJieTypeParameterStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
-import com.intellij.psi.PsiElement
 import com.intellij.psi.search.LocalSearchScope
 import com.intellij.psi.search.SearchScope
 import com.intellij.psi.util.PsiTreeUtil
@@ -41,9 +39,8 @@ import com.intellij.psi.util.PsiTreeUtil
  * - 函数泛型：`func map<T, R>(list: List<T>, transform: (T) -> R)`
  * - 接口泛型：`interface Comparable<T>`
  *
- * 支持类型参数的上界约束：
- * - 单个上界：`class Foo<T: Comparable<T>>`
- * - 多个上界：`class Bar<T> where T: Comparable<T>, T: Serializable`
+ * 仓颉类型参数自身不携带上界约束，所有约束统一通过 `where` 子句表达，例如
+ * `class Bar<T> where T <: Comparable<T> & Serializable`，参见 [CjTypeConstraint]。
  *
  * 该类同时支持基于 Stub 的索引和基于 PSI 树的解析，以优化性能。
  */
@@ -81,70 +78,6 @@ class CjTypeParameter : CjNamedDeclarationStub<CangJieTypeParameterStub> {
     override fun toString(): String {
         return node.elementType.toString()
     }
-
-    /**
-     * 设置类型参数的上界约束
-     *
-     * 用于修改类型参数的约束条件，例如从 `T` 修改为 `T: Comparable<T>`
-     *
-     * 处理以下情况：
-     * 1. 如果当前有上界且新上界为 null：删除冒号和上界约束
-     * 2. 如果当前有上界且新上界非 null：替换现有上界
-     * 3. 如果当前无上界且新上界非 null：添加冒号和上界约束
-     * 4. 如果当前无上界且新上界为 null：无操作
-     *
-     * @param typeReference 新的上界类型引用，null 表示移除上界约束
-     * @return 设置后的类型引用，如果移除了约束则返回 null
-     */
-    fun setExtendsBound(typeReference: CjTypeReference?): CjTypeReference? {
-        val currentExtendsBound = extendsBound
-        if (currentExtendsBound != null) {
-            if (typeReference == null) {
-                // 移除现有的上界约束
-                val colon = findChildByType<PsiElement>(CjTokens.COLON)
-                colon?.delete()
-                currentExtendsBound.delete()
-                return null
-            }
-            // 替换现有的上界约束
-            return currentExtendsBound.replace(typeReference) as CjTypeReference
-        }
-
-        if (typeReference != null) {
-            // 添加新的上界约束
-            val colon = addAfter(CjPsiFactory(project).createColon(), nameIdentifier)
-            return addAfter(typeReference, colon) as CjTypeReference
-        }
-
-        return null
-    }
-
-    /**
-     * 类型参数的上界约束（单个）
-     *
-     * 例如：`class Foo<T: Comparable<T>>` 中的 `Comparable<T>`
-     * 对于多个上界约束，只返回第一个
-     * 优先从 Stub 索引获取以提升性能
-     *
-     * @return 上界类型引用，如果没有约束则返回 null
-     */
-    val extendsBound: CjTypeReference?
-        get() = getStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
-
-    /**
-     * 类型参数的所有上界约束
-     *
-     * 例如：`class Foo<T> where T: Comparable<T>, T: Serializable` 中的约束列表
-     * 优先从 Stub 索引获取以提升性能
-     *
-     * @return 所有上界类型引用的列表，如果没有约束则返回空列表
-     */
-    val extendsBounds: List<CjTypeReference>
-        get() = getStubOrPsiChildrenAsList(
-            CjStubElementTypes.TYPE_REFERENCE,
-        )
-
-
 
     /**
      * 获取类型参数的使用范围

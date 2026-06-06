@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project
 import com.intellij.psi.util.CachedValue
 import com.intellij.psi.util.CachedValueProvider
 import com.intellij.psi.util.CachedValuesManager
-import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.analysis.api.CaPlatformInterface
 import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
@@ -28,38 +27,34 @@ import org.cangnova.cangjie.cfir.session.CfirBuiltinTypes
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.CfirDummyCompilerLazyDeclarationResolver
 import org.cangnova.cangjie.cfir.symbols.CfirLazyDeclarationResolver
+import org.cangnova.cangjie.platform.TargetPlatform
+import java.util.concurrent.ConcurrentHashMap
 
 @OptIn(PrivateSessionConstructor::class, SessionConfiguration::class, CaPlatformInterface::class)
 @LLCfirInternals
 class LLCfirBuiltinsSessionFactory(private val project: Project) {
     private val builtInTypes = CfirBuiltinTypes()
-    private val builtinsModule: CaBuiltinsModule = CaBuiltinsModuleImpl(project)
-    private val projectStructureProvider: CangJieProjectStructureProvider = CangJieProjectStructureProvider.getInstance(project)
-    @Volatile
-    private var builtinsSession: CachedValue<LLCfirBuiltinsSession>? = null
+    private val builtinsModules = ConcurrentHashMap<TargetPlatform, CaBuiltinsModule>()
+    private val builtinsSessions = ConcurrentHashMap<TargetPlatform, CachedValue<LLCfirBuiltinsSession>>()
+    private val projectStructureProvider: CangJieProjectStructureProvider =
+        CangJieProjectStructureProvider.getInstance(project)
 
     /**
-     * Returns the builtins [CaBuiltinsModule]. [getBuiltinsModule] should be used instead of [getBuiltinsSession] when a
+     * Returns the [targetPlatform]'s builtins [CaBuiltinsModule]. [getBuiltinsModule] should be used instead of [getBuiltinsSession] when a
      * [CaBuiltinsModule] is needed as a dependency for other [CaModule][org.cangnova.cangjie.analysis.api.projectStructure.CaModule]s. This
      * is because during project structure creation, we have to avoid the creation of the builtins *session*, as not all services might have
      * been registered at that point.
      */
-    fun getBuiltinsModule(): CaBuiltinsModule = builtinsModule
+    fun getBuiltinsModule(targetPlatform: TargetPlatform): CaBuiltinsModule =
+        builtinsModules.getOrPut(targetPlatform) { CaBuiltinsModuleImpl(targetPlatform, project) }
 
-    fun getBuiltinsSession(): LLCfirBuiltinsSession {
-        builtinsSession?.let { return it.value }
-
-        synchronized(this) {
-            builtinsSession?.let { return it.value }
-
-            val cachedValue = CachedValuesManager.getManager(project).createCachedValue {
-                val session = createBuiltinsSession()
+    fun getBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession =
+        builtinsSessions.getOrPut(targetPlatform) {
+            CachedValuesManager.getManager(project).createCachedValue {
+                val session = createBuiltinsSession(targetPlatform)
                 CachedValueProvider.Result(session, session.createValidityTracker())
             }
-            builtinsSession = cachedValue
-            return cachedValue.value
-        }
-    }
+        }.value
 
     /**
      * Invalidates all builtins modules and sessions.
@@ -75,10 +70,12 @@ class LLCfirBuiltinsSessionFactory(private val project: Project) {
      * invalidation or code analysis until the invalidation is complete.
      */
     internal fun invalidateAll() {
-        builtinsSession = null
+        builtinsModules.clear()
+        builtinsSessions.clear()
     }
 
-    private fun createBuiltinsSession(): LLCfirBuiltinsSession {
+    private fun createBuiltinsSession(targetPlatform: TargetPlatform): LLCfirBuiltinsSession {
+        val builtinsModule = getBuiltinsModule(targetPlatform)
         val session = LLCfirBuiltinsSession(builtinsModule, builtInTypes)
         val moduleData = LLCfirModuleData(session)
 

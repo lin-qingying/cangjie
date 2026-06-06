@@ -1,7 +1,4 @@
-/*
- * Copyright 2010-2025 JetBrains s.r.o. and Kotlin Programming Language contributors.
- * Use of this source code is governed by the Apache 2.0 license that can be found in the license/LICENSE.txt file.
- */
+
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.symbolProviders
 
@@ -272,14 +269,31 @@ internal class LLCangJieSourceSymbolProvider(
         // to retrieve the files in the IDE mode
         val files = context ?: declarationProvider.getTopLevelCallableFiles(callableId)
 
+        if (callableId.packageName.asString() == "untitled89.b" && callableId.callableName.asString() == "a11") {
+            System.err.println(
+                "DEBUG_A11 providerModule=${session.llCfirModuleData.caModule} type=${TYPE::class.simpleName} " +
+                    "context=${context != null} files=" + files.joinToString { file ->
+                        "${file.name}:${file.packageFqName.asString()}:physical=${file.isPhysical}"
+                    }
+            )
+        }
+
         if (files.isEmpty()) return emptyList()
 
-        return buildList {
+        val result = buildList {
             files.forEach { cjFile ->
                 val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
                 cfirFile.collectCallableSymbolsOfTypeTo<TYPE>(this, callableId.callableName)
             }
         }
+
+        if (callableId.packageName.asString() == "untitled89.b" && callableId.callableName.asString() == "a11") {
+            System.err.println(
+                "DEBUG_A11 result providerModule=${session.llCfirModuleData.caModule} type=${TYPE::class.simpleName} " +
+                    "count=${result.size} symbols=${result.joinToString { it::class.simpleName ?: it::class.java.name }}"
+            )
+        }
+        return result
     }
 
     private inline fun <reified TYPE : CfirCallableSymbol<*>> CfirFile.collectCallableSymbolsOfTypeTo(result: MutableList<TYPE>, name: Name) {

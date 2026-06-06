@@ -20,6 +20,7 @@ import org.cangnova.cangjie.source.toCjPsiSourceElement
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.builder.*
+import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
@@ -1415,10 +1416,6 @@ class PsiRawCfirBuilder(
             additionalBounds: List<CfirTypeRef> = emptyList(),
         ): CfirTypeParameter {
             val name = Name.identifier(psi.name ?: "<error>")
-            val bounds = buildList {
-                addAll(psi.extendsBounds.map(::convertTypeRef))
-                addAll(additionalBounds)
-            }
 
             return buildSourceDeclaration(CfirTypeParameterSymbol()) { symbol ->
                 buildTypeParameter {
@@ -1431,7 +1428,8 @@ class PsiRawCfirBuilder(
                     attributes = CfirDeclarationAttributes.EMPTY
                     this.containingDeclarationSymbol = containingDeclarationSymbol
                     this.name = name
-                    this.bounds.addAll(bounds)
+                    this.bounds.addAll(additionalBounds)
+                    addDefaultBoundIfNecessary()
                 }
             }
         }

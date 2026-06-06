@@ -12,7 +12,6 @@ import org.cangnova.cangjie.analysis.api.platform.modification.CaSessionInvalida
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleProvider
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaProjectStructureSnapshot
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieModuleDependentsProviderBase
-import org.cangnova.cangjie.analysis.api.platform.projectStructure.CangJieProjectStructureProvider
 import org.cangnova.cangjie.analysis.api.session.CaSessionProvider
 import org.cangnova.cangjie.analysis.test.framework.projectStructure.CjTestModuleStructure
 import java.util.concurrent.ConcurrentHashMap
@@ -29,6 +28,7 @@ class CaTestPlatformState(
 ) {
     private val globalModificationCount = AtomicLong(0)
     private val moduleModificationCounts = ConcurrentHashMap<CaModule, AtomicLong>()
+
     @Volatile
     private var installedProjectStructure: InstalledCaTestProjectStructure? = null
 
@@ -42,7 +42,11 @@ class CaTestPlatformState(
      * 再让 `CangJieProjectStructureProvider`、`CaModuleProvider` 等平台服务统一委托给它。
      */
     fun install(moduleStructure: CjTestModuleStructure) {
-        val builtinsModule = CaBuiltinsModuleImpl(project)
+        val builtinsModule =
+            CaBuiltinsModuleImpl(
+                targetPlatform = moduleStructure.mainModules.first().caModule.targetPlatform,
+                project = project,
+            )
         installedProjectStructure = InstalledCaTestProjectStructure(builtinsModule, moduleStructure)
     }
 
@@ -213,7 +217,8 @@ class CaTestSessionInvalidationService(
     override fun invalidate(modules: Set<CaModule>) {
         project.getService(CaTestPlatformState::class.java).invalidate(modules)
 
-        val delegatedInvalidationService = project.getService(CaSessionProvider::class.java) as? CaSessionInvalidationService
+        val delegatedInvalidationService =
+            project.getService(CaSessionProvider::class.java) as? CaSessionInvalidationService
         if (delegatedInvalidationService != null && delegatedInvalidationService !== this) {
             delegatedInvalidationService.invalidate(modules)
         }

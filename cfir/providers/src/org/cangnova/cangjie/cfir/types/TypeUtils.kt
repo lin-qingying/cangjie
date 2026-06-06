@@ -176,6 +176,18 @@ fun <T : ConeCangJieType> T.withAbbreviation(attribute: AbbreviatedTypeAttribute
     return withAttributes(clearedAttributes.add(attribute))
 }
 
+/**
+ * 移除当前类型顶层携带的 typealias 缩写视图。
+ *
+ * CFIR 内部展开类型会保留 [AbbreviatedTypeAttribute] 供引用、渲染和调试读取；
+ * Analysis API 暴露 `fullyExpandedType` 时需要取得真正的展开视图，因此通过该 helper
+ * 在保持其他类型属性不变的前提下只删除 abbreviation attribute。
+ */
+fun <T : ConeCangJieType> T.withoutAbbreviation(): T {
+    val clearedAttributes = attributes.abbreviatedType?.let(attributes::remove) ?: return this
+    return withAttributes(clearedAttributes)
+}
+
 fun <T : ConeCangJieType> T.withArguments(arguments: List<ConeTypeProjection>): T {
     if (typeArguments == arguments) {
         return this

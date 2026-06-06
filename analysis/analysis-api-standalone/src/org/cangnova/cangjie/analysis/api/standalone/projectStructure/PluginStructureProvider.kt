@@ -268,6 +268,13 @@ object PluginStructureProvider {
         "com.intellij.targetElementEvaluator",
         "com.intellij.targetElementUtilExtender",
         "com.intellij.usageTargetProvider",
+        "com.intellij.lang.namesValidator",
+        "com.intellij.lang.refactoringSupport",
+        "com.intellij.renameInputValidator",
+        "com.intellij.renamePsiElementProcessor",
+        "com.intellij.automaticRenamerFactory",
+        "com.intellij.refactoring.helper",
+        "com.intellij.useScopeOptimizer",
     )
 
     private val MockComponentManager.classLoader: ClassLoader

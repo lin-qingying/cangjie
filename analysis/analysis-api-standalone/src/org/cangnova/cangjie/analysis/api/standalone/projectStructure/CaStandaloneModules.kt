@@ -1,4 +1,7 @@
-@file:OptIn(org.cangnova.cangjie.analysis.api.CaPlatformInterface::class)
+@file:OptIn(
+    org.cangnova.cangjie.analysis.api.CaPlatformInterface::class,
+    org.cangnova.cangjie.analysis.api.CaImplementationDetail::class,
+)
 
 package org.cangnova.cangjie.analysis.api.standalone.projectStructure
 
@@ -21,8 +24,10 @@ import org.cangnova.cangjie.analysis.api.projectStructure.CaLibrarySourceModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaNotUnderContentRootModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
-import org.cangnova.cangjie.analysis.decompiled.psi.BuiltinsVirtualFileProvider
+import org.cangnova.cangjie.analysis.api.impl.base.projectStructure.CaBuiltinsModuleImpl
 import org.cangnova.cangjie.analysis.api.platform.projectStructure.CaModuleBase
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.TargetPlatform
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 
@@ -31,7 +36,8 @@ import org.cangnova.cangjie.psi.CjFile
  */
 sealed class CaStandaloneModule(
     final override val project: Project,
-    private val scopeRoots: List<PsiFileSystemItem>,
+    scopeRoots: List<PsiFileSystemItem>,
+    final override val targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
 ) : CaModuleBase() {
     final override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
     final override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
@@ -46,34 +52,39 @@ class CaStandaloneSourceModule(
     override val languageVersionSettings: LanguageVersionSettings,
     project: Project,
     override val psiRoots: List<PsiFileSystemItem>,
-) : CaStandaloneModule(project, psiRoots), CaSourceModule
+    targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
+) : CaStandaloneModule(project, psiRoots, targetPlatform), CaSourceModule
 
 class CaStandaloneLibraryModule(
     override val libraryName: String,
     project: Project,
     override val binaryRoots: List<PsiFileSystemItem>,
-) : CaStandaloneModule(project, binaryRoots), CaLibraryModule
+    targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
+) : CaStandaloneModule(project, binaryRoots, targetPlatform), CaLibraryModule
 
 class CaStandaloneLibrarySourceModule(
     override val libraryName: String,
     override val binaryLibraryModule: CaLibraryModule,
     project: Project,
     override val sourceRoots: List<PsiFileSystemItem>,
-) : CaStandaloneModule(project, sourceRoots), CaLibrarySourceModule
+    targetPlatform: TargetPlatform = binaryLibraryModule.targetPlatform,
+) : CaStandaloneModule(project, sourceRoots, targetPlatform), CaLibrarySourceModule
 
 class CaStandaloneLibraryFallbackDependenciesModule(
     override val dependencyOwnerName: String,
     project: Project,
     scopeRoots: List<PsiFileSystemItem>,
-) : CaStandaloneModule(project, scopeRoots), CaLibraryFallbackDependenciesModule
+    targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
+) : CaStandaloneModule(project, scopeRoots, targetPlatform), CaLibraryFallbackDependenciesModule
 
 class CaStandaloneBuiltinsModule(
     project: Project,
     scopeRoots: List<PsiFileSystemItem> = emptyList(),
     override val builtinsName: String = "<builtins>",
-) : CaStandaloneModule(project, scopeRoots), CaBuiltinsModule {
+    targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform,
+) : CaStandaloneModule(project, scopeRoots, targetPlatform), CaBuiltinsModule {
     override val contentScope: GlobalSearchScope
-        get() = BuiltinsVirtualFileProvider.getInstance().createBuiltinsScope(project)
+        get() = CaBuiltinsModuleImpl(targetPlatform, project).contentScope
 }
 
 class CaStandaloneDanglingFileModule(
@@ -83,7 +94,7 @@ class CaStandaloneDanglingFileModule(
     override val resolutionMode: CaDanglingFileResolutionMode = CaDanglingFileResolutionMode.PREFER_SELF,
     project: Project,
     override val psiRoots: List<PsiFileSystemItem>,
-) : CaStandaloneModule(project, psiRoots), CaDanglingFileModule {
+) : CaStandaloneModule(project, psiRoots, contextModule.targetPlatform), CaDanglingFileModule {
     private val filePointers: List<SmartPsiElementPointer<CjFile>> =
         psiRoots.map { psiRoot ->
             val file = psiRoot as? CjFile
@@ -119,7 +130,8 @@ class CaStandaloneNotUnderContentRootModule(
     override val originalModule: CaModule?,
     project: Project,
     scopeRoots: List<PsiFileSystemItem>,
-) : CaStandaloneModule(project, scopeRoots), CaNotUnderContentRootModule
+    targetPlatform: TargetPlatform = originalModule?.targetPlatform ?: CangJiePlatforms.defaultCangJiePlatform,
+) : CaStandaloneModule(project, scopeRoots, targetPlatform), CaNotUnderContentRootModule
 
 /**
  * Standalone 根作用域。
@@ -133,7 +145,7 @@ private class StandaloneRootContentScope(
     project: Project,
     private val scopeRoots: List<PsiFileSystemItem>,
 ) : GlobalSearchScope(project) {
-    private val directScope = GlobalSearchScope.filesWithoutLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })
+    private val directScope = filesWithoutLibrariesScope(project, scopeRoots.mapNotNull { it.virtualFile })
 
     private val reachableFilesByTraversal: Set<VirtualFile> by lazy(LazyThreadSafetyMode.PUBLICATION) {
         buildSet {

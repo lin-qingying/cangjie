@@ -8,6 +8,7 @@ import org.cangnova.cangjie.incremental.components.EnumMatchTracker
 import org.cangnova.cangjie.incremental.components.ICFileMappingTracker
 import org.cangnova.cangjie.incremental.components.ImportTracker
 import org.cangnova.cangjie.incremental.components.LookupTracker
+import org.cangnova.cangjie.platform.TargetPlatform
 
 /**
  * 通用编译配置键集合。
@@ -73,6 +74,10 @@ object CommonConfigurationKeys {
     /** 是否对源码文件禁用排序。对齐 Kotlin 键：`DONT_SORT_SOURCE_FILES`。 */
     @JvmField
     val DONT_SORT_SOURCE_FILES = CompilerConfigurationKey.create<Boolean>("DONT_SORT_SOURCE_FILES")
+
+    /** 目标平台。对齐 Kotlin 键：`TARGET_PLATFORM`。 */
+    @JvmField
+    val TARGET_PLATFORM = CompilerConfigurationKey.create<TargetPlatform>("TARGET_PLATFORM")
 }
 
 /**
@@ -95,6 +100,17 @@ var CompilerConfiguration.moduleName: String?
     get() = get(CommonConfigurationKeys.MODULE_NAME)
     set(value) {
         put(CommonConfigurationKeys.MODULE_NAME, requireNotNull(value) { "nullable values are not allowed" })
+    }
+
+/**
+ * 目标平台扩展属性。
+ *
+ * 对齐 Kotlin 声明：`CompilerConfiguration.targetPlatform`。
+ */
+var CompilerConfiguration.targetPlatform: TargetPlatform?
+    get() = get(CommonConfigurationKeys.TARGET_PLATFORM)
+    set(value) {
+        put(CommonConfigurationKeys.TARGET_PLATFORM, requireNotNull(value) { "nullable values are not allowed" })
     }
 
 /**

@@ -115,6 +115,7 @@ import org.cangnova.cangjie.cfir.types.ConeQuestType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeStubType
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toSymbol
 import org.cangnova.cangjie.cfir.types.ConeTupleType
@@ -126,6 +127,7 @@ import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.forEachType
 import org.cangnova.cangjie.cfir.types.renderForDebugging
+import org.cangnova.cangjie.cfir.types.withoutAbbreviation
 import org.cangnova.cangjie.cfir.visitors.CfirVisitorVoid
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -454,37 +456,43 @@ companion object{
     inner class TypeBuilder {
         fun buildType(coneType: CfirTypeRef): CaType = buildType(coneType.coneType)
 
-        fun buildType(coneType: ConeCangJieType): CaType = when (coneType) {
-            is ConeClassLikeType,
-            is ConeStructType,
-            is ConeEnumType,
-            is ConeTypeAliasType,
-            -> CaCfirUsualClassType(coneType, this@CaSymbolByCfirBuilder)
+        fun buildType(coneType: ConeCangJieType): CaType {
+            val publicConeType = coneType
+                .fullyExpandedType(analysisSession.cfirSession)
+                .withoutAbbreviation()
 
-            is ConePrimitiveType -> CaCfirPrimitiveType(coneType, analysisSession)
-            is ConeFunctionType -> CaCfirFunctionType(coneType, analysisSession)
-            is ConeTupleType -> CaCfirTupleType(coneType, analysisSession)
-            is ConeIntersectionType -> CaCfirIntersectionType(coneType, analysisSession)
-            is ConeUnionType -> CaCfirUnionType(coneType, analysisSession)
-            is ConeTypeParameterType -> CaCfirTypeParameterType(coneType, this@CaSymbolByCfirBuilder)
-            is ConeErrorType ->
-                when (val diagnostic = coneType.diagnostic) {
-                    is ConeUnresolvedError, is ConeUnmatchedTypeArgumentsError -> {
-                        CaCfirClassErrorType(coneType, diagnostic, this@CaSymbolByCfirBuilder)
+            return when (publicConeType) {
+                is ConeClassLikeType,
+                is ConeStructType,
+                is ConeEnumType,
+                is ConeTypeAliasType,
+                -> CaCfirUsualClassType(publicConeType, this@CaSymbolByCfirBuilder)
+
+                is ConePrimitiveType -> CaCfirPrimitiveType(publicConeType, analysisSession)
+                is ConeFunctionType -> CaCfirFunctionType(publicConeType, analysisSession)
+                is ConeTupleType -> CaCfirTupleType(publicConeType, analysisSession)
+                is ConeIntersectionType -> CaCfirIntersectionType(publicConeType, analysisSession)
+                is ConeUnionType -> CaCfirUnionType(publicConeType, analysisSession)
+                is ConeTypeParameterType -> CaCfirTypeParameterType(publicConeType, this@CaSymbolByCfirBuilder)
+                is ConeErrorType ->
+                    when (val diagnostic = publicConeType.diagnostic) {
+                        is ConeUnresolvedError, is ConeUnmatchedTypeArgumentsError -> {
+                            CaCfirClassErrorType(publicConeType, diagnostic, this@CaSymbolByCfirBuilder)
+                        }
+
+                        else -> CaCfirErrorType(publicConeType, this@CaSymbolByCfirBuilder)
                     }
 
-                    else -> CaCfirErrorType(coneType, this@CaSymbolByCfirBuilder)
-                }
 
+                    is ConeQuestType -> CaCfirNonClassErrorType(
+                    coneType = publicConeType,
+                    analysisSession = analysisSession,
+                    errorMessageImpl = "Quest type cannot be exposed as a stable public type",
+                    presentableTextImpl = publicConeType.renderForDebugging(),
+                )
 
-                is ConeQuestType -> CaCfirNonClassErrorType(
-                coneType = coneType,
-                analysisSession = analysisSession,
-                errorMessageImpl = "Quest type cannot be exposed as a stable public type",
-                presentableTextImpl = coneType.renderForDebugging(),
-            )
-
-            else -> error("Unsupported CFIR public type projection: ${coneType::class.qualifiedName}")
+                else -> error("Unsupported CFIR public type projection: ${publicConeType::class.qualifiedName}")
+            }
         }
 
         fun buildTypeProjections(coneType: ConeCangJieType): List<CaTypeProjection> {

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.analysis.api.projectStructure
 
 import com.intellij.openapi.project.Project
 import com.intellij.psi.search.GlobalSearchScope
+import org.cangnova.cangjie.platform.TargetPlatform
 
 /**
  * Analysis API 视角下的模块抽象。
@@ -94,6 +95,14 @@ interface CaModule {
      */
     val stableModuleName: String?
         get() = null
+
+    /**
+     * 模块对应的仓颉目标平台身份，例如 `cjnative` / `cjvm`。
+     *
+     * 对齐 Kotlin Analysis API 的 `KaModule.targetPlatform`，这里只表达高层编译目标，
+     * 不混入 IDE / standalone / LSP 等宿主环境语义。
+     */
+    val targetPlatform: TargetPlatform
 
     /**
      * 当前模块是否可作为 `analyze()` 的 use-site module。

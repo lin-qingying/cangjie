@@ -34,6 +34,7 @@ import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
 
 /**
  * Phase 3 调用解析单元测试共享工具。
@@ -62,6 +63,7 @@ object CallResolutionTestFixtures {
         name = Name.identifier("test-module"),
         dependencies = emptyList(),
         refinementDependencies = emptyList(),
+        targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
         platform = CfirPlatform.DEFAULT,
     ).apply {
         bindSession(StubCfirSession)

@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -1736,40 +1737,13 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
-    /** 转换单个类型参数 */
-    private fun convertTypeParameter(node: LighterASTNode): CfirTypeParameter {
-        val name = tree.findChildByType(node, CjTokens.IDENTIFIER)?.let { Name.identifier(it.asText()) }
-            ?: Name.identifier("<error>")
-
-        // 提取 bounds（extends bounds）
-        val bounds = mutableListOf<CfirTypeRef>()
-        tree.forEachChildren(node) { child ->
-            if (child.tokenType == CjNodeTypes.TYPE_REFERENCE) {
-                bounds.add(convertTypeRef(child))
-            }
-        }
-
-        return buildSourceDeclaration(CfirTypeParameterSymbol()) { symbol ->
-            buildTypeParameter {
-                resolvePhase = CfirResolvePhase.RAW_CFIR
-                source = node.toSource()
-                this.symbol = symbol
-                origin = CfirDeclarationOrigin.Source
-                moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
-                this.name = name
-                this.bounds.addAll(bounds)
-            }
-        }
-    }
-
+    /** 转换单个类型参数（仓颉文法只允许 where 子句承载上界约束，类型参数节点自身不携带 bound） */
     private fun convertTypeParameter(
         node: LighterASTNode,
         containingDeclarationSymbol: CfirBasedSymbol<*>,
         additionalBounds: List<CfirTypeRef> = emptyList(),
     ): CfirTypeParameter {
         val name = typeParameterName(node)
-        val bounds = extractInlineTypeParameterBounds(node) + additionalBounds
 
         return buildSourceDeclaration(CfirTypeParameterSymbol()) { symbol ->
             buildTypeParameter {
@@ -1781,7 +1755,8 @@ class LightTreeRawCfirDeclarationBuilder(
                 attributes = CfirDeclarationAttributes.EMPTY
                 this.containingDeclarationSymbol = containingDeclarationSymbol
                 this.name = name
-                this.bounds.addAll(bounds)
+                this.bounds.addAll(additionalBounds)
+                addDefaultBoundIfNecessary()
             }
         }
     }
@@ -1789,16 +1764,6 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun typeParameterName(node: LighterASTNode): Name {
         return tree.findChildByType(node, CjTokens.IDENTIFIER)?.let { Name.identifier(it.asText()) }
             ?: Name.identifier("<error>")
-    }
-
-    private fun extractInlineTypeParameterBounds(node: LighterASTNode): List<CfirTypeRef> {
-        val bounds = mutableListOf<CfirTypeRef>()
-        tree.forEachChildren(node) { child ->
-            if (child.tokenType == CjNodeTypes.TYPE_REFERENCE) {
-                bounds += convertTypeRef(child)
-            }
-        }
-        return bounds
     }
 
     private fun collectTypeConstraintBounds(ownerNode: LighterASTNode): Map<Name, List<CfirTypeRef>> {

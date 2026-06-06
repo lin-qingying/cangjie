@@ -22,6 +22,7 @@ import org.cangnova.cangjie.cfir.common.CfirPlatform
 import org.cangnova.cangjie.cfir.common.CfirSourceModuleData
 import org.cangnova.cangjie.cfir.session.registerModuleData
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.platform.CangJiePlatforms
 import org.cangnova.cangjie.utils.exceptions.requireWithAttachment
 
 @LLCfirInternals
@@ -49,7 +50,7 @@ class LLCfirSessionCache(
     fun getSession(module: CaModule, preferBinary: Boolean = false): LLCfirSession =
         when (module) {
             is CaBuiltinsModule if preferBinary ->
-                LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession()
+                LLCfirBuiltinsSessionFactory.getInstance(project).getBuiltinsSession(module.targetPlatform)
 
             is CaLibraryModule if preferBinary -> getBinaryLibraryCachedSession(module, storage.binaryCache)
 
@@ -178,6 +179,7 @@ fun createEmptySession(): CfirSession {
             Name.identifier("<stub module>"),
             dependencies = emptyList(),
             refinementDependencies = emptyList(),
+            targetPlatform = CangJiePlatforms.defaultCangJiePlatform,
             platform = CfirPlatform.DEFAULT,
         )
         registerModuleData(moduleData)

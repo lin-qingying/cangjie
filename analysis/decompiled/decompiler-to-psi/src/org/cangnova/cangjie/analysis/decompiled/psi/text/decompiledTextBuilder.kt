@@ -352,7 +352,6 @@ internal fun buildDecompiledText(fileStub: CangJieFileStubImpl): String = Pretty
         override fun visitTypeParameter(parameter: CjTypeParameter) {
             withSuffix(" ") { parameter.modifierList?.accept(this) }
             append(parameter.name?.let(::renderIdentifier).orEmpty())
-            withPrefix(" : ") { parameter.extendsBound?.getTypeText()?.takeIf(String::isNotBlank)?.let(::append) }
         }
 
         override fun visitTypeConstraintList(list: CjTypeConstraintList) {
