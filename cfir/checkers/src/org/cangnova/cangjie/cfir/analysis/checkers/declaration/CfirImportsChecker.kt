@@ -169,13 +169,6 @@ object CfirImportsChecker : CfirFileChecker() {
         importBindingsByImport: Map<CfirImport, CfirResolvedImportBinding>,
     ): Boolean {
         val resolvedBinding = importBindingsByImport[import]
-        if (importedFqName.asString() == "untitled89.b.a11") {
-            System.err.println(
-                "DEBUG_A11 checker bindingTargets=" +
-                    resolvedBinding?.targets.orEmpty().joinToString { it::class.simpleName ?: it::class.java.name } +
-                    " bindingPresent=${resolvedBinding != null}"
-            )
-        }
         if (resolvedBinding != null) {
             return resolvedBinding.targets.any { target -> target !is CfirResolvedImportTarget.Package }
         }
@@ -239,11 +232,6 @@ object CfirImportsChecker : CfirFileChecker() {
 
         val classLike = symbolProvider.getClassLikeSymbolByClassId(ClassId(packageFqName, importedName))
         val callableSymbols = symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName)
-        if (importedFqName.asString() == "untitled89.b.a11") {
-            System.err.println(
-                "DEBUG_A11 checkerFallback classLike=${classLike != null} callables=${callableSymbols.size}"
-            )
-        }
         return classLike != null || callableSymbols.isNotEmpty()
     }
 

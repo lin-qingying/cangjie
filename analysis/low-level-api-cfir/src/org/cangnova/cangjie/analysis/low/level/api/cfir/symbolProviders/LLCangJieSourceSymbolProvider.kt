@@ -269,15 +269,6 @@ internal class LLCangJieSourceSymbolProvider(
         // to retrieve the files in the IDE mode
         val files = context ?: declarationProvider.getTopLevelCallableFiles(callableId)
 
-        if (callableId.packageName.asString() == "untitled89.b" && callableId.callableName.asString() == "a11") {
-            System.err.println(
-                "DEBUG_A11 providerModule=${session.llCfirModuleData.caModule} type=${TYPE::class.simpleName} " +
-                    "context=${context != null} files=" + files.joinToString { file ->
-                        "${file.name}:${file.packageFqName.asString()}:physical=${file.isPhysical}"
-                    }
-            )
-        }
-
         if (files.isEmpty()) return emptyList()
 
         val result = buildList {
@@ -285,13 +276,6 @@ internal class LLCangJieSourceSymbolProvider(
                 val cfirFile = moduleComponents.cfirFileBuilder.buildRawCfirFileWithCaching(cjFile)
                 cfirFile.collectCallableSymbolsOfTypeTo<TYPE>(this, callableId.callableName)
             }
-        }
-
-        if (callableId.packageName.asString() == "untitled89.b" && callableId.callableName.asString() == "a11") {
-            System.err.println(
-                "DEBUG_A11 result providerModule=${session.llCfirModuleData.caModule} type=${TYPE::class.simpleName} " +
-                    "count=${result.size} symbols=${result.joinToString { it::class.simpleName ?: it::class.java.name }}"
-            )
         }
         return result
     }
