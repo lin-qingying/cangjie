@@ -45,6 +45,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.superTypeGraphStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -819,6 +820,7 @@ private class CfirExtendSupertypesCollector(
 private fun createImportingScopes(file: CfirFile, session: CfirSession): List<CfirScope> {
     val symbolProvider: CfirSymbolProvider = session.symbolProvider
     val imports = file.imports
+    val resolvedImports = session.importBindingStoreOrNull?.getBindings(file)?.imports
     val defaultImports = session.defaultImportsProvider
         .getDefaultImports(includeLowPriorityImports = true)
         .filter { it.fqName !in session.defaultImportsProvider.excludedImports }
@@ -828,8 +830,8 @@ private fun createImportingScopes(file: CfirFile, session: CfirSession): List<Cf
         // CfirTypeResolver 按顺序查找 scope；supertype 解析同样必须高优先级在前。
         add(CfirFileDeclaredTopLevelScope(file))
         add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
-        add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
-        add(CfirExplicitStarImportingScope(imports, symbolProvider))
+        add(CfirExplicitSimpleImportingScope(imports, symbolProvider, resolvedImports))
+        add(CfirExplicitStarImportingScope(imports, symbolProvider, resolvedImports))
         add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
         add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
     }

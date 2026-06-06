@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
@@ -540,6 +541,7 @@ open class CfirDeclarationsResolveTransformer(
     private fun createImportingScopes(file: CfirFile): List<CfirScope> {
         val symbolProvider = session.symbolProvider
         val imports = file.imports
+        val resolvedImports = session.importBindingStoreOrNull?.getBindings(file)?.imports
         val defaultImportsProvider = session.defaultImportsProvider
         val defaultImports = defaultImportsProvider.getDefaultImports(includeLowPriorityImports = true)
             .filter { it.fqName !in defaultImportsProvider.excludedImports }
@@ -556,10 +558,10 @@ open class CfirDeclarationsResolveTransformer(
             // Scope 列表按低优先级到高优先级排列，声明解析阶段同样保持本地声明优先。
             add(CfirExplicitStarImportingScope(defaultImports, symbolProvider))
             add(CfirExplicitSimpleImportingScope(defaultImports, symbolProvider))
-            add(CfirExplicitStarImportingScope(imports, symbolProvider))
+            add(CfirExplicitStarImportingScope(imports, symbolProvider, resolvedImports))
             add(CfirPackageMemberScope(file.packageDirective.packageFqName, session))
             add(CfirFileDeclaredTopLevelScope(file))
-            add(CfirExplicitSimpleImportingScope(imports, symbolProvider))
+            add(CfirExplicitSimpleImportingScope(imports, symbolProvider, resolvedImports))
         }
     }
     // ── Named function ────────────────────────────────────────────────────
