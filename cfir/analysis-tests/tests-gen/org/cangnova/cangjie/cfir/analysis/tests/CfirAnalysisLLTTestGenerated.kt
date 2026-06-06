@@ -3708,7 +3708,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             }
 
             @TestMetadata("primitive_00")
-            @TestDataPath("\$PROJECT_ROOT")
+            @TestDataPath($$"$PROJECT_ROOT")
             @Nested
             inner class Primitive00 : AbstractCfirLightTreeDiagnosticsTest() {
                 @Test
