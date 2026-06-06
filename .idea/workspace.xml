@@ -1062,6 +1062,7 @@
     "Gradle.CfirAnalysisDiagnosticsTestGenerated.testAssignmentTypeMismatch.executor": "Run",
     "Gradle.CfirAnalysisDiagnosticsTestGenerated.testMultipleDiagnostics.executor": "Run",
     "Gradle.CfirAnalysisDiagnosticsTestGenerated.testUnresolvedSymbolType.executor": "Debug",
+    "Gradle.CfirAnalysisLLTTestGenerated.executor": "Run",
     "Gradle.CfirAnalysisLltTestGenerated.executor": "Run",
     "Gradle.CfirAnalysisMacroPsiTestGenerated.testSameProjectMacroPackageImportOnly.executor": "Run",
     "Gradle.CfirAnalysisMacroTestGenerated.executor": "Run",
@@ -1536,7 +1537,7 @@
       <workItem from="1779952101449" duration="1027000" />
       <workItem from="1779956555610" duration="116000" />
       <workItem from="1780025561983" duration="42000" />
-      <workItem from="1780730387725" duration="3163000" />
+      <workItem from="1780730387725" duration="5444000" />
     </task>
     <task id="LOCAL-00001" summary="add: implement generic functions and type declarations">
       <option name="closed" value="true" />
@@ -1810,7 +1811,7 @@
                   <entry key="branch">
                     <value>
                       <list>
-                        <option value="cfir-new" />
+                        <option value="main" />
                       </list>
                     </value>
                   </entry>
