@@ -179,7 +179,9 @@ object CangJieFormatter {
         if (mockProject.getService(TreeAspect::class.java) == null) {
             mockProject.registerService(TreeAspect::class.java)
         }
-        if (mockProject.getService(PomModel::class.java) == null) {
+        val pomModel = mockProject.getService(PomModel::class.java)
+        if (pomModel?.getModelAspect(PostprocessReformattingAspect::class.java) == null) {
+            mockProject.picoContainer.unregisterComponent(PomModel::class.java.name)
             mockProject.registerService(PomModel::class.java, HeadlessFormattingPomModel::class.java)
         }
     }

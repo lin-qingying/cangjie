@@ -1,0 +1,12 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <applicationService
+            serviceImplementation="org.cangnova.cangjie.codeinsight.api.applicators.fixes.CangJieQuickFixService"/>
+    </extensions>
+
+    <extensionPoints>
+        <extensionPoint qualifiedName="org.cangnova.cangjie.codeinsight.quickfix.registrar"
+                        interface="org.cangnova.cangjie.codeinsight.api.applicators.fixes.CangJieQuickFixRegistrar"
+                        dynamic="true"/>
+    </extensionPoints>
+</idea-plugin>

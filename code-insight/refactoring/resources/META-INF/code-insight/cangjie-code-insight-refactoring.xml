@@ -1,0 +1,32 @@
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <lang.namesValidator
+            language="CangJie"
+            implementationClass="org.cangnova.cangjie.codeinsight.refactoring.CangJieNamesValidator"/>
+        <lang.refactoringSupport
+            language="CangJie"
+            implementationClass="org.cangnova.cangjie.codeinsight.refactoring.CangJieRefactoringSupportProvider"/>
+        <renameInputValidator
+            implementation="org.cangnova.cangjie.codeinsight.refactoring.rename.CangJieDeclarationRenameInputValidator"/>
+
+        <renamePsiElementProcessor
+            id="CangJieClass"
+            implementation="org.cangnova.cangjie.codeinsight.refactoring.rename.RenameCangJieClassifierProcessor"
+            order="first"/>
+        <renamePsiElementProcessor
+            id="CangJieFunction"
+            implementation="org.cangnova.cangjie.codeinsight.refactoring.rename.RenameCangJieFunctionProcessor"
+            order="first"/>
+        <renamePsiElementProcessor
+            id="CangJieProperty"
+            implementation="org.cangnova.cangjie.codeinsight.refactoring.rename.RenameCangJiePropertyProcessor"
+            order="first"/>
+        <renamePsiElementProcessor
+            id="CangJieParameter"
+            implementation="org.cangnova.cangjie.codeinsight.refactoring.rename.RenameCangJieParameterProcessor"
+            order="first"/>
+        <renamePsiElementProcessor
+            id="CangJieTypeParameter"
+            implementation="org.cangnova.cangjie.codeinsight.refactoring.rename.RenameCangJieTypeParameterProcessor"/>
+    </extensions>
+</idea-plugin>

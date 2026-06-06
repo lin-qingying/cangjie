@@ -21,6 +21,7 @@ import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieSta
 import org.cangnova.cangjie.analysis.api.standalone.base.declarations.CangJieStandaloneDeclarationProviderMerger
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderFactory
 import org.cangnova.cangjie.analysis.api.standalone.base.packages.CangJieStandalonePackageProviderMerger
+import org.cangnova.cangjie.codeinsight.refactoring.CangJieRefactoringHeadlessRegistrar
 import org.cangnova.cangjie.lsp.CangjieLspEnvironment
 
 /**
@@ -49,6 +50,12 @@ internal object AnalysisApiLspServiceRegistrar {
             PluginStructureProvider.registerApplicationServices(application, pluginXmlPath)
             PluginStructureProvider.registerProjectServices(project, pluginXmlPath)
         }
+        CangJieRefactoringHeadlessRegistrar.registerExtensionPoints(application)
+        CangJieRefactoringHeadlessRegistrar.registerProjectServices(project)
+        PluginStructureProvider.registerApplicationServices(
+            application,
+            CangJieRefactoringHeadlessRegistrar.PLUGIN_XML_PATH,
+        )
 
         /*
          * LSP 运行时要保留自己的 project structure / modification 服务实现，

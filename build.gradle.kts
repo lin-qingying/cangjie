@@ -737,6 +737,9 @@ val idePublicationArtifacts = linkedMapOf(
     ":prepare:ide-plugin-dependencies:cangjie-frontend-psi-for-ide" to ("cangjie-frontend-psi-for-ide" to md("""
         **IDE plugin dependency:** packages :psi (with :common, :util) into a single fat jar.
     """)),
+    ":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-for-ide" to ("cangjie-frontend-code-insight-for-ide" to md("""
+        **IDE plugin dependency:** packages :code-insight:api quick-fix API (with :analysis:analysis-api) into a single fat jar.
+    """)),
     ":prepare:ide-plugin-dependencies:cangjie-frontend-code-insight-formatting-for-ide" to ("cangjie-frontend-code-insight-formatting-for-ide" to md("""
         **IDE plugin dependency:** packages :code-insight:formatting (with :psi, :common, :util) into a single fat jar.
     """)),

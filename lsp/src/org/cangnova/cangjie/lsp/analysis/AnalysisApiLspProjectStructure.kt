@@ -34,6 +34,8 @@ import org.cangnova.cangjie.lsp.state.LspTextDocument
 import org.cangnova.cangjie.lsp.state.LspWorkspaceModuleDefinition
 import org.cangnova.cangjie.lsp.state.LspWorkspaceState
 import org.cangnova.cangjie.lsp.state.uriToPathOrNull
+import org.cangnova.cangjie.platform.CangJiePlatforms
+import org.cangnova.cangjie.platform.TargetPlatform
 import org.cangnova.cangjie.psi.CjCodeFragment
 import org.cangnova.cangjie.psi.CjFile
 import java.nio.file.Files
@@ -469,6 +471,7 @@ internal class CaLspSourceModule(
     override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
     override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
     override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
+    override val targetPlatform: TargetPlatform = CangJiePlatforms.defaultCangJiePlatform
 
     override val baseContentScope: GlobalSearchScope =
         buildSourceModuleContentScope(project, sourceRootPaths)
@@ -520,6 +523,8 @@ internal class CaLspDanglingFileModule(
     override val directRegularDependencies: MutableList<CaModule> = mutableListOf()
     override val directDependsOnDependencies: MutableList<CaModule> = mutableListOf()
     override val directFriendDependencies: MutableList<CaModule> = mutableListOf()
+    override val targetPlatform: TargetPlatform
+        get() = contextModule.targetPlatform
 
     override val baseContentScope: GlobalSearchScope
         get() = GlobalSearchScope.filesWithoutLibrariesScope(
