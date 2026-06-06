@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -21,10 +23,12 @@ import org.cangnova.cangjie.name.Name
 class CfirExplicitSimpleImportingScope(
     imports: List<CfirImport>,
     private val symbolProvider: CfirSymbolProvider,
+    resolvedImports: List<CfirResolvedImportBinding>? = null,
 ) : CfirImportScope() {
 
     /** 按有效名称（别名或短名称）索引的导入条目 */
     private val importsByName: Map<Name, List<CfirImport>>
+    private val resolvedImportsByName: Map<Name, List<CfirResolvedImportBinding>>?
 
     init {
         val map = HashMap<Name, MutableList<CfirImport>>()
@@ -35,9 +39,18 @@ class CfirExplicitSimpleImportingScope(
             map.getOrPut(effectiveName) { mutableListOf() }.add(import)
         }
         importsByName = map
+        resolvedImportsByName = resolvedImports
+            ?.filter { !it.importDirective.isAllUnder }
+            ?.groupBy { it.effectiveName }
     }
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
+        val resolvedImports = resolvedImportsByName?.get(name)
+        if (resolvedImports != null) {
+            resolvedImports.forEachTarget<CfirResolvedImportTarget.ClassLike> { processor(it.symbol) }
+            return
+        }
+
         val imports = importsByName[name] ?: return
         for (import in imports) {
             val importedFqName = import.importedFqName ?: continue
@@ -48,6 +61,12 @@ class CfirExplicitSimpleImportingScope(
     }
 
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
+        val resolvedImports = resolvedImportsByName?.get(name)
+        if (resolvedImports != null) {
+            resolvedImports.forEachCallableTarget<CfirNamedFunctionSymbol>(processor)
+            return
+        }
+
         val imports = importsByName[name] ?: return
         for (import in imports) {
             val fqName = import.importedFqName ?: continue
@@ -58,6 +77,12 @@ class CfirExplicitSimpleImportingScope(
     }
 
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        val resolvedImports = resolvedImportsByName?.get(name)
+        if (resolvedImports != null) {
+            resolvedImports.forEachCallableTarget(processor)
+            return
+        }
+
         val imports = importsByName[name] ?: return
         for (import in imports) {
             val fqName = import.importedFqName ?: continue
@@ -68,12 +93,32 @@ class CfirExplicitSimpleImportingScope(
     }
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
+        val resolvedImports = resolvedImportsByName?.get(name)
+        if (resolvedImports != null) {
+            resolvedImports.forEachCallableTarget<CfirPropertySymbol>(processor)
+            return
+        }
+
         val imports = importsByName[name] ?: return
         for (import in imports) {
             val fqName = import.importedFqName ?: continue
             val packageFqName = fqName.parent()
             val callableName = fqName.shortName()
             symbolProvider.getTopLevelPropertySymbols(packageFqName, callableName).forEach(processor)
+        }
+    }
+
+    private inline fun <reified T : CfirResolvedImportTarget> List<CfirResolvedImportBinding>.forEachTarget(processor: (T) -> Unit) {
+        for (import in this) {
+            import.targets.filterIsInstance<T>().forEach(processor)
+        }
+    }
+
+    private inline fun <reified S : CfirCallableSymbol<*>> List<CfirResolvedImportBinding>.forEachCallableTarget(
+        processor: (S) -> Unit,
+    ) {
+        forEachTarget<CfirResolvedImportTarget.Callable> { target ->
+            target.symbols.filterIsInstance<S>().forEach(processor)
         }
     }
 }
