@@ -41,27 +41,8 @@ class CfirImportBindingStore : CfirSessionComponent {
     private val bindingsByFile = mutableMapOf<CfirFile, CfirFileImportBindings>()
 
     fun record(file: CfirFile, imports: List<CfirResolvedImportBinding>) {
-        imports.firstOrNull { it.importDirective.importedFqName?.asString() == "untitled89.b.a11" }?.let { binding ->
-            System.err.println(
-                "DEBUG_A11 storeRecord file=${file.name} path=${file.sourceFile?.path} " +
-                    "fileId=${System.identityHashCode(file)} importId=${System.identityHashCode(binding.importDirective)} " +
-                    "targets=${binding.targets.joinToString { it::class.simpleName ?: it::class.java.name }}"
-            )
-        }
         bindingsByFile[file] = CfirFileImportBindings(file = file, imports = imports)
     }
 
-    fun getBindings(file: CfirFile): CfirFileImportBindings? {
-        val result = bindingsByFile[file]
-        result?.imports
-            ?.firstOrNull { it.importDirective.importedFqName?.asString() == "untitled89.b.a11" }
-            ?.let { binding ->
-                System.err.println(
-                    "DEBUG_A11 storeGet file=${file.name} path=${file.sourceFile?.path} " +
-                        "fileId=${System.identityHashCode(file)} importId=${System.identityHashCode(binding.importDirective)} " +
-                        "targets=${binding.targets.joinToString { it::class.simpleName ?: it::class.java.name }}"
-                )
-            }
-        return result
-    }
+    fun getBindings(file: CfirFile): CfirFileImportBindings? = bindingsByFile[file]
 }
