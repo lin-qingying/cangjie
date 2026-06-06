@@ -36,6 +36,8 @@
 | 文件 | 角色 | 说明 |
 |---|---|---|
 | [`cangjie_features.md`](cangjie_features.md) | 参考 | 基于官方文档整理的仓颉语言特性清单 |
+| [`cangjie-language-spec-whitepaper.md`](cangjie-language-spec-whitepaper.md) | 规约 | 仓颉语言核心语法与语义规约白皮书，重点区分变量、属性、类型、表达式和扩展语义 |
+| [`cangjie-tutorial/`](cangjie-tutorial/) | 教程站 | 使用 VitePress 构建的多文件仓颉语言教程，按命令行任务本学习路径组织 |
 
 ## 计划 / Plans
 

@@ -1041,6 +1041,9 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
                 // 使用 reason 字符串中提取的名称，或者使用结构化 Cone 诊断类。
                 null
 
+            DiagnosticKind.ThisTypeNotAllowed ->
+                CfirErrors.parse_this_type_not_allow.on(source ?: diagnosticSource, session)
+
             else -> null
         } ?: mapSimpleDiagnosticByReason(this, diagnosticSource, session)
 

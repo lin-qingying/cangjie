@@ -14,6 +14,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
@@ -32,8 +35,12 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.constructThisType
 import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
@@ -367,7 +374,13 @@ class BodyResolveContext(
     ): T {
         val ownerSymbol = owner.symbol as? CfirClassLikeSymbol<*>
             ?: return f()
-        val ownerType = ownerSymbol.constructType()
+        val ownerTypeArguments = owner.typeParameters.map { typeParameter ->
+            ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
+        }
+        val ownerType = when (ownerSymbol) {
+            is CfirClassSymbol -> ownerSymbol.constructThisType(ownerTypeArguments)
+            else -> ownerSymbol.constructType(ownerTypeArguments)
+        }
         val towerElementsForClass = holder.collectTowerDataElementsForClass(owner, ownerType)
 
         val base = towerDataContext.addNonLocalTowerDataElements(towerElementsForClass.superClassesStaticScopes)
@@ -501,6 +514,65 @@ class BodyResolveContext(
             storeFunction(namedFunction, session)
         }
         return withContainer(namedFunction, f)
+    }
+
+    /**
+     * 对齐 K2 `withProperty`：属性声明自身引入类型参数作用域，并作为访问器解析的父容器。
+     */
+    @OptIn(PrivateForInline::class)
+    inline fun <T> withProperty(property: CfirProperty, f: () -> T): T =
+        withTypeParametersOf(property) {
+            withContainer(property, f)
+        }
+
+    /**
+     * 对齐 K2 `withPropertyAccessor`：访问器 body 独立拥有局部参数作用域，
+     * 但仍运行在所属属性已经建立好的 class / property tower data 之内。
+     */
+    @OptIn(PrivateForInline::class)
+    inline fun <T> withPropertyAccessor(
+        property: CfirProperty,
+        accessor: CfirPropertyAccessor,
+        holder: SessionAndScopeSessionHolder,
+        f: () -> T,
+    ): T {
+        if (accessor.body == null) {
+            return if (accessor.isGetter) {
+                withContainer(accessor, f)
+            } else {
+                withTowerDataCleanup {
+                    addLocalScope(CfirLocalScope(holder.session))
+                    withContainer(accessor, f)
+                }
+            }
+        }
+
+        return withTowerDataCleanup {
+            addLocalScope(CfirLocalScope(holder.session))
+            for (valueParameter in accessor.valueParameters) {
+                storeValueParameterIfNeeded(valueParameter, holder.session)
+            }
+
+            withPublicApiInlineFunction(accessor) {
+                withContainer(accessor, f)
+            }
+        }
+    }
+
+    /**
+     * 对齐 K2 `withTypeParametersOf`，仅把真实类型参数放入 tower data。
+     */
+    @OptIn(PrivateForInline::class)
+    inline fun <T> withTypeParametersOf(declaration: CfirTypeParameterRefsOwner, f: () -> T): T {
+        val typeParameters = declaration.typeParameters.filterIsInstance<CfirTypeParameter>()
+        if (typeParameters.isEmpty()) {
+            return f()
+        }
+
+        return withTowerDataCleanup {
+            addNonLocalScope(CfirTypeParameterScopeImpl(typeParameters))
+            f()
+        }
     }
 
     /**

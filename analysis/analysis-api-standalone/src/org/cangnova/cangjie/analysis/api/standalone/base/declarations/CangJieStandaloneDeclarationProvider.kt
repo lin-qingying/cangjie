@@ -59,14 +59,17 @@ class CangJieStandaloneDeclarationProviderFactory(
         libraryModule: CaLibraryModule,
         scope: GlobalSearchScope,
     ): List<CangJieFileBasedDeclarationProvider> {
-        return CaDecompiledBinaryIndex.getInstance(project)
+        val rootFiles = fileCollector.collectFromRoots(libraryModule.binaryRoots, scope)
+        val decompiledFiles = CaDecompiledBinaryIndex.getInstance(project)
             .getBinaryFiles(libraryModule)
             .asSequence()
             .filter(scope::contains)
             .mapNotNull { binaryFile -> psiManager.findFile(binaryFile) as? CjFile }
+            .toList()
+
+        return (rootFiles + decompiledFiles)
             .distinctBy { file -> file.virtualFile?.url ?: file.name }
             .map(::CangJieFileBasedDeclarationProvider)
-            .toList()
     }
 }
 
@@ -107,8 +110,18 @@ internal class CangJieStandaloneSourceFileCollector(
         get() = CaModuleProvider.getInstance(project)
 
     fun collect(scope: GlobalSearchScope): List<CjFile> {
+        return collectFromRoots(moduleProvider.allSourceFiles, scope)
+    }
+
+    /**
+     * 为 standalone source roots 与 stub-origin library roots 提供同一套 PSI 文件收集规则。
+     */
+    fun collectFromRoots(
+        roots: Iterable<PsiFileSystemItem>,
+        scope: GlobalSearchScope,
+    ): List<CjFile> {
         return buildList {
-            moduleProvider.allSourceFiles.forEach { sourceRoot ->
+            roots.forEach { sourceRoot ->
                 collectFromSourceRoot(sourceRoot, scope, this)
             }
         }.distinctBy { file -> file.virtualFile ?: file }

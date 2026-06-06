@@ -372,7 +372,13 @@ class Candidate(
             else -> null
         } ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved return type"))
 
-        return if (::substitutor.isInitialized) substitutor.substituteOrSelf(declared) else declared
+        val substituted = if (::substitutor.isInitialized) substitutor.substituteOrSelf(declared) else declared
+        return substituted.replaceThisTypeWithDispatchReceiver()
+    }
+
+    private fun ConeCangJieType.replaceThisTypeWithDispatchReceiver(): ConeCangJieType {
+        if (this !is ConeClassLikeType || !isThisType) return this
+        return dispatchReceiverExpression()?.coneTypeOrNull ?: this
     }
 
     private fun enumConstructorOwnerType(declaration: CfirEnumConstructor): ConeCangJieType? {

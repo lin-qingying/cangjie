@@ -6,7 +6,7 @@ Tower Data Context:
             Opaque scope
     Element 2
         Implicit receiver:
-            CfirClassSymbol offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>offset: R|kotlin.Unit|value: <implicit>internal? class Box<T> {
+            CfirClassSymbol internal? class Box<T> {
     public prop value: R|kotlin.Unit|
     init(value: R|kotlin.Unit|) {
         <element: CfirLazyBlock>
@@ -17,18 +17,7 @@ Tower Data Context:
         }
     }
 }
-internal? class Box<T> {
-    public prop value: R|kotlin.Unit|
-    init(value: R|kotlin.Unit|) {
-        <element: CfirLazyBlock>
-    }
-    public func unwrap(): R|kotlin.Unit| {
-        RETURN {
-            NAMED_ACCESS(value)
-        }
-    }
-}
-            Type: sample/lowlevel/contextcollector/generated/Box
+            Type: sample/lowlevel/contextcollector/generated/Box<T>.This
     Element 3
         Scope: CfirLocalScope
     Element 4

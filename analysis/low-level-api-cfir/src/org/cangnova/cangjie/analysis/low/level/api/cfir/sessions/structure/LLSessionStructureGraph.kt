@@ -2,6 +2,7 @@
 
 package org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.structure
 
+import org.cangnova.cangjie.analysis.api.projectStructure.CaDanglingFileModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaLibraryModule
 import org.cangnova.cangjie.analysis.api.projectStructure.CaSourceModule
 import org.cangnova.cangjie.analysis.low.level.api.cfir.sessions.LLCfirSession
@@ -50,6 +51,7 @@ internal class LLSessionStructureGraphNode(
 
     val label: String
         get() = when (val module = session.caModule) {
+            is CaDanglingFileModule -> module.moduleDescription
             is CaSourceModule -> "[SRC] ${module.name}"
             is CaLibraryModule -> "[LIB] ${module.libraryName}"
             else -> module.moduleDescription

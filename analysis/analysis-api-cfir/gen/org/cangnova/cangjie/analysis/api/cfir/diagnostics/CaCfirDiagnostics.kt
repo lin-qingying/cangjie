@@ -555,6 +555,10 @@ sealed interface CaCfirDiagnostic<PSI : PsiElement> : CaDiagnosticWithPsi<PSI> {
         val typeName: Name
     }
 
+    interface ParseThisTypeNotAllow : CaCfirDiagnostic<CjTypeReference> {
+        override val diagnosticClass get() = ParseThisTypeNotAllow::class
+    }
+
     interface InvisibleMember : CaCfirDiagnostic<PsiElement> {
         override val diagnosticClass get() = InvisibleMember::class
         val member: String

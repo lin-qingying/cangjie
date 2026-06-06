@@ -604,6 +604,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("typeName")
         }
 
+        // This 类型只允许出现在 class 实例成员函数返回类型中。
+        val parse_this_type_not_allow by error<CjTypeReference>()
+
         // 可见性错误：成员在当前上下文不可见
         val INVISIBLE_MEMBER by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<String>("member")

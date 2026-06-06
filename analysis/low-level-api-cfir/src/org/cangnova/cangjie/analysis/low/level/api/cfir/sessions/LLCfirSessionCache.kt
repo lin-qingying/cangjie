@@ -134,16 +134,16 @@ class LLCfirSessionCache(
     private fun createSession(module: CaModule): LLCfirSession {
         val sessionFactory = createPlatformAwareSessionFactory(module)
         return when (module) {
-            is CaSourceModule -> sessionFactory.createSourcesSession(module)
-            is CaBuiltinsModule -> sessionFactory.createResolvableLibrarySession(module)
-            is CaLibraryModule -> sessionFactory.createResolvableLibrarySession(module)
-            is CaLibrarySourceModule -> sessionFactory.createResolvableLibrarySession(module)
-            is CaLibraryFallbackDependenciesModule -> sessionFactory.createBinaryLibrarySession(module)
             is CaDanglingFileModule -> {
                 //  Dangling file context must have an analyzable session, so we can properly compile code against it.
                 val contextSession = getSession(module.contextModule, preferBinary = false)
                 sessionFactory.createDanglingFileSession(module, contextSession)
             }
+            is CaSourceModule -> sessionFactory.createSourcesSession(module)
+            is CaBuiltinsModule -> sessionFactory.createResolvableLibrarySession(module)
+            is CaLibraryModule -> sessionFactory.createResolvableLibrarySession(module)
+            is CaLibrarySourceModule -> sessionFactory.createResolvableLibrarySession(module)
+            is CaLibraryFallbackDependenciesModule -> sessionFactory.createBinaryLibrarySession(module)
             is CaNotUnderContentRootModule -> sessionFactory.createNotUnderContentRootResolvableSession(module)
             else -> error("Unexpected module kind: ${module::class.simpleName}")
         }

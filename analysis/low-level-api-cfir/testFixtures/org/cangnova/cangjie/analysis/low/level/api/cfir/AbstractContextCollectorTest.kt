@@ -107,8 +107,6 @@ abstract class AbstractContextCollectorSourceTest : AbstractContextCollectorTest
 }
 
 private object ContextCollectorGoldenRenderer {
-    private val symbolRenderer = CfirRenderer.withReadability()
-
     fun render(context: ContextCollector.Context, builder: StringBuilder) = with(builder) {
         renderTowerDataContext(context.towerDataContext)
     }
@@ -185,7 +183,8 @@ private object ContextCollectorGoldenRenderer {
     }
 
     private fun renderSymbol(symbol: CfirBasedSymbol<*>): String {
-        return "${symbol::class.simpleName} ${symbolRenderer.renderElementAsString(symbol.cfir)}"
+        val renderer = CfirRenderer.withReadability()
+        return "${symbol::class.simpleName} ${renderer.renderElementAsString(symbol.cfir)}"
     }
 
     private fun ConeCangJieType.renderReadableType(): String = renderForDebugging()

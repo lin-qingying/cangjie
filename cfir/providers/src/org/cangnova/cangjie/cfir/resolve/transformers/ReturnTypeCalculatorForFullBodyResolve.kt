@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
+import org.cangnova.cangjie.cfir.canHaveDeferredReturnTypeCalculation
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
@@ -23,13 +24,16 @@ class ReturnTypeCalculatorForFullBodyResolve : ReturnTypeCalculator() {
             return returnTypeRef
         }
 
-        return callableCopyTypeCalculator.computeReturnType(declaration)
-            ?: buildErrorTypeRef {
-                diagnostic = ConeSimpleDiagnostic(
-                    "Cannot calculate return type during full-body resolution",
-                    DiagnosticKind.InferenceError,
-                )
-            }
+        if (declaration.canHaveDeferredReturnTypeCalculation) {
+            return callableCopyTypeCalculator.computeReturnType(declaration)
+        }
+
+        return buildErrorTypeRef {
+            diagnostic = ConeSimpleDiagnostic(
+                "Cannot calculate return type during full-body resolution",
+                DiagnosticKind.InferenceError,
+            )
+        }
     }
 
     companion object {

@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.diagnosticFactoryForReturnTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.checkers.isSubtypeForTypeMismatch
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.specificTypeMismatchDiagnostic
@@ -107,7 +108,7 @@ object CfirReturnTypeMismatchChecker : CfirReturnExpressionChecker( ) {
                 return
             }
             reporter.reportOn(
-                source, CfirErrors.RETURN_TYPE_MISMATCH,
+                source, diagnosticFactoryForReturnTypeMismatch(context.session, expectedType),
                 expectedType,
                 actualType,
                 false,

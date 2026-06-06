@@ -870,7 +870,8 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         components.dataFlowAnalyzer.enterJump(returnExpression)
-        val expectedReturnTypeRef = returnExpression.target.labeledElement.returnTypeRef as? CfirResolvedTypeRef
+        val expectedReturnTypeRef = (returnExpression.target.labeledElement.returnTypeRef as? CfirResolvedTypeRef)
+            ?.takeUnless { it.coneType is ConeErrorType }
         val resultResolutionMode = expectedReturnTypeRef?.let(::withExpectedType) ?: ResolutionMode.ContextIndependent
         returnExpression.transformResult(transformer, resultResolutionMode)
         returnExpression.transformAnnotations(transformer, ResolutionMode.ContextIndependent)

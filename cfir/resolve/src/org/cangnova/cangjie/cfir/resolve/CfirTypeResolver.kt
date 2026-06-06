@@ -45,11 +45,13 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.cfir.symbols.constructThisType
 
 /**
  * 鐎靛綊缍?Kotlin `FirTypeResolver` 閻ㄥ嫪绱扮拠婵堢矋娴犺埖濞婄挒鈽呮嫹? */
@@ -74,6 +76,8 @@ data class CfirTypeResolutionResult(
     val diagnostic: ConeDiagnostic?,
 )
 
+private const val THIS_TYPE_NOT_ALLOWED_REASON = "This type is only allowed as an instance member function return type"
+
 /**
  * Supertype supplier hook used by the SUPER_TYPES phase.
  */
@@ -89,6 +93,7 @@ class CfirTypeResolverImpl(
     private val session: CfirSession,
 ) : CfirTypeResolver() {
     private val cFuncName = Name.identifier("CFunc")
+    private val thisTypeName = Name.identifier("This")
     private val aliasedTypeExpansionGloballyDisabled: Boolean =
         !session.languageVersionSettings.getFlag(AnalysisFlags.expandTypeAliasesInTypeResolution)
 
@@ -175,6 +180,9 @@ class CfirTypeResolverImpl(
 
         if (typeRef.qualifier.size == 1) {
             val qualifierPart = typeRef.qualifier.single()
+            if (qualifierPart.name == thisTypeName) {
+                return resolveThisType(qualifierPart, configuration)
+            }
             if (qualifierPart.name == cFuncName) {
                 return resolveCFuncUserType(qualifierPart, configuration, expandTypeAliases)
             }
@@ -235,6 +243,25 @@ class CfirTypeResolverImpl(
             expandTypeAliases = expandTypeAliases,
             configuration = configuration,
         )
+    }
+
+    private fun resolveThisType(
+        qualifierPart: CfirQualifierPart,
+        configuration: TypeResolutionConfiguration,
+    ): ConeCangJieType {
+        val owner = configuration.thisTypeOwner
+            ?: return thisTypeNotAllowedError()
+        if (qualifierPart.typeArguments.isNotEmpty()) {
+            return thisTypeNotAllowedError("This type does not accept type arguments")
+        }
+        val typeArguments = owner.typeParameters.map { parameter ->
+            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
+        }
+        return owner.symbol.constructThisType(typeArguments)
+    }
+
+    private fun thisTypeNotAllowedError(reason: String = THIS_TYPE_NOT_ALLOWED_REASON): ConeErrorType {
+        return ConeErrorType(ConeSimpleDiagnostic(reason, DiagnosticKind.ThisTypeNotAllowed))
     }
 
     private fun resolveCFuncUserType(

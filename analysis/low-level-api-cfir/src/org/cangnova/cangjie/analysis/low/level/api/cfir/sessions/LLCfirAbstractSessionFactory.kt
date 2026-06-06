@@ -390,6 +390,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
 
             register(CfirProvider::class, cfirProvider)
             register(CfirLazyDeclarationResolver::class, LLCfirLazyDeclarationResolver())
+            register(
+                CfirExtendProvider::class,
+                LLCfirSessionExtendProvider(this, extendIndexStore),
+            )
 
             register(CfirRegisteredPluginAnnotations::class, CfirRegisteredPluginAnnotationsImpl(session))
             register(CfirPredicateBasedProvider::class, CfirEmptyPredicateBasedProvider)
@@ -435,9 +439,13 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                         is CaLibraryModule, is CaLibrarySourceModule -> {
                             // Wrap library dependencies into a single classpath-filtering provider
                             // Also see 'LLDanglingFileDependenciesSymbolProvider.filterSymbols()'
-                            add(LLDanglingFileDependenciesSymbolProvider(contextSession.dependenciesSymbolProvider))
+                            val contextDependencies = contextSession.dependenciesSymbolProvider
+                            add(LLDanglingFileDependenciesSymbolProvider(contextDependencies))
                         }
-                        else -> add(contextSession.dependenciesSymbolProvider)
+                        else -> {
+                            val contextDependencies = contextSession.dependenciesSymbolProvider
+                            add(contextDependencies)
+                        }
                     }
 
                     add(builtinsSession.symbolProvider)
@@ -493,10 +501,6 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
         fun getOrCreateSessionForDependency(dependency: CaModule): LLCfirSession? = when (dependency) {
             is CaBuiltinsModule -> null // Built-ins are already added
 
-            is CaLibraryModule, is CaLibraryFallbackDependenciesModule -> sessionCache.getDependencySession(dependency)
-
-            is CaSourceModule -> sessionCache.getDependencySession(dependency)
-
             is CaDanglingFileModule -> {
                 requireWithAttachment(dependency.isStable, message = { "Unstable dangling modules cannot be used as a dependency" }) {
                     withCaModuleEntry("module", module)
@@ -505,6 +509,10 @@ internal abstract class LLCfirAbstractSessionFactory(protected val project: Proj
                 }
                 sessionCache.getDependencySession(dependency)
             }
+
+            is CaLibraryModule, is CaLibraryFallbackDependenciesModule -> sessionCache.getDependencySession(dependency)
+
+            is CaSourceModule -> sessionCache.getDependencySession(dependency)
 
             else -> {
                 errorWithAttachment("Module ${module::class} cannot depend on ${dependency::class}") {

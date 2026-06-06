@@ -46,6 +46,7 @@ private fun CjTypeElement.toCfirTypeRef(
     is CjOptionType -> toCfirOptionTypeRef(ref, toSource)
     is CjTupleType -> toCfirTupleTypeRef(ref, toSource)
     is CjVArrayType -> toCfirVArrayTypeRef(ref, toSource)
+    is CjThisType -> toCfirThisTypeRef(ref, toSource)
     else -> buildErrorTypeRef {
         source = ref.toCjSourceElementOrNull(toSource)
         diagnostic =  ConeSimpleDiagnostic("Unsupported type element: ${javaClass.simpleName}")
@@ -86,6 +87,19 @@ private fun CjUserType.toCfirUserTypeRef(
     return buildUserTypeRef {
         source = ref.toCjSourceElement(toSource)
         this.qualifier += qualifier
+    }
+}
+
+private fun CjThisType.toCfirThisTypeRef(
+    ref: CjTypeReference,
+    toSource: (com.intellij.psi.PsiElement) -> AbstractCjSourceElement,
+): CfirUserTypeRef {
+    return buildUserTypeRef {
+        source = ref.toCjSourceElement(toSource)
+        qualifier += buildQualifierPart {
+            source = toSource(this@toCfirThisTypeRef) as? CjSourceElement
+            name = Name.identifier("This")
+        }
     }
 }
 

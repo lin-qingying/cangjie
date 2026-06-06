@@ -26,6 +26,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
 import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
@@ -313,25 +314,69 @@ open class CfirDeclarationsResolveTransformer(
         property: CfirProperty,
         data: ResolutionMode,
     ): CfirProperty {
-        val savedContext = context.towerDataContext
+        if (property.bodyResolveState >= CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED) {
+            bumpPhase(property)
+            return property
+        }
 
-        context.withContainer(property) {
+        val shouldResolveEverything = !transformer.implicitTypeOnly
+        if (property.isLocal) {
+            context.storeProperty(property, session)
+        }
+
+        context.withProperty(property) {
             property.replaceReturnTypeRef(
                 resolveExplicitTypeRefIfNeeded(
                     property.returnTypeRef,
                     property.typeParameters,
-                )
+                ),
             )
-            if (property.isLocal) {
-                context.storeProperty(property, session)
+
+            if (shouldResolveEverything) {
+                property.transformAnnotations(transformer, data)
+                property.transformTypeParameters(transformer, ResolutionMode.ContextIndependent)
+            }
+
+            property.getter?.let { getter ->
+                transformAccessor(getter, property, shouldResolveEverything)
+                property.replaceBodyResolveState(CfirPropertyBodyResolveState.INITIALIZER_AND_GETTER_RESOLVED)
+            }
+
+            if (shouldResolveEverything) {
+                property.setter?.let { setter ->
+                    transformAccessor(setter, property, shouldResolveEverything)
+                }
+                property.replaceBodyResolveState(CfirPropertyBodyResolveState.ALL_BODIES_RESOLVED)
             }
         }
 
-        if (!property.isLocal) {
-            context.replaceTowerDataContext(savedContext)
-        }
         bumpPhase(property)
         return property
+    }
+
+    override fun transformPropertyAccessor(
+        propertyAccessor: CfirPropertyAccessor,
+        data: ResolutionMode,
+    ): CfirPropertyAccessor {
+        transformProperty(propertyAccessor.propertySymbol.cfir, data)
+        return propertyAccessor
+    }
+
+    private fun transformAccessor(
+        accessor: CfirPropertyAccessor,
+        owner: CfirProperty,
+        shouldResolveEverything: Boolean,
+    ): Unit = whileAnalysing(session, accessor) {
+        context.withPropertyAccessor(owner, accessor, components) {
+            prepareSignatureForBodyResolve(accessor)
+            withFullBodyResolve {
+                transformFunctionWithGivenSignature(
+                    accessor,
+                    shouldResolveEverything,
+                    inferImplicitReturnType = accessor.isGetter,
+                )
+            }
+        }
     }
 
     // ── Variable (generic fallback) ───────────────────────────────────────
@@ -418,7 +463,7 @@ open class CfirDeclarationsResolveTransformer(
         if (fieldVariable.returnTypeRef is CfirImplicitTypeRef) {
             val initType = fieldVariable.initializer?.coneTypeOrNull
             if (initType != null) {
-                val resolvedType = IdealTypeResolver.resolveIfIdeal(initType)
+                val resolvedType = IdealTypeResolver.resolveIfIdeal(initType).approximateThisTypeForDeclaration()
                 fieldVariable.replaceReturnTypeRef(
                     fieldVariable.returnTypeRef.resolvedTypeFromPrototype(
                         resolvedType,
@@ -507,7 +552,7 @@ open class CfirDeclarationsResolveTransformer(
         if (patternVariable.returnTypeRef is CfirImplicitTypeRef) {
             val initType = patternVariable.initializer?.coneTypeOrNull
             if (initType != null) {
-                val resolvedType = IdealTypeResolver.resolveIfIdeal(initType)
+                val resolvedType = IdealTypeResolver.resolveIfIdeal(initType).approximateThisTypeForDeclaration()
                 patternVariable.replaceReturnTypeRef(
                     patternVariable.returnTypeRef.resolvedTypeFromPrototype(
                         resolvedType,
@@ -729,6 +774,8 @@ open class CfirDeclarationsResolveTransformer(
             return expressionTypes.single()
         }
 
+        expressionTypes.commonThisReturnTypeOrNull()?.let { return it }
+
         val commonType = session.typeContext.commonSuperTypeOrNull(expressionTypes)
         if (commonType != null && commonType !is ConeErrorType && commonType.isAcceptableInferredReturnType(expressionTypes)) {
             return commonType
@@ -739,6 +786,13 @@ open class CfirDeclarationsResolveTransformer(
             postfix = " do not have the smallest common supertype",
         ) { "'$it'" }
         return ConeErrorType(ConeSimpleDiagnostic(message))
+    }
+
+    private fun List<ConeCangJieType>.commonThisReturnTypeOrNull(): ConeClassLikeType? {
+        val thisTypes = map { type -> type as? ConeClassLikeType ?: return null }
+        if (thisTypes.any { !it.isThisType }) return null
+        val first = thisTypes.firstOrNull() ?: return null
+        return first.takeIf { candidate -> thisTypes.all { it == candidate } }
     }
 
     /**

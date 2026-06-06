@@ -19,6 +19,7 @@ data class TypeResolutionConfiguration(
      */
     val scopes: Iterable<CfirScope> = emptyList(),
     val containingClassDeclarations: List<CfirClass> = emptyList(),
+    val thisTypeOwner: CfirClass? = null,
     val useSiteFile: CfirFile?,
     val topContainer: CfirDeclaration? = null,
     val scopeTypeParameters: Map<String, CfirTypeParameter> = emptyMap(),
@@ -45,6 +46,11 @@ data class TypeResolutionConfiguration(
     fun withContainingClassDeclarations(classes: List<CfirClass>): TypeResolutionConfiguration {
         if (containingClassDeclarations === classes) return this
         return copy(containingClassDeclarations = classes)
+    }
+
+    fun withThisTypeOwner(owner: CfirClass?): TypeResolutionConfiguration {
+        if (thisTypeOwner === owner) return this
+        return copy(thisTypeOwner = owner)
     }
 
     fun withScopes(scopes: Iterable<CfirScope>): TypeResolutionConfiguration {

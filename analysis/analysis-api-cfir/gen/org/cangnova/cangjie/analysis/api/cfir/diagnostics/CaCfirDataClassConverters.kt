@@ -2632,6 +2632,12 @@ private fun CaDiagnosticConverterBuilder.addConversions145() {
             token,
         )
     }
+    add(CfirErrors.parse_this_type_not_allow) { cfirDiagnostic ->
+        ParseThisTypeNotAllowImpl(
+            cfirDiagnostic as CjPsiDiagnostic,
+            token,
+        )
+    }
 }
 
 private fun CaDiagnosticConverterBuilder.addConversions146() {

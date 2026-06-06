@@ -252,8 +252,8 @@ object LLFlightRecorder {
 private fun computeModuleKind(target: CfirElementWithResolveState): Byte {
     val moduleData = target.moduleData as LLCfirModuleData
     return when (moduleData.caModule) {
-        is CaSourceModule -> 0
         is CaDanglingFileModule -> 1
+        is CaSourceModule -> 0
         is CaNotUnderContentRootModule -> 2
         is CaLibraryFallbackDependenciesModule -> 3
         is CaLibraryModule -> 4

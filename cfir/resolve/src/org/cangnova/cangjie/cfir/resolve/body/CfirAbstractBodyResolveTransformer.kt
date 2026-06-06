@@ -335,6 +335,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return declarationsTransformer.transformProperty(property, data)
     }
 
+    override fun transformPropertyAccessor(propertyAccessor: CfirPropertyAccessor, data: ResolutionMode): CfirPropertyAccessor {
+        return declarationsTransformer.transformPropertyAccessor(propertyAccessor, data)
+    }
+
     override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: ResolutionMode): CfirFieldVariable {
         return declarationsTransformer.transformFieldVariable(fieldVariable, data)
     }
