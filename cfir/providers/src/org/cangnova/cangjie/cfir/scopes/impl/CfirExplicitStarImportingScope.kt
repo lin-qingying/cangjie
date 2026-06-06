@@ -2,6 +2,8 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
+import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.scopes.CfirImportScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
@@ -21,6 +23,7 @@ import org.cangnova.cangjie.name.Name
 class CfirExplicitStarImportingScope(
     imports: List<CfirImport>,
     private val symbolProvider: CfirSymbolProvider,
+    resolvedImports: List<CfirResolvedImportBinding>? = null,
 ) : CfirImportScope() {
 
     /** 所有星号导入的目标包名 */
@@ -32,9 +35,19 @@ class CfirExplicitStarImportingScope(
             .mapNotNull { it.importedFqName }
             .distinct()
     }
+    private val resolvedStarImportPackages: List<FqName>? = resolvedImports
+        ?.asSequence()
+        ?.filter { it.importDirective.isAllUnder }
+        ?.flatMap { binding ->
+            binding.targets.asSequence().mapNotNull { target ->
+                (target as? CfirResolvedImportTarget.Package)?.fqName
+            }
+        }
+        ?.distinct()
+        ?.toList()
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
-        for (packageFqName in starImportPackages) {
+        for (packageFqName in packages()) {
             val classId = ClassId(packageFqName, FqName.topLevel(name))
             val symbol = symbolProvider.getClassLikeSymbolByClassId(classId)
             if (symbol != null) processor(symbol)
@@ -42,20 +55,22 @@ class CfirExplicitStarImportingScope(
     }
 
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
-        for (packageFqName in starImportPackages) {
+        for (packageFqName in packages()) {
             symbolProvider.getTopLevelFunctionSymbols(packageFqName, name).forEach(processor)
         }
     }
 
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
-        for (packageFqName in starImportPackages) {
+        for (packageFqName in packages()) {
             symbolProvider.getTopLevelCallableSymbols(packageFqName, name).forEach(processor)
         }
     }
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
-        for (packageFqName in starImportPackages) {
+        for (packageFqName in packages()) {
             symbolProvider.getTopLevelPropertySymbols(packageFqName, name).forEach(processor)
         }
     }
+
+    private fun packages(): List<FqName> = resolvedStarImportPackages ?: starImportPackages
 }
