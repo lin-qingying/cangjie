@@ -35,6 +35,3 @@
 ./gradlew :lsp:test
 ```
 
-## 相关文档
-
-- `../docs/current-module-organization.md` — LSP 层定位

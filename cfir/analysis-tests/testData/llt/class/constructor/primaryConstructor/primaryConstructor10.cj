@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
 
 class Data {
     public Data(let a!: Bool = <!sema_assignment_of_member_variable_cannot_use_this_or_super, sema_capture_has_shadow_variable!>x<!>, var x!: Bool = a) {}

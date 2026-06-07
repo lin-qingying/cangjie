@@ -4,5 +4,3 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: mkdir empty_folder
-// EXEC: %compiler %pkg_opt %n 2>&1 | compare %f

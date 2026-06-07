@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %noColor %f 2>&1 | compare %f
 
 main() {
     var range1 = <!parse_expected_expression!>..<!>10 :3

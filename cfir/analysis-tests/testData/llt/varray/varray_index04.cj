@@ -1,4 +1,3 @@
-// (CJNATIVE and DEBUG_OPTION) EXEC-PIPE: %frontendCompiler %dump-ast %cmp_opt %f -o %output 2>&1 | compare %f
 
 main() {
     // UInt32_Max = 4294967295

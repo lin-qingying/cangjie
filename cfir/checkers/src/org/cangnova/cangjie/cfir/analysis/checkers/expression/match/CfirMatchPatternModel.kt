@@ -22,15 +22,22 @@ import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.ClassId
 
 typealias CfirMatrix = List<List<CfirMatchPattern>>
+
+private const val OPTION_SOME_CONSTRUCTOR_NAME = "Some"
+private const val OPTION_NONE_CONSTRUCTOR_NAME = "None"
 
 data class CfirMatchPattern(
     val type: ConeCangJieType,
@@ -197,15 +204,19 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
 }
 
 sealed class CfirConstructor {
-    open fun arity(type: ConeCangJieType): Int = when (type) {
-        is ConeTupleType if this is Single -> type.elementTypes.size
+    open fun arity(type: ConeCangJieType): Int = when (val patternType = type.expandedPatternEnumType()) {
+        is ConeTupleType if this is Single -> patternType.elementTypes.size
         is ConeEnumType if this is Enum -> arityHint
+        is ConeClassLikeType if this is Enum && patternType.classId == StdlibClassIds.Option ->
+            stdlibOptionConstructorArity(entryName) ?: 0
         else -> 0
     }
 
-    open fun subTypes(type: ConeCangJieType): List<ConeCangJieType> = when (type) {
-        is ConeTupleType if this is Single -> type.elementTypes
+    open fun subTypes(type: ConeCangJieType): List<ConeCangJieType> = when (val patternType = type.expandedPatternEnumType()) {
+        is ConeTupleType if this is Single -> patternType.elementTypes
         is ConeEnumType if this is Enum -> List(arityHint) { ConeErrorType(ConeSimpleDiagnostic("enum constructor argument")) }
+        is ConeClassLikeType if this is Enum && patternType.classId == StdlibClassIds.Option ->
+            patternType.stdlibOptionConstructorSubTypes(entryName)
         else -> emptyList()
     }
 
@@ -229,8 +240,8 @@ sealed class CfirConstructor {
     }
 
     companion object {
-        fun allConstructors(type: ConeCangJieType, session: CfirSession): List<CfirConstructor> = when (type) {
-            is ConePrimitiveType -> when (type.kind) {
+        fun allConstructors(type: ConeCangJieType, session: CfirSession): List<CfirConstructor> = when (val patternType = type.expandedPatternEnumType()) {
+            is ConePrimitiveType -> when (patternType.kind) {
                 PrimitiveTypeKind.BOOLEAN -> listOf(
                     ConstantValue(CfirConstantValue.BooleanConst(true)),
                     ConstantValue(CfirConstantValue.BooleanConst(false)),
@@ -240,12 +251,17 @@ sealed class CfirConstructor {
             }
 
             is ConeEnumType -> {
-                val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(type.classId)
+                val classSymbol = session.symbolProvider.getClassLikeSymbolByClassId(patternType.classId)
                 val klass = classSymbol?.takeIf { it.isBound }?.cfir ?: return emptyList()
                 klass.declarations
                     .filterIsInstance<CfirEnumConstructor>()
-                    .map { Enum(type.classId, it.name.asString(), arityHint = it.payloadArity()) }
+                    .map { Enum(patternType.classId, it.name.asString(), arityHint = it.payloadArity()) }
             }
+
+            is ConeClassLikeType if patternType.classId == StdlibClassIds.Option -> listOf(
+                Enum(StdlibClassIds.Option, OPTION_SOME_CONSTRUCTOR_NAME, arityHint = 1),
+                Enum(StdlibClassIds.Option, OPTION_NONE_CONSTRUCTOR_NAME, arityHint = 0),
+            )
 
             else -> listOf(Single)
         }
@@ -292,14 +308,17 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
         }
 
         is CfirEnumPattern -> {
-            val enumType = expectedType as? ConeEnumType
-            val enumClassId = enumType?.classId
+            val patternType = expectedType.expandedPatternEnumType()
+            val enumClassId = patternType.patternEnumClassId()
             val entryName = (pattern.constructorReference as? CfirNamedReference)?.name?.asString()
             if (enumClassId == null || entryName == null) {
                 listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
             } else {
+                val constructor = CfirConstructor.Enum(enumClassId, entryName, pattern.arguments.size)
+                val argumentTypes = constructor.subTypes(patternType)
                 val subPatterns = pattern.arguments.mapIndexed { index, sub ->
-                    val subType = ConeErrorType(ConeSimpleDiagnostic("enum arg[$index]"))
+                    val subType = argumentTypes.getOrNull(index)
+                        ?: ConeErrorType(ConeSimpleDiagnostic("enum arg[$index]"))
                     convertPattern(sub, subType).firstOrNull() ?: CfirMatchPattern.wild(subType)
                 }
                 listOf(
@@ -353,6 +372,32 @@ fun isSameType(a: ConeCangJieType, b: ConeCangJieType): Boolean {
 
 fun inferExpressionType(expression: CfirExpression?, fallback: ConeCangJieType = ConeErrorType(ConeSimpleDiagnostic("unknown"))): ConeCangJieType {
     return expression?.coneTypeOrNull ?: fallback
+}
+
+private fun ConeCangJieType.expandedPatternEnumType(): ConeCangJieType = when (this) {
+    is ConeTypeAliasType -> expandedType?.expandedPatternEnumType() ?: this
+    else -> this
+}
+
+private fun ConeCangJieType.patternEnumClassId(): ClassId? = when (this) {
+    is ConeEnumType -> classId
+    is ConeClassLikeType -> classId.takeIf { it == StdlibClassIds.Option }
+    else -> null
+}
+
+private fun stdlibOptionConstructorArity(entryName: String): Int? = when (entryName) {
+    OPTION_SOME_CONSTRUCTOR_NAME -> 1
+    OPTION_NONE_CONSTRUCTOR_NAME -> 0
+    else -> null
+}
+
+/**
+ * `Option<T>` 以 class-like 类型进入矩阵模型时，仍按官方 enum payload 投影子模式类型。
+ */
+private fun ConeClassLikeType.stdlibOptionConstructorSubTypes(entryName: String): List<ConeCangJieType> = when (entryName) {
+    OPTION_SOME_CONSTRUCTOR_NAME -> typeArguments.singleOrNull()?.type?.let(::listOf) ?: emptyList()
+    OPTION_NONE_CONSTRUCTOR_NAME -> emptyList()
+    else -> emptyList()
 }
 
 fun collectEnumConstructorNames(type: ConeEnumType, context: CheckerContext): List<String> {

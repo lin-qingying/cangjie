@@ -1,12 +1,42 @@
+// FILE: pkg/pkg.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkg
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg/pkg.cj -o pkg.%middle
-// EXEC: %compiler %cmp_opt %n.cj pkg.%middle 2>&1 | compare %f
+package pkg
+
+public open class C {}
+
+extend C {
+    func f() {
+        1
+    }
+    private func g() {
+        1
+    }
+    mut prop p: Int64 {
+        get() {
+            0
+        }
+        set(v) {}
+    }
+    private mut prop q: Int64 {
+        get() {
+            0
+        }
+        set(v) {}
+    }
+}
+
+// FILE: main.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 internal import <!package_search_error!>pkg<!>.*
 
@@ -25,8 +55,3 @@ class C1 <: C {
 main() {
     0
 }
-
-// (not CJNATIVE) ASSERT: regex .*error.*: no matching function declaration for function call 'g'
-// (CJNATIVE) ASSERT: scan undeclared identifier 'g'
-// (not CJNATIVE) ASSERT: regex .*error.*: can not access field 'q'
-// (CJNATIVE)ASSERT: scan undeclared identifier 'q'

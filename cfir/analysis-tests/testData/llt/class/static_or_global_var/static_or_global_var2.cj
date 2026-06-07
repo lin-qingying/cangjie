@@ -4,9 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// random seed:1635836677524
 
-// All global variable need to be defined before use!
 
 main(): Int64 {
     return 0;

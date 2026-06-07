@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 // test type recursive.
 <!sema_value_type_recursive!>s<!>truct S1 {

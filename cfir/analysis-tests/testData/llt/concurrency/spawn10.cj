@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt --module-name="ohos" %f -o %n.%suffix
-// EXEC-0: %run %run_opt %n.%suffix
 
 package ohos.base
 

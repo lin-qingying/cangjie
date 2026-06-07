@@ -4,11 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: typealias36_dep.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt typealias36_dep.cj -o pkga.%middle
-// EXEC-PIPE-0: %compiler %cmp_opt pkga.%middle %f -o %output 2>&1 | compare %f
 
-// EXEC: %run %run_opt %output %run_args
 
 import <!package_search_error!>pkga<!>
 

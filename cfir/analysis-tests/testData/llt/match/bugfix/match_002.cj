@@ -1,4 +1,3 @@
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 enum TimeUnit2 {
 | Year(Float32)

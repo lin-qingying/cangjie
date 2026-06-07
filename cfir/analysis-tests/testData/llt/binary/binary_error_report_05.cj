@@ -6,7 +6,6 @@
 
 // DIAGNOSTICS: -warnings
 
-// (CJNATIVE) EXEC: %compiler %enableO2 %cmp_opt %n.cj -o %output 2>&1 |compare %f
 
 main(): Int64 {
     var b = Boo()

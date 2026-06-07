@@ -4,9 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %n.cj -o %output
 
-// scan: 1 error generated, 1 error printed.
 
 main() {
     let x = 0

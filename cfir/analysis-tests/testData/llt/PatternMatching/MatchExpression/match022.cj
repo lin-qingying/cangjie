@@ -4,9 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 
-// _EXEC: %compi I<T,K>{
   func a(a:A<T,K>){a}
   func b(){1}
 <!parse_expected_decl!>}<!>
@@ -34,7 +32,6 @@ extend B{
 }
 
 main(): Int64<!parse_missing_body!> <!> <!parse_expected_character!>ler<!> %cmp_opt %f -o %output
-// _EXEC: %run %run_opt %output %run_args
 
 type A<T,K> = enumA<T,K>
 

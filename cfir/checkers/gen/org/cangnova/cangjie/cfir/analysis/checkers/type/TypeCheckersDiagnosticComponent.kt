@@ -49,6 +49,10 @@ class TypeCheckersDiagnosticComponent(
         checkers.allTypeRefCheckers.check(implicitTypeRef, data)
     }
 
+    override fun visitUnresolvedTypeRef(unresolvedTypeRef: CfirUnresolvedTypeRef, data: CheckerContext) {
+        checkers.allTypeRefCheckers.check(unresolvedTypeRef, data)
+    }
+
     override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef, data: CheckerContext) {
         checkers.allTypeRefCheckers.check(userTypeRef, data)
     }
@@ -59,6 +63,10 @@ class TypeCheckersDiagnosticComponent(
 
     override fun visitFunctionTypeRef(functionTypeRef: CfirFunctionTypeRef, data: CheckerContext) {
         checkers.allTypeRefCheckers.check(functionTypeRef, data)
+    }
+
+    override fun visitOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: CheckerContext) {
+        checkers.allTypeRefCheckers.check(optionTypeRef, data)
     }
 
     override fun visitTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: CheckerContext) {

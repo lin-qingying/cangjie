@@ -28,6 +28,6 @@ CFIR 类型系统的"是什么"层。对齐 Kotlin K2 `compiler/fir/cones`。
 
 ## 相关文档
 
-- `../../cjfir-compiler-stages.md` — CFIR_RESOLVE 中类型推断与替换设计
+- `../../docs/cjfir-compiler-stages.md` — CFIR_RESOLVE 中类型推断与替换设计
 - `../../docs/cfir-body-resolve-constraint-system-design.md` — 类型系统在 BODY_RESOLVE 中的使用
 - `../../docs/k2-module-alignment.md` — 与 Kotlin K2 `cones` 对照

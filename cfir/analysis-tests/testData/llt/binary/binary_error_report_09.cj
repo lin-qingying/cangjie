@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE) EXEC: %compiler %enableO2 %cmp_opt %n.cj -o %output %diag_json 2>&1 |compare %f
 
 class Test {
     operator func <!UNABLE_TO_INFER_RETURN_TYPE!>+<!>(other: Test) {

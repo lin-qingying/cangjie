@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC-PIPE: %run %run_opt %output %run_args | compare %f
-// EXEC: %compiler %f -o %output %overflowOpt
-// RUN-EXEC-PIPE: %run %run_opt %output %run_args | compare %f
 
 class Counter {
     var c = 0

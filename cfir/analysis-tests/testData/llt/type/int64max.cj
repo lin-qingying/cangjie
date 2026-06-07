@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%compiler %cmp_opt %f -o %output
-// EXEC:%run %run_opt %output %run_args
 
 func run(): Int64 {
     var i1: Int64 = -9223372036854775808

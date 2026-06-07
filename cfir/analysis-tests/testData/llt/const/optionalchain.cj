@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %f %cmp_opt 2>&1 | compare %f
 
 class B1 {
     let v = Some(B2())

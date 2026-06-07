@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %noColor %cmp_opt_chir2hlir %f -o %n.%suffix 2>&1 | compare %f
 
 interface I2 {}
 

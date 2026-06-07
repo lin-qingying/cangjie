@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix 2>&1 | compare %f
 
 struct A {
     public A (var a:Int64 <!parse_expected_dot_lparen!>=<!> 3, var b:Int64 <!parse_expected_dot_lparen!>=<!>this.a) {

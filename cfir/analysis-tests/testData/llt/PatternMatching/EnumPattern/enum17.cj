@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 
 enum a< b, c, d<!parse_expected_right_delimiter!> <!>{
     e

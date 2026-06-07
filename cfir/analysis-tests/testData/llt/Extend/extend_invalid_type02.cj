@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %overflowOpt %cmp_opt %f -o %output 
 
 public interface <!INTERFACE_CANNOT_INHERIT_CLASS!>Strbase<!> <: Collection<Byte> & Equatable<String> & Comparable<String> & Hashable & <!UNRESOLVED_REFERENCE!>T<!> & String {}
 

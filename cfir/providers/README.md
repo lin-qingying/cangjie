@@ -36,4 +36,3 @@ CFIR 中的 Symbol / Extension / Call providers，对齐 Kotlin K2 `compiler/fir
 ## 相关文档
 
 - `../../docs/k2-module-alignment.md` — 与 Kotlin K2 `providers` 对照
-- `../../docs/current-module-organization.md` — `:cfir:symbols` 演化说明

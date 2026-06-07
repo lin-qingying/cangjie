@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkgs0018001a
-// DEPENDENCE: pkgs0018002a pkgs0018003a
-// (not not CJNATIVE) EXEC: %compiler %cmp_opt pkgs0018003a/pkgs0018003a.%middle pkgs0018002a/pkgs0018002a.%middle pkgs0018001a/pkgs0018001a.%middle %n.cj --import-path pkgs0018001a --import-path pkgs0018002a --import-path pkgs0018003a -o %n.%suffix
-// (not CJNATIVE) EXEC: %compiler %cmp_opt  pkgs0018001a/pkgs0018001a.%middle pkgs0018002a/pkgs0018002a.%middle pkgs0018003a/pkgs0018003a.%middle %n.cj --import-path pkgs0018001a --import-path pkgs0018002a --import-path pkgs0018003a -o %n.%suffix
 
 package pkgs0018004a
 

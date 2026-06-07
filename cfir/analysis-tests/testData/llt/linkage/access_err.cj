@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// LEVEL: 0
-// DEPENDENCE: base01.cj %n.cjnative.expect
-// EXEC: %compiler %cmp_opt %compile_lib_opt base01.cj -o base01.%middle
-// (CJNATIVE) EXEC: %compiler %cmp_opt base01.%middle %f -o %output 2>&1 | compare %n.cjnative.expect
 
 package a.b.c
 

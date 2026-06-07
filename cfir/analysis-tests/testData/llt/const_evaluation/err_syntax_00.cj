@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 
 var <!parse_expected_one_of_identifier_or_pattern!>this<!> : Int64 = 1
 

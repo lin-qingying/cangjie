@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %f -o %output
-// RUN-EXEC: %run %run_opt %output %run_args
 
 class A {
     mut prop m: Int64 {

@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// exec: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
 class ContainerC {
     public interface I1 {                         // expected: regex interface type must be toplevel
@@ -25,5 +24,3 @@ main(): Int64 {
     return 0
 }
 
-// assert: regex-not core dumped
-// assert: regex-not stack trace

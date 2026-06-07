@@ -1,13 +1,64 @@
+// FILE: testa.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: ./testa.cj ./testb4.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt testa.cj -o a.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt testb4.cj -o b.%middle
-// EXEC-PIPE-1: %compiler %cmp_opt b.%middle a.%middle %f -o %output 2>&1 | compare %f
+package a
+
+private interface I0 {
+    public func f0(): Unit
+}
+
+public class Foo<T> {}
+
+// The extension is exported.
+extend<T> Foo<T> <: I0 {
+    public func f0(): Unit {}
+}
+
+// FILE: testb4.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+package b.c
+
+import a.Foo
+
+private interface I1 {
+    public func f1(): Unit
+}
+
+internal interface I2 {
+    public func f2(): Unit
+}
+
+protected interface I3 {
+    public func f3(): Unit
+}
+
+public interface I4 {
+    public func f4(): Unit
+}
+
+extend<T> Foo<T> <: I1 & I2 & I3 {
+    public func f1() {} // not export
+    public func f2() {} // export
+    public func f3() {} // export
+    public func f4() {} // not export
+}
+
+// FILE: main06.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package b.d
 

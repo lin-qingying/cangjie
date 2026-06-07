@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE)EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
-// (not CJNATIVE) EXEC: %frontendCompiler %f
 
 interface I1 {
     func foo(): Unit

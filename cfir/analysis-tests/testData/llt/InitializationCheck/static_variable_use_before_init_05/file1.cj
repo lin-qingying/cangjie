@@ -1,10 +1,24 @@
+// FILE: file2.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: file2.cj
+open class Bar {
+    static let x: Int64
+    static init() {
+        x = <!USED_BEFORE_INITIALIZATION!>Foo.y<!>
+    }
+}
+
+// FILE: file1.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 // Test for sub class using parent class's static member in different file
 // Circular initialization
 

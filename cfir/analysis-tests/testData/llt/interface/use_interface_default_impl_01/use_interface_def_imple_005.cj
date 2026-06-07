@@ -1,15 +1,68 @@
+// FILE: pkg1/a.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkg1 pkg2
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg1/a.cj -o pkg1.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg2/b.cj pkg1.%middle -o pkg2.%middle
-// (CJNATIVE) EXEC: %compiler %cmp_opt %f pkg2.%middle pkg1.%middle -o %output
-// (not CJNATIVE) EXEC: %compiler %cmp_opt %f pkg1.%middle pkg2.%middle -o %output
-// RUN-EXEC: %run %run_opt %output %run_args
+package pkg1
+
+public interface MyInterface {
+    static func foo1(): IntNative
+    static func foo2<T>(a: IntNative): IntNative {
+        foo1()
+        return a + foo1()
+    }
+}
+
+// FILE: pkg2/b.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+package pkg2
+
+internal import pkg1.*
+
+public class myClass1<T> <: MyInterface {
+    public static var x: IntNative = 20
+    public static func f() {
+        x = 10
+        return x
+    }
+    public static func foo1(): IntNative {
+        f()
+    }
+}
+
+public class myClass2<T> <: MyInterface {
+    public static var x: IntNative = 20
+    public static func foo1(): IntNative {
+        x = 11
+        return x
+    }
+    public static func foo3() {
+        foo2<IntNative>(11)
+    }
+}
+
+public class myClass3<T> <: MyInterface {
+    public static var x: IntNative = 10
+    public static func foo1(): IntNative {
+        x = 30
+        return x
+    }
+}
+
+// FILE: use_interface_def_imple_005.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 internal import pkg1.*
 internal import pkg2.*

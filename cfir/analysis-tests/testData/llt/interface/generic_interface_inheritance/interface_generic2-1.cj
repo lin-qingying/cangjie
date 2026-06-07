@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %f %noColor 2>&1 | compare %f
 
 interface I<T> {
     func foo(a: T): T

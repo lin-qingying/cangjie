@@ -1,12 +1,25 @@
+// FILE: pkg/pkg.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkg
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg/pkg.cj -o pkg/pkg.%middle
-// EXEC-PIPE-1: %compiler %cmp_opt pkg/pkg.%middle %n.cj --import-path pkg 2>&1 | compare %f
+package pkg
+
+public interface A<T> {
+    func foo(a: T): T {
+        return a
+    }
+}
+
+// FILE: class_no_override_modifier_invalid_9.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 internal import pkg.*
 

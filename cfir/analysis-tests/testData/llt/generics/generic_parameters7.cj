@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %cmp_opt  %typecheck %f 2>&1 | compare %f
 
 interface A<X,Y> where X<:A<X,X> & B<Y,Y>, Y<:A<Y,Y> & B<X,X>{}
 interface B<X,Y> where X<:A<<!parse_expected_type!>,<!>X>,X<!parse_expected_character!>,<!>X<!parse_expected_left_brace!>><!>,X,X>,X,X>,X,X>,X,X>,X,X> & B<Y,Y>, Y<:A<Y,Y> & B<X,X>{}

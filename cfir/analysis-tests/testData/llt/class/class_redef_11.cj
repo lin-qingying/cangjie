@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %diag_json %typecheck %f 2>&1 | compare %f
 
 main(): Int64 {
     if (<!GENERIC_ARGUMENT_NO_MATCH!>Coo.foo<Int32>(1, 2)<!> != 2 || Boo<Int32>.foo<Int32>(3, 4) != 4) {

@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %frontendCompiler %typecheck %cmp_opt %f
 
 class Data {
     public var a: Int32

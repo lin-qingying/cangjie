@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %diag_json %typecheck %f 2>&1 | compare %f
 
 main() {
     var range1 = <!GENERIC_ARGUMENT_NO_MATCH!>1..Int64(10)<!> : 3

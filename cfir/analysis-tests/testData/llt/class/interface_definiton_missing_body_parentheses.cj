@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// exec: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
 interface I1 { }
 interface I2
@@ -14,5 +13,3 @@ main(): Int64 {        // expected: regex expected '{' in interface'}'
     return 0
 }
 
-// assert: regex-not core dumped
-// assert: regex-not stack trace

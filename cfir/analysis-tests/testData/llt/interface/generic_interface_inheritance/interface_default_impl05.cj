@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output | compare %f
 
 interface I<T> {
     func f1(<!chir_dce_unused_variable!>a<!>: T): Unit {

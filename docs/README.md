@@ -7,7 +7,6 @@
 
 | 文件 | 角色 | 说明 |
 |---|---|---|
-| [`current-module-organization.md`](current-module-organization.md) | 模块现状 | 当前 `settings.gradle.kts` 中所有一方模块的分层视图与简要职责 |
 | [`module-organization.md`](module-organization.md) | 模块规划 | 12 阶段管线与 K2 对齐目标驱动的模块拆分规划 |
 | [`compiler-module-design.md`](compiler-module-design.md) | 模块设计 | 按子系统划分编译器模块的设计基线 |
 | [`k2-module-alignment.md`](k2-module-alignment.md) | 模块对照 | 仓颉模块 ↔ Kotlin K2 模块的逐一对照表 |
@@ -39,22 +38,16 @@
 | [`cangjie-language-spec-whitepaper.md`](cangjie-language-spec-whitepaper.md) | 规约 | 仓颉语言核心语法与语义规约白皮书，重点区分变量、属性、类型、表达式和扩展语义 |
 | [`cangjie-tutorial/`](cangjie-tutorial/) | 教程站 | 使用 VitePress 构建的多文件仓颉语言教程，按命令行任务本学习路径组织 |
 
-## 计划 / Plans
+## 计划
 
 | 文件 | 角色 | 说明 |
 |---|---|---|
 | [`plan-conflicting-type-constraints.md`](plan-conflicting-type-constraints.md) | 计划 | 冲突类型约束处理计划 |
 | [`plan-operator-overload-numeric-widening.md`](plan-operator-overload-numeric-widening.md) | 计划 | 运算符重载数值扩宽计划 |
-| [`plans/2026-03-23-resolution-common-inference-migration.md`](plans/2026-03-23-resolution-common-inference-migration.md) | 计划 | `resolution.common` 推断迁移计划 |
-
-## 归档
-
-[`archive/`](archive/) 下保留**已被取代或重复**的历史快照与设计稿，见 [`archive/README.md`](archive/README.md)。
 
 ## 阅读建议
 
-- 想了解**当前实际模块**：先看 `current-module-organization.md` 与项目根 `README.md`。
+- 想了解**当前实际模块**：以项目根 `settings.gradle.kts` 为准，并结合根 `README.md` 阅读。
 - 想了解**应该如何拆**：先看 `compiler-module-design.md` 与 `module-organization.md`。
 - 想了解**与 Kotlin K2 的对应关系**：看 `k2-module-alignment.md`。
 - 想了解**前端 / IR 实现进度**：看时间最新的 `cfir-semantic-analysis-maturity-vs-official-*.md` 与 `diagnostics-gap-vs-official-cpp-sema-status-*.md`。
-- 想知道某份带日期文档是否已被覆盖：检查 `archive/` 是否已存在新版。

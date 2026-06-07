@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
 class A<X, Y, Z> {
     public func test(a: <!sema_generic_instantiation_causes_ambiguous_functions!>A<X, Y, Z><!>, b: A<X, Y, Z>) {}

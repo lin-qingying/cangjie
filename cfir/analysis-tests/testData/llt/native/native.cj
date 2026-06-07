@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %cmp_opt %f 2>&1 | compare %f
 
 //brief:IntNative赋值为常量计算且溢出，编译报错
 main(): Int64 {

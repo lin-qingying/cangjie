@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %enableO2 %f -o %output
-// EXEC: %run %run_opt %output %run_args
 
 struct R<o, j> {
     let n: (Range<Int16>) = 127..7701

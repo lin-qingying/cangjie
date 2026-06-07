@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %noColor %typecheck %f 2>&1 | compare %f
 
 open class Base<U> {
     public var a: <!sema_undeclared_type_name!>T<!>

@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: base02.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt base02.cj -o base02.%middle
-// EXEC: %compiler %cmp_opt base02.%middle %f -o %output
-// EXEC: %run %run_opt %output | compare %f
 
 package a.b.c
 

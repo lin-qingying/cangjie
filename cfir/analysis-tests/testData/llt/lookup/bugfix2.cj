@@ -1,5 +1,3 @@
-// EXEC-0: %compiler %import-cangjie-stdx %cmp_opt %f -o %output
-// EXEC-0: %set_stdx_path %run %run_opt %output %run_args | compare %f
 
 internal import <!package_search_error!>stdx.encoding.json<!>.*
 main() {

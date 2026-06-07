@@ -15,7 +15,7 @@
 主要文档：
 - `CLAUDE.md`
 - `README.md`
-- `cjfir-compiler-stages.md`
+- `docs/cjfir-compiler-stages.md`
 - `TESTING_CONVENTIONS.md`
 
 ## 2) 规则文件检查（Cursor/Copilot）

@@ -4,5 +4,3 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkg
-// ERRCHECK: %compiler %noColor %pkg_opt pkg -o %output

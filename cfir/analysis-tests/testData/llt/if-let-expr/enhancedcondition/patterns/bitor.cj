@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %f %cmp_opt -o %output -Woff all 2>&1 | compare %f
 
 func foo(a: ?Int64, b: ?Int64) {
     if (let Some(_) <- a<!parse_expected_right_delimiter!> <!>| let None <- b) {

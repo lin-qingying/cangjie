@@ -1,5 +1,3 @@
-// (CJNATIVE) EXEC: %compiler %f %optimization_level_2 -o %output
-// (CJNATIVE) RUN-EXEC-PIPE: %run %run_args %run_opt %output | compare %f
 
 enum E {
     Foo(Int32, Int32)

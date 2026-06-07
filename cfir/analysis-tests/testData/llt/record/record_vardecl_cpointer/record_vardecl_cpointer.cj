@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: %n.c
 
 class RPtr {
     public var a = CPointer<Int64>()

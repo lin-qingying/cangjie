@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 main(): Int64 {
     let arr = [2, 1, 0]

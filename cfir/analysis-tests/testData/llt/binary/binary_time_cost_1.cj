@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-1:%frontendCompiler %typecheck %cmp_opt %f
-// TIMEOUT: 5
 
 func yamlParserFetchNextToken(parser: YamlParserT): Bool {
     if (!(isBlankz(parser.buffer, parser.bufferPos) || parser.buffer[parser.bufferPos] == '-' ||

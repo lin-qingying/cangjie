@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE) EXEC:%frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 main(): Int64 {
     var _: Int8 = <!chir_shift_length_overflow!>10 << 8<!>

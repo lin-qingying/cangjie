@@ -1,4 +1,3 @@
-// EXEC-PIPE-1: %compiler %f | compare %f
 
 open class Base{}
 class Sub <: Base{}

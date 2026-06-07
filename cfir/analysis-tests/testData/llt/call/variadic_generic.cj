@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// LEVLE: 0
 public let var_1684765083668_218 : UInt16 = UInt16(UInt8(UInt8(UInt8(30))))
 
 var var_1684765083668_402 : Array<UInt16> = [UInt16(101), UInt16(128), UInt16(49), UInt16(118), UInt16(157), UInt16(21), UInt16(189), UInt16(132), UInt16(244), UInt16(189)]

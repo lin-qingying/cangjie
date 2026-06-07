@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %diag_json %f -o %output
 func foo(a: Int64): Unit {}
 
 func foo(a: Bool): Unit {}

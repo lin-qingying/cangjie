@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt -Woff unused %f -o %output 2>&1 | compare %f
 
 main() {
     // float literal exceeds the value range of target float type.

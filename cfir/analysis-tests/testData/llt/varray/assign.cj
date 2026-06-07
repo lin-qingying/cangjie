@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE) EXEC-PIPE-1: %compiler %f 2>&1 %cmp_opt | compare %f
 var b = VArray<Int64, $3>({i => i})
 
 func getb(n: String) {

@@ -37,4 +37,3 @@
 ## 相关文档
 
 - `../docs/k2-module-alignment.md` — 与 Kotlin K2 对照
-- `../docs/current-module-organization.md` — 在基础设施层的位置

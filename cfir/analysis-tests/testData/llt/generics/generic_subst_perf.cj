@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// TIMEOUT: 10
 
 import std.collection.*
 

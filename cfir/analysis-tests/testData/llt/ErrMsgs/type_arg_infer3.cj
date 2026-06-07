@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt --diagnostic-format json %f -o %output
 
 // test err msg for arg/param and ret/expected type mismatch
 func f<T>(a: A<T>) {}

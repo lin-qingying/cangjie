@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-0: %compiler %cmp_opt %f -o %output
-// EXEC-PIPE-0: %run %run_opt %output %run_args 2>&1 | compare %f
 
 import std.collection.*
 

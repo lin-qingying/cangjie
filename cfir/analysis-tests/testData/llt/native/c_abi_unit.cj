@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck -c %cmp_opt %f 2>&1 | compare %f
 
 foreign func foo(<!sema_cfunc_cannot_have_unit_args!>a: Unit<!>): Unit
 

@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (DEBUG_OPTION)EXEC:%frontendCompiler %typecheck %cmp_opt %f
 
 enum TimeUnit {
     Time(Int32, Int32)

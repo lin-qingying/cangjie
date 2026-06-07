@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %diag_json %f 2>&1 | compare %f
 // UpperBound: Tuple Type
 
 func foo<T>() where T <: <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>(Int32, Int32)<!> {

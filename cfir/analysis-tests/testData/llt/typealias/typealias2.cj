@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%compiler %cmp_opt %f -o %n.%suffix
-// EXEC: %run %n.%suffix
 
 <!typealias_unused_type_parameters!>t<!>ype A<T> = Int64
 

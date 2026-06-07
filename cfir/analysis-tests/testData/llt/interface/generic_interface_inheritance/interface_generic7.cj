@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %f %error_count_limit_all %noColor 2>&1 | compare %f
 
 interface I<T> {}
 

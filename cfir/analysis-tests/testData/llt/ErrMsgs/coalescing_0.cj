@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
     (Some(<!sema_no_match_operator_function_call!>1<!>(true)) ?? false) + true

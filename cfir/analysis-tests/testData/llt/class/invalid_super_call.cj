@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %noColor %typecheck %f %error_count_limit_all 2>&1 | compare %f
 
 func mm() {
     <!sema_this_super_use_error_outside_class!>s<!>uper()

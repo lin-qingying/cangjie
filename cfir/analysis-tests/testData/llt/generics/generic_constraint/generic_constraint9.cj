@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 
 func atest<<!sema_generic_param_exist_in_class_irrelevant_upperbound_recursively!>T<!>>(param: T) where T <: Array<T> {
     return param

@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 class A {
     static func <!sema_unable_to_infer_return_type!>foo<!><T>(a: T) {

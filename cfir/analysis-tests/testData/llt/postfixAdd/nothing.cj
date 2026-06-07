@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %f %diag_json 2>&1 | compare %f
 
 main() {
     var a = return 10

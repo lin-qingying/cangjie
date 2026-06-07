@@ -1,5 +1,3 @@
-<!sema_missing_entry!>/<!>/ ERRCHECK: %compiler %cmp_opt %f -o %output
-
 public interface Schedule{}
 
 public interface Job{

@@ -28,8 +28,7 @@
 
 ## 相关文档
 
-- `../cjfir-compiler-stages.md` — 完整阶段设计
+- `../docs/cjfir-compiler-stages.md` — 完整阶段设计
 - `../docs/compiler-module-design.md` — 模块组织设计
-- `../docs/current-module-organization.md` — 当前实装模块全景
 - `chir/docs/module-boundary.md` — CHIR 模块边界
 - `codegen/docs/cpp-codegen-mapping.md` — CodeGen 官方对照

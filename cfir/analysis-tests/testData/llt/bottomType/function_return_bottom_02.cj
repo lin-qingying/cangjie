@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (DEBUG_OPTION)EXEC: %compiler %debugCHIROpt %cmp_opt %f -o %output 2>&1 | compare %f
 
 
 

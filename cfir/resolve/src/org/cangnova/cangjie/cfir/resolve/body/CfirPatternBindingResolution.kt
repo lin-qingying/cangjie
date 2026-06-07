@@ -23,11 +23,18 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.name.Name
+
+private val OPTION_SOME_CONSTRUCTOR_NAME = Name.identifier("Some")
+private val OPTION_NONE_CONSTRUCTOR_NAME = Name.identifier("None")
 
 /**
  * 统一的模式绑定解析支持。
@@ -122,7 +129,11 @@ private fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType?,
 ): List<ConeCangJieType> {
-    val enumType = expectedType as? ConeEnumType ?: return emptyList()
+    val enumType = expectedType?.expandedPatternEnumType() ?: return emptyList()
+    val optionArgumentTypes = resolveStdlibOptionArgumentTypes(pattern, enumType)
+    if (optionArgumentTypes != null) return optionArgumentTypes
+
+    if (enumType !is ConeEnumType) return emptyList()
     val enumDeclaration = (session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum)
         ?: return emptyList()
 
@@ -135,6 +146,36 @@ private fun CfirPartialBodyResolveTransformer.resolveEnumArgumentTypes(
         ?: return emptyList()
 
     return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
+}
+
+private fun ConeCangJieType.expandedPatternEnumType(): ConeCangJieType = when (this) {
+    is ConeTypeAliasType -> expandedType?.expandedPatternEnumType() ?: this
+    else -> this
+}
+
+/**
+ * 标准库 `Option<T>` 在当前类型系统中以 class-like 类型承载，
+ * 但官方语义仍是 `Some(T)` / `None` 的泛型 enum。
+ */
+private fun resolveStdlibOptionArgumentTypes(
+    pattern: CfirEnumPattern,
+    expectedType: ConeCangJieType,
+): List<ConeCangJieType>? {
+    val optionType = expectedType as? ConeClassLikeType ?: return null
+    if (optionType.classId != StdlibClassIds.Option) return null
+
+    val constructorName = extractEnumConstructorName(pattern)
+    val optionArgumentType = optionType.typeArguments.singleOrNull()?.type
+    return when {
+        constructorName == OPTION_SOME_CONSTRUCTOR_NAME &&
+                pattern.arguments.size == 1 &&
+                optionArgumentType != null -> listOf(optionArgumentType)
+        constructorName == OPTION_NONE_CONSTRUCTOR_NAME &&
+                pattern.arguments.isEmpty() -> emptyList()
+        constructorName == OPTION_SOME_CONSTRUCTOR_NAME ||
+                constructorName == OPTION_NONE_CONSTRUCTOR_NAME -> emptyList()
+        else -> null
+    }
 }
 
 private fun extractEnumConstructorName(pattern: CfirEnumPattern): Name? {

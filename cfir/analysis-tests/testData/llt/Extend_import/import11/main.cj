@@ -1,13 +1,40 @@
+// FILE: pkg.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkg.cj pkg1.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt %enableO2 pkg1.cj -o pkg1.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt %enableO2 pkg.cj pkg1.%middle -o pkg.%middle
-// EXEC: %compiler %cmp_opt %enableO2 %f pkg.%middle pkg1.%middle -o %output 2>&1 | compare %f
+package pkg
+
+internal import pkg1.*
+
+public interface I<T> {}
+
+extend<T2> A<T2> <: I<T2> {}
+
+extend<T2> B<T2> <: I<Int64> {}
+
+// FILE: pkg1.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+package pkg1
+
+public class A<T1> {}
+
+public class B<T1> {}
+
+// FILE: main.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 internal import <!package_search_error!>pkg1<!>.*
 

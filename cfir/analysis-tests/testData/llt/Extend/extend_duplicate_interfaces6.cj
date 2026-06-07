@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %typecheck %noColor %f 2>&1 | compare %f
 
 main(): Int64 {
     if (<!SUPER_TYPES_DUPLICATE!>B<String><!>().m != 1) {

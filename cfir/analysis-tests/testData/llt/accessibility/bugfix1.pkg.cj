@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// LEVLE: 0
 package a
 interface I {
     func foo() {

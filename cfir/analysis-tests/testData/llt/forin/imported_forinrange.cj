@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: %n.lib.cj
-// EXEC: %compiler %n.lib.cj %compile_lib_opt -o liba.%middle
-// EXEC: %compiler %f liba.%middle
 
 import a.*
 

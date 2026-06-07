@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %diag_json %f 2>&1 | compare %f
 
 class E1 {}
 

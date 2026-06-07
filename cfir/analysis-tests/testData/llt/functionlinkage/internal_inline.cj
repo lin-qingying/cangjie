@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE and DEBUG_OPTION) EXEC-PIPE: %frontendCompiler %dump-ir-to-screen %compile_lib_opt %enableO2 --disable-reflection %f 2>&1 | compare %f
-// (not CJNATIVE and DEBUG_OPTION) EXEC-PIPE: %frontendCompiler %dump-ir-to-screen %compile_lib_opt %enableO2 %f 2>&1 | compare %f
-// (CJNATIVE) ASSERT: regex-not internal.*@_CN3pkg3fooEv
-// (not CJNATIVE) ASSERT: regex-not internal.*@"_CN3pkg16\$internal_inline3fooEv"
 
 package pkg
 

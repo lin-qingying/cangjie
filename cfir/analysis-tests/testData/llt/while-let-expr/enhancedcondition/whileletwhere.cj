@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %f %cmp_opt -o %output 2>&1 | compare %f
 enum My {
     A |B(Int64) | C(Int64)
 }

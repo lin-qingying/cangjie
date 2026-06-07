@@ -31,4 +31,3 @@ CFIR 树与处理链共享的最底层抽象。对齐 Kotlin K2 `compiler/fir/fi
 ## 相关文档
 
 - `../../docs/k2-module-alignment.md` — 与 Kotlin K2 `fir-common` 对照
-- `../../docs/current-module-organization.md` — 在 CFIR 数据模型层中的位置

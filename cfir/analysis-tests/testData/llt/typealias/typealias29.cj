@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %diag_json %f -o %n.%suffix 2>&1 | compare %f
 
 interface I {}
 

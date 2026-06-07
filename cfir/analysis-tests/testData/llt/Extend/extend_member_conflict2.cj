@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
 
 extend A {
     <!sema_static_and_non_static_member_cannot_have_same_name!>p<!>ublic func x1() {}

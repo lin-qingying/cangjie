@@ -58,5 +58,4 @@
 
 - `../docs/type-inference-four-systems-comparison.md` — 四套类型推断对照
 - `../docs/cfir-body-resolve-constraint-system-design.md` — BODY_RESOLVE 约束系统
-- `../docs/plans/2026-03-23-resolution-common-inference-migration.md` — 迁移计划
 - `../docs/plan-conflicting-type-constraints.md`、`../docs/plan-operator-overload-numeric-widening.md`

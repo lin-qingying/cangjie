@@ -1,4 +1,3 @@
-// EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
 
 interface I<T> {
     func foo1(a:T):Int64

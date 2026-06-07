@@ -1,4 +1,3 @@
-// ERRCHECK: %compiler %cmp_opt %f  -o %output
 
 main():Int64 {
     var a = Coo()

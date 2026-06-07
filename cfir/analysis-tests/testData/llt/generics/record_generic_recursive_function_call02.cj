@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 struct Data<T1, T2, T3> {
     public func area(width: T1, length: T2, height: T3): T3{

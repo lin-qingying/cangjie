@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %noColor %f %error_count_limit_all 2>&1 | compare %f
 
 class A {
     private init() {}

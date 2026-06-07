@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-0: %compiler %noColor %cmp_opt_chir2hlir %f -o %n.%suffix
-// EXEC-0: %run %n.%suffix
 
 var node1: CPointer<Unit> = CPointer<Unit>()
 var node2 = CPointer<Unit>()

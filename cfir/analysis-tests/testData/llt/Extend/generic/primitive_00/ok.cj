@@ -1,10 +1,26 @@
+// FILE: pkg.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: ./pkg.cj
+package pkg
+
+public interface I<T> where T <: I<T> {
+    operator func -(): T
+    operator func <<(other: T): T
+}
+
+extend Int64 <: I<Int64> {}
+
+// FILE: ok.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 internal import pkg.I
 
 func f<T>() {
