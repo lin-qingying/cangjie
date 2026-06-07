@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-1:%frontendCompiler %typecheck %cmp_opt %f
-// TIMEOUT: 10
 
 main() : Int64 {
 var l_a : Array<(Unit,Unit) > = [((),())]

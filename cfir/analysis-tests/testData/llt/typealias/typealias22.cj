@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: typealias22.expect
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// EXEC: %run %output | compare typealias22.expect
 
 type Parse<T, Result> = ((Array<T>, Result)) -> ?Array<T>
 

@@ -61,8 +61,7 @@ RAW_CFIR
 
 ## 相关文档
 
-- `../../cjfir-compiler-stages.md` 第 7 阶段
+- `../../docs/cjfir-compiler-stages.md` 第 7 阶段
 - `../../docs/cfir-body-resolve-constraint-system-design.md` — BODY_RESOLVE 约束系统
 - `../../docs/type-inference-four-systems-comparison.md` — 四套类型推断对照
-- `../../docs/plans/2026-03-23-resolution-common-inference-migration.md` — 推断迁移计划
 - `../cfir-tree/resolve-rollback-plan.md` — Phase-by-phase 回滚预案

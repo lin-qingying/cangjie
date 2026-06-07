@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%frontendCompiler %typecheck %noColor %f 2>&1 | compare %f
 
 main() {
     var arr = [1, 2, 3, 4, 5]

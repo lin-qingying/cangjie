@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 public var var42: Int16 = Int16(38);
 public var var272: Float32 = Float32(86.0);

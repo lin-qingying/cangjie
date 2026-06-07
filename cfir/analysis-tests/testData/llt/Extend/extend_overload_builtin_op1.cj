@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE) EXEC-PIPE-1: %compiler %cmp_opt %f 2>&1 | compare %f
 
 extend Int64 {
     <!sema_operator_overload_built_in_binary_operator!>p<!>ublic operator func +(right: Int64) {

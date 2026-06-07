@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE: %compiler %f %cmp_opt 2>&1 | compare %f
 
 main() {
     let a = Some(1)

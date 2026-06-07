@@ -1,13 +1,39 @@
+// FILE: pkg.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkg.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt --no-sub-pkg pkg.cj -o pkg.%middle
-// EXEC: %compiler %cmp_opt pkg.%middle %f -o %output
-// EXEC: %run %run_opt %output
+package pkg
+
+public interface I {
+    func f(): Unit
+}
+
+class A <: I {
+    public func f() {}
+}
+
+func test1<T>(a: T) where T <: I {
+    a.f()
+}
+
+public func test2<T>(a: T) where T <: I {
+    test1<T>(a)
+}
+
+public func test3<T>() {
+    test2<A>(A())
+}
+
+// FILE: main.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 import pkg.*
 

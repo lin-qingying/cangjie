@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE) EXEC-1: %compiler %cmp_opt %f -o %output
-// (not CJNATIVE) EXEC: %compiler %cmp_opt %f -o %output
 
 public interface Addable<T> where T <: Addable<T> {
     operator func +(right: T): T

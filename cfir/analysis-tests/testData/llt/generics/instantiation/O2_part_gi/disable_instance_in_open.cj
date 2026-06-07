@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f %enableO2 -o %output
-// RUN-EXEC: %run %run_opt %output %run_args 2>&1 | compare %f
 
 interface I {
     static func f6<T>(): Int64

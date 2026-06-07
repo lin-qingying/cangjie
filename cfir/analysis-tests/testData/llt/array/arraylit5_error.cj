@@ -5,7 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 // NO_PRELUDE
 
-// EXEC:%frontendCompiler --no-prelude %typecheck %cmp_opt %f 2>&1 | compare %f
 
 main() {
     let <!chir_dce_unused_variable!>a<!> = [1, 2, 3]

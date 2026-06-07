@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
 
 var a1: Range<Int8> = 0..10 : 5
 var a2: Range<UInt8> = 0..10 : 5

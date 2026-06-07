@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// RUN-EXEC: %run %run_opt %output
 
 interface I {
     func test(): Bool {

@@ -4,16 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 main(): Int64 {
     case60()
     return 0
 }
 
-//TEST-CASE:60
 //	Step:match (expression_var) { case ERROR_IDENTIFIER_tuplePattern => }
-//	Expect:Fail
 func case60() {
     let scoreTuple = ("a", 90)
     var result: String = match (scoreTuple) {

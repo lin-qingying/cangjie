@@ -1,4 +1,3 @@
-// ERRCHECK: %compiler %enableEH %cmp_opt %f -o %output 2>&1 | compare %f
 
 import stdx.effect.Command
 

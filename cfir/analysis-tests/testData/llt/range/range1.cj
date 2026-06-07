@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %f 2>&1 | compare %f
 
 var gRange1 = 1..10:2
 var gRange2 = <!parse_expected_expression!>..<!>10

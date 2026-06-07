@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %diag_json %f -o %output 2>&1 | compare %f
 
 main() {
     <!UNABLE_TO_INFER_GENERIC_FUNC!>CPointerHandle()<!>

@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-基于 Kotlin/JVM 的仓颉编程语言前端实现，架构参考 Kotlin K2，功能对齐官方仓颉编译器（C++），覆盖从源码解析到 .cjo 序列化的完整前端管线（详见 `cjfir-compiler-stages.md`）。
+基于 Kotlin/JVM 的仓颉编程语言前端实现，架构参考 Kotlin K2，功能对齐官方仓颉编译器（C++），覆盖从源码解析到 .cjo 序列化的完整前端管线（详见 `docs/cjfir-compiler-stages.md`）。
 
 ## 编译管线
 
@@ -124,10 +124,6 @@ CFIR2CHIR → CODEGEN
 - **规范优先**：项目级开发规范见 `DEVELOPMENT_CONVENTIONS.md`，默认对一方模块强制生效。
   关键约束：可读性优先于炫技、一致性优先于个人习惯、明确优先于隐式、不可变优先于可变、接口隔离优先于大而全、领域建模优先于过程堆砌。
   工程约束：模块边界清晰、依赖方向单向、领域模型稳定、接口契约明确、测试层次完整、可观测性内建、工程治理自动化、变更可控且可回滚。
-
-## Agent Runtime Notes
-- Do not create any `.gradle-user-*` directory (for example: `.gradle-user-local`, `.gradle-user-fresh`, `.gradle-user-xxxx`).
-- If Gradle cannot be executed for any reason, immediately notify the user.
 
 ## Cfir/K2 FIR Alignment
 

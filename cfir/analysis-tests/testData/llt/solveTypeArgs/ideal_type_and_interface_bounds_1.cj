@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output
-// EXEC-11: %run %run_opt %output %run_args
 
 func test<T>(a: T): T where T <: ToString {
     a

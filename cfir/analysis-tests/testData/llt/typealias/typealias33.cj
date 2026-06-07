@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-0: %compiler %cmp_opt %f -o %output 2>&1
 
 class GennericClassA<T> {}
 

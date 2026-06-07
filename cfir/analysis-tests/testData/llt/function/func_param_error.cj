@@ -4,6 +4,5 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 func b(bo!: (<!sema_undeclared_type_name!>R<!>esult, <!sema_generic_type_without_type_argument!>R<!>ange) -> Bool): Unit {}

@@ -3,7 +3,7 @@
 > 以 `compiler-module-design.md` 中规划的仓颉编译器模块为主线，逐一对照 Kotlin K2 编译器中的对应模块。
 > 标注哪些是 1:1 映射、哪些是合并/拆分、哪些是仓颉独有。
 >
-> **现状提示（2026-05-11）**：表格描述的是模块**对照关系**（设计层面），不是实装状态。文中标为"（规划）"的 `:cfir:symbols` 当前已演化为 `:cfir:semantics` + `:cfir:providers`；其它实装状态以 [`current-module-organization.md`](current-module-organization.md) 为准。
+> **现状提示（2026-05-11）**：表格描述的是模块**对照关系**（设计层面），不是实装状态。文中标为"（规划）"的 `:cfir:symbols` 当前已演化为 `:cfir:semantics` + `:cfir:providers`；其它实装状态以 `settings.gradle.kts` 为准。
 
 ---
 

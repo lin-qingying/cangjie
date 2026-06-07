@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 
 public interface I1<V> {
     func containsValue(value: V, fn: (V, V) -> Bool): Bool {

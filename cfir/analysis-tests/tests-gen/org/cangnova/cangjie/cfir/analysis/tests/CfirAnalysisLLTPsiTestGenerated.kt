@@ -19,996 +19,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt")
     }
 
-    @TestMetadata("APILevelChecker")
-    @TestDataPath("\$PROJECT_ROOT")
-    @Nested
-    inner class APILevelChecker : AbstractCfirPsiDiagnosticTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker")
-        }
-
-        @TestMetadata("index.cj")
-        @Test
-        fun testIndex() {
-            runTest("cfir/analysis-tests/testData/llt/APILevelChecker/index.cj")
-        }
-
-        @TestMetadata("index.mac.cj")
-        @Test
-        fun testIndexMac() {
-            runTest("cfir/analysis-tests/testData/llt/APILevelChecker/index.mac.cj")
-        }
-
-        @TestMetadata("hide")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class Hide : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/hide")
-            }
-
-            @TestMetadata("call_hide1.cj")
-            @Test
-            fun testCallHide1() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide1.cj")
-            }
-
-            @TestMetadata("call_hide2.cj")
-            @Test
-            fun testCallHide2() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide2.cj")
-            }
-
-            @TestMetadata("call_hide3.cj")
-            @Test
-            fun testCallHide3() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide3.cj")
-            }
-
-            @TestMetadata("call_hide_err.cj")
-            @Test
-            fun testCallHideErr() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide_err.cj")
-            }
-
-            @TestMetadata("call_hide_extend.cj")
-            @Test
-            fun testCallHideExtend() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide_extend.cj")
-            }
-
-            @TestMetadata("call_hide_extend_dep.cj")
-            @Test
-            fun testCallHideExtendDep() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide_extend_dep.cj")
-            }
-
-            @TestMetadata("call_hide_param.cj")
-            @Test
-            fun testCallHideParam() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide_param.cj")
-            }
-
-            @TestMetadata("call_hide_param_dep.cj")
-            @Test
-            fun testCallHideParamDep() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide_param_dep.cj")
-            }
-
-            @TestMetadata("call_hide_param_dep_err.cj")
-            @Test
-            fun testCallHideParamDepErr() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide_param_dep_err.cj")
-            }
-
-            @TestMetadata("call_hide_param_ok.cj")
-            @Test
-            fun testCallHideParamOk() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/call_hide_param_ok.cj")
-            }
-
-            @TestMetadata("hide.cj")
-            @Test
-            fun testHide() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide.cj")
-            }
-
-            @TestMetadata("hide_err.cj")
-            @Test
-            fun testHideErr() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_err.cj")
-            }
-
-            @TestMetadata("hide_in_extend1.cj")
-            @Test
-            fun testHideInExtend1() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_in_extend1.cj")
-            }
-
-            @TestMetadata("hide_in_extend2.cj")
-            @Test
-            fun testHideInExtend2() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_in_extend2.cj")
-            }
-
-            @TestMetadata("hide_in_extend3.cj")
-            @Test
-            fun testHideInExtend3() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_in_extend3.cj")
-            }
-
-            @TestMetadata("hide_in_extend4.cj")
-            @Test
-            fun testHideInExtend4() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_in_extend4.cj")
-            }
-
-            @TestMetadata("hide_in_extend5.cj")
-            @Test
-            fun testHideInExtend5() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_in_extend5.cj")
-            }
-
-            @TestMetadata("hide_in_extend6.cj")
-            @Test
-            fun testHideInExtend6() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_in_extend6.cj")
-            }
-
-            @TestMetadata("hide_use1.cj")
-            @Test
-            fun testHideUse1() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_use1.cj")
-            }
-
-            @TestMetadata("hide_use2.cj")
-            @Test
-            fun testHideUse2() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_use2.cj")
-            }
-
-            @TestMetadata("hide_use3.cj")
-            @Test
-            fun testHideUse3() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_use3.cj")
-            }
-
-            @TestMetadata("hide_use_err.cj")
-            @Test
-            fun testHideUseErr() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_use_err.cj")
-            }
-
-            @TestMetadata("hide_without_compilerTimeVisible.cj")
-            @Test
-            fun testHideWithoutCompilerTimeVisible() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/hide_without_compilerTimeVisible.cj")
-            }
-
-            @TestMetadata("mix_anno.cj")
-            @Test
-            fun testMixAnno() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/mix_anno.cj")
-            }
-
-            @TestMetadata("mix_anno_dep.cj")
-            @Test
-            fun testMixAnnoDep() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/mix_anno_dep.cj")
-            }
-
-            @TestMetadata("mix_macro1.cj")
-            @Test
-            fun testMixMacro1() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/mix_macro1.cj")
-            }
-
-            @TestMetadata("mix_macro1_use.cj")
-            @Test
-            fun testMixMacro1Use() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/mix_macro1_use.cj")
-            }
-
-            @TestMetadata("mix_macro2.cj")
-            @Test
-            fun testMixMacro2() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/mix_macro2.cj")
-            }
-
-            @TestMetadata("mix_macro2_use.cj")
-            @Test
-            fun testMixMacro2Use() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/mix_macro2_use.cj")
-            }
-
-            @TestMetadata("mix_macro_dep.cj")
-            @Test
-            fun testMixMacroDep() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/mix_macro_dep.cj")
-            }
-
-            @TestMetadata("mix_macro_dep1.cj")
-            @Test
-            fun testMixMacroDep1() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/mix_macro_dep1.cj")
-            }
-
-            @TestMetadata("multi_hide.cj")
-            @Test
-            fun testMultiHide() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/multi_hide.cj")
-            }
-
-            @TestMetadata("override_by_hide1.cj")
-            @Test
-            fun testOverrideByHide1() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide1.cj")
-            }
-
-            @TestMetadata("override_by_hide2.cj")
-            @Test
-            fun testOverrideByHide2() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide2.cj")
-            }
-
-            @TestMetadata("override_by_hide3_1.cj")
-            @Test
-            fun testOverrideByHide31() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide3_1.cj")
-            }
-
-            @TestMetadata("override_by_hide3_2.cj")
-            @Test
-            fun testOverrideByHide32() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide3_2.cj")
-            }
-
-            @TestMetadata("override_by_hide3_3.cj")
-            @Test
-            fun testOverrideByHide33() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide3_3.cj")
-            }
-
-            @TestMetadata("override_by_hide3_4.cj")
-            @Test
-            fun testOverrideByHide34() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide3_4.cj")
-            }
-
-            @TestMetadata("override_by_hide3_5.cj")
-            @Test
-            fun testOverrideByHide35() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide3_5.cj")
-            }
-
-            @TestMetadata("override_by_hide4_1.cj")
-            @Test
-            fun testOverrideByHide41() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide4_1.cj")
-            }
-
-            @TestMetadata("override_by_hide4_2.cj")
-            @Test
-            fun testOverrideByHide42() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide4_2.cj")
-            }
-
-            @TestMetadata("override_by_hide4_3.cj")
-            @Test
-            fun testOverrideByHide43() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide4_3.cj")
-            }
-
-            @TestMetadata("override_by_hide5.cj")
-            @Test
-            fun testOverrideByHide5() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide5.cj")
-            }
-
-            @TestMetadata("override_by_hide6_1.cj")
-            @Test
-            fun testOverrideByHide61() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide6_1.cj")
-            }
-
-            @TestMetadata("override_by_hide6_2.cj")
-            @Test
-            fun testOverrideByHide62() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/override_by_hide6_2.cj")
-            }
-
-            @TestMetadata("use_qualifiedtype.cj")
-            @Test
-            fun testUseQualifiedtype() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/hide/use_qualifiedtype.cj")
-            }
-        }
-
-        @TestMetadata("level")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class Level : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level")
-            }
-
-            @TestMetadata("apilevel.cj")
-            @Test
-            fun testApilevel() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/apilevel.cj")
-            }
-
-            @TestMetadata("call_construct.cj")
-            @Test
-            fun testCallConstruct() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/call_construct.cj")
-            }
-
-            @TestMetadata("dep_err.cj")
-            @Test
-            fun testDepErr() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/dep_err.cj")
-            }
-
-            @TestMetadata("dep_ok.cj")
-            @Test
-            fun testDepOk() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/dep_ok.cj")
-            }
-
-            @TestMetadata("dep_ok1.cj")
-            @Test
-            fun testDepOk1() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/dep_ok1.cj")
-            }
-
-            @TestMetadata("invalid_ref.cj")
-            @Test
-            fun testInvalidRef() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/invalid_ref.cj")
-            }
-
-            @TestMetadata("multi_anno.cj")
-            @Test
-            fun testMultiAnno() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/multi_anno.cj")
-            }
-
-            @TestMetadata("non_literal.cj")
-            @Test
-            fun testNonLiteral() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/non_literal.cj")
-            }
-
-            @TestMetadata("on_invalid_decl.cj")
-            @Test
-            fun testOnInvalidDecl() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/on_invalid_decl.cj")
-            }
-
-            @TestMetadata("test_dep01.cj")
-            @Test
-            fun testTestDep01() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/test_dep01.cj")
-            }
-
-            @TestMetadata("merge_anno")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class MergeAnno : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno")
-                }
-
-                @TestMetadata("dep1.cj")
-                @Test
-                fun testDep1() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/dep1.cj")
-                }
-
-                @TestMetadata("dep2.cj")
-                @Test
-                fun testDep2() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/dep2.cj")
-                }
-
-                @TestMetadata("merge1.cj")
-                @Test
-                fun testMerge1() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge1.cj")
-                }
-
-                @TestMetadata("merge2.cj")
-                @Test
-                fun testMerge2() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge2.cj")
-                }
-
-                @TestMetadata("merge3.cj")
-                @Test
-                fun testMerge3() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge3.cj")
-                }
-
-                @TestMetadata("merge01")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge01 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge01")
-                    }
-
-                    @TestMetadata("dep1.cj")
-                    @Test
-                    fun testDep1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge01/dep1.cj")
-                    }
-
-                    @TestMetadata("merge1.cj")
-                    @Test
-                    fun testMerge1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge01/merge1.cj")
-                    }
-
-                    @TestMetadata("merge2.cj")
-                    @Test
-                    fun testMerge2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge01/merge2.cj")
-                    }
-                }
-
-                @TestMetadata("merge02")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge02 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge02")
-                    }
-
-                    @TestMetadata("dep2.cj")
-                    @Test
-                    fun testDep2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge02/dep2.cj")
-                    }
-
-                    @TestMetadata("merge3.cj")
-                    @Test
-                    fun testMerge3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge02/merge3.cj")
-                    }
-                }
-
-                @TestMetadata("merge03")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge03 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03")
-                    }
-
-                    @TestMetadata("dep1.cj")
-                    @Test
-                    fun testDep1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/dep1.cj")
-                    }
-
-                    @TestMetadata("dep2.cj")
-                    @Test
-                    fun testDep2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/dep2.cj")
-                    }
-
-                    @TestMetadata("dep3.cj")
-                    @Test
-                    fun testDep3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/dep3.cj")
-                    }
-
-                    @TestMetadata("dep4.cj")
-                    @Test
-                    fun testDep4() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/dep4.cj")
-                    }
-
-                    @TestMetadata("dep5.cj")
-                    @Test
-                    fun testDep5() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/dep5.cj")
-                    }
-
-                    @TestMetadata("dep6.cj")
-                    @Test
-                    fun testDep6() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/dep6.cj")
-                    }
-
-                    @TestMetadata("test1.cj")
-                    @Test
-                    fun testTest1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/test1.cj")
-                    }
-
-                    @TestMetadata("test2.cj")
-                    @Test
-                    fun testTest2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/test2.cj")
-                    }
-
-                    @TestMetadata("test3.cj")
-                    @Test
-                    fun testTest3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/test3.cj")
-                    }
-
-                    @TestMetadata("test4.cj")
-                    @Test
-                    fun testTest4() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/test4.cj")
-                    }
-
-                    @TestMetadata("test5.cj")
-                    @Test
-                    fun testTest5() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/test5.cj")
-                    }
-
-                    @TestMetadata("test6.cj")
-                    @Test
-                    fun testTest6() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge03/test6.cj")
-                    }
-                }
-
-                @TestMetadata("merge04")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge04 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04")
-                    }
-
-                    @TestMetadata("dep1.cj")
-                    @Test
-                    fun testDep1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04/dep1.cj")
-                    }
-
-                    @TestMetadata("dep2.cj")
-                    @Test
-                    fun testDep2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04/dep2.cj")
-                    }
-
-                    @TestMetadata("dep3.cj")
-                    @Test
-                    fun testDep3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04/dep3.cj")
-                    }
-
-                    @TestMetadata("dep4.cj")
-                    @Test
-                    fun testDep4() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04/dep4.cj")
-                    }
-
-                    @TestMetadata("test1.cj")
-                    @Test
-                    fun testTest1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04/test1.cj")
-                    }
-
-                    @TestMetadata("test2.cj")
-                    @Test
-                    fun testTest2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04/test2.cj")
-                    }
-
-                    @TestMetadata("test3.cj")
-                    @Test
-                    fun testTest3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04/test3.cj")
-                    }
-
-                    @TestMetadata("test4.cj")
-                    @Test
-                    fun testTest4() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge04/test4.cj")
-                    }
-                }
-
-                @TestMetadata("merge05")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge05 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge05")
-                    }
-
-                    @TestMetadata("dep.cj")
-                    @Test
-                    fun testDep() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge05/dep.cj")
-                    }
-
-                    @TestMetadata("test.cj")
-                    @Test
-                    fun testTest() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge05/test.cj")
-                    }
-                }
-
-                @TestMetadata("merge_std")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class MergeStd : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge_std")
-                    }
-
-                    @TestMetadata("importall.cj")
-                    @Test
-                    fun testImportall() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge_std/importall.cj")
-                    }
-
-                    @TestMetadata("importsingle.cj")
-                    @Test
-                    fun testImportsingle() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level/merge_anno/merge_std/importsingle.cj")
-                    }
-                }
-            }
-        }
-
-        @TestMetadata("level_v1")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class LevelV1 : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level_v1")
-            }
-
-            @TestMetadata("apilevel.cj")
-            @Test
-            fun testApilevel() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/apilevel.cj")
-            }
-
-            @TestMetadata("call_construct.cj")
-            @Test
-            fun testCallConstruct() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/call_construct.cj")
-            }
-
-            @TestMetadata("dep_err.cj")
-            @Test
-            fun testDepErr() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/dep_err.cj")
-            }
-
-            @TestMetadata("dep_ok.cj")
-            @Test
-            fun testDepOk() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/dep_ok.cj")
-            }
-
-            @TestMetadata("dep_ok1.cj")
-            @Test
-            fun testDepOk1() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/dep_ok1.cj")
-            }
-
-            @TestMetadata("invalid_ref.cj")
-            @Test
-            fun testInvalidRef() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/invalid_ref.cj")
-            }
-
-            @TestMetadata("multi_anno.cj")
-            @Test
-            fun testMultiAnno() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/multi_anno.cj")
-            }
-
-            @TestMetadata("non_literal.cj")
-            @Test
-            fun testNonLiteral() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/non_literal.cj")
-            }
-
-            @TestMetadata("on_invalid_decl.cj")
-            @Test
-            fun testOnInvalidDecl() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/on_invalid_decl.cj")
-            }
-
-            @TestMetadata("test_dep01.cj")
-            @Test
-            fun testTestDep01() {
-                runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/test_dep01.cj")
-            }
-
-            @TestMetadata("merge_anno")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class MergeAnno : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno")
-                }
-
-                @TestMetadata("dep1.cj")
-                @Test
-                fun testDep1() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/dep1.cj")
-                }
-
-                @TestMetadata("dep2.cj")
-                @Test
-                fun testDep2() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/dep2.cj")
-                }
-
-                @TestMetadata("merge1.cj")
-                @Test
-                fun testMerge1() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge1.cj")
-                }
-
-                @TestMetadata("merge2.cj")
-                @Test
-                fun testMerge2() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge2.cj")
-                }
-
-                @TestMetadata("merge3.cj")
-                @Test
-                fun testMerge3() {
-                    runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge3.cj")
-                }
-
-                @TestMetadata("merge01")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge01 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge01")
-                    }
-
-                    @TestMetadata("dep1.cj")
-                    @Test
-                    fun testDep1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge01/dep1.cj")
-                    }
-
-                    @TestMetadata("merge1.cj")
-                    @Test
-                    fun testMerge1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge01/merge1.cj")
-                    }
-
-                    @TestMetadata("merge2.cj")
-                    @Test
-                    fun testMerge2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge01/merge2.cj")
-                    }
-                }
-
-                @TestMetadata("merge02")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge02 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge02")
-                    }
-
-                    @TestMetadata("dep2.cj")
-                    @Test
-                    fun testDep2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge02/dep2.cj")
-                    }
-
-                    @TestMetadata("merge3.cj")
-                    @Test
-                    fun testMerge3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge02/merge3.cj")
-                    }
-                }
-
-                @TestMetadata("merge03")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge03 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03")
-                    }
-
-                    @TestMetadata("dep1.cj")
-                    @Test
-                    fun testDep1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/dep1.cj")
-                    }
-
-                    @TestMetadata("dep2.cj")
-                    @Test
-                    fun testDep2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/dep2.cj")
-                    }
-
-                    @TestMetadata("dep3.cj")
-                    @Test
-                    fun testDep3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/dep3.cj")
-                    }
-
-                    @TestMetadata("dep4.cj")
-                    @Test
-                    fun testDep4() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/dep4.cj")
-                    }
-
-                    @TestMetadata("dep5.cj")
-                    @Test
-                    fun testDep5() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/dep5.cj")
-                    }
-
-                    @TestMetadata("dep6.cj")
-                    @Test
-                    fun testDep6() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/dep6.cj")
-                    }
-
-                    @TestMetadata("test1.cj")
-                    @Test
-                    fun testTest1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/test1.cj")
-                    }
-
-                    @TestMetadata("test2.cj")
-                    @Test
-                    fun testTest2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/test2.cj")
-                    }
-
-                    @TestMetadata("test3.cj")
-                    @Test
-                    fun testTest3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/test3.cj")
-                    }
-
-                    @TestMetadata("test4.cj")
-                    @Test
-                    fun testTest4() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/test4.cj")
-                    }
-
-                    @TestMetadata("test5.cj")
-                    @Test
-                    fun testTest5() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/test5.cj")
-                    }
-
-                    @TestMetadata("test6.cj")
-                    @Test
-                    fun testTest6() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge03/test6.cj")
-                    }
-                }
-
-                @TestMetadata("merge04")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge04 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04")
-                    }
-
-                    @TestMetadata("dep1.cj")
-                    @Test
-                    fun testDep1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04/dep1.cj")
-                    }
-
-                    @TestMetadata("dep2.cj")
-                    @Test
-                    fun testDep2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04/dep2.cj")
-                    }
-
-                    @TestMetadata("dep3.cj")
-                    @Test
-                    fun testDep3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04/dep3.cj")
-                    }
-
-                    @TestMetadata("dep4.cj")
-                    @Test
-                    fun testDep4() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04/dep4.cj")
-                    }
-
-                    @TestMetadata("test1.cj")
-                    @Test
-                    fun testTest1() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04/test1.cj")
-                    }
-
-                    @TestMetadata("test2.cj")
-                    @Test
-                    fun testTest2() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04/test2.cj")
-                    }
-
-                    @TestMetadata("test3.cj")
-                    @Test
-                    fun testTest3() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04/test3.cj")
-                    }
-
-                    @TestMetadata("test4.cj")
-                    @Test
-                    fun testTest4() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge04/test4.cj")
-                    }
-                }
-
-                @TestMetadata("merge05")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Merge05 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge05")
-                    }
-
-                    @TestMetadata("dep.cj")
-                    @Test
-                    fun testDep() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge05/dep.cj")
-                    }
-
-                    @TestMetadata("test.cj")
-                    @Test
-                    fun testTest() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge05/test.cj")
-                    }
-                }
-
-                @TestMetadata("merge_std")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class MergeStd : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge_std")
-                    }
-
-                    @TestMetadata("importall.cj")
-                    @Test
-                    fun testImportall() {
-                        runTest("cfir/analysis-tests/testData/llt/APILevelChecker/level_v1/merge_anno/merge_std/importall.cj")
-                    }
-                }
-            }
-        }
-    }
-
     @TestMetadata("CompoundAssign")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
@@ -1432,12 +442,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_01/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_01/pkg.cj")
-            }
         }
 
         @TestMetadata("access_not_imported_02")
@@ -1454,18 +458,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_02/main.cj")
             }
-
-            @TestMetadata("pkg1.cj")
-            @Test
-            fun testPkg1() {
-                runTest("cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_02/pkg1.cj")
-            }
-
-            @TestMetadata("pkg2.cj")
-            @Test
-            fun testPkg2() {
-                runTest("cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_02/pkg2.cj")
-            }
         }
 
         @TestMetadata("access_not_imported_03")
@@ -1481,18 +473,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_03/main.cj")
-            }
-
-            @TestMetadata("pkg1.cj")
-            @Test
-            fun testPkg1() {
-                runTest("cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_03/pkg1.cj")
-            }
-
-            @TestMetadata("pkg2.cj")
-            @Test
-            fun testPkg2() {
-                runTest("cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_03/pkg2.cj")
             }
         }
     }
@@ -2859,12 +1839,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/default_implement/default_implement_00/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/Extend/default_implement/default_implement_00/pkg.cj")
-                }
             }
 
             @TestMetadata("default_implement_01")
@@ -2881,12 +1855,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/default_implement/default_implement_01/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/Extend/default_implement/default_implement_01/pkg.cj")
-                }
             }
 
             @TestMetadata("inherit_relation_of_extend01")
@@ -2902,12 +1870,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/default_implement/inherit_relation_of_extend01/main.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/Extend/default_implement/inherit_relation_of_extend01/pkg.cj")
                 }
             }
 
@@ -2957,18 +1919,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/bug_part_import/main.cj")
                 }
-
-                @TestMetadata("testa.cj")
-                @Test
-                fun testTesta() {
-                    runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/bug_part_import/testa.cj")
-                }
-
-                @TestMetadata("testb.cj")
-                @Test
-                fun testTestb() {
-                    runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/bug_part_import/testb.cj")
-                }
             }
 
             @TestMetadata("direct_extend")
@@ -2987,12 +1937,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic01")
-                    }
-
-                    @TestMetadata("a.cj")
-                    @Test
-                    fun testA() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic01/a.cj")
                     }
 
                     @TestMetadata("failed01.cj")
@@ -3029,18 +1973,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic02")
                     }
 
-                    @TestMetadata("a.cj")
-                    @Test
-                    fun testA() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic02/a.cj")
-                    }
-
-                    @TestMetadata("b.cj")
-                    @Test
-                    fun testB() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic02/b.cj")
-                    }
-
                     @TestMetadata("failed01.cj")
                     @Test
                     fun testFailed01() {
@@ -3061,12 +1993,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic03")
-                    }
-
-                    @TestMetadata("a.cj")
-                    @Test
-                    fun testA() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic03/a.cj")
                     }
 
                     @TestMetadata("pass01.cj")
@@ -3101,18 +2027,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testMainErr() {
                         runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_inherit/main_err.cj")
-                    }
-
-                    @TestMetadata("p1.cj")
-                    @Test
-                    fun testP1() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_inherit/p1.cj")
-                    }
-
-                    @TestMetadata("p2.cj")
-                    @Test
-                    fun testP2() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_inherit/p2.cj")
                     }
                 }
             }
@@ -3151,18 +2065,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/bugfix1")
                     }
 
-                    @TestMetadata("aux_extend_test_a03_01.cj")
-                    @Test
-                    fun testAuxExtendTestA0301() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/bugfix1/aux_extend_test_a03_01.cj")
-                    }
-
-                    @TestMetadata("aux_test_a03_01.cj")
-                    @Test
-                    fun testAuxTestA0301() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/bugfix1/aux_test_a03_01.cj")
-                    }
-
                     @TestMetadata("test_a03_03.cj")
                     @Test
                     fun testTestA0303() {
@@ -3179,18 +2081,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/bugfix2")
                     }
 
-                    @TestMetadata("aux_extend_test_a02_24.cj")
-                    @Test
-                    fun testAuxExtendTestA0224() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/bugfix2/aux_extend_test_a02_24.cj")
-                    }
-
-                    @TestMetadata("aux_test_a02_24.cj")
-                    @Test
-                    fun testAuxTestA0224() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/bugfix2/aux_test_a02_24.cj")
-                    }
-
                     @TestMetadata("test_a02_24_02.cj")
                     @Test
                     fun testTestA022402() {
@@ -3205,12 +2095,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/exported_extend_use_non_export_extend")
-                    }
-
-                    @TestMetadata("testa.cj")
-                    @Test
-                    fun testTesta() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/exported_extend_use_non_export_extend/testa.cj")
                     }
 
                     @TestMetadata("testb.cj")
@@ -3234,18 +2118,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export01/main.cj")
                     }
-
-                    @TestMetadata("testa.cj")
-                    @Test
-                    fun testTesta() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export01/testa.cj")
-                    }
-
-                    @TestMetadata("testb.cj")
-                    @Test
-                    fun testTestb() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export01/testb.cj")
-                    }
                 }
 
                 @TestMetadata("extend_member_export02")
@@ -3261,18 +2133,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export02/main.cj")
-                    }
-
-                    @TestMetadata("testa.cj")
-                    @Test
-                    fun testTesta() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export02/testa.cj")
-                    }
-
-                    @TestMetadata("testb.cj")
-                    @Test
-                    fun testTestb() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export02/testb.cj")
                     }
                 }
 
@@ -3290,18 +2150,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export03/main.cj")
                     }
-
-                    @TestMetadata("testa.cj")
-                    @Test
-                    fun testTesta() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export03/testa.cj")
-                    }
-
-                    @TestMetadata("testb.cj")
-                    @Test
-                    fun testTestb() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export03/testb.cj")
-                    }
                 }
 
                 @TestMetadata("extend_member_export04")
@@ -3317,18 +2165,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export04/main.cj")
-                    }
-
-                    @TestMetadata("testa.cj")
-                    @Test
-                    fun testTesta() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export04/testa.cj")
-                    }
-
-                    @TestMetadata("testb.cj")
-                    @Test
-                    fun testTestb() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export04/testb.cj")
                     }
                 }
 
@@ -3400,42 +2236,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testMain10() {
                         runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/main10.cj")
                     }
-
-                    @TestMetadata("testa.cj")
-                    @Test
-                    fun testTesta() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/testa.cj")
-                    }
-
-                    @TestMetadata("testb1.cj")
-                    @Test
-                    fun testTestb1() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/testb1.cj")
-                    }
-
-                    @TestMetadata("testb2.cj")
-                    @Test
-                    fun testTestb2() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/testb2.cj")
-                    }
-
-                    @TestMetadata("testb3.cj")
-                    @Test
-                    fun testTestb3() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/testb3.cj")
-                    }
-
-                    @TestMetadata("testb4.cj")
-                    @Test
-                    fun testTestb4() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/testb4.cj")
-                    }
-
-                    @TestMetadata("testb5.cj")
-                    @Test
-                    fun testTestb5() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05/testb5.cj")
-                    }
                 }
 
                 @TestMetadata("extend_member_export06")
@@ -3457,18 +2257,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testMain02() {
                         runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export06/main02.cj")
-                    }
-
-                    @TestMetadata("testa.cj")
-                    @Test
-                    fun testTesta() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export06/testa.cj")
-                    }
-
-                    @TestMetadata("testb.cj")
-                    @Test
-                    fun testTestb() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export06/testb.cj")
                     }
                 }
             }
@@ -3594,12 +2382,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend/extend_lookup/main.cj")
             }
-
-            @TestMetadata("testa.cj")
-            @Test
-            fun testTesta() {
-                runTest("cfir/analysis-tests/testData/llt/Extend/extend_lookup/testa.cj")
-            }
         }
 
         @TestMetadata("generic")
@@ -3721,12 +2503,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testOk() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/generic/primitive_00/ok.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/Extend/generic/primitive_00/pkg.cj")
-                }
             }
 
             @TestMetadata("same_func_in_different_pkg")
@@ -3742,38 +2518,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg/main.cj")
-                }
-
-                @TestMetadata("pkg1")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg/pkg1")
-                    }
-
-                    @TestMetadata("pkg1.cj")
-                    @Test
-                    fun testPkg1() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg/pkg1/pkg1.cj")
-                    }
-                }
-
-                @TestMetadata("pkg2")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg/pkg2")
-                    }
-
-                    @TestMetadata("pkg2.cj")
-                    @Test
-                    fun testPkg2() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg/pkg2/pkg2.cj")
-                    }
                 }
             }
 
@@ -3791,38 +2535,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg_conflict/main.cj")
                 }
-
-                @TestMetadata("pkg1")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg_conflict/pkg1")
-                    }
-
-                    @TestMetadata("pkg1.cj")
-                    @Test
-                    fun testPkg1() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg_conflict/pkg1/pkg1.cj")
-                    }
-                }
-
-                @TestMetadata("pkg2")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg_conflict/pkg2")
-                    }
-
-                    @TestMetadata("pkg2.cj")
-                    @Test
-                    fun testPkg2() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg_conflict/pkg2/pkg2.cj")
-                    }
-                }
             }
 
             @TestMetadata("use_internal_extend_in_external_generic_with_conflict")
@@ -3838,38 +2550,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_with_conflict/main.cj")
-                }
-
-                @TestMetadata("pkg1")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_with_conflict/pkg1")
-                    }
-
-                    @TestMetadata("pkg1.cj")
-                    @Test
-                    fun testPkg1() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_with_conflict/pkg1/pkg1.cj")
-                    }
-                }
-
-                @TestMetadata("pkg2")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_with_conflict/pkg2")
-                    }
-
-                    @TestMetadata("pkg2.cj")
-                    @Test
-                    fun testPkg2() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_with_conflict/pkg2/pkg2.cj")
-                    }
                 }
             }
 
@@ -3887,38 +2567,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_without_conflict/main.cj")
                 }
-
-                @TestMetadata("pkg1")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_without_conflict/pkg1")
-                    }
-
-                    @TestMetadata("pkg1.cj")
-                    @Test
-                    fun testPkg1() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_without_conflict/pkg1/pkg1.cj")
-                    }
-                }
-
-                @TestMetadata("pkg2")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_without_conflict/pkg2")
-                    }
-
-                    @TestMetadata("pkg2.cj")
-                    @Test
-                    fun testPkg2() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_without_conflict/pkg2/pkg2.cj")
-                    }
-                }
             }
 
             @TestMetadata("use_internal_generic_extend_in_external_generic")
@@ -3934,38 +2582,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_generic_extend_in_external_generic/main.cj")
-                }
-
-                @TestMetadata("pkg1")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_generic_extend_in_external_generic/pkg1")
-                    }
-
-                    @TestMetadata("pkg1.cj")
-                    @Test
-                    fun testPkg1() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_generic_extend_in_external_generic/pkg1/pkg1.cj")
-                    }
-                }
-
-                @TestMetadata("pkg2")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_generic_extend_in_external_generic/pkg2")
-                    }
-
-                    @TestMetadata("pkg2.cj")
-                    @Test
-                    fun testPkg2() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/generic/use_internal_generic_extend_in_external_generic/pkg2/pkg2.cj")
-                    }
                 }
             }
         }
@@ -4153,22 +2769,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("other_pkg_in_generic")
@@ -4184,22 +2784,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_in_generic/main.cj")
-                }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_in_generic/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_in_generic/pkg/pkg.cj")
-                    }
                 }
             }
 
@@ -4217,22 +2801,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_prop/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_prop/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_prop/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("other_pkg_prop_virtual")
@@ -4248,22 +2816,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_prop_virtual/main.cj")
-                }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_prop_virtual/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_prop_virtual/pkg/pkg.cj")
-                    }
                 }
             }
 
@@ -4281,22 +2833,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_virtual/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_virtual/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_virtual/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("three_pkg")
@@ -4312,38 +2848,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/three_pkg/main.cj")
-                }
-
-                @TestMetadata("pkg1")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/three_pkg/pkg1")
-                    }
-
-                    @TestMetadata("pkg1.cj")
-                    @Test
-                    fun testPkg1() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/three_pkg/pkg1/pkg1.cj")
-                    }
-                }
-
-                @TestMetadata("pkg2")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/three_pkg/pkg2")
-                    }
-
-                    @TestMetadata("pkg2.cj")
-                    @Test
-                    fun testPkg2() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/interface_default_implement/three_pkg/pkg2/pkg2.cj")
-                    }
                 }
             }
         }
@@ -4405,22 +2909,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/orphan_rule/already_extend_interface/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/orphan_rule/already_extend_interface/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/orphan_rule/already_extend_interface/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("already_extend_interface_generic")
@@ -4436,22 +2924,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/orphan_rule/already_extend_interface_generic/main.cj")
-                }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/orphan_rule/already_extend_interface_generic/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/orphan_rule/already_extend_interface_generic/pkg/pkg.cj")
-                    }
                 }
             }
         }
@@ -4835,22 +3307,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/type_alias/orphan_rule/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/type_alias/orphan_rule/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/type_alias/orphan_rule/pkg/pkg.cj")
-                    }
-                }
             }
         }
 
@@ -4913,22 +3369,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/visibility/default_other_pkg_child_class/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/visibility/default_other_pkg_child_class/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/visibility/default_other_pkg_child_class/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("protect_other_pkg")
@@ -4945,22 +3385,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/visibility/protect_other_pkg/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/visibility/protect_other_pkg/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/visibility/protect_other_pkg/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("protect_other_pkg_child_class")
@@ -4976,22 +3400,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/Extend/visibility/protect_other_pkg_child_class/main.cj")
-                }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/visibility/protect_other_pkg_child_class/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/Extend/visibility/protect_other_pkg_child_class/pkg/pkg.cj")
-                    }
                 }
             }
         }
@@ -5100,12 +3508,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import/main.cj")
             }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import/p1.cj")
-            }
         }
 
         @TestMetadata("import1")
@@ -5121,12 +3523,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import1/main.cj")
-            }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import1/p1.cj")
             }
         }
 
@@ -5144,12 +3540,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import10/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import10/pkg.cj")
-            }
         }
 
         @TestMetadata("import11")
@@ -5166,18 +3556,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import11/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import11/pkg.cj")
-            }
-
-            @TestMetadata("pkg1.cj")
-            @Test
-            fun testPkg1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import11/pkg1.cj")
-            }
         }
 
         @TestMetadata("import12")
@@ -5187,18 +3565,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import12")
-            }
-
-            @TestMetadata("pkg0.cj")
-            @Test
-            fun testPkg0() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import12/pkg0.cj")
-            }
-
-            @TestMetadata("pkg1.cj")
-            @Test
-            fun testPkg1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import12/pkg1.cj")
             }
 
             @TestMetadata("pkg2.cj")
@@ -5217,18 +3583,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import13")
             }
 
-            @TestMetadata("pkg0.cj")
-            @Test
-            fun testPkg0() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import13/pkg0.cj")
-            }
-
-            @TestMetadata("pkg1.cj")
-            @Test
-            fun testPkg1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import13/pkg1.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
@@ -5243,18 +3597,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import14")
-            }
-
-            @TestMetadata("pkga.cj")
-            @Test
-            fun testPkga() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import14/pkga.cj")
-            }
-
-            @TestMetadata("pkgb.cj")
-            @Test
-            fun testPkgb() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import14/pkgb.cj")
             }
 
             @TestMetadata("test.cj")
@@ -5273,12 +3615,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import15")
             }
 
-            @TestMetadata("a.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import15/a.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
@@ -5293,18 +3629,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import16")
-            }
-
-            @TestMetadata("pkg1.cj")
-            @Test
-            fun testPkg1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import16/pkg1.cj")
-            }
-
-            @TestMetadata("pkg2.cj")
-            @Test
-            fun testPkg2() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import16/pkg2.cj")
             }
 
             @TestMetadata("test.cj")
@@ -5328,12 +3652,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import2/main.cj")
             }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import2/p1.cj")
-            }
         }
 
         @TestMetadata("import3")
@@ -5349,18 +3667,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import3/main.cj")
-            }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import3/p1.cj")
-            }
-
-            @TestMetadata("p2.cj")
-            @Test
-            fun testP2() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import3/p2.cj")
             }
         }
 
@@ -5378,18 +3684,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import4/main.cj")
             }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import4/p1.cj")
-            }
-
-            @TestMetadata("p2.cj")
-            @Test
-            fun testP2() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import4/p2.cj")
-            }
         }
 
         @TestMetadata("import5")
@@ -5406,12 +3700,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import5/main.cj")
             }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import5/p1.cj")
-            }
         }
 
         @TestMetadata("import6")
@@ -5421,24 +3709,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import6")
-            }
-
-            @TestMetadata("A.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import6/A.cj")
-            }
-
-            @TestMetadata("B.cj")
-            @Test
-            fun testB() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import6/B.cj")
-            }
-
-            @TestMetadata("C.cj")
-            @Test
-            fun testC() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import6/C.cj")
             }
 
             @TestMetadata("main.cj")
@@ -5457,24 +3727,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import7")
             }
 
-            @TestMetadata("A.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import7/A.cj")
-            }
-
-            @TestMetadata("B.cj")
-            @Test
-            fun testB() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import7/B.cj")
-            }
-
-            @TestMetadata("C.cj")
-            @Test
-            fun testC() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import7/C.cj")
-            }
-
             @TestMetadata("main.cj")
             @Test
             fun testMain() {
@@ -5489,18 +3741,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import7_1")
-            }
-
-            @TestMetadata("A.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import7_1/A.cj")
-            }
-
-            @TestMetadata("B.cj")
-            @Test
-            fun testB() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import7_1/B.cj")
             }
 
             @TestMetadata("C.cj")
@@ -5524,12 +3764,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import9/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import9/pkg.cj")
-            }
         }
 
         @TestMetadata("import_orphanrule_01")
@@ -5545,12 +3779,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_01/main.cj")
-            }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_01/p1.cj")
             }
         }
 
@@ -5568,12 +3796,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_02/main.cj")
             }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_02/p1.cj")
-            }
         }
 
         @TestMetadata("import_orphanrule_03")
@@ -5589,12 +3811,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_03/main.cj")
-            }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_03/p1.cj")
             }
         }
 
@@ -5612,12 +3828,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_04/main.cj")
             }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_04/p1.cj")
-            }
         }
 
         @TestMetadata("import_orphanrule_05")
@@ -5633,12 +3843,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_05/main.cj")
-            }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_05/p1.cj")
             }
         }
 
@@ -5656,12 +3860,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_06/main.cj")
             }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_06/p1.cj")
-            }
         }
 
         @TestMetadata("import_orphanrule_07")
@@ -5677,12 +3875,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_07/main.cj")
-            }
-
-            @TestMetadata("p1.cj")
-            @Test
-            fun testP1() {
-                runTest("cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_07/p1.cj")
             }
         }
     }
@@ -5950,12 +4142,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testFile1() {
                 runTest("cfir/analysis-tests/testData/llt/InitializationCheck/global_variable_not_assignable_01/file1.cj")
             }
-
-            @TestMetadata("file2.cj")
-            @Test
-            fun testFile2() {
-                runTest("cfir/analysis-tests/testData/llt/InitializationCheck/global_variable_not_assignable_01/file2.cj")
-            }
         }
 
         @TestMetadata("global_variable_not_assignable_02")
@@ -5971,12 +4157,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testFile1() {
                 runTest("cfir/analysis-tests/testData/llt/InitializationCheck/global_variable_not_assignable_02/file1.cj")
-            }
-
-            @TestMetadata("file2.cj")
-            @Test
-            fun testFile2() {
-                runTest("cfir/analysis-tests/testData/llt/InitializationCheck/global_variable_not_assignable_02/file2.cj")
             }
         }
 
@@ -5994,12 +4174,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testFile1() {
                 runTest("cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_02/file1.cj")
             }
-
-            @TestMetadata("file2.cj")
-            @Test
-            fun testFile2() {
-                runTest("cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_02/file2.cj")
-            }
         }
 
         @TestMetadata("static_variable_use_before_init_05")
@@ -6016,12 +4190,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testFile1() {
                 runTest("cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_05/file1.cj")
             }
-
-            @TestMetadata("file2.cj")
-            @Test
-            fun testFile2() {
-                runTest("cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_05/file2.cj")
-            }
         }
 
         @TestMetadata("static_variable_use_before_init_06")
@@ -6037,12 +4205,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testFile1() {
                 runTest("cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_06/file1.cj")
-            }
-
-            @TestMetadata("file2.cj")
-            @Test
-            fun testFile2() {
-                runTest("cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_06/file2.cj")
             }
         }
     }
@@ -6141,12 +4303,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/IsOrAsExpr/import_generic_as_01")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/IsOrAsExpr/import_generic_as_01/pkg.cj")
             }
 
             @TestMetadata("test.cj")
@@ -6979,12 +5135,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testPass() {
                     runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_class/pass.cj")
                 }
-
-                @TestMetadata("pkga.cj")
-                @Test
-                fun testPkga() {
-                    runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_class/pkga.cj")
-                }
             }
 
             @TestMetadata("pkg_generic_interface")
@@ -7000,12 +5150,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testFail() {
                     runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_generic_interface/fail.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_generic_interface/pkg.cj")
                 }
             }
 
@@ -7028,12 +5172,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testPass() {
                     runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_interaction/pass.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_interaction/pkg.cj")
                 }
             }
 
@@ -7069,18 +5207,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testPass() {
                     runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_interface/pass.cj")
                 }
-
-                @TestMetadata("pkga.cj")
-                @Test
-                fun testPkga() {
-                    runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_interface/pkga.cj")
-                }
-
-                @TestMetadata("pkgs.cj")
-                @Test
-                fun testPkgs() {
-                    runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_interface/pkgs.cj")
-                }
             }
 
             @TestMetadata("pkg_visibility")
@@ -7102,12 +5228,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testPass() {
                     runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_visibility/pass.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_visibility/pkg.cj")
                 }
             }
         }
@@ -7367,12 +5487,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testOkReachable() {
                     runTest("cfir/analysis-tests/testData/llt/PatternMatching/TypePattern/pkg_non_sealed/ok_reachable.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/PatternMatching/TypePattern/pkg_non_sealed/pkg.cj")
-                }
             }
         }
     }
@@ -7413,22 +5527,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type/test.cj")
             }
 
-            @TestMetadata("pa")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pa : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type/pa")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type/pa/a.cj")
-                }
-            }
-
             @TestMetadata("pb")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
@@ -7436,12 +5534,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type/pb")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type/pb/b.cj")
                 }
 
                 @TestMetadata("b2.cj")
@@ -7461,12 +5553,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type2")
             }
 
-            @TestMetadata("a.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type2/a.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
@@ -7481,18 +5567,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type3")
-            }
-
-            @TestMetadata("base.cj")
-            @Test
-            fun testBase() {
-                runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type3/base.cj")
-            }
-
-            @TestMetadata("derived.cj")
-            @Test
-            fun testDerived() {
-                runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type3/derived.cj")
             }
 
             @TestMetadata("test.cj")
@@ -7511,18 +5585,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type4")
             }
 
-            @TestMetadata("base.cj")
-            @Test
-            fun testBase() {
-                runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type4/base.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type4/pkg.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
@@ -7539,632 +5601,10 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type5")
             }
 
-            @TestMetadata("base.cj")
-            @Test
-            fun testBase() {
-                runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type5/base.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type5/pkg.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
                 runTest("cfir/analysis-tests/testData/llt/accessibility/common_super_type5/test.cj")
-            }
-        }
-    }
-
-    @TestMetadata("annotation")
-    @TestDataPath("\$PROJECT_ROOT")
-    @Nested
-    inner class Annotation : AbstractCfirPsiDiagnosticTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation")
-        }
-
-        @TestMetadata("err_abstract.cj")
-        @Test
-        fun testErrAbstract() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_abstract.cj")
-        }
-
-        @TestMetadata("err_annotation_no_const_init.cj")
-        @Test
-        fun testErrAnnotationNoConstInit() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_annotation_no_const_init.cj")
-        }
-
-        @TestMetadata("err_const_arg_00.cj")
-        @Test
-        fun testErrConstArg00() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_const_arg_00.cj")
-        }
-
-        @TestMetadata("err_const_arg_01.cj")
-        @Test
-        fun testErrConstArg01() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_const_arg_01.cj")
-        }
-
-        @TestMetadata("err_custom_annotation_place_func_01.cj")
-        @Test
-        fun testErrCustomAnnotationPlaceFunc01() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_custom_annotation_place_func_01.cj")
-        }
-
-        @TestMetadata("err_custom_annotation_place_var_01.cj")
-        @Test
-        fun testErrCustomAnnotationPlaceVar01() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_custom_annotation_place_var_01.cj")
-        }
-
-        @TestMetadata("err_custom_annotation_place_var_02.cj")
-        @Test
-        fun testErrCustomAnnotationPlaceVar02() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_custom_annotation_place_var_02.cj")
-        }
-
-        @TestMetadata("err_open.cj")
-        @Test
-        fun testErrOpen() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_open.cj")
-        }
-
-        @TestMetadata("err_sealed.cj")
-        @Test
-        fun testErrSealed() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/err_sealed.cj")
-        }
-
-        @TestMetadata("ok_class_00.cj")
-        @Test
-        fun testOkClass00() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_00.cj")
-        }
-
-        @TestMetadata("ok_class_01.cj")
-        @Test
-        fun testOkClass01() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_01.cj")
-        }
-
-        @TestMetadata("ok_class_02.cj")
-        @Test
-        fun testOkClass02() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_02.cj")
-        }
-
-        @TestMetadata("ok_class_03.cj")
-        @Test
-        fun testOkClass03() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_03.cj")
-        }
-
-        @TestMetadata("ok_class_04.cj")
-        @Test
-        fun testOkClass04() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_04.cj")
-        }
-
-        @TestMetadata("ok_class_05.cj")
-        @Test
-        fun testOkClass05() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_05.cj")
-        }
-
-        @TestMetadata("ok_class_05_dep.cj")
-        @Test
-        fun testOkClass05Dep() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_05_dep.cj")
-        }
-
-        @TestMetadata("ok_class_06.cj")
-        @Test
-        fun testOkClass06() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_06.cj")
-        }
-
-        @TestMetadata("ok_class_06_dep.cj")
-        @Test
-        fun testOkClass06Dep() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_06_dep.cj")
-        }
-
-        @TestMetadata("ok_class_07.cj")
-        @Test
-        fun testOkClass07() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_07.cj")
-        }
-
-        @TestMetadata("ok_class_07_dep.cj")
-        @Test
-        fun testOkClass07Dep() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_07_dep.cj")
-        }
-
-        @TestMetadata("ok_class_08.cj")
-        @Test
-        fun testOkClass08() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_08.cj")
-        }
-
-        @TestMetadata("ok_class_08_dep.cj")
-        @Test
-        fun testOkClass08Dep() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_class_08_dep.cj")
-        }
-
-        @TestMetadata("ok_default_impl_00.cj")
-        @Test
-        fun testOkDefaultImpl00() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_default_impl_00.cj")
-        }
-
-        @TestMetadata("ok_different_instantiation_00.cj")
-        @Test
-        fun testOkDifferentInstantiation00() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_different_instantiation_00.cj")
-        }
-
-        @TestMetadata("ok_enum_func.cj")
-        @Test
-        fun testOkEnumFunc() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_enum_func.cj")
-        }
-
-        @TestMetadata("ok_member_inextend.cj")
-        @Test
-        fun testOkMemberInextend() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_member_inextend.cj")
-        }
-
-        @TestMetadata("ok_non_public_warning.cj")
-        @Test
-        fun testOkNonPublicWarning() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_non_public_warning.cj")
-        }
-
-        @TestMetadata("ok_param_00.cj")
-        @Test
-        fun testOkParam00() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_param_00.cj")
-        }
-
-        @TestMetadata("ok_param_01.cj")
-        @Test
-        fun testOkParam01() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_param_01.cj")
-        }
-
-        @TestMetadata("ok_same_annotation_00.cj")
-        @Test
-        fun testOkSameAnnotation00() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_same_annotation_00.cj")
-        }
-
-        @TestMetadata("ok_same_annotation_01.cj")
-        @Test
-        fun testOkSameAnnotation01() {
-            runTest("cfir/analysis-tests/testData/llt/annotation/ok_same_annotation_01.cj")
-        }
-
-        @TestMetadata("globals")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class Globals : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/globals")
-            }
-
-            @TestMetadata("allkinds.cj")
-            @Test
-            fun testAllkinds() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/allkinds.cj")
-            }
-
-            @TestMetadata("apilevel.cj")
-            @Test
-            fun testApilevel() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/apilevel.cj")
-            }
-
-            @TestMetadata("derive.cj")
-            @Test
-            fun testDerive() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/derive.cj")
-            }
-
-            @TestMetadata("enum_cons.cj")
-            @Test
-            fun testEnumCons() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/enum_cons.cj")
-            }
-
-            @TestMetadata("enumcons_inside_macro.cj")
-            @Test
-            fun testEnumconsInsideMacro() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/enumcons_inside_macro.cj")
-            }
-
-            @TestMetadata("extend.cj")
-            @Test
-            fun testExtend() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/extend.cj")
-            }
-
-            @TestMetadata("finalizer.cj")
-            @Test
-            fun testFinalizer() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/finalizer.cj")
-            }
-
-            @TestMetadata("global.cj")
-            @Test
-            fun testGlobal() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/global.cj")
-            }
-
-            @TestMetadata("global_vp.cj")
-            @Test
-            fun testGlobalVp() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/global_vp.cj")
-            }
-
-            @TestMetadata("instantiated.cj")
-            @Test
-            fun testInstantiated() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/instantiated.cj")
-            }
-
-            @TestMetadata("key.cj")
-            @Test
-            fun testKey() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/globals/key.cj")
-            }
-
-            @TestMetadata("bad")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Bad : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/globals/bad")
-                }
-
-                @TestMetadata("globalfunc_on_globalvar.cj")
-                @Test
-                fun testGlobalfuncOnGlobalvar() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/bad/globalfunc_on_globalvar.cj")
-                }
-
-                @TestMetadata("globalvar_on_globalfunc.cj")
-                @Test
-                fun testGlobalvarOnGlobalfunc() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/bad/globalvar_on_globalfunc.cj")
-                }
-
-                @TestMetadata("instantiated.cj")
-                @Test
-                fun testInstantiated() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/bad/instantiated.cj")
-                }
-
-                @TestMetadata("main.cj")
-                @Test
-                fun testMain() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/bad/main.cj")
-                }
-
-                @TestMetadata("type.cj")
-                @Test
-                fun testType() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/bad/type.cj")
-                }
-            }
-
-            @TestMetadata("datarace")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Datarace : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/globals/datarace")
-                }
-
-                @TestMetadata("globalfunc.cj")
-                @Test
-                fun testGlobalfunc() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/datarace/globalfunc.cj")
-                }
-            }
-
-            @TestMetadata("multipkgs")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Multipkgs : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/globals/multipkgs")
-                }
-
-                @TestMetadata("255.cj")
-                @Test
-                fun test255() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/multipkgs/255.cj")
-                }
-
-                @TestMetadata("255.pkg.cj")
-                @Test
-                fun test255Pkg() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/multipkgs/255.pkg.cj")
-                }
-
-                @TestMetadata("all.cj")
-                @Test
-                fun testAll() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/multipkgs/all.cj")
-                }
-
-                @TestMetadata("all.pkg.cj")
-                @Test
-                fun testAllPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/globals/multipkgs/all.pkg.cj")
-                }
-            }
-        }
-
-        @TestMetadata("ifavailable")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class Ifavailable : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/ifavailable")
-            }
-
-            @TestMetadata("basecase.cj")
-            @Test
-            fun testBasecase() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/basecase.cj")
-            }
-
-            @TestMetadata("err_desugar.cj")
-            @Test
-            fun testErrDesugar() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/err_desugar.cj")
-            }
-
-            @TestMetadata("err_lambda_with_param.cj")
-            @Test
-            fun testErrLambdaWithParam() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/err_lambda_with_param.cj")
-            }
-
-            @TestMetadata("err_not_lambda.cj")
-            @Test
-            fun testErrNotLambda() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/err_not_lambda.cj")
-            }
-
-            @TestMetadata("err_not_literal.cj")
-            @Test
-            fun testErrNotLiteral() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/err_not_literal.cj")
-            }
-
-            @TestMetadata("err_too_few_args.cj")
-            @Test
-            fun testErrTooFewArgs() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/err_too_few_args.cj")
-            }
-
-            @TestMetadata("err_too_many_args.cj")
-            @Test
-            fun testErrTooManyArgs() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/err_too_many_args.cj")
-            }
-
-            @TestMetadata("err_without_import.cj")
-            @Test
-            fun testErrWithoutImport() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/err_without_import.cj")
-            }
-
-            @TestMetadata("lambda_not_unit_return_type.cj")
-            @Test
-            fun testLambdaNotUnitReturnType() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/lambda_not_unit_return_type.cj")
-            }
-
-            @TestMetadata("level_limit.cj")
-            @Test
-            fun testLevelLimit() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_limit.cj")
-            }
-
-            @TestMetadata("nested.cj")
-            @Test
-            fun testNested() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/nested.cj")
-            }
-
-            @TestMetadata("external_weak")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class ExternalWeak : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/ifavailable/external_weak")
-                }
-
-                @TestMetadata("dep.cj")
-                @Test
-                fun testDep() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/external_weak/dep.cj")
-                }
-
-                @TestMetadata("dep1.cj")
-                @Test
-                fun testDep1() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/external_weak/dep1.cj")
-                }
-
-                @TestMetadata("device_info.cj")
-                @Test
-                fun testDeviceInfo() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/external_weak/device_info.cj")
-                }
-
-                @TestMetadata("external_weak.cj")
-                @Test
-                fun testExternalWeak() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/external_weak/external_weak.cj")
-                }
-            }
-
-            @TestMetadata("level_syscap_check")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class LevelSyscapCheck : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check")
-                }
-
-                @TestMetadata("apilevel.cj")
-                @Test
-                fun testApilevel() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/apilevel.cj")
-                }
-
-                @TestMetadata("canIUse.cj")
-                @Test
-                fun testCanIUse() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/canIUse.cj")
-                }
-
-                @TestMetadata("device_info.cj")
-                @Test
-                fun testDeviceInfo() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/device_info.cj")
-                }
-
-                @TestMetadata("syscap_test01.cj")
-                @Test
-                fun testSyscapTest01() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/syscap_test01.cj")
-                }
-
-                @TestMetadata("syscap_test02.cj")
-                @Test
-                fun testSyscapTest02() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/syscap_test02.cj")
-                }
-
-                @TestMetadata("test01.cj")
-                @Test
-                fun testTest01() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test01.cj")
-                }
-
-                @TestMetadata("test02.cj")
-                @Test
-                fun testTest02() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test02.cj")
-                }
-
-                @TestMetadata("test03.cj")
-                @Test
-                fun testTest03() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test03.cj")
-                }
-
-                @TestMetadata("test04.cj")
-                @Test
-                fun testTest04() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test04.cj")
-                }
-
-                @TestMetadata("test05.cj")
-                @Test
-                fun testTest05() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test05.cj")
-                }
-
-                @TestMetadata("test06.cj")
-                @Test
-                fun testTest06() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test06.cj")
-                }
-
-                @TestMetadata("test07.cj")
-                @Test
-                fun testTest07() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test07.cj")
-                }
-
-                @TestMetadata("test08.cj")
-                @Test
-                fun testTest08() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test08.cj")
-                }
-
-                @TestMetadata("test09.cj")
-                @Test
-                fun testTest09() {
-                    runTest("cfir/analysis-tests/testData/llt/annotation/ifavailable/level_syscap_check/test09.cj")
-                }
-            }
-        }
-
-        @TestMetadata("ok_different_pkgs_00")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class OkDifferentPkgs00 : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/ok_different_pkgs_00")
-            }
-
-            @TestMetadata("a.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ok_different_pkgs_00/a.cj")
-            }
-
-            @TestMetadata("b.cj")
-            @Test
-            fun testB() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ok_different_pkgs_00/b.cj")
-            }
-        }
-
-        @TestMetadata("ok_different_pkgs_01")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class OkDifferentPkgs01 : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/annotation/ok_different_pkgs_01")
-            }
-
-            @TestMetadata("a.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ok_different_pkgs_01/a.cj")
-            }
-
-            @TestMetadata("b.cj")
-            @Test
-            fun testB() {
-                runTest("cfir/analysis-tests/testData/llt/annotation/ok_different_pkgs_01/b.cj")
             }
         }
     }
@@ -8389,18 +5829,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/array/array_extend/main.cj")
-            }
-
-            @TestMetadata("pkg1.cj")
-            @Test
-            fun testPkg1() {
-                runTest("cfir/analysis-tests/testData/llt/array/array_extend/pkg1.cj")
-            }
-
-            @TestMetadata("pkg2.cj")
-            @Test
-            fun testPkg2() {
-                runTest("cfir/analysis-tests/testData/llt/array/array_extend/pkg2.cj")
             }
         }
     }
@@ -9014,122 +6442,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     runTest("cfir/analysis-tests/testData/llt/box/box_export/src/main.cj")
                 }
 
-                @TestMetadata("config")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Config : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_export/src/config")
-                    }
-
-                    @TestMetadata("ArgOptsConfigurationSource.cj")
-                    @Test
-                    fun testArgOptsConfigurationSource() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/config/ArgOptsConfigurationSource.cj")
-                    }
-
-                    @TestMetadata("Configuration.cj")
-                    @Test
-                    fun testConfiguration() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/config/Configuration.cj")
-                    }
-
-                    @TestMetadata("ConfigurationBuilder.cj")
-                    @Test
-                    fun testConfigurationBuilder() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/config/ConfigurationBuilder.cj")
-                    }
-
-                    @TestMetadata("ConfigurationManager.cj")
-                    @Test
-                    fun testConfigurationManager() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/config/ConfigurationManager.cj")
-                    }
-
-                    @TestMetadata("ConfigurationSource.cj")
-                    @Test
-                    fun testConfigurationSource() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/config/ConfigurationSource.cj")
-                    }
-
-                    @TestMetadata("EnvVarsConfigurationSource.cj")
-                    @Test
-                    fun testEnvVarsConfigurationSource() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/config/EnvVarsConfigurationSource.cj")
-                    }
-
-                    @TestMetadata("JosnConfigurationSource.cj")
-                    @Test
-                    fun testJosnConfigurationSource() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/config/JosnConfigurationSource.cj")
-                    }
-
-                    @TestMetadata("MemoryConfigurationSource.cj")
-                    @Test
-                    fun testMemoryConfigurationSource() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/config/MemoryConfigurationSource.cj")
-                    }
-                }
-
-                @TestMetadata("host")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Host : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_export/src/host")
-                    }
-
-                    @TestMetadata("DefautFilesMiddleware.cj")
-                    @Test
-                    fun testDefautFilesMiddleware() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/host/DefautFilesMiddleware.cj")
-                    }
-
-                    @TestMetadata("HostEnvironment.cj")
-                    @Test
-                    fun testHostEnvironment() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/host/HostEnvironment.cj")
-                    }
-
-                    @TestMetadata("Middleware.cj")
-                    @Test
-                    fun testMiddleware() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/host/Middleware.cj")
-                    }
-
-                    @TestMetadata("RequestDelegate.cj")
-                    @Test
-                    fun testRequestDelegate() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/host/RequestDelegate.cj")
-                    }
-
-                    @TestMetadata("StaticFilesMiddleware.cj")
-                    @Test
-                    fun testStaticFilesMiddleware() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/host/StaticFilesMiddleware.cj")
-                    }
-
-                    @TestMetadata("WebHost.cj")
-                    @Test
-                    fun testWebHost() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/host/WebHost.cj")
-                    }
-
-                    @TestMetadata("WebHostBuilder.cj")
-                    @Test
-                    fun testWebHostBuilder() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/host/WebHostBuilder.cj")
-                    }
-
-                    @TestMetadata("WebServer.cj")
-                    @Test
-                    fun testWebServer() {
-                        runTest("cfir/analysis-tests/testData/llt/box/box_export/src/host/WebServer.cj")
-                    }
-                }
-
                 @TestMetadata("service")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
@@ -9192,22 +6504,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/box/box_generic_class_01/main.cj")
             }
-
-            @TestMetadata("pkg")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_generic_class_01/pkg")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/box/box_generic_class_01/pkg/pkg.cj")
-                }
-            }
         }
 
         @TestMetadata("box_generic_class_02")
@@ -9223,22 +6519,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/box/box_generic_class_02/main.cj")
-            }
-
-            @TestMetadata("pkg")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_generic_class_02/pkg")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/box/box_generic_class_02/pkg/pkg.cj")
-                }
             }
         }
 
@@ -9256,22 +6536,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/box/box_generic_class_03/main.cj")
             }
-
-            @TestMetadata("pkg")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_generic_class_03/pkg")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/box/box_generic_class_03/pkg/pkg.cj")
-                }
-            }
         }
 
         @TestMetadata("check_super_box_04")
@@ -9287,12 +6551,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testCheckSuperBox04() {
                 runTest("cfir/analysis-tests/testData/llt/box/check_super_box_04/check_super_box_04.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/box/check_super_box_04/pkg.cj")
             }
         }
 
@@ -9310,12 +6568,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testCheckSuperBox07() {
                 runTest("cfir/analysis-tests/testData/llt/box/check_super_box_07/check_super_box_07.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/box/check_super_box_07/pkg.cj")
-            }
         }
 
         @TestMetadata("check_super_box_08")
@@ -9332,12 +6584,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/box/check_super_box_08/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/box/check_super_box_08/pkg.cj")
-            }
         }
 
         @TestMetadata("import_inline_box_01")
@@ -9353,12 +6599,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/box/import_inline_box_01/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/box/import_inline_box_01/pkg.cj")
             }
         }
     }
@@ -9917,12 +7157,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/capture/import_generic_func_01/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/capture/import_generic_func_01/pkg.cj")
             }
         }
     }
@@ -11753,12 +8987,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/ThisType/import_this_01/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/class/ThisType/import_this_01/pkg.cj")
-                }
             }
 
             @TestMetadata("import_this_02")
@@ -11774,12 +9002,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/ThisType/import_this_02/main.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/class/ThisType/import_this_02/pkg.cj")
                 }
             }
         }
@@ -11831,22 +9053,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/class/call_private_ctor_in_other_package/main.cj")
-            }
-
-            @TestMetadata("pkg")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/call_private_ctor_in_other_package/pkg")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/class/call_private_ctor_in_other_package/pkg/pkg.cj")
-                }
             }
         }
 
@@ -12030,22 +9236,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test1/main.cj")
                     }
-
-                    @TestMetadata("pkga")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkga : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test1/pkga")
-                        }
-
-                        @TestMetadata("pkga.cj")
-                        @Test
-                        fun testPkga() {
-                            runTest("cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test1/pkga/pkga.cj")
-                        }
-                    }
                 }
 
                 @TestMetadata("test2")
@@ -12062,22 +9252,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test2/main.cj")
                     }
-
-                    @TestMetadata("pkga")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkga : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test2/pkga")
-                        }
-
-                        @TestMetadata("pkga.cj")
-                        @Test
-                        fun testPkga() {
-                            runTest("cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test2/pkga/pkga.cj")
-                        }
-                    }
                 }
 
                 @TestMetadata("test3")
@@ -12093,22 +9267,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test3/main.cj")
-                    }
-
-                    @TestMetadata("pkga")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkga : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test3/pkga")
-                        }
-
-                        @TestMetadata("pkga.cj")
-                        @Test
-                        fun testPkga() {
-                            runTest("cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test3/pkga/pkga.cj")
-                        }
                     }
                 }
             }
@@ -12127,22 +9285,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testClassNoOverrideModifierInvalid9() {
                 runTest("cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_9/class_no_override_modifier_invalid_9.cj")
-            }
-
-            @TestMetadata("pkg")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_9/pkg")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_9/pkg/pkg.cj")
-                }
             }
         }
 
@@ -12168,22 +9310,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/class_override_modifier_3/src/main.cj")
-                }
-
-                @TestMetadata("pkgs")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_override_modifier_3/src/pkgs")
-                    }
-
-                    @TestMetadata("pkgs.cj")
-                    @Test
-                    fun testPkgs() {
-                        runTest("cfir/analysis-tests/testData/llt/class/class_override_modifier_3/src/pkgs/pkgs.cj")
-                    }
                 }
             }
         }
@@ -12505,12 +9631,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor/import_primary_ctor_01")
                     }
 
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor/import_primary_ctor_01/pkg.cj")
-                    }
-
                     @TestMetadata("test.cj")
                     @Test
                     fun testTest() {
@@ -12559,22 +9679,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/import_static_function/generic_class/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function/generic_class/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/class/import_static_function/generic_class/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("no_generic_class")
@@ -12590,22 +9694,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class/main.cj")
-                }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class/pkg/pkg.cj")
-                    }
                 }
             }
 
@@ -12623,22 +9711,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class2/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class2/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class2/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("no_generic_class3")
@@ -12654,22 +9726,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class3/main.cj")
-                }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class3/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class3/pkg/pkg.cj")
-                    }
                 }
             }
         }
@@ -12687,18 +9743,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/class/inhert_with_same_name/main.cj")
-            }
-
-            @TestMetadata("testa.cj")
-            @Test
-            fun testTesta() {
-                runTest("cfir/analysis-tests/testData/llt/class/inhert_with_same_name/testa.cj")
-            }
-
-            @TestMetadata("testb.cj")
-            @Test
-            fun testTestb() {
-                runTest("cfir/analysis-tests/testData/llt/class/inhert_with_same_name/testb.cj")
             }
         }
 
@@ -12725,22 +9769,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control1/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control1/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control1/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("toplevel_interface_access_control2")
@@ -12757,22 +9785,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control2/main.cj")
                 }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control2/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control2/pkg/pkg.cj")
-                    }
-                }
             }
 
             @TestMetadata("toplevel_interface_access_control3")
@@ -12788,22 +9800,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control3/main.cj")
-                }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control3/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control3/pkg/pkg.cj")
-                    }
                 }
             }
         }
@@ -13022,12 +10018,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/class/override_unvisible_01/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/class/override_unvisible_01/pkg.cj")
-            }
         }
 
         @TestMetadata("override_unvisible_02")
@@ -13043,12 +10033,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/class/override_unvisible_02/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/class/override_unvisible_02/pkg.cj")
             }
         }
 
@@ -13066,12 +10050,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/class/override_unvisible_03/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/class/override_unvisible_03/pkg.cj")
-            }
         }
 
         @TestMetadata("protected")
@@ -13081,12 +10059,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/protected")
-            }
-
-            @TestMetadata("a.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/class/protected/a.cj")
             }
 
             @TestMetadata("b.cj")
@@ -13109,12 +10081,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testFail() {
                 runTest("cfir/analysis-tests/testData/llt/class/shadow_parent/fail.cj")
-            }
-
-            @TestMetadata("pkga.cj")
-            @Test
-            fun testPkga() {
-                runTest("cfir/analysis-tests/testData/llt/class/shadow_parent/pkga.cj")
             }
         }
 
@@ -13217,24 +10183,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_01/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_01/pkg.cj")
-                }
-
-                @TestMetadata("pkg1.cj")
-                @Test
-                fun testPkg1() {
-                    runTest("cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_01/pkg1.cj")
-                }
-
-                @TestMetadata("pkg2.cj")
-                @Test
-                fun testPkg2() {
-                    runTest("cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_01/pkg2.cj")
-                }
             }
 
             @TestMetadata("generic_class_static_init_02")
@@ -13251,24 +10199,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_02/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_02/pkg.cj")
-                }
-
-                @TestMetadata("pkg1.cj")
-                @Test
-                fun testPkg1() {
-                    runTest("cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_02/pkg1.cj")
-                }
-
-                @TestMetadata("pkg2.cj")
-                @Test
-                fun testPkg2() {
-                    runTest("cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_02/pkg2.cj")
-                }
             }
 
             @TestMetadata("static_init_pkg_01")
@@ -13284,12 +10214,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/class/static_init/static_init_pkg_01/main.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/class/static_init/static_init_pkg_01/pkg.cj")
                 }
             }
         }
@@ -13388,12 +10312,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var14")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var14/a.cj")
                 }
 
                 @TestMetadata("test1.cj")
@@ -13594,12 +10512,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/concurrency/import_pkg/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/concurrency/import_pkg/pkg.cj")
-            }
         }
     }
 
@@ -13652,28 +10564,10 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             runTest("cfir/analysis-tests/testData/llt/const_evaluation/const_init_error.cj")
         }
 
-        @TestMetadata("const_safe_macro_not_std.cj")
-        @Test
-        fun testConstSafeMacroNotStd() {
-            runTest("cfir/analysis-tests/testData/llt/const_evaluation/const_safe_macro_not_std.cj")
-        }
-
-        @TestMetadata("const_safe_macro_std.cj")
-        @Test
-        fun testConstSafeMacroStd() {
-            runTest("cfir/analysis-tests/testData/llt/const_evaluation/const_safe_macro_std.cj")
-        }
-
         @TestMetadata("const_safe_not_std.cj")
         @Test
         fun testConstSafeNotStd() {
             runTest("cfir/analysis-tests/testData/llt/const_evaluation/const_safe_not_std.cj")
-        }
-
-        @TestMetadata("const_safe_std.cj")
-        @Test
-        fun testConstSafeStd() {
-            runTest("cfir/analysis-tests/testData/llt/const_evaluation/const_safe_std.cj")
         }
 
         @TestMetadata("desugarexpr.cj")
@@ -14108,12 +11002,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             runTest("cfir/analysis-tests/testData/llt/const_evaluation/ok_varray.cj")
         }
 
-        @TestMetadata("or_in_annotation.cj")
-        @Test
-        fun testOrInAnnotation() {
-            runTest("cfir/analysis-tests/testData/llt/const_evaluation/or_in_annotation.cj")
-        }
-
         @TestMetadata("different_pkgs")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
@@ -14127,12 +11015,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testOk() {
                 runTest("cfir/analysis-tests/testData/llt/const_evaluation/different_pkgs/ok.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/const_evaluation/different_pkgs/pkg.cj")
             }
         }
     }
@@ -14468,22 +11350,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     runTest("cfir/analysis-tests/testData/llt/constraint_check/pkg001/b/b.cj")
                 }
             }
-        }
-    }
-
-    @TestMetadata("deprecated")
-    @TestDataPath("\$PROJECT_ROOT")
-    @Nested
-    inner class Deprecated : AbstractCfirPsiDiagnosticTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/deprecated")
-        }
-
-        @TestMetadata("dep.cj")
-        @Test
-        fun testDep() {
-            runTest("cfir/analysis-tests/testData/llt/deprecated/dep.cj")
         }
     }
 
@@ -15104,12 +11970,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             runTest("cfir/analysis-tests/testData/llt/enum/err_syntax_00.cj")
         }
 
-        @TestMetadata("ok_same_macro_name.cj")
-        @Test
-        fun testOkSameMacroName() {
-            runTest("cfir/analysis-tests/testData/llt/enum/ok_same_macro_name.cj")
-        }
-
         @TestMetadata("ok_subscript_assign_00.cj")
         @Test
         fun testOkSubscriptAssign00() {
@@ -15226,12 +12086,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testEnum31Test() {
                 runTest("cfir/analysis-tests/testData/llt/enum/enum31_test/enum31_test.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/enum/enum31_test/pkg.cj")
-            }
         }
 
         @TestMetadata("enum33_test")
@@ -15248,12 +12102,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/enum/enum33_test/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/enum/enum33_test/pkg.cj")
-            }
         }
 
         @TestMetadata("enum34_test")
@@ -15269,12 +12117,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/enum/enum34_test/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/enum/enum34_test/pkg.cj")
             }
         }
 
@@ -15502,22 +12344,10 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ffi")
         }
 
-        @TestMetadata("bad_cfunctype_check.cj")
-        @Test
-        fun testBadCfunctypeCheck() {
-            runTest("cfir/analysis-tests/testData/llt/ffi/bad_cfunctype_check.cj")
-        }
-
         @TestMetadata("c_type_in_generictype.cj")
         @Test
         fun testCTypeInGenerictype() {
             runTest("cfir/analysis-tests/testData/llt/ffi/c_type_in_generictype.cj")
-        }
-
-        @TestMetadata("c_type_interface.cj")
-        @Test
-        fun testCTypeInterface() {
-            runTest("cfir/analysis-tests/testData/llt/ffi/c_type_interface.cj")
         }
 
         @TestMetadata("c_type_subtype.cj")
@@ -15573,12 +12403,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ffi/import_cpointer_generic")
-            }
-
-            @TestMetadata("a.cj")
-            @Test
-            fun testA() {
-                runTest("cfir/analysis-tests/testData/llt/ffi/import_cpointer_generic/a.cj")
             }
 
             @TestMetadata("b.cj")
@@ -16302,18 +13126,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             runTest("cfir/analysis-tests/testData/llt/function/nest_function_call.cj")
         }
 
-        @TestMetadata("nest_function_generic_inst01.cj")
-        @Test
-        fun testNestFunctionGenericInst01() {
-            runTest("cfir/analysis-tests/testData/llt/function/nest_function_generic_inst01.cj")
-        }
-
-        @TestMetadata("nest_function_generic_inst02.cj")
-        @Test
-        fun testNestFunctionGenericInst02() {
-            runTest("cfir/analysis-tests/testData/llt/function/nest_function_generic_inst02.cj")
-        }
-
         @TestMetadata("nest_function_use_01.cj")
         @Test
         fun testNestFunctionUse01() {
@@ -16581,82 +13393,10 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_01")
             }
 
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_01/pkg.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
                 runTest("cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_01/test.cj")
-            }
-        }
-
-        @TestMetadata("defaultParameter_pkg_02")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class DefaultParameterPkg02 : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02")
-            }
-
-            @TestMetadata("test.cj")
-            @Test
-            fun testTest() {
-                runTest("cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02/test.cj")
-            }
-
-            @TestMetadata("test_macro.cj")
-            @Test
-            fun testTestMacro() {
-                runTest("cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02/test_macro.cj")
-            }
-
-            @TestMetadata("test_macro_definition.cj")
-            @Test
-            fun testTestMacroDefinition() {
-                runTest("cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02/test_macro_definition.cj")
-            }
-
-            @TestMetadata("test_mutation.cj")
-            @Test
-            fun testTestMutation() {
-                runTest("cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02/test_mutation.cj")
-            }
-
-            @TestMetadata("f2")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class F2 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02/f2")
-                }
-
-                @TestMetadata("test3.cj")
-                @Test
-                fun testTest3() {
-                    runTest("cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02/f2/test3.cj")
-                }
-            }
-
-            @TestMetadata("g1")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class G1 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02/g1")
-                }
-
-                @TestMetadata("test2.cj")
-                @Test
-                fun testTest2() {
-                    runTest("cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_02/g1/test2.cj")
-                }
             }
         }
 
@@ -16692,38 +13432,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testOk() {
                 runTest("cfir/analysis-tests/testData/llt/function/import_00/ok.cj")
             }
-
-            @TestMetadata("m1")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class M1 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/import_00/m1")
-                }
-
-                @TestMetadata("p1.cj")
-                @Test
-                fun testP1() {
-                    runTest("cfir/analysis-tests/testData/llt/function/import_00/m1/p1.cj")
-                }
-            }
-
-            @TestMetadata("m2")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class M2 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/import_00/m2")
-                }
-
-                @TestMetadata("p1.cj")
-                @Test
-                fun testP1() {
-                    runTest("cfir/analysis-tests/testData/llt/function/import_00/m2/p1.cj")
-                }
-            }
         }
 
         @TestMetadata("static_function")
@@ -16758,22 +13466,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_01/src/main.cj")
                     }
-
-                    @TestMetadata("pkga")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkga : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_01/src/pkga")
-                        }
-
-                        @TestMetadata("a.cj")
-                        @Test
-                        fun testA() {
-                            runTest("cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_01/src/pkga/a.cj")
-                        }
-                    }
                 }
             }
 
@@ -16790,22 +13482,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_02/main.cj")
-                }
-
-                @TestMetadata("pkg")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_02/pkg")
-                    }
-
-                    @TestMetadata("pkg.cj")
-                    @Test
-                    fun testPkg() {
-                        runTest("cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_02/pkg/pkg.cj")
-                    }
                 }
             }
         }
@@ -16847,12 +13523,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/indirect_used_generic_class_01")
             }
 
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/functionlinkage/indirect_used_generic_class_01/pkg.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
@@ -16874,34 +13544,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/functionlinkage/ok_no_sub_pkg_00/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/functionlinkage/ok_no_sub_pkg_00/pkg.cj")
-            }
-        }
-
-        @TestMetadata("ok_no_sub_pkg_01")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class OkNoSubPkg01 : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/ok_no_sub_pkg_01")
-            }
-
-            @TestMetadata("main.cj")
-            @Test
-            fun testMain() {
-                runTest("cfir/analysis-tests/testData/llt/functionlinkage/ok_no_sub_pkg_01/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/functionlinkage/ok_no_sub_pkg_01/pkg.cj")
-            }
         }
 
         @TestMetadata("used_internal_decl_01")
@@ -16913,38 +13555,10 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_01")
             }
 
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_01/pkg.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
                 runTest("cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_01/test.cj")
-            }
-        }
-
-        @TestMetadata("used_internal_decl_02")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class UsedInternalDecl02 : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_02")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_02/pkg.cj")
-            }
-
-            @TestMetadata("test.cj")
-            @Test
-            fun testTest() {
-                runTest("cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_02/test.cj")
             }
         }
 
@@ -16955,12 +13569,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_03")
-            }
-
-            @TestMetadata("test1.cj")
-            @Test
-            fun testTest1() {
-                runTest("cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_03/test1.cj")
             }
 
             @TestMetadata("test2.cj")
@@ -17036,12 +13644,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
         @Test
         fun testInvalidImport() {
             runTest("cfir/analysis-tests/testData/llt/fuzz_invalid_parse/invalid_import.cj")
-        }
-
-        @TestMetadata("invalid_import_ast_using_quote.cj")
-        @Test
-        fun testInvalidImportAstUsingQuote() {
-            runTest("cfir/analysis-tests/testData/llt/fuzz_invalid_parse/invalid_import_ast_using_quote.cj")
         }
 
         @TestMetadata("invalid_primary_ctor.cj")
@@ -18034,12 +14636,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/bugfix1/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/bugfix1/pkg.cj")
-            }
         }
 
         @TestMetadata("class_generic_import_05")
@@ -18184,12 +14780,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/generics/generic_constraint/generic_constraint7/main.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/generic_constraint/generic_constraint7/pkg.cj")
                 }
             }
         }
@@ -18348,22 +14938,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     runTest("cfir/analysis-tests/testData/llt/generics/generic_func_with_default_param_01/pkg0/pkg0.cj")
                 }
             }
-
-            @TestMetadata("pkg1")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_func_with_default_param_01/pkg1")
-                }
-
-                @TestMetadata("pkg1.cj")
-                @Test
-                fun testPkg1() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/generic_func_with_default_param_01/pkg1/pkg1.cj")
-                }
-            }
         }
 
         @TestMetadata("generic_inheritance")
@@ -18441,12 +15015,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/generics/generic_member/pkg01/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/generic_member/pkg01/pkg.cj")
-                }
             }
         }
 
@@ -18464,12 +15032,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member02/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member02/pkg.cj")
-            }
         }
 
         @TestMetadata("generic_member03")
@@ -18485,12 +15047,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member03/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member03/pkg.cj")
             }
         }
 
@@ -18508,12 +15064,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member04/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member04/pkg.cj")
-            }
         }
 
         @TestMetadata("generic_member05")
@@ -18529,12 +15079,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member05/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member05/pkg.cj")
             }
         }
 
@@ -18552,12 +15096,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member06/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member06/pkg.cj")
-            }
         }
 
         @TestMetadata("generic_member07")
@@ -18573,12 +15111,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member07/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member07/pkg.cj")
             }
         }
 
@@ -18596,12 +15128,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member08/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member08/pkg.cj")
-            }
         }
 
         @TestMetadata("generic_member09")
@@ -18618,12 +15144,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member09/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member09/pkg.cj")
-            }
         }
 
         @TestMetadata("generic_member10")
@@ -18639,12 +15159,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/generic_member10/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/generic_member10/pkg.cj")
             }
         }
 
@@ -18892,12 +15406,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/import_desugar_binary_opt/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/import_desugar_binary_opt/pkg.cj")
-            }
         }
 
         @TestMetadata("import_internal2external_1002")
@@ -18923,22 +15431,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/generics/import_internal2external_1002/src/main.cj")
                 }
-
-                @TestMetadata("pkga")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkga : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/import_internal2external_1002/src/pkga")
-                    }
-
-                    @TestMetadata("pkga.cj")
-                    @Test
-                    fun testPkga() {
-                        runTest("cfir/analysis-tests/testData/llt/generics/import_internal2external_1002/src/pkga/pkga.cj")
-                    }
-                }
             }
         }
 
@@ -18949,12 +15441,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/import_no_conflit_01")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/import_no_conflit_01/pkg.cj")
             }
 
             @TestMetadata("test.cj")
@@ -19063,12 +15549,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/generics/instantiation/instantiation_01/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/instantiation/instantiation_01/pkg.cj")
-                }
             }
 
             @TestMetadata("usage_collection_01")
@@ -19085,12 +15565,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/generics/instantiation/usage_collection_01/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/instantiation/usage_collection_01/pkg.cj")
-                }
             }
 
             @TestMetadata("use_import_layout")
@@ -19106,12 +15580,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/generics/instantiation/use_import_layout/main.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/instantiation/use_import_layout/pkg.cj")
                 }
             }
         }
@@ -19141,12 +15609,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_01")
             }
 
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_01/pkg.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
@@ -19167,40 +15629,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testTest() {
                 runTest("cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_02/test.cj")
-            }
-
-            @TestMetadata("testa.cj")
-            @Test
-            fun testTesta() {
-                runTest("cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_02/testa.cj")
-            }
-
-            @TestMetadata("testb.cj")
-            @Test
-            fun testTestb() {
-                runTest("cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_02/testb.cj")
-            }
-        }
-
-        @TestMetadata("instantiation_rearrange_03")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class InstantiationRearrange03 : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_03")
-            }
-
-            @TestMetadata("main.cj")
-            @Test
-            fun testMain() {
-                runTest("cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_03/main.cj")
-            }
-
-            @TestMetadata("test.cj")
-            @Test
-            fun testTest() {
-                runTest("cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_03/test.cj")
             }
         }
 
@@ -19357,12 +15785,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkg_generic_inheritance")
             }
 
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/pkg_generic_inheritance/pkg.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
@@ -19379,12 +15801,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkg_generic_inheritance_02")
             }
 
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/pkg_generic_inheritance_02/pkg.cj")
-            }
-
             @TestMetadata("test.cj")
             @Test
             fun testTest() {
@@ -19399,12 +15815,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkg_instantiation_01")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/pkg_instantiation_01/pkg.cj")
             }
 
             @TestMetadata("test.cj")
@@ -19732,22 +16142,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0019_record_test/main.cj")
             }
-
-            @TestMetadata("pkgs")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0019_record_test/pkgs")
-                }
-
-                @TestMetadata("pkgs.cj")
-                @Test
-                fun testPkgs() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0019_record_test/pkgs/pkgs.cj")
-                }
-            }
         }
 
         @TestMetadata("pkgs002")
@@ -19796,22 +16190,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test/main.cj")
             }
-
-            @TestMetadata("pkgs")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test/pkgs")
-                }
-
-                @TestMetadata("pkgs.cj")
-                @Test
-                fun testPkgs() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test/pkgs/pkgs.cj")
-                }
-            }
         }
 
         @TestMetadata("pkgs0020_record_test2")
@@ -19827,22 +16205,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test2/main.cj")
-            }
-
-            @TestMetadata("pkgs")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test2/pkgs")
-                }
-
-                @TestMetadata("pkgs.cj")
-                @Test
-                fun testPkgs() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test2/pkgs/pkgs.cj")
-                }
             }
         }
 
@@ -19860,22 +16222,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test3/main.cj")
             }
-
-            @TestMetadata("pkgs")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test3/pkgs")
-                }
-
-                @TestMetadata("pkgs.cj")
-                @Test
-                fun testPkgs() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test3/pkgs/pkgs.cj")
-                }
-            }
         }
 
         @TestMetadata("pkgs0021_record_test")
@@ -19891,22 +16237,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0021_record_test/main.cj")
-            }
-
-            @TestMetadata("pkgs")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0021_record_test/pkgs")
-                }
-
-                @TestMetadata("pkgs.cj")
-                @Test
-                fun testPkgs() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0021_record_test/pkgs/pkgs.cj")
-                }
             }
         }
 
@@ -20052,38 +16382,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0026_generic_record_repeat_import/main.cj")
             }
-
-            @TestMetadata("pkga")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkga : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0026_generic_record_repeat_import/pkga")
-                }
-
-                @TestMetadata("pkga.cj")
-                @Test
-                fun testPkga() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0026_generic_record_repeat_import/pkga/pkga.cj")
-                }
-            }
-
-            @TestMetadata("pkgb")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkgb : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0026_generic_record_repeat_import/pkgb")
-                }
-
-                @TestMetadata("pkgb.cj")
-                @Test
-                fun testPkgb() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0026_generic_record_repeat_import/pkgb/pkgb.cj")
-                }
-            }
         }
 
         @TestMetadata("pkgs0028_generic_import_ai_demo")
@@ -20196,22 +16494,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0030_generic_external_use_internal_ui_demo/main.cj")
             }
-
-            @TestMetadata("pkgs")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0030_generic_external_use_internal_ui_demo/pkgs")
-                }
-
-                @TestMetadata("pkgs.cj")
-                @Test
-                fun testPkgs() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0030_generic_external_use_internal_ui_demo/pkgs/pkgs.cj")
-                }
-            }
         }
 
         @TestMetadata("pkgs0031_generic_with_nongeneric_test")
@@ -20228,22 +16510,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0031_generic_with_nongeneric_test/main.cj")
             }
-
-            @TestMetadata("pkgs")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0031_generic_with_nongeneric_test/pkgs")
-                }
-
-                @TestMetadata("pkgs.cj")
-                @Test
-                fun testPkgs() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0031_generic_with_nongeneric_test/pkgs/pkgs.cj")
-                }
-            }
         }
 
         @TestMetadata("pkgs0033_generic_multipkg_ai_demo")
@@ -20259,38 +16525,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs0033_generic_multipkg_ai_demo/main.cj")
-            }
-
-            @TestMetadata("pkg")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0033_generic_multipkg_ai_demo/pkg")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0033_generic_multipkg_ai_demo/pkg/pkg.cj")
-                }
-            }
-
-            @TestMetadata("pkg0")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg0 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0033_generic_multipkg_ai_demo/pkg0")
-                }
-
-                @TestMetadata("pkg0.cj")
-                @Test
-                fun testPkg0() {
-                    runTest("cfir/analysis-tests/testData/llt/generics/pkgs0033_generic_multipkg_ai_demo/pkg0/pkg0.cj")
-                }
             }
         }
 
@@ -20443,18 +16677,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs009/pkgs009001.cj")
             }
 
-            @TestMetadata("pkgs009002.cj")
-            @Test
-            fun testPkgs009002() {
-                runTest("cfir/analysis-tests/testData/llt/generics/pkgs009/pkgs009002.cj")
-            }
-
-            @TestMetadata("pkgs009003.cj")
-            @Test
-            fun testPkgs009003() {
-                runTest("cfir/analysis-tests/testData/llt/generics/pkgs009/pkgs009003.cj")
-            }
-
             @TestMetadata("pkgs009001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
@@ -20486,12 +16708,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/pkgs010/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/generics/pkgs010/pkg.cj")
-            }
         }
 
         @TestMetadata("rearrange_multi_impl")
@@ -20507,18 +16723,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/generics/rearrange_multi_impl/main.cj")
-            }
-
-            @TestMetadata("ser.cj")
-            @Test
-            fun testSer() {
-                runTest("cfir/analysis-tests/testData/llt/generics/rearrange_multi_impl/ser.cj")
-            }
-
-            @TestMetadata("ser2.cj")
-            @Test
-            fun testSer2() {
-                runTest("cfir/analysis-tests/testData/llt/generics/rearrange_multi_impl/ser2.cj")
             }
         }
     }
@@ -20867,22 +17071,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testWildcard() {
                 runTest("cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition/wildcard.cj")
-            }
-
-            @TestMetadata("libast")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Libast : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition/libast")
-                }
-
-                @TestMetadata("letcond.cj")
-                @Test
-                fun testLetcond() {
-                    runTest("cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition/libast/letcond.cj")
-                }
             }
 
             @TestMetadata("o2")
@@ -21243,22 +17431,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                         runTest("cfir/analysis-tests/testData/llt/incordec/increment_11n/src/pkga/pkga.cj")
                     }
                 }
-
-                @TestMetadata("pkgb")
-                @TestDataPath("\$PROJECT_ROOT")
-                @Nested
-                inner class Pkgb : AbstractCfirPsiDiagnosticTest() {
-                    @Test
-                    fun testAllFilesPresent() {
-                        assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/incordec/increment_11n/src/pkgb")
-                    }
-
-                    @TestMetadata("pkgb.cj")
-                    @Test
-                    fun testPkgb() {
-                        runTest("cfir/analysis-tests/testData/llt/incordec/increment_11n/src/pkgb/pkgb.cj")
-                    }
-                }
             }
         }
 
@@ -21592,22 +17764,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testCase() {
                         runTest("cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import1/case.cj")
                     }
-
-                    @TestMetadata("pkg")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import1/pkg")
-                        }
-
-                        @TestMetadata("pkg.cj")
-                        @Test
-                        fun testPkg() {
-                            runTest("cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import1/pkg/pkg.cj")
-                        }
-                    }
                 }
 
                 @TestMetadata("generic_interface_import2")
@@ -21623,38 +17779,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testCase() {
                         runTest("cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import2/case.cj")
-                    }
-
-                    @TestMetadata("pkg1")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import2/pkg1")
-                        }
-
-                        @TestMetadata("pkg1.cj")
-                        @Test
-                        fun testPkg1() {
-                            runTest("cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import2/pkg1/pkg1.cj")
-                        }
-                    }
-
-                    @TestMetadata("pkg2")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import2/pkg2")
-                        }
-
-                        @TestMetadata("pkg2.cj")
-                        @Test
-                        fun testPkg2() {
-                            runTest("cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import2/pkg2/pkg2.cj")
-                        }
                     }
                 }
             }
@@ -21880,38 +18004,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testUseInterfaceDefImple005() {
                 runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_01/use_interface_def_imple_005.cj")
             }
-
-            @TestMetadata("pkg1")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_01/pkg1")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_01/pkg1/a.cj")
-                }
-            }
-
-            @TestMetadata("pkg2")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_01/pkg2")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_01/pkg2/b.cj")
-                }
-            }
         }
 
         @TestMetadata("use_interface_default_impl_02")
@@ -21928,54 +18020,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testUseInterfaceDefImple024() {
                 runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_02/use_interface_def_imple_024.cj")
             }
-
-            @TestMetadata("pkg1")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_02/pkg1")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_02/pkg1/a.cj")
-                }
-            }
-
-            @TestMetadata("pkg2")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg2 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_02/pkg2")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_02/pkg2/b.cj")
-                }
-            }
-
-            @TestMetadata("pkg3")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg3 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_02/pkg3")
-                }
-
-                @TestMetadata("c.cj")
-                @Test
-                fun testC() {
-                    runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_02/pkg3/c.cj")
-                }
-            }
         }
 
         @TestMetadata("use_interface_default_impl_03")
@@ -21991,22 +18035,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testUseInterfaceDefImple008() {
                 runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_03/use_interface_def_imple_008.cj")
-            }
-
-            @TestMetadata("pkg1")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg1 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_03/pkg1")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_03/pkg1/a.cj")
-                }
             }
         }
     }
@@ -22046,12 +18074,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
         @Test
         fun testJoin02() {
             runTest("cfir/analysis-tests/testData/llt/join_meet/join_02.cj")
-        }
-
-        @TestMetadata("join_03.cj")
-        @Test
-        fun testJoin03() {
-            runTest("cfir/analysis-tests/testData/llt/join_meet/join_03.cj")
         }
 
         @TestMetadata("join_04.cj")
@@ -22692,12 +18714,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup01")
                 }
 
-                @TestMetadata("testa.cj")
-                @Test
-                fun testTesta() {
-                    runTest("cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup01/testa.cj")
-                }
-
                 @TestMetadata("testb.cj")
                 @Test
                 fun testTestb() {
@@ -22714,12 +18730,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup02")
                 }
 
-                @TestMetadata("testa.cj")
-                @Test
-                fun testTesta() {
-                    runTest("cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup02/testa.cj")
-                }
-
                 @TestMetadata("testb.cj")
                 @Test
                 fun testTestb() {
@@ -22734,12 +18744,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup03")
-                }
-
-                @TestMetadata("testa.cj")
-                @Test
-                fun testTesta() {
-                    runTest("cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup03/testa.cj")
                 }
 
                 @TestMetadata("testb.cj")
@@ -22828,12 +18832,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testAccessCheck() {
                 runTest("cfir/analysis-tests/testData/llt/lookup/accessible/access_check.cj")
             }
-
-            @TestMetadata("pkga.cj")
-            @Test
-            fun testPkga() {
-                runTest("cfir/analysis-tests/testData/llt/lookup/accessible/pkga.cj")
-            }
         }
 
         @TestMetadata("multi_files_private_00")
@@ -22865,12 +18863,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/lookup/multi_files_private_00/pkg/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/lookup/multi_files_private_00/pkg/pkg.cj")
-                }
             }
         }
 
@@ -22887,28 +18879,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/lookup/multi_files_private_01/main.cj")
-            }
-
-            @TestMetadata("pkg")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lookup/multi_files_private_01/pkg")
-                }
-
-                @TestMetadata("main.cj")
-                @Test
-                fun testMain() {
-                    runTest("cfir/analysis-tests/testData/llt/lookup/multi_files_private_01/pkg/main.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/lookup/multi_files_private_01/pkg/pkg.cj")
-                }
             }
         }
     }
@@ -22976,12 +18946,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testNoMainPart1() {
                 runTest("cfir/analysis-tests/testData/llt/main/files/no_main_part1.cj")
             }
-
-            @TestMetadata("no_main_part2.cj")
-            @Test
-            fun testNoMainPart2() {
-                runTest("cfir/analysis-tests/testData/llt/main/files/no_main_part2.cj")
-            }
         }
 
         @TestMetadata("main_redefinition")
@@ -22997,22 +18961,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/main/main_redefinition/main.cj")
-            }
-
-            @TestMetadata("pkg")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Pkg : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/main_redefinition/pkg")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/main/main_redefinition/pkg/pkg.cj")
-                }
             }
         }
 
@@ -23619,12 +19567,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/bad/missingEllipse_imported.cj")
             }
 
-            @TestMetadata("missingEllipse_imported.lib.cj")
-            @Test
-            fun testMissingEllipseImportedLib() {
-                runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/bad/missingEllipse_imported.lib.cj")
-            }
-
             @TestMetadata("nested_match.cj")
             @Test
             fun testNestedMatch() {
@@ -23665,52 +19607,16 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_abi.cj")
             }
 
-            @TestMetadata("change_abi.new.cj")
-            @Test
-            fun testChangeAbiNew() {
-                runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_abi.new.cj")
-            }
-
-            @TestMetadata("change_abi.old.cj")
-            @Test
-            fun testChangeAbiOld() {
-                runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_abi.old.cj")
-            }
-
             @TestMetadata("change_abi_recursive.cj")
             @Test
             fun testChangeAbiRecursive() {
                 runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_abi_recursive.cj")
             }
 
-            @TestMetadata("change_abi_recursive.new.cj")
-            @Test
-            fun testChangeAbiRecursiveNew() {
-                runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_abi_recursive.new.cj")
-            }
-
-            @TestMetadata("change_abi_recursive.old.cj")
-            @Test
-            fun testChangeAbiRecursiveOld() {
-                runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_abi_recursive.old.cj")
-            }
-
             @TestMetadata("change_lib.cj")
             @Test
             fun testChangeLib() {
                 runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_lib.cj")
-            }
-
-            @TestMetadata("change_lib.new.cj")
-            @Test
-            fun testChangeLibNew() {
-                runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_lib.new.cj")
-            }
-
-            @TestMetadata("change_lib.old.cj")
-            @Test
-            fun testChangeLibOld() {
-                runTest("cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat/change_lib.old.cj")
             }
         }
     }
@@ -23746,12 +19652,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
         @Test
         fun testBinaryExprTimeout() {
             runTest("cfir/analysis-tests/testData/llt/operator/binary_expr_timeout.cj")
-        }
-
-        @TestMetadata("err_quote_unary.cj")
-        @Test
-        fun testErrQuoteUnary() {
-            runTest("cfir/analysis-tests/testData/llt/operator/err_quote_unary.cj")
         }
 
         @TestMetadata("float_division_zero.cj")
@@ -24000,12 +19900,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             runTest("cfir/analysis-tests/testData/llt/operator_overload/empty_index.cj")
         }
 
-        @TestMetadata("err_binary_00.cj")
-        @Test
-        fun testErrBinary00() {
-            runTest("cfir/analysis-tests/testData/llt/operator_overload/err_binary_00.cj")
-        }
-
         @TestMetadata("err_binary_01.cj")
         @Test
         fun testErrBinary01() {
@@ -24144,12 +20038,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             runTest("cfir/analysis-tests/testData/llt/operator_overload/timeout_01.cj")
         }
 
-        @TestMetadata("timeout_02.cj")
-        @Test
-        fun testTimeout02() {
-            runTest("cfir/analysis-tests/testData/llt/operator_overload/timeout_02.cj")
-        }
-
         @TestMetadata("timeout_03.cj")
         @Test
         fun testTimeout03() {
@@ -24160,12 +20048,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
         @Test
         fun testTimeout04() {
             runTest("cfir/analysis-tests/testData/llt/operator_overload/timeout_04.cj")
-        }
-
-        @TestMetadata("timeout_05.cj")
-        @Test
-        fun testTimeout05() {
-            runTest("cfir/analysis-tests/testData/llt/operator_overload/timeout_05.cj")
         }
 
         @TestMetadata("timeout_06.cj")
@@ -24400,22 +20282,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testTest() {
                 runTest("cfir/analysis-tests/testData/llt/overflow_check/import_overflow_check/test.cj")
             }
-
-            @TestMetadata("p1")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class P1 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/overflow_check/import_overflow_check/p1")
-                }
-
-                @TestMetadata("pkg_1.cj")
-                @Test
-                fun testPkg1() {
-                    runTest("cfir/analysis-tests/testData/llt/overflow_check/import_overflow_check/p1/pkg_1.cj")
-                }
-            }
         }
     }
 
@@ -24642,12 +20508,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/property/import_prop_check/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/property/import_prop_check/pkg.cj")
-            }
         }
 
         @TestMetadata("import_prop_lookup")
@@ -24664,64 +20524,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/property/import_prop_lookup/main.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/property/import_prop_lookup/pkg.cj")
-            }
-        }
-    }
-
-    @TestMetadata("quote_expr")
-    @TestDataPath("\$PROJECT_ROOT")
-    @Nested
-    inner class QuoteExpr : AbstractCfirPsiDiagnosticTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/quote_expr")
-        }
-
-        @TestMetadata("err1.cj")
-        @Test
-        fun testErr1() {
-            runTest("cfir/analysis-tests/testData/llt/quote_expr/err1.cj")
-        }
-
-        @TestMetadata("main_err.cj")
-        @Test
-        fun testMainErr() {
-            runTest("cfir/analysis-tests/testData/llt/quote_expr/main_err.cj")
-        }
-
-        @TestMetadata("main_err1.cj")
-        @Test
-        fun testMainErr1() {
-            runTest("cfir/analysis-tests/testData/llt/quote_expr/main_err1.cj")
-        }
-
-        @TestMetadata("main_ok.cj")
-        @Test
-        fun testMainOk() {
-            runTest("cfir/analysis-tests/testData/llt/quote_expr/main_ok.cj")
-        }
-
-        @TestMetadata("main_ok1.cj")
-        @Test
-        fun testMainOk1() {
-            runTest("cfir/analysis-tests/testData/llt/quote_expr/main_ok1.cj")
-        }
-
-        @TestMetadata("ok1.cj")
-        @Test
-        fun testOk1() {
-            runTest("cfir/analysis-tests/testData/llt/quote_expr/ok1.cj")
-        }
-
-        @TestMetadata("testa.cj")
-        @Test
-        fun testTesta() {
-            runTest("cfir/analysis-tests/testData/llt/quote_expr/testa.cj")
         }
     }
 
@@ -25578,22 +21380,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_invalid_6/src/main.cj")
                     }
-
-                    @TestMetadata("pkgs")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_invalid_6/src/pkgs")
-                        }
-
-                        @TestMetadata("pkgs.cj")
-                        @Test
-                        fun testPkgs() {
-                            runTest("cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_invalid_6/src/pkgs/pkgs.cj")
-                        }
-                    }
                 }
             }
 
@@ -25620,22 +21406,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_ok_2/src/main.cj")
                     }
-
-                    @TestMetadata("pkgs")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_ok_2/src/pkgs")
-                        }
-
-                        @TestMetadata("pkgs.cj")
-                        @Test
-                        fun testPkgs() {
-                            runTest("cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_ok_2/src/pkgs/pkgs.cj")
-                        }
-                    }
                 }
             }
 
@@ -25661,22 +21431,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     @Test
                     fun testMain() {
                         runTest("cfir/analysis-tests/testData/llt/record/mut/record_mut_invalid_10/src/main.cj")
-                    }
-
-                    @TestMetadata("pkgs")
-                    @TestDataPath("\$PROJECT_ROOT")
-                    @Nested
-                    inner class Pkgs : AbstractCfirPsiDiagnosticTest() {
-                        @Test
-                        fun testAllFilesPresent() {
-                            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_mut_invalid_10/src/pkgs")
-                        }
-
-                        @TestMetadata("pkgs.cj")
-                        @Test
-                        fun testPkgs() {
-                            runTest("cfir/analysis-tests/testData/llt/record/mut/record_mut_invalid_10/src/pkgs/pkgs.cj")
-                        }
                     }
                 }
             }
@@ -25887,24 +21641,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/record/static_init/generic_struct_static_init_01/main.cj")
                 }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/record/static_init/generic_struct_static_init_01/pkg.cj")
-                }
-
-                @TestMetadata("pkg1.cj")
-                @Test
-                fun testPkg1() {
-                    runTest("cfir/analysis-tests/testData/llt/record/static_init/generic_struct_static_init_01/pkg1.cj")
-                }
-
-                @TestMetadata("pkg2.cj")
-                @Test
-                fun testPkg2() {
-                    runTest("cfir/analysis-tests/testData/llt/record/static_init/generic_struct_static_init_01/pkg2.cj")
-                }
             }
 
             @TestMetadata("static_init_pkg_01")
@@ -25920,12 +21656,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testMain() {
                     runTest("cfir/analysis-tests/testData/llt/record/static_init/static_init_pkg_01/main.cj")
-                }
-
-                @TestMetadata("pkg.cj")
-                @Test
-                fun testPkg() {
-                    runTest("cfir/analysis-tests/testData/llt/record/static_init/static_init_pkg_01/pkg.cj")
                 }
             }
         }
@@ -26076,12 +21806,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/return")
-        }
-
-        @TestMetadata("bangexpr01.cj")
-        @Test
-        fun testBangexpr01() {
-            runTest("cfir/analysis-tests/testData/llt/return/bangexpr01.cj")
         }
 
         @TestMetadata("return1.cj")
@@ -26869,76 +22593,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
         fun testUnit3() {
             runTest("cfir/analysis-tests/testData/llt/type/unit3.cj")
         }
-
-        @TestMetadata("int_type_suffix")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class IntTypeSuffix : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/type/int_type_suffix")
-            }
-
-            @TestMetadata("001.cj")
-            @Test
-            fun test001() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/001.cj")
-            }
-
-            @TestMetadata("002.cj")
-            @Test
-            fun test002() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/002.cj")
-            }
-
-            @TestMetadata("003.cj")
-            @Test
-            fun test003() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/003.cj")
-            }
-
-            @TestMetadata("004.cj")
-            @Test
-            fun test004() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/004.cj")
-            }
-
-            @TestMetadata("005.cj")
-            @Test
-            fun test005() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/005.cj")
-            }
-
-            @TestMetadata("006.cj")
-            @Test
-            fun test006() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/006.cj")
-            }
-
-            @TestMetadata("007.cj")
-            @Test
-            fun test007() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/007.cj")
-            }
-
-            @TestMetadata("010.cj")
-            @Test
-            fun test010() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/010.cj")
-            }
-
-            @TestMetadata("011.cj")
-            @Test
-            fun test011() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/011.cj")
-            }
-
-            @TestMetadata("013.cj")
-            @Test
-            fun test013() {
-                runTest("cfir/analysis-tests/testData/llt/type/int_type_suffix/013.cj")
-            }
-        }
     }
 
     @TestMetadata("type_infer")
@@ -27413,38 +23067,10 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/typealias/import_alias")
             }
 
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/typealias/import_alias/pkg.cj")
-            }
-
             @TestMetadata("typeaslias.cj")
             @Test
             fun testTypeaslias() {
                 runTest("cfir/analysis-tests/testData/llt/typealias/import_alias/typeaslias.cj")
-            }
-        }
-
-        @TestMetadata("import_macro_alias")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class ImportMacroAlias : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/typealias/import_macro_alias")
-            }
-
-            @TestMetadata("define.cj")
-            @Test
-            fun testDefine() {
-                runTest("cfir/analysis-tests/testData/llt/typealias/import_macro_alias/define.cj")
-            }
-
-            @TestMetadata("typeaslias.cj")
-            @Test
-            fun testTypeaslias() {
-                runTest("cfir/analysis-tests/testData/llt/typealias/import_macro_alias/typeaslias.cj")
             }
         }
 
@@ -27461,22 +23087,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/typealias/overload_and_alias/main.cj")
-            }
-
-            @TestMetadata("a")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class A : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/typealias/overload_and_alias/a")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/typealias/overload_and_alias/a/a.cj")
-                }
             }
         }
     }
@@ -27571,34 +23181,16 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused012.cj")
             }
 
-            @TestMetadata("unused012pkga.cj")
-            @Test
-            fun testUnused012pkga() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused012pkga.cj")
-            }
-
             @TestMetadata("unused013.cj")
             @Test
             fun testUnused013() {
                 runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused013.cj")
             }
 
-            @TestMetadata("unused013pkga.cj")
-            @Test
-            fun testUnused013pkga() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused013pkga.cj")
-            }
-
             @TestMetadata("unused014.cj")
             @Test
             fun testUnused014() {
                 runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused014.cj")
-            }
-
-            @TestMetadata("unused014pkga.cj")
-            @Test
-            fun testUnused014pkga() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused014pkga.cj")
             }
 
             @TestMetadata("unused015.cj")
@@ -27622,38 +23214,10 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused013")
                 }
 
-                @TestMetadata("otherFile.cj")
-                @Test
-                fun testOtherFile() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused013/otherFile.cj")
-                }
-
                 @TestMetadata("unused.cj")
                 @Test
                 fun testUnused() {
                     runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused013/unused.cj")
-                }
-            }
-
-            @TestMetadata("unused014")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Unused014 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused014")
-                }
-
-                @TestMetadata("macro.cj")
-                @Test
-                fun testMacro() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused014/macro.cj")
-                }
-
-                @TestMetadata("unused.cj")
-                @Test
-                fun testUnused() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused014/unused.cj")
                 }
             }
 
@@ -27664,18 +23228,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused015")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused015/a.cj")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused015/b.cj")
                 }
 
                 @TestMetadata("unused015.cj")
@@ -27694,18 +23246,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused016")
                 }
 
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused016/a.cj")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused016/b.cj")
-                }
-
                 @TestMetadata("unused016.cj")
                 @Test
                 fun testUnused016() {
@@ -27720,18 +23260,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused017")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused017/a.cj")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused017/b.cj")
                 }
 
                 @TestMetadata("unused017.cj")
@@ -27750,24 +23278,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused018")
                 }
 
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused018/a.cj")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused018/b.cj")
-                }
-
-                @TestMetadata("c.cj")
-                @Test
-                fun testC() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused018/c.cj")
-                }
-
                 @TestMetadata("unused018.cj")
                 @Test
                 fun testUnused018() {
@@ -27782,12 +23292,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused019")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused019/a.cj")
                 }
 
                 @TestMetadata("unused019.cj")
@@ -27873,12 +23377,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused011.cj")
             }
 
-            @TestMetadata("unused012.cj")
-            @Test
-            fun testUnused012() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused012.cj")
-            }
-
             @TestMetadata("unused016.cj")
             @Test
             fun testUnused016() {
@@ -27892,18 +23390,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused013")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused013/a.cj")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused013/b.cj")
                 }
 
                 @TestMetadata("unused013.cj")
@@ -27922,18 +23408,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused014")
                 }
 
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused014/a.cj")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused014/b.cj")
-                }
-
                 @TestMetadata("unused014.cj")
                 @Test
                 fun testUnused014() {
@@ -27948,12 +23422,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused015")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused015/b.cj")
                 }
 
                 @TestMetadata("unused015.cj")
@@ -27972,18 +23440,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused016")
                 }
 
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused016/a.cj")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused016/b.cj")
-                }
-
                 @TestMetadata("unused016.cj")
                 @Test
                 fun testUnused016() {
@@ -27998,24 +23454,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused017")
-                }
-
-                @TestMetadata("a.cj")
-                @Test
-                fun testA() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused017/a.cj")
-                }
-
-                @TestMetadata("b.cj")
-                @Test
-                fun testB() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused017/b.cj")
-                }
-
-                @TestMetadata("c.cj")
-                @Test
-                fun testC() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused017/c.cj")
                 }
 
                 @TestMetadata("unused017.cj")
@@ -28099,24 +23537,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport004")
             }
 
-            @TestMetadata("fileUseArrayList.cj")
-            @Test
-            fun testFileUseArrayList() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport004/fileUseArrayList.cj")
-            }
-
-            @TestMetadata("fileUseb.cj")
-            @Test
-            fun testFileUseb() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport004/fileUseb.cj")
-            }
-
-            @TestMetadata("fileUsef.cj")
-            @Test
-            fun testFileUsef() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport004/fileUsef.cj")
-            }
-
             @TestMetadata("unused001.cj")
             @Test
             fun testUnused001() {
@@ -28169,116 +23589,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testUnused009() {
                 runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport004/unused009.cj")
-            }
-        }
-
-        @TestMetadata("unusedImport005")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class UnusedImport005 : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport005")
-            }
-
-            @TestMetadata("unused001.cj")
-            @Test
-            fun testUnused001() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused001.cj")
-            }
-
-            @TestMetadata("unused002.cj")
-            @Test
-            fun testUnused002() {
-                runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused002.cj")
-            }
-
-            @TestMetadata("unused003")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Unused003 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused003")
-                }
-
-                @TestMetadata("other.cj")
-                @Test
-                fun testOther() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused003/other.cj")
-                }
-
-                @TestMetadata("unused003.cj")
-                @Test
-                fun testUnused003() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused003/unused003.cj")
-                }
-            }
-
-            @TestMetadata("unused004")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Unused004 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused004")
-                }
-
-                @TestMetadata("other.cj")
-                @Test
-                fun testOther() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused004/other.cj")
-                }
-
-                @TestMetadata("unused004.cj")
-                @Test
-                fun testUnused004() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused004/unused004.cj")
-                }
-            }
-
-            @TestMetadata("unused005")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Unused005 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused005")
-                }
-
-                @TestMetadata("other.cj")
-                @Test
-                fun testOther() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused005/other.cj")
-                }
-
-                @TestMetadata("unused005.cj")
-                @Test
-                fun testUnused005() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused005/unused005.cj")
-                }
-            }
-
-            @TestMetadata("unused006")
-            @TestDataPath("\$PROJECT_ROOT")
-            @Nested
-            inner class Unused006 : AbstractCfirPsiDiagnosticTest() {
-                @Test
-                fun testAllFilesPresent() {
-                    assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused006")
-                }
-
-                @TestMetadata("other.cj")
-                @Test
-                fun testOther() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused006/other.cj")
-                }
-
-                @TestMetadata("unused006.cj")
-                @Test
-                fun testUnused006() {
-                    runTest("cfir/analysis-tests/testData/llt/unusedImport/unusedImport005/unused006/unused006.cj")
-                }
             }
         }
     }
@@ -28428,12 +23738,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             fun testTest1() {
                 runTest("cfir/analysis-tests/testData/llt/var/multi_file_var_with_pattern_01/test1.cj")
             }
-
-            @TestMetadata("test2.cj")
-            @Test
-            fun testTest2() {
-                runTest("cfir/analysis-tests/testData/llt/var/multi_file_var_with_pattern_01/test2.cj")
-            }
         }
 
         @TestMetadata("var_source_import_01")
@@ -28449,12 +23753,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testMain() {
                 runTest("cfir/analysis-tests/testData/llt/var/var_source_import_01/main.cj")
-            }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/var/var_source_import_01/pkg.cj")
             }
         }
     }
@@ -28484,12 +23782,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
         @Test
         fun testInvalidVarrayCtor() {
             runTest("cfir/analysis-tests/testData/llt/varray/invalid_varray_ctor.cj")
-        }
-
-        @TestMetadata("subsript_with_member_access_let.cj")
-        @Test
-        fun testSubsriptWithMemberAccessLet() {
-            runTest("cfir/analysis-tests/testData/llt/varray/subsript_with_member_access_let.cj")
         }
 
         @TestMetadata("varray01.cj")
@@ -28691,146 +23983,6 @@ class CfirAnalysisLLTPsiTestGenerated : AbstractCfirPsiDiagnosticTest() {
             @Test
             fun testPkg() {
                 runTest("cfir/analysis-tests/testData/llt/varray/generic/pkg.cj")
-            }
-        }
-
-        @TestMetadata("varray_cffi")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class VarrayCffi : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/varray/varray_cffi")
-            }
-
-            @TestMetadata("varray_cstruct01.cj")
-            @Test
-            fun testVarrayCstruct01() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_cstruct01.cj")
-            }
-
-            @TestMetadata("varray_cstruct02.cj")
-            @Test
-            fun testVarrayCstruct02() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_cstruct02.cj")
-            }
-
-            @TestMetadata("varray_cstruct03.cj")
-            @Test
-            fun testVarrayCstruct03() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_cstruct03.cj")
-            }
-
-            @TestMetadata("varray_cstruct04.cj")
-            @Test
-            fun testVarrayCstruct04() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_cstruct04.cj")
-            }
-
-            @TestMetadata("varray_cstruct05.cj")
-            @Test
-            fun testVarrayCstruct05() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_cstruct05.cj")
-            }
-
-            @TestMetadata("varray_ctype01.cj")
-            @Test
-            fun testVarrayCtype01() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_ctype01.cj")
-            }
-
-            @TestMetadata("varray_ctype02.cj")
-            @Test
-            fun testVarrayCtype02() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_ctype02.cj")
-            }
-
-            @TestMetadata("varray_ctype03.cj")
-            @Test
-            fun testVarrayCtype03() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_ctype03.cj")
-            }
-
-            @TestMetadata("varray_inout.cj")
-            @Test
-            fun testVarrayInout() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_inout.cj")
-            }
-
-            @TestMetadata("varray_inout02.cj")
-            @Test
-            fun testVarrayInout02() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_inout02.cj")
-            }
-
-            @TestMetadata("varray_inout03.cj")
-            @Test
-            fun testVarrayInout03() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_inout03.cj")
-            }
-
-            @TestMetadata("varray_inout04.cj")
-            @Test
-            fun testVarrayInout04() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_inout04.cj")
-            }
-
-            @TestMetadata("varray_inout05.cj")
-            @Test
-            fun testVarrayInout05() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_cffi/varray_inout05.cj")
-            }
-        }
-
-        @TestMetadata("varray_with_reftype")
-        @TestDataPath("\$PROJECT_ROOT")
-        @Nested
-        inner class VarrayWithReftype : AbstractCfirPsiDiagnosticTest() {
-            @Test
-            fun testAllFilesPresent() {
-                assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/varray/varray_with_reftype")
-            }
-
-            @TestMetadata("lambda_rettype.cj")
-            @Test
-            fun testLambdaRettype() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_with_reftype/lambda_rettype.cj")
-            }
-
-            @TestMetadata("varray_with_reftype01.cj")
-            @Test
-            fun testVarrayWithReftype01() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_with_reftype/varray_with_reftype01.cj")
-            }
-
-            @TestMetadata("varray_with_reftype02.cj")
-            @Test
-            fun testVarrayWithReftype02() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_with_reftype/varray_with_reftype02.cj")
-            }
-
-            @TestMetadata("varray_with_reftype03.cj")
-            @Test
-            fun testVarrayWithReftype03() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_with_reftype/varray_with_reftype03.cj")
-            }
-
-            @TestMetadata("varray_with_reftype04.cj")
-            @Test
-            fun testVarrayWithReftype04() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_with_reftype/varray_with_reftype04.cj")
-            }
-
-            @TestMetadata("varray_with_reftype05.cj")
-            @Test
-            fun testVarrayWithReftype05() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_with_reftype/varray_with_reftype05.cj")
-            }
-
-            @TestMetadata("varray_with_reftype06.cj")
-            @Test
-            fun testVarrayWithReftype06() {
-                runTest("cfir/analysis-tests/testData/llt/varray/varray_with_reftype/varray_with_reftype06.cj")
             }
         }
     }

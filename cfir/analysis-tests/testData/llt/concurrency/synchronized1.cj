@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1:%compiler %cmp_opt %sync-link %f -o %output 2>&1 | compare %f
 
 internal import std.sync.*
 

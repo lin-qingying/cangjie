@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: ../mod1
-// EXEC: %compiler %cmp_opt %compile_lib_opt ./mod1/src/p1/*.cj --module-name mod1 -o mod1/a.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt ./mod1/src/*.cj mod1/a.%middle --module-name mod1 -o mod1/default.%middle
-// EXEC: %compiler --verbose %cmp_opt mod1/a.%middle mod1/default.%middle %f -o %output
 
 internal import mod1.p1.*
 internal import mod1.default.*

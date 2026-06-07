@@ -40,5 +40,4 @@
 
 ## 相关文档
 
-- `../../cjfir-compiler-stages.md` 第 4、10 阶段 — IMPORT_PACKAGE / SAVE_CJO 设计
-- `../../docs/current-module-organization.md` — SAVE_CJO 写入侧状态
+- `../../docs/cjfir-compiler-stages.md` 第 4、10 阶段 — IMPORT_PACKAGE / SAVE_CJO 设计

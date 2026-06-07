@@ -1,6 +1,4 @@
-// EXEC: %compiler %f | compare %f
 
-// All global variable need to be defined before use!
  var variable87 : int8 = int8(10);
 
  let variable123 : char = 'W';

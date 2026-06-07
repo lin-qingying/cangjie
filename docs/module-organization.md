@@ -3,7 +3,7 @@
 > 基于 12 阶段编译管线和 Kotlin K2 FIR 架构对齐目标，规划仓颉编译器的模块组织。
 > 不以当前代码量为依据，以职责边界和依赖方向为准则。
 >
-> **现状提示（2026-05-11）**：本文是**规划文档**，与当前实际接入构建的模块清单可能存在差异。当前实装模块清单以 [`current-module-organization.md`](current-module-organization.md) 与 `settings.gradle.kts` 为准。文中标为"已完成"的 `:cfir:symbols` 当前已不存在，职责拆入 `:cfir:semantics` + `:cfir:providers`。
+> **现状提示（2026-05-11）**：本文是**规划文档**，与当前实际接入构建的模块清单可能存在差异。当前实装模块清单以 `settings.gradle.kts` 为准。文中标为"已完成"的 `:cfir:symbols` 当前已不存在，职责拆入 `:cfir:semantics` + `:cfir:providers`。
 
 ---
 

@@ -1,4 +1,3 @@
-// EXEC-PIPE: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 import std.collection.ArrayList
 main() {

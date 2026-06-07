@@ -1,7 +1,3 @@
-// DEPENDENCE: %n.c
-// EXEC-PIPE-0: %clang %clang_shared_opt %n.c -o %cffi_output
-// EXEC-PIPE-0: %compiler %cmp_opt %cffi-link %f -o %output
-// EXEC-PIPE-0: %run %run_opt %output %run_args
 
 
 var cStr = unsafe {LibC.mallocCString("CANG")}

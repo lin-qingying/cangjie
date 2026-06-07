@@ -4,6 +4,5 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %typecheck %f 2>&1 | compare %f
 
 <!sema_type_implement_non_interface!>s<!>truct A <: A {} // Expected: regex  struct 'A' can only implement interface

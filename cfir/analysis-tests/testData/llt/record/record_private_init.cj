@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %noColor %f 2>&1 | compare %f
 struct A {
     private init() {}
     public init(b: Int64, c: Int64) {}

@@ -47,7 +47,7 @@ CFIR 是仓颉前端的中间表示（Cangjie Frontend IR），对齐 Kotlin K2 
 
 ## 阶段对应
 
-CFIR 各子模块在前端管线中的位置（见根 `cjfir-compiler-stages.md`）：
+CFIR 各子模块在前端管线中的位置（见 `../docs/cjfir-compiler-stages.md`）：
 
 ```
 阶段 6 CFIR_BUILD     → raw-cfir/*
@@ -58,7 +58,7 @@ CFIR 各子模块在前端管线中的位置（见根 `cjfir-compiler-stages.md`
 
 ## 相关文档
 
-- `../cjfir-compiler-stages.md` — 阶段设计
+- `../docs/cjfir-compiler-stages.md` — 阶段设计
 - `../docs/cfir-body-resolve-constraint-system-design.md` — BODY_RESOLVE 约束系统
 - `../docs/cfir-semantic-analysis-maturity-vs-official-2026-04-08.md` — 实现成熟度评估
 - `cfir-tree/tree-generator/Readme.md` — CFIR 节点生成器

@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%compiler %cmp_opt --diagnostic-format=json %f 2>&1 | compare %f
 
 // should fail for op with no info
 main() {

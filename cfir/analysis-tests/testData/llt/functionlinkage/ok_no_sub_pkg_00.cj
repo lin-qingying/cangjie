@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE and DEBUG_OPTION) EXEC-PIPE: %frontendCompiler %dump-ir-to-screen --no-sub-pkg %compile_lib_opt --apc=1 %f 2>&1 | compare %f
-// (not CJNATIVE and DEBUG_OPTION) EXEC-PIPE: %frontendCompiler %dump-ir-to-screen --no-sub-pkg %compile_lib_opt %f 2>&1 | compare %f
-// (CJNATIVE) ASSERT: scan @_CN3pkg11farFarAheadE = global
-// (not CJNATIVE) ASSERT: scan @_ZN3pkg11farFarAheadE = global
 
 package pkg
 

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// RUN-EXEC-PIPE: %run %run_opt %output %run_args | compare %f
-// EXEC: %compiler %cmp_opt -O2 %f -o %output
 
 main() {
     for (i in r'a'..=r'c') {

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE)EXEC: %run %run_opt %n.%suffix
-// (not CJNATIVE)EXEC-1: %run %run_opt %n.%suffix
 
 interface I {
     static func foo(x: Int32): Int32 {

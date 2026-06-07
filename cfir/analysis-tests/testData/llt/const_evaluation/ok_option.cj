@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// RUN-EXEC: %run %run_opt %output %run_args
 
 public interface Dgl2023Singapura {}
 

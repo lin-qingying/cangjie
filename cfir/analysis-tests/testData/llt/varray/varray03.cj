@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 main() {
     let a: VArray<Int64, <!parse_expect_integer_literal_varray!>$<!>-1> = [1, 2, 3] //error

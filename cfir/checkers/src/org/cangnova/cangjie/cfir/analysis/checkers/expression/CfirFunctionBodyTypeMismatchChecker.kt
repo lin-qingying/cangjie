@@ -11,8 +11,13 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExhaustivenessStatus
+import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
 import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
+import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeErrorType
@@ -35,7 +40,7 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
 
         if (block.statements.dropLast(1).any { it is CfirReturnExpression }) return
         val tailExpression = block.statements.lastOrNull() as? CfirExpression ?: return
-        if (tailExpression is CfirReturnExpression) return
+        if (tailExpression.isTerminatingFunctionBodyTail()) return
 
         val actualType = tailExpression.coneTypeOrNull ?: return
         if (actualType is ConeErrorType) return
@@ -66,5 +71,42 @@ object CfirFunctionBodyTypeMismatchChecker : CfirBasicExpressionChecker() {
                 c = false,
             )
         }
+    }
+}
+
+/**
+ * 函数体尾位置若被显式控制流终止，不存在需要与函数返回类型比较的隐式返回值。
+ */
+private fun CfirExpression.isTerminatingFunctionBodyTail(): Boolean {
+    return when (this) {
+        is CfirReturnExpression,
+        is CfirThrowExpression,
+        -> true
+
+        is CfirBlock -> {
+            val tailExpression = statements.lastOrNull() as? CfirExpression ?: return false
+            tailExpression.isTerminatingFunctionBodyTail()
+        }
+
+        is CfirIfExpression -> {
+            val elseBranch = elseBranch ?: return false
+            thenBranch.isTerminatingFunctionBodyTail() && elseBranch.isTerminatingFunctionBodyTail()
+        }
+
+        is CfirMatchExpression -> {
+            exhaustiveness is CfirMatchExhaustivenessStatus.Exhaustive &&
+                    branches.isNotEmpty() &&
+                    branches.all { it.body.isTerminatingFunctionBodyTail() }
+        }
+
+        is CfirTryExpression -> {
+            val finallyTerminates = finallyBlock?.isTerminatingFunctionBodyTail() == true
+            finallyTerminates ||
+                    (tryBlock.isTerminatingFunctionBodyTail() &&
+                            catches.all { it.body.isTerminatingFunctionBodyTail() } &&
+                            handlers.all { it.body.isTerminatingFunctionBodyTail() })
+        }
+
+        else -> false
     }
 }

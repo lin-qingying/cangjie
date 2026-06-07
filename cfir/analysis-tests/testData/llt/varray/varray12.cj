@@ -5,8 +5,6 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 // DIAGNOSTICS: -warnings
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-// RUN-EXEC-PIPE-0: %run %run_opt %output %run_args
 
 func foo() {
     var i = 0

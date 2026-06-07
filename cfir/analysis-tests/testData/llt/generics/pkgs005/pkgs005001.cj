@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkgs005001a
 // Test condition: package with a single generic function is imported by only importing packageName like "import pkgName"
 
 internal import pkgs005001a.*

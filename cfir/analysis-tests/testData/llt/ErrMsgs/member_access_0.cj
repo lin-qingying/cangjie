@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %compile_lib_opt %n.cj 2>&1 | compare %f
 
 main() {
     let a = 1 <!sema_invalid_binary_expr!>+<!> true

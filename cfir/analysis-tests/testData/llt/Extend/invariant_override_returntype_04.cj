@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// LEVEL: 0
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-// (CJNATIVE) ASSERT: scan (package std.core)string.cj
 
 public interface Cloneable {
     func clone(): Cloneable

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkgs0018001a
-// DEPENDENCE: pkgs0018002a pkgs0018003a
 
 package pkgs0018004a
 

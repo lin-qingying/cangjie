@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// RUN-EXEC: %run %run_opt %output %run_args
 
 class A<T> {
     public A(let b!: Int32 = 0) {

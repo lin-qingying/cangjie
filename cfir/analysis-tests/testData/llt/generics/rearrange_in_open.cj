@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE) EXEC: %compiler %f -o %n.%suffix %enableO2 --fno-chir-function-inlining
-// (CJNATIVE) EXEC: %run %run_opt %n.%suffix 2>&1 | compare %f
-// (CJNATIVE) ASSERT: scan 11
-// (CJNATIVE) ASSERT: scan 12
 
 abstract class A {
     public static func f<T>() {

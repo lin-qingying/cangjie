@@ -29,19 +29,26 @@ import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
+
+private val OPTION_SOME_CONSTRUCTOR_NAME = Name.identifier("Some")
+private val OPTION_NONE_CONSTRUCTOR_NAME = Name.identifier("None")
 
 /**
  * `match` 的 pattern legality 独立于穷尽性。
@@ -125,8 +132,8 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
             }
 
             is CfirEnumPattern -> {
-                val enumType = expectedType as? ConeEnumType
-                if (enumType == null) {
+                val argumentTypes = pattern.enumConstructorArgumentTypes(expectedType, context)
+                if (argumentTypes == null) {
                     reporter.reportOn(
                         source = pattern.source,
                         factory = CfirErrors.PATTERN_NOT_MATCH,
@@ -135,39 +142,6 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                     return
                 }
 
-                val enumDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
-                if (enumDeclaration == null) {
-                    reporter.reportOn(
-                        source = pattern.source,
-                        factory = CfirErrors.PATTERN_NOT_MATCH,
-                        a = pattern.patternText(),
-                    )
-                    return
-                }
-
-                val constructorName = pattern.constructorName()
-                if (constructorName == null) {
-                    reporter.reportOn(
-                        source = pattern.source,
-                        factory = CfirErrors.PATTERN_NOT_MATCH,
-                        a = pattern.patternText(),
-                    )
-                    return
-                }
-
-                val enumConstructor = enumDeclaration.declarations
-                    .filterIsInstance<CfirEnumConstructor>()
-                    .firstOrNull { constructor -> constructor.name == constructorName }
-                if (enumConstructor == null) {
-                    reporter.reportOn(
-                        source = pattern.source,
-                        factory = CfirErrors.PATTERN_NOT_MATCH,
-                        a = pattern.patternText(),
-                    )
-                    return
-                }
-
-                val argumentTypes = enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
                 if (pattern.arguments.size != argumentTypes.size) {
                     reporter.reportOn(
                         source = pattern.source ?: pattern.constructorReference.source,
@@ -248,15 +222,7 @@ private fun CfirPattern.hasPatternLegalityProblem(
         }
 
         is CfirEnumPattern -> {
-            val enumType = expectedType as? ConeEnumType ?: return true
-            val enumDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
-                ?: return true
-            val constructorName = constructorName() ?: return true
-            val enumConstructor = enumDeclaration.declarations
-                .filterIsInstance<CfirEnumConstructor>()
-                .firstOrNull { constructor -> constructor.name == constructorName }
-                ?: return true
-            val argumentTypes = enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
+            val argumentTypes = enumConstructorArgumentTypes(expectedType, context) ?: return true
             arguments.size != argumentTypes.size ||
                     arguments.withIndex().any { (index, argument) ->
                         argument.hasPatternLegalityProblem(argumentTypes[index], context)
@@ -290,6 +256,48 @@ private fun CfirEnumPattern.constructorName(): Name? = when (val reference = con
     is CfirResolvedNamedReference -> reference.name
     is CfirNamedReference -> reference.name
     else -> null
+}
+
+private fun CfirEnumPattern.enumConstructorArgumentTypes(
+    expectedType: ConeCangJieType,
+    context: CheckerContext,
+): List<ConeCangJieType>? {
+    val enumType = expectedType.expandedPatternEnumType()
+    val optionArgumentTypes = resolveStdlibOptionArgumentTypes(this, enumType)
+    if (optionArgumentTypes != null) return optionArgumentTypes
+
+    if (enumType !is ConeEnumType) return null
+    val enumDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
+        ?: return null
+    val constructorName = constructorName() ?: return null
+    val enumConstructor = enumDeclaration.declarations
+        .filterIsInstance<CfirEnumConstructor>()
+        .firstOrNull { constructor -> constructor.name == constructorName }
+        ?: return null
+    return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
+}
+
+private fun ConeCangJieType.expandedPatternEnumType(): ConeCangJieType = when (this) {
+    is ConeTypeAliasType -> expandedType?.expandedPatternEnumType() ?: this
+    else -> this
+}
+
+/**
+ * 标准库 `Option<T>` 在本地类型表示中可能是 class-like，
+ * 但官方语义仍是 `Some(T)` / `None` 的 enum 构造器。
+ */
+private fun resolveStdlibOptionArgumentTypes(
+    pattern: CfirEnumPattern,
+    expectedType: ConeCangJieType,
+): List<ConeCangJieType>? {
+    val optionType = expectedType as? ConeClassLikeType ?: return null
+    if (optionType.classId != StdlibClassIds.Option) return null
+
+    return when (pattern.constructorName()) {
+        OPTION_SOME_CONSTRUCTOR_NAME -> optionType.typeArguments.singleOrNull()?.type?.let(::listOf) ?: emptyList()
+        OPTION_NONE_CONSTRUCTOR_NAME -> emptyList()
+        else -> null
+    }
 }
 
 private fun CfirConstPattern.isCompatibleWith(expectedType: ConeCangJieType): Boolean {

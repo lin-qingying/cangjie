@@ -8,6 +8,20 @@ open class C1 {
     public func foo1() {
         return this
     }
+
+    public func foo3() {
+        try {
+            return this
+        } finally {
+        }
+    }
+
+    public func foo4(): This {
+        try {
+            return this
+        } finally {
+        }
+    }
 }
 
 class C2 <: C1 {
@@ -19,5 +33,7 @@ class C2 <: C1 {
 main() {
     let obj = C2()
     obj.foo1().foo2()
+    obj.foo3().foo2()
+    obj.foo4().foo2()
     return 0
 }

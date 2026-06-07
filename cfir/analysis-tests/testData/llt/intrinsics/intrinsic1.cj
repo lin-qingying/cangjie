@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-0: %compiler %n.cj -o %output
-// EXEC-0: %output 2>&1 | compare %f
 
 public class LazyTensorHandle {
     public var lazyTensorHandleId: Int32

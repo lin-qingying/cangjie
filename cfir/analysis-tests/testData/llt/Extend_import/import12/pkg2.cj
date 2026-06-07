@@ -1,13 +1,49 @@
+// FILE: pkg0.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkg0.cj pkg1.cj pkg2.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg0.cj -o pkg0.%middle
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkg0.%middle pkg1.cj -o pkg1.%middle
-// ERRCHECK: %compiler %cmp_opt %compile_lib_opt pkg0.%middle pkg1.%middle pkg2.cj -o pkg2.%middle 2>&1
+package pkg0
+
+public class A {}
+
+// FILE: pkg1.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
+package pkg1
+
+internal import pkg0.*
+
+public interface I {
+    func fi(): Int64
+}
+
+public interface J {
+    func fj(): Int64
+}
+
+extend A <: I & J {
+    public func fi() {
+        1
+    }
+    public func fj() {
+        2
+    }
+}
+
+// FILE: pkg2.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 package pkg2
 

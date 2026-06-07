@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 
 main() {
     try {} catch (_: <!CATCH_TYPE_MUST_EXTEND_EXCEPTION!>Nothing<!>) {}

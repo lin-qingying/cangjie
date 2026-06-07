@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-// EXEC: %run %run_opt %output %run_args
 
 var r1 = match ((10, 5)) {
     case (b: Unit, a: Unit) => 1

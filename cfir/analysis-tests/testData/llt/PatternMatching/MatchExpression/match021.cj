@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
 
 struct a <!parse_expected_left_brace!>func<!> <!parse_expected_name!>(<!><!parse_expected_right_delimiter!> <!><!parse_expected_name!>{<!>
     let b : a <!parse_expected_character!>var<!> c : ((Unit<!parse_expected_right_delimiter!> <!><!parse_expected_character!>*<!> UInt32 * Range) * Bool * String * Int8 *

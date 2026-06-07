@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %typecheck %noColor %f %error_count_limit_all 2>&1 | compare %f
 
 struct A {
     public let a: Int64 = 1

@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE)EXEC-PIPE-0: %compiler %noColor %cmp_opt_chir2hlir %f -o %n.%suffix
-// (CJNATIVE)EXEC-0: %run %n.%suffix
-// (not CJNATIVE) ERRCHECK: %compiler %noColor %f
 
 func malloc<T>(initial: Option<T>): Int64 {
     initial.isSome()

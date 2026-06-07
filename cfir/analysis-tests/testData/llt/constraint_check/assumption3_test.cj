@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %typecheck %diag_json %f 2>&1 | compare %f
 
 <!sema_generic_type_argument_not_match_constraint!>c<!>lass C<X> where X <: C<C<C<C<<!sema_generic_type_argument_not_match_constraint!>I<!>nt32>>>> {
     func foo() {}

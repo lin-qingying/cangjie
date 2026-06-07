@@ -4,9 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
-// (not CJNATIVE) ASSERT: scan the number '9223372036854775808' exceeds the value range of type 'Int32'
-// (CJNATIVE) ASSERT: scan the number '9223372036854775808' exceeds the value range of type 'Int64'
 
 main(): Int64 {
     var varr: VArray<Int64, $9223372036854775808> = VArray<Int64, $9223372036854775808> {i => i + 1}

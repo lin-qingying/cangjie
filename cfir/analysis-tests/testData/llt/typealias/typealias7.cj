@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
 <!sema_typealias_cycle, typealias_unused_type_parameters!>t<!>ype D<T> = F<Int32>
 

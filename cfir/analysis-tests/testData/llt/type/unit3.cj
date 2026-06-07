@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %n.cj
 
 main(): Int64 {
     var <!chir_dce_unused_variable!>a<!>: (Unit) -> UInt64

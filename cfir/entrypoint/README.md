@@ -37,5 +37,4 @@
 
 ## 相关文档
 
-- `../../cjfir-compiler-stages.md` — 阶段编排设计
-- `../../docs/current-module-organization.md` — entrypoint 在分层中的位置
+- `../../docs/cjfir-compiler-stages.md` — 阶段编排设计

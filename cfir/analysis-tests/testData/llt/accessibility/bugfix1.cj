@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// LEVLE: 0
-// DEPENDENCE: %n.pkg.cj
 
 package b
 import a.*

@@ -1,4 +1,3 @@
-// ERRCHECK: %compiler %enableEH %cmp_opt %f -o %output %diag_json
 import stdx.effect.Command
 
 main() {

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %output
-// TIMEOUT: 10
 
 main():Int64 {
     var a = 0B10000_0000_0000_00000000_0000_0000_00000000_0000_0000_00000000_0000_0000_0000u64

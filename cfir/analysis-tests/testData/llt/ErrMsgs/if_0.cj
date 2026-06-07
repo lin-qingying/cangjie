@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt -c %n.cj 2>&1 | compare %f
 
 main() {
     let a: Bool = true

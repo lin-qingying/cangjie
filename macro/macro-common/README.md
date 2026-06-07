@@ -35,4 +35,4 @@
 ## 相关文档
 
 - `../README.md` — Macro 总览
-- `../../cjfir-compiler-stages.md` 第 5 阶段
+- `../../docs/cjfir-compiler-stages.md` 第 5 阶段

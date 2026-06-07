@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %n.%suffix
-// EXEC: %run %run_opt %n.%suffix
 
 extend Unit {
     public operator func ()(<!chir_dce_unused_variable!>y<!>: Unit): Unit {}

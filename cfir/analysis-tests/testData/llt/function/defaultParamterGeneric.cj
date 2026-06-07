@@ -4,6 +4,5 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (DEBUG_OPTION)EXEC:%frontendCompiler %typecheck --dump-ir %cmp_opt %f 2>&1
 
 public func test<T>(a!: Option<T> = Option<T>.None) {}

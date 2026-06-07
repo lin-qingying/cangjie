@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt %f -o %n.%suffix
 
 <!INHERIT_THREAD_CONTEXT_INVALID!>class MyCustomThreadContext <: ThreadContext {
     public func end(): Unit {}

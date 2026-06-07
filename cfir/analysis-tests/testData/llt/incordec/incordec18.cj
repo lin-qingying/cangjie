@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
 
 main():Int64 {
     var a  = {x:Int64=>x}(1)<!parse_invalid_incre_expr!>++<!>

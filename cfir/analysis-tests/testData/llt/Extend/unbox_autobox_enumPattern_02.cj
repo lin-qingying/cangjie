@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// RUN-EXEC: %run %output
 
 enum MyOption<T> {
     | MyEmpty

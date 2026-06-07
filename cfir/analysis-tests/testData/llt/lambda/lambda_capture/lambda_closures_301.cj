@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %n.cj -o %output 2>&1 | compare %f
 
 // 函数/闭包/
 // 捕获 var 声明的局部变量：捕获了可变变量的函数或lambda只能被调用，不能作为一等公民使 用，包括不能赋值给变量，不能作为实参或返回值使用。

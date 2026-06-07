@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-1: %compiler %cmp_opt %f -o %output
 
 // Was ICE, should quit normally
 

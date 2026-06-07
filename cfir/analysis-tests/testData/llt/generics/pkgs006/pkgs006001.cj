@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: pkgs006001a
 // Test condition: multi-file package with several generic functions along with normal function is imported
 
 internal import pkgs006001a.NormalFunc

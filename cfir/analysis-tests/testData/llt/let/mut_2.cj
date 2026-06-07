@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRORCHECK: %compiler %cmp_opt %f
 
 interface IA {
     mut func f1(): Unit

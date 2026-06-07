@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// ERRCHECK: %compiler %cmp_opt --diagnostic-format json %f -o %output
 
 // ensure no temporary type var names like 'T-0' exist in constraints
 func f<T>(x: T) where T <: Comparable<T> {

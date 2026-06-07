@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: composition9_2.cj
-// EXEC: %compiler %compile_lib_opt %n.cj composition9_2.cj 2>&1 | compare %f
 
 func foo() {
     let h = <!sema_undeclared_identifier!>f<!> ~> <!sema_undeclared_identifier!>g<!>

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (not CJNATIVE) EXEC-PIPE-1: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// (CJNATIVE) EXEC: %frontendCompiler %f
 
 abstract class A {
     public open func a<T>(<!chir_dce_unused_variable!>c<!>: T) {}

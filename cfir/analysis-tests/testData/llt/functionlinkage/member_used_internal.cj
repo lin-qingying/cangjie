@@ -4,10 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (CJNATIVE and DEBUG_OPTION)EXEC-PIPE: %frontendCompiler %dump-ir-to-screen %compile_lib_opt --disable-reflection --apc=1 %f 2>&1 | compare %f
-// (not CJNATIVE and DEBUG_OPTION) EXEC-PIPE: %frontendCompiler %dump-ir-to-screen %compile_lib_opt %f 2>&1 | compare %f
-// (CJNATIVE) ASSERT: regex define internal i64 @.*pkg.*fooH
-// (not CJNATIVE) ASSERT: regex define internal i64 @.*pkg.*fooE
 
 // Test for 'foo' has internal linkage
 package pkg

@@ -1,4 +1,3 @@
-// EXEC-PIPE: %compiler %cmp_opt  %f -o %output 2>&1 | compare %f
 
 package c
 import std.convert.Parsable

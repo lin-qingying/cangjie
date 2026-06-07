@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: %n.expect
-// EXEC-1: %compiler %f %cmp_opt -o %output 2>&1 | compare %n.expect
 
 main() {
     while (let Some(a) <- 1 {}

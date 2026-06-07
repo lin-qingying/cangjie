@@ -46,5 +46,5 @@ macro-common  ─┬─→ macro-process  (生产实现)
 
 ## 相关文档
 
-- `../cjfir-compiler-stages.md` 第 5 阶段 — 宏展开设计
+- `../docs/cjfir-compiler-stages.md` 第 5 阶段 — 宏展开设计
 - `../intellij-ide/docs/macro-psi-replacement-design.md` — IDE 侧宏 PSI 替换设计

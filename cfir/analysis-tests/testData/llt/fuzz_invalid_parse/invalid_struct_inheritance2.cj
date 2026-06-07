@@ -1,4 +1,3 @@
-// EXEC-PIPE-1: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 // Was stackoverflow during type substitution. should pass
 interface A<T> <: <!parse_decl_cannot_inherit_their_self!>A<C<T>><!> &B<C<T>>{}

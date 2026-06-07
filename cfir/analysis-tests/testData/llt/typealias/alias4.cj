@@ -1,4 +1,3 @@
-// EXEC: %compiler %f -Woff unused
 
 import std.collection.*
 

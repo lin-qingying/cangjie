@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 var a = 'a'-o %n.<!parse_expected_name!>%<!>{ =>
 var a = 'a'-o %n.<!parse_expected_name!>%<!>suffix

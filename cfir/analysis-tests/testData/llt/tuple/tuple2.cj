@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC:%frontendCompiler %cmp_opt %typecheck %cmp_opt %f 2>&1 | compare %f
 
 main() : Int64 {
     let <!parse_tuple_pattern_expected_more_field!>(m)<!> = (1)

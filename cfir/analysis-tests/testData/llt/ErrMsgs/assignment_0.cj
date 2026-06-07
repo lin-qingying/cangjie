@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt -c %n.cj 2>&1 | compare %f
 
 main(): Int64 {
     var x: <!sema_undeclared_type_name!>C<!><<!sema_undeclared_type_name!>T<!>> = <!sema_no_match_operator_function_call!>1<!>(true)

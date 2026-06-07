@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// (not CJNATIVE) EXEC-PIPE-1: %compiler %cmp_opt %f -o %n.%suffix 2>&1 | compare %f
-// (CJNATIVE) EXEC: %frontendCompiler %f
 
 interface A {
     func f<T>(a: T): T

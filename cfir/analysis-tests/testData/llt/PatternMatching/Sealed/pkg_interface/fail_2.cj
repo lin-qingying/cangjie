@@ -1,12 +1,25 @@
+// FILE: pkgs.cj
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// DEPENDENCE: ./pkgs.cj
-// EXEC: %compiler %cmp_opt %compile_lib_opt pkgs.cj -o pkgs.%middle
-// ERRCHECK: %compiler %cmp_opt pkgs.%middle %f -o %output
+package pkgs
+
+sealed interface I {
+    static func f() {
+        1
+    }
+}
+
+// FILE: fail_2.cj
+// Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// This source file is part of the Cangjie project, licensed under Apache-2.0
+// with Runtime Library Exception.
+//
+// See https://cangjie-lang.cn/pages/LICENSE for license information.
+
 
 import <!package_search_error!>pkgs<!>.*
 

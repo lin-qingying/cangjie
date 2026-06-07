@@ -30,9 +30,11 @@ fun main(args: Array<String>) {
         ) {
             alias<CfirTypeRef>("TypeRefChecker").let {
                 visitAlso<CfirImplicitTypeRef>(it)
+                visitAlso<CfirUnresolvedTypeRef>(it)
                 visitAlso<CfirUserTypeRef>(it)
                 visitAlso<CfirBasicTypeRef>(it)
                 visitAlso<CfirFunctionTypeRef>(it)
+                visitAlso<CfirOptionTypeRef>(it)
                 visitAlso<CfirTupleTypeRef>(it)
                 visitAlso<CfirVArrayTypeRef>(it)
             }
@@ -52,6 +54,9 @@ fun main(args: Array<String>) {
             ) {
                 alias<CfirStatement>("BasicExpressionChecker", false).let {
                     visitAlso<CfirExpression>(it)
+                    visitAlso<CfirWrappedExpression>(it)
+                    visitAlso<CfirOptionalExpression>(it)
+                    visitAlso<CfirOptionalChainExpression>(it)
                     visitAlso<CfirBlock>(it)
                     visitAlso<CfirLazyBlock>(it)
                     visitAlso<CfirLazyExpression>(it)

@@ -32,6 +32,3 @@
 ./gradlew :cfir:semantics:test
 ```
 
-## 相关文档
-
-- `../../docs/current-module-organization.md` — `:cfir:symbols` → `:cfir:semantics` + `:cfir:providers` 的拆分说明

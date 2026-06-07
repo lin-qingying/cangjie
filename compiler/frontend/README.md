@@ -40,6 +40,5 @@
 
 ## 相关文档
 
-- `../../cjfir-compiler-stages.md` — 完整阶段设计
-- `../../docs/current-module-organization.md` — 当前实装模块全景
+- `../../docs/cjfir-compiler-stages.md` — 完整阶段设计
 - `../../TESTING_CONVENTIONS.md` — 全项目测试约定

@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %compiler %cmp_opt %f -o %output 2>&1 | compare %f
 
 interface I<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, R> where T <: R {
     func foo(): R

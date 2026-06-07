@@ -1,4 +1,3 @@
-// (DEBUG_OPTION) RUN-EXEC-PIPE-0: %frontendCompiler %dump-ast %cmp_opt %f 2>&1 | compare %f
 
 let b: VArray<Int64, $3> = VArray<Int64, $3>(repeat: 0)
 

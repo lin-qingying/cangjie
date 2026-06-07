@@ -40,5 +40,5 @@
 
 ## 相关文档
 
-- `../cjfir-compiler-stages.md` 第 10 阶段 SAVE_CJO — 序列化格式说明
+- `../docs/cjfir-compiler-stages.md` 第 10 阶段 SAVE_CJO — 序列化格式说明
 - `../macro/README.md` — 宏协议设计

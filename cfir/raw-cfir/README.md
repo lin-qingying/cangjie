@@ -49,6 +49,6 @@
 
 ## 相关文档
 
-- `../../cjfir-compiler-stages.md` 第 6 阶段
+- `../../docs/cjfir-compiler-stages.md` 第 6 阶段
 - `../../docs/psi-cfir-ast-chir-alignment.md` — PSI ↔ CFIR 节点对照
 - `psi2cfir/testData/rawBuilder/README.md` — 测试数据组织

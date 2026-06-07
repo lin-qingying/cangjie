@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %n.cj -o %output 2>&1 |compare %f
 
 interface I1 {
     func foo(a: <!parse_this_type_not_allow!>This<!>): <!parse_this_type_not_allow!>This<!> {

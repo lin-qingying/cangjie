@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-1: %frontendCompiler %cmp_opt %typecheck %f 2>&1 | compare %f
 
 main(): Int64 {
     func g(h!: (Int64) -> Int64, a!: (Int64) -> Int64) {

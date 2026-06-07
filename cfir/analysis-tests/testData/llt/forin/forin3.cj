@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output 2>&1 |compare %f
 
 func case01() {
     let intList: Array<Int32> = [0, 1, 2, 3, 4]

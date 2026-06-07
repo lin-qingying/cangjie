@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f  -o %output
-// EXEC: %run %run_opt %output %run_args
 
 var r1 = match (((), ())) {
     case (b: Int64, a: Int64) => 1

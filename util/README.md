@@ -35,6 +35,3 @@
 ./gradlew :util:test
 ```
 
-## 相关文档
-
-- `../docs/current-module-organization.md` — 基础设施层定位

@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC-PIPE-0: %compiler %cmp_opt %f -o %output
-// EXEC-PIPE-0: %run %run_opt %output %run_args
 
 func foo(a: Int): UInt {
     return UInt64(a)

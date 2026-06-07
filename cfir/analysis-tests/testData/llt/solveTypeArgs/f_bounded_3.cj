@@ -4,7 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %frontendCompiler %typecheck %cmp_opt %f 2>&1 | compare %f
 
 interface Graph<G, E, V> where G <: Graph<G, E, V>, E <: Edge<G, E, V>, V <: Vertex<G, E, V> {
     // func getVertices(): List<V>;

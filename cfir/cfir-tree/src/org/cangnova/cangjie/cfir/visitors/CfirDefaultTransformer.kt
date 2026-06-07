@@ -330,8 +330,12 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformTypeRef(resolvedTypeRef, data)
     }
 
+    override fun transformUnresolvedTypeRef(unresolvedTypeRef: CfirUnresolvedTypeRef, data: D): CfirTypeRef {
+        return transformTypeRef(unresolvedTypeRef, data)
+    }
+
     override fun transformUserTypeRef(userTypeRef: CfirUserTypeRef, data: D): CfirTypeRef {
-        return transformTypeRef(userTypeRef, data)
+        return transformUnresolvedTypeRef(userTypeRef, data)
     }
 
     override fun transformBasicTypeRef(basicTypeRef: CfirBasicTypeRef, data: D): CfirTypeRef {
@@ -346,6 +350,10 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
         return transformTypeRef(functionTypeRef, data)
     }
 
+    override fun transformOptionTypeRef(optionTypeRef: CfirOptionTypeRef, data: D): CfirTypeRef {
+        return transformUnresolvedTypeRef(optionTypeRef, data)
+    }
+
     override fun transformTupleTypeRef(tupleTypeRef: CfirTupleTypeRef, data: D): CfirTypeRef {
         return transformTypeRef(tupleTypeRef, data)
     }
@@ -355,7 +363,7 @@ open class CfirDefaultTransformer<in D> : CfirTransformer<D>() {
     }
 
     override fun transformErrorTypeRef(errorTypeRef: CfirErrorTypeRef, data: D): CfirTypeRef {
-        return transformTypeRef(errorTypeRef, data)
+        return transformResolvedTypeRef(errorTypeRef, data)
     }
 
     override fun transformReference(reference: CfirReference, data: D): CfirReference {

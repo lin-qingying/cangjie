@@ -4,8 +4,6 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-// EXEC: %compiler %cmp_opt %f -o %output
-// EXEC: %run %run_opt %output %run_args
 
 // Test for type inference of E<(Option<Int64>, Int64)> with literal (Int64, Int64)
 enum E<T> {
