@@ -43,10 +43,12 @@ val requireExternalReferenceRepo = providers.environmentVariable("CI")
     .orElse(false)
 
 dependencies {
+    api(project(":cfir:cfir-tree"))
     implementation(project(":flatbuffers-gen"))
     implementation(libs.flatbuffers.java)
 
     testImplementation(project(":compiler:codegen"))
+    testImplementation(project(":compiler:jvm-codegen"))
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 }

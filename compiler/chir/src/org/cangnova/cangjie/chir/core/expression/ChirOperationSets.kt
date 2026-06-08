@@ -89,6 +89,16 @@ object ChirOperationSets {
         "fptosi",
         "fptoui",
         "phi",
+        "jvm.new",
+        "jvm.getfield",
+        "jvm.putfield",
+        "jvm.getstatic",
+        "jvm.putstatic",
+        "jvm.newarray",
+        "jvm.arrayload",
+        "jvm.arraystore",
+        "jvm.arraylength",
+        "jvm.checkcast",
+        "jvm.instanceof",
     )
 }
-

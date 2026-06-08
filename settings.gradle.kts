@@ -125,6 +125,7 @@ include(":tests:test-infrastructure")
 
 include(":compiler:chir")
 include(":compiler:codegen")
+include(":compiler:jvm-codegen")
 
 include(":llvm-interop")
 include(":llvm-interop:llvm-interop-api")

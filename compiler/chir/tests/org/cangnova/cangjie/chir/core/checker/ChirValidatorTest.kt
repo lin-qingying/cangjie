@@ -3,6 +3,7 @@
 import org.cangnova.cangjie.chir.core.context.DefaultChirContext
 import org.cangnova.cangjie.chir.core.controlflow.ChirBlock
 import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
+import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirTerminator
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
@@ -78,6 +79,57 @@ class ChirValidatorTest {
         val report = DefaultChirValidator().validatePackage(pkg, DefaultChirContext())
         assertTrue(report.hasErrors)
         assertTrue(report.issues.any { it.code == "RETURN_TYPE_MISMATCH" })
+    }
+
+    @Test
+    fun `validator rejects non bool conditional branch condition`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val function = DefaultChirFunctionDeclaration(
+            semanticId = ChirSemanticId("fn:bad-branch-condition"),
+            name = "badBranchCondition",
+            returnType = intType,
+            parameters = emptyList(),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:entry"),
+                    name = "entry",
+                    expressions = emptyList(),
+                    terminator = ChirConditionalBranchTerminator(
+                        semanticId = ChirSemanticId("term:conditional"),
+                        condition = ChirConstantValue(
+                            semanticId = ChirSemanticId("const:one"),
+                            type = intType,
+                            literal = "1",
+                        ),
+                        trueTargetBlockId = ChirSemanticId("block:true"),
+                        falseTargetBlockId = ChirSemanticId("block:false"),
+                    ),
+                ),
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:true"),
+                    name = "true",
+                    expressions = emptyList(),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:true:return"),
+                        returnValue = ChirConstantValue(ChirSemanticId("const:true:return"), intType, "1"),
+                    ),
+                ),
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:false"),
+                    name = "false",
+                    expressions = emptyList(),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:false:return"),
+                        returnValue = ChirConstantValue(ChirSemanticId("const:false:return"), intType, "0"),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:entry"),
+        )
+
+        val report = DefaultChirValidator().validatePackage(packageWith(function), DefaultChirContext())
+        assertTrue(report.hasErrors)
+        assertTrue(report.issues.any { it.code == "BRANCH_CONDITION_TYPE_MISMATCH" })
     }
 
     @Test
