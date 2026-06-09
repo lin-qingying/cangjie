@@ -81,11 +81,13 @@ class DefaultChirValidator : ChirValidator {
                     nodeId = declarationId,
                 )
             }
-
-            module.declarations.filterIsInstance<ChirFunctionDeclaration>().forEach { function ->
-                validateFunction(function, issues)
-            }
         }
+
+        val importedFunctionIds = chirPackage.members.importedFunctions.mapTo(hashSetOf()) { it.semanticId }
+        allDeclarations
+            .filterIsInstance<ChirFunctionDeclaration>()
+            .filterNot { it.semanticId in importedFunctionIds }
+            .forEach { function -> validateFunction(function, issues) }
 
         val functionById = allDeclarations
             .filterIsInstance<ChirFunctionDeclaration>()

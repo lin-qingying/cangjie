@@ -1,17 +1,24 @@
 package org.cangnova.cangjie.jvm.codegen.types
 
 import org.cangnova.cangjie.chir.core.type.ChirClassType
+import org.cangnova.cangjie.chir.core.type.ChirBoxType
+import org.cangnova.cangjie.chir.core.type.ChirCPointerType
 import org.cangnova.cangjie.chir.core.type.ChirCStringType
 import org.cangnova.cangjie.chir.core.type.ChirEnumType
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
+import org.cangnova.cangjie.chir.core.type.ChirGenericType
 import org.cangnova.cangjie.chir.core.type.ChirNamedType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirRawArrayType
+import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirStructType
+import org.cangnova.cangjie.chir.core.type.ChirThisType
+import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirUnresolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirVArrayType
 import org.cangnova.cangjie.jvm.codegen.api.JvmCodegenOptions
 import org.cangnova.cangjie.jvm.codegen.diagnostics.JvmCodegenException
 import org.cangnova.cangjie.jvm.codegen.naming.JvmNamePolicy
@@ -47,15 +54,21 @@ class JvmTypeMapper(
             ChirPrimitiveType.UNIT, ChirPrimitiveType.VOID, ChirPrimitiveType.NOTHING -> throw JvmCodegenException(
                 "type ${resolved.renderName} cannot be used as a JVM value type",
             )
-            ChirPrimitiveType.FLOAT16 -> throw JvmCodegenException("JVM backend does not support float16 value type")
+            ChirPrimitiveType.FLOAT16 -> Type.FLOAT_TYPE
             is ChirCStringType -> Type.getObjectType("java/lang/String")
             is ChirNamedType -> mapNamedType(resolved)
             is ChirClassType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.name))
             is ChirStructType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.name))
             is ChirEnumType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.name))
             is ChirRawArrayType -> Type.getType("[${mapValueType(resolved.elementType).descriptor}")
-            is ChirFunctionType -> Type.getObjectType("java/lang/Object")
-            else -> throw JvmCodegenException("unsupported JVM value type ${resolved.renderName}")
+            is ChirVArrayType -> Type.getType("[".repeat(resolved.rank.coerceAtLeast(1)) + mapValueType(resolved.elementType).descriptor)
+            is ChirCPointerType -> Type.getObjectType("java/nio/ByteBuffer")
+            is ChirRefType -> Type.getObjectType("java/lang/Object")
+            is ChirBoxType -> Type.getObjectType("java/lang/Object")
+            is ChirTupleType -> Type.getObjectType("java/lang/Object")
+            is ChirGenericType -> Type.getObjectType("java/lang/Object")
+            is ChirThisType -> Type.getObjectType(namePolicy.typeInternalName(defaultPackageName, resolved.ownerTypeName))
+            is ChirFunctionType -> Type.getObjectType("java/lang/invoke/MethodHandle")
         }
     }
 

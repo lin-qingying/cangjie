@@ -1,0 +1,28 @@
+package org.cangnova.cangjie.jvm.runtime
+
+/**
+ * JVM 后端的无符号数值转换运行时。
+ *
+ * JVM 没有无符号整型 carrier，CHIR 的 UInt/ULong 仍以 byte/short/int/long 保存 bit pattern。
+ * 浮点到无符号整数的转换需要在写回 carrier 前按无符号范围截断。
+ */
+object CjJvmUnsignedRuntime {
+    private const val TWO_TO_63: Double = 9.223372036854776E18
+
+    @JvmStatic
+    fun doubleToUInt8(value: Double): Byte = doubleToUInt64(value).toByte()
+
+    @JvmStatic
+    fun doubleToUInt16(value: Double): Short = doubleToUInt64(value).toShort()
+
+    @JvmStatic
+    fun doubleToUInt32(value: Double): Int = doubleToUInt64(value).toInt()
+
+    @JvmStatic
+    fun doubleToUInt64(value: Double): Long {
+        if (value.isNaN() || value <= 0.0) return 0L
+        if (value < TWO_TO_63) return value.toLong()
+        val lowerHalf = (value - TWO_TO_63).toLong()
+        return lowerHalf xor Long.MIN_VALUE
+    }
+}
