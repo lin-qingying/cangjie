@@ -14,8 +14,10 @@ import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.codegen.api.ChirCodegenInput
 import org.cangnova.cangjie.codegen.api.CodegenOptions
+import org.cangnova.cangjie.codegen.diagnostics.CodegenLoweringException
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.assertThrows
 
 class GlobalAndRuntimeMappingIntegrationTest {
     @Test
@@ -131,5 +133,39 @@ class GlobalAndRuntimeMappingIntegrationTest {
         assertTrue(ir.contains("@g_ext = external global i32"), ir)
         assertTrue(ir.contains("@cangjie.package.init = internal constant ptr @init"), ir)
         assertTrue(ir.contains("@cangjie.package.literal_init = internal constant ptr @literal_init"), ir)
+    }
+
+    @Test
+    fun `rejects package runtime entry mapping with missing target function`() {
+        val error = assertThrows<CodegenLoweringException> {
+            DefaultChirToLlvmCodeGenerator().generate(
+                ChirCodegenInput(
+                    chirPackage = ChirPackage(
+                        semanticId = ChirSemanticId("pkg:missing-entry"),
+                        name = "missing-entry",
+                        modules = listOf(
+                            ChirModule(
+                                semanticId = ChirSemanticId("mod:missing-entry"),
+                                name = "missing-entry",
+                                declarations = emptyList(),
+                            ),
+                        ),
+                        packageInitFunctionId = ChirSemanticId("fn:missing-init"),
+                    ),
+                    options = CodegenOptions(
+                        enabled = true,
+                        validateChirBeforeLowering = false,
+                        verifyBeforeWrite = true,
+                        emitBitcode = false,
+                        emitComments = false,
+                        emitModuleHeader = false,
+                        emitRuntimeDeclarations = false,
+                    ),
+                ),
+            )
+        }
+
+        assertTrue(error.message?.contains("cangjie.package.init") == true, error.message)
+        assertTrue(error.message?.contains("fn:missing-init") == true, error.message)
     }
 }

@@ -2,6 +2,7 @@ package org.cangnova.cangjie.codegen.pipeline
 
 import org.cangnova.cangjie.chir.core.checker.ChirValidationReportFormatter
 import org.cangnova.cangjie.chir.core.checker.DefaultChirValidator
+import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirModule
 import org.cangnova.cangjie.codegen.api.ChirCodegenInput
 import org.cangnova.cangjie.codegen.api.ChirCodegenOutput
@@ -32,12 +33,19 @@ class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
             }
         }
         val backend = backendFactory.createAndInitialize(input.options)
-        val partitionedModules = when (input.options.partitionMode) {
-            ModulePartitionMode.SINGLE_MODULE -> listOf(mergeModules(input.chirPackage.modules))
-            ModulePartitionMode.PER_CHIR_MODULE -> input.chirPackage.modules
+        val plannedModules = when (input.options.partitionMode) {
+            ModulePartitionMode.SINGLE_MODULE -> listOf(ModuleLoweringInput(mergeModules(input.chirPackage.modules), emitPackageDefinitions = true))
+            ModulePartitionMode.PER_CHIR_MODULE -> buildList {
+                if (input.hasPackageDefinitions()) {
+                    add(ModuleLoweringInput(input.packageDefinitionsModule(), emitPackageDefinitions = true))
+                }
+                input.chirPackage.modules.forEach { module ->
+                    add(ModuleLoweringInput(module, emitPackageDefinitions = false))
+                }
+            }
         }
         val loweringResult = loweringPipeline.run(
-            initialPlan = ChirLoweringPlan(modules = partitionedModules),
+            initialPlan = ChirLoweringPlan(modules = plannedModules.map { it.module }),
             options = input.options,
         )
 
@@ -46,7 +54,16 @@ class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
             options = input.options,
         )
 
-        val modules = loweringResult.plan.modules.map { CGModule(context, it, backendApi = backend).lower() }
+        val plannedById = plannedModules.associateBy { it.module.semanticId }
+        val modules = loweringResult.plan.modules.map { module ->
+            val planned = plannedById[module.semanticId]
+            CGModule(
+                context = context,
+                module = module,
+                backendApi = backend,
+                emitPackageDefinitions = planned?.emitPackageDefinitions ?: true,
+            ).lower()
+        }
         val loweringTrace = if (input.options.emitLoweringTrace) {
             loweringResult.traceLines + "backend=${backend.id}"
         } else {
@@ -57,9 +74,29 @@ class DefaultChirToLlvmCodeGenerator : ChirToLlvmCodeGenerator {
 
     private fun mergeModules(modules: List<ChirModule>): ChirModule {
         return ChirModule(
-            semanticId = org.cangnova.cangjie.chir.core.identity.ChirSemanticId("merged:${modules.joinToString("+") { it.semanticId.value }}"),
+            semanticId = ChirSemanticId("merged:${modules.joinToString("+") { it.semanticId.value }}"),
             name = "merged",
             declarations = modules.flatMap { it.declarations },
         )
     }
+
+    private fun ChirCodegenInput.hasPackageDefinitions(): Boolean {
+        return chirPackage.members.globalFunctions.isNotEmpty() ||
+            chirPackage.members.globalVariables.isNotEmpty() ||
+            chirPackage.packageInitFunctionId != null ||
+            chirPackage.packageLiteralInitFunctionId != null
+    }
+
+    private fun ChirCodegenInput.packageDefinitionsModule(): ChirModule {
+        return ChirModule(
+            semanticId = ChirSemanticId("pkg-module:${chirPackage.semanticId.value}"),
+            name = "package",
+            declarations = emptyList(),
+        )
+    }
+
+    private data class ModuleLoweringInput(
+        val module: ChirModule,
+        val emitPackageDefinitions: Boolean,
+    )
 }

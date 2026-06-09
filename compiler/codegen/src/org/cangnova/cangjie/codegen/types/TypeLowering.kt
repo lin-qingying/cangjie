@@ -18,7 +18,14 @@ import org.cangnova.cangjie.chir.core.type.ChirTupleType
 import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirUnresolvedTypeRef
 import org.cangnova.cangjie.chir.core.type.ChirVArrayType
+import org.cangnova.cangjie.codegen.diagnostics.CodegenLoweringException
 
+/**
+ * CHIR 类型到 LLVM IR 类型的唯一 lowering 入口。
+ *
+ * 后端只接受已经解析完成的 CHIR 类型；未解析类型必须在 CHIR 校验阶段被拦截，
+ * 不能在这里生成看似可用的占位 LLVM 类型。
+ */
 interface TypeLowering {
     fun lower(type: ChirTypeRef): String
 }
@@ -27,8 +34,10 @@ class DefaultTypeLowering : TypeLowering {
     override fun lower(type: ChirTypeRef): String {
         return when (type) {
             is ChirResolvedTypeRef -> lowerResolved(type)
-            is ChirUnresolvedTypeRef -> "%${type.symbol}"
-            else -> "ptr"
+            is ChirUnresolvedTypeRef -> throw CodegenLoweringException(
+                "cannot lower unresolved CHIR type '${type.symbol}' to LLVM IR",
+                null,
+            )
         }
     }
 
@@ -52,24 +61,27 @@ class DefaultTypeLowering : TypeLowering {
             ChirPrimitiveType.RUNE -> "i32"
             ChirPrimitiveType.NOTHING -> "void"
             ChirPrimitiveType.VOID -> "void"
-            is ChirNamedType -> "%${resolved.renderName}"
+            is ChirNamedType -> llvmNominalTypeName(resolved)
             is ChirTupleType -> "{ ${resolved.elementTypes.joinToString(", ") { lower(it) }} }"
             is ChirFunctionType -> "ptr"
-            is ChirStructType -> "%struct.${resolved.name}"
-            is ChirClassType -> "%class.${resolved.name}"
-            is ChirEnumType -> "%enum.${resolved.name}"
-            is ChirRawArrayType -> "[${resolved.size ?: 0} x ${lower(resolved.elementType)}]"
-            is ChirVArrayType -> "%varray.${resolved.rank}.${sanitize(resolved.elementType.renderName)}"
+            is ChirStructType -> llvmNominalTypeName(resolved)
+            is ChirClassType -> llvmNominalTypeName(resolved)
+            is ChirEnumType -> llvmNominalTypeName(resolved)
+            is ChirRawArrayType -> {
+                val size = resolved.size ?: throw CodegenLoweringException(
+                    "raw array type '${resolved.renderName}' must carry a fixed LLVM array size",
+                    null,
+                )
+                "[$size x ${lower(resolved.elementType)}]"
+            }
+            is ChirVArrayType -> llvmNominalTypeName(resolved)
             is ChirCPointerType -> "ptr"
             is ChirCStringType -> "ptr"
-            is ChirGenericType -> "%generic.${resolved.identifier}"
+            is ChirGenericType -> llvmNominalTypeName(resolved)
             is ChirRefType -> "ptr"
-            is ChirBoxType -> "%box.${sanitize(resolved.boxedType.renderName)}"
-            is ChirThisType -> "%this.${sanitize(resolved.ownerTypeName)}"
-            else -> "%${sanitize(resolved.renderName)}"
+            is ChirBoxType -> llvmNominalTypeName(resolved)
+            is ChirThisType -> llvmNominalTypeName(resolved)
         }
     }
-
-    private fun sanitize(raw: String): String = raw.replace(':', '_').replace('<', '_').replace('>', '_').replace(',', '_')
 }
 

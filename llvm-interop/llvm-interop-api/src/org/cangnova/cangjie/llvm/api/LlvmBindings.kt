@@ -59,7 +59,14 @@ data class LlvmVerificationResult(
  *
  * 由不同后端实现（如 JNI）提供具体能力。
  */
-internal interface LlvmBindings {
+interface LlvmBindings {
+    fun targetInitializeAll() = unsupportedUnit()
+    fun targetDefaultTriple(): String = unsupported()
+    fun targetCreateMachine(options: LlvmTargetMachineOptions): LlvmTargetMachineRef = unsupported()
+    fun targetDisposeMachine(machine: LlvmTargetMachineRef) = unsupportedUnit()
+    fun targetMachineEmitObjectFile(machine: LlvmTargetMachineRef, module: LlvmModuleRef, outputPath: String) = unsupportedUnit()
+    fun targetMachineEmitObjectBytes(machine: LlvmTargetMachineRef, module: LlvmModuleRef): ByteArray = unsupported()
+
     fun contextCreate(): LlvmContextRef = unsupported()
     fun contextDispose(context: LlvmContextRef) = unsupportedUnit()
 
@@ -69,8 +76,14 @@ internal interface LlvmBindings {
     fun moduleSetDataLayout(module: LlvmModuleRef, dataLayout: String) = unsupportedUnit()
     fun moduleAddFunction(module: LlvmModuleRef, name: String, functionType: LlvmTypeRef): LlvmValueRef = unsupported()
     fun moduleAddGlobal(module: LlvmModuleRef, type: LlvmTypeRef, name: String): LlvmValueRef = unsupported()
+    fun moduleParseAssemblyInContext(name: String, assembly: String, context: LlvmContextRef): LlvmModuleRef = unsupported()
     fun moduleToString(module: LlvmModuleRef): String = unsupported()
     fun moduleVerify(module: LlvmModuleRef): LlvmVerificationResult = unsupported()
+    fun moduleWriteBitcodeToMemoryBuffer(module: LlvmModuleRef): ByteArray = unsupported()
+    fun moduleWriteBitcodeToFile(module: LlvmModuleRef, outputPath: String): Int = unsupported()
+    fun moduleRunPasses(module: LlvmModuleRef, passPipeline: String, targetMachine: LlvmTargetMachineRef) = unsupportedUnit()
+    fun functionAppendBasicBlock(function: LlvmValueRef, name: String): LlvmBasicBlockRef = unsupported()
+    fun functionVerify(function: LlvmValueRef): LlvmVerificationResult = unsupported()
 
     fun contextIntType(context: LlvmContextRef, bits: Int): LlvmTypeRef = unsupported()
     fun contextFloatType(context: LlvmContextRef): LlvmTypeRef = unsupported()
@@ -86,6 +99,11 @@ internal interface LlvmBindings {
     fun contextNamedStructType(context: LlvmContextRef, name: String): LlvmTypeRef = unsupported()
     fun structSetBody(type: LlvmTypeRef, elementTypes: List<LlvmTypeRef>, isPacked: Boolean) = unsupportedUnit()
     fun contextArrayType(elementType: LlvmTypeRef, size: Int): LlvmTypeRef = unsupported()
+    fun constInt(type: LlvmTypeRef, value: Long, signExtend: Boolean): LlvmValueRef = unsupported()
+    fun constReal(type: LlvmTypeRef, value: Double): LlvmValueRef = unsupported()
+    fun constNull(type: LlvmTypeRef): LlvmValueRef = unsupported()
+    fun valueGetName(value: LlvmValueRef): String = unsupported()
+    fun valueGetType(value: LlvmValueRef): LlvmTypeRef = unsupported()
 
     fun builderCreateInContext(context: LlvmContextRef): LlvmBuilderRef = unsupported()
     fun builderDispose(builder: LlvmBuilderRef) = unsupportedUnit()
@@ -210,6 +228,15 @@ internal interface LlvmBindings {
 internal object LlvmBindingRegistry {
     @Volatile
     var bindings: LlvmBindings = object : LlvmBindings {}
+}
+
+/**
+ * 安装当前进程使用的 LLVM 绑定实现。
+ *
+ * 生产后端应在完成原生库加载和版本校验后调用该入口。
+ */
+fun installLlvmBindings(bindings: LlvmBindings) {
+    LlvmBindingRegistry.bindings = bindings
 }
 
 /**

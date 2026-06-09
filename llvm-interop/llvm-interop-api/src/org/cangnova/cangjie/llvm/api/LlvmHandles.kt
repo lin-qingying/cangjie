@@ -69,3 +69,13 @@ value class LlvmTargetMachineRef(val address: Long) {
 
     val isNull: Boolean get() = address == 0L
 }
+
+/** LLVM 模块 Pass 管线原生执行上下文句柄。 */
+@JvmInline
+value class LlvmPassManagerRef(val address: Long) {
+    companion object {
+        val NULL = LlvmPassManagerRef(0L)
+    }
+
+    val isNull: Boolean get() = address == 0L
+}

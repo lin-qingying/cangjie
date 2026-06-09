@@ -15,11 +15,14 @@ import org.cangnova.cangjie.chir.core.declaration.ChirStructDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirTypeDeclaration
 import org.cangnova.cangjie.chir.core.declaration.ChirVariableDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirBinaryOperator
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
-import org.cangnova.cangjie.chir.core.expression.ChirOperationSets
+import org.cangnova.cangjie.chir.core.expression.ChirMemoryOperation
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirUnaryOperator
 import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.model.ChirPackage
 import org.cangnova.cangjie.chir.core.model.allDeclarations
@@ -134,11 +137,11 @@ class DefaultChirValidator : ChirValidator {
             block.expressions.forEach { expression ->
                 when (expression) {
                     is ChirBinaryExpression -> {
-                        val operator = expression.operator.lowercase()
+                        val operator = ChirBinaryOperator.parse(expression.operator)
                         validateTypeRef(expression.left.type, expression.left.semanticId, "binary.left", issues)
                         validateTypeRef(expression.right.type, expression.right.semanticId, "binary.right", issues)
                         validateTypeRef(expression.resultType, expression.semanticId, "binary.result", issues)
-                        if (operator !in ChirOperationSets.binaryOperators) {
+                        if (operator == null) {
                             issues += ChirValidationIssue(
                                 code = "UNSUPPORTED_BINARY_OPERATOR",
                                 severity = ChirValidationSeverity.ERROR,
@@ -156,10 +159,10 @@ class DefaultChirValidator : ChirValidator {
                         }
                     }
                     is ChirUnaryExpression -> {
-                        val operator = expression.operator.lowercase()
+                        val operator = ChirUnaryOperator.parse(expression.operator)
                         validateTypeRef(expression.operand.type, expression.operand.semanticId, "unary.operand", issues)
                         validateTypeRef(expression.resultType, expression.semanticId, "unary.result", issues)
-                        if (operator !in ChirOperationSets.unaryOperators) {
+                        if (operator == null) {
                             issues += ChirValidationIssue(
                                 code = "UNSUPPORTED_UNARY_OPERATOR",
                                 severity = ChirValidationSeverity.ERROR,
@@ -202,11 +205,11 @@ class DefaultChirValidator : ChirValidator {
                         }
                     }
                     is ChirMemoryExpression -> {
-                        val operation = expression.operation.lowercase()
+                        val operation = ChirMemoryOperation.parse(expression.operation)
                         validateTypeRef(expression.address.type, expression.address.semanticId, "memory.address", issues)
                         expression.value?.let { validateTypeRef(it.type, it.semanticId, "memory.value", issues) }
                         expression.resultType?.let { validateTypeRef(it, expression.semanticId, "memory.result", issues) }
-                        if (operation !in ChirOperationSets.memoryOperations) {
+                        if (operation == null) {
                             issues += ChirValidationIssue(
                                 code = "UNSUPPORTED_MEMORY_OPERATION",
                                 severity = ChirValidationSeverity.ERROR,
@@ -215,7 +218,7 @@ class DefaultChirValidator : ChirValidator {
                             )
                         }
                         when (operation) {
-                            "alloca" -> {
+                            ChirMemoryOperation.ALLOCA -> {
                                 if (expression.value != null) {
                                     issues += ChirValidationIssue(
                                         code = "MEMORY_ALLOCA_VALUE_PRESENT",
@@ -230,7 +233,7 @@ class DefaultChirValidator : ChirValidator {
                                     validatePointerAlloca(expression, issues)
                                 }
                             }
-                            "load" -> {
+                            ChirMemoryOperation.LOAD -> {
                                 val targetType = validateMemoryAddress(expression.address, expression, issues)
                                 if (expression.value != null) {
                                     issues += ChirValidationIssue(
@@ -256,7 +259,7 @@ class DefaultChirValidator : ChirValidator {
                                     )
                                 }
                             }
-                            "store" -> {
+                            ChirMemoryOperation.STORE -> {
                                 val targetType = validateMemoryAddress(expression.address, expression, issues)
                                 if (expression.value == null) {
                                     issues += ChirValidationIssue(
@@ -283,15 +286,18 @@ class DefaultChirValidator : ChirValidator {
                                     )
                                 }
                             }
+                            ChirMemoryOperation.GET_ELEMENT_PTR,
+                            ChirMemoryOperation.GET_ELEMENT_PTR_INBOUNDS,
+                            null -> Unit
                         }
                     }
                     is ChirOtherExpression -> {
-                        val operation = expression.operation.lowercase()
+                        val operation = ChirOtherOperation.parse(expression.operation)
                         expression.operands.forEachIndexed { index, operand ->
                             validateTypeRef(operand.type, operand.semanticId, "other.operand#$index", issues)
                         }
                         expression.resultType?.let { validateTypeRef(it, expression.semanticId, "other.result", issues) }
-                        if (operation !in ChirOperationSets.otherOperations) {
+                        if (operation == null) {
                             issues += ChirValidationIssue(
                                 code = "UNSUPPORTED_OTHER_OPERATION",
                                 severity = ChirValidationSeverity.ERROR,

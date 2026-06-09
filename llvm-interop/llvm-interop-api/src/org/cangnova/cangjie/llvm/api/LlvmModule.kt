@@ -30,6 +30,21 @@ class LlvmModule internal constructor(
         return bindings.moduleAddGlobal(ref, type, name)
     }
 
+    fun appendBasicBlock(function: LlvmValueRef, name: String): LlvmBasicBlockRef {
+        ensureOpen()
+        return bindings.functionAppendBasicBlock(function, name)
+    }
+
+    fun valueName(value: LlvmValueRef): String {
+        ensureOpen()
+        return bindings.valueGetName(value)
+    }
+
+    fun valueType(value: LlvmValueRef): LlvmTypeRef {
+        ensureOpen()
+        return bindings.valueGetType(value)
+    }
+
     fun irText(): String {
         ensureOpen()
         return bindings.moduleToString(ref)
@@ -41,6 +56,24 @@ class LlvmModule internal constructor(
         if (!verification.ok) {
             throw LlvmVerificationException(verification.message ?: "module verification failed")
         }
+    }
+
+    fun verifyFunction(function: LlvmValueRef) {
+        ensureOpen()
+        val verification = bindings.functionVerify(function)
+        if (!verification.ok) {
+            throw LlvmVerificationException(verification.message ?: "function verification failed")
+        }
+    }
+
+    fun bitcodeBytes(): ByteArray {
+        ensureOpen()
+        return bindings.moduleWriteBitcodeToMemoryBuffer(ref)
+    }
+
+    fun writeBitcodeToFile(outputPath: String): Int {
+        ensureOpen()
+        return bindings.moduleWriteBitcodeToFile(ref, outputPath)
     }
 
     override fun close() {

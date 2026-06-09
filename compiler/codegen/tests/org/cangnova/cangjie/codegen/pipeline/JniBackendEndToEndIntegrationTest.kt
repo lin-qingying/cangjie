@@ -12,11 +12,15 @@ import org.cangnova.cangjie.chir.core.value.ChirConstantValue
 import org.cangnova.cangjie.codegen.api.ChirCodegenInput
 import org.cangnova.cangjie.codegen.api.CodegenOptions
 import org.cangnova.cangjie.codegen.api.LlvmBackendKind
+import org.cangnova.cangjie.codegen.backend.JniLlvmBackend
+import org.cangnova.cangjie.codegen.backend.LlvmBackendEmissionOptions
+import org.cangnova.cangjie.llvm.api.LlvmTargetMachines
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import java.nio.file.Files
 
 class JniBackendEndToEndIntegrationTest {
     companion object {
@@ -116,6 +120,68 @@ class JniBackendEndToEndIntegrationTest {
         assertEquals(0x43.toByte(), bitcode[1])
         assertEquals(0xC0.toByte(), bitcode[2])
         assertEquals(0xDE.toByte(), bitcode[3])
+    }
+
+    @Test
+    fun `jni backend emits object file from generated chir llvm ir`() {
+        val output = DefaultChirToLlvmCodeGenerator().generate(
+            ChirCodegenInput(
+                chirPackage = simpleReturnPackage(),
+                options = CodegenOptions(
+                    enabled = true,
+                    llvmBackendKind = LlvmBackendKind.JNI,
+                    failOnUnavailable = true,
+                    emitBitcode = false,
+                    emitComments = false,
+                    emitModuleHeader = false,
+                    emitRuntimeDeclarations = false,
+                ),
+            ),
+        )
+
+        val backend = JniLlvmBackend()
+        backend.initialize()
+        LlvmTargetMachines.initializeAll()
+        val targetTriple = LlvmTargetMachines.defaultTriple()
+        val outputPath = Files.createTempFile("cangjie-codegen-", ".o")
+        val module = output.modules.single()
+        backend.emitObjectFile(
+            module.name,
+            module.ir,
+            LlvmBackendEmissionOptions(targetTriple = targetTriple),
+            outputPath.toString(),
+        )
+
+        assertTrue(Files.exists(outputPath))
+        assertTrue(Files.size(outputPath) > 0)
+    }
+
+    @Test
+    fun `jni codegen pipeline emits object code bytes`() {
+        JniLlvmBackend().initialize()
+        LlvmTargetMachines.initializeAll()
+        val targetTriple = LlvmTargetMachines.defaultTriple()
+
+        val output = DefaultChirToLlvmCodeGenerator().generate(
+            ChirCodegenInput(
+                chirPackage = simpleReturnPackage(),
+                options = CodegenOptions(
+                    enabled = true,
+                    llvmBackendKind = LlvmBackendKind.JNI,
+                    failOnUnavailable = true,
+                    emitBitcode = false,
+                    emitObjectCode = true,
+                    optimizeLlvmModule = true,
+                    targetTriple = targetTriple,
+                    emitComments = false,
+                    emitModuleHeader = false,
+                    emitRuntimeDeclarations = false,
+                ),
+            ),
+        )
+
+        val objectCode = output.modules.single().objectCode ?: error("missing object code bytes")
+        assertTrue(objectCode.isNotEmpty())
     }
 
     private fun simpleReturnPackage(): ChirPackage {

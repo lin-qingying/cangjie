@@ -1,5 +1,11 @@
 package org.cangnova.cangjie.llvm.jni
 
+import org.cangnova.cangjie.llvm.api.LlvmContext
+import org.cangnova.cangjie.llvm.api.LlvmCodeGenOptimizationLevel
+import org.cangnova.cangjie.llvm.api.LlvmPassPipeline
+import org.cangnova.cangjie.llvm.api.LlvmPassManagers
+import org.cangnova.cangjie.llvm.api.LlvmTargetMachineOptions
+import org.cangnova.cangjie.llvm.api.LlvmTargetMachines
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotEquals
@@ -41,6 +47,93 @@ class LlvmNativeIntegrationTest {
                 "missing $LIB_PATH_FLAG or $NATIVE_HOME_FLAG or -D$NATIVE_HOME_PROP",
             )
             System.setProperty(NATIVE_HOME_PROP, nativeHome)
+        }
+    }
+
+    @Test
+    fun `can build function body through public llvm api binding`() {
+        assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
+        LlvmNative.installBindings()
+
+        LlvmContext().use { context ->
+            val module = context.createModule("api_binding_module")
+            val int32Type = context.int32Type
+            val functionType = context.functionType(int32Type, emptyList())
+            val function = module.addFunction("main", functionType)
+            val entry = module.appendBasicBlock(function, "entry")
+
+            context.createBuilder().use { builder ->
+                builder.positionAtEnd(entry)
+                builder.buildRet(context.constInt(int32Type, 42))
+            }
+
+            module.verifyFunction(function)
+            module.verify()
+            val ir = module.irText()
+            assertTrue(ir.contains("define i32 @main()"), ir)
+            assertTrue(ir.contains("ret i32 42"), ir)
+            assertEquals("main", module.valueName(function))
+
+            val bitcode = module.bitcodeBytes()
+            assertFalse(bitcode.isEmpty())
+        }
+    }
+
+    @Test
+    fun `can emit object file through public target machine binding`() {
+        assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
+        LlvmNative.installBindings()
+        LlvmTargetMachines.initializeAll()
+        val targetTriple = LlvmTargetMachines.defaultTriple()
+        assertTrue(targetTriple.isNotBlank())
+
+        LlvmContext().use { context ->
+            val module = context.createModule("object_emission_module")
+            module.setTargetTriple(targetTriple)
+            val int32Type = context.int32Type
+            val function = module.addFunction("main", context.functionType(int32Type, emptyList()))
+            val entry = module.appendBasicBlock(function, "entry")
+            context.createBuilder().use { builder ->
+                builder.positionAtEnd(entry)
+                builder.buildRet(context.constInt(int32Type, 42))
+            }
+            module.verify()
+
+            val output = Files.createTempFile("llvm-jni-object-", ".o")
+            LlvmTargetMachines.create(LlvmTargetMachineOptions(targetTriple = targetTriple)).use { targetMachine ->
+                targetMachine.emitObjectFile(module, output.toString())
+                val objectBytes = targetMachine.emitObjectBytes(module)
+                assertTrue(objectBytes.isNotEmpty())
+            }
+
+            assertTrue(Files.exists(output))
+            assertTrue(Files.size(output) > 0)
+        }
+    }
+
+    @Test
+    fun `can run module pass pipeline through public llvm api binding`() {
+        assertTrue(LlvmNative.isAvailable, LlvmNative.loadDiagnostics)
+        LlvmNative.installBindings()
+
+        LlvmContext().use { context ->
+            val module = context.createModule("pass_pipeline_module")
+            val int32Type = context.int32Type
+            val function = module.addFunction("main", context.functionType(int32Type, emptyList()))
+            val entry = module.appendBasicBlock(function, "entry")
+            context.createBuilder().use { builder ->
+                builder.positionAtEnd(entry)
+                builder.buildRet(context.constInt(int32Type, 42))
+            }
+
+            module.verify()
+            LlvmPassManagers.createModulePassManager(
+                LlvmPassPipeline.defaultOptimization(LlvmCodeGenOptimizationLevel.LESS),
+            ).use { passManager ->
+                passManager.run(module)
+            }
+            module.verify()
+            assertTrue(module.bitcodeBytes().isNotEmpty())
         }
     }
 

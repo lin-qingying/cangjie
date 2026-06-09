@@ -38,10 +38,16 @@ class LlvmApiContractTest {
                 module.setDataLayout("e-m:e-p:64:64")
                 val f = module.addFunction("f", context.functionType(context.int32Type, emptyList()))
                 val g = module.addGlobal("g", context.int32Type)
+                val entry = module.appendBasicBlock(f, "entry")
                 assertTrue(!f.isNull)
                 assertTrue(!g.isNull)
+                assertTrue(!entry.isNull)
                 assertEquals("; fake-ir", module.irText())
                 module.verify()
+                module.verifyFunction(f)
+                assertEquals("f", module.valueName(f))
+                assertEquals(context.int32Type, module.valueType(f))
+                assertEquals(byteArrayOf(0x42, 0x43).toList(), module.bitcodeBytes().toList())
             }
         }
 
@@ -49,8 +55,11 @@ class LlvmApiContractTest {
         assertTrue(fake.events.contains("moduleSetDataLayout:e-m:e-p:64:64"))
         assertTrue(fake.events.any { it.startsWith("moduleAddFunction:f") })
         assertTrue(fake.events.any { it.startsWith("moduleAddGlobal:g") })
+        assertTrue(fake.events.contains("functionAppendBasicBlock:entry"))
         assertTrue(fake.events.contains("moduleToString"))
         assertTrue(fake.events.contains("moduleVerify"))
+        assertTrue(fake.events.contains("functionVerify"))
+        assertTrue(fake.events.contains("moduleWriteBitcodeToMemoryBuffer"))
     }
 
     @Test
@@ -79,8 +88,10 @@ class LlvmApiContractTest {
                 val builder = context.createBuilder()
                 val lhs = LlvmValueRef(11)
                 val rhs = LlvmValueRef(12)
+                val constant = context.constInt(context.int32Type, 42)
                 builder.buildAdd(lhs, rhs, "sum")
                 builder.buildICmp(LlvmIntPredicate.EQ, lhs, rhs, "cmp")
+                builder.buildRet(constant)
                 builder.buildRet(lhs)
                 builder.close()
             }
@@ -89,6 +100,47 @@ class LlvmApiContractTest {
         assertTrue(fake.events.contains("builderBuildAdd:sum"))
         assertTrue(fake.events.contains("builderBuildICmp:EQ:cmp"))
         assertTrue(fake.events.contains("builderBuildRet"))
+    }
+
+    @Test
+    fun `target machine delegates object file emission to bindings`() {
+        val fake = FakeLlvmBindings()
+
+        withLlvmBindingsForTest(fake) {
+            LlvmTargetMachines.initializeAll()
+            assertEquals("x86_64-test", LlvmTargetMachines.defaultTriple())
+            LlvmContext().use { context ->
+                val module = context.createModule("target")
+                LlvmTargetMachines.create(LlvmTargetMachineOptions(targetTriple = "x86_64-test")).use { targetMachine ->
+                    targetMachine.emitObjectFile(module, "target.o")
+                    assertEquals(byteArrayOf(0x7F, 0x45).toList(), targetMachine.emitObjectBytes(module).toList())
+                }
+            }
+        }
+
+        assertTrue(fake.events.contains("targetInitializeAll"))
+        assertTrue(fake.events.contains("targetCreateMachine:x86_64-test"))
+        assertTrue(fake.events.contains("targetMachineEmitObjectFile:target.o"))
+        assertTrue(fake.events.contains("targetMachineEmitObjectBytes"))
+        assertTrue(fake.events.contains("targetDisposeMachine"))
+    }
+
+    @Test
+    fun `module pass manager delegates pass pipeline to bindings`() {
+        val fake = FakeLlvmBindings()
+
+        withLlvmBindingsForTest(fake) {
+            LlvmContext().use { context ->
+                val module = context.createModule("passes")
+                LlvmPassManagers.createModulePassManager(
+                    LlvmPassPipeline.defaultOptimization(LlvmCodeGenOptimizationLevel.DEFAULT),
+                ).use { passManager ->
+                    passManager.run(module)
+                }
+            }
+        }
+
+        assertTrue(fake.events.contains("moduleRunPasses:default<O2>:0"))
     }
 
     @Test
@@ -108,6 +160,30 @@ private class FakeLlvmBindings(
 ) : LlvmBindings {
     val events = mutableListOf<String>()
     private val ids = AtomicLong(1L)
+
+    override fun targetInitializeAll() {
+        events += "targetInitializeAll"
+    }
+
+    override fun targetDefaultTriple(): String = "x86_64-test"
+
+    override fun targetCreateMachine(options: LlvmTargetMachineOptions): LlvmTargetMachineRef {
+        events += "targetCreateMachine:${options.targetTriple}"
+        return LlvmTargetMachineRef(ids.getAndIncrement())
+    }
+
+    override fun targetDisposeMachine(machine: LlvmTargetMachineRef) {
+        events += "targetDisposeMachine"
+    }
+
+    override fun targetMachineEmitObjectFile(machine: LlvmTargetMachineRef, module: LlvmModuleRef, outputPath: String) {
+        events += "targetMachineEmitObjectFile:$outputPath"
+    }
+
+    override fun targetMachineEmitObjectBytes(machine: LlvmTargetMachineRef, module: LlvmModuleRef): ByteArray {
+        events += "targetMachineEmitObjectBytes"
+        return byteArrayOf(0x7F, 0x45)
+    }
 
     override fun contextCreate(): LlvmContextRef {
         events += "contextCreate"
@@ -145,6 +221,11 @@ private class FakeLlvmBindings(
         return LlvmValueRef(ids.getAndIncrement())
     }
 
+    override fun functionAppendBasicBlock(function: LlvmValueRef, name: String): LlvmBasicBlockRef {
+        events += "functionAppendBasicBlock:$name"
+        return LlvmBasicBlockRef(ids.getAndIncrement())
+    }
+
     override fun moduleToString(module: LlvmModuleRef): String {
         events += "moduleToString"
         return "; fake-ir"
@@ -152,6 +233,20 @@ private class FakeLlvmBindings(
 
     override fun moduleVerify(module: LlvmModuleRef): LlvmVerificationResult {
         events += "moduleVerify"
+        return verificationResult
+    }
+
+    override fun moduleWriteBitcodeToMemoryBuffer(module: LlvmModuleRef): ByteArray {
+        events += "moduleWriteBitcodeToMemoryBuffer"
+        return byteArrayOf(0x42, 0x43)
+    }
+
+    override fun moduleRunPasses(module: LlvmModuleRef, passPipeline: String, targetMachine: LlvmTargetMachineRef) {
+        events += "moduleRunPasses:$passPipeline:${targetMachine.address}"
+    }
+
+    override fun functionVerify(function: LlvmValueRef): LlvmVerificationResult {
+        events += "functionVerify"
         return verificationResult
     }
 
@@ -170,6 +265,9 @@ private class FakeLlvmBindings(
     override fun contextNamedStructType(context: LlvmContextRef, name: String): LlvmTypeRef = LlvmTypeRef(3002)
     override fun structSetBody(type: LlvmTypeRef, elementTypes: List<LlvmTypeRef>, isPacked: Boolean) = Unit
     override fun contextArrayType(elementType: LlvmTypeRef, size: Int): LlvmTypeRef = LlvmTypeRef(3003)
+    override fun constInt(type: LlvmTypeRef, value: Long, signExtend: Boolean): LlvmValueRef = LlvmValueRef(value)
+    override fun valueGetName(value: LlvmValueRef): String = "f"
+    override fun valueGetType(value: LlvmValueRef): LlvmTypeRef = LlvmTypeRef(1032)
 
     override fun builderCreateInContext(context: LlvmContextRef): LlvmBuilderRef {
         events += "builderCreate"

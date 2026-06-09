@@ -18,6 +18,7 @@ import org.cangnova.cangjie.chir.core.model.ChirPackage
 import org.cangnova.cangjie.chir.core.model.ChirPackageMembers
 import org.cangnova.cangjie.chir.core.type.ChirFunctionType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType.BOOL
+import org.cangnova.cangjie.chir.core.type.ChirCPointerType
 import org.cangnova.cangjie.chir.core.type.ChirPrimitiveType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
 import org.cangnova.cangjie.chir.core.value.ChirConstantValue
@@ -338,7 +339,7 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
 
     private fun buildThrowUnwindFixturePackage(packageName: String, moduleName: String, functionName: String): ChirPackage {
         val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
-        val ptrType = ChirResolvedTypeRef(ChirPrimitiveType.INT64)
+        val ptrType = ChirResolvedTypeRef(ChirCPointerType(ChirResolvedTypeRef(ChirPrimitiveType.INT8)))
         val unwindBlock = ChirSemanticId("block:unwind")
         val function = DefaultChirFunctionDeclaration(
             semanticId = ChirSemanticId("fn:$functionName"),
@@ -355,7 +356,7 @@ abstract class AbstractCodegenParityTestCase : TestCase() {
                         exceptionValue = ChirConstantValue(
                             semanticId = ChirSemanticId("const:exc"),
                             type = ptrType,
-                            literal = "0",
+                            literal = "null",
                         ),
                         unwindTargetBlockId = unwindBlock,
                     ),

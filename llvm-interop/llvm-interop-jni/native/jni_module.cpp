@@ -81,6 +81,21 @@ extern "C" JNIEXPORT jlong JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative
     );
 }
 
+extern "C" JNIEXPORT jlong JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative_functionAppendBasicBlock(
+    JNIEnv* env,
+    jclass,
+    jlong function,
+    jstring name
+) {
+    JniUtfChars block_name(env, name);
+    return ptr_to_jlong(
+        LLVMAppendBasicBlock(
+            jlong_to_ptr<LLVMOpaqueValue>(function),
+            block_name.c_str()
+        )
+    );
+}
+
 extern "C" JNIEXPORT jlong JNICALL Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleParseAssemblyInContext(
     JNIEnv* env,
     jclass,
