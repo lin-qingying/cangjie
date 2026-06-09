@@ -6,6 +6,7 @@ import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
+import org.cangnova.cangjie.chir.core.controlflow.ChirTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirThrowTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirUnwindTerminator
 import org.cangnova.cangjie.chir.core.declaration.ChirFunctionDeclaration
@@ -63,7 +64,10 @@ class CGFunction(
             is ChirConstantValue -> normalizeConstant(value.literal, lowerType(value.type))
             is ChirLocalValue -> "%${sanitizeIdentifier(value.name, "local")}"
             is ChirParameterValue -> {
-                val paramName = parameterNameById[value.semanticId] ?: sanitizeIdentifier(value.name, "param")
+                val paramName = parameterNameById[value.semanticId] ?: throw CodegenLoweringException(
+                    "parameter value ${value.semanticId.value} is not declared in function ${declaration.name}",
+                    value.semanticId,
+                )
                 "%$paramName"
             }
             is ChirGlobalValue -> "@${sanitizeIdentifier(value.name, "global")}"
@@ -96,7 +100,10 @@ class CGFunction(
     }
 
     internal fun blockLabel(blockId: ChirSemanticId): String {
-        return blockLabelById[blockId] ?: sanitizeIdentifier(blockId.value, "bb")
+        return blockLabelById[blockId] ?: throw CodegenLoweringException(
+            "function ${declaration.name} references missing block ${blockId.value}",
+            blockId,
+        )
     }
 
     internal fun resolveBlockLabel(reference: String): String? {
@@ -109,14 +116,18 @@ class CGFunction(
         return byName?.let(blockLabelById::get)
     }
 
-    private fun lowerTerminator(terminator: Any): List<String> {
+    private fun lowerTerminator(terminator: ChirTerminator): List<String> {
         return when (terminator) {
             is ChirReturnTerminator -> lowerReturnTerminator(terminator)
             is ChirBranchTerminator -> listOf("  br label %${blockLabel(terminator.targetBlockId)}")
-            is ChirConditionalBranchTerminator -> listOf(
-                "  br i1 ${renderValue(terminator.condition)}, label %${blockLabel(terminator.trueTargetBlockId)}, label %${blockLabel(terminator.falseTargetBlockId)}",
-            )
+            is ChirConditionalBranchTerminator -> {
+                requireSameType("i1", lowerType(terminator.condition.type), terminator.semanticId, "conditional branch condition")
+                listOf(
+                    "  br i1 ${renderValue(terminator.condition)}, label %${blockLabel(terminator.trueTargetBlockId)}, label %${blockLabel(terminator.falseTargetBlockId)}",
+                )
+            }
             is ChirThrowTerminator -> {
+                requireSameType("ptr", lowerType(terminator.exceptionValue.type), terminator.semanticId, "throw exception")
                 val lines = mutableListOf<String>()
                 lines += "  call void @cangjie.throw(ptr ${renderValue(terminator.exceptionValue)})"
                 val unwindTarget = terminator.unwindTargetBlockId
@@ -142,10 +153,15 @@ class CGFunction(
             return if (functionReturnType == "void") {
                 listOf("  ret void")
             } else {
-                listOf("  ret $functionReturnType ${defaultValueLiteral(functionReturnType)}")
+                throw CodegenLoweringException(
+                    "function ${declaration.name} returns $functionReturnType but return terminator has no value",
+                    terminator.semanticId,
+                )
             }
         }
-        return listOf("  ret ${lowerType(returnValue.type)} ${renderValue(returnValue)}")
+        val valueType = lowerType(returnValue.type)
+        requireSameType(functionReturnType, valueType, terminator.semanticId, "return value")
+        return listOf("  ret $valueType ${renderValue(returnValue)}")
     }
 
     private fun buildFunctionHeader(): String {
@@ -248,30 +264,63 @@ class CGFunction(
 
     private fun verifyControlFlow() {
         if (!context.options.verifyBeforeWrite) return
-        require(declaration.blocks.isNotEmpty()) { "function ${declaration.name} must contain at least one block" }
+        if (declaration.blocks.isEmpty()) {
+            throw CodegenLoweringException(
+                "function ${declaration.name} must contain at least one block",
+                declaration.semanticId,
+            )
+        }
 
         val blockIds = declaration.blocks.map { it.semanticId }.toSet()
-        require(declaration.entryBlockId in blockIds) {
-            "function ${declaration.name} entry block ${declaration.entryBlockId.value} is missing"
+        if (declaration.entryBlockId !in blockIds) {
+            throw CodegenLoweringException(
+                "function ${declaration.name} entry block ${declaration.entryBlockId.value} is missing",
+                declaration.entryBlockId,
+            )
         }
 
         declaration.blocks.forEach { block ->
             when (val terminator = block.terminator) {
-                is ChirBranchTerminator -> require(terminator.targetBlockId in blockIds) {
-                    "function ${declaration.name} has branch to missing block ${terminator.targetBlockId.value}"
+                is ChirBranchTerminator -> {
+                    if (terminator.targetBlockId !in blockIds) {
+                        throw CodegenLoweringException(
+                            "function ${declaration.name} has branch to missing block ${terminator.targetBlockId.value}",
+                            terminator.semanticId,
+                        )
+                    }
                 }
                 is ChirConditionalBranchTerminator -> {
-                    require(terminator.trueTargetBlockId in blockIds) {
-                        "function ${declaration.name} has cond-branch true target ${terminator.trueTargetBlockId.value} missing"
+                    if (terminator.trueTargetBlockId !in blockIds) {
+                        throw CodegenLoweringException(
+                            "function ${declaration.name} has cond-branch true target ${terminator.trueTargetBlockId.value} missing",
+                            terminator.semanticId,
+                        )
                     }
-                    require(terminator.falseTargetBlockId in blockIds) {
-                        "function ${declaration.name} has cond-branch false target ${terminator.falseTargetBlockId.value} missing"
+                    if (terminator.falseTargetBlockId !in blockIds) {
+                        throw CodegenLoweringException(
+                            "function ${declaration.name} has cond-branch false target ${terminator.falseTargetBlockId.value} missing",
+                            terminator.semanticId,
+                        )
                     }
                 }
-                is ChirUnwindTerminator -> require(terminator.targetBlockId in blockIds) {
-                    "function ${declaration.name} has unwind target ${terminator.targetBlockId.value} missing"
+                is ChirUnwindTerminator -> {
+                    if (terminator.targetBlockId !in blockIds) {
+                        throw CodegenLoweringException(
+                            "function ${declaration.name} has unwind target ${terminator.targetBlockId.value} missing",
+                            terminator.semanticId,
+                        )
+                    }
                 }
-                else -> Unit
+                is ChirThrowTerminator -> {
+                    val unwindTarget = terminator.unwindTargetBlockId
+                    if (unwindTarget != null && unwindTarget !in blockIds) {
+                        throw CodegenLoweringException(
+                            "function ${declaration.name} has throw unwind target ${unwindTarget.value} missing",
+                            terminator.semanticId,
+                        )
+                    }
+                }
+                is ChirReturnTerminator -> Unit
             }
         }
     }
@@ -285,14 +334,12 @@ class CGFunction(
         }
     }
 
-    private fun defaultValueLiteral(llvmType: String): String {
-        return when {
-            llvmType == "void" -> "void"
-            llvmType == "i1" -> "0"
-            llvmType.matches(Regex("i\\d+")) -> "0"
-            llvmType == "half" || llvmType == "float" || llvmType == "double" -> "0.0"
-            llvmType == "ptr" -> "null"
-            else -> "zeroinitializer"
+    private fun requireSameType(expected: String, actual: String, sourceId: ChirSemanticId, subject: String) {
+        if (expected != actual) {
+            throw CodegenLoweringException(
+                "$subject type mismatch: expected $expected, got $actual",
+                sourceId,
+            )
         }
     }
 

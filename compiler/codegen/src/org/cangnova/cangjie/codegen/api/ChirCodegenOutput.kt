@@ -13,8 +13,9 @@ data class ChirCodegenOutput(
 fun ChirCodegenOutput.writeLlvmArtifacts(
     outputDirectory: Path,
     emitBitcode: Boolean = true,
+    emitObjectCode: Boolean = false,
     writer: LlvmArtifactWriter = LlvmArtifactWriter(),
-): List<LlvmModuleOutputPath> = writer.write(this, outputDirectory, emitBitcode)
+): List<LlvmModuleOutputPath> = writer.write(this, outputDirectory, emitBitcode, emitObjectCode)
 
 fun interface ChirToLlvmCodeGenerator {
     fun generate(input: ChirCodegenInput): ChirCodegenOutput

@@ -10,6 +10,7 @@ data class LlvmModuleArtifact(
     val ir: String,
     val functions: List<LlvmFunctionArtifact>,
     val bitcode: ByteArray? = null,
+    val objectCode: ByteArray? = null,
 )
 
 data class LlvmValueRef(

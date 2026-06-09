@@ -1,5 +1,8 @@
 package org.cangnova.cangjie.llvm.jni
 
+import org.cangnova.cangjie.llvm.api.LlvmBackendUnavailableException
+import org.cangnova.cangjie.llvm.api.installLlvmBindings
+
 /**
  * LLVM JNI 原生入口。
  *
@@ -18,6 +21,30 @@ object LlvmNative {
         loadDiagnostics = loadResult.diagnostics
     }
 
+    /**
+     * 将 JNI 实现安装为当前进程的 LLVM API 绑定。
+     */
+    fun installBindings() {
+        if (!isAvailable) {
+            throw LlvmBackendUnavailableException("LLVM JNI native bindings are unavailable: $loadDiagnostics")
+        }
+        installLlvmBindings(JniLlvmBindings)
+    }
+
+    @JvmStatic external fun targetInitializeAll()
+    @JvmStatic external fun targetDefaultTriple(): String
+    @JvmStatic external fun targetCreateMachine(
+        targetTriple: String,
+        cpu: String,
+        features: String,
+        optimizationLevel: Int,
+        relocationMode: Int,
+        codeModel: Int,
+    ): Long
+    @JvmStatic external fun targetDisposeMachine(targetMachine: Long)
+    @JvmStatic external fun targetMachineEmitObjectFile(targetMachine: Long, module: Long, outputPath: String)
+    @JvmStatic external fun targetMachineEmitObjectBytes(targetMachine: Long, module: Long): ByteArray
+
     @JvmStatic external fun contextCreate(): Long
     @JvmStatic external fun contextDispose(context: Long)
 
@@ -27,9 +54,11 @@ object LlvmNative {
     @JvmStatic external fun moduleSetDataLayout(module: Long, dataLayout: String)
     @JvmStatic external fun moduleAddFunction(module: Long, name: String, functionType: Long): Long
     @JvmStatic external fun moduleAddGlobal(module: Long, type: Long, name: String): Long
+    @JvmStatic external fun functionAppendBasicBlock(function: Long, name: String): Long
     @JvmStatic external fun moduleParseAssemblyInContext(name: String, assembly: String, context: Long): Long
     @JvmStatic external fun modulePrintToString(module: Long): String
     @JvmStatic external fun moduleVerify(module: Long)
+    @JvmStatic external fun moduleRunPasses(module: Long, passPipeline: String, targetMachine: Long)
 
     @JvmStatic external fun intTypeInContext(context: Long, bits: Int): Long
     @JvmStatic external fun floatTypeInContext(context: Long): Long

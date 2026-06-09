@@ -21,11 +21,12 @@ class LlvmArtifactWriterTest {
                     ir = "define i32 @main() {\n  ret i32 0\n}",
                     functions = emptyList(),
                     bitcode = byteArrayOf(0x42, 0x43),
+                    objectCode = byteArrayOf(0x7F, 0x45),
                 ),
             ),
         )
 
-        val written = output.writeLlvmArtifacts(tempDir, emitBitcode = true)
+        val written = output.writeLlvmArtifacts(tempDir, emitBitcode = true, emitObjectCode = true)
 
         assertEquals(1, written.size)
         val paths = written.single()
@@ -35,6 +36,7 @@ class LlvmArtifactWriterTest {
             Files.readString(paths.llvmIrPath, StandardCharsets.UTF_8),
         )
         assertArrayEquals(byteArrayOf(0x42, 0x43), Files.readAllBytes(paths.bitcodePath))
+        assertArrayEquals(byteArrayOf(0x7F, 0x45), Files.readAllBytes(paths.objectPath))
     }
 
     @Test
@@ -72,6 +74,26 @@ class LlvmArtifactWriterTest {
 
         assertThrows<IllegalArgumentException> {
             output.writeLlvmArtifacts(tempDir, emitBitcode = true)
+        }
+    }
+
+    @Test
+    fun `fails when object code requested but module has none`() {
+        val tempDir = Files.createTempDirectory("llvm-writer")
+        val output = ChirCodegenOutput(
+            modules = listOf(
+                LlvmModuleArtifact(
+                    name = "missing-object",
+                    ir = "define void @f() { ret void }",
+                    functions = emptyList(),
+                    bitcode = null,
+                    objectCode = null,
+                ),
+            ),
+        )
+
+        assertThrows<IllegalArgumentException> {
+            output.writeLlvmArtifacts(tempDir, emitBitcode = false, emitObjectCode = true)
         }
     }
 }

@@ -10,6 +10,8 @@ add_library(cangjie_llvm_jni SHARED
     jni_builder.cpp
     jni_analysis.cpp
     jni_bitwriter.cpp
+    jni_target.cpp
+    jni_passes.cpp
     jni_registry.cpp
 )
 

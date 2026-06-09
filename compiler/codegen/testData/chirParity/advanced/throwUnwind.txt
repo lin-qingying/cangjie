@@ -1,6 +1,6 @@
 define i32 @main() {
 entry:
-  call void @cangjie.throw(ptr 0)
+  call void @cangjie.throw(ptr null)
   br label %unwind
 unwind:
   ret i32 0

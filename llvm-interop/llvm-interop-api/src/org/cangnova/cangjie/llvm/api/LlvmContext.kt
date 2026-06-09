@@ -5,9 +5,11 @@ package org.cangnova.cangjie.llvm.api
  *
  * 管理类型构造、模块/构建器创建及资源生命周期。
  */
-class LlvmContext internal constructor(
+class LlvmContext private constructor(
     private val bindings: LlvmBindings = LlvmBindingRegistry.bindings,
 ) : AutoCloseable {
+    constructor() : this(LlvmBindingRegistry.bindings)
+
     val ref: LlvmContextRef = bindings.contextCreate()
 
     private val ownedModules = mutableListOf<LlvmModule>()
@@ -56,9 +58,30 @@ class LlvmContext internal constructor(
         return bindings.contextArrayType(elementType, size)
     }
 
+    fun constInt(type: LlvmTypeRef, value: Long, signExtend: Boolean = false): LlvmValueRef {
+        ensureOpen()
+        return bindings.constInt(type, value, signExtend)
+    }
+
+    fun constReal(type: LlvmTypeRef, value: Double): LlvmValueRef {
+        ensureOpen()
+        return bindings.constReal(type, value)
+    }
+
+    fun constNull(type: LlvmTypeRef): LlvmValueRef {
+        ensureOpen()
+        return bindings.constNull(type)
+    }
+
     fun createModule(name: String): LlvmModule {
         ensureOpen()
         val moduleRef = bindings.moduleCreateInContext(name, ref)
+        return LlvmModule(moduleRef, this, bindings).also { ownedModules += it }
+    }
+
+    fun parseModule(name: String, assembly: String): LlvmModule {
+        ensureOpen()
+        val moduleRef = bindings.moduleParseAssemblyInContext(name, assembly, ref)
         return LlvmModule(moduleRef, this, bindings).also { ownedModules += it }
     }
 

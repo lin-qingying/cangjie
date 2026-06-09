@@ -2,15 +2,21 @@ package org.cangnova.cangjie.codegen.dispatcher
 
 import org.cangnova.cangjie.chir.core.attribute.ChirStringAttribute
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirBinaryOperator
+import org.cangnova.cangjie.chir.core.expression.ChirBinaryOperatorFamily
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
 import org.cangnova.cangjie.chir.core.expression.ChirExpression
 import org.cangnova.cangjie.chir.core.expression.ChirMemoryExpression
-import org.cangnova.cangjie.chir.core.expression.ChirOperationSets
+import org.cangnova.cangjie.chir.core.expression.ChirMemoryOperation
 import org.cangnova.cangjie.chir.core.expression.ChirOtherExpression
+import org.cangnova.cangjie.chir.core.expression.ChirOtherOperation
 import org.cangnova.cangjie.chir.core.expression.ChirUnaryExpression
+import org.cangnova.cangjie.chir.core.expression.ChirUnaryOperator
+import org.cangnova.cangjie.chir.core.identity.ChirSemanticId
 import org.cangnova.cangjie.chir.core.type.ChirCPointerType
 import org.cangnova.cangjie.chir.core.type.ChirRefType
 import org.cangnova.cangjie.chir.core.type.ChirResolvedTypeRef
+import org.cangnova.cangjie.chir.core.type.ChirTypeRef
 import org.cangnova.cangjie.chir.core.value.ChirValue
 import org.cangnova.cangjie.codegen.diagnostics.CodegenLoweringException
 import org.cangnova.cangjie.codegen.function.CGFunction
@@ -33,64 +39,97 @@ class ExpressionLoweringDispatcher {
     private fun lowerUnary(function: CGFunction, expression: ChirUnaryExpression): List<String> {
         val result = function.resultRef(expression.semanticId)
         val type = function.lowerType(expression.resultType)
+        val operandType = function.lowerType(expression.operand.type)
         val operand = function.renderValue(expression.operand)
-        return when (parseUnaryOp(expression.operator)) {
-            UnaryOp.NEG -> listOf("  $result = sub $type 0, $operand")
-            UnaryOp.FNEG -> listOf("  $result = fneg $type $operand")
-            UnaryOp.BIT_NOT -> listOf("  $result = xor $type $operand, -1")
-            UnaryOp.LOGICAL_NOT -> listOf("  $result = xor i1 $operand, true")
-            UnaryOp.IDENTITY -> listOf("  $result = add $type $operand, 0")
-            else -> throw CodegenLoweringException(
+        val operator = ChirUnaryOperator.parse(expression.operator)
+            ?: throw CodegenLoweringException(
                 "unsupported unary operator '${expression.operator}'",
                 expression.semanticId,
             )
+        return when (operator) {
+            ChirUnaryOperator.INT_NEG -> {
+                requireSameType(type, operandType, expression.semanticId, "integer negation result")
+                requireIntegerType(type, expression.semanticId, "integer negation")
+                listOf("  $result = sub $type 0, $operand")
+            }
+            ChirUnaryOperator.FLOAT_NEG -> {
+                requireSameType(type, operandType, expression.semanticId, "floating negation result")
+                requireFloatType(type, expression.semanticId, "floating negation")
+                listOf("  $result = fneg $type $operand")
+            }
+            ChirUnaryOperator.BIT_NOT -> {
+                requireSameType(type, operandType, expression.semanticId, "bitwise not result")
+                requireIntegerType(type, expression.semanticId, "bitwise not")
+                listOf("  $result = xor $type $operand, -1")
+            }
+            ChirUnaryOperator.LOGICAL_NOT -> {
+                requireSameType("i1", type, expression.semanticId, "logical not result")
+                requireSameType("i1", operandType, expression.semanticId, "logical not operand")
+                listOf("  $result = xor i1 $operand, true")
+            }
+            ChirUnaryOperator.IDENTITY -> {
+                requireSameType(type, operandType, expression.semanticId, "identity result")
+                when {
+                    isFloatType(type) -> listOf("  $result = fadd $type $operand, 0.0")
+                    isIntegerType(type) -> listOf("  $result = add $type $operand, 0")
+                    else -> throw CodegenLoweringException(
+                        "identity requires integer or floating LLVM type, got $type",
+                        expression.semanticId,
+                    )
+                }
+            }
         }
     }
 
     private fun lowerBinary(function: CGFunction, expression: ChirBinaryExpression): List<String> {
         val result = function.resultRef(expression.semanticId)
         val leftType = function.lowerType(expression.left.type)
+        val rightType = function.lowerType(expression.right.type)
+        val resultType = function.lowerType(expression.resultType)
         val left = function.renderValue(expression.left)
         val right = function.renderValue(expression.right)
 
-        val mnemonic = when (parseBinaryOp(expression.operator)) {
-            BinaryOp.ADD -> if (isFloatType(leftType)) "fadd" else "add"
-            BinaryOp.SUB -> if (isFloatType(leftType)) "fsub" else "sub"
-            BinaryOp.MUL -> if (isFloatType(leftType)) "fmul" else "mul"
-            BinaryOp.DIV -> if (isFloatType(leftType)) "fdiv" else "sdiv"
-            BinaryOp.UDIV -> "udiv"
-            BinaryOp.REM -> if (isFloatType(leftType)) "frem" else "srem"
-            BinaryOp.UREM -> "urem"
-            BinaryOp.AND -> "and"
-            BinaryOp.OR -> "or"
-            BinaryOp.XOR -> "xor"
-            BinaryOp.SHL -> "shl"
-            BinaryOp.ASHR -> "ashr"
-            BinaryOp.LSHR -> "lshr"
-            BinaryOp.EQ -> if (isFloatType(leftType)) "fcmp oeq" else "icmp eq"
-            BinaryOp.NE -> if (isFloatType(leftType)) "fcmp one" else "icmp ne"
-            BinaryOp.LT -> if (isFloatType(leftType)) "fcmp olt" else "icmp slt"
-            BinaryOp.LE -> if (isFloatType(leftType)) "fcmp ole" else "icmp sle"
-            BinaryOp.GT -> if (isFloatType(leftType)) "fcmp ogt" else "icmp sgt"
-            BinaryOp.GE -> if (isFloatType(leftType)) "fcmp oge" else "icmp sge"
-            BinaryOp.ULT -> "icmp ult"
-            BinaryOp.ULE -> "icmp ule"
-            BinaryOp.UGT -> "icmp ugt"
-            BinaryOp.UGE -> "icmp uge"
-            BinaryOp.FEQ -> "fcmp oeq"
-            BinaryOp.FNE -> "fcmp one"
-            BinaryOp.FLT -> "fcmp olt"
-            BinaryOp.FLE -> "fcmp ole"
-            BinaryOp.FGT -> "fcmp ogt"
-            BinaryOp.FGE -> "fcmp oge"
-            null -> null
-        }
-
-        if (mnemonic == null) {
-            throw CodegenLoweringException(
+        val operator = ChirBinaryOperator.parse(expression.operator)
+            ?: throw CodegenLoweringException(
                 "unsupported binary operator '${expression.operator}'",
                 expression.semanticId,
             )
+        requireSameType(leftType, rightType, expression.semanticId, "binary operands")
+        if (operator.family == ChirBinaryOperatorFamily.COMPARISON) {
+            requireSameType("i1", resultType, expression.semanticId, "comparison result")
+        } else {
+            requireSameType(leftType, resultType, expression.semanticId, "binary result")
+        }
+        val mnemonic = when (operator) {
+            ChirBinaryOperator.ADD -> if (isFloatType(leftType)) "fadd" else "add"
+            ChirBinaryOperator.SUB -> if (isFloatType(leftType)) "fsub" else "sub"
+            ChirBinaryOperator.MUL -> if (isFloatType(leftType)) "fmul" else "mul"
+            ChirBinaryOperator.SIGNED_DIV -> if (isFloatType(leftType)) "fdiv" else "sdiv"
+            ChirBinaryOperator.UNSIGNED_DIV -> "udiv"
+            ChirBinaryOperator.SIGNED_REM -> if (isFloatType(leftType)) "frem" else "srem"
+            ChirBinaryOperator.UNSIGNED_REM -> "urem"
+            ChirBinaryOperator.BIT_AND -> "and"
+            ChirBinaryOperator.BIT_OR -> "or"
+            ChirBinaryOperator.BIT_XOR -> "xor"
+            ChirBinaryOperator.SHIFT_LEFT -> "shl"
+            ChirBinaryOperator.SIGNED_SHIFT_RIGHT -> "ashr"
+            ChirBinaryOperator.UNSIGNED_SHIFT_RIGHT -> "lshr"
+            ChirBinaryOperator.EQUAL -> if (isFloatType(leftType)) "fcmp oeq" else "icmp eq"
+            ChirBinaryOperator.NOT_EQUAL -> if (isFloatType(leftType)) "fcmp one" else "icmp ne"
+            ChirBinaryOperator.SIGNED_LESS -> if (isFloatType(leftType)) "fcmp olt" else "icmp slt"
+            ChirBinaryOperator.SIGNED_LESS_OR_EQUAL -> if (isFloatType(leftType)) "fcmp ole" else "icmp sle"
+            ChirBinaryOperator.SIGNED_GREATER -> if (isFloatType(leftType)) "fcmp ogt" else "icmp sgt"
+            ChirBinaryOperator.SIGNED_GREATER_OR_EQUAL -> if (isFloatType(leftType)) "fcmp oge" else "icmp sge"
+            ChirBinaryOperator.UNSIGNED_LESS -> "icmp ult"
+            ChirBinaryOperator.UNSIGNED_LESS_OR_EQUAL -> "icmp ule"
+            ChirBinaryOperator.UNSIGNED_GREATER -> "icmp ugt"
+            ChirBinaryOperator.UNSIGNED_GREATER_OR_EQUAL -> "icmp uge"
+            ChirBinaryOperator.FLOAT_EQUAL -> "fcmp oeq"
+            ChirBinaryOperator.FLOAT_NOT_EQUAL -> "fcmp one"
+            ChirBinaryOperator.FLOAT_LESS -> "fcmp olt"
+            ChirBinaryOperator.FLOAT_LESS_OR_EQUAL -> "fcmp ole"
+            ChirBinaryOperator.FLOAT_GREATER -> "fcmp ogt"
+            ChirBinaryOperator.FLOAT_GREATER_OR_EQUAL -> "fcmp oge"
         }
         return if (mnemonic.startsWith("icmp ") || mnemonic.startsWith("fcmp ")) {
             listOf("  $result = $mnemonic $leftType $left, $right")
@@ -100,42 +139,62 @@ class ExpressionLoweringDispatcher {
     }
 
     private fun lowerMemory(function: CGFunction, expression: ChirMemoryExpression): List<String> {
-        val operation = parseMemoryOp(expression.operation)
+        val operation = ChirMemoryOperation.parse(expression.operation)
+            ?: throw CodegenLoweringException(
+                "unsupported memory operation '${expression.operation}'",
+                expression.semanticId,
+            )
         val address = function.renderValue(expression.address)
         val alignmentSuffix = alignSuffixFrom(expression.address, expression.value)
         return when (operation) {
-            MemoryOp.LOAD -> {
-                val resultType = expression.resultType?.let(function::lowerType) ?: "ptr"
+            ChirMemoryOperation.LOAD -> {
+                val resultType = expression.resultType?.let(function::lowerType)
+                    ?: throw CodegenLoweringException(
+                        "load requires an explicit result type",
+                        expression.semanticId,
+                    )
+                val elementType = pointeeType(function, expression.address.type, expression.semanticId)
+                requireSameType(elementType, resultType, expression.semanticId, "load result")
                 listOf("  ${function.resultRef(expression.semanticId)} = load $resultType, ptr $address$alignmentSuffix")
             }
-            MemoryOp.STORE -> {
+            ChirMemoryOperation.STORE -> {
                 val value = expression.value ?: throw CodegenLoweringException(
                     "store requires value operand",
                     expression.semanticId,
                 )
+                val elementType = pointeeType(function, expression.address.type, expression.semanticId)
+                val valueType = function.lowerType(value.type)
+                requireSameType(elementType, valueType, expression.semanticId, "store value")
                 listOf("  store ${function.renderTypedValue(value)}, ptr $address$alignmentSuffix")
             }
-            MemoryOp.ALLOCA -> {
-                val allocatedType = expression.resultType?.let { pointeeType(function, it) } ?: "i8"
+            ChirMemoryOperation.ALLOCA -> {
+                val resultType = expression.resultType ?: throw CodegenLoweringException(
+                    "alloca requires a pointer or reference result type",
+                    expression.semanticId,
+                )
+                val allocatedType = pointeeType(function, resultType, expression.semanticId)
                 val countValue = expression.value ?: expression.address
                 val countType = function.lowerType(countValue.type)
+                requireIntegerType(countType, expression.semanticId, "alloca element count")
                 val count = ", $countType ${function.renderValue(countValue)}"
                 listOf("  ${function.resultRef(expression.semanticId)} = alloca $allocatedType$count$alignmentSuffix")
             }
-            MemoryOp.GEP, MemoryOp.GEP_INBOUNDS -> {
-                val elementType = pointeeType(function, expression.address.type)
-                val indexValue = expression.value
-                val indexType = indexValue?.let { function.lowerType(it.type) } ?: "i64"
-                val index = indexValue?.let(function::renderValue) ?: "0"
-                val inboundsToken = if (operation == MemoryOp.GEP) "" else " inbounds"
+            ChirMemoryOperation.GET_ELEMENT_PTR,
+            ChirMemoryOperation.GET_ELEMENT_PTR_INBOUNDS,
+            -> {
+                val elementType = pointeeType(function, expression.address.type, expression.semanticId)
+                val indexValue = expression.value ?: throw CodegenLoweringException(
+                    "getelementptr requires an explicit index operand",
+                    expression.semanticId,
+                )
+                val indexType = function.lowerType(indexValue.type)
+                requireIntegerType(indexType, expression.semanticId, "getelementptr index")
+                val index = function.renderValue(indexValue)
+                val inboundsToken = if (operation == ChirMemoryOperation.GET_ELEMENT_PTR) "" else " inbounds"
                 listOf(
                     "  ${function.resultRef(expression.semanticId)} = getelementptr$inboundsToken $elementType, ptr $address, $indexType $index",
                 )
             }
-            else -> throw CodegenLoweringException(
-                "unsupported memory operation '${expression.operation}'",
-                expression.semanticId,
-            )
         }
     }
 
@@ -165,38 +224,48 @@ class ExpressionLoweringDispatcher {
     }
 
     private fun lowerOther(function: CGFunction, expression: ChirOtherExpression): List<String> {
-        val op = parseOtherOp(expression.operation)
+        val op = ChirOtherOperation.parse(expression.operation)
+            ?: throw CodegenLoweringException(
+                "unsupported other operation '${expression.operation}'",
+                expression.semanticId,
+            )
         val result = function.resultRef(expression.semanticId)
         val targetType = expression.resultType?.let(function::lowerType)
         val operands = expression.operands
 
         return when (op) {
-            OtherOp.SELECT -> {
-                if (operands.size < 3 || targetType == null) {
+            ChirOtherOperation.SELECT -> {
+                if (operands.size != 3 || targetType == null) {
                     throw CodegenLoweringException(
                         "malformed select expression",
                         expression.semanticId,
                     )
                 }
+                val conditionType = function.lowerType(operands[0].type)
+                val lhsType = function.lowerType(operands[1].type)
+                val rhsType = function.lowerType(operands[2].type)
+                requireSameType("i1", conditionType, expression.semanticId, "select condition")
+                requireSameType(targetType, lhsType, expression.semanticId, "select true operand")
+                requireSameType(targetType, rhsType, expression.semanticId, "select false operand")
                 val cond = function.renderValue(operands[0])
                 val lhs = function.renderValue(operands[1])
                 val rhs = function.renderValue(operands[2])
                 listOf("  $result = select i1 $cond, $targetType $lhs, $targetType $rhs")
             }
-            OtherOp.BITCAST,
-            OtherOp.PTRTOINT,
-            OtherOp.INTTOPTR,
-            OtherOp.TRUNC,
-            OtherOp.ZEXT,
-            OtherOp.SEXT,
-            OtherOp.FPTRUNC,
-            OtherOp.FPEXT,
-            OtherOp.SITOFP,
-            OtherOp.UITOFP,
-            OtherOp.FPTOSI,
-            OtherOp.FPTOUI,
+            ChirOtherOperation.BITCAST,
+            ChirOtherOperation.PTRTOINT,
+            ChirOtherOperation.INTTOPTR,
+            ChirOtherOperation.TRUNC,
+            ChirOtherOperation.ZEXT,
+            ChirOtherOperation.SEXT,
+            ChirOtherOperation.FPTRUNC,
+            ChirOtherOperation.FPEXT,
+            ChirOtherOperation.SITOFP,
+            ChirOtherOperation.UITOFP,
+            ChirOtherOperation.FPTOSI,
+            ChirOtherOperation.FPTOUI,
             -> {
-                if (operands.isEmpty() || targetType == null) {
+                if (operands.size != 1 || targetType == null) {
                     throw CodegenLoweringException(
                         "malformed cast expression",
                         expression.semanticId,
@@ -205,9 +274,9 @@ class ExpressionLoweringDispatcher {
                 val source = operands.first()
                 val sourceType = function.lowerType(source.type)
                 val sourceValue = function.renderValue(source)
-                listOf("  $result = ${op.llvmMnemonic} $sourceType $sourceValue to $targetType")
+                listOf("  $result = ${castMnemonic(op)} $sourceType $sourceValue to $targetType")
             }
-            OtherOp.PHI -> {
+            ChirOtherOperation.PHI -> {
                 if (operands.isEmpty() || targetType == null) {
                     throw CodegenLoweringException(
                         "malformed phi expression",
@@ -215,6 +284,8 @@ class ExpressionLoweringDispatcher {
                     )
                 }
                 val incoming = operands.map { operand ->
+                    val operandType = function.lowerType(operand.type)
+                    requireSameType(targetType, operandType, expression.semanticId, "phi incoming operand")
                     val predecessorRef = operand.attributes
                         .asSequence()
                         .filterIsInstance<ChirStringAttribute>()
@@ -240,8 +311,58 @@ class ExpressionLoweringDispatcher {
         }
     }
 
+    private fun castMnemonic(operation: ChirOtherOperation): String {
+        return when (operation) {
+            ChirOtherOperation.BITCAST -> "bitcast"
+            ChirOtherOperation.PTRTOINT -> "ptrtoint"
+            ChirOtherOperation.INTTOPTR -> "inttoptr"
+            ChirOtherOperation.TRUNC -> "trunc"
+            ChirOtherOperation.ZEXT -> "zext"
+            ChirOtherOperation.SEXT -> "sext"
+            ChirOtherOperation.FPTRUNC -> "fptrunc"
+            ChirOtherOperation.FPEXT -> "fpext"
+            ChirOtherOperation.SITOFP -> "sitofp"
+            ChirOtherOperation.UITOFP -> "uitofp"
+            ChirOtherOperation.FPTOSI -> "fptosi"
+            ChirOtherOperation.FPTOUI -> "fptoui"
+            else -> throw CodegenLoweringException(
+                "operation '${operation.canonicalName}' is not an LLVM cast operation",
+                null,
+            )
+        }
+    }
+
     private fun isFloatType(llvmType: String): Boolean {
         return llvmType == "half" || llvmType == "float" || llvmType == "double"
+    }
+
+    private fun requireFloatType(llvmType: String, sourceId: ChirSemanticId, subject: String) {
+        if (!isFloatType(llvmType)) {
+            throw CodegenLoweringException(
+                "$subject requires floating LLVM type, got $llvmType",
+                sourceId,
+            )
+        }
+    }
+
+    private fun requireIntegerType(llvmType: String, sourceId: ChirSemanticId, subject: String) {
+        if (!isIntegerType(llvmType)) {
+            throw CodegenLoweringException(
+                "$subject requires integer LLVM type, got $llvmType",
+                sourceId,
+            )
+        }
+    }
+
+    private fun isIntegerType(llvmType: String): Boolean = llvmType.matches(integerTypeRegex)
+
+    private fun requireSameType(expected: String, actual: String, sourceId: ChirSemanticId, subject: String) {
+        if (expected != actual) {
+            throw CodegenLoweringException(
+                "$subject type mismatch: expected $expected, got $actual",
+                sourceId,
+            )
+        }
     }
 
     private fun alignSuffixFrom(vararg values: ChirValue?): String {
@@ -254,164 +375,23 @@ class ExpressionLoweringDispatcher {
         return if (alignValue.isNullOrBlank()) "" else ", align $alignValue"
     }
 
-    private fun pointeeType(function: CGFunction, typeRef: org.cangnova.cangjie.chir.core.type.ChirTypeRef): String {
+    private fun pointeeType(
+        function: CGFunction,
+        typeRef: ChirTypeRef,
+        sourceId: ChirSemanticId,
+    ): String {
         val resolved = (typeRef as? ChirResolvedTypeRef)?.type
         return when (resolved) {
             is ChirCPointerType -> function.lowerType(resolved.pointeeType)
             is ChirRefType -> function.lowerType(resolved.referencedType)
-            else -> "i8"
+            else -> throw CodegenLoweringException(
+                "memory operation requires pointer/ref type, got '${typeRef.renderName}'",
+                sourceId,
+            )
         }
     }
 
-    private fun parseUnaryOp(raw: String): UnaryOp? {
-        val normalized = raw.lowercase().trim()
-        if (normalized !in ChirOperationSets.unaryOperators) return null
-        return when (normalized) {
-            "neg", "ineg" -> UnaryOp.NEG
-            "fneg" -> UnaryOp.FNEG
-            "not", "bitnot" -> UnaryOp.BIT_NOT
-            "logical_not", "lnot" -> UnaryOp.LOGICAL_NOT
-            "copy", "mov", "identity" -> UnaryOp.IDENTITY
-            else -> null
-        }
+    private companion object {
+        val integerTypeRegex = Regex("i\\d+")
     }
-
-    private fun parseMemoryOp(raw: String): MemoryOp? {
-        val normalized = raw.lowercase().trim()
-        if (normalized !in ChirOperationSets.memoryOperations) return null
-        return when (normalized) {
-            "load" -> MemoryOp.LOAD
-            "store" -> MemoryOp.STORE
-            "alloca" -> MemoryOp.ALLOCA
-            "gep", "getelementptr" -> MemoryOp.GEP
-            "getelementptr inbounds" -> MemoryOp.GEP_INBOUNDS
-            "getelementptr.inbounds" -> MemoryOp.GEP_INBOUNDS
-            else -> null
-        }
-    }
-
-    private fun parseBinaryOp(raw: String): BinaryOp? {
-        val normalized = raw.lowercase().trim()
-        if (normalized !in ChirOperationSets.binaryOperators) return null
-        return when (normalized) {
-            "add", "+", "plus" -> BinaryOp.ADD
-            "sub", "-", "minus" -> BinaryOp.SUB
-            "mul", "*", "times" -> BinaryOp.MUL
-            "div", "/" -> BinaryOp.DIV
-            "udiv" -> BinaryOp.UDIV
-            "rem", "%" -> BinaryOp.REM
-            "urem" -> BinaryOp.UREM
-            "and" -> BinaryOp.AND
-            "or" -> BinaryOp.OR
-            "xor" -> BinaryOp.XOR
-            "shl" -> BinaryOp.SHL
-            "ashr" -> BinaryOp.ASHR
-            "lshr" -> BinaryOp.LSHR
-            "eq", "==" -> BinaryOp.EQ
-            "ne", "!=" -> BinaryOp.NE
-            "lt", "<", "slt" -> BinaryOp.LT
-            "le", "<=", "sle" -> BinaryOp.LE
-            "gt", ">", "sgt" -> BinaryOp.GT
-            "ge", ">=", "sge" -> BinaryOp.GE
-            "ult" -> BinaryOp.ULT
-            "ule" -> BinaryOp.ULE
-            "ugt" -> BinaryOp.UGT
-            "uge" -> BinaryOp.UGE
-            "feq" -> BinaryOp.FEQ
-            "fne" -> BinaryOp.FNE
-            "flt" -> BinaryOp.FLT
-            "fle" -> BinaryOp.FLE
-            "fgt" -> BinaryOp.FGT
-            "fge" -> BinaryOp.FGE
-            else -> null
-        }
-    }
-
-    private fun parseOtherOp(raw: String): OtherOp? {
-        val normalized = raw.lowercase().trim()
-        if (normalized !in ChirOperationSets.otherOperations) return null
-        return when (normalized) {
-            "select" -> OtherOp.SELECT
-            "bitcast" -> OtherOp.BITCAST
-            "ptrtoint" -> OtherOp.PTRTOINT
-            "inttoptr" -> OtherOp.INTTOPTR
-            "trunc" -> OtherOp.TRUNC
-            "zext" -> OtherOp.ZEXT
-            "sext" -> OtherOp.SEXT
-            "fptrunc" -> OtherOp.FPTRUNC
-            "fpext" -> OtherOp.FPEXT
-            "sitofp" -> OtherOp.SITOFP
-            "uitofp" -> OtherOp.UITOFP
-            "fptosi" -> OtherOp.FPTOSI
-            "fptoui" -> OtherOp.FPTOUI
-            "phi" -> OtherOp.PHI
-            else -> null
-        }
-    }
-
-    private enum class UnaryOp {
-        NEG,
-        FNEG,
-        BIT_NOT,
-        LOGICAL_NOT,
-        IDENTITY,
-    }
-
-    private enum class BinaryOp {
-        ADD,
-        SUB,
-        MUL,
-        DIV,
-        UDIV,
-        REM,
-        UREM,
-        AND,
-        OR,
-        XOR,
-        SHL,
-        ASHR,
-        LSHR,
-        EQ,
-        NE,
-        LT,
-        LE,
-        GT,
-        GE,
-        ULT,
-        ULE,
-        UGT,
-        UGE,
-        FEQ,
-        FNE,
-        FLT,
-        FLE,
-        FGT,
-        FGE,
-    }
-
-    private enum class MemoryOp {
-        LOAD,
-        STORE,
-        ALLOCA,
-        GEP,
-        GEP_INBOUNDS,
-    }
-
-    private enum class OtherOp(val llvmMnemonic: String) {
-        SELECT("select"),
-        BITCAST("bitcast"),
-        PTRTOINT("ptrtoint"),
-        INTTOPTR("inttoptr"),
-        TRUNC("trunc"),
-        ZEXT("zext"),
-        SEXT("sext"),
-        FPTRUNC("fptrunc"),
-        FPEXT("fpext"),
-        SITOFP("sitofp"),
-        UITOFP("uitofp"),
-        FPTOSI("fptosi"),
-        FPTOUI("fptoui"),
-        PHI("phi"),
-    }
-
 }

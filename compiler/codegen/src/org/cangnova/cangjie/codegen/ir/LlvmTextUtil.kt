@@ -5,12 +5,12 @@ internal data class LlvmSignature(
     val argumentTypes: List<String>,
 )
 
-internal fun sanitizeIdentifier(raw: String, fallback: String = "tmp"): String {
+internal fun sanitizeIdentifier(raw: String, prefix: String = "tmp"): String {
     val sanitized = raw
         .replace(Regex("[^A-Za-z0-9_.$]"), "_")
         .trim('_')
-    if (sanitized.isBlank()) return fallback
-    return if (sanitized.first().isDigit()) "${fallback}_$sanitized" else sanitized
+    if (sanitized.isBlank()) return prefix
+    return if (sanitized.first().isDigit()) "${prefix}_$sanitized" else sanitized
 }
 
 internal fun uniquifyIdentifier(base: String, used: MutableMap<String, Int>): String {

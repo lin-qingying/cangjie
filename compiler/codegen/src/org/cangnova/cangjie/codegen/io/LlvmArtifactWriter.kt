@@ -11,6 +11,7 @@ data class LlvmModuleOutputPath(
     val moduleName: String,
     val llvmIrPath: Path,
     val bitcodePath: Path?,
+    val objectPath: Path?,
 )
 
 class LlvmArtifactWriter {
@@ -18,12 +19,14 @@ class LlvmArtifactWriter {
         output: ChirCodegenOutput,
         outputDirectory: Path,
         emitBitcode: Boolean = true,
-    ): List<LlvmModuleOutputPath> = writeModules(output.modules, outputDirectory, emitBitcode)
+        emitObjectCode: Boolean = false,
+    ): List<LlvmModuleOutputPath> = writeModules(output.modules, outputDirectory, emitBitcode, emitObjectCode)
 
     fun writeModules(
         modules: List<LlvmModuleArtifact>,
         outputDirectory: Path,
         emitBitcode: Boolean = true,
+        emitObjectCode: Boolean = false,
     ): List<LlvmModuleOutputPath> {
         Files.createDirectories(outputDirectory)
 
@@ -57,10 +60,28 @@ class LlvmArtifactWriter {
                 }
             }
 
+            val objectPath = if (!emitObjectCode) {
+                null
+            } else {
+                val objectCode = requireNotNull(module.objectCode) {
+                    "module '${module.name}' does not contain object code bytes; set emitObjectCode=false or enable object emission"
+                }
+                outputDirectory.resolve("$moduleFileBase.o").also { path ->
+                    Files.write(
+                        path,
+                        objectCode,
+                        StandardOpenOption.CREATE,
+                        StandardOpenOption.TRUNCATE_EXISTING,
+                        StandardOpenOption.WRITE,
+                    )
+                }
+            }
+
             LlvmModuleOutputPath(
                 moduleName = module.name,
                 llvmIrPath = llvmIrPath,
                 bitcodePath = bitcodePath,
+                objectPath = objectPath,
             )
         }
     }

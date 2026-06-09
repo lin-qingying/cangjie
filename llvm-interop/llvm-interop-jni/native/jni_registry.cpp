@@ -1,6 +1,12 @@
 // JNI 动态注册入口与方法表。
 #include <jni.h>
 
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetInitializeAll();
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetDefaultTriple();
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetCreateMachine();
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetDisposeMachine();
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetMachineEmitObjectFile();
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetMachineEmitObjectBytes();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_contextCreate();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_contextDispose();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleCreateInContext();
@@ -9,8 +15,10 @@ extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleSetTargetTri
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleSetDataLayout();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleAddFunction();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleAddGlobal();
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_functionAppendBasicBlock();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_modulePrintToString();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleVerify();
+extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleRunPasses();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_intTypeInContext();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_floatTypeInContext();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_doubleTypeInContext();
@@ -80,7 +88,19 @@ extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_verifyFunction();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_writeBitcodeToFile();
 extern "C" void Java_org_cangnova_cangjie_llvm_jni_LlvmNative_writeBitcodeToMemoryBuffer();
 
+// JNINativeMethod 的 name/signature 字段在 JNI C API 中仍是 char*，
+// 但 RegisterNatives 不会修改这里的静态字符串字面量。
+#if defined(__clang__)
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wwritable-strings"
+#endif
 static JNINativeMethod kLlvmNativeMethods[] = {
+    {"targetInitializeAll", "()V", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetInitializeAll)},
+    {"targetDefaultTriple", "()Ljava/lang/String;", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetDefaultTriple)},
+    {"targetCreateMachine", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;III)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetCreateMachine)},
+    {"targetDisposeMachine", "(J)V", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetDisposeMachine)},
+    {"targetMachineEmitObjectFile", "(JJLjava/lang/String;)V", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetMachineEmitObjectFile)},
+    {"targetMachineEmitObjectBytes", "(JJ)[B", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_targetMachineEmitObjectBytes)},
     {"contextCreate", "()J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_contextCreate)},
     {"contextDispose", "(J)V", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_contextDispose)},
     {"moduleCreateInContext", "(Ljava/lang/String;J)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleCreateInContext)},
@@ -89,8 +109,10 @@ static JNINativeMethod kLlvmNativeMethods[] = {
     {"moduleSetDataLayout", "(JLjava/lang/String;)V", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleSetDataLayout)},
     {"moduleAddFunction", "(JLjava/lang/String;J)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleAddFunction)},
     {"moduleAddGlobal", "(JJLjava/lang/String;)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleAddGlobal)},
+    {"functionAppendBasicBlock", "(JLjava/lang/String;)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_functionAppendBasicBlock)},
     {"modulePrintToString", "(J)Ljava/lang/String;", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_modulePrintToString)},
     {"moduleVerify", "(J)V", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleVerify)},
+    {"moduleRunPasses", "(JLjava/lang/String;J)V", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_moduleRunPasses)},
     {"intTypeInContext", "(JI)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_intTypeInContext)},
     {"floatTypeInContext", "(J)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_floatTypeInContext)},
     {"doubleTypeInContext", "(J)J", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_doubleTypeInContext)},
@@ -160,6 +182,9 @@ static JNINativeMethod kLlvmNativeMethods[] = {
     {"writeBitcodeToFile", "(JLjava/lang/String;)I", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_writeBitcodeToFile)},
     {"writeBitcodeToMemoryBuffer", "(J)[B", reinterpret_cast<void*>(Java_org_cangnova_cangjie_llvm_jni_LlvmNative_writeBitcodeToMemoryBuffer)},
 };
+#if defined(__clang__)
+#pragma clang diagnostic pop
+#endif
 
 extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void*) {
     JNIEnv* env = nullptr;

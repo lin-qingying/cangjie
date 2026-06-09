@@ -9,8 +9,11 @@ open class LlvmBackendFactory {
         return when (options.llvmBackendKind) {
             LlvmBackendKind.JNI -> {
                 val jniBackend = createJniBackend()
-                if (options.emitBitcode) {
+                val requiresNativeEmission = options.emitBitcode || options.emitObjectCode
+                if (requiresNativeEmission || options.failOnUnavailable) {
                     jniBackend.initialize()
+                }
+                if (requiresNativeEmission) {
                     checkVersion(jniBackend, options.requiredLlvmMajorVersion)
                 }
                 jniBackend
@@ -21,8 +24,15 @@ open class LlvmBackendFactory {
     protected open fun createJniBackend(): LlvmBackend = JniLlvmBackend()
 
     private fun checkVersion(backend: LlvmBackend, expectedMajorVersion: Int) {
-        val actualVersion = backend.capabilities.llvmVersion ?: return
-        val actualMajor = actualVersion.takeWhile { it.isDigit() }.toIntOrNull() ?: return
+        val actualVersion = backend.capabilities.llvmVersion ?: throw LlvmBackendVersionMismatchException(
+            expectedMajor = expectedMajorVersion,
+            actualVersion = "<missing>",
+        )
+        val actualMajor = actualVersion.takeWhile { it.isDigit() }.toIntOrNull()
+            ?: throw LlvmBackendVersionMismatchException(
+                expectedMajor = expectedMajorVersion,
+                actualVersion = actualVersion,
+            )
         if (actualMajor != expectedMajorVersion) {
             throw LlvmBackendVersionMismatchException(
                 expectedMajor = expectedMajorVersion,
