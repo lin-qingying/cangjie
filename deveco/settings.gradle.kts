@@ -7,7 +7,6 @@ pluginManagement {
     }
     plugins {
         id("org.jetbrains.kotlin.jvm") version "2.2.20"
-        id("org.jetbrains.kotlin.plugin.compose") version "2.2.20"
         id("org.jetbrains.intellij.platform") version "2.10.5"
         id("org.jetbrains.intellij.platform.module") version "2.10.5"
     }
@@ -17,20 +16,37 @@ plugins {
     id("org.jetbrains.intellij.platform.settings") version "2.10.5"
 }
 
-includeBuild("../") {
-    dependencySubstitution {
-        substitute(module("org.cangnova.cangjie:cangjie-frontend-common-for-ide"))
-            .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-common-for-ide-module"))
-        substitute(module("org.cangnova.cangjie:cangjie-frontend-psi-for-ide"))
-            .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-psi-for-ide-module"))
-        substitute(module("org.cangnova.cangjie:cangjie-frontend-cfir-for-ide"))
-            .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-cfir-for-ide-module"))
-        substitute(module("org.cangnova.cangjie:cangjie-frontend-analysis-api-for-ide"))
-            .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-for-ide-module"))
-        substitute(module("org.cangnova.cangjie:cangjie-frontend-analysis-api-cfir-for-ide"))
-            .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-cfir-for-ide-module"))
-        substitute(module("org.cangnova.cangjie:cangjie-frontend-analysis-api-standalone-for-ide"))
-            .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-standalone-for-ide-module"))
+val useSourceFrontend = providers.gradleProperty("devecoUseSourceFrontend")
+    .map(String::toBoolean)
+    .orElse(false)
+    .get()
+
+if (useSourceFrontend) {
+    includeBuild("../") {
+        dependencySubstitution {
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-common-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-common-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-psi-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-psi-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-code-insight-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-code-insight-formatting-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-formatting-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-code-insight-folding-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-folding-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-code-insight-highlighting-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-highlighting-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-code-insight-refactoring-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-code-insight-refactoring-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-cfir-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-cfir-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-analysis-api-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-analysis-api-cfir-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-cfir-for-ide-module"))
+            substitute(module("org.cangnova.cangjie:cangjie-frontend-analysis-api-standalone-for-ide"))
+                .using(project(":prepare:ide-plugin-dependencies-module:cangjie-frontend-analysis-api-standalone-for-ide-module"))
+        }
     }
 }
 
