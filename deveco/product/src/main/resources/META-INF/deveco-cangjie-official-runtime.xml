@@ -1,0 +1,304 @@
+<idea-plugin>
+    <!-- DevEco 官方 Cangjie 运行时注册面，由本插件统一装载。 -->
+    <extensionPoints>
+        <extensionPoint
+            qualifiedName="com.huawei.cangjie.updateProvider"
+            interface="com.huawei.cangjie.projectmgmt.sync.upgrade.provider.CangjieUpdateProvider"
+        />
+    </extensionPoints>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <completion.contributor language="Cangjie" implementationClass="com.huawei.idea.completion.CangjieCompletionContributor"/>
+        <completion.contributor
+            language="Cangjie"
+            implementationClass="com.huawei.capabilities.completion.LSPCompletionContributor"
+            order="first"
+            id="lspCompletion4Cangjie"
+        />
+        <lang.foldingBuilder language="Cangjie" implementationClass="com.huawei.idea.codefolding.CangJieFoldingBuilder"/>
+        <lang.braceMatcher language="Cangjie" implementationClass="com.huawei.idea.bracematcher.CangjieBraceMatcher"/>
+        <lang.commenter language="Cangjie" implementationClass="com.huawei.idea.formatter.CangjieCommenter"/>
+        <applicationService serviceImplementation="com.huawei.idea.lsp.listener.CangjieFileListenerRegisterSingleton"/>
+        <breadcrumbsInfoProvider implementation="com.huawei.idea.breadcrumbs.CangjieBreadcrumbs"/>
+        <postStartupActivity implementation="com.huawei.idea.lsp.launcher.PostSyncLspStartUp"/>
+
+        <fileType
+            name="Cangjie"
+            language="Cangjie"
+            implementationClass="com.huawei.idea.filetypes.CangjieCodeFile"
+            fieldName="INSTANCE"
+            extensions="cj"
+        />
+        <fileType
+            name="CangjieMacrocall"
+            language="CangjieMacrocall"
+            implementationClass="com.huawei.idea.filetypes.CangjieMacroCallFileType"
+            fieldName="INSTANCE"
+            extensions="macrocall"
+        />
+        <fileType name="Toml" language="Toml" implementationClass="com.huawei.idea.filetypes.TomlFile" fieldName="INSTANCE" extensions="toml"/>
+        <fileType name="Toml" language="Toml" implementationClass="com.huawei.idea.filetypes.TomlFile" fieldName="INSTANCE" extensions="lock"/>
+        <fileType
+            name="CangjieLldbApiFileTypeCommands"
+            language="LLDB_CANGJIE"
+            implementationClass="com.huawei.cangjie.debugger.console.editor.CangjieLldbLanguageFileType"
+            fieldName="INSTANCE"
+            extensions="CangjieLldbApiFileTypeExtension"
+        />
+
+        <lang.parserDefinition language="Cangjie" implementationClass="com.huawei.idea.language.CharParserDefinition"/>
+        <lang.parserDefinition language="CangjieMacrocall" implementationClass="com.huawei.idea.language.CangjieMacrocallParseDefinition"/>
+        <lineIndentProvider implementation="com.huawei.idea.formatter.CangjieFormatterBasedLineIndentProvider" order="first"/>
+        <typedHandler implementation="com.huawei.idea.edit.QuotePairCompletion"/>
+        <typedHandler implementation="com.huawei.capabilities.completion.CangjieTypedHandler"/>
+        <typedHandler implementation="com.huawei.capabilities.lsp.CangjieLSPTypedHandler" id="LSPTypedHandler"/>
+        <backspaceHandlerDelegate implementation="com.huawei.idea.edit.CangjieQuoteDeleteHandler"/>
+        <highlightErrorFilter implementation="com.huawei.idea.highlightersetting.CharHighlightErrorFilter"/>
+        <lang.syntaxHighlighterFactory language="Cangjie" implementationClass="com.huawei.idea.syntaxhighlighter.CangjieSyntaxFactory"/>
+        <codeInsight.parameterInfo language="Cangjie" implementationClass="com.huawei.idea.signaturehelp.CangjieSignatureHelp"/>
+        <semanticHighlighter language="Cangjie" implementationClass="com.huawei.idea.highlightersetting.CangjieSemanticTokenHighlighter"/>
+        <typeHierarchyProvider language="Cangjie" implementationClass="com.huawei.capabilities.typehierarchy.CangjieTypeHierarchyProvider"/>
+
+        <renameHandler implementation="com.huawei.capabilities.lsp.CangjieLSPRenameHandler" id="LSPRenameHandler" order="first"/>
+        <renamePsiElementProcessor
+            implementation="com.huawei.capabilities.lsp.CangjieLSPRenameProcessor"
+            id="LSPRenameProcessor"
+            order="first"
+        />
+        <lang.documentationProvider language="Cangjie" implementationClass="com.huawei.capabilities.lsp.CangjieDocumentationProvider"/>
+        <gotoDeclarationHandler
+            implementation="com.huawei.capabilities.lsp.CangjieGotoDeclarationHandler"
+            id="LSPCangjieDeclarationContributor"
+        />
+        <externalAnnotator language="Cangjie" implementationClass="com.huawei.idea.highlightersetting.CangjieSemanticHighlight"/>
+        <externalAnnotator language="Cangjie" implementationClass="com.huawei.idea.highlightersetting.CangjieExternalAnnotator"/>
+        <gotoSymbolContributor implementation="com.huawei.capabilities.contribution.CangjieLSPSymbolContributor" id="LSPSymbolContributor"/>
+        <gotoClassContributor implementation="com.huawei.capabilities.contribution.CangjieClassNameContributor"/>
+        <colorSettingsPage implementation="com.huawei.idea.highlightersetting.CangjieColorSettingsPage"/>
+        <lang.findUsagesProvider language="Cangjie" implementationClass="com.huawei.capabilities.lsp.CangjieFindUsagesProvider"/>
+        <usageTargetProvider implementation="com.huawei.capabilities.lsp.CangjieUsageTargetProvider"/>
+        <findUsagesHandlerFactory implementation="com.huawei.capabilities.lsp.CangjieFindUsagesHandlerFactory"/>
+        <targetElementEvaluator language="Cangjie" implementationClass="com.huawei.capabilities.lsp.CangjieTargetElementEvaluatorEx2"/>
+        <callHierarchyProvider
+            language="Cangjie"
+            implementationClass="com.huawei.capabilities.hierarchy.callhierarchy.CangjieCallHierarchyProvider"
+        />
+
+        <notificationGroup displayType="STICKY_BALLOON" id="Cangjie.module.json.notification" isLogByDefault="true"/>
+        <notificationGroup displayType="STICKY_BALLOON" id="Cangjie.lsp.notification" isLogByDefault="true"/>
+        <notificationGroup id="Cangjie.Sdk.Manager.Expires.Notification" displayType="BALLOON" isLogByDefault="true"/>
+        <notificationGroup id="Cangjie.Sdk.Manager.Notification" displayType="STICKY_BALLOON" isLogByDefault="true"/>
+        <notificationGroup displayType="STICKY_BALLOON" id="Cangjie Project Mgmt Group"/>
+        <notificationGroup displayType="STICKY_BALLOON" id="Cangjie.Project.Mgmt.Notification" isLogByDefault="true"/>
+        <notificationGroup displayType="BALLOON" id="Cangjie.Project.Mgmt.Expires.Notification" isLogByDefault="true"/>
+
+        <psi.treeChangeListener implementation="com.huawei.idea.lsp.listener.ModuleJsonListener"/>
+        <editorNotificationProvider implementation="com.huawei.idea.notification.CangjieEditorNotificationProvider"/>
+        <editorHighlighterProvider filetype="Cangjie" implementationClass="com.huawei.idea.syntaxhighlighter.CangjieEditorHighlighterProvider"/>
+        <highlightingPassFactory
+            id="CangjieHighlightingPassFactory"
+            order="last"
+            implementation="com.huawei.idea.lsp.highlighting.CangjieLanguageServiceHighlightingPassFactory"
+        />
+        <problemFileHighlightFilter
+            id="CangjieProblemFileHighlightFilter"
+            implementation="com.huawei.idea.lsp.highlighting.CangjieProblemFileHighlightFilter"
+        />
+        <toolWindow
+            id="Cangjie API"
+            anchor="right"
+            secondary="true"
+            factoryClass="com.huawei.capabilities.apidocs.ApiDocsToolWindowFactory"
+            order="last"
+            canCloseContents="false"
+            doNotActivateOnStart="true"
+        />
+
+        <postStartupActivity implementation="com.huawei.cangjie.projectmgmt.utils.CangjieStartupActivity"/>
+        <treeStructureProvider implementation="com.huawei.cangjie.projectmgmt.utils.CangjieFileHider" id="CangjieFileHider" order="last"/>
+        <daemon.highlightInfoFilter implementation="com.huawei.cangjie.projectmgmt.filter.JsonHighlightInfoFilter" order="first"/>
+        <projectService
+            serviceInterface="com.huawei.cangjie.projectmgmt.sync.dts2cj.Dts2cjViewManager"
+            serviceImplementation="com.huawei.cangjie.projectmgmt.sync.dts2cj.Dts2cjViewManager"
+        />
+        <xdebugger.breakpointType implementation="com.huawei.cangjie.debugger.breakpoint.type.CangjieSourceBreakpointType"/>
+        <xdebugger.breakpointType implementation="com.huawei.cangjie.debugger.breakpoint.type.CangjieFunctionBreakpointType"/>
+        <xdebugger.breakpointType implementation="com.huawei.cangjie.debugger.breakpoint.type.CangjieDataBreakpointType"/>
+        <xdebugger.breakpointType implementation="com.huawei.cangjie.debugger.breakpoint.type.CangjieInstructionBreakpointType"/>
+        <langCodeStyleSettingsProvider implementation="com.huawei.cangjie.debugger.console.editor.CangjieLldbLanguageCodeStyleProvider"/>
+        <postStartupActivity implementation="com.huawei.cangjie.debugger.register.CangjieStartupActivity"/>
+        <projectService serviceImplementation="com.huawei.deveco.cjfmt.core.ReformatCodeService"/>
+        <typingActionsExtension implementation="com.huawei.deveco.cjfmt.core.CangjieTypingActionsExtension" order="first"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.huawei.deveco.projectmodel.ohos">
+        <syncProject implementation="com.huawei.idea.lsp.ohoslauncher.CangjieSyncProject" order="last"/>
+        <projectInit implementation="com.huawei.cangjie.sdkmanager.sync.CangjieSdkSync" order="first"/>
+        <preSync implementation="com.huawei.cangjie.res.json.profile.schema.CjBuildProfileSchemaProviderUnregister" order="first"/>
+        <preSync implementation="com.huawei.cangjie.projectmgmt.sync.CangjieProjectSyncImpl" order="last"/>
+        <syncModule implementation="com.huawei.cangjie.projectmgmt.sync.CangjieModuleSyncImpl" order="first"/>
+        <postSync implementation="com.huawei.cangjie.projectmgmt.sync.upgrade.welcome.CangjieUpdateChecker" id="CangjieUpgradeCheck" order="last"/>
+        <postSync implementation="com.huawei.cangjie.projectmgmt.sync.dts2cj.Dts2cjCopySync" id="CangjieDts2cjCopySync" order="last"/>
+        <syncProject implementation="com.huawei.deveco.cjfmt.core.SyncFormat"/>
+        <syncProject implementation="com.huawei.deveco.cjlint.CodeLinterWarning"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.huawei.deveco.hvigor">
+        <filterFactory implementation="com.huawei.cangjie.build.filter.CangjieBuildFilterFactory"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="JavaScript">
+        <JsonSchema.ProviderFactory implementation="com.huawei.cangjie.res.json.profile.schema.CjBuildProfileSchemaProviderFactory"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.huawei">
+        <templateProvider implementation="com.huawei.cangjie.projectmgmt.template.CangjieTemplateProvider"/>
+        <renderInitTemplate implementation="com.huawei.cangjie.projectmgmt.render.CangjieInitProjectTemplate" order="first"/>
+        <renderInitTemplate implementation="com.huawei.cangjie.projectmgmt.render.CangjieInitLibraryTemplate" order="first"/>
+        <renderInitTemplate implementation="com.huawei.cangjie.projectmgmt.render.CangjieInitShareTemplate" order="first"/>
+        <renderInitTemplate implementation="com.huawei.cangjie.projectmgmt.render.CangjieInitAbilityTemplate" order="first"/>
+        <renderInitTemplate implementation="com.huawei.cangjie.projectmgmt.render.CangjieInitModuleTemplate" order="first"/>
+        <renderInitTemplate implementation="com.huawei.cangjie.projectmgmt.render.CangjieInitPageTemplate" order="first"/>
+        <projectNodeProvider implementation="com.huawei.cangjie.projectmgmt.nodes.CangjieNodeProvider" order="first"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.huawei.cangjie">
+        <updateProvider implementation="com.huawei.cangjie.projectmgmt.sync.upgrade.impl.CangjieBuildUpdateImpl" order="first"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.huawei.ohos">
+        <harmonyDebugger implementation="com.huawei.cangjie.debugger.ohos.CangjieOpenHarmonyDebugger"/>
+        <harmonyDebugger implementation="com.huawei.cangjie.debugger.ohos.CangjieDualOpenHarmonyDebugger"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="com.huawei.codelinter">
+        <engineProvider implementation="com.huawei.deveco.cjlint.CjlintEngine"/>
+    </extensions>
+
+    <extensions defaultExtensionNs="org.jetbrains.plugins.terminal">
+        <localTerminalCustomizer implementation="com.huawei.deveco.terminal.CangjiePluginLocalTerminalCustomizer"/>
+    </extensions>
+
+    <actions>
+        <unregister id="GotoImplementation"/>
+        <action
+            id="CangJieGotoImplementation"
+            text="Implementation(s)"
+            class="com.huawei.capabilities.lsp.CangjieGotoImplementationAction"
+        >
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt B"/>
+            <add-to-group group-id="EditorPopupMenu.GoTo" anchor="after" relative-to-action="GotoImplementation"/>
+        </action>
+
+        <group id="CangjieGoToCodeGroup">
+            <action
+                id="GotoImplementation"
+                text="Implementation(s)"
+                description="Navigate to the declaration of the symbol at caret or show its usages"
+                class="com.huawei.capabilities.lsp.ExtendArkUiGotoImplementationAction"
+            >
+                <add-to-group group-id="EditorPopupMenu.GoTo" anchor="before" relative-to-action="GotoTest"/>
+            </action>
+        </group>
+
+        <action
+            id="CharPlugin.NewCangJieFileAction"
+            class="com.huawei.idea.actions.CangjieNewFileAction"
+            text="Cangjie File"
+            description="Create new Cangjie code file in the current project"
+            icon="/icons/Cangjie_logo_icon.svg"
+        >
+            <add-to-group group-id="NewGroup" anchor="first"/>
+        </action>
+
+        <group id="Cangjie.PageGroup" class="com.huawei.cangjie.projectmgmt.action.page.CangjiePageGroup" icon="/icons/menu/pageGroup.svg">
+            <action id="Cangjie.GenerateCangjieEmptyPage" class="com.huawei.cangjie.projectmgmt.action.page.GenerateEmptyPage" icon="/icons/menu/ability.svg"/>
+            <add-to-group group-id="NewGroup" anchor="first"/>
+        </group>
+
+        <action
+            id="Cangjie.EnableCangjie"
+            class="com.huawei.cangjie.projectmgmt.action.EnableCangjieAbilityAction"
+            text="Enable Cangjie"
+            description="Create Cangjie ability in the current module"
+            icon="/icons/menu/ability.svg"
+        >
+            <add-to-group group-id="NewGroup" anchor="first"/>
+        </action>
+        <action
+            id="Cangjie.GenerateCangjieIDLEditor"
+            class="com.huawei.cangjie.projectmgmt.action.GenerateCangjieIdlAction"
+            text="Cangjie-ArkTS Interop API"
+        >
+            <add-to-group group-id="GenerateGroup" anchor="after" relative-to-action="DelegateMethods"/>
+        </action>
+        <group id="Cangjie.GenerateCangjieGroup">
+            <separator/>
+            <action id="Cangjie.GenerateCangjieBindings" class="com.huawei.cangjie.projectmgmt.action.GenerateCangjieBindingsAction" text="Generate Cangjie Bindings"/>
+            <add-to-group group-id="ProjectViewPopupMenu" anchor="after" relative-to-action="FindUsages"/>
+        </group>
+
+        <action
+            id="com.huawei.action.CangjieRunVSCodeLaunchJsonTestAction"
+            class="com.huawei.cangjie.debugger.action.CangjieRunVSCodeLaunchJsonAction"
+            text="Cangjie Run First Configuration in Launch.Json"
+        />
+        <action
+            id="com.huawei.cangjie.debugger.action.databp.CangjieSetNoTypeDataBreakpointAction"
+            class="com.huawei.cangjie.debugger.action.databp.CangjieSetNoTypeDataBreakpointAction"
+            text="Break on Value Access"
+        >
+            <add-to-group group-id="XDebugger.ValueGroup" relative-to-action="XDebugger.JumpToTypeSource" anchor="after"/>
+        </action>
+        <action
+            id="com.huawei.cangjie.debugger.action.databp.CangjieSetReadDataBreakpointAction"
+            class="com.huawei.cangjie.debugger.action.databp.CangjieSetReadDataBreakpointAction"
+            text="Break on Value Read"
+        >
+            <add-to-group
+                group-id="XDebugger.ValueGroup"
+                relative-to-action="com.huawei.cangjie.debugger.action.databp.CangjieSetNoTypeDataBreakpointAction"
+                anchor="after"
+            />
+        </action>
+        <action
+            id="com.huawei.cangjie.debugger.action.databp.CangjieSetWriteDataBreakpointAction"
+            class="com.huawei.cangjie.debugger.action.databp.CangjieSetWriteDataBreakpointAction"
+            text="Break on Value Change"
+        >
+            <add-to-group
+                group-id="XDebugger.ValueGroup"
+                relative-to-action="com.huawei.cangjie.debugger.action.databp.CangjieSetReadDataBreakpointAction"
+                anchor="after"
+            />
+        </action>
+        <action
+            id="com.huawei.cangjie.debugger.action.databp.CangjieSetReadWriteDataBreakpointAction"
+            class="com.huawei.cangjie.debugger.action.databp.CangjieSetReadWriteDataBreakpointAction"
+            text="Break on Value Access"
+        >
+            <add-to-group
+                group-id="XDebugger.ValueGroup"
+                relative-to-action="com.huawei.cangjie.debugger.action.databp.CangjieSetWriteDataBreakpointAction"
+                anchor="after"
+            />
+        </action>
+
+        <unregister id="ReformatCode"/>
+        <action id="ReformatCode" class="com.huawei.deveco.cjfmt.actions.CjReformatCodeAction" description="Reformat Code" text="Reformat Code">
+            <add-to-group group-id="CodeFormatGroup" anchor="before" relative-to-action="ShowReformatFileDialog"/>
+            <add-to-group group-id="ProjectViewPopupMenuModifyGroup" anchor="before" relative-to-action="OptimizeImports"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt L"/>
+        </action>
+        <unregister id="ShowReformatFileDialog"/>
+        <action
+            id="ShowReformatFileDialog"
+            class="com.huawei.deveco.cjfmt.actions.CjReformatFileAction"
+            description="Reformat File"
+            text="Reformat File..."
+        >
+            <add-to-group group-id="CodeFormatGroup" anchor="before" relative-to-action="AutoIndentLines"/>
+            <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt shift L"/>
+        </action>
+    </actions>
+</idea-plugin>

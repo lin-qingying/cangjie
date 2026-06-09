@@ -1,14 +1,26 @@
-<idea-plugin>
-    <id>org.cangnova.cangjie.deveco</id>
+<idea-plugin xmlns:xi="http://www.w3.org/2001/XInclude">
+    <id>com.huawei.cangjie-support-plugin</id>
     <name>Cangjie DevEco</name>
     <vendor url="https://github.com/lin-qingying">Lin_Qing_Ying</vendor>
     <description><![CDATA[
-        基于仓颉前端源码产物的 DevEco Studio 增强插件骨架。<br>
-        当前版本先固化模块边界、同步模型与工具窗口入口，后续能力在此基础上持续扩展。
+        基于仓颉前端源码产物和 DevEco Studio 官方 Cangjie 运行时的增强插件。<br>
+        提供仓颉语言服务、鸿蒙项目同步、SDK 管理、格式化、Lint、DAP 调试和 DevEco 运行时状态入口。
     ]]></description>
 
-    <depends>com.intellij.modules.compose</depends>
+    <depends>com.intellij.modules.platform</depends>
+    <depends>com.intellij.modules.lang</depends>
+    <depends>com.intellij.modules.xml</depends>
+    <depends>com.intellij.modules.vcs</depends>
+    <depends>com.intellij.modules.xdebugger</depends>
+    <depends>com.intellij.modules.json</depends>
+    <depends>com.intellij.copyright</depends>
+    <depends>org.jetbrains.plugins.terminal</depends>
+    <depends>com.huawei.ohos</depends>
+    <depends>com.huawei.deveco.hvigor</depends>
+    <depends>com.huawei.codelinter</depends>
     <resource-bundle>messages.DevEcoMessageBundle</resource-bundle>
+
+    <xi:include href="/META-INF/deveco-cangjie-official-runtime.xml" xpointer="xpointer(/idea-plugin/*)"/>
 
     <extensions defaultExtensionNs="com.intellij">
         <toolWindow

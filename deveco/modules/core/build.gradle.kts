@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     id("org.jetbrains.kotlin.jvm")
-    id("org.jetbrains.kotlin.plugin.compose")
     id("org.jetbrains.intellij.platform.module")
 }
 
@@ -27,6 +26,5 @@ dependencies {
         } else {
             intellijIdea(syncPlatformVersion.get())
         }
-        composeUI()
     }
 }
