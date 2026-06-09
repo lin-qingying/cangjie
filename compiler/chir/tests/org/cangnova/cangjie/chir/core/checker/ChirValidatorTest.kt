@@ -6,6 +6,8 @@ import org.cangnova.cangjie.chir.core.controlflow.ChirBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirConditionalBranchTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirReturnTerminator
 import org.cangnova.cangjie.chir.core.controlflow.ChirTerminator
+import org.cangnova.cangjie.chir.core.declaration.ChirDeclaration
+import org.cangnova.cangjie.chir.core.declaration.DefaultChirClassDeclaration
 import org.cangnova.cangjie.chir.core.declaration.DefaultChirFunctionDeclaration
 import org.cangnova.cangjie.chir.core.expression.ChirCallExpression
 import org.cangnova.cangjie.chir.core.expression.ChirBinaryExpression
@@ -79,6 +81,44 @@ class ChirValidatorTest {
         val report = DefaultChirValidator().validatePackage(pkg, DefaultChirContext())
         assertTrue(report.hasErrors)
         assertTrue(report.issues.any { it.code == "RETURN_TYPE_MISMATCH" })
+    }
+
+    @Test
+    fun `validator reports member function errors inside custom type declarations`() {
+        val intType = ChirResolvedTypeRef(ChirPrimitiveType.INT32)
+        val boolType = ChirResolvedTypeRef(ChirPrimitiveType.BOOL)
+        val memberFunction = DefaultChirFunctionDeclaration(
+            semanticId = ChirSemanticId("fn:Box.badMember"),
+            name = "badMember",
+            returnType = intType,
+            parameters = emptyList(),
+            blocks = listOf(
+                ChirBlock(
+                    semanticId = ChirSemanticId("block:Box.badMember"),
+                    name = "entry",
+                    expressions = emptyList(),
+                    terminator = ChirReturnTerminator(
+                        semanticId = ChirSemanticId("term:Box.badMember:return"),
+                        returnValue = ChirConstantValue(
+                            semanticId = ChirSemanticId("const:Box.badMember:true"),
+                            type = boolType,
+                            literal = "true",
+                        ),
+                    ),
+                ),
+            ),
+            entryBlockId = ChirSemanticId("block:Box.badMember"),
+        )
+        val box = DefaultChirClassDeclaration(
+            semanticId = ChirSemanticId("class:Box"),
+            name = "Box",
+            memberDeclarations = listOf(memberFunction),
+        )
+
+        val report = DefaultChirValidator().validatePackage(packageWith(box), DefaultChirContext())
+
+        assertTrue(report.hasErrors)
+        assertTrue(report.issues.any { it.code == "RETURN_TYPE_MISMATCH" && it.nodeId == ChirSemanticId("term:Box.badMember:return") })
     }
 
     @Test
@@ -399,7 +439,7 @@ class ChirValidatorTest {
         )
     }
 
-    private fun packageWith(function: DefaultChirFunctionDeclaration): ChirPackage {
+    private fun packageWith(vararg declarations: ChirDeclaration): ChirPackage {
         return ChirPackage(
             semanticId = ChirSemanticId("pkg:test"),
             name = "test.pkg",
@@ -407,7 +447,7 @@ class ChirValidatorTest {
                 ChirModule(
                     semanticId = ChirSemanticId("mod:test"),
                     name = "test.mod",
-                    declarations = listOf(function),
+                    declarations = declarations.toList(),
                 ),
             ),
         )

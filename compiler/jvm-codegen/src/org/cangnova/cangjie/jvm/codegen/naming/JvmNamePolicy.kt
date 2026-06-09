@@ -37,6 +37,8 @@ class JvmNamePolicy(
 
     fun functionJvmName(function: ChirFunctionDeclaration): String = sanitizeMethodName(function.name)
 
+    fun functionJvmName(rawName: String): String = sanitizeMethodName(rawName)
+
     fun fieldJvmName(name: String): String = sanitizeJavaIdentifier(name, "field")
 
     private fun packageInternalPath(packageName: String): String {
