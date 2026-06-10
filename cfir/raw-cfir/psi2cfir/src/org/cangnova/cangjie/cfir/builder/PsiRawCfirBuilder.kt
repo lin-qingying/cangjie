@@ -5,6 +5,8 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.AstLoadingFilter
 import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.cfir.copyWithNewSource
+import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.CfirLoopTarget
@@ -594,6 +596,7 @@ class PsiRawCfirBuilder(
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
                             val declarations = convertClassMembers(psi).toMutableList().also { declarations ->
+                                addPrimaryConstructorParameterProperties(psi, declarations)
                                 if (classKind != CfirClassKind.INTERFACE && declarations.none { it is CfirConstructor }) {
                                     declarations.add(0, buildImplicitPrimaryConstructor(psi))
                                 }
@@ -645,7 +648,10 @@ class PsiRawCfirBuilder(
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
                             val declarations = convertClassMembers(psi).toMutableList().also { declarations ->
-                                declarations.add(0, buildImplicitPrimaryConstructor(psi))
+                                addPrimaryConstructorParameterProperties(psi, declarations)
+                                if (declarations.none { it is CfirConstructor }) {
+                                    declarations.add(0, buildImplicitPrimaryConstructor(psi))
+                                }
                             }
                             typeParameters to declarations
                         }
@@ -669,6 +675,7 @@ class PsiRawCfirBuilder(
                         val (classTypeParameters, classDeclarations) = withContainerSymbol(symbol) {
                             val typeParameters = convertTypeParameters(psi, symbol)
                             val declarations = convertClassMembers(psi).toMutableList().also { declarations ->
+                                addPrimaryConstructorParameterProperties(psi, declarations)
                                 if (declarations.none { it is CfirConstructor }) {
                                     declarations.add(0, buildImplicitPrimaryConstructor(psi))
                                 }
@@ -695,6 +702,64 @@ class PsiRawCfirBuilder(
                     }
                 }
             }
+        }
+
+        /**
+         * 主构造 `let/const/var` 参数同时声明同名成员。
+         *
+         * Kotlin raw FIR 在构建 class 时把 `val/var` 参数转换成 property 并加入声明树；
+         * 仓颉 CFIR 的低层 API 已以 [CfirValueParameter.correspondingProperty] 作为这条关系的框架入口，
+         * 因此这里在 raw 阶段创建对应成员，保证成员作用域和 LL 映射共享同一声明来源。
+         */
+        private fun addPrimaryConstructorParameterProperties(
+            psi: CjClassLikeDeclaration,
+            declarations: MutableList<CfirDeclaration>,
+        ) {
+            val typeStatement = psi as? CjTypeStatement ?: return
+            val primaryConstructor = typeStatement.primaryConstructor ?: return
+            val primaryConstructorIndex = declarations.indexOfFirst { it is CfirConstructor && it.isPrimary }
+            if (primaryConstructorIndex < 0) return
+
+            val cfirPrimaryConstructor = declarations[primaryConstructorIndex] as CfirConstructor
+            val generatedProperties = primaryConstructor.valueParameters
+                .zip(cfirPrimaryConstructor.valueParameters)
+                .mapNotNull { (parameterPsi, valueParameter) ->
+                    if (!parameterPsi.hasLetOrVar()) return@mapNotNull null
+                    convertPrimaryConstructorParameterProperty(parameterPsi, valueParameter)
+                }
+
+            if (generatedProperties.isNotEmpty()) {
+                declarations.addAll(primaryConstructorIndex + 1, generatedProperties)
+            }
+        }
+
+        private fun convertPrimaryConstructorParameterProperty(
+            psi: CjParameter,
+            valueParameter: CfirValueParameter,
+        ): CfirProperty {
+            val name = psi.nameAsSafeName
+            val propertySource = psi.toCjPsiSourceElement().fakeElement(CjFakeSourceElementKind.PropertyFromParameter)
+            val propertySymbol = CfirPropertySymbol(callableIdFor(name))
+            val property = buildSourceDeclaration(propertySymbol) { symbol ->
+                buildProperty {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = propertySource
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    isLocal = context.inLocalContext
+                    dispatchReceiverType = currentDispatchReceiverType()
+                    status = convertDeclarationStatus(psi)
+                    returnTypeRef = valueParameter.returnTypeRef.copyWithNewSource(propertySource)
+                    this.name = name
+                    getter = null
+                    setter = null
+                }
+            }
+            valueParameter.correspondingProperty = property
+            return property
         }
 
         private fun convertExtend(psi: CjExtend): CfirExtend {
@@ -1738,7 +1803,13 @@ class PsiRawCfirBuilder(
             }
 
             val callee = psi.calleeExpression
-            val lambdaArgs = psi.lambdaArguments.mapNotNull { it.getLambdaExpression()?.let(::convertLambda) }
+            val lambdaArgs = psi.lambdaArguments.mapNotNull { lambdaArgument ->
+                lambdaArgument.getLambdaExpression()?.let { lambda ->
+                    convertLambda(lambda).also { anonymousFunctionExpression ->
+                        anonymousFunctionExpression.replaceIsTrailingLambda(true)
+                    }
+                }
+            }
 
             /**
              * 对齐 Kotlin FIR raw builder：
@@ -1776,6 +1847,15 @@ class PsiRawCfirBuilder(
             val typeArgs = extractCallTypeArguments(psi, callee)
 
             val (receiver, reference) = resolveCalleeReference(callee)
+
+            if (psi.valueArgumentList == null && lambdaArgs.isEmpty() && typeArgs.isNotEmpty()) {
+                return buildNamedAccessExpression {
+                    source = psi.toCjPsiSourceElement()
+                    calleeReference = reference
+                    explicitReceiver = receiver
+                    typeArguments.addAll(typeArgs)
+                }
+            }
 
             return buildFunctionCall {
                 source = psi.toCjPsiSourceElement()
@@ -1929,7 +2009,13 @@ class PsiRawCfirBuilder(
                     buildNamedReference(Name.identifier(callee?.text ?: "<error>"), callee?.toCjPsiSourceElement())
                 }
                 val lambdaArgs =
-                    selector.lambdaArguments.mapNotNull { it.getLambdaExpression()?.let { l -> convertLambda(l) } }
+                    selector.lambdaArguments.mapNotNull { lambdaArgument ->
+                        lambdaArgument.getLambdaExpression()?.let { lambda ->
+                            convertLambda(lambda).also { anonymousFunctionExpression ->
+                                anonymousFunctionExpression.replaceIsTrailingLambda(true)
+                            }
+                        }
+                    }
 
                 return buildFunctionCall {
                     source = psi.toCjPsiSourceElement()
@@ -2081,14 +2167,21 @@ class PsiRawCfirBuilder(
         // ---- Loops ----
 
         private fun convertFor(psi: CjForExpression): CfirForInExpression {
-            val loopParam = psi.loopParameter
-            val loopVarName = loopParam?.nameAsSafeName ?: Name.special("<anonymous>")
-            val loopTypeRef = if (loopParam != null) convertTypeRef(loopParam.typeReference) else buildImplicitTypeRef()
             val loopStatus = cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
-            val variable = buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(loopVarName))) { symbol ->
+            val loopPattern = psi.pattern?.let { pattern ->
+                convertCasePattern(
+                    pattern = pattern,
+                    ownerStatus = loopStatus,
+                    ownerIsLocal = true,
+                    ownerIsVar = false,
+                )
+            } ?: buildWildcardPattern {
+                source = psi.toCjPsiSourceElement()
+            }
+            val variable = buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(Name.special("<pattern-variable>")))) { symbol ->
                 buildPatternVariable {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = (loopParam ?: psi).toCjPsiSourceElement()
+                    source = (psi.pattern ?: psi).toCjPsiSourceElement()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
@@ -2096,20 +2189,8 @@ class PsiRawCfirBuilder(
                     attributes = CfirDeclarationAttributes.EMPTY
                     isLocal = true
                     status = loopStatus
-                    returnTypeRef = loopTypeRef
-                    pattern = buildBindingPattern {
-                        source = (loopParam ?: psi).toCjPsiSourceElement()
-                        name = loopVarName
-                        typeRef = loopTypeRef.takeUnless { it is CfirImplicitTypeRef }
-                        bindingVariable = createPatternBindingVariable(
-                            source = (loopParam ?: psi).toCjPsiSourceElement(),
-                            name = loopVarName,
-                            status = loopStatus,
-                            isLocal = true,
-                            isVar = false,
-                            returnTypeRef = loopTypeRef,
-                        )
-                    }
+                    returnTypeRef = buildImplicitTypeRef()
+                    pattern = loopPattern
                     isVar = false
                 }
             }

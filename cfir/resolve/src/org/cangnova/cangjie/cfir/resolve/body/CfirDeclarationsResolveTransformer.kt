@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
@@ -137,6 +138,11 @@ open class CfirDeclarationsResolveTransformer(
             transformEnumContent(enum, data)
         }
 
+    override fun transformExtend(extend: CfirExtend, data: ResolutionMode): CfirExtend =
+        whileAnalysing(session, extend) {
+            transformExtendContent(extend, data)
+        }
+
     protected open fun transformClassContent(klass: CfirClass, data: ResolutionMode): CfirClass =
         doTransformRegularClassContent(klass, data)
 
@@ -150,6 +156,20 @@ open class CfirDeclarationsResolveTransformer(
 
     protected open fun transformEnumContent(enum: CfirEnum, data: ResolutionMode): CfirEnum =
         transformOtherClassLikeDeclaration(enum, data) as CfirEnum
+
+    protected open fun transformExtendContent(extend: CfirExtend, data: ResolutionMode): CfirExtend {
+        val savedContext = context.towerDataContext
+        try {
+            return context.withScopesForExtend(extend, components) {
+                context.withContainer(extend) {
+                    transformDeclarationContent(extend, data) as CfirExtend
+                }
+            }
+        } finally {
+            context.replaceTowerDataContext(savedContext)
+            bumpPhase(extend)
+        }
+    }
 
     /**
      * regular class 对齐 Kotlin `doTransformRegularClassContent`：
@@ -390,6 +410,34 @@ open class CfirDeclarationsResolveTransformer(
         variable: CfirVariable,
         data: ResolutionMode,
     ): CfirVariable {
+        variable.replaceReturnTypeRef(resolveExplicitTypeRefIfNeeded(variable.returnTypeRef))
+
+        val explicitTypeRef = variable.returnTypeRef
+        val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
+            ResolutionMode.WithExpectedType(explicitTypeRef)
+        } else {
+            ResolutionMode.ContextIndependent
+        }
+
+        variable.initializer?.let {
+            variable.transformInitializer(transformer, initializerMode)
+        }
+
+        if (variable.returnTypeRef is CfirImplicitTypeRef) {
+            val initType = variable.initializer?.coneTypeOrNull
+            if (initType != null) {
+                val resolvedType = IdealTypeResolver.resolveIfIdeal(initType).approximateThisTypeForDeclaration()
+                variable.replaceReturnTypeRef(
+                    variable.returnTypeRef.resolvedTypeFromPrototype(
+                        resolvedType,
+                        variable.returnTypeRef.source,
+                    ),
+                )
+            }
+        }
+
+        context.storeVariable(variable, session)
+
         bumpPhase(variable)
         return variable
     }
@@ -767,7 +815,9 @@ open class CfirDeclarationsResolveTransformer(
         }
 
         val expressionTypes = returnExpressions.map { expression ->
-            expression.coneTypeOrNull ?: ConeErrorType(ConeSimpleDiagnostic("Postponed inference"))
+            expression.coneTypeOrNull ?: ConeErrorType(
+                ConeSimpleDiagnostic("Postponed inference", DiagnosticKind.InferenceError)
+            )
         }
 
         if (expressionTypes.size == 1) {
@@ -785,7 +835,7 @@ open class CfirDeclarationsResolveTransformer(
             prefix = "The types ",
             postfix = " do not have the smallest common supertype",
         ) { "'$it'" }
-        return ConeErrorType(ConeSimpleDiagnostic(message))
+        return ConeErrorType(ConeSimpleDiagnostic(message, DiagnosticKind.InferenceError))
     }
 
     private fun List<ConeCangJieType>.commonThisReturnTypeOrNull(): ConeClassLikeType? {
@@ -810,6 +860,10 @@ open class CfirDeclarationsResolveTransformer(
         return this === ConeAnyType || (this is ConeClassLikeType && classId == StdlibClassIds.Any)
     }
 
+    /**
+     * 隐式声明类型用于后续解析时，应采用错误表达式携带的有效类型。
+     * 原始错误仍保留在 initializer 上，由诊断收集阶段报告。
+     */
     /**
      * 提前把函数签名（返回类型、各参数类型）解析到 resolved 状态。
      * 用于局部嵌套函数进入 body resolve 前的一次性签名准备。

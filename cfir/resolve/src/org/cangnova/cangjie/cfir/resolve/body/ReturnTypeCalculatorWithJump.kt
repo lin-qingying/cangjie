@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.isCopyCreatedInScope
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
@@ -40,6 +41,10 @@ open class ReturnTypeCalculatorWithJump(
     override val callableCopyTypeCalculator: CallableCopyTypeCalculator = CallableCopyTypeCalculatorWithJump()
 
     override fun tryCalculateReturnTypeOrNull(declaration: CfirCallableDeclaration): CfirResolvedTypeRef {
+        if (declaration is CfirPatternBindingVariable) {
+            calculatePatternBindingReturnTypeOrNull(declaration)?.let { return it }
+        }
+
         if (declaration.isLocal) {
             return ReturnTypeCalculatorForFullBodyResolve.Default.tryCalculateReturnType(declaration)
         }
@@ -136,6 +141,24 @@ open class ReturnTypeCalculatorWithJump(
         val newReturnTypeRef = transformedDeclaration.returnTypeRef
         require(newReturnTypeRef is CfirResolvedTypeRef) { transformedDeclaration }
         return newReturnTypeRef
+    }
+
+    /**
+     * Pattern binding 的名字解析 symbol 与隐式类型推断 owner 不同：
+     * binding 自身没有 initializer，类型由外层 pattern variable 推断后投影写回。
+     */
+    private fun calculatePatternBindingReturnTypeOrNull(
+        declaration: CfirPatternBindingVariable,
+    ): CfirResolvedTypeRef? {
+        (declaration.returnTypeRef as? CfirResolvedTypeRef)?.let { return it }
+
+        val owner = session.cfirProvider.getCfirPatternVariableForBinding(declaration.symbol) ?: return null
+        if (implicitBodyResolveComputationSession.getStatus(owner.symbol) is CfirImplicitBodyResolveComputationStatus.Computing) {
+            return recursionInImplicitTypeRef(declaration)
+        }
+
+        tryCalculateReturnTypeOrNull(owner)
+        return declaration.returnTypeRef as? CfirResolvedTypeRef
     }
 
     private inner class CallableCopyTypeCalculatorWithJump : CallableCopyTypeCalculator.DeferredCallableCopyTypeCalculator() {

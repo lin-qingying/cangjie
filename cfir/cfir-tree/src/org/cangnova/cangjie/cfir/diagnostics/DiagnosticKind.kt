@@ -24,5 +24,6 @@ enum class DiagnosticKind {
     ReturnInStaticInit,
     CaptureBeforeInitialization,
     ThisTypeNotAllowed,
+    EmptyArrayLiteralTypeUndefined,
     Other,
 }

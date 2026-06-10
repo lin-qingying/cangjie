@@ -4,9 +4,11 @@
  * Tower 层级分组，表示候选在 scope 塔中的来源层级。
  * 候选收集器会用它比较层级优先级：
  * - 层级越高，优先级越高
- * - 同一层级中，`depth` 越深优先级越高
- * 对齐 K2 `TowerGroup`，但这里直接用 `depth` 表示嵌套深度。
- * 仓颉额外加入了 `EXTEND` 层级，位于 `LOCAL` 和 `IMPORTED` 之间。
+ * - 同一层级中，`depth` 越小越靠近当前词法位置
+ *
+ * 对齐 K2 `TowerGroupKind` 的核心顺序：
+ * explicit receiver member > local > implicit/non-local。
+ * 仓颉额外加入了 `EXTEND` 层级，位于 `LOCAL` 和普通非局部 scope 之间。
  */
 data class CfirTowerGroup(
     /** 层级种类。 */
@@ -17,15 +19,21 @@ data class CfirTowerGroup(
 
     /**
      * Scope 塔上的层级种类。
-     * 优先级从高到低依次为：`MEMBER > LOCAL > EXTEND > IMPORTED > PACKAGE`。
+     *
+     * `EXPLICIT_MEMBER` 只用于显式接收者（如 `a.foo`）的成员候选；
+     * 隐式 `this` 成员必须低于局部变量/参数，否则同名构造器参数会被字段遮蔽。
      */
     enum class Kind {
-        /** 类的直接成员。 */
-        MEMBER,
+        /** 显式接收者成员。 */
+        EXPLICIT_MEMBER,
         /** 局部 scope，如函数体或块内部声明。 */
         LOCAL,
         /** `extend` 声明引入的成员，仓颉特有。 */
         EXTEND,
+        /** 普通非局部 scope，例如类型参数、静态 scope 等。 */
+        NON_LOCAL,
+        /** 隐式接收者成员，例如当前类的 `this` 成员。 */
+        IMPLICIT_MEMBER,
         /** import 引入的声明。 */
         IMPORTED,
         /** 包级声明。 */
@@ -36,18 +44,20 @@ data class CfirTowerGroup(
         // kind ordinal 越小，优先级越高
         val kindComparison = this.kind.ordinal.compareTo(other.kind.ordinal)
         if (kindComparison != 0) return kindComparison
-        // 同 kind 中，depth 越大优先级越高
-        return other.depth.compareTo(this.depth)
+        // Kotlin tower 中 innermost local depth 为 0，depth 越小越优先。
+        return this.depth.compareTo(other.depth)
     }
 
     companion object {
         val Start = CfirTowerGroup(Kind.PACKAGE, Int.MAX_VALUE)
-        val MEMBER = CfirTowerGroup(Kind.MEMBER)
+        val EXPLICIT_MEMBER = CfirTowerGroup(Kind.EXPLICIT_MEMBER)
+        val IMPLICIT_MEMBER = CfirTowerGroup(Kind.IMPLICIT_MEMBER)
         val EXTEND = CfirTowerGroup(Kind.EXTEND)
+        val NON_LOCAL = CfirTowerGroup(Kind.NON_LOCAL)
         val PACKAGE = CfirTowerGroup(Kind.PACKAGE)
 
         fun local(depth: Int) = CfirTowerGroup(Kind.LOCAL, depth)
+        fun nonLocal(depth: Int) = CfirTowerGroup(Kind.NON_LOCAL, depth)
         fun imported(depth: Int) = CfirTowerGroup(Kind.IMPORTED, depth)
     }
 }
-

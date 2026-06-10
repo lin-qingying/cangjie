@@ -38,7 +38,7 @@ open class DiagnosticCodeMetaInfoRenderConfiguration(
         return "(\"${params.filter { it.isNotEmpty() }.joinToString("; ")}\")"
     }
 
-    fun getTag(codeMetaInfo: DiagnosticCodeMetaInfo): String {
+    open fun getTag(codeMetaInfo: DiagnosticCodeMetaInfo): String {
         return codeMetaInfo.diagnostic.factory.name.removePrefix("CFIR_")
     }
 }

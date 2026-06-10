@@ -35,15 +35,16 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
 
     private fun CfirFunction.bodyUsageState(): UsageState {
         val returnType = returnTypeRef.coneTypeOrNull
-        return if (returnType == ConePrimitiveType.UNIT) UsageState.Unused else UsageState.Used
+        return if (returnType == ConePrimitiveType.UNIT) UsageState.UnusedUnitReturn else UsageState.Used
     }
 
     private enum class UsageState {
         Used,
         Unused,
+        UnusedUnitReturn,
         ;
 
-        fun isUnused(): Boolean = this == Unused
+        fun isUnused(): Boolean = this == Unused || this == UnusedUnitReturn
     }
 
     private class UsageVisitor(
@@ -121,6 +122,8 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
 
         private fun checkExpression(expression: CfirExpression, data: UsageState) {
             if (!data.isUnused()) return
+            // 官方 cjc 只在 Unit 返回位置的非 Unit 表达式上报 unused expression，尾部 `()` 是有效返回值。
+            if (data == UsageState.UnusedUnitReturn && expression.coneTypeOrNull == ConePrimitiveType.UNIT) return
             if (expression.hasSideEffect()) return
             if (expression is CfirAnonymousFunctionExpression) return
             if (expression is CfirThisReceiverExpression && declaration is CfirFinalizer) return

@@ -23,7 +23,7 @@ object CfirMapTypeArguments : ResolutionStage() {
         val mapping = buildTypeArgumentMapping(candidate)
         candidate.typeArgumentMapping = mapping
 
-        checkTypeArgumentCount(candidate)
+        checkTypeArgumentCount(candidate, context)
     }
 
     private fun buildTypeArgumentMapping(candidate: Candidate): TypeArgumentMapping {
@@ -45,20 +45,17 @@ object CfirMapTypeArguments : ResolutionStage() {
      * 它在 `ConeInapplicableCandidateError` 路径中被映射。
      */
     context(sink: CheckerSink)
-    private fun checkTypeArgumentCount(candidate: Candidate) {
+    private fun checkTypeArgumentCount(
+        candidate: Candidate,
+        context: ResolutionContext,
+    ) {
         val explicitCount = candidate.callInfo.typeArguments
             .count { it is CfirResolvedTypeRef }
         if (explicitCount == 0) return
 
         val declaration = candidate.symbol.takeIf { it.isBound }?.cfir ?: return
-        val declaredTypeParams = when (declaration) {
-            is org.cangnova.cangjie.cfir.declarations.CfirFunction -> declaration.typeParameters
-            is org.cangnova.cangjie.cfir.declarations.CfirClass -> declaration.typeParameters
-            is org.cangnova.cangjie.cfir.declarations.CfirStruct -> declaration.typeParameters
-            is org.cangnova.cangjie.cfir.declarations.CfirEnum -> declaration.typeParameters
-            is org.cangnova.cangjie.cfir.declarations.CfirInterface -> declaration.typeParameters
-            else -> return
-        }
+        val declaredTypeParams = CfirCreateFreshTypeVariableSubstitutorStage
+            .collectCandidateTypeParametersForFreshVariables(context.session, candidate, declaration)
 
         val expected = declaredTypeParams.size
         if (expected != explicitCount) {

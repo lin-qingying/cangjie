@@ -7,7 +7,7 @@
 
 main(): Int64 {
     var a: Int8 = 1
-    a <<= <!CONST_EVAL_SHIFT_COUNT_OVERFLOW!>9<!>
-    a >>= <!CONST_EVAL_SHIFT_COUNT_OVERFLOW!>9<!>
+    a <<= <!sema_const_eval_shift_count_overflow!>9<!>
+    a >>= <!sema_const_eval_shift_count_overflow!>9<!>
     return 1
 }

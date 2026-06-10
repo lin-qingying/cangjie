@@ -28,6 +28,7 @@ class ConeErrorType(
 
     val diagnostic: ConeDiagnostic get() = lookupTag.diagnostic
     val delegatedType: ConeCangJieType? get() = lookupTag.delegatedType
+    override val isError: Boolean get() = true
 
     override fun equals(other: Any?): Boolean = this === other
     override fun hashCode(): Int = System.identityHashCode(this)

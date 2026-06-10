@@ -22,8 +22,9 @@ import org.cangnova.cangjie.source.text
 /**
  * Pattern variable initializer type mismatch checker.
  *
- * Aligned with Kotlin's FirInitializerTypeMismatchChecker behavior for declaration initializers:
- * compare initializer type against declared type and report dedicated diagnostic.
+ * 普通表达式初始化器由这里比较声明类型与初始化器类型。
+ * 官方仓颉编译器把这类 `sema_mismatched_types` 锚定在初始化表达式，
+ * 因此这里与字段初始化器保持同一诊断表面：报告表达式上的 `TYPE_MISMATCH`。
  */
 object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -32,9 +33,9 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
 
         val expectedType = (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
         val initializer = declaration.initializer?.takeIf { it !is CfirErrorExpression } ?: return
+        if (initializer is CfirFunctionCall) return
         if (initializer.hasResolutionDiagnostic()) return
         if (initializer.isBareEnumConstructorAccess()) return
-        if (initializer is CfirFunctionCall) return
         val actualType = initializer.coneTypeOrNull ?: return
         val initializerSource = initializer.source as? AbstractCjSourceElement
         val isEnumConstructorInitializer = initializer.isEnumConstructorAccess()
@@ -44,11 +45,7 @@ object CfirPatternVariableInitializerTypeMismatchChecker : CfirPatternVariableCh
             actualType = actualType,
             source = if (isEnumConstructorInitializer) initializerSource ?: source else source,
             preferredSpecializedSource = initializerSource,
-            diagnosticFactory = if (isEnumConstructorInitializer) {
-                CfirErrors.TYPE_MISMATCH
-            } else {
-                CfirErrors.PATTERN_INITIALIZER_TYPE_MISMATCH
-            },
+            diagnosticFactory = CfirErrors.TYPE_MISMATCH,
         )
     }
 }

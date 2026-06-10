@@ -2,7 +2,6 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -20,13 +19,16 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -49,7 +51,7 @@ enum class CfirClassMemberScopeKind {
     DECLARATION_SITE,
 }
 
-class CfirClassUseSiteMemberScope(
+class CfirClassUseSiteMemberScope private constructor(
     private val session: CfirSession,
     private val classSymbol: CfirClassLikeSymbol<*>,
     private val symbolProvider: CfirSymbolProvider,
@@ -57,7 +59,27 @@ class CfirClassUseSiteMemberScope(
     private val directSupertypeProvider: CfirDirectSupertypeProvider? = null,
     private val ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
     private val scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
+    private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
 ) : CfirTypeScope() {
+    constructor(
+        session: CfirSession,
+        classSymbol: CfirClassLikeSymbol<*>,
+        symbolProvider: CfirSymbolProvider,
+        extendProvider: CfirExtendProvider? = null,
+        directSupertypeProvider: CfirDirectSupertypeProvider? = null,
+        ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
+        scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
+    ) : this(
+        session = session,
+        classSymbol = classSymbol,
+        symbolProvider = symbolProvider,
+        extendProvider = extendProvider,
+        directSupertypeProvider = directSupertypeProvider,
+        ownerType = ownerType,
+        scopeKind = scopeKind,
+        supertypePath = CfirSupertypePath.root(classSymbol.classId),
+    )
+
     constructor(
         classSymbol: CfirClassLikeSymbol<*>,
         symbolProvider: CfirSymbolProvider,
@@ -71,26 +93,31 @@ class CfirClassUseSiteMemberScope(
         directSupertypeProvider = directSupertypeProvider,
         ownerType = declarationSelfType(classSymbol),
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
 
     private val declaredScope = CfirClassDeclaredMemberScope(classSymbol)
     private val extendScope = takeIf { scopeKind == CfirClassMemberScopeKind.USE_SITE }
         ?.let { extendProvider?.let { provider -> CfirExtendMemberScope(classSymbol.classId, provider) } }
     private val parentScopes: List<CfirTypeScope> by lazy { buildParentScopes() }
-
-    override fun getCallableNames(): Set<Name> = buildSet {
-        addDeclaredCallableNames(classSymbol.cfir.declarations, this)
-        addAll(extendCallableNames())
-        addAll(parentCallableNames())
-    }
-
-    override fun getClassifierNames(): Set<Name> = buildSet {
-        for (declaration in classSymbol.cfir.declarations) {
-            if (declaration is CfirClassLikeDeclaration) add((declaration.symbol as CfirClassLikeSymbol<*>).name)
+    private val callableNamesCached by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        buildSet {
+            addAll(declaredScope.getCallableNames())
+            addAll(extendCallableNames())
+            addAll(parentCallableNames())
         }
-        addAll(extendClassifierNames())
-        addAll(parentClassifierNames())
     }
+    private val classifierNamesCached by lazy(LazyThreadSafetyMode.PUBLICATION) {
+        buildSet {
+            addAll(declaredScope.getClassifierNames())
+            addAll(extendClassifierNames())
+            addAll(parentClassifierNames())
+        }
+    }
+
+    override fun getCallableNames(): Set<Name> = callableNamesCached
+
+    override fun getClassifierNames(): Set<Name> = classifierNamesCached
 
     override fun processDirectOverriddenFunctionsWithBaseScope(
         functionSymbol: CfirNamedFunctionSymbol,
@@ -135,9 +162,12 @@ class CfirClassUseSiteMemberScope(
         directSupertypeProvider = newSession.directSupertypeProviderOrNull,
         ownerType = ownerType,
         scopeKind = scopeKind,
+        supertypePath = supertypePath,
     )
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
+        if (name !in getClassifierNames()) return
+
         val local = mutableListOf<CfirClassLikeSymbol<*>>()
         declaredScope.processClassifiersByName(name) { local += it }
         if (local.isEmpty()) {
@@ -153,6 +183,8 @@ class CfirClassUseSiteMemberScope(
     }
 
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
+        if (name !in getCallableNames()) return
+
         declaredScope.processFunctionsByName(name, processor)
         extendScope?.processFunctionsByName(name, processor)
         for (parent in parentScopes) {
@@ -161,6 +193,8 @@ class CfirClassUseSiteMemberScope(
     }
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
+        if (name !in getCallableNames()) return
+
         val local = mutableListOf<CfirPropertySymbol>()
         declaredScope.processPropertiesByName(name) { local += it }
         if (local.isEmpty()) {
@@ -176,17 +210,28 @@ class CfirClassUseSiteMemberScope(
     }
 
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
-        declaredScope.processCallablesByName(name, processor)
-        extendScope?.processCallablesByName(name, processor)
+        if (name !in getCallableNames()) return
+
+        val local = mutableListOf<CfirCallableSymbol<*>>()
+        declaredScope.processCallablesByName(name) { local += it }
+        extendScope?.processCallablesByName(name) { local += it }
+        if (local.isNotEmpty()) {
+            local.forEach(processor)
+            if (local.any { it.isValueLikeCallable() }) return
+        }
         for (parent in parentScopes) {
             parent.processCallablesByName(name, processor)
         }
     }
 
+    private fun CfirCallableSymbol<*>.isValueLikeCallable(): Boolean =
+        this is CfirPropertySymbol || this is CfirVariableSymbol<*> || this is CfirEnumConstructorSymbol
+
     private fun buildParentScopes(): List<CfirTypeScope> {
         val rootType = ownerType ?: return emptyList()
         return directParentTypesOf(rootType).mapNotNull { supertype ->
             val classId = supertype.classIdOrPrimitiveClassId ?: return@mapNotNull null
+            if (supertypePath.contains(classId)) return@mapNotNull null
             val parentSymbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: return@mapNotNull null
             CfirClassUseSiteMemberScope(
                 session = session,
@@ -196,6 +241,7 @@ class CfirClassUseSiteMemberScope(
                 directSupertypeProvider = directSupertypeProvider,
                 ownerType = supertype,
                 scopeKind = scopeKind,
+                supertypePath = supertypePath.child(classId),
             )
         }
     }
@@ -233,27 +279,64 @@ class CfirClassUseSiteMemberScope(
         }
     }.filter { extendProvider?.isExtendAccessible(it) != false }
 
-    private fun addDeclaredCallableNames(
-        declarations: List<CfirDeclaration>,
-        destination: MutableSet<Name>,
-    ) {
-        for (declaration in declarations) {
-            when (declaration) {
-                is CfirFunction -> declaration.callableNameOrNull()?.let(destination::add)
-                is CfirProperty -> destination += declaration.name
-                is CfirFieldVariable -> destination += declaration.name
-                is CfirEnumConstructor -> destination += declaration.name
-                else -> Unit
-            }
-        }
-    }
-
     private fun parentCallableNames(): Set<Name> = buildSet {
-        parentScopes.flatMapTo(this) { it.getCallableNames() }
+        collectParentNames(
+            ownerType = ownerType ?: return@buildSet,
+            visitedClassIds = linkedSetOf(classSymbol.classId),
+            collectDeclaredNames = CfirClassDeclaredMemberScope::getCallableNames,
+            collectExtendNames = CfirClassUseSiteMemberScope::extendCallableNames,
+            addNames = ::addAll,
+        )
     }
 
     private fun parentClassifierNames(): Set<Name> = buildSet {
-        parentScopes.flatMapTo(this) { it.getClassifierNames() }
+        collectParentNames(
+            ownerType = ownerType ?: return@buildSet,
+            visitedClassIds = linkedSetOf(classSymbol.classId),
+            collectDeclaredNames = CfirClassDeclaredMemberScope::getClassifierNames,
+            collectExtendNames = CfirClassUseSiteMemberScope::extendClassifierNames,
+            addNames = ::addAll,
+        )
+    }
+
+    /**
+     * 对齐 Kotlin `lookupSuperTypes(...).traverseDepthFirstWithoutDuplicates` 的 containing-names 收集语义。
+     *
+     * `parentScopes` 仍然保留当前 use-site 查询路径，用于按名称处理成员；但 containing names
+     * 只需要集合结果。如果沿每条继承路径递归调用父 scope 的 `getCallableNames()`，标准库中
+     * diamond 继承会重复构造大量等价父 scope，LLT 大套件会在成员名缓存阶段耗尽堆。
+     */
+    private fun collectParentNames(
+        ownerType: ConeCangJieType,
+        visitedClassIds: MutableSet<ClassId>,
+        collectDeclaredNames: CfirClassDeclaredMemberScope.() -> Set<Name>,
+        collectExtendNames: CfirClassUseSiteMemberScope.() -> Set<Name>,
+        addNames: (Set<Name>) -> Unit,
+    ) {
+        for (supertype in directParentTypesOf(ownerType)) {
+            val classId = supertype.classIdOrPrimitiveClassId ?: continue
+            if (!visitedClassIds.add(classId)) continue
+            val parentSymbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: continue
+            val parentScope = CfirClassUseSiteMemberScope(
+                session = session,
+                classSymbol = parentSymbol,
+                symbolProvider = symbolProvider,
+                extendProvider = extendProvider,
+                directSupertypeProvider = directSupertypeProvider,
+                ownerType = supertype,
+                scopeKind = scopeKind,
+                supertypePath = supertypePath.child(classId),
+            )
+            addNames(parentScope.declaredScope.collectDeclaredNames())
+            addNames(parentScope.collectExtendNames())
+            parentScope.collectParentNames(
+                ownerType = supertype,
+                visitedClassIds = visitedClassIds,
+                collectDeclaredNames = collectDeclaredNames,
+                collectExtendNames = collectExtendNames,
+                addNames = addNames,
+            )
+        }
     }
 
     private fun directParentTypesOf(type: ConeCangJieType): List<ConeCangJieType> {
@@ -285,6 +368,33 @@ class CfirClassUseSiteMemberScope(
 
 private fun declarationSelfType(symbol: CfirClassLikeSymbol<*>): ConeCangJieType? {
     return symbol.takeIf { it.isBound }?.constructType()
+}
+
+/**
+ * 父类型展开路径。
+ *
+ * Kotlin FIR 在 `lookupSuperTypes` 层用可变 visited set 阻断重复 symbol。当前 CFIR
+ * use-site scope 仍采用 lazy 父 scope 构造，因此这里用链式路径表达同一语义，
+ * 避免递归层级较深时反复复制完整 `Set<ClassId>` 导致 O(n^2) 内存增长。
+ */
+private class CfirSupertypePath private constructor(
+    private val classId: ClassId,
+    private val parent: CfirSupertypePath?,
+) {
+    fun contains(candidate: ClassId): Boolean {
+        var current: CfirSupertypePath? = this
+        while (current != null) {
+            if (current.classId == candidate) return true
+            current = current.parent
+        }
+        return false
+    }
+
+    fun child(classId: ClassId): CfirSupertypePath = CfirSupertypePath(classId, this)
+
+    companion object {
+        fun root(classId: ClassId): CfirSupertypePath = CfirSupertypePath(classId, parent = null)
+    }
 }
 
 private data class MemberWithBaseScope<S : CfirCallableSymbol<*>>(

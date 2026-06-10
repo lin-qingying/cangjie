@@ -31,10 +31,25 @@ abstract class AbstractConeSubstitutor(
 
     private fun ConeCangJieType.substituteRecursive(): ConeCangJieType? {
         return when (this) {
+            is ConeErrorType -> substituteErrorType()
             is ConeTypeAliasType -> substituteTypeAlias()
             is ConeRigidType -> substituteArguments()
             else -> null
         }
+    }
+
+    private fun ConeErrorType.substituteErrorType(): ConeCangJieType? {
+        val substitutedDelegatedType = delegatedType?.let { substituteOrNull(it) ?: it }
+        val substitutedArguments = substituteArguments()
+        if (substitutedDelegatedType == delegatedType && substitutedArguments == null) return null
+
+        return ConeErrorType(
+            diagnostic = diagnostic,
+            isUninferredParameter = isUninferredParameter,
+            delegatedType = substitutedDelegatedType,
+            typeArguments = (substitutedArguments as? ConeErrorType)?.typeArguments ?: typeArguments,
+            attributes = attributes,
+        )
     }
 
     private fun ConeTypeAliasType.substituteTypeAlias(): ConeCangJieType? {
@@ -129,6 +144,7 @@ private fun ConeCangJieType.typeConstructorForSubstitution(): TypeConstructorMar
 private fun ConeCangJieType.approximateIntegerLiteralType(): ConeCangJieType {
     return when (this) {
         is ConeIdealLiteralType -> getApproximatedType()
+        is ConePrimitiveType -> IdealTypeResolver.resolveIfIdeal(this)
         else -> this
     }
 }

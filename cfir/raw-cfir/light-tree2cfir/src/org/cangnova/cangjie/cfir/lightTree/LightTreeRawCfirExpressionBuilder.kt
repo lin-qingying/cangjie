@@ -461,10 +461,12 @@ class LightTreeRawCfirExpressionBuilder(
           val argNodes = mutableListOf<LighterASTNode>()
           val typeArgNodes = mutableListOf<LighterASTNode>()
           val lambdaArgNodes = mutableListOf<LighterASTNode>()
+          var hasValueArgumentList = false
 
         tree.forEachChildren(node) { child ->
             when (child.tokenType) {
                 CjNodeTypes.VALUE_ARGUMENT_LIST -> {
+                    hasValueArgumentList = true
                     tree.forEachChildren(child) { arg ->
                         if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
                             argNodes.add(arg)
@@ -561,6 +563,15 @@ class LightTreeRawCfirExpressionBuilder(
           callArguments.addAll(lambdaArgs)
 
           val (receiver, reference) = resolveCalleeReference(effectiveCalleeNode)
+
+          if (!hasValueArgumentList && lambdaArgs.isEmpty() && typeArgs.isNotEmpty()) {
+              return buildNamedAccessExpression {
+                  source = node.toSource()
+                  calleeReference = reference
+                  explicitReceiver = receiver
+                  this.typeArguments.addAll(typeArgs)
+              }
+          }
 
           return buildFunctionCall {
               source = node.toSource()
@@ -1137,53 +1148,43 @@ class LightTreeRawCfirExpressionBuilder(
     // ===== Loops =====
 
     private fun convertFor(node: LighterASTNode): CfirForInExpression {
-        var paramNode: LighterASTNode? = null
+        var patternNode: LighterASTNode? = null
         var rangeNode: LighterASTNode? = null
         var bodyNode: LighterASTNode? = null
 
         tree.forEachChildren(node) { child ->
             when (child.tokenType) {
-                CjNodeTypes.VALUE_PARAMETER -> paramNode = child
                 CjNodeTypes.LOOP_RANGE -> rangeNode = findFirstExpression(child)
                 CjNodeTypes.BODY -> bodyNode = findFirstExpression(child)
+                else -> if (isPatternToken(child.tokenType)) {
+                    patternNode = child
+                }
             }
         }
 
-        val paramName = paramNode?.let {
-            val nameNode = tree.findChildByType(it, CjTokens.IDENTIFIER)
-            nameNode?.asText()
-        }
-        val paramTypeRef = paramNode?.let {
-            val typeRef = tree.findChildByType(it, CjNodeTypes.TYPE_REFERENCE)
-            convertTypeReference(typeRef, tree, source) { n -> n.toSourceElement() }
-        } ?: buildImplicitTypeRef()
         val loopStatus = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
-
-        val variableName = if (paramName != null) Name.identifier(paramName) else Name.special("<anonymous>")
-            val variable = buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(variableName))) { symbol ->
+        val loopPattern = patternNode?.let {
+            convertPattern(
+                node = it,
+                ownerStatus = loopStatus,
+                ownerIsLocal = true,
+                ownerIsVar = false,
+            )
+        } ?: buildWildcardPattern {
+            source = node.toSource()
+        }
+        val variable = buildSourceDeclaration(CfirPatternVariableSymbol(callableIdFor(Name.special("<pattern-variable>")))) { symbol ->
                 buildPatternVariable {
                     resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = (paramNode ?: node).toSource()
+                    source = (patternNode ?: node).toSource()
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = true
                 status = loopStatus
-                returnTypeRef = paramTypeRef
-                pattern = buildBindingPattern {
-                    source = (paramNode ?: node).toSource()
-                    name = variableName
-                    typeRef = paramTypeRef.takeUnless { it is org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef }
-                    bindingVariable = declarationBuilder.createPatternBindingVariable(
-                        source = (paramNode ?: node).toSource(),
-                        name = variableName,
-                        status = loopStatus,
-                        isLocal = true,
-                        isVar = false,
-                        returnTypeRef = paramTypeRef,
-                    )
-                }
+                returnTypeRef = buildImplicitTypeRef()
+                pattern = loopPattern
                 isVar = false
             }
         }

@@ -1,7 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.diagnostics
 
+import com.intellij.psi.PsiElement
 import com.intellij.psi.util.PsiTreeUtil
-import org.cangnova.cangjie.LanguageFeature
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.*
@@ -9,6 +9,7 @@ import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
@@ -21,6 +22,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.model.ConeReceiverConstraintP
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
+import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.semantics.isSuccess
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -47,6 +49,7 @@ fun ConeDiagnostic.toCfirDiagnostics(
     callOrAssignmentSource: CjSourceElement?,
     valueParameter: CfirValueParameter? = null,
 ): List<CjDiagnostic> {
+    if (this is ConeUnreportedDuplicateDiagnostic) return emptyList()
     return when (this) {
         is ConeConstraintSystemHasContradiction -> mapSystemHasContradictionError(session, source, callOrAssignmentSource)
         is ConeInapplicableCandidateError -> mapInapplicableCandidateError(session, source, callOrAssignmentSource)
@@ -65,7 +68,9 @@ private fun ConstraintSystemError.mapConstraintSystemError(
 ): CjDiagnostic? {
     return when (this) {
         is ConstraintMismatch -> {
-            if (candidate.symbol.let { it as? CfirCallableSymbol<*> }?.cfir?.typeParameters?.isNotEmpty() == true) {
+            if (candidate.symbol.let { it as? CfirCallableSymbol<*> }?.cfir?.typeParameters?.isNotEmpty() == true &&
+                !candidate.hasExplicitTypeArgumentsInCall()
+            ) {
                 ConeConstraintSystemHasContradiction(candidate)
                     .genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session)
                     ?.let { return it }
@@ -86,11 +91,13 @@ private fun ConstraintSystemError.mapConstraintSystemError(
             val reportOn = argumentAndReportSource.second
 
             argument?.let {
-                (it as? org.cangnova.cangjie.cfir.expressions.CfirExpression)
-                    ?.genericInferenceArgumentMismatchDiagnostic(session)
-                    ?.let { inferenceDiagnostic ->
-                    return inferenceDiagnostic
-                    }
+                if (!candidate.hasExplicitTypeArgumentsInCall()) {
+                    (it as? org.cangnova.cangjie.cfir.expressions.CfirExpression)
+                        ?.genericInferenceArgumentMismatchDiagnostic(session)
+                        ?.let { inferenceDiagnostic ->
+                            return inferenceDiagnostic
+                        }
+                }
                 return argumentTypeMismatch(
                     source = reportOn ?: it.source ?: source,
                     expectedType = upperConeType.substituteTypeVariableTypes(candidate, session),
@@ -124,18 +131,17 @@ private fun ConstraintSystemError.mapConstraintSystemError(
 
         is NotEnoughInformationForTypeParameter<*> ->
             if (
+                candidate.isImplicitBuiltinArrayConstructorCall() ||
+                candidate.isImplicitGenericCallWithTypeParameters() ||
                 candidate.hasGenericCallNotEnoughTypeInformation() ||
                 candidate.looksLikeImplicitGenericCallInferenceFailure(source, qualifiedAccessSource)
             ) {
                 ConeConstraintSystemHasContradiction(candidate)
-                    .genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session)
+                    .unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session)
             } else {
                 typeVariable.asDeclaredTypeParameterSymbolOrNull()?.let {
-                    CfirErrors.CANNOT_INFER_PARAMETER_TYPE.on(
-                        source ?: qualifiedAccessSource ?: candidate.callInfo.callSite.source ?: return null,
-                        it,
-                        session,
-                    )
+                    ConeConstraintSystemHasContradiction(candidate)
+                        .unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session)
                 }
             }
 
@@ -180,6 +186,19 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
     val errors = candidate.errors
+    candidate.diagnostics
+        .filterIsInstance<TooManyArguments>()
+        .mapNotNull { diagnostic ->
+            CfirErrors.TOO_MANY_ARGUMENTS.on(
+                diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+                diagnostic.targetName,
+                session,
+            )
+        }
+        .takeIf { it.isNotEmpty() }
+        ?.let { return it }
+    if (candidate.callInfo.arguments.any { it.containsErrorDiagnosticInArgument() }) return emptyList()
+
     if (isBareStaticGenericQualifierInferenceError(session)) {
         return listOfNotNull(
             CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
@@ -189,14 +208,14 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
         )
     }
     if (candidate.hasGenericCallNotEnoughTypeInformation()) {
-        return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
+        return listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
     }
     if (hasGenericInferenceConstraintMismatch()) {
         return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
     }
 
     val hasNotEnoughInformationError = errors.any { it is NotEnoughInformationForTypeParameter<*> }
-    return errors.mapNotNull { error ->
+    return errors.coalesceArgumentConstraintMismatches().coalesceExpectedTypeConstraintMismatches().mapNotNull { error ->
         if (hasNotEnoughInformationError &&
             error is ConstraintMismatch &&
             error.position.from is ConeExpectedTypeConstraintPosition
@@ -282,9 +301,6 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
         .takeIf { it.isNotEmpty() }
         ?.let { return it }
 
-    genericInferenceInapplicableDiagnostic(session, source, qualifiedAccessSource)
-        ?.let { return listOf(it) }
-
     val noMatchingInvokeDiagnostic = mapNoMatchingInvokeOperatorDiagnostic(session, source, qualifiedAccessSource)
     val genericDiagnostic = (qualifiedAccessSource ?: source)?.let { diagnosticSource ->
         when (candidateSymbol.cfir) {
@@ -298,7 +314,8 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
 
     var suppressedRangeArgumentMismatch = false
     var suppressedErrorTypeInArguments = false
-    val diagnostics = candidate.diagnostics.filter { !it.isSuccess }.mapNotNull { rootCause ->
+    val hasErrorTypeInArguments = candidate.diagnostics.any { it == ErrorTypeInArguments }
+    val diagnostics = candidate.diagnostics.filter { !it.isSuccess }.coalesceArgumentTypeMismatches().mapNotNull { rootCause ->
         when (rootCause) {
             ErrorTypeInArguments -> {
                 suppressedErrorTypeInArguments = true
@@ -313,11 +330,16 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
             is ArgumentTypeMismatch -> {
                 candidate.multiLambdaBuilderInferenceDiagnosticFor(rootCause.argument, source, qualifiedAccessSource, session)
                     ?.let { return@mapNotNull it }
-                rootCause.argument.genericInferenceArgumentMismatchDiagnostic(session)
-                    ?.let { return@mapNotNull it }
-                rootCause.argument.genericInferenceCallTypeMismatchDiagnostic(session)
-                    ?.let { return@mapNotNull it }
-                if (!candidate.usedOuterCs && rootCause.systemHadContradiction) {
+                if (!candidate.hasExplicitTypeArgumentsInCall()) {
+                    rootCause.argument.genericInferenceArgumentMismatchDiagnostic(session)
+                        ?.let { return@mapNotNull it }
+                    rootCause.argument.genericInferenceCallTypeMismatchDiagnostic(session)
+                        ?.let { return@mapNotNull it }
+                }
+                if (!candidate.usedOuterCs &&
+                    rootCause.systemHadContradiction &&
+                    !candidate.hasExplicitTypeArgumentsInCall()
+                ) {
                     return@mapNotNull null
                 }
                 if (candidate.hasGenericCallNotEnoughTypeInformation() && rootCause.argument is CfirAnonymousFunctionExpression) {
@@ -349,9 +371,30 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
                 }
             }
 
+            is AmbiguousArgumentType -> {
+                val diagnosticSource = rootCause.callSite.source
+                    ?: qualifiedAccessSource
+                    ?: source
+                    ?: candidate.callInfo.callSite.source
+                    ?: return@mapNotNull null
+                CfirErrors.AMBIGUOUS_ARG_TYPE.on(
+                    diagnosticSource.firstCharacterDiagnosticSource(),
+                    candidate.callInfo.name,
+                    session,
+                )
+            }
+
             is InferenceConstraintError -> {
+                if (hasErrorTypeInArguments) return@mapNotNull null
+                if (candidate.diagnostics.any { it is TooManyArguments }) return@mapNotNull null
+                if (candidate.callInfo.arguments.any { it.containsErrorDiagnosticInArgument() }) return@mapNotNull null
+                if (candidate.hasExplicitTypeArgumentsInCall() &&
+                    candidate.diagnostics.any { it is ArgumentTypeMismatch }
+                ) {
+                    return@mapNotNull null
+                }
                 if (candidate.symbol.let { it as? CfirCallableSymbol<*> }?.cfir?.typeParameters?.isNotEmpty() == true &&
-                    (candidate.callInfo.callSite as? CfirQualifiedAccessExpression)?.typeArguments?.isEmpty() != false
+                    !candidate.hasExplicitTypeArgumentsInCall()
                 ) {
                     ConeConstraintSystemHasContradiction(candidate)
                         .genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session)
@@ -409,6 +452,9 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
 
     noMatchingInvokeDiagnostic?.let { return listOf(it) }
 
+    genericInferenceInapplicableDiagnostic(session, source, qualifiedAccessSource)
+        ?.let { return listOf(it) }
+
     val diagnosticSource = qualifiedAccessSource ?: source ?: return emptyList()
     return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session))
 }
@@ -459,7 +505,8 @@ private fun ConeInapplicableCandidateError.genericInferenceInapplicableDiagnosti
     qualifiedAccessSource: CjSourceElement?,
 ): CjDiagnostic? {
     val contradiction = ConeConstraintSystemHasContradiction(candidate)
-    val hasInferenceConstraintDiagnostic = candidate.diagnostics.any { it is InferenceConstraintError }
+    val hasInferenceConstraintDiagnostic = !candidate.hasExplicitTypeArgumentsInCall() &&
+        candidate.diagnostics.any { it is InferenceConstraintError }
     if (!candidate.hasGenericInferenceArgumentMismatch() &&
         !candidate.hasGenericCallNotEnoughTypeInformation() &&
         !contradiction.hasGenericInferenceConstraintMismatch() &&
@@ -496,6 +543,7 @@ private fun argumentTypeMismatch(
     session: CfirSession,
 ): CjDiagnostic? {
     if (source == null) return null
+    if (expectedType.containsErrorType() || actualType.containsErrorType()) return null
     if (expectedType.rangeElementTypeOrNull() != null &&
         actualType.rangeElementTypeOrNull() != null
     ) {
@@ -836,8 +884,6 @@ private fun ConeUnresolvedNameError.buildInvalidBinaryOperatorDiagnostic(
     diagnosticSource: CjSourceElement,
     session: CfirSession,
 ): CjDiagnostic? {
-    if (!session.languageVersionSettings.supportsFeature(LanguageFeature.InvalidBinaryOperatorDiagnostics)) return null
-
     val operatorToken = operator ?: return null
     val leftType = receiverType ?: return null
     val rightType = argumentTypes.singleOrNull() ?: return null
@@ -900,31 +946,26 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
     session: CfirSession,
 ): CjDiagnostic? {
     val diagnosticSource = callOrAssignmentSource ?: source ?: return null
-    val genericCallDiagnosticSource = callOrAssignmentSource
+    val genericCallSource = callOrAssignmentSource ?: source
+    val genericCallDiagnosticSource = genericCallSource
         ?.genericInferenceCallCalleeSource()
-        ?.takeIf { callOrAssignmentSource.isImplicitGenericCallWithoutTypeArguments() }
+        ?.takeIf { genericCallSource.isImplicitGenericCallWithoutTypeArguments() }
     return when (this) {
         is ConeFunctionExpectedError,
         is ConeFunctionCallExpectedError,
         -> CfirErrors.INVALID_CALLED_OBJECT.on(diagnosticSource, session)
 
         is ConeCannotInferGenericFunctionTypeParameterType ->
-            CfirErrors.NEW_INFERENCE_ERROR.on(
-                genericCallDiagnosticSource ?: diagnosticSource,
-                "Inference error: ConstraintMismatch",
+            CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
+                diagnosticSource,
                 session,
             )
 
         is ConeCannotInferTypeParameterType ->
-            if (genericCallDiagnosticSource != null) {
-                CfirErrors.NEW_INFERENCE_ERROR.on(
-                    genericCallDiagnosticSource,
-                    "Inference error: ConstraintMismatch",
-                    session,
-                )
-            } else {
-                CfirErrors.CANNOT_INFER_PARAMETER_TYPE.on(diagnosticSource, typeParameter, session)
-            }
+            CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
+                diagnosticSource,
+                session,
+            )
 
         is ConeCannotInferValueParameterType ->
             CfirErrors.LAMBDA_MUST_HAVE_TYPE_ANNOTATION.on(diagnosticSource, session)
@@ -948,9 +989,15 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
                 session,
             )
 
-        is ConeNoMatchingInvokeOperatorError -> CfirErrors.NO_MATCHING_OPERATOR_INVOKE.on(
-            diagnosticSource, name.asString(), receiverType, session
-        )
+        is ConeNoMatchingInvokeOperatorError -> {
+            val invokeDiagnosticSource = source ?: diagnosticSource
+            CfirErrors.NO_MATCHING_OPERATOR_INVOKE.on(
+                CjOffsetsOnlySourceElement(invokeDiagnosticSource.startOffset, invokeDiagnosticSource.endOffset),
+                name.asString(),
+                receiverType,
+                session,
+            )
+        }
 
         is ConeEffectsFeatureDisabledError -> CfirErrors.EFFECTS_FEATURE_DISABLED.on(
             diagnosticSource,
@@ -1019,7 +1066,7 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
             DiagnosticKind.GenericTypeWithoutTypeArgument ->
                 CfirErrors.GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT.on(
-                    diagnosticSource,
+                    diagnosticSource.firstCharacterDiagnosticSource(),
                     diagnosticSource.toApproxTypeName(),
                     session,
                 )
@@ -1043,6 +1090,9 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
             DiagnosticKind.ThisTypeNotAllowed ->
                 CfirErrors.parse_this_type_not_allow.on(source ?: diagnosticSource, session)
+
+            DiagnosticKind.EmptyArrayLiteralTypeUndefined ->
+                CfirErrors.ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED.on(diagnosticSource, session)
 
             else -> null
         } ?: mapSimpleDiagnosticByReason(this, diagnosticSource, session)
@@ -1086,6 +1136,10 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             diagnosticSource, session,
         )
 
+        is ConePackageNameConflictError -> CfirErrors.AMBIGUOUS_USE.on(
+            diagnosticSource, packageName, session,
+        )
+
         is ConeGenericTypeInconsistentError -> CfirErrors.GENERIC_TYPE_INCONSISTENT.on(
             diagnosticSource, typeParameterName, session,
         )
@@ -1107,6 +1161,10 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
         is ConeGenericArgumentNoMatchError -> CfirErrors.GENERIC_ARGUMENT_NO_MATCH.on(
             diagnosticSource, session,
+        )
+
+        is ConeGenericTypeArgumentNotMatchConstraintError -> CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT.on(
+            diagnosticSource, actualType, upperBound, genericType, session,
         )
 
         is ConeGenericConstraintNotLooserError -> CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER.on(
@@ -1147,6 +1205,14 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
 
         is ConeInvalidNodeAfterCheckError -> CfirErrors.INVALID_NODE_AFTER_CHECK.on(
             diagnosticSource, session,
+        )
+
+        is ConeInconsistentArrayLiteralElementTypeError -> CfirErrors.INCONSISTENT_ARRAY_LITERAL_ELEMENT_TYPE.on(
+            diagnosticSource, session,
+        )
+
+        is ConeTypeMismatchError -> CfirErrors.TYPE_MISMATCH.on(
+            diagnosticSource, expectedType, actualType, false, session,
         )
 
         is ConeMismatchedTypesBecauseError -> CfirErrors.MISMATCHED_TYPES_BECAUSE.on(
@@ -1220,6 +1286,7 @@ private fun ConeCangJieType.substituteTypeVariableTypes(
 private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMismatch(): Boolean {
     val candidateSymbol = candidate.symbol as? CfirCallableSymbol<*> ?: return false
     if (candidateSymbol.cfir.typeParameters.isEmpty()) return false
+    if (candidate.hasExplicitTypeArgumentsInCall()) return false
 
     return candidate.errors.any { it is ConstraintMismatch }
 }
@@ -1227,6 +1294,7 @@ private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMi
 private fun AbstractCallCandidate<*>.hasGenericInferenceArgumentMismatch(): Boolean {
     val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
     if (callableSymbol.cfir.typeParameters.isEmpty()) return false
+    if (hasExplicitTypeArgumentsInCall()) return false
 
     val declaredTypeParameters = callableSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
     val argumentMismatches = diagnostics.filterIsInstance<ArgumentTypeMismatch>()
@@ -1262,6 +1330,28 @@ private fun ConeConstraintSystemHasContradiction.genericInferenceErrorDiagnostic
     return CfirErrors.NEW_INFERENCE_ERROR.on(
         diagnosticSource,
         "Inference error: ConstraintMismatch",
+        session,
+    )
+}
+
+private fun ConeConstraintSystemHasContradiction.unableToInferGenericFunctionDiagnostic(
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    /**
+     * 官方仓颉将泛型调用实参无法推断归一为
+     * `unable to infer generic argument of this function`。
+     * 这里保留 Kotlin FIR 的 constraint-system 分层，只在诊断表面映射为
+     * 仓颉诊断名，并把调用表达式作为默认范围，匹配 LLT 的 inline 夹注格式。
+     */
+    val diagnosticSource = qualifiedAccessSource?.genericInferenceWholeCallSource()
+        ?: candidate.callInfo.callSite.source?.genericInferenceWholeCallSource()
+        ?: source?.genericInferenceWholeCallSource()
+        ?: return null
+
+    return CfirErrors.UNABLE_TO_INFER_GENERIC_FUNC.on(
+        diagnosticSource,
         session,
     )
 }
@@ -1342,6 +1432,7 @@ private fun typeMismatchDiagnostic(
     session: CfirSession,
 ): CjDiagnostic? {
     val diagnosticSource = source ?: return null
+    if (expectedType.containsErrorType() || actualType.containsErrorType()) return null
     specificTypeMismatchDiagnostic(
         source = diagnosticSource,
         expectedType = expectedType,
@@ -1465,6 +1556,16 @@ private fun CjSourceElement.genericInferenceCallCalleeSource(): CjSourceElement?
     return callExpression.calleeExpression?.toCjPsiSourceElement() ?: this
 }
 
+private fun CjSourceElement.genericInferenceWholeCallSource(): CjSourceElement {
+    val psiSource = when (this) {
+        is CjPsiSourceElement -> this
+        is CjLightSourceElement -> this.unwrapToCjPsiSourceElement()
+        else -> null
+    } ?: return this
+
+    return psiSource.psi.containingCallExpressionOrNull()?.toCjPsiSourceElement() ?: this
+}
+
 private fun CjSourceElement.isImplicitGenericCallWithoutTypeArguments(): Boolean {
     val psiSource = when (this) {
         is CjPsiSourceElement -> this
@@ -1472,7 +1573,7 @@ private fun CjSourceElement.isImplicitGenericCallWithoutTypeArguments(): Boolean
         else -> null
     } ?: return false
 
-    val callExpression = psiSource.psi as? CjCallExpression ?: return false
+    val callExpression = psiSource.psi.containingCallExpressionOrNull() ?: return false
     return callExpression.typeArguments.isEmpty()
 }
 
@@ -1483,9 +1584,19 @@ private fun CjSourceElement?.hasExplicitTypeArgumentsInSource(): Boolean {
         else -> null
     } ?: return false
 
-    val callExpression = psiSource.psi as? CjCallExpression ?: return false
+    val callExpression = psiSource.psi.containingCallExpressionOrNull() ?: return false
     return callExpression.typeArguments.isNotEmpty()
 }
+
+private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentsInCall(): Boolean {
+    return callInfo.hasExplicitTypeArguments ||
+        (callInfo.callSite as? CfirQualifiedAccessExpression)?.typeArguments?.isNotEmpty() == true ||
+        (callInfo.explicitReceiver as? CfirQualifiedAccessExpression)?.typeArguments?.isNotEmpty() == true ||
+        callInfo.callSite.source.hasExplicitTypeArgumentsInSource()
+}
+
+private fun PsiElement.containingCallExpressionOrNull(): CjCallExpression? =
+    this as? CjCallExpression ?: PsiTreeUtil.getParentOfType(this, CjCallExpression::class.java, false)
 
 private fun CfirQualifiedAccessExpression.genericInferenceCallableSymbolOrNull(): CfirCallableSymbol<*>? {
     return when (val reference = calleeReference) {
@@ -1500,6 +1611,79 @@ private fun CfirQualifiedAccessExpression.genericInferenceCallableSymbolOrNull()
 private fun CfirAnonymousFunction.containsErrorType(): Boolean {
     return returnTypeRef is CfirErrorTypeRef ||
         valueParameters.any { it.returnTypeRef is CfirErrorTypeRef }
+}
+
+/**
+ * 仓颉官方 InvalidTy 会阻断后续普通类型不匹配诊断；CFIR 在约束系统里保留
+ * delegated type 时，也必须按错误类型处理，避免把已报告错误再次映射成 mismatch。
+ */
+private fun ConeCangJieType.containsErrorType(): Boolean {
+    if (this is ConeErrorType || isError) return true
+    return typeArguments.any { it.type.containsErrorType() }
+}
+
+private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.containsErrorDiagnosticInArgument(): Boolean {
+    if (coneTypeOrNull is ConeErrorType) return true
+    if (this is CfirDiagnosticHolder) return true
+    if (this is CfirResolvable && calleeReference is CfirDiagnosticHolder) return true
+
+    var hasErrorDiagnostic = false
+    acceptChildren(object : CfirVisitorVoid() {
+        override fun visitElement(element: org.cangnova.cangjie.cfir.CfirElement) {
+            if (hasErrorDiagnostic) return
+            when {
+                element is CfirDiagnosticHolder -> hasErrorDiagnostic = true
+                element is CfirResolvable && element.calleeReference is CfirDiagnosticHolder -> hasErrorDiagnostic = true
+                element is org.cangnova.cangjie.cfir.expressions.CfirExpression &&
+                    element.coneTypeOrNull is ConeErrorType -> hasErrorDiagnostic = true
+                else -> element.acceptChildren(this, null)
+            }
+        }
+    }, null)
+    return hasErrorDiagnostic
+}
+
+/**
+ * 官方 Cangjie Sema 对同一次调用中的实参类型错误只报告首个不匹配实参。
+ * 这里按候选诊断顺序合并参数约束错误，保留后续非参数约束错误继续映射。
+ */
+private fun List<ConstraintSystemError>.coalesceArgumentConstraintMismatches(): List<ConstraintSystemError> {
+    var reportedArgumentMismatch = false
+    return filter { error ->
+        if (error !is ConstraintMismatch || error.position.from !is ArgumentConstraintPosition<*>) return@filter true
+        if (reportedArgumentMismatch) return@filter false
+        reportedArgumentMismatch = true
+        true
+    }
+}
+
+/**
+ * 官方 Cangjie Sema 对同一调用的期望类型约束只报告一个主类型不匹配。
+ * 显式类型实参的 `Array<T>(...)` 等调用可能在约束系统内生成多个同源
+ * expected-type mismatch，这里保留首个用户可见主错误。
+ */
+private fun List<ConstraintSystemError>.coalesceExpectedTypeConstraintMismatches(): List<ConstraintSystemError> {
+    var reportedExpectedTypeMismatch = false
+    return filter { error ->
+        if (error !is ConstraintMismatch || error.position.from !is ConeExpectedTypeConstraintPosition) return@filter true
+        if (reportedExpectedTypeMismatch) return@filter false
+        reportedExpectedTypeMismatch = true
+        true
+    }
+}
+
+/**
+ * 与约束系统错误保持一致：同一候选上的多个 [ArgumentTypeMismatch]
+ * 是同一调用参数检查的级联结果，只保留首个作为用户可见主错误。
+ */
+private fun List<ResolutionDiagnostic>.coalesceArgumentTypeMismatches(): List<ResolutionDiagnostic> {
+    var reportedArgumentMismatch = false
+    return filter { diagnostic ->
+        if (diagnostic !is ArgumentTypeMismatch) return@filter true
+        if (reportedArgumentMismatch) return@filter false
+        reportedArgumentMismatch = true
+        true
+    }
 }
 
 private fun TypeParameterMarker.asDeclaredTypeParameterSymbolOrNull(): CfirTypeParameterSymbol? = when (this) {
@@ -1535,7 +1719,7 @@ private fun ConeCangJieType.referencesDeclaredTypeParameter(
 private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(): Boolean {
     val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
     if (callableSymbol.cfir.typeParameters.isEmpty()) return false
-    if (callInfo.callSite.source.hasExplicitTypeArgumentsInSource()) return false
+    if (hasExplicitTypeArgumentsInCall()) return false
 
     val declaredTypeParameters = callableSymbol.cfir.typeParameters.mapTo(mutableSetOf()) { it.symbol }
     return errors.any { error ->
@@ -1545,13 +1729,24 @@ private fun AbstractCallCandidate<*>.hasGenericCallNotEnoughTypeInformation(): B
     }
 }
 
+private fun AbstractCallCandidate<*>.isImplicitGenericCallWithTypeParameters(): Boolean {
+    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
+    return callableSymbol.cfir.typeParameters.isNotEmpty() && !hasExplicitTypeArgumentsInCall()
+}
+
+private fun AbstractCallCandidate<*>.isImplicitBuiltinArrayConstructorCall(): Boolean {
+    val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
+    return callableSymbol.cfir.origin == CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor &&
+        !hasExplicitTypeArgumentsInCall()
+}
+
 private fun AbstractCallCandidate<*>.looksLikeImplicitGenericCallInferenceFailure(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): Boolean {
     val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return false
     if (callableSymbol.cfir.typeParameters.isEmpty()) return false
-    if (callInfo.callSite.source.hasExplicitTypeArgumentsInSource()) return false
+    if (hasExplicitTypeArgumentsInCall()) return false
     val calleeSource = source ?: return false
     val callSource = qualifiedAccessSource ?: callInfo.callSite.source ?: return false
     if (calleeSource.startOffset == callSource.startOffset && calleeSource.endOffset == callSource.endOffset) return false
@@ -1569,6 +1764,10 @@ private fun CjSourceElement.toApproxTypeName(): Name {
     val rawText = text?.toString().orEmpty()
     val simplified = rawText.substringAfterLast('.').substringBefore('<').substringBefore('&').trim()
     return Name.identifierIfValid(simplified) ?: Name.ERROR_NAME
+}
+
+private fun CjSourceElement.firstCharacterDiagnosticSource(): CjOffsetsOnlySourceElement {
+    return CjOffsetsOnlySourceElement(startOffset, (startOffset + 1).coerceAtMost(endOffset))
 }
 
 private fun CjSourceElement?.isAssignmentExpression(): Boolean {

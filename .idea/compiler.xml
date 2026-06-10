@@ -1927,6 +1927,9 @@
       <module name="cangjie.compiler.frontend.common.test" options="-proc:none" />
       <module name="cangjie.compiler.frontend.main" options="-proc:none" />
       <module name="cangjie.compiler.frontend.test" options="-proc:none" />
+      <module name="cangjie.compiler.jvm-codegen" options="-proc:none" />
+      <module name="cangjie.compiler.jvm-codegen.main" options="-proc:none" />
+      <module name="cangjie.compiler.jvm-codegen.test" options="-proc:none" />
       <module name="cangjie.compiler.main" options="-proc:none" />
       <module name="cangjie.compiler.phaser" options="-proc:none" />
       <module name="cangjie.compiler.phaser.main" options="-proc:none" />

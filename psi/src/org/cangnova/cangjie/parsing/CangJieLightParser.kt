@@ -26,14 +26,48 @@ package org.cangnova.cangjie.parsing
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.lang.PsiBuilder
+import com.intellij.lang.impl.PsiBuilderImpl
+import com.intellij.openapi.util.Ref
+import com.intellij.psi.TokenType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 
 object CangJieLightParser {
-    fun parse(builder: PsiBuilder): FlyweightCapableTreeStructure<LighterASTNode> {
+    fun parse(
+        builder: PsiBuilder,
+        errorListener: LightTreeParsingErrorListener? = null,
+    ): FlyweightCapableTreeStructure<LighterASTNode> {
         val cjParsing: CangJieParsing = CangJieParsing.createForTopLevelNonLazy(
             SemanticWhitespaceAwarePsiBuilderImpl(builder),
         )
         cjParsing.parseFile()
-        return builder.lightTree
+        return builder.lightTree.also { lightTree ->
+            if (errorListener != null) {
+                reportErrors(lightTree.root, lightTree, errorListener)
+            }
+        }
+    }
+
+    fun interface LightTreeParsingErrorListener {
+        fun onError(startOffset: Int, endOffset: Int, message: String?)
+    }
+
+    private fun reportErrors(
+        node: LighterASTNode,
+        tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        errorListener: LightTreeParsingErrorListener,
+        ref: Ref<Array<LighterASTNode?>> = Ref(),
+    ) {
+        tree.getChildren(node, ref)
+        val children = ref.get() ?: return
+
+        for (child in children) {
+            if (child == null) break
+            if (child.tokenType == TokenType.ERROR_ELEMENT) {
+                errorListener.onError(child.startOffset, child.endOffset, PsiBuilderImpl.getErrorMessage(child))
+            }
+
+            ref.set(null)
+            reportErrors(child, tree, errorListener, ref)
+        }
     }
 }

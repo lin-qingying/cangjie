@@ -7,6 +7,8 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 
 /**
@@ -38,6 +40,7 @@ class IntegerLiteralAndOperatorApproximationTransformer(
     private fun ConeCangJieType.approximateIntegerLiteralType(expectedType: ConeCangJieType?): ConeCangJieType {
         return when (this) {
             is ConeIdealLiteralType -> expectedType ?: getApproximatedType()
+            is ConePrimitiveType -> IdealTypeResolver.resolveIfIdeal(this, expectedType)
             else -> this
         }
     }

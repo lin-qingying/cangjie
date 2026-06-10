@@ -22,7 +22,7 @@ public struct Tensor {
     }
 }
 
-public func SwitchOp(input0: Tensor, <!chir_dce_unused_variable!>input1<!>: Tensor, <!chir_dce_unused_variable!>input2<!>: Tensor) {
+public func SwitchOp(input0: Tensor, input1: Tensor, input2: Tensor) {
     match (input0.handle_) {
         case Some(v) => print("error: the input is SomeTensor.\n")
         case None => print("error: the input is NoneTensor.\n")

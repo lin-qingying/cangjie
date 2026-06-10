@@ -22,6 +22,7 @@ class PendingDiagnosticsReporterImpl(
     private val sourceMapper: (AbstractCjSourceElement) -> AbstractCjSourceElement? = { null },
 ) : PendingDiagnosticReporter() {
     private val pendingDiagnosticsByFilePath: MutableMap<String, MutableList<CjDiagnostic>> = mutableMapOf()
+    private val committedDiagnosticsByFilePath: MutableMap<String, MutableList<CjDiagnostic>> = mutableMapOf()
 
     override val hasErrors: Boolean
         get() = delegate.hasErrors
@@ -125,7 +126,7 @@ class PendingDiagnosticsReporterImpl(
                     }
                     diagnosticElement == element || commitEverything -> {
                         iterator.remove()
-                        delegate.report(diagnostic, context)
+                        commitDiagnostic(path, diagnostic, context)
                     }
                 }
             }
@@ -146,10 +147,36 @@ class PendingDiagnosticsReporterImpl(
             val (_, pendingList) = iterator.next()
             for (diagnostic in pendingList) {
                 if (!context.isDiagnosticSuppressed(diagnostic)) {
-                    delegate.report(diagnostic, context)
+                    commitDiagnostic(
+                        filePath = (diagnostic.context as? DiagnosticContext)?.containingFilePath,
+                        diagnostic = diagnostic,
+                        context = context,
+                    )
                 }
             }
             iterator.remove()
         }
     }
+
+    private fun commitDiagnostic(
+        filePath: String?,
+        diagnostic: CjDiagnostic,
+        context: DiagnosticContext,
+    ) {
+        val committedDiagnostics = filePath?.let {
+            committedDiagnosticsByFilePath.getOrPut(it) { mutableListOf() }
+        }
+        if (committedDiagnostics != null) {
+            if (committedDiagnostics.any { it.hasSameDiagnosticIdentity(diagnostic) }) return
+        }
+
+        delegate.report(diagnostic, context)
+        committedDiagnostics?.add(diagnostic)
+    }
 }
+
+private fun CjDiagnostic.hasSameDiagnosticIdentity(other: CjDiagnostic): Boolean =
+    factoryName == other.factoryName &&
+        renderMessage() == other.renderMessage() &&
+        firstRange.startOffset == other.firstRange.startOffset &&
+        firstRange.endOffset == other.firstRange.endOffset

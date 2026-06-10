@@ -39,6 +39,7 @@ import org.cangnova.cangjie.cfir.declarations.impl.CfirClassImpl
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.resolve.ThisTypeResolutionContext
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.scopes.impl.CfirExplicitSimpleImportingScope
@@ -50,6 +51,8 @@ import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
+import org.cangnova.cangjie.cfir.symbols.constructThisType
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.types.CfirBasicTypeRef
@@ -59,6 +62,7 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
@@ -144,11 +148,12 @@ class CfirTypeResolveTransformer(
     }
 
     override fun transformExtend(extend: CfirExtend, data: CfirTypeResolutionConfiguration): CfirExtend {
-        val configuration = data
+        var configuration = data
             .withTopContainer(extend)
             .withAdditionalTypeParameters(extend.typeParameters)
         extend.transformTypeParameters(this, configuration)
         extend.transformExtendedTypeRef(this, configuration)
+        configuration = configuration.withThisTypeContext(thisTypeContextForExtend(extend))
         extend.transformSuperTypeRefs(this, configuration)
         extend.transformAnnotations(this, configuration)
         extend.transformDeclarations(this, configuration)
@@ -187,7 +192,7 @@ class CfirTypeResolveTransformer(
         function.transformTypeParameters(this, configuration)
         function.transformReturnTypeRef(
             this,
-            configuration.withThisTypeOwner(thisTypeOwnerForFunctionReturn(function, data.topContainer)),
+            configuration.withThisTypeContext(thisTypeContextForFunctionReturn(function, data)),
         )
         function.transformValueParameters(this, configuration)
         function.transformAnnotations(this, configuration)
@@ -196,12 +201,35 @@ class CfirTypeResolveTransformer(
         return function
     }
 
-    private fun thisTypeOwnerForFunctionReturn(
+    private fun thisTypeContextForFunctionReturn(
         function: CfirFunction,
-        containingDeclaration: CfirDeclaration?,
-    ): CfirClass? {
-        if (function !is CfirNamedFunction || function.status.isStatic) return null
-        return containingDeclaration as? CfirClass
+        data: CfirTypeResolutionConfiguration,
+    ): ThisTypeResolutionContext? {
+        if (function !is CfirNamedFunction) return null
+
+        val inherited = data.thisTypeContext?.asDisallowed()
+        return when (val containingDeclaration = data.topContainer) {
+            is CfirClass -> {
+                val thisType = containingDeclaration.constructClassThisType() ?: return inherited
+                ThisTypeResolutionContext(thisType, isAllowed = !function.status.isStatic)
+            }
+
+            is CfirExtend -> inherited ?: thisTypeContextForExtend(containingDeclaration)
+            else -> inherited
+        }
+    }
+
+    private fun thisTypeContextForExtend(extend: CfirExtend): ThisTypeResolutionContext? {
+        val extendedType = extend.extendedTypeRef.coneTypeOrNull ?: return null
+        return ThisTypeResolutionContext(extendedType, isAllowed = false)
+    }
+
+    private fun CfirClass.constructClassThisType(): ConeCangJieType? {
+        val classSymbol = symbol as? CfirClassSymbol ?: return null
+        val typeArguments = typeParameters.map { parameter ->
+            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
+        }
+        return classSymbol.constructThisType(typeArguments)
     }
 
     override fun transformConstructor(constructor: CfirConstructor, data: CfirTypeResolutionConfiguration): CfirConstructor {
@@ -311,6 +339,7 @@ class CfirTypeResolveTransformer(
     override fun transformTypeParameter(typeParameter: CfirTypeParameter, data: CfirTypeResolutionConfiguration): CfirTypeParameter {
         typeParameter.transformAnnotations(this, data)
         typeParameter.transformBounds(this, data)
+        bumpPhase(typeParameter)
         return typeParameter
     }
 

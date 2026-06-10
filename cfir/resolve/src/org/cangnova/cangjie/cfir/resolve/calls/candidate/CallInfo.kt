@@ -42,6 +42,9 @@ open class CallInfo(
     override val isImplicitInvoke: Boolean
         get() = implicitInvokeMode != ImplicitInvokeMode.None
 
+    override val hasExplicitTypeArguments: Boolean
+        get() = typeArguments.isNotEmpty()
+
     val argumentAtoms: List<ConeResolutionAtom> = arguments.map { createRawAtom(it) }
 
     fun replaceWithVariableAccess(): CallInfo =

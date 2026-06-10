@@ -32,6 +32,10 @@ object SourceElementPositioningStrategies {
         LightTreePositioningStrategies.THROW_KEYWORD,
         PositioningStrategies.THROW_KEYWORD,
     )
+    val ARRAY_LITERAL_LEFT_BRACKET = SourceElementPositioningStrategy(
+        LightTreePositioningStrategies.ARRAY_LITERAL_LEFT_BRACKET,
+        PositioningStrategies.ARRAY_LITERAL_LEFT_BRACKET,
+    )
     val VARIABLE_INITIALIZER: AbstractSourceElementPositioningStrategy = DEFAULT
     val PATTERN_VARIABLE_INITIALIZER: AbstractSourceElementPositioningStrategy = SourceElementPositioningStrategy(
         LightTreePositioningStrategies.INITIALIZER_EQ,

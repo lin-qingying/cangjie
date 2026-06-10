@@ -87,6 +87,7 @@
             <option value="$PROJECT_DIR$/compiler/config" />
             <option value="$PROJECT_DIR$/compiler/frontend" />
             <option value="$PROJECT_DIR$/compiler/frontend-arguments-generator" />
+            <option value="$PROJECT_DIR$/compiler/jvm-codegen" />
             <option value="$PROJECT_DIR$/compiler/phaser" />
             <option value="$PROJECT_DIR$/compiler/plugin" />
             <option value="$PROJECT_DIR$/dependencies" />
@@ -215,6 +216,7 @@
                   <project path="$PROJECT_DIR$/compiler/config" />
                   <project path="$PROJECT_DIR$/compiler/frontend" />
                   <project path="$PROJECT_DIR$/compiler/frontend-arguments-generator" />
+                  <project path="$PROJECT_DIR$/compiler/jvm-codegen" />
                   <project path="$PROJECT_DIR$/compiler/phaser" />
                   <project path="$PROJECT_DIR$/compiler/plugin" />
                   <project path="$PROJECT_DIR$/dependencies" />
@@ -345,6 +347,7 @@
             <option value="$PROJECT_DIR$/compiler/config" />
             <option value="$PROJECT_DIR$/compiler/frontend" />
             <option value="$PROJECT_DIR$/compiler/frontend-arguments-generator" />
+            <option value="$PROJECT_DIR$/compiler/jvm-codegen" />
             <option value="$PROJECT_DIR$/compiler/phaser" />
             <option value="$PROJECT_DIR$/compiler/plugin" />
             <option value="$PROJECT_DIR$/dependencies" />

@@ -4,12 +4,14 @@ import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.resolve.toClassSymbol
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -44,6 +46,14 @@ abstract class CfirProvider : CfirSessionComponent {
         getCfirClassifierContainerFileIfAny(symbol.classId)
 
     abstract fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile?
+
+    /**
+     * 返回 pattern binding 所属的外层 pattern variable。
+     *
+     * 仓颉的名字解析暴露的是 `let (a, b) = ...` 中的 binding symbol，
+     * 但隐式类型推断入口属于携带 initializer 的外层 pattern variable。
+     */
+    open fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? = null
 
     abstract fun getCfirFilesByPackage(fqName: FqName): List<CfirFile>
 

@@ -11,8 +11,10 @@ import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECL
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorNamedValue
 import org.cangnova.cangjie.cfir.declarations.builder.buildErrorFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
+import org.cangnova.cangjie.cfir.declarations.builder.buildTypeParameter
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
+import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
@@ -25,12 +27,21 @@ import org.cangnova.cangjie.cfir.symbols.CfirErrorEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirErrorNamedValueSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.resolve.calls.components.PostponedArgumentsAnalyzerContext
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
@@ -41,6 +52,13 @@ import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
  * This keeps tower traversal focused on scope walking while preserving the current
  * receiver/base-system defaults used by local call resolution.
  */
+internal enum class BuiltinArrayConstructorKind {
+    EMPTY,
+    COLLECTION,
+    INIT_FUNCTION,
+    REPEAT_ELEMENT,
+}
+
 class CandidateFactory(
     private val context: ResolutionContext,
     private val baseSystem: ConstraintStorage  ,
@@ -153,6 +171,199 @@ class CandidateFactory(
         )
     }
 
+    /**
+     * 构造 `std.core.Array` 内建构造表达式候选。
+     *
+     * 官方编译器把 `Array<T>(...)` 调用解糖为 `ArrayExpr`，再按
+     * 空数组、`(size, (Int64)->T)`、`(size, repeat: T)` 三种形状做检查。
+     * CFIR 没有独立 ArrayExpr 节点参与解析，因此用 synthetic function 保留
+     * 统一 call-resolution 管线中的类型实参映射、参数映射和 lambda 期望类型。
+     */
+    internal fun createBuiltinArrayConstructorCandidate(
+        callInfo: CallInfo,
+        kind: BuiltinArrayConstructorKind,
+    ): Candidate {
+        val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
+        val elementTypeParameterSymbol = CfirTypeParameterSymbol()
+        val elementTypeParameterName = Name.identifier("T")
+        val elementTypeParameter = buildTypeParameter {
+            source = callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor
+            attributes = CfirDeclarationAttributes.EMPTY
+            containingDeclarationSymbol = symbol
+            this.symbol = elementTypeParameterSymbol
+            name = elementTypeParameterName
+            addDefaultBoundIfNecessary()
+        }
+        val elementType = ConeTypeParameterTypeImpl(elementTypeParameterSymbol.toLookupTag())
+        val int64Type = ConePrimitiveType(PrimitiveTypeKind.INT64)
+        val valueParameters = when (kind) {
+            BuiltinArrayConstructorKind.EMPTY -> emptyList()
+            BuiltinArrayConstructorKind.COLLECTION -> listOf(
+                buildSyntheticValueParameter(
+                    ownerSymbol = symbol,
+                    parameterName = ARRAY_COLLECTION_PARAMETER_NAME,
+                    parameterType = ConeClassLikeType(
+                        StdlibClassIds.Collection.toLookupTag(),
+                        typeArguments = listOf(elementType),
+                        isInterface = true,
+                    ),
+                    isNamed = false,
+                    source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                ),
+            )
+            BuiltinArrayConstructorKind.INIT_FUNCTION -> listOf(
+                buildSyntheticValueParameter(
+                    ownerSymbol = symbol,
+                    parameterName = ARRAY_SIZE_PARAMETER_NAME,
+                    parameterType = int64Type,
+                    isNamed = false,
+                    source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                ),
+                buildSyntheticValueParameter(
+                    ownerSymbol = symbol,
+                    parameterName = ARRAY_INIT_PARAMETER_NAME,
+                    parameterType = ConeFunctionType(parameterTypes = listOf(int64Type), returnType = elementType),
+                    isNamed = false,
+                    source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
+                ),
+            )
+            BuiltinArrayConstructorKind.REPEAT_ELEMENT -> listOf(
+                buildSyntheticValueParameter(
+                    ownerSymbol = symbol,
+                    parameterName = ARRAY_SIZE_PARAMETER_NAME,
+                    parameterType = int64Type,
+                    isNamed = false,
+                    source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                ),
+                buildSyntheticValueParameter(
+                    ownerSymbol = symbol,
+                    parameterName = ARRAY_REPEAT_PARAMETER_NAME,
+                    parameterType = elementType,
+                    isNamed = true,
+                    source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
+                ),
+            )
+        }
+
+        buildNamedFunction {
+            source = callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            typeParameters.add(elementTypeParameter)
+            returnTypeRef = buildResolvedTypeRef {
+                source = callInfo.callSite.source
+                coneType = ConeClassLikeType(StdlibClassIds.Array.toLookupTag(), typeArguments = listOf(elementType))
+            }
+            this.valueParameters.addAll(valueParameters)
+            body = null
+            this.symbol = symbol
+            name = callInfo.name
+            isMut = false
+        }
+
+        return createCandidate(
+            callInfo = callInfo,
+            symbol = symbol,
+            originScope = null,
+        )
+    }
+
+    /**
+     * 构造仓颉原始类型转换表达式的合成候选。
+     *
+     * 官方 `TypeConvExpr` 对 `Int32(x)` 这类写法独立执行 `SynNumTypeConvExpr`，
+     * 语义上不是用户声明的构造器。CFIR 仍复用现有 call candidate 管线承载
+     * 参数映射、参数检查和调用完成，因此这里用 synthetic fake function 表达
+     * “一个参数转换为目标原始类型”的调用形状。
+     */
+    fun createPrimitiveTypeConversionCandidate(
+        callInfo: CallInfo,
+        targetKind: PrimitiveTypeKind,
+        sourceType: ConePrimitiveType,
+    ): Candidate {
+        val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
+        val parameterName = Name.identifier("primitiveTypeConversionArg")
+        val parameter = buildValueParameter {
+            source = callInfo.arguments.singleOrNull()?.source ?: callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.FakeFunction
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            this.symbol = CfirValueParameterSymbol(CallableId(parameterName))
+            containingDeclarationSymbol = symbol
+            isNamed = false
+            status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+            returnTypeRef = buildResolvedTypeRef {
+                source = callInfo.arguments.singleOrNull()?.source ?: callInfo.callSite.source
+                coneType = sourceType
+            }
+            name = parameterName
+            defaultValue = null
+        }
+
+        buildNamedFunction {
+            source = callInfo.callSite.source
+            moduleData = context.session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.FakeFunction
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef {
+                source = callInfo.callSite.source
+                coneType = ConePrimitiveType(targetKind)
+            }
+            valueParameters.add(parameter)
+            body = null
+            this.symbol = symbol
+            name = callInfo.name
+            isMut = false
+        }
+
+        return createCandidate(
+            callInfo = callInfo,
+            symbol = symbol,
+            originScope = null,
+        )
+    }
+
+    private fun buildSyntheticValueParameter(
+        ownerSymbol: CfirNamedFunctionSymbol,
+        parameterName: Name,
+        parameterType: ConeCangJieType,
+        isNamed: Boolean,
+        source: CjSourceElement?,
+    ) = buildValueParameter {
+        this.source = source
+        moduleData = context.session.moduleData
+        resolvePhase = CfirResolvePhase.BODY_RESOLVE
+        origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor
+        attributes = CfirDeclarationAttributes.EMPTY
+        isLocal = true
+        dispatchReceiverType = null
+        symbol = CfirValueParameterSymbol(CallableId(parameterName))
+        containingDeclarationSymbol = ownerSymbol
+        this.isNamed = isNamed
+        status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
+        returnTypeRef = buildResolvedTypeRef {
+            this.source = source
+            coneType = parameterType
+        }
+        name = parameterName
+        defaultValue = null
+    }
+
     fun createErrorCandidate(callInfo: CallInfo, diagnostic: ConeDiagnostic): Candidate {
         val errorSymbol = when(callInfo.callKind) {
             is CallKind.Function,
@@ -258,3 +469,8 @@ fun PostponedArgumentsAnalyzerContext.addSubsystemFromAtom(atom: ConeResolutionA
         }
     }
 }
+
+private val ARRAY_SIZE_PARAMETER_NAME = Name.identifier("size")
+private val ARRAY_COLLECTION_PARAMETER_NAME = Name.identifier("elements")
+private val ARRAY_INIT_PARAMETER_NAME = Name.identifier("arrayInit")
+private val ARRAY_REPEAT_PARAMETER_NAME = Name.identifier("repeat")

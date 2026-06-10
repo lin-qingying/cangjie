@@ -303,6 +303,10 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return declarationsTransformer.transformEnum(enum, data)
     }
 
+    override fun transformExtend(extend: CfirExtend, data: ResolutionMode): CfirExtend {
+        return declarationsTransformer.transformExtend(extend, data)
+    }
+
     override fun transformFunction(function: CfirFunction, data: ResolutionMode): CfirFunction {
         return declarationsTransformer.transformFunction(function, data)
     }

@@ -1,19 +1,23 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.diagnostics
 
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ARGUMENT_TYPE_MISMATCH
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ASSIGNMENT_TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CANNOT_INFER_PARAMETER_TYPE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_ARITHMETIC_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_DIVIDE_BY_ZERO
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_NEGATIVE_SHIFT_COUNT
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_SHIFT_COUNT_OVERFLOW
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INCONSISTENT_ARRAY_LITERAL_ELEMENT_TYPE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.LITERAL_NUMERIC_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.NEW_INFERENCE_ERROR
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.NO_CONSTRUCTOR
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.REF_NOT_BE_TYPE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.PATTERN_INITIALIZER_TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.REDECLARATION
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INVALID_OPERATOR_PARAMETER_COUNT
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.RETURN_TYPE_MISMATCH
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_INCOMPATIBLE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CLASSIFIER_REDECLARATION
@@ -41,6 +45,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
     override val MAP: CjDiagnosticFactoryToRendererMap by CjDiagnosticFactoryToRendererMap("FIR") { map ->
         map.put(NO_CONSTRUCTOR, "No constructor available for this type.")
+        map.put(REF_NOT_BE_TYPE, "type name cannot be used as an expression")
         map.put(
             CfirErrors.ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR,
             "Enum type ''{0}'' cannot be used as a type constructor; use an enum constructor instead.",
@@ -194,6 +199,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(
             CfirErrors.AMBIGUOUS_FUNCTION_CALL,
             "Ambiguous function call for ''{0}''.",
+            RENDER_NAME,
+        )
+        map.put(
+            CfirErrors.AMBIGUOUS_ARG_TYPE,
+            "Ambiguous arguments type in call expression.",
             RENDER_NAME,
         )
         map.put(
@@ -455,6 +465,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             NOT_RENDERED,
         )
         map.put(
+            TYPE_INCOMPATIBLE,
+            "Type incompatible in this {0}.",
+            RENDER_STRING,
+        )
+        map.put(
             CfirErrors.VARRAY_SIZE_MISMATCH,
             "VArray size mismatch: expected size ''{0}'', actual size ''{1}'' for element type ''{2}''.",
             TO_STRING,
@@ -475,6 +490,8 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
 
         map.put(CANNOT_INFER_PARAMETER_TYPE, "Cannot infer type for type parameter ''{0}''. Specify it explicitly.", DECLARATION_NAME)
         map.put(NEW_INFERENCE_ERROR, "Inference error: {0}", RENDER_STRING)
+        map.put(ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED, "array literal type cannot be inferred")
+        map.put(INCONSISTENT_ARRAY_LITERAL_ELEMENT_TYPE, "inconsistent element type for array literal")
         map.put(
             TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR,
             "Cannot infer type parameter ''{0}'' only from input positions.",
@@ -585,6 +602,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // ================================================================
         map.put(CfirErrors.GENERIC_TYPE_INCONSISTENT, "generic types substitutions are inconsistent for ''{0}''", RENDER_NAME)
         map.put(CfirErrors.GENERIC_ARGUMENT_NO_MATCH, "type argument's number does not match type parameter's number")
+        map.put(CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT, "generic type argument ''{0}'' does not match upper bound ''{1}'' of ''{2}''", RENDER_TYPE, RENDER_TYPE, RENDER_TYPE)
         map.put(CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER, "the constraint of type parameter is not looser than parent's constraint")
         map.put(CfirErrors.GENERIC_INSTANTIATION_CAUSES_AMBIGUOUS_FUNCTIONS, "generic instantiation ''{0}'' causes ambiguous function ''{1}''", RENDER_NAME, RENDER_NAME)
         map.put(CfirErrors.GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY, "generic parameter ''{0}'' cannot be used in class irrelevant upper bounds ''{1}''", RENDER_NAME, RENDER_TYPE)

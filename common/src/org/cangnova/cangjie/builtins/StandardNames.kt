@@ -344,6 +344,9 @@ object StandardNames {
     val ITERABLE = Name.identifier("Iterable")
 
     @JvmField
+    val COLLECTION = Name.identifier("Collection")
+
+    @JvmField
     val OBJECT = Name.identifier("Object")
 
     @JvmField

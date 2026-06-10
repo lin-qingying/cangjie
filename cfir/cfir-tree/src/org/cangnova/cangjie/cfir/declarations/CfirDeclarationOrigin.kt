@@ -13,6 +13,14 @@ sealed class CfirDeclarationOrigin(
     sealed class Synthetic : CfirDeclarationOrigin(generated = true) {
         data object Default : Synthetic()
         data object FakeFunction : Synthetic()
+        /**
+         * 仓颉内建 `Array<T>(...)` 构造表达式对应官方 `ArrayExpr`。
+         *
+         * 它复用 call-resolution 的候选与约束系统，但语义上不是 Kotlin
+         * `when` / `try` / `!!` 一类控制结构 fake function，不能进入
+         * synthetic fake function 的 expected-type equality 处理。
+         */
+        data object BuiltinArrayConstructor : Synthetic()
         object TypeAliasConstructor : Synthetic()
 
         object Error : Synthetic()

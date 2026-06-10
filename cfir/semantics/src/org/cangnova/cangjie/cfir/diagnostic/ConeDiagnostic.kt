@@ -317,6 +317,17 @@ data class ConeCannotRefToPackageNameError(
 }
 
 /**
+ * 已导入包短名或别名指向多个包。
+ *
+ * 对齐 C++ `GetImportedPackageDecl` 返回 conflict 后报告的包名歧义。
+ */
+data class ConePackageNameConflictError(
+    val packageName: Name,
+) : ConeDiagnostic {
+    override val reason: String get() = "package name '$packageName' is ambiguous"
+}
+
+/**
  * 泛型类型替换不一致。
  *
  * 对齐 C++ sema_generic_type_inconsistent。
@@ -337,6 +348,20 @@ data class ConeGenericArgumentNoMatchError(
     val actualCount: Int,
 ) : ConeDiagnostic {
     override val reason: String get() = "expected $expectedCount type argument(s) but got $actualCount"
+}
+
+/**
+ * 泛型类型实参不满足声明侧约束。
+ *
+ * 对齐 C++ sema_generic_type_argument_not_match_constraint。
+ */
+data class ConeGenericTypeArgumentNotMatchConstraintError(
+    val genericType: ConeCangJieType,
+    val actualType: ConeCangJieType,
+    val upperBound: ConeCangJieType,
+) : ConeDiagnostic {
+    override val reason: String
+        get() = "generic type argument '$actualType' does not match upper bound '$upperBound' of '$genericType'"
 }
 
 /**
@@ -445,6 +470,28 @@ class ConeUnableToInferGenericFuncError : ConeDiagnostic {
  */
 class ConeInvalidNodeAfterCheckError : ConeDiagnostic {
     override val reason: String get() = "node is invalid after semantic check"
+}
+
+/**
+ * 通用类型不匹配。
+ *
+ * 用于 resolve 阶段已经确定期望类型与实际类型的语义节点，后续统一映射到
+ * CFIR 的 `TYPE_MISMATCH` 诊断，避免用字符串 reason 表示结构化类型信息。
+ */
+data class ConeTypeMismatchError(
+    val expectedType: ConeCangJieType,
+    val actualType: ConeCangJieType,
+) : ConeDiagnostic {
+    override val reason: String get() = "type mismatch: expected $expectedType but got $actualType"
+}
+
+/**
+ * 数组字面量元素类型不一致。
+ *
+ * 对齐 C++ `SynArrayLit` 中的 `sema_inconsistency_elemType`。
+ */
+class ConeInconsistentArrayLiteralElementTypeError : ConeDiagnostic {
+    override val reason: String get() = "inconsistent element type for array literal"
 }
 
 /**

@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-func f(<!chir_dce_unused_variable!>a<!>: Bool) {
+func f(a: Bool) {
     println("f")
     false
 }
@@ -15,7 +15,7 @@ class A {
         get() {
             false
         }
-        set(<!chir_dce_unused_variable!>v<!>) {
+        set(v) {
             ()
         }
     }

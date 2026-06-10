@@ -10,6 +10,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
@@ -130,13 +132,32 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirFunction) {
         val returnTypeRef = declaration.returnTypeRef
-        if (returnTypeRef is CfirErrorTypeRef && returnTypeRef.delegatedTypeRef == null) {
+        if (returnTypeRef is CfirErrorTypeRef && returnTypeRef.isFunctionReturnTypeInferenceFailure()) {
             if (declaration is CfirNamedFunction && declaration.body != null) {
                 reporter.reportOn(
                     source = declaration.functionNameDiagnosticSource(),
                     factory = CfirErrors.UNABLE_TO_INFER_RETURN_TYPE,
                 )
             }
+        }
+    }
+
+    /**
+     * 只消费返回类型推断自身产生的错误。
+     *
+     * 函数体尾表达式若是 ambiguous / unresolved / inapplicable call，原始错误已由
+     * ErrorNodeDiagnosticCollectorComponent 或 CfirExpressionWithErrorTypeChecker 按调用点报告；
+     * 这里不能把这类表达式错误再提升成函数名级 `UNABLE_TO_INFER_RETURN_TYPE`。
+     */
+    private fun CfirErrorTypeRef.isFunctionReturnTypeInferenceFailure(): Boolean {
+        if (delegatedTypeRef != null) return false
+        val simpleDiagnostic = diagnostic as? ConeSimpleDiagnostic ?: return false
+        return when (simpleDiagnostic.kind) {
+            DiagnosticKind.InferenceError,
+            DiagnosticKind.RecursionInImplicitTypes,
+            -> true
+
+            else -> false
         }
     }
 }

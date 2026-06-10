@@ -4,7 +4,11 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
@@ -35,9 +39,27 @@ sealed class ConeResolutionAtom : AbstractConeResolutionAtom() {
                         subAtom = childExpression?.let { createRawAtom(it) },
                     )
                 }
+                is CfirNamedAccessExpression -> when {
+                    expression.shouldBeResolvedAsFunctionReferenceArgument() ->
+                        ConeResolutionAtomWithPostponedChild(
+                            expression = expression,
+                            fallbackSubAtom = createRawAtomForResolvable(expression),
+                        )
+                    else -> createRawAtomForResolvable(expression)
+                }
                 is CfirResolvable -> createRawAtomForResolvable(expression)
                 else -> ConeSimpleLeafResolutionAtom(expression)
             }
+        }
+
+        private fun CfirNamedAccessExpression.shouldBeResolvedAsFunctionReferenceArgument(): Boolean {
+            val diagnostic = (calleeReference as? CfirErrorNamedReference)?.diagnostic as? ConeAmbiguityError
+                ?: return false
+            return explicitReceiver == null &&
+                diagnostic.candidates.isNotEmpty() &&
+                diagnostic.candidates.all { candidate ->
+                    candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+                }
         }
 
         private fun createRawAtomForResolvable(expression: CfirResolvable): ConeResolutionAtom {
@@ -189,12 +211,12 @@ class ConeResolvedCallableReferenceAtom(
 
 class ConeSimpleNameForContextSensitiveResolution(
     override val expression: CfirExpression,
+    override val expectedType: ConeCangJieType,
     val containingCallCandidate: Candidate,
-    val fallbackSubAtom: ConeResolutionAtom? = null,
+    val fallbackSubAtom: ConeResolutionAtom,
 ) : ConePostponedResolvedAtom() {
-    override val inputTypes: Collection<ConeCangJieType> = emptyList()
+    override val inputTypes: Collection<ConeCangJieType> = listOf(expectedType)
     override val outputType: ConeCangJieType? = null
-    override val expectedType: ConeCangJieType? = null
 }
 
 class ConeContextSensitiveAlternativeForQualifierAtom(

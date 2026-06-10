@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.resolve.transformers.body.resolve
 
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
+import org.cangnova.cangjie.cfir.calls.ImplicitExtensionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirClass
@@ -9,6 +10,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -41,6 +43,7 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.symbols.constructThisType
 import org.cangnova.cangjie.cfir.symbols.constructType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
@@ -471,6 +474,47 @@ class BodyResolveContext(
             forFinalizers = forFinalizers,
             primaryConstructorPureParametersScope = primaryConstructorPureParametersScope,
             primaryConstructorAllParametersScope = primaryConstructorAllParametersScope,
+        )
+
+        return withTowerDataContexts(newContexts, f)
+    }
+
+    /**
+     * 进入 extend 声明体时，`this` 指向被扩展类型而不是 extend 声明本身。
+     *
+     * 作用域形状沿用 Kotlin class body 的 tower-data 框架：类型参数作用域优先，
+     * 再加入一个可用的隐式接收者；差异只来自仓颉 extend 语义。
+     */
+    fun <T> withScopesForExtend(
+        extend: CfirExtend,
+        holder: SessionAndScopeSessionHolder,
+        f: () -> T,
+    ): T {
+        val typeParameterScope = extend.typeParameters
+            .takeIf { it.isNotEmpty() }
+            ?.let(::CfirTypeParameterScopeImpl)
+
+        val withTypeParameters = if (typeParameterScope != null) {
+            towerDataContext.addNonLocalScope(typeParameterScope)
+        } else {
+            towerDataContext
+        }
+
+        val extensionReceiver = ImplicitExtensionReceiverValue(
+            extend.symbol,
+            extend.extendedTypeRef.coneType,
+            holder.session,
+            holder.scopeSession,
+        )
+        val forMembersResolution = withTypeParameters.addReceiver(null, extensionReceiver)
+
+        val newContexts = CfirRegularTowerDataContexts(
+            regular = forMembersResolution,
+            forNestedClasses = withTypeParameters,
+            forStaticMembers = withTypeParameters,
+            forConstructorHeaders = withTypeParameters,
+            forEnumConstructors = withTypeParameters,
+            forFinalizers = forMembersResolution,
         )
 
         return withTowerDataContexts(newContexts, f)

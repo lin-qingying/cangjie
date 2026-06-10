@@ -2,10 +2,12 @@ package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternBindingSymbol
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -46,6 +48,13 @@ class CfirCompositeProvider(
     override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? {
         for (provider in providers) {
             provider.getCfirCallableContainerFile(symbol)?.let { return it }
+        }
+        return null
+    }
+
+    override fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? {
+        for (provider in providers) {
+            provider.getCfirPatternVariableForBinding(symbol)?.let { return it }
         }
         return null
     }

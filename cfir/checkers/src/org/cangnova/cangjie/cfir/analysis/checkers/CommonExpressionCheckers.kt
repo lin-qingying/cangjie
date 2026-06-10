@@ -5,6 +5,8 @@ import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAssignmentChec
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAssignmentLegalityChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirAssignmentTypeMismatchChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirBasicExpressionChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirClassifierAsExpressionChecker
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirCompoundAssignmentSemanticsChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirConstEvalArithmeticChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirConstructorDelegationCallChecker
 import org.cangnova.cangjie.cfir.analysis.checkers.expression.CfirErrorExpressionChecker
@@ -74,6 +76,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
 
     override val assignmentCheckers: Set<CfirAssignmentChecker>
         get() = setOf(
+            CfirCompoundAssignmentSemanticsChecker,
             CfirAssignmentLegalityChecker,
             CfirAssignmentTypeMismatchChecker,
             CfirImmutableFunctionCannotModifyFieldChecker,
@@ -110,6 +113,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         get() = setOf(
             CfirFunctionReferenceLegalityChecker,
             CfirGenericBareClassifierAccessChecker,
+            CfirClassifierAsExpressionChecker,
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,
         )

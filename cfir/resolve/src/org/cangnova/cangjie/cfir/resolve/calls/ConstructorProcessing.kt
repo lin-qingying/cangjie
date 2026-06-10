@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.calls
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedClass
@@ -10,6 +11,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 
 internal enum class ConstructorFilter {
     OnlyNested,
@@ -48,6 +50,7 @@ private fun CfirScope.processConstructorsByName(
 
         if (!seen.add(matchedSymbol)) return@processClassifiersByName
 
+        matchedSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
         val declaration = matchedSymbol.cfir as? CfirClassLikeDeclaration ?: return@processClassifiersByName
         if (declaration is CfirEnum) return@processClassifiersByName
         if (!constructorFilter.accepts(declaration)) return@processClassifiersByName

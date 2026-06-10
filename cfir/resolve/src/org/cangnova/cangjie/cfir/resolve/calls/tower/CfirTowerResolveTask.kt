@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
+import org.cangnova.cangjie.cfir.resolve.body.importedPackageQualifierScopeOrNull
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
@@ -96,7 +97,7 @@ internal abstract class CfirBaseTowerResolveTask(
             }
 
             element.implicitReceiver?.let { receiver ->
-                onImplicitReceiver(receiver, CfirTowerGroup.MEMBER)
+                onImplicitReceiver(receiver, CfirTowerGroup.IMPLICIT_MEMBER)
             }
         }
     }
@@ -142,14 +143,14 @@ internal open class CfirTowerResolveTask(
         processLevel(
             FunctionTypeInvokeTowerLevel(receiverExpression),
             info,
-            CfirTowerGroup.MEMBER,
+            CfirTowerGroup.EXPLICIT_MEMBER,
             explicitReceiverKind = ExplicitReceiverKind.DISPATCH_RECEIVER,
         )
 
         processLevel(
             DispatchReceiverMemberScopeTowerLevel(components, explicitReceiver),
             info,
-            CfirTowerGroup.MEMBER,
+            CfirTowerGroup.EXPLICIT_MEMBER,
             explicitReceiverKind = ExplicitReceiverKind.DISPATCH_RECEIVER,
         )
 
@@ -180,22 +181,23 @@ internal open class CfirTowerResolveTask(
         info: CallInfo,
         receiverExpression: CfirExpression,
     ) {
-        val callableScope = receiverExpression.qualifierScopeOrNull(components.session) ?: return
+        val packageQualifierScope = receiverExpression.importedPackageQualifierScopeOrNull(components.file, components.session)
+        val callableScope = packageQualifierScope ?: receiverExpression.qualifierScopeOrNull(components.session) ?: return
         processLevel(
             ScopeBasedTowerLevel(
                 components = components,
                 scope = callableScope,
-                dispatchReceiver = ExpressionReceiverValue(receiverExpression),
+                dispatchReceiver = if (packageQualifierScope == null) ExpressionReceiverValue(receiverExpression) else null,
             ),
             info,
-            CfirTowerGroup.MEMBER,
+            CfirTowerGroup.EXPLICIT_MEMBER,
         )
     }
 }
 
 private fun classifyNonLocalScope(scope: CfirScope, importedDepth: Int): CfirTowerGroup {
     return when (scope) {
-        is CfirClassDeclaredMemberScope -> CfirTowerGroup.MEMBER
+        is CfirClassDeclaredMemberScope -> CfirTowerGroup.NON_LOCAL
         is CfirLocalScope -> CfirTowerGroup.local(0)
         is CfirExtendMemberScope -> CfirTowerGroup.EXTEND
         is CfirImportScope -> CfirTowerGroup.imported(importedDepth)

@@ -4,11 +4,13 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-private func foo(): Unit {
+// LLT_COMPANION_SOURCES
+
+private func <!CONFLICTING_OVERLOADS!>foo<!>(): Unit {
     println("foo in 2.cj")
 }
 
 internal func hoo() {
    println("hoo in 2.cj")
-   foo()
+   <!AMBIGUOUS_FUNCTION_CALL!>foo<!>()
 }

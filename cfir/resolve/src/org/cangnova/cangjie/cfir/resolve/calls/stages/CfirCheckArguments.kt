@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.LanguageFeature
+import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.lookupTracker
@@ -9,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.getExpectedType
 import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclaration
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -44,6 +46,11 @@ object CfirCheckArguments : ResolutionStage() {
             )
         }
 
+        when {
+            candidate.system.hasContradiction && candidate.callInfo.arguments.isNotEmpty() -> {
+                sink.yieldDiagnostic(InapplicableCandidate)
+            }
+        }
     }
 
     context(sink: CheckerSink, context: ResolutionContext)
@@ -69,6 +76,7 @@ object CfirCheckArguments : ResolutionStage() {
         )
     }
 }
+
 private fun getExpectedTypeWithImplicitIntegerCoercion(
     session: CfirSession,
     argument: CfirExpression,

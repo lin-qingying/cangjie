@@ -5,7 +5,9 @@ import org.cangnova.cangjie.cfir.types.ConeClassLikeLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeClassifierLookupTag
 import org.cangnova.cangjie.cfir.types.ConeClassifierType
+import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
+import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.name.ClassId
 
@@ -39,7 +41,12 @@ fun CfirClassLikeSymbol<*>.constructType(
     attributes: ConeAttributes = ConeAttributes.Empty
 ): ConeLookupTagBasedType {
 
-    return ConeClassLikeType(this.toLookupTag(), typeArguments, attributes)
+    return when (this) {
+        is CfirInterfaceSymbol -> ConeClassLikeType(this.toLookupTag(), typeArguments, attributes, isInterface = true)
+        is CfirStructSymbol -> ConeStructType(this.toLookupTag(), typeArguments, attributes)
+        is CfirEnumSymbol -> ConeEnumType(this.toLookupTag(), typeArguments, attributes, isRefEnum)
+        else -> ConeClassLikeType(this.toLookupTag(), typeArguments, attributes)
+    }
 }
 
 /**

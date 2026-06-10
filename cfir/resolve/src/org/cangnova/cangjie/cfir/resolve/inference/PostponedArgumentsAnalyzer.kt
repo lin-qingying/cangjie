@@ -1,6 +1,15 @@
 package org.cangnova.cangjie.cfir.resolve.inference
 
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
+import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.resolve.body.CfirCallResolver
 import org.cangnova.cangjie.cfir.resolve.calls.ConeContextSensitiveAlternativeForQualifierAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom
@@ -16,9 +25,11 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.ArgumentCheckingProcessor
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CheckerSinkImpl
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
+import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
@@ -71,12 +82,69 @@ class PostponedArgumentsAnalyzer(
                 }
             }
 
-            is ConeResolvedCallableReferenceAtom,
-            is ConeSimpleNameForContextSensitiveResolution,
+            is ConeResolvedCallableReferenceAtom -> {
+                atom.analyzed = true
+            }
+
+            is ConeSimpleNameForContextSensitiveResolution -> {
+                processFunctionReferenceArgument(atom, candidate)
+            }
+
             is ConeContextSensitiveAlternativeForQualifierAtom -> {
                 atom.analyzed = true
             }
         }
+    }
+
+    private fun processFunctionReferenceArgument(
+        atom: ConeSimpleNameForContextSensitiveResolution,
+        topLevelCandidate: Candidate,
+    ) {
+        if (atom.analyzed) return
+        atom.analyzed = true
+
+        val expression = atom.expression as? CfirNamedAccessExpression ?: return
+        val errorReference = expression.calleeReference as? CfirErrorNamedReference ?: return
+        val ambiguity = errorReference.diagnostic as? ConeAmbiguityError ?: return
+        val functionCandidates = ambiguity.candidates
+            .filter { candidate -> candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction }
+        if (functionCandidates.size != ambiguity.candidates.size) {
+            ArgumentCheckingProcessor.resolveArgumentExpression(
+                topLevelCandidate,
+                atom.fallbackSubAtom,
+                atom.expectedType,
+                CheckerSinkImpl(topLevelCandidate),
+                context = resolutionContext,
+                isReceiver = false,
+                isDispatch = false,
+            )
+            return
+        }
+
+        val hasExplicitTypeArguments = expression.typeArguments.isNotEmpty() ||
+            functionCandidates
+                .filterIsInstance<org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate<*>>()
+                .any { candidate -> candidate.callInfo.hasExplicitTypeArguments }
+
+        val diagnostic = if (hasExplicitTypeArguments) {
+            topLevelCandidate.addDiagnostic(AmbiguousArgumentType(topLevelCandidate.callInfo.explicitReceiver ?: topLevelCandidate.callInfo.callSite, expression))
+            ConeUnreportedDuplicateDiagnostic(ambiguity)
+        } else {
+            topLevelCandidate.addDiagnostic(ErrorTypeInArguments)
+            ConeSimpleDiagnostic(
+                "generic function reference should be used with type argument",
+                DiagnosticKind.GenericTypeWithoutTypeArgument,
+            )
+        }
+
+        expression.replaceCalleeReference(
+            buildErrorNamedReference {
+                source = errorReference.source
+                name = errorReference.name
+                this.diagnostic = diagnostic
+            }
+        )
+        expression.replaceConeTypeOrNull(ConeErrorType(diagnostic, delegatedType = atom.expectedType))
     }
 
     private fun analyzeLambda(
@@ -163,6 +231,10 @@ class PostponedArgumentsAnalyzer(
             }
 
             hasExpressionInReturnArguments = true
+            if (expression.hasResolutionError()) {
+                checkerSink.reportDiagnostic(ErrorTypeInArguments)
+                continue
+            }
 
             if (!builder.hasContradiction || returnAtom is ConeResolutionAtomWithPostponedChild) {
                 ArgumentCheckingProcessor.resolveArgumentExpression(
@@ -175,6 +247,8 @@ class PostponedArgumentsAnalyzer(
                     isDispatch = false,
                     anonymousFunctionIfReturnExpression = atom.anonymousFunction,
                 )
+            } else if (expression.hasResolutionError()) {
+                checkerSink.reportDiagnostic(ErrorTypeInArguments)
             }
         }
 
@@ -226,6 +300,11 @@ class PostponedArgumentsAnalyzer(
 
 private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.isImplicitUnitForEmptyLambda(): Boolean {
     return source?.kind == CjFakeSourceElementKind.ImplicitUnit.ForEmptyLambda
+}
+
+private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.hasResolutionError(): Boolean {
+    if (coneTypeOrNull is ConeErrorType) return true
+    return this is CfirResolvable && calleeReference is CfirErrorNamedReference
 }
 
 fun ConeLambdaWithTypeVariableAsExpectedTypeAtom.transformToResolvedLambda(

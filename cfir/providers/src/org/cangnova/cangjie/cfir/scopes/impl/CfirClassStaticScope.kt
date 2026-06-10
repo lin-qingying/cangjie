@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
@@ -10,6 +11,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
@@ -46,6 +48,7 @@ class CfirClassStaticScope(
         memberIndex.enumConstructors[name]?.forEach(processor)
         memberIndex.functions[name]?.forEach(processor)
         memberIndex.properties[name]?.forEach(processor)
+        memberIndex.fields[name]?.forEach(processor)
     }
 
     override fun withReplacedSessionOrNull(
@@ -58,17 +61,23 @@ class CfirClassStaticScope(
         val enumConstructors: Map<Name, List<CfirEnumConstructorSymbol>>,
         val functions: Map<Name, List<CfirNamedFunctionSymbol>>,
         val properties: Map<Name, List<CfirPropertySymbol>>,
+        val fields: Map<Name, List<CfirFieldVariableSymbol>>,
     ) {
         val callableNames: Set<Name> = buildSet {
             addAll(enumConstructors.keys)
             addAll(functions.keys)
             addAll(properties.keys)
+            addAll(fields.keys)
         }
 
         val classifierNames: Set<Name> = classifiers.keys
 
         val isEmpty: Boolean
-            get() = classifiers.isEmpty() && enumConstructors.isEmpty() && functions.isEmpty() && properties.isEmpty()
+            get() = classifiers.isEmpty()
+                    && enumConstructors.isEmpty()
+                    && functions.isEmpty()
+                    && properties.isEmpty()
+                    && fields.isEmpty()
     }
 
     private fun buildIndex(declarations: List<CfirDeclaration>): MemberIndex {
@@ -76,6 +85,7 @@ class CfirClassStaticScope(
         val enumConstructors = linkedMapOf<Name, MutableList<CfirEnumConstructorSymbol>>()
         val functions = linkedMapOf<Name, MutableList<CfirNamedFunctionSymbol>>()
         val properties = linkedMapOf<Name, MutableList<CfirPropertySymbol>>()
+        val fields = linkedMapOf<Name, MutableList<CfirFieldVariableSymbol>>()
 
         for (declaration in declarations) {
             when (declaration) {
@@ -103,10 +113,18 @@ class CfirClassStaticScope(
                     properties.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
                 }
 
+                is CfirFieldVariable -> {
+                    // 静态字段与 Kotlin 静态 property 一样只能通过 qualifier scope 暴露。
+                    declaration.symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
+                    if (!declaration.status.isStatic) continue
+                    val symbol = declaration.symbol as? CfirFieldVariableSymbol ?: continue
+                    fields.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
+                }
+
                 else -> continue
             }
         }
 
-        return MemberIndex(classifiers, enumConstructors, functions, properties)
+        return MemberIndex(classifiers, enumConstructors, functions, properties, fields)
     }
 }

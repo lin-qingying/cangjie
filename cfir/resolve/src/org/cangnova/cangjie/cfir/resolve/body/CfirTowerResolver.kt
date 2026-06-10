@@ -76,7 +76,10 @@ class CfirTowerResolver(
             else -> manager.enqueueResolverTask {
                 // 对齐 Kotlin FirTowerResolver：已解析的类型/包限定符不作为普通表达式接收者处理，
                 // 而是从限定符自身的静态 callable scope 中收集候选。
-                if (receiver.resolvedQualifierClassifier(session) != null) {
+                if (
+                    receiver.resolvedQualifierClassifier(session) != null ||
+                    receiver.importedPackageQualifierScopeOrNull(components.file, session) != null
+                ) {
                     mainTask.runResolverForQualifierReceiver(info, receiver)
                 } else {
                     mainTask.runResolverForExpressionReceiver(info, receiver)

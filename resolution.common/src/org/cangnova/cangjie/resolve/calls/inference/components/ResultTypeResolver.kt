@@ -261,9 +261,7 @@ class ResultTypeResolver(
         if (lowerConstraintTypes.isNotEmpty()) {
             if (lowerConstraintTypes.size > 1 &&
                 lowerConstraintTypes.all { type ->
-                    type.asRigidType()?.let { rigidType ->
-                        rigidType.isStubTypeForVariableInSubtyping()
-                    } == true
+                    type.asRigidType()?.isStubTypeForVariableInSubtyping() == true
                 }
             ) {
                 // This situation is only allowed to happen when semi-fixing for input types for OverloadResolutionByLambdaReturnType

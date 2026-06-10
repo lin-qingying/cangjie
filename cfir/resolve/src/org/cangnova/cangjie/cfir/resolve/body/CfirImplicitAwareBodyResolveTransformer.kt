@@ -2,7 +2,9 @@
 
 import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
@@ -47,6 +49,20 @@ open class CfirImplicitAwareBodyResolveTransformer(
         return computeCachedTransformationResult(property) {
             super.transformProperty(property, data)
         } as CfirProperty
+    }
+
+    override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: ResolutionMode): CfirFieldVariable {
+        @Suppress("UNCHECKED_CAST")
+        return computeCachedTransformationResult(fieldVariable) {
+            super.transformFieldVariable(fieldVariable, data)
+        } as CfirFieldVariable
+    }
+
+    override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: ResolutionMode): CfirPatternVariable {
+        @Suppress("UNCHECKED_CAST")
+        return computeCachedTransformationResult(patternVariable) {
+            super.transformPatternVariable(patternVariable, data)
+        } as CfirPatternVariable
     }
 
     override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {

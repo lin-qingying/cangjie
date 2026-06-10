@@ -562,19 +562,26 @@ class ConeOverloadConflictResolver(
         specific: PrimitiveTypeKind,
         general: PrimitiveTypeKind,
     ): Boolean {
+        if (!specific.isNumeric || !general.isNumeric) return false
         if (specific == general) return true
 
+        // 对齐官方仓颉 TypeCheckUtil::CompareIntAndFloat：
+        // Int64 优先于其他整数，整数优先于浮点，Float64 优先于其他浮点；
+        // 除这些规则外，同族数值类型在重载消歧中互为等价。
         return when {
-            specific in SIGNED_NUMERIC_SPECIFICITY && general in SIGNED_NUMERIC_SPECIFICITY ->
-                SIGNED_NUMERIC_SPECIFICITY.getValue(specific) >= SIGNED_NUMERIC_SPECIFICITY.getValue(general)
+            specific.isInteger -> {
+                if (general.isInteger) {
+                    specific == PrimitiveTypeKind.INT64 || general != PrimitiveTypeKind.INT64
+                } else {
+                    true
+                }
+            }
 
-            specific in UNSIGNED_NUMERIC_SPECIFICITY && general in UNSIGNED_NUMERIC_SPECIFICITY ->
-                UNSIGNED_NUMERIC_SPECIFICITY.getValue(specific) >= UNSIGNED_NUMERIC_SPECIFICITY.getValue(general)
+            general.isInteger -> false
 
-            specific in FLOAT_NUMERIC_SPECIFICITY && general in FLOAT_NUMERIC_SPECIFICITY ->
-                FLOAT_NUMERIC_SPECIFICITY.getValue(specific) >= FLOAT_NUMERIC_SPECIFICITY.getValue(general)
-
-            else -> false
+            specific == PrimitiveTypeKind.FLOAT64 -> true
+            general == PrimitiveTypeKind.FLOAT64 -> false
+            else -> true
         }
     }
 
@@ -623,29 +630,6 @@ class ConeOverloadConflictResolver(
         return visit(member)
     }
 
-    companion object {
-        private val SIGNED_NUMERIC_SPECIFICITY: Map<PrimitiveTypeKind, Int> = mapOf(
-            PrimitiveTypeKind.INT8 to 0,
-            PrimitiveTypeKind.INT16 to 1,
-            PrimitiveTypeKind.INT32 to 2,
-            PrimitiveTypeKind.INT64 to 3,
-            PrimitiveTypeKind.INT_NATIVE to 4,
-        )
-
-        private val UNSIGNED_NUMERIC_SPECIFICITY: Map<PrimitiveTypeKind, Int> = mapOf(
-            PrimitiveTypeKind.UINT8 to 0,
-            PrimitiveTypeKind.UINT16 to 1,
-            PrimitiveTypeKind.UINT32 to 2,
-            PrimitiveTypeKind.UINT64 to 3,
-            PrimitiveTypeKind.UINT_NATIVE to 4,
-        )
-
-        private val FLOAT_NUMERIC_SPECIFICITY: Map<PrimitiveTypeKind, Int> = mapOf(
-            PrimitiveTypeKind.FLOAT16 to 0,
-            PrimitiveTypeKind.FLOAT32 to 1,
-            PrimitiveTypeKind.FLOAT64 to 2,
-        )
-    }
 }
 
 private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.coneTypeOrNull(): ConeCangJieType? {

@@ -30,9 +30,8 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
         val source = expression.source as? AbstractCjSourceElement ?: return
         val operatorName = extractOperatorName(expression) ?: return
         if (operatorName !in SUPPORTED) return
+        if (expression.isPrimitiveCompoundAssignmentCall(context)) return
 
-        val leftLiteral = expression.explicitReceiver as? CfirLiteralExpression ?: return
-        val left = CfirIntConstantEvalUtils.parseIntLiteral(leftLiteral) ?: return
         val rightExpression = expression.argumentList.arguments.singleOrNull() ?: return
 
         if (operatorName == LEFT_SHIFT || operatorName == RIGHT_SHIFT) {
@@ -40,6 +39,8 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
             return
         }
 
+        val leftLiteral = expression.explicitReceiver as? CfirLiteralExpression ?: return
+        val left = CfirIntConstantEvalUtils.parseIntLiteral(leftLiteral) ?: return
         val right = CfirIntConstantEvalUtils.parseSignedIntExpression(rightExpression) ?: return
 
         if ((operatorName == DIV || operatorName == REM) && right.value == BigInteger.ZERO) {
