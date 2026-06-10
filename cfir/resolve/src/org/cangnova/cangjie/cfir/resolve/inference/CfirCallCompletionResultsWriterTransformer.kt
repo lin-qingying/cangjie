@@ -58,13 +58,17 @@ import org.cangnova.cangjie.cfir.types.ConeClassifierType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
+import org.cangnova.cangjie.cfir.types.IdealTypeResolver
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeApproximator
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
@@ -105,11 +109,7 @@ class CfirCallCompletionResultsWriterTransformer(
             computeNamedValueFunctionType(declaration, subCandidate)
         } else if (declaration is CfirCallableDeclaration) {
             val calculated = typeCalculator.tryCalculateReturnType(declaration)
-            if (calculated !is CfirErrorTypeRef) {
-                calculated.coneType
-            } else {
-                ConeErrorType(calculated.diagnostic)
-            }
+            calculated.coneType
         } else {
             // this branch is for cases when we have
             // some invalid qualified access expression itself.
@@ -153,7 +153,7 @@ class CfirCallCompletionResultsWriterTransformer(
         }
 
         typeCalculator.tryCalculateReturnType(declaration)
-        val returnType = finallySubstituteOrSelf(candidate.substitutedReturnType())
+        val returnType = finallySubstituteOrSelf(candidate.substitutedReturnType()).approximateThisTypeForDeclaration()
         return ConeFunctionType(parameterTypes, returnType)
     }
 
@@ -355,13 +355,24 @@ class CfirCallCompletionResultsWriterTransformer(
         val calleeReference = qualifiedAccessExpression.calleeReference as? CfirNamedReferenceWithCandidate
             ?: return qualifiedAccessExpression
         val result = prepareQualifiedTransform(qualifiedAccessExpression, calleeReference)
+        val candidate = calleeReference.candidate
         result.transformChildren(this, data)
-        result.replaceConeTypeOrNull(
-            integerOperatorApproximator.approximateType(
-                result.coneTypeOrNull,
+        val resultType = result.coneTypeOrNull?.substituteType(candidate)
+        if (resultType != null) {
+            // qualified access 完成后必须写回最终替换类型；无参 enum constructor
+            // 如 `None` 的 owner 泛型依赖 expected type 约束，不能保留声明原始类型。
+            val approximatedType = integerOperatorApproximator.approximateType(
+                resultType,
                 data?.getExpectedType(qualifiedAccessExpression),
+            ) ?: resultType
+            result.replaceConeTypeOrNull(approximatedType)
+            session.lookupTracker?.recordTypeResolveAsLookup(
+                approximatedType,
+                qualifiedAccessExpression.source,
+                context.file.source,
             )
-        )
+        }
+        result.addNonFatalDiagnostics(candidate)
         return result
     }
 
@@ -650,6 +661,10 @@ class CfirCallCompletionResultsWriterTransformer(
     }
 
     private fun completedResultType(candidate: Candidate): ConeCangJieType {
+        candidate.callFailureDiagnosticForResultType()?.let { diagnostic ->
+            return ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))
+        }
+
         val substituted = finallySubstituteOrSelf(candidate.substitutedReturnType())
         val approximated = typeApproximator.approximateToSuperType(
             substituted,
@@ -658,15 +673,26 @@ class CfirCallCompletionResultsWriterTransformer(
         return integerOperatorApproximator.approximateType(approximated, null) ?: approximated
     }
 
+    @OptIn(ApplicabilityDetail::class)
+    private fun Candidate.callFailureDiagnosticForResultType(): ConeDiagnostic? {
+        if (!lowestApplicability.isSuccess) {
+            return ConeInapplicableCandidateError(lowestApplicability, this)
+        }
+        if (!isSuccessful) {
+            require(system.hasContradiction) {
+                "Candidate is not successful, but system has no contradiction"
+            }
+            return ConeConstraintSystemHasContradiction(this)
+        }
+        return null
+    }
+
     private fun CfirNamedReferenceWithCandidate.hasAdditionalResolutionErrors(): Boolean = false
 
     @OptIn(ApplicabilityDetail::class)
     private fun CfirNamedReferenceWithCandidate.toResolvedReference(): CfirNamedReference {
         val errorDiagnostic = when {
             this is CfirErrorReferenceWithCandidate -> this.diagnostic
-            candidate.system.hasContradiction ->
-                ConeConstraintSystemHasContradiction(candidate)
-
             !candidate.lowestApplicability.isSuccess ->
                 ConeInapplicableCandidateError(candidate.lowestApplicability, candidate)
 
@@ -770,6 +796,7 @@ private fun ConeCangJieType.toExpectedType(
 private fun ConeCangJieType.approximateIntegerLiteralType(): ConeCangJieType =
     when (this) {
         is ConeIdealLiteralType -> getApproximatedType()
+        is ConePrimitiveType -> IdealTypeResolver.resolveIfIdeal(this)
         else -> this
     }
 

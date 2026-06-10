@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessAnalyzer
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
 import org.cangnova.cangjie.cfir.reportEnumUsageInMatch
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
@@ -19,6 +20,7 @@ object CfirMatchExhaustivenessChecker : CfirMatchExpressionChecker( ) {
         val source = expression.source as? AbstractCjSourceElement ?: return
         val subject = expression.subject ?: return
         val subjectType = subject.coneTypeOrNull ?: return
+        if (subjectType is ConeErrorType) return
         if (expression.hasPatternLegalityProblem(context)) return
 
         context.session.enumMatchTracker?.reportEnumUsageInMatch(context.containingFilePath, subjectType)

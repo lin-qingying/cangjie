@@ -230,6 +230,7 @@ interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeF
     /** 创建元组类型 */
     fun createTupleType(elementTypes: List<CangJieTypeMarker>): CangJieTypeMarker =
         error("Tuple type creation not available in this context")
+
 }
 
 // =====================================================================
@@ -664,6 +665,26 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
 
     /** 判断是否是 Nothing（不可达底层类型） */
     fun CangJieTypeMarker.isNothing() = typeConstructor().isNothingConstructor()
+
+    // ------------------------------------------------------------------
+    // Option 自动装箱
+    // 对齐官方 C++ TypeManager::IsSubtype(..., allowOptionBox=true)：
+    // 目标类型是 core.Option<T> 且目标 Option 嵌套层级更深时，允许源类型按 T 继续做子类型检查。
+    // 具体上下文负责识别本类型系统中的 core.Option<T>。
+    // ------------------------------------------------------------------
+
+    /** 若当前类型是标准库 `Option<T>`，返回其元素类型；否则返回 null。 */
+    fun CangJieTypeMarker.optionBoxedElementType(): CangJieTypeMarker? = null
+
+    /** 统计连续嵌套的 `Option` 层级，对齐官方 `CountOptionNestedLevel`。 */
+    fun CangJieTypeMarker.optionNestedLevel(): Int {
+        var current = this
+        var level = 0
+        while (true) {
+            current = current.optionBoxedElementType() ?: return level
+            level++
+        }
+    }
 
     /** 判断刚性类型是否是 class 或 struct 实例化的类型 */
     fun RigidTypeMarker.isClassType(): Boolean = typeConstructor().isClassTypeConstructor()

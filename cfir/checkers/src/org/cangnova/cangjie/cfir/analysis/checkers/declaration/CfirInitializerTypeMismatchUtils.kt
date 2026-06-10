@@ -7,7 +7,6 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
@@ -24,8 +23,9 @@ fun checkTypeMismatch(
     diagnosticFactory: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Boolean>,
 ) {
     if (actualType is ConeErrorType || expectedType is ConeErrorType) return
+    val diagnosticSource = preferredSpecializedSource ?: source
     specificTypeMismatchDiagnostic(
-        source = preferredSpecializedSource ?: source,
+        source = diagnosticSource,
         expectedType = expectedType,
         actualType = actualType,
         session = context.session,
@@ -38,7 +38,7 @@ fun checkTypeMismatch(
     val normalizedExpectedType = expectedType.normalizeForSubtypeCheck()
     if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, normalizedActualType, normalizedExpectedType) == true) return
     reporter.reportOn(
-        source,
+        diagnosticSource,
         diagnosticFactory,
         expectedType,
         actualType,
@@ -57,7 +57,6 @@ private fun ConeCangJieType.normalizeForSubtypeCheck(): ConeCangJieType {
             }
         }
 
-        is ConeIdealLiteralType -> defaultType
         else -> this
     }
 }

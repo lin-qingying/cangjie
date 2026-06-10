@@ -35,6 +35,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      */
     val RESOLVE by object : DiagnosticGroup("Resolve") {
         val NO_CONSTRUCTOR by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
+        val REF_NOT_BE_TYPE by error<PsiElement>()
 
         /**
          * enum 类型名不能直接当作类型构造器调用，例如 `A(1)`。
@@ -50,7 +51,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * 处理同名分类器、可调用声明冲突
      */
     val REDECLARATION by object : DiagnosticGroup("Redeclaration") {
-        val CONFLICTING_OVERLOADS by error<CjNamedDeclaration>(PositioningStrategy.CALLABLE_DECLARATION_SIGNATURE_NO_MODIFIERS) {
+        val CONFLICTING_OVERLOADS by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Collection<String>>("conflictingSymbols")
         }
 
@@ -327,6 +328,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("functionName")
         }
 
+        // 调用实参的重载函数引用类型无法唯一确定
+        val AMBIGUOUS_ARG_TYPE by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<Name>("functionName")
+        }
+
         // 构造器委托调用形成递归
         val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
@@ -522,6 +528,18 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("message")
         }
 
+        /**
+         * 空数组字面量缺少元素和上下文目标类型时，无法推断 Array 的元素类型。
+         * 对齐官方 `sema_empty_arrayLit_type_undefined`，主诊断位置标在 `[`。
+         */
+        val ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED by error<PsiElement>(PositioningStrategy.ARRAY_LITERAL_LEFT_BRACKET)
+
+        /**
+         * 无目标类型数组字面量的元素类型无法求得可见公共父类型。
+         * 对齐官方 `sema_inconsistency_elemType`，诊断挂在整个数组字面量上。
+         */
+        val INCONSISTENT_ARRAY_LITERAL_ELEMENT_TYPE by error<PsiElement>()
+
         val TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR by error<CjElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<CfirTypeParameterSymbol>("parameter")
         }
@@ -585,6 +603,17 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<ConeCangJieType>("actualType")  // 赋值表达式的实际类型
             parameter<Boolean>("isMismatchDueToNullability")  // 是否因为可空性导致不匹配
             // PositioningStrategy.OPERATOR 表示将错误标记位置设置在赋值操作符处
+        }
+
+        /**
+         * 类型本身不支持当前语义场景。
+         *
+         * 对齐官方 Sema 的 `sema_type_incompatible`，例如复合赋值左值类型不在
+         * `COMPOUND_ASSIGN_TYPE_MAP` 中时，错误属于整个语义场景不可用，而不是
+         * 右值到左值的普通类型不匹配。
+         */
+        val TYPE_INCOMPATIBLE by error<PsiElement> {
+            parameter<String>("contextDescription")
         }
 
         /**
@@ -951,6 +980,13 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 类型参数个数不匹配
         val GENERIC_ARGUMENT_NO_MATCH by error<PsiElement>()
+
+        // 泛型类型实参不满足声明侧约束
+        val GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT by error<PsiElement> {
+            parameter<ConeCangJieType>("actualType")
+            parameter<ConeCangJieType>("upperBound")
+            parameter<ConeCangJieType>("genericType")
+        }
 
         // 子类型约束不能比父类宽松
         val GENERIC_CONSTRAINT_NOT_LOOSER by error<PsiElement>()

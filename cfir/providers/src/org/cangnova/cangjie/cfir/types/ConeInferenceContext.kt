@@ -226,7 +226,8 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
     }
 
     override fun TypeConstructorMarker.isIntegerLiteralTypeConstructor(): Boolean {
-        return this is ConeIdealLiteralType
+        return this is ConeIdealLiteralType ||
+                this is ConePrimitiveType && kind.isIdeal
     }
 
     override fun TypeConstructorMarker.getClassFqNameUnsafe(): FqNameUnsafe? {

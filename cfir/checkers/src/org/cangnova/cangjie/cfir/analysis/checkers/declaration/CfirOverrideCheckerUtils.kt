@@ -9,6 +9,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
@@ -24,9 +26,6 @@ import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.renderForDebugging
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 
@@ -78,14 +77,14 @@ private fun CfirCallableSymbol<*>.ownerClassId(session: org.cangnova.cangjie.cfi
 }
 
 internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: CfirNamedFunctionSymbol): List<CfirFunctionSymbol<*>> {
-    val targetSignature = functionSymbol.stableSignatureKey()
-    val targetIsStatic = functionSymbol.isStaticMember()
+    val targetSignature = functionSymbol.overrideSignatureKey()
+    val targetIsStatic = functionSymbol.isStaticMemberForOverride()
     val result = linkedSetOf<CfirFunctionSymbol<*>>()
     processDirectOverriddenFunctionsWithBaseScope(functionSymbol) { candidate, _ ->
         if (
             candidate != functionSymbol &&
-            candidate.stableSignatureKey() == targetSignature &&
-            candidate.isStaticMember() == targetIsStatic
+            candidate.overrideSignatureKey() == targetSignature &&
+            candidate.isStaticMemberForOverride() == targetIsStatic
         ) {
             result += candidate
         }
@@ -95,50 +94,20 @@ internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: Cfir
 }
 
 internal fun CfirTypeScope.collectDirectOverriddenProperties(propertySymbol: CfirPropertySymbol): List<CfirPropertySymbol> {
-    val targetSignature = propertySymbol.stableSignatureKey()
-    val targetIsStatic = propertySymbol.isStaticMember()
+    val targetSignature = propertySymbol.overrideSignatureKey()
+    val targetIsStatic = propertySymbol.isStaticMemberForOverride()
     val result = linkedSetOf<CfirPropertySymbol>()
     processDirectOverriddenPropertiesWithBaseScope(propertySymbol) { candidate, _ ->
         if (
             candidate != propertySymbol &&
-            candidate.stableSignatureKey() == targetSignature &&
-            candidate.isStaticMember() == targetIsStatic
+            candidate.overrideSignatureKey() == targetSignature &&
+            candidate.isStaticMemberForOverride() == targetIsStatic
         ) {
             result += candidate
         }
         ProcessorAction.NEXT
     }
     return result.toList()
-}
-
-internal fun CfirCallableSymbol<*>.stableSignatureKey(): String {
-    if (!isBound) return callableIdAsString()
-
-    return when (val declaration = cfir) {
-        is CfirFunction -> {
-            val typeParameterPart = "#tp${declaration.typeParameters.size}"
-            val parameterPart = declaration.valueParameters.joinToString(
-                prefix = "(",
-                postfix = ")",
-                separator = ",",
-            ) { parameter ->
-                parameter.returnTypeRef.toOverrideSignatureComponent()
-            }
-            "fun:${name.asString()}$typeParameterPart$parameterPart"
-        }
-
-        is CfirProperty -> "prop:${name.asString()}"
-        else -> callableIdAsString()
-    }
-}
-
-private fun CfirTypeRef.toOverrideSignatureComponent(): String = when (this) {
-    is CfirResolvedTypeRef -> coneType.renderForDebugging()
-    else -> toString()
-}
-
-private fun CfirCallableSymbol<*>.isStaticMember(): Boolean {
-    return isBound && cfir.status.isStatic
 }
 
 internal fun CfirCallableSymbol<*>.isVisibleIn(

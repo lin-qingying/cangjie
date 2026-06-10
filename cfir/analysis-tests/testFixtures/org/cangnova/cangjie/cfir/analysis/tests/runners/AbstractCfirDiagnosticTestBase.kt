@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.analysis.tests.runners
 
 import org.cangnova.cangjie.cfir.analysis.tests.services.MacroConstructionEnvironmentConfigurator
+import org.cangnova.cangjie.cfir.analysis.tests.services.LltCompanionSourceFilesProvider
 import org.cangnova.cangjie.test.CfirParser
 import org.cangnova.cangjie.test.builders.TestConfigurationBuilder
 import org.cangnova.cangjie.test.config.CfirTestDataConsistencyHandler
@@ -81,6 +82,7 @@ fun TestConfigurationBuilder.baseCfirSpecDiagnosticTestConfiguration() {
     }
 
     useAdditionalSourceProviders(::SpecHelpersSourceFilesProvider)
+    useAdditionalSourceProviders(::LltCompanionSourceFilesProvider)
 
     useAfterAnalysisCheckers(
         ::CfirTestDataConsistencyHandler,

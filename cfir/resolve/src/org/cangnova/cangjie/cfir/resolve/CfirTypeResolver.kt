@@ -37,6 +37,7 @@ import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
@@ -106,39 +107,39 @@ class CfirTypeResolverImpl(
         supertypeSupplier: SupertypeSupplier,
         expandTypeAliases: Boolean,
     ): CfirTypeResolutionResult {
-        val type = when (typeRef) {
-            is CfirResolvedTypeRef -> typeRef.coneType
-            is CfirImplicitTypeRef -> ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage"))
-            is CfirBasicTypeRef -> resolveBasicType(typeRef, configuration)
+        return when (typeRef) {
+            is CfirResolvedTypeRef -> result(typeRef.coneType)
+            is CfirImplicitTypeRef -> result(ConeErrorType(ConeSimpleDiagnostic("Implicit type reference is not resolvable at this stage")))
+            is CfirBasicTypeRef -> result(resolveBasicType(typeRef, configuration))
             is CfirUserTypeRef -> resolveUserType(typeRef, configuration, expandTypeAliases)
-            is CfirOptionTypeRef -> resolveOptionType(typeRef, configuration, expandTypeAliases)
+            is CfirOptionTypeRef -> result(resolveOptionType(typeRef, configuration, expandTypeAliases))
             is CfirFunctionTypeRef -> {
                 val parameterTypes = typeRef.parameterTypeRefs.map { resolveType(it, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type }
                 val returnType = resolveType(typeRef.returnTypeRef, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type
-                ConeFunctionType(parameterTypes = parameterTypes, returnType = returnType)
+                result(ConeFunctionType(parameterTypes = parameterTypes, returnType = returnType))
             }
             is CfirTupleTypeRef -> {
                 val elementTypes = typeRef.elementTypeRefs.map { resolveType(it, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type }
-                ConeTupleType(elementTypes = elementTypes)
+                result(ConeTupleType(elementTypes = elementTypes))
             }
             is CfirVArrayTypeRef -> {
                 val elementType = resolveType(typeRef.elementTypeRef, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type
                 val size = typeRef.sizeLiteral.toLongOrNull()
                 if (size != null) {
-                    ConeVArrayType(elementType = elementType, size = size)
+                    result(ConeVArrayType(elementType = elementType, size = size))
                 } else {
-                    ConeErrorType(ConeSimpleDiagnostic("Invalid VArray size: ${typeRef.sizeLiteral}"))
+                    result(ConeErrorType(ConeSimpleDiagnostic("Invalid VArray size: ${typeRef.sizeLiteral}")))
                 }
             }
-            is CfirErrorTypeRef -> ConeErrorType(typeRef.diagnostic)
-            else -> ConeErrorType(ConeSimpleDiagnostic("Unsupported type reference: ${typeRef::class.simpleName}"))
+            is CfirErrorTypeRef -> result(ConeErrorType(typeRef.diagnostic))
+            else -> result(ConeErrorType(ConeSimpleDiagnostic("Unsupported type reference: ${typeRef::class.simpleName}")))
         }
-
-        return CfirTypeResolutionResult(
-            type = type,
-            diagnostic = (type as? ConeErrorType)?.diagnostic,
-        )
     }
+
+    private fun result(type: ConeCangJieType): CfirTypeResolutionResult = CfirTypeResolutionResult(
+        type = type,
+        diagnostic = (type as? ConeErrorType)?.diagnostic,
+    )
 
     override fun resolveClass(typeRef: CfirTypeRef): CfirClassLikeDeclaration? {
         val userTypeRef = typeRef as? CfirUserTypeRef ?: return null
@@ -173,32 +174,32 @@ class CfirTypeResolverImpl(
         typeRef: CfirUserTypeRef,
         configuration: TypeResolutionConfiguration,
         expandTypeAliases: Boolean = true,
-    ): ConeCangJieType {
+    ): CfirTypeResolutionResult {
         if (typeRef.qualifier.isEmpty()) {
-            return ConeErrorType(ConeSimpleDiagnostic("Empty user type"))
+            return result(ConeErrorType(ConeSimpleDiagnostic("Empty user type")))
         }
 
         if (typeRef.qualifier.size == 1) {
             val qualifierPart = typeRef.qualifier.single()
             if (qualifierPart.name == thisTypeName) {
-                return resolveThisType(qualifierPart, configuration)
+                return result(resolveThisType(qualifierPart, configuration))
             }
             if (qualifierPart.name == cFuncName) {
-                return resolveCFuncUserType(qualifierPart, configuration, expandTypeAliases)
+                return result(resolveCFuncUserType(qualifierPart, configuration, expandTypeAliases))
             }
             val typeParameterName = qualifierPart.name.asString()
             val typeParameter = configuration.scopeTypeParameters[typeParameterName]
             if (typeParameter != null && qualifierPart.typeArguments.isEmpty()) {
-                return ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
+                return result(ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag()))
             }
         }
 
         val resolvedQualifier = resolveQualifiedClassLike(typeRef, configuration)
         val resolvedClass = resolvedQualifier.declaration
-            ?: return ConeErrorType(
+            ?: return result(ConeErrorType(
                 resolvedQualifier.diagnostic
                     ?: ConeUnresolvedTypeQualifierError(typeRef.qualifier)
-            )
+            ))
 
         val classId = checkNotNull(resolvedQualifier.classId) {
             "Resolved class-like declaration `${resolvedClass.name}` is missing ClassId"
@@ -224,44 +225,63 @@ class CfirTypeResolverImpl(
                 expandTypeAliases = expandTypeAliases,
                 configuration = configuration,
             )
-            return ConeErrorType(
-                diagnostic = ConeUnmatchedTypeArgumentsError(
-                    symbol = resolvedClass.symbol,
-                    expectedCount = expectedTypeArgumentsCount,
-                    actualCount = resolvedArguments.size,
-                    providedTypeArguments = finalQualifier.typeArguments,
-                ),
-                delegatedType = resolvedRawType,
-                typeArguments = resolvedArguments,
+            return result(
+                ConeErrorType(
+                    diagnostic = ConeUnmatchedTypeArgumentsError(
+                        symbol = resolvedClass.symbol,
+                        expectedCount = expectedTypeArgumentsCount,
+                        actualCount = resolvedArguments.size,
+                        providedTypeArguments = finalQualifier.typeArguments,
+                    ),
+                    delegatedType = resolvedRawType,
+                    typeArguments = resolvedArguments,
+                )
             )
         }
 
-        return createResolvedClassLikeType(
+        val resolvedType = createResolvedClassLikeType(
             resolvedClass = resolvedClass,
             classId = classId,
             resolvedArguments = resolvedArguments,
             expandTypeAliases = expandTypeAliases,
             configuration = configuration,
         )
+        resolvedArguments.firstOrNull { it is ConeErrorType }?.let { errorArgument ->
+            return result(
+                ConeErrorType(
+                    diagnostic = ConeUnreportedDuplicateDiagnostic((errorArgument as ConeErrorType).diagnostic),
+                    delegatedType = resolvedType,
+                    typeArguments = resolvedArguments,
+                )
+            )
+        }
+        return result(resolvedType)
     }
 
     private fun resolveThisType(
         qualifierPart: CfirQualifierPart,
         configuration: TypeResolutionConfiguration,
     ): ConeCangJieType {
-        val owner = configuration.thisTypeOwner
+        val thisTypeContext = configuration.thisTypeContext
             ?: return thisTypeNotAllowedError()
         if (qualifierPart.typeArguments.isNotEmpty()) {
-            return thisTypeNotAllowedError("This type does not accept type arguments")
+            return thisTypeNotAllowedError(
+                reason = "This type does not accept type arguments",
+                delegatedType = thisTypeContext.type,
+            )
         }
-        val typeArguments = owner.typeParameters.map { parameter ->
-            ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
+        return if (thisTypeContext.isAllowed) {
+            thisTypeContext.type
+        } else {
+            thisTypeNotAllowedError(delegatedType = thisTypeContext.type)
         }
-        return owner.symbol.constructThisType(typeArguments)
     }
 
-    private fun thisTypeNotAllowedError(reason: String = THIS_TYPE_NOT_ALLOWED_REASON): ConeErrorType {
-        return ConeErrorType(ConeSimpleDiagnostic(reason, DiagnosticKind.ThisTypeNotAllowed))
+    private fun thisTypeNotAllowedError(
+        reason: String = THIS_TYPE_NOT_ALLOWED_REASON,
+        delegatedType: ConeCangJieType? = null,
+    ): ConeErrorType {
+        return ConeErrorType(ConeSimpleDiagnostic(reason, DiagnosticKind.ThisTypeNotAllowed), delegatedType = delegatedType)
     }
 
     private fun resolveCFuncUserType(

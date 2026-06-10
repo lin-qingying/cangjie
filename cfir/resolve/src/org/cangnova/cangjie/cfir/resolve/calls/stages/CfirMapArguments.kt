@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.diagnostic.NamedParameterNotFound
 import org.cangnova.cangjie.cfir.diagnostic.NeedNamedArgument
 import org.cangnova.cangjie.cfir.diagnostic.NoValueForParameter
 import org.cangnova.cangjie.cfir.diagnostic.TooManyArguments
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
@@ -72,6 +73,8 @@ object CfirMapArguments : ResolutionStage() {
     ) {
         val parameters = candidate.declaredParametersForMapping()
         val argumentInfos = argumentAtoms.map(::CallArgumentInfo)
+        val nonTrailingArguments = argumentInfos.filterNot { it.isTrailingLambda }
+        val trailingLambdaArguments = argumentInfos.filter { it.isTrailingLambda }
         val argumentMapping = LinkedHashMap<ConeResolutionAtom, CfirValueParameter>(argumentAtoms.size)
         val usedParameters = linkedSetOf<CfirValueParameter>()
 
@@ -89,7 +92,7 @@ object CfirMapArguments : ResolutionStage() {
         var seenNamedArgument = false
         var hasUnmappedNamedArgumentError = false
 
-        for (argument in argumentInfos) {
+        for (argument in nonTrailingArguments) {
             val argumentName = argument.name
             if (argumentName != null) {
                 seenNamedArgument = true
@@ -141,6 +144,14 @@ object CfirMapArguments : ResolutionStage() {
             nextPositionalIndex += 1
         }
 
+        mapTrailingLambdaArguments(
+            candidate = candidate,
+            parameters = parameters,
+            trailingLambdaArguments = trailingLambdaArguments,
+            usedParameters = usedParameters,
+            argumentMapping = argumentMapping,
+        )
+
         if (!hasUnmappedNamedArgumentError) {
             parameters
                 .filterNot { it in usedParameters }
@@ -153,12 +164,44 @@ object CfirMapArguments : ResolutionStage() {
         candidate.initializeArgumentMapping(argumentAtoms, argumentMapping)
         candidate.numDefaults = parameters.count { it !in usedParameters && it.defaultValue != null }
     }
+
+    context(sink: CheckerSink)
+    private fun mapTrailingLambdaArguments(
+        candidate: Candidate,
+        parameters: List<CfirValueParameter>,
+        trailingLambdaArguments: List<CallArgumentInfo>,
+        usedParameters: MutableSet<CfirValueParameter>,
+        argumentMapping: MutableMap<ConeResolutionAtom, CfirValueParameter>,
+    ) {
+        val externalArgument = trailingLambdaArguments.firstOrNull() ?: return
+        val lastParameter = parameters.lastOrNull()
+        if (lastParameter == null || lastParameter in usedParameters) {
+            if (!candidate.hasTooManyArgumentsDiagnostic()) {
+                sink.reportDiagnostic(TooManyArguments(externalArgument.atom.expression, candidate.callInfo.name))
+            }
+        } else {
+            usedParameters.add(lastParameter)
+            argumentMapping[externalArgument.atom] = lastParameter
+        }
+
+        trailingLambdaArguments.drop(1).forEach { argument ->
+            if (!candidate.hasTooManyArgumentsDiagnostic()) {
+                sink.reportDiagnostic(TooManyArguments(argument.atom.expression, candidate.callInfo.name))
+            }
+        }
+    }
 }
+
+private fun Candidate.hasTooManyArgumentsDiagnostic(): Boolean =
+    diagnostics.any { it is TooManyArguments }
 
 private data class CallArgumentInfo(
     val atom: ConeResolutionAtom,
     val name: Name? = atom.expression.argumentNameOrNull(),
-)
+) {
+    val isTrailingLambda: Boolean
+        get() = (atom.expression as? CfirAnonymousFunctionExpression)?.isTrailingLambda == true
+}
 
 private fun CfirExpression.argumentNameOrNull(): Name? {
     val source = valueArgumentSourceOrNull() ?: return null

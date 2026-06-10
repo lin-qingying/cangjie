@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.diagnostic
 
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -20,6 +21,15 @@ class  ArgumentTypeMismatch(
     val anonymousFunctionIfReturnExpression: CfirFunction? = null,
     val systemHadContradiction: Boolean = false,
 ) : ResolutionDiagnostic( CandidateApplicability.INAPPLICABLE)
+
+/**
+ * 官方 Cangjie `TypeCheckCall::GetArgTyPossibilities` 在调用实参是重载函数引用、
+ * 且外层调用只能从实参类型反推泛型时，把错误归属到外层调用本身。
+ */
+class AmbiguousArgumentType(
+    val callSite: CfirElement,
+    val argument: CfirExpression,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
 class HiddenCandidate : ResolutionDiagnostic(CandidateApplicability.HIDDEN)
 

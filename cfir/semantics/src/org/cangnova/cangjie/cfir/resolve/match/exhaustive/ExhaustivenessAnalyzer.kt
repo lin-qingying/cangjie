@@ -10,6 +10,7 @@ import org.cangnova.cangjie.cfir.resolve.match.exhaustive.inria.isWellTyped
 import org.cangnova.cangjie.cfir.resolve.match.inferExpressionType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 
 /**
  * 仓颉 match 穷尽性共享分析入口。
@@ -29,6 +30,8 @@ object ExhaustivenessAnalyzer {
         context: MatchExhaustivenessContext,
     ): ExhaustivenessResult {
         val subjectType = inferExpressionType(match.subject)
+        if (subjectType is ConeErrorType) return ExhaustivenessResult.Skipped
+
         val matrix = try {
             match.calculateMatrix(subjectType)
         } catch (e: Exception) {
@@ -54,6 +57,8 @@ object ExhaustivenessAnalyzer {
         context: MatchExhaustivenessContext,
     ): ExhaustivenessResult {
         val type = inferExpressionType(expression)
+        if (type is ConeErrorType) return ExhaustivenessResult.Skipped
+
         val matrix = try {
             pattern.calculateMatrix(type)
         } catch (e: Exception) {
@@ -78,6 +83,7 @@ object ExhaustivenessAnalyzer {
         type: ConeCangJieType,
         context: MatchExhaustivenessContext,
     ): ExhaustivenessResult {
+        if (type is ConeErrorType) return ExhaustivenessResult.Skipped
         if (!matrix.isWellTyped()) {
             return ExhaustivenessResult.Error("matrix is not well typed")
         }
@@ -117,6 +123,8 @@ object ExhaustivenessAnalyzer {
         context: MatchExhaustivenessContext,
     ): DispatchAnalysis? {
         val subjectType = inferExpressionType(match.subject)
+        if (subjectType is ConeErrorType) return null
+
         val matrix = try {
             match.calculateMatrix(subjectType)
         } catch (_: Exception) {

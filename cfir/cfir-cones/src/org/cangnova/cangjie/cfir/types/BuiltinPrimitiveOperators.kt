@@ -28,6 +28,10 @@ object BuiltinPrimitiveOperators {
         OperatorNameConventions.OR,
         OperatorNameConventions.XOR,
     )
+    private val logicalNames = listOf(
+        OperatorNameConventions.ANDAND,
+        OperatorNameConventions.OROR,
+    )
     private val shiftNames = listOf(
         OperatorNameConventions.LEFT_SHIFT,
         OperatorNameConventions.RIGHT_SHIFT,
@@ -66,7 +70,7 @@ object BuiltinPrimitiveOperators {
 
                 if (kind in integerKinds) {
                     addSameOperandOperators(kind, listOf(OperatorNameConventions.REM) + bitwiseNames)
-                    addSameOperandUnaryOperators(kind, unaryIntegerNames)
+                    addSameOperandUnaryOperators(kind, listOf(OperatorNameConventions.NOT) + unaryIntegerNames)
                     for (shiftName in shiftNames) {
                         for (rhsKind in integerKinds) {
                             add(signature(shiftName, kind, rhsKind, kind))
@@ -84,6 +88,7 @@ object BuiltinPrimitiveOperators {
 
                 if (kind == PrimitiveTypeKind.BOOLEAN) {
                     add(signature(OperatorNameConventions.NOT, kind, emptyList(), PrimitiveTypeKind.BOOLEAN))
+                    addSameOperandOperators(kind, logicalNames, returnKind = PrimitiveTypeKind.BOOLEAN)
                 }
 
                 when (kind) {
@@ -133,12 +138,155 @@ object BuiltinPrimitiveOperators {
         receiverType: ConeCangJieType?,
         argumentTypes: List<ConeCangJieType>,
     ): BuiltinPrimitiveOperatorMatch? {
-        val receiverKind = (receiverType as? ConePrimitiveType)?.kind ?: return null
-        val argumentKinds = argumentTypes.map { (it as? ConePrimitiveType)?.kind ?: return null }
-        val signature = signaturesFor(receiverKind).firstOrNull { candidate ->
-            candidate.name == name && candidate.parameterKinds == argumentKinds
-        } ?: return null
+        val receiverKind = receiverType?.toBuiltinOperatorKind() ?: return null
+        val argumentKinds = argumentTypes.map { it.toBuiltinOperatorKind() ?: return null }
+        val signature = resolveSignature(name, receiverKind, argumentKinds) ?: return null
         return BuiltinPrimitiveOperatorMatch(signature)
+    }
+
+    /**
+     * 判断一次 operator 调用是否已经进入内建 primitive 运算语义域。
+     *
+     * 该判断只描述“应由内建运算规则处理”的形态，不代表匹配成功；
+     * 匹配失败时由 body resolve 保留 operator token、左右操作数类型，
+     * 交给诊断映射阶段归类为官方的 invalid binary/unary operator。
+     */
+    fun canDiagnoseInvalidPrimitiveOperator(
+        name: Name,
+        receiverType: ConeCangJieType?,
+        argumentTypes: List<ConeCangJieType>,
+    ): Boolean {
+        receiverType?.toBuiltinOperatorKind() ?: return false
+        if (argumentTypes.any { it.toBuiltinOperatorKind() == null }) return false
+        return signaturesByReceiver.values
+            .asSequence()
+            .flatten()
+            .any { signature ->
+                signature.name == name && signature.parameterKinds.size == argumentTypes.size
+            }
+    }
+
+    private fun resolveSignature(
+        name: Name,
+        receiverKind: PrimitiveTypeKind,
+        argumentKinds: List<PrimitiveTypeKind>,
+    ): BuiltinPrimitiveOperatorSignature? {
+        if (argumentKinds.isEmpty()) {
+            return signaturesFor(receiverKind).firstOrNull { candidate ->
+                candidate.name == name && candidate.parameterKinds.isEmpty()
+            }
+        }
+
+        val argumentKind = argumentKinds.singleOrNull() ?: return null
+
+        // 对齐官方 BuiltInOperatorUtil：理想字面量参与内建运算匹配，
+        // 但不会作为对外暴露的 primitive 成员签名。
+        return when (name) {
+            in arithmeticNames -> resolveSameOperandSignature(name, receiverKind, argumentKind, numericKinds)
+            OperatorNameConventions.REM -> resolveSameOperandSignature(name, receiverKind, argumentKind, integerKinds)
+            in bitwiseNames -> resolveSameOperandSignature(name, receiverKind, argumentKind, integerKinds)
+            in logicalNames -> resolveSameOperandSignature(
+                name,
+                receiverKind,
+                argumentKind,
+                listOf(PrimitiveTypeKind.BOOLEAN),
+                PrimitiveTypeKind.BOOLEAN,
+            )
+            in shiftNames -> resolveShiftSignature(name, receiverKind, argumentKind)
+            in equalityNames -> resolveSameOperandSignature(
+                name,
+                receiverKind,
+                argumentKind,
+                equatableKinds,
+                PrimitiveTypeKind.BOOLEAN,
+            )
+
+            in orderingNames -> resolveSameOperandSignature(
+                name,
+                receiverKind,
+                argumentKind,
+                comparableKinds,
+                PrimitiveTypeKind.BOOLEAN,
+            )
+
+            OperatorNameConventions.EXPONENTIATION -> resolveExponentiationSignature(name, receiverKind, argumentKind)
+            else -> signaturesFor(receiverKind).firstOrNull { candidate ->
+                candidate.name == name && candidate.parameterKinds == argumentKinds
+            }
+        }
+    }
+
+    private fun resolveSameOperandSignature(
+        name: Name,
+        receiverKind: PrimitiveTypeKind,
+        argumentKind: PrimitiveTypeKind,
+        allowedKinds: Collection<PrimitiveTypeKind>,
+        returnKind: PrimitiveTypeKind? = null,
+    ): BuiltinPrimitiveOperatorSignature? {
+        val operandKind = commonBuiltinOperandKind(receiverKind, argumentKind, allowedKinds) ?: return null
+        return signature(name, receiverKind, argumentKind, returnKind ?: operandKind)
+    }
+
+    private fun resolveShiftSignature(
+        name: Name,
+        receiverKind: PrimitiveTypeKind,
+        argumentKind: PrimitiveTypeKind,
+    ): BuiltinPrimitiveOperatorSignature? {
+        if (!receiverKind.isBuiltinIntegerOperand() || !argumentKind.isBuiltinIntegerOperand()) return null
+        return signature(name, receiverKind, argumentKind, receiverKind.defaultedIdealKind())
+    }
+
+    private fun resolveExponentiationSignature(
+        name: Name,
+        receiverKind: PrimitiveTypeKind,
+        argumentKind: PrimitiveTypeKind,
+    ): BuiltinPrimitiveOperatorSignature? {
+        val defaultedReceiverKind = receiverKind.defaultedIdealKind()
+        val isValid = when (defaultedReceiverKind) {
+            PrimitiveTypeKind.INT64 -> argumentKind == PrimitiveTypeKind.UINT64 ||
+                    argumentKind == PrimitiveTypeKind.IDEAL_INT
+
+            PrimitiveTypeKind.FLOAT64 -> argumentKind == PrimitiveTypeKind.INT64 ||
+                    argumentKind == PrimitiveTypeKind.FLOAT64 ||
+                    argumentKind == PrimitiveTypeKind.IDEAL_INT ||
+                    argumentKind == PrimitiveTypeKind.IDEAL_FLOAT
+
+            else -> false
+        }
+        if (!isValid) return null
+        return signature(name, receiverKind, argumentKind, defaultedReceiverKind)
+    }
+
+    private fun commonBuiltinOperandKind(
+        left: PrimitiveTypeKind,
+        right: PrimitiveTypeKind,
+        allowedKinds: Collection<PrimitiveTypeKind>,
+    ): PrimitiveTypeKind? {
+        if (left == PrimitiveTypeKind.NOTHING) return right.takeIf { it in allowedKinds }?.defaultedIdealKind()
+        if (right == PrimitiveTypeKind.NOTHING) return left.takeIf { it in allowedKinds }?.defaultedIdealKind()
+        if (left !in allowedKinds || right !in allowedKinds) return null
+        if (left == right) return left
+        if (left == PrimitiveTypeKind.IDEAL_INT && right.isInteger && !right.isIdeal) return right
+        if (right == PrimitiveTypeKind.IDEAL_INT && left.isInteger && !left.isIdeal) return left
+        if (left == PrimitiveTypeKind.IDEAL_FLOAT && right.isFloat && !right.isIdeal) return right
+        if (right == PrimitiveTypeKind.IDEAL_FLOAT && left.isFloat && !left.isIdeal) return left
+        return null
+    }
+
+    private fun PrimitiveTypeKind.isBuiltinIntegerOperand(): Boolean =
+        this == PrimitiveTypeKind.NOTHING || isInteger
+
+    private fun PrimitiveTypeKind.defaultedIdealKind(): PrimitiveTypeKind = when (this) {
+        PrimitiveTypeKind.IDEAL_INT -> PrimitiveTypeKind.INT64
+        PrimitiveTypeKind.IDEAL_FLOAT -> PrimitiveTypeKind.FLOAT64
+        else -> this
+    }
+
+    private fun ConeCangJieType.toBuiltinOperatorKind(): PrimitiveTypeKind? = when (this) {
+        is ConePrimitiveType -> kind
+        is ConeIdealIntLiteralType -> PrimitiveTypeKind.IDEAL_INT
+        is ConeIdealFloatLiteralType -> PrimitiveTypeKind.IDEAL_FLOAT
+        else -> null
     }
 
     private fun MutableList<BuiltinPrimitiveOperatorSignature>.addSameOperandOperators(

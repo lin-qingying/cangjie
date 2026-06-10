@@ -12,6 +12,8 @@ import org.cangnova.cangjie.cfir.entrypoint.session.createDefaultCfirSessionFact
 import org.cangnova.cangjie.cfir.entrypoint.session.CfirSessionConfigurator
 import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.config.CompilerConfiguration
 import org.cangnova.cangjie.config.classpathRoots
 import org.cangnova.cangjie.config.languageVersionSettings
@@ -221,10 +223,14 @@ open class CfirFrontendFacade(
             CfirParser.Psi -> cjFiles
         }
 
-        val filesMap = usedFilesMap.keys
-            .zip(firFiles)
-            .onEach { assert(it.first.name == it.second.name) }
-            .toMap()
+        val filesMap = usedFilesMap.keys.associateWith { testFile ->
+            val sourceFile = usedFilesMap.getValue(testFile)
+            val candidates = firFiles.filter { it.sourceFile.matchesTestSourceFile(sourceFile) }
+            require(candidates.size == 1) {
+                "Expected exactly one CFIR file for test file $testFile, got ${candidates.size}"
+            }
+            candidates.single()
+        }
 
         return CfirOutputPartForDependsOnModule(
             module = module,
@@ -233,6 +239,16 @@ open class CfirFrontendFacade(
             firAnalyzerFacade = firAnalyzerFacade,
             firFilesByTestFile = filesMap,
         )
+    }
+
+    /**
+     * 测试框架中的 `TestFile.relativePath` 只属于 fixture 标识，CFIR 文件必须回连到真实前端源对象。
+     * LightTree 直接复用同一个 [CjSourceFile]，PSI 则在 builder 中用同一个 [CjFile] 包装成 [CjPsiSourceFile]。
+     */
+    private fun CjSourceFile?.matchesTestSourceFile(testSourceFile: Any): Boolean = when (testSourceFile) {
+        is CjSourceFile -> this === testSourceFile
+        is CjFile -> this is CjPsiSourceFile && psiFile === testSourceFile
+        else -> false
     }
 
     private fun createModuleBasedSession(

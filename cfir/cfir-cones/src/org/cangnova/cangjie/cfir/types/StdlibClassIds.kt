@@ -33,6 +33,7 @@ object StdlibClassIds {
     @JvmField val Equatable = ClassId(core, StandardNames.EQUATABLE)
     @JvmField val Countable = ClassId(core, StandardNames.COUNTABLE)
     @JvmField val Iterable = ClassId(core, StandardNames.ITERABLE)
+    @JvmField val Collection = ClassId(core, StandardNames.COLLECTION)
     @JvmField val ToString = ClassId(core, StandardNames.TOSTRING)
     @JvmField val Future = ClassId(core, StandardNames.FUTURE)
 
@@ -45,7 +46,7 @@ object StdlibClassIds {
     @JvmField
     val allClassIds: Set<ClassId> = setOf(
         Object, Any, String, Array, Option, Range, Exception, Error, Resource,
-        Comparable, Equatable, Countable, Iterable, ToString, Future,
+        Comparable, Equatable, Countable, Iterable, Collection, ToString, Future,
         Command, Resumption,
     )
 }

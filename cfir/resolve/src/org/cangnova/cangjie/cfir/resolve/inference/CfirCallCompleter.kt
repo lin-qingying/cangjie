@@ -22,7 +22,6 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeSimpleLeafResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.stages.TypeArgumentMapping
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
@@ -41,12 +40,15 @@ import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeAnyType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
+import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -88,11 +90,7 @@ class CfirCallCompleter(
     ): T where T : CfirResolvable, T : CfirExpression {
         val reference = call.calleeReference as? CfirNamedReferenceWithCandidate ?: return call
         val candidate = reference.candidate
-        val initialType = when {
-            candidate.callInfo.callKind == CallKind.Function -> candidate.substitutedReturnType()
-            candidate.symbol.takeIf { it.isBound }?.cfir is CfirEnumConstructor -> candidate.substitutedReturnType()
-            else -> components.typeFromCallee(call).initialTypeOfCandidate(candidate)
-        }
+        val initialType = components.typeFromCallee(call).initialTypeOfCandidate(candidate)
 
         // Annotation types are resolved during type resolution, and generic arguments aren't inferred.
         // Updating the type of an annotation call is a no-op, it only checks if it's the same as the type of the annotation type ref.
@@ -155,6 +153,8 @@ class CfirCallCompleter(
         if (!candidate.shouldUseExpectedTypeForCompletion(initialType, expectedType)) return
         val system = candidate.system
 
+        if (candidate.addBuiltinArrayConstructorExpectedElementConstraint(expectedType)) return
+
         when {
             resolutionMode.fromCast -> {
                 if (candidate.isFunctionForExpectTypeFromCastFeature()) {
@@ -180,6 +180,25 @@ class CfirCallCompleter(
     }
 
     /**
+     * 官方 `ArrayExpr` 在无显式类型实参时会用左侧 `Array<E>` 的元素类型约束构造器泛型 `T`。
+     *
+     * 显式 `Array<T>(...)` 已经由类型实参固定元素类型；此时左侧期望类型属于
+     * 初始化表达式整体检查，不能再反向制造调用推断错误。
+     */
+    private fun Candidate.addBuiltinArrayConstructorExpectedElementConstraint(
+        expectedType: ConeCangJieType,
+    ): Boolean {
+        val callable = symbol.takeIf { it.isBound }?.cfir as? CfirFunction ?: return false
+        if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor) return false
+        if (callInfo.hasExplicitTypeArguments) return false
+
+        val expectedElementType = expectedType.fullyExpandedType().arrayElementType ?: return false
+        val elementVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
+        system.addSubtypeConstraint(elementVariableType, expectedElementType, ConeExpectedTypeConstraintPosition)
+        return true
+    }
+
+    /**
      * enum 构造器的 owner 泛型只能从同一个 enum 的期望类型中推断。
      * 若期望类型属于其它 enum/非 enum，官方 enum sugar 路径不会把该期望类型
      * 注入构造器泛型约束，而是保留构造器自身类型，后续再报告裸泛型或类型不匹配。
@@ -189,9 +208,15 @@ class CfirCallCompleter(
         expectedType: ConeCangJieType,
     ): Boolean {
         if (symbol.takeIf { it.isBound }?.cfir !is CfirEnumConstructor) return true
-        val initialEnumType = initialType.fullyExpandedType() as? ConeEnumType ?: return true
-        val expectedEnumType = expectedType.fullyExpandedType() as? ConeEnumType ?: return false
-        return initialEnumType.classId == expectedEnumType.classId
+        val initialEnumClassId = initialType.fullyExpandedType().enumConstructorOwnerClassIdOrNull() ?: return true
+        val expectedEnumClassId = expectedType.fullyExpandedType().enumConstructorOwnerClassIdOrNull() ?: return false
+        return initialEnumClassId == expectedEnumClassId
+    }
+
+    private fun ConeCangJieType.enumConstructorOwnerClassIdOrNull(): ClassId? = when (this) {
+        is ConeEnumType -> classId
+        is ConeClassLikeType -> classId.takeIf { it == StdlibClassIds.Option }
+        else -> null
     }
 
     private fun Candidate.isSyntheticFunctionCallThatShouldUseEqualityConstraint(

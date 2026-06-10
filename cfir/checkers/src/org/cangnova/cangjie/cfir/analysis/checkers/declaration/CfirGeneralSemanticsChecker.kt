@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 
 /**
  * 通用语义检查器（General 分组）
@@ -219,18 +220,17 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
     }
 
     /**
-     * 同包内不允许导出两个同名的 private 顶层声明。
+     * 同包内不允许导出两个同名的 private 顶层 nominal 声明。
      *
-     * 对齐 C++ sema_export_same_private_decl
+     * 对齐 C++ `AnalyzeFunctionLinkage` 中的 `sema_export_same_private_decl`：
+     * 官方只遍历 `IsNominalDecl() && private && linkage != INTERNAL` 的声明。
+     * 函数、属性、字段的同名问题由重声明/重载检查器处理，不能在这里重复报导出限制。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkExportSamePrivateDecl(file: CfirFile) {
         val byName = mutableMapOf<Name, Int>()
         for (decl in file.declarations) {
             val vis = when (decl) {
-                is CfirNamedFunction -> decl.status.visibility
-                is CfirProperty -> decl.status.visibility
-                is CfirFieldVariable -> decl.status.visibility
                 is CfirClass -> decl.status.visibility
                 is CfirInterface -> decl.status.visibility
                 is CfirStruct -> decl.status.visibility
@@ -243,9 +243,6 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
         }
         for (decl in file.declarations) {
             val vis = when (decl) {
-                is CfirNamedFunction -> decl.status.visibility
-                is CfirProperty -> decl.status.visibility
-                is CfirFieldVariable -> decl.status.visibility
                 is CfirClass -> decl.status.visibility
                 is CfirInterface -> decl.status.visibility
                 is CfirStruct -> decl.status.visibility
@@ -487,6 +484,7 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkPropertyAccessors(property: CfirProperty) {
         if (property.isCatchParameter == true) return
+        if (property.source?.kind == CjFakeSourceElementKind.PropertyFromParameter) return
         if (context.containingDeclarations.lastOrNull() is CfirInterface) return
         if (property.status.isAbstract) return
         if (property.getter == null && property.setter == null) {

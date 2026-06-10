@@ -19,10 +19,13 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.constructThisType
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -363,7 +366,8 @@ class Candidate(
     }
 
     fun substitutedReturnType(): ConeCangJieType {
-        val declared = when (val declaration = symbol.cfir) {
+        val declaration = symbol.cfir
+        val declared = when (declaration) {
             is CfirFunction -> (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
             is CfirConstructor -> (declaration.returnTypeRef as? CfirResolvedTypeRef)?.coneType
             is CfirEnumConstructor -> enumConstructorOwnerType(declaration)
@@ -373,13 +377,46 @@ class Candidate(
         } ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved return type"))
 
         val substituted = if (::substitutor.isInitialized) substitutor.substituteOrSelf(declared) else declared
-        return substituted.replaceThisTypeWithDispatchReceiver()
+        return if (declaration is CfirFunction && declaration.origin == CfirDeclarationOrigin.Synthetic.FakeFunction) {
+            substituted
+        } else {
+            substituted.replaceThisTypeWithDispatchReceiver()
+        }
     }
 
     private fun ConeCangJieType.replaceThisTypeWithDispatchReceiver(): ConeCangJieType {
-        if (this !is ConeClassLikeType || !isThisType) return this
-        return dispatchReceiverExpression()?.coneTypeOrNull ?: this
+        val fallbackType = when {
+            this is ConeClassLikeType && isThisType -> this
+            this is ConeErrorType && diagnostic.isThisTypeNotAllowed -> delegatedType ?: return this
+            else -> return this
+        }
+        return thisTypeBindingReceiverType()
+            ?: fallbackType
     }
+
+    private fun thisTypeBindingReceiverType(): ConeCangJieType? {
+        if (callInfo.explicitReceiver == null) {
+            containingClassThisType()?.let { return it }
+        }
+        return dispatchReceiverExpression()?.coneTypeOrNull
+            ?: chosenExtensionReceiverExpression()?.coneTypeOrNull
+    }
+
+    private fun containingClassThisType(): ConeCangJieType? {
+        val containingClass = callInfo.containingDeclarations
+            .asReversed()
+            .filterIsInstance<CfirClass>()
+            .firstOrNull()
+            ?: return null
+        val classSymbol = containingClass.symbol as? CfirClassSymbol ?: return null
+        val typeArguments = containingClass.typeParameters.map { typeParameter ->
+            ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
+        }
+        return classSymbol.constructThisType(typeArguments)
+    }
+
+    private val ConeDiagnostic.isThisTypeNotAllowed: Boolean
+        get() = (this as? ConeSimpleDiagnostic)?.kind == DiagnosticKind.ThisTypeNotAllowed
 
     private fun enumConstructorOwnerType(declaration: CfirEnumConstructor): ConeCangJieType? {
         val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return null

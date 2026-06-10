@@ -68,6 +68,12 @@ internal class ScopeBasedTowerLevel(
     override fun processCallablesByName(info: CallInfo, processor: TowerLevelProcessor): ProcessResult {
         var result = ProcessResult.SCOPE_EMPTY
         scope.processCallablesByName(info.name) { symbol ->
+            // 仓颉 enum constructor 在普通名字访问中不是普通 callable。
+            // 裸 enum 值访问由 CfirCallResolver 的 EnumConstructorCall fallback 单独进入，
+            // 否则同名顶层变量/函数会被错误地与 enum constructor 合并成歧义。
+            if (info.callKind == CallKind.NamedValueAccess && symbol is CfirEnumConstructorSymbol) {
+                return@processCallablesByName
+            }
             result = ProcessResult.FOUND
             consumeCallableCandidate(symbol, processor)
         }

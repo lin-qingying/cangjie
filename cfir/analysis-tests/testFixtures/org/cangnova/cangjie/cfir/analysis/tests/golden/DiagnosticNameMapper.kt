@@ -20,9 +20,11 @@ object DiagnosticNameMapper {
         "PATTERN_INITIALIZER_TYPE_MISMATCH" to "sema_mismatched_types",
         "TRY_BRANCH_TYPE_MISMATCH" to "sema_mismatched_types",
         "COMMAND_INCOMPATIBLE_TYPE" to "sema_mismatched_types",
+        "TYPE_INCOMPATIBLE" to "sema_type_incompatible",
 
         // ── Resolve ──
         "NO_CONSTRUCTOR" to "sema_no_matching_constructor",
+        "REF_NOT_BE_TYPE" to "sema_ref_not_be_type",
         "UNRESOLVED_REFERENCE" to "sema_undeclared_identifier",
         "INVISIBLE_MEMBER" to "sema_no_matching_function",
         "INVISIBLE_REFERENCE" to "sema_undeclared_identifier",
@@ -30,6 +32,7 @@ object DiagnosticNameMapper {
         "EXPLICIT_SUPER_CALL_REQUIRED" to "sema_explicit_super_call_required",
         "AMBIGUOUS_FUNCTION_CALL" to "sema_ambiguous_call",
         "AMBIGUOUS_CONSTRUCTOR_CALL" to "sema_ambiguous_constructor_call",
+        "AMBIGUOUS_ARG_TYPE" to "sema_ambiguous_arg_type",
         "AMBIGUOUS_FUNCTION_REFERENCE" to "sema_ambiguous_function_reference",
         "NO_MATCHING_OPERATOR_INVOKE" to "sema_no_matching_operator_invoke",
         "ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR" to "sema_enum_type_cannot_be_used_as_constructor",
@@ -88,12 +91,14 @@ object DiagnosticNameMapper {
         // ── Inference ──
         "NEW_INFERENCE_ERROR" to "sema_new_inference_error",
         "CANNOT_INFER_PARAMETER_TYPE" to "sema_cannot_infer_parameter_type",
+        "ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED" to "sema_empty_arrayLit_type_undefined",
         "BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION" to "sema_builder_inference_multi_lambda_restriction",
         "INFERRED_TYPE_VARIABLE_INTO_EMPTY_INTERSECTION" to "sema_inferred_type_variable_into_empty_intersection",
         "INFERRED_TYPE_VARIABLE_INTO_POSSIBLE_EMPTY_INTERSECTION" to "sema_inferred_type_variable_into_possible_empty_intersection",
 
         // ── Generics / Constraints ──
-        "GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT" to "sema_generic_type_should_be_used_with_type_argument",
+        "GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT" to "sema_generic_type_without_type_argument",
+        "GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT" to "sema_generic_type_argument_not_match_constraint",
         "GENERIC_NO_MEMBER_MATCH_IN_UPPER_BOUNDS" to "sema_generic_no_member_match_in_upper_bounds",
         "GENERIC_NO_METHOD_MATCH_IN_UPPER_BOUNDS" to "sema_generic_no_method_match_in_upper_bounds",
         "CONFLICTING_UPPER_BOUNDS" to "sema_conflicting_upper_bounds",
@@ -118,6 +123,7 @@ object DiagnosticNameMapper {
         "NON_EXHAUSTIVE_MATCH" to "sema_non_exhaustive_match",
         "ENUM_PATTERN_PARAM_SIZE_ERROR" to "sema_enum_pattern_param_size_error",
         "TUPLE_PATTERN_NOT_MATCH" to "sema_tuple_pattern_not_match",
+        "PATTERN_NOT_MATCH" to "sema_pattern_not_match",
 
         // ── Const eval ──
         "CONST_EVAL_ARITHMETIC_OVERFLOW" to "sema_const_eval_arithmetic_overflow",
@@ -127,7 +133,7 @@ object DiagnosticNameMapper {
         "LITERAL_NUMERIC_OVERFLOW" to "sema_literal_numeric_overflow",
 
         // ── Operator ──
-        "INVALID_BINARY_OPERATOR" to "sema_invalid_binary_operator",
+        "INVALID_BINARY_OPERATOR" to "sema_invalid_binary_expr",
 
         // ── Inout ──
         "INOUT_MUST_BE_VAR_VARIABLE" to "sema_inout_must_be_var_variable",

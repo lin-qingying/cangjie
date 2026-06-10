@@ -65,7 +65,7 @@ class CfirSpecificTypeResolverTransformer(
             typeRef.transformChildren(this, data)
         }
 
-        val (resolvedType, diagnostic) = session.typeResolver.resolveType(
+        val resolution = session.typeResolver.resolveType(
             typeRef = typeRef,
             configuration = data,
             areBareTypesAllowed = areBareTypesAllowed,
@@ -74,7 +74,7 @@ class CfirSpecificTypeResolverTransformer(
             supertypeSupplier = supertypeSupplier,
             expandTypeAliases = expandTypeAliases,
         )
-        return transformType(typeRef, resolvedType, diagnostic, data)
+        return transformType(typeRef, resolution.type, resolution.diagnostic, data)
     }
 
     private fun transformType(

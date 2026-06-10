@@ -3,14 +3,15 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.tree.IElementType
-import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.diff.FlyweightCapableTreeStructure
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirImport
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.providers.isReexportingSourceImport
 import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportBinding
@@ -18,16 +19,14 @@ import org.cangnova.cangjie.cfir.resolve.services.CfirResolvedImportTarget
 import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.CfirUserTypeRef
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitorVoid
 import org.cangnova.cangjie.cfir.containingClassLookupTag
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjFile
 import org.cangnova.cangjie.psi.CjNodeTypes
-import org.cangnova.cangjie.psi.CjImportDirective
-import org.cangnova.cangjie.psi.CjSimpleNameExpression
-import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
@@ -41,10 +40,12 @@ object CfirImportsChecker : CfirFileChecker() {
         val importBindingsByImport = resolvedImports.associateBy { it.importDirective }
         val conflictingNameImports = resolvedImports
             .filter { it.targets.isNotEmpty() && it.importDirective.aliasName == null }
+            .filterNot { it.hasOnlyPackageTargets() }
             .groupBy { it.effectiveName }
             .collectCurrentConflictingImports()
         val conflictingAliasImports = resolvedImports
             .filter { it.targets.isNotEmpty() && it.importDirective.aliasName != null }
+            .filterNot { it.hasOnlyPackageTargets() }
             .groupBy { it.importDirective.aliasName!! }
             .collectCurrentConflictingImports()
 
@@ -76,13 +77,18 @@ object CfirImportsChecker : CfirFileChecker() {
 
     private fun List<CfirResolvedImportBinding>.allCurrentConflictingImports(): Set<CfirImport> {
         val conflictingNameImports = filter { it.importDirective.aliasName == null }
+            .filterNot { it.hasOnlyPackageTargets() }
             .groupBy { it.effectiveName }
             .collectAllCurrentConflictingImports()
         val conflictingAliasImports = filter { it.importDirective.aliasName != null }
+            .filterNot { it.hasOnlyPackageTargets() }
             .groupBy { it.importDirective.aliasName!! }
             .collectAllCurrentConflictingImports()
         return conflictingNameImports + conflictingAliasImports
     }
+
+    private fun CfirResolvedImportBinding.hasOnlyPackageTargets(): Boolean =
+        targets.isNotEmpty() && targets.all { it is CfirResolvedImportTarget.Package }
 
     private fun Map<Name, List<CfirResolvedImportBinding>>.collectAllCurrentConflictingImports(): Set<CfirImport> {
         val result = linkedSetOf<CfirImport>()
@@ -128,12 +134,7 @@ object CfirImportsChecker : CfirFileChecker() {
         declaration: CfirFile,
         duplicateImports: Set<CfirImport>,
     ) {
-        val psiFile = declaration.source?.psi as? CjFile ?: return
-        val referencedNames = PsiTreeUtil.collectElementsOfType(psiFile, CjSimpleNameExpression::class.java)
-            .asSequence()
-            .filter { reference: CjSimpleNameExpression -> reference.getStrictParentOfType<CjImportDirective>() == null }
-            .map(CjSimpleNameExpression::referencedNameAsName)
-            .toSet()
+        val referencedNames = declaration.collectReferencedNames()
         val referencedClassIds = declaration.collectReferencedClassIds()
         val importBindingsByImport = context.session.importBindingStoreOrNull
             ?.getBindings(declaration)
@@ -157,6 +158,37 @@ object CfirImportsChecker : CfirFileChecker() {
         }
     }
 
+    private fun CfirFile.collectReferencedNames(): Set<Name> {
+        val result = linkedSetOf<Name>()
+        accept(object : CfirDefaultVisitorVoid() {
+            override fun visitElement(element: CfirElement) {
+                element.acceptChildren(this)
+            }
+
+            override fun visitNamedReference(namedReference: CfirNamedReference) {
+                if (namedReference.source != null) {
+                    result += namedReference.name
+                }
+                super.visitNamedReference(namedReference)
+            }
+
+            override fun visitUserTypeRef(userTypeRef: CfirUserTypeRef) {
+                for (qualifierPart in userTypeRef.qualifier) {
+                    if (qualifierPart.source != null) {
+                        result += qualifierPart.name
+                    }
+                }
+                super.visitUserTypeRef(userTypeRef)
+            }
+
+            override fun visitResolvedTypeRef(resolvedTypeRef: CfirResolvedTypeRef) {
+                super.visitResolvedTypeRef(resolvedTypeRef)
+                resolvedTypeRef.delegatedTypeRef?.accept(this)
+            }
+        })
+        return result
+    }
+
     /**
      * IMPORTS 阶段已经产出的 binding 是本文件 import 可解析性的唯一事实来源。
      * checker 仅在缺失 binding 时才回退到 symbolProvider 直接查询，避免与宏导入、
@@ -170,7 +202,7 @@ object CfirImportsChecker : CfirFileChecker() {
     ): Boolean {
         val resolvedBinding = importBindingsByImport[import]
         if (resolvedBinding != null) {
-            return resolvedBinding.targets.any { target -> target !is CfirResolvedImportTarget.Package }
+            return resolvedBinding.targets.isNotEmpty()
         }
         return canResolveTerminalImportTarget(importedFqName)
     }
@@ -232,7 +264,7 @@ object CfirImportsChecker : CfirFileChecker() {
 
         val classLike = symbolProvider.getClassLikeSymbolByClassId(ClassId(packageFqName, importedName))
         val callableSymbols = symbolProvider.getTopLevelCallableSymbols(packageFqName, importedName)
-        return classLike != null || callableSymbols.isNotEmpty()
+        return classLike != null || callableSymbols.isNotEmpty() || symbolProvider.hasPackage(importedFqName)
     }
 
     private fun CfirImport.getSourceForImportSegment(indexFromLast: Int): CjSourceElement? {

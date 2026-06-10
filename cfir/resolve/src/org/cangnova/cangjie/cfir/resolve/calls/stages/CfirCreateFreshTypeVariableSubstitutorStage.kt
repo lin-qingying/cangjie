@@ -40,7 +40,7 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         val declaration = candidate.symbol.cfir
-        val typeParameters = collectTypeParametersForFreshVariables(context.session, candidate, declaration)
+        val typeParameters = collectCandidateTypeParametersForFreshVariables(context.session, candidate, declaration)
         if (typeParameters.isEmpty()) {
             candidate.initializeSubstitutorAndVariables(ConeSubstitutor.Empty, emptyList())
             return
@@ -122,7 +122,14 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
         return toFreshVariables to freshTypeVariables
     }
 
-    private fun collectTypeParametersForFreshVariables(
+    /**
+     * 返回调用候选参与显式类型实参映射和 fresh-variable 初始化的类型参数。
+     *
+     * 普通函数使用声明自身类型参数；构造器调用使用 owner class/enum 的类型参数。
+     * 该集合必须和 `CfirMapTypeArguments` 的计数逻辑保持一致，否则
+     * `Array<Int64>(...)` 这类构造器显式类型实参会先被误判为数量错误。
+     */
+    internal fun collectCandidateTypeParametersForFreshVariables(
         session: CfirSession,
         candidate: Candidate,
         declaration: Any?,

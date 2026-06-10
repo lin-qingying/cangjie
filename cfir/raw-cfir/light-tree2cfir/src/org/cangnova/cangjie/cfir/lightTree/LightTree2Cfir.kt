@@ -9,13 +9,19 @@ import org.cangnova.cangjie.CjIoFileSourceFile
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
 import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.CjSyntaxErrors
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
+import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.lexer.CangJieLexer
 import org.cangnova.cangjie.parsing.CangJieLightParser
 import org.cangnova.cangjie.parsing.CangJieParserDefinition
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.readSourceFileWithMapping
 
@@ -23,7 +29,6 @@ class LightTree2Cfir(
     val session: CfirSession,
     private val scopeProvider: CfirScopeProvider,
 
-    @Suppress("UNUSED_PARAMETER")
     private val diagnosticsReporter: DiagnosticReporter? = null,
     private val bodyBuildingMode: BodyBuildingMode = BodyBuildingMode.NORMAL,
 ) {
@@ -85,7 +90,24 @@ class LightTree2Cfir(
             CangJieLexer(),
             code,
         )
-        val lightTree = CangJieLightParser.parse(builder)
+        val lightTree = CangJieLightParser.parse(builder, makeErrorListener(sourceFile))
         return buildCfirFileWithSurfaces(lightTree, sourceFile, linesMapping)
+    }
+
+    private fun makeErrorListener(sourceFile: CjSourceFile): CangJieLightParser.LightTreeParsingErrorListener? {
+        val reporter = diagnosticsReporter ?: return null
+        val diagnosticContext = object : DiagnosticContext {
+            override val languageVersionSettings = session.languageVersionSettings
+            override val containingFilePath: String? = sourceFile.path
+            override fun isDiagnosticSuppressed(diagnostic: CjDiagnostic): Boolean = false
+        }
+        return CangJieLightParser.LightTreeParsingErrorListener { startOffset, endOffset, message ->
+            val factory = CjSyntaxErrors.factoryForParserMessage(message) ?: return@LightTreeParsingErrorListener
+            reporter.reportOn(
+                CjOffsetsOnlySourceElement(startOffset, endOffset),
+                factory,
+                diagnosticContext,
+            )
+        }
     }
 }

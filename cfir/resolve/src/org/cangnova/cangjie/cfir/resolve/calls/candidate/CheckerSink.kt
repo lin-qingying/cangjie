@@ -10,3 +10,14 @@ abstract class CheckerSink {
 
     abstract suspend fun yield()
 }
+
+suspend inline fun CheckerSink.yieldIfNeed() {
+    if (needYielding) {
+        yield()
+    }
+}
+
+suspend inline fun CheckerSink.yieldDiagnostic(diagnostic: ResolutionDiagnostic) {
+    reportDiagnostic(diagnostic)
+    yieldIfNeed()
+}

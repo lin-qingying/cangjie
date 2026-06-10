@@ -8,6 +8,9 @@ import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.*
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
+import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
 import org.cangnova.cangjie.cfir.patterns.builder.buildEnumPattern
@@ -21,6 +24,7 @@ import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeProjection
 import org.cangnova.cangjie.cfir.types.ConeTupleType
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
@@ -36,6 +40,8 @@ import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import org.cangnova.cangjie.name.SpecialNames
 
 /**
@@ -225,6 +231,27 @@ class CfirDeclDeserializer(
             coneType = coneType,
             delegatedTypeRef = null,
         )
+    }
+
+    /**
+     * `FuncDecl.type` 是完整函数类型 `(P1, P2, ...) -> R`，而 CFIR `CfirFunction.returnTypeRef`
+     * 只表示 callable 的结果类型 `R`。官方 ASTLoader 也是把 `decl.ty` 与
+     * `funcBody.retType` 分开恢复，这里必须保持同样的声明形状。
+     */
+    private fun buildFunctionReturnTypeRef(decl: Decl): CfirResolvedTypeRef {
+        val funcInfo = decl.info(FuncInfo()) as? FuncInfo
+            ?: error("FuncDecl '${decl.identifier ?: "<anonymous>"}' must contain FuncInfo")
+        val encodedReturnType = funcInfo.funcBody?.retType ?: 0u
+        if (encodedReturnType != 0u) {
+            return buildTypeRef(encodedReturnType)
+        }
+
+        val functionType = typeDeserializer.deserializeTypeFromField(decl.type) as? ConeFunctionType
+            ?: error("FuncDecl '${decl.identifier ?: "<anonymous>"}' must carry FuncTy in Decl.type")
+        return buildResolvedTypeRef {
+            customRenderer = false
+            coneType = functionType.returnType
+        }
     }
 
     /** 反序列化泛型参数列表 */
@@ -484,13 +511,13 @@ class CfirDeclDeserializer(
             return convertEnumConstructorFromFunctionDecl(decl)
         }
 
-        val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirNamedFunctionSymbol(CallableId(packageFqName, name))
         val status = buildStatus(decl)
+        val name = normalizedLibraryFunctionName(decl, status)
+        val symbol = CfirNamedFunctionSymbol(callableIdForCurrentOwner(name))
         val typeParams = withContainingDeclarationSymbol(symbol) {
             deserializeTypeParameters(decl)
         }
-        val returnTypeRef = buildTypeRef(decl.type)
+        val returnTypeRef = buildFunctionReturnTypeRef(decl)
 
         // 从 FuncInfo.funcBody.paramLists 获取参数
         val valueParams = mutableListOf<CfirValueParameter>()
@@ -531,6 +558,62 @@ class CfirDeclDeserializer(
         symbol.bind(cfirFunc)
         cfirFunc.markResolved()
         return cfirFunc
+    }
+
+    /**
+     * `.cjo` 中 operator 函数的 identifier 仍是源代码文本（如 `==`、`!=`、`[]`）。
+     * PSI 与 LightTree raw CFIR 会先归一化到 `OperatorNameConventions`，库声明也必须恢复成同一名称，
+     * 否则 std.core 中的真实 operator 成员无法被调用解析命中。
+     */
+    private fun normalizedLibraryFunctionName(decl: Decl, status: CfirDeclarationStatus): Name {
+        val rawName = decl.identifier ?: "???"
+        if (!status.isOperator) return Name.identifier(rawName)
+
+        val valueParameterDecls = functionValueParameterDecls(decl)
+        return when (rawName) {
+            "-", OperatorNameConventions.MINUS.asString(), OperatorNameConventions.UNARY_MINUS.asString() ->
+                if (valueParameterDecls.isEmpty()) OperatorNameConventions.UNARY_MINUS else OperatorNameConventions.MINUS
+
+            "+", OperatorNameConventions.PLUS.asString(), OperatorNameConventions.UNARY_PLUS.asString() ->
+                if (valueParameterDecls.isEmpty()) OperatorNameConventions.UNARY_PLUS else OperatorNameConventions.PLUS
+
+            "[]", OperatorNameConventions.GET.asString(), OperatorNameConventions.SET.asString() ->
+                if (valueParameterDecls.lastOrNull().isNamedValueParameter()) OperatorNameConventions.SET else OperatorNameConventions.GET
+
+            else -> rawName.asOperatorName()
+        }
+    }
+
+    private fun functionValueParameterDecls(decl: Decl): List<Decl> {
+        val funcInfo = decl.info(FuncInfo()) as? FuncInfo ?: return emptyList()
+        val funcBody = funcInfo.funcBody ?: return emptyList()
+        val parameterDecls = mutableListOf<Decl>()
+
+        for (i in 0 until funcBody.paramListsLength) {
+            val paramList = funcBody.paramLists(i) ?: continue
+            for (j in 0 until paramList.paramsLength) {
+                val paramIndex = decodeDeclRef(paramList.params(j)) ?: continue
+                val paramDecl = try {
+                    context.pkg.allDecls(paramIndex)
+                } catch (_: IndexOutOfBoundsException) {
+                    null
+                } ?: continue
+                parameterDecls += paramDecl
+            }
+        }
+
+        return parameterDecls
+    }
+
+    private fun Decl?.isNamedValueParameter(): Boolean {
+        val param = this ?: return false
+        val info = param.info(ParamInfo()) as? ParamInfo ?: return false
+        return info.isNamedParam && param.identifier == "value"
+    }
+
+    private fun callableIdForCurrentOwner(name: Name): CallableId {
+        val containingClass = currentContainingDeclarationSymbol as? CfirClassLikeSymbol<*>
+        return containingClass?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name)
     }
 
     /**
@@ -596,7 +679,7 @@ class CfirDeclDeserializer(
     /** PropDecl → CfirProperty */
     private fun convertProperty(decl: Decl): CfirProperty {
         val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirPropertySymbol(CallableId(packageFqName, name))
+        val symbol = CfirPropertySymbol(callableIdForCurrentOwner(name))
         val status = buildStatus(decl)
         val typeParams = withContainingDeclarationSymbol(symbol) {
             deserializeTypeParameters(decl)
@@ -634,7 +717,7 @@ class CfirDeclDeserializer(
         }
 
         val name = Name.identifier(decl.identifier ?: "???")
-        val symbol = CfirFieldVariableSymbol(CallableId(packageFqName, name))
+        val symbol = CfirFieldVariableSymbol(callableIdForCurrentOwner(name))
         val status = buildStatus(decl)
         val typeParams = withContainingDeclarationSymbol(symbol) {
             deserializeTypeParameters(decl)
@@ -1149,6 +1232,9 @@ class CfirDeclDeserializer(
         }
         val returnTypeRef = buildTypeRef(decl.type)
         val isNamed = info?.isNamedParam ?: false
+        val defaultValue = info?.defaultVal
+            ?.let(::decodeExprRef)
+            ?.let { buildLibraryDefaultValueMarker(returnTypeRef) }
         val cfirParam = CfirValueParameterImpl(
             source = null,
             isNamed = isNamed,
@@ -1166,11 +1252,23 @@ class CfirDeclDeserializer(
             typeParameters = typeParams,
             returnTypeRef = returnTypeRef,
             name = name,
-            defaultValue = null,
+            defaultValue = defaultValue,
 
         )
         symbol.bind(cfirParam)
         cfirParam.markResolved()
         return cfirParam
+    }
+
+    /**
+     * `.cjo` 的 ParamInfo.defaultVal 只在调用解析阶段需要恢复“该参数有默认值”这一事实。
+     *
+     * 官方 ASTLoader 会把 defaultVal 反序列化回 FuncParam.assignment；当前 CFIR 反序列化层尚未实现
+     * flatbuffer 表达式到 CFIR 表达式的完整转换，因此这里构造一个带参数类型的占位表达式，保留调用匹配语义。
+     */
+    private fun buildLibraryDefaultValueMarker(typeRef: CfirResolvedTypeRef): CfirExpression = buildLiteralExpression {
+        coneTypeOrNull = typeRef.coneType
+        kind = CfirLiteralKind.UNIT
+        value = null
     }
 }

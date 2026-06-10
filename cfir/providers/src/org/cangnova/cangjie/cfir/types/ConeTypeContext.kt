@@ -124,6 +124,12 @@ interface ConeTypeContext :
         return newType
     }
 
+    override fun CangJieTypeMarker.optionBoxedElementType(): CangJieTypeMarker? {
+        val coneType = this as? ConeCangJieType ?: return null
+        if (coneType.classId != StdlibClassIds.Option) return null
+        return coneType.typeArguments.singleOrNull()?.type
+    }
+
     override fun TypeConstructorMarker.parametersCount(): Int = getParameters().size
 
     override fun TypeConstructorMarker.getParameter(index: Int): TypeParameterMarker = getParameters()[index]
@@ -169,21 +175,14 @@ interface ConeTypeContext :
         null
 
     override fun RigidTypeMarker.possibleIntegerTypes(): Collection<CangJieTypeMarker> =
-        if (this is ConePrimitiveType && kind == PrimitiveTypeKind.IDEAL_INT) {
-            listOf(
-                ConePrimitiveType.INT8,
-                ConePrimitiveType.INT16,
-                ConePrimitiveType.INT32,
-                ConePrimitiveType.INT64,
-                ConePrimitiveType.INT_NATIVE,
-                ConePrimitiveType.UINT8,
-                ConePrimitiveType.UINT16,
-                ConePrimitiveType.UINT32,
-                ConePrimitiveType.UINT64,
-                ConePrimitiveType.UINT_NATIVE,
-            )
-        } else {
-            emptyList()
+        when (this) {
+            is ConeIdealLiteralType -> possibleTypes
+            is ConePrimitiveType -> when (kind) {
+                PrimitiveTypeKind.IDEAL_INT -> ConeIdealIntLiteralType.POSSIBLE_INT_TYPES
+                PrimitiveTypeKind.IDEAL_FLOAT -> ConeIdealFloatLiteralType.POSSIBLE_FLOAT_TYPES
+                else -> emptyList()
+            }
+            else -> emptyList()
         }
 
 

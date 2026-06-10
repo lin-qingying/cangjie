@@ -21,6 +21,7 @@ import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.DeferredCallableCopyReturnType
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.deferredCallableCopyReturnType
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.cfirProvider
@@ -74,9 +75,12 @@ class CfirClassSubstitutionScope(
     override fun getClassifierNames(): Set<Name> = useSiteMemberScope.getClassifierNames()
 
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
+        val selected = linkedMapOf<String, CfirNamedFunctionSymbol>()
         useSiteMemberScope.processFunctionsByName(name) { original ->
-            processor(substituteFunctionSymbol(original))
+            val substituted = substituteFunctionSymbol(original)
+            selected.putIfAbsent(substituted.overrideSignatureKey(), substituted)
         }
+        selected.values.forEach(processor)
     }
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {

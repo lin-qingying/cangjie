@@ -151,6 +151,11 @@ class CfirProviderImpl(
     override fun getCfirCallableContainerFile(symbol: CfirCallableSymbol<*>): CfirFile? =
         state.callableContainerFileMap[symbol.unwrapCallableForDeclarationMetadataLookup()]
 
+    override fun getCfirPatternVariableForBinding(symbol: CfirPatternBindingSymbol): CfirPatternVariable? {
+        val ownerSymbol = state.patternBindingOwnerMap[symbol] ?: return null
+        return ownerSymbol.takeIf { it.isBound }?.cfir
+    }
+
     override fun getClassNamesInPackage(fqName: FqName): Set<Name> =
         resolveSourcePackageTopLevelNames(fqName).classifierNames
 
@@ -542,6 +547,7 @@ class CfirProviderImpl(
                     val bindingSymbol = bindingVariable.symbol as? CfirPatternBindingSymbol ?: continue
                     state.callableContainerFileMap[bindingSymbol] = containingFile
                     state.callableOwnerClassIdMap[bindingSymbol] = containingClass
+                    state.patternBindingOwnerMap[bindingSymbol] = symbol
                     val callableId = CallableId(packageFqName, bindingVariable.name)
                     state.callableMap.getOrPut(callableId, ::mutableListOf).add(bindingSymbol)
                     state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(bindingVariable.name)
@@ -678,6 +684,7 @@ class CfirProviderImpl(
         val classesInPackage: MutableMap<FqName, MutableSet<Name>> = hashMapOf()
         val callableContainerFileMap: MutableMap<CfirCallableSymbol<*>, CfirFile> = hashMapOf()
         val callableOwnerClassIdMap: MutableMap<CfirCallableSymbol<*>, ClassId?> = hashMapOf()
+        val patternBindingOwnerMap: MutableMap<CfirPatternBindingSymbol, CfirPatternVariableSymbol> = hashMapOf()
 
         val callableMap: MutableMap<CallableId, MutableList<CfirCallableSymbol<*>>> = hashMapOf()
         val functionMap: MutableMap<CallableId, MutableList<CfirNamedFunctionSymbol>> = hashMapOf()

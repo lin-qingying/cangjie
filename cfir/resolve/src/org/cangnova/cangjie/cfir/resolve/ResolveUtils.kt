@@ -23,6 +23,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
@@ -47,6 +48,7 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeStructType
 import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
+import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.type.model.safeSubstitute
@@ -66,13 +68,12 @@ fun <T : CfirResolvable> BodyResolveComponents.typeFromCallee(access: T): ConeCa
 
 fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCangJieType {
     return when (calleeReference) {
-        is CfirErrorNamedReference -> {
-
-            ConeErrorType(ConeUnreportedDuplicateDiagnostic(calleeReference.diagnostic))
-        }
-
         is CfirNamedReferenceWithCandidate -> {
             val candidate = calleeReference.candidate
+            // 函数类型变量以调用形式使用时，对齐 synthetic invoke：表达式类型是函数类型的返回值。
+            if (candidate.callInfo.callKind == CallKind.Function && candidate.symbol.cfir is CfirVariable) {
+                return candidate.substitutedReturnType()
+            }
             if (candidate.symbol.cfir is CfirEnumConstructor) {
                 return candidate.substitutedReturnType()
             }
@@ -80,6 +81,11 @@ fun BodyResolveComponents.typeFromCallee(calleeReference: CfirReference): ConeCa
                 CallKind.NamedValueAccess -> typeFromNamedValueCandidate(candidate)
                 else -> typeFromSymbol(candidate.symbol)
             }
+        }
+
+        is CfirErrorNamedReference -> {
+
+            ConeErrorType(ConeUnreportedDuplicateDiagnostic(calleeReference.diagnostic))
         }
 
         is CfirResolvedAppliedCallableReference -> {
@@ -137,7 +143,7 @@ private fun BodyResolveComponents.typeFromNamedValueCandidate(candidate: Candida
     }
 
     returnTypeCalculator.tryCalculateReturnType(declaration)
-    val substitutedReturnType = candidate.substitutedReturnType()
+    val substitutedReturnType = candidate.substitutedReturnType().approximateThisTypeForDeclaration()
 
     return ConeFunctionType(parameterTypes, substitutedReturnType)
 }

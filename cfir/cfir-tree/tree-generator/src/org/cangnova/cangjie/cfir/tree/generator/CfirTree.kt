@@ -905,7 +905,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
      * - 无名称（始终为 `<anonymous>`）
      * - 携带 [isLambda]、[hasExplicitParameterList] 等语义标记
      * - 持有 [typeRef] 用于推断 lambda 整体类型
-     * - [matchingParameterFunctionType] 记录参数推断匹配的函数类型
+       * - [matchingParameterFunctionType] 记录参数推断匹配的函数类型
      */
     val anonymousFunction: Element by element(Declaration, name = "AnonymousFunction") {
         parent(function)

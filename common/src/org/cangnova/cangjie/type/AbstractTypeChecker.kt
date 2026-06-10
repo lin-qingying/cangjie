@@ -228,6 +228,15 @@ object AbstractTypeChecker {
         // 所有类型都是 Any 的子类型
         if (ctx.isAnyConstructor(ctx.typeConstructor(superType))) return true
 
+        val optionBoxedElementType = ctx.optionBoxedElementTypeOf(superType)
+        if (
+            optionBoxedElementType != null &&
+            ctx.optionNestedLevelOf(subType) < ctx.optionNestedLevelOf(superType) &&
+            completeIsSubTypeOf(state, subType, optionBoxedElementType)
+        ) {
+            return true
+        }
+
         val subConstructor = ctx.typeConstructor(subType)
         val superConstructor = ctx.typeConstructor(superType)
 
@@ -367,6 +376,13 @@ private fun TypeSystemContext.isStubType(type: RigidTypeMarker): Boolean = type.
 
 /** 桥接 [TypeSystemContext.isNothing] */
 private fun TypeSystemContext.isNothing(type: CangJieTypeMarker): Boolean = type.isNothing()
+
+/** 桥接 [TypeSystemContext.optionBoxedElementType] */
+private fun TypeSystemContext.optionBoxedElementTypeOf(type: CangJieTypeMarker): CangJieTypeMarker? =
+    with(this) { type.optionBoxedElementType() }
+
+/** 桥接 [TypeSystemContext.optionNestedLevel] */
+private fun TypeSystemContext.optionNestedLevelOf(type: CangJieTypeMarker): Int = with(this) { type.optionNestedLevel() }
 
 /** 桥接 [TypeSystemContext.typeConstructor] (RigidTypeMarker) */
 private fun TypeSystemContext.typeConstructor(type: RigidTypeMarker): TypeConstructorMarker = type.typeConstructor()

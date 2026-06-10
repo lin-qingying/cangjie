@@ -8,8 +8,8 @@
 package pa
 
 import std.collection.*
-import std.unittest
-import std.unittest.testmacro
+import <!UNUSED_IMPORT!>std.unittest<!>
+import <!UNUSED_IMPORT!>std.unittest.testmacro<!>
 
 func foo() {
     return ["", ArrayList<Any>()]

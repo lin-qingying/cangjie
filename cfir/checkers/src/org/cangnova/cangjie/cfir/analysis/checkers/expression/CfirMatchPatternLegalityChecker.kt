@@ -44,6 +44,8 @@ import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
@@ -135,7 +137,7 @@ object CfirMatchPatternLegalityChecker : CfirMatchExpressionChecker() {
                 val argumentTypes = pattern.enumConstructorArgumentTypes(expectedType, context)
                 if (argumentTypes == null) {
                     reporter.reportOn(
-                        source = pattern.source,
+                        source = pattern.enumConstructorDiagnosticSource(),
                         factory = CfirErrors.PATTERN_NOT_MATCH,
                         a = pattern.patternText(),
                     )
@@ -246,6 +248,11 @@ private fun typesMayOverlap(
 
 private fun CfirPattern.patternText(): String =
     source?.text?.toString()?.trim().orEmpty().ifBlank { this::class.simpleName ?: "pattern" }
+
+private fun CfirEnumPattern.enumConstructorDiagnosticSource(): AbstractCjSourceElement? {
+    val source = constructorReference.source ?: source ?: return null
+    return CjOffsetsOnlySourceElement(source.startOffset, source.startOffset + 1)
+}
 
 private fun ConeCangJieType.patternTypeText(): String = when (this) {
     is ConePrimitiveType -> kind.typeName

@@ -3,6 +3,8 @@ package org.cangnova.cangjie.cfir.lightTree
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.copyWithNewSource
+import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
@@ -296,6 +298,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = extractClassMembers(node).toMutableList().also { declarations ->
+                            addPrimaryConstructorParameterProperties(node, declarations)
                             if (declarations.none { it is CfirConstructor }) {
                                 declarations.add(0, buildImplicitPrimaryConstructor(node))
                             }
@@ -340,6 +343,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = extractClassMembers(node).toMutableList().also { declarations ->
+                            addPrimaryConstructorParameterProperties(node, declarations)
                             if (declarations.none { it is CfirConstructor }) {
                                 declarations.add(0, buildImplicitPrimaryConstructor(node))
                             }
@@ -365,6 +369,7 @@ class LightTreeRawCfirDeclarationBuilder(
                     val (typeParams, classDeclarations) = withContainerSymbol(symbol) {
                         val typeParameters = extractTypeParameters(node, symbol)
                         val declarations = extractClassMembers(node).toMutableList().also { declarations ->
+                            addPrimaryConstructorParameterProperties(node, declarations)
                             if (declarations.none { it is CfirConstructor }) {
                                 declarations.add(0, buildImplicitPrimaryConstructor(node))
                             }
@@ -392,6 +397,70 @@ class LightTreeRawCfirDeclarationBuilder(
                 }
             }
         }
+    }
+
+    /**
+     * 主构造 `let/const/var` 参数同时声明同名成员。
+     *
+     * LightTree 路径必须与 PSI raw builder 保持同一声明树形状：先生成主构造参数，
+     * 再为带声明关键字的参数生成对应属性并记录 [CfirValueParameter.correspondingProperty]。
+     */
+    private fun addPrimaryConstructorParameterProperties(
+        ownerNode: LighterASTNode,
+        declarations: MutableList<CfirDeclaration>,
+    ) {
+        val primaryConstructorNode = findPrimaryConstructorNode(ownerNode) ?: return
+        val primaryConstructorIndex = declarations.indexOfFirst { it is CfirConstructor && it.isPrimary }
+        if (primaryConstructorIndex < 0) return
+
+        val cfirPrimaryConstructor = declarations[primaryConstructorIndex] as CfirConstructor
+        val generatedProperties = extractValueParameterNodes(primaryConstructorNode)
+            .zip(cfirPrimaryConstructor.valueParameters)
+            .mapNotNull { (parameterNode, valueParameter) ->
+                if (!hasLetOrVarKeyword(parameterNode)) return@mapNotNull null
+                convertPrimaryConstructorParameterProperty(parameterNode, valueParameter)
+            }
+
+        if (generatedProperties.isNotEmpty()) {
+            declarations.addAll(primaryConstructorIndex + 1, generatedProperties)
+        }
+    }
+
+    private fun convertPrimaryConstructorParameterProperty(
+        node: LighterASTNode,
+        valueParameter: CfirValueParameter,
+    ): CfirProperty {
+        val name = extractName(node)
+        val modifiers = LightTreeModifierList.from(tree, node)
+        val propertySource = node.toSource().fakeElement(CjFakeSourceElementKind.PropertyFromParameter)
+        val propertySymbol = CfirPropertySymbol(callableIdFor(name))
+        val property = buildSourceDeclaration(propertySymbol) { symbol ->
+            buildProperty {
+                resolvePhase = CfirResolvePhase.RAW_CFIR
+                source = propertySource
+                this.symbol = symbol
+                origin = CfirDeclarationOrigin.Source
+                moduleData = baseModuleData
+                attributes = CfirDeclarationAttributes.EMPTY
+                isLocal = context.inLocalContext
+                dispatchReceiverType = currentDispatchReceiverType()
+                status = modifiers.toDeclarationStatusForCurrentContext()
+                returnTypeRef = valueParameter.returnTypeRef.copyWithNewSource(propertySource)
+                this.name = name
+                getter = null
+                setter = null
+            }
+        }
+        valueParameter.correspondingProperty = property
+        return property
+    }
+
+    private fun findPrimaryConstructorNode(ownerNode: LighterASTNode): LighterASTNode? {
+        val bodyNode = tree.findChildByType(ownerNode, CjNodeTypes.CLASS_BODY)
+            ?: tree.findChildByType(ownerNode, CjNodeTypes.INTERFACE_BODY)
+            ?: tree.findChildByType(ownerNode, CjNodeTypes.ENUM_BODY)
+            ?: return null
+        return tree.findChildByType(bodyNode, CjNodeTypes.PRIMARY_CONSTRUCTOR)
     }
 
     private fun buildImplicitPrimaryConstructor(ownerNode: LighterASTNode): CfirConstructor {
@@ -1926,14 +1995,17 @@ class LightTreeRawCfirDeclarationBuilder(
         containingDeclarationSymbol: CfirBasedSymbol<*>,
         requiresExplicitType: Boolean = true,
     ): List<CfirValueParameter> {
-        val paramList = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST) ?: return emptyList()
-        return tree.getChildrenByType(paramList, CjNodeTypes.VALUE_PARAMETER)
+        return extractValueParameterNodes(node)
             .map { convertValueParameter(it, containingDeclarationSymbol, requiresExplicitType) }
     }
 
+    private fun extractValueParameterNodes(node: LighterASTNode): List<LighterASTNode> {
+        val paramList = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST) ?: return emptyList()
+        return tree.getChildrenByType(paramList, CjNodeTypes.VALUE_PARAMETER)
+    }
+
     private fun countValueParameters(node: LighterASTNode): Int {
-        val paramList = tree.findChildByType(node, CjNodeTypes.VALUE_PARAMETER_LIST) ?: return 0
-        return tree.getChildrenByType(paramList, CjNodeTypes.VALUE_PARAMETER).size
+        return extractValueParameterNodes(node).size
     }
 
     /** 提取函数体块 */
@@ -1974,6 +2046,16 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun hasVarKeyword(node: LighterASTNode): Boolean {
         tree.forEachChildren(node) { child ->
             if (child.tokenType == CjTokens.VAR_KEYWORD) return true
+        }
+        return false
+    }
+
+    /** 判断主构造参数是否声明为成员参数。 */
+    private fun hasLetOrVarKeyword(node: LighterASTNode): Boolean {
+        tree.forEachChildren(node) { child ->
+            when (child.tokenType) {
+                CjTokens.LET_KEYWORD, CjTokens.CONST_KEYWORD, CjTokens.VAR_KEYWORD -> return true
+            }
         }
         return false
     }

@@ -73,9 +73,7 @@ val ConeCangJieType.isIdealLiteralType: Boolean
 /** 提取类类型的 ClassId（内建原始类型返回 null） */
 val ConeCangJieType.classId: ClassId?
     get() = when (this) {
-        is ConeClassLikeType -> classId
-        is ConeStructType -> classId
-        is ConeEnumType -> classId
+        is ConeClassifierType -> lookupTag.classId
         is ConeTypeAliasType -> classId
         else -> null
     }
@@ -93,6 +91,9 @@ val ConeCangJieType.isArray: Boolean
  */
 val ConeCangJieType.arrayElementType: ConeCangJieType?
     get() = when (this) {
+        is ConeErrorType ->
+            delegatedType?.arrayElementType
+                ?: if (classId == StdlibClassIds.Array) typeArguments.singleOrNull()?.type else null
         is ConeClassLikeType ->
             if (classId == StdlibClassIds.Array) typeArguments.singleOrNull()?.type else null
         is ConeStructType ->
@@ -103,3 +104,23 @@ val ConeCangJieType.arrayElementType: ConeCangJieType?
 
 val ConeCangJieType.isOption: Boolean
     get() = classId == StdlibClassIds.Option
+
+/**
+ * 提取标准库 `Option<T>` 的 payload 类型 `T`。
+ *
+ * 官方 `??`、`?` 链和 `Some`/`None` 模式都以 `Option<T>` 的唯一类型实参
+ * 作为解包后的语义类型，因此这里集中暴露该投影，避免各个 resolve/checker
+ * 分散手写 `StdlibClassIds.Option` 判断。
+ */
+val ConeCangJieType.optionElementType: ConeCangJieType?
+    get() = when (this) {
+        is ConeErrorType ->
+            delegatedType?.optionElementType
+                ?: if (classId == StdlibClassIds.Option) typeArguments.singleOrNull()?.type else null
+        is ConeClassLikeType ->
+            if (classId == StdlibClassIds.Option) typeArguments.singleOrNull()?.type else null
+        is ConeEnumType ->
+            if (classId == StdlibClassIds.Option) typeArguments.singleOrNull()?.type else null
+        is ConeTypeAliasType -> expandedType?.optionElementType
+        else -> null
+    }

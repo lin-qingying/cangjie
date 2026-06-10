@@ -53,6 +53,8 @@ private val COMPOUND_ASSIGN_NAMES: Map<IElementType, Name> = mapOf(
     CjTokens.MULTEQ to OperatorNameConventions.TIMES,
     CjTokens.DIVEQ to OperatorNameConventions.DIV,
     CjTokens.PERCEQ to OperatorNameConventions.REM,
+    CjTokens.ANDANDEQ to OperatorNameConventions.ANDAND,
+    CjTokens.OROREQ to OperatorNameConventions.OROR,
     CjTokens.ANDEQ to OperatorNameConventions.AND,
     CjTokens.OREQ to OperatorNameConventions.OR,
     CjTokens.XOREQ to OperatorNameConventions.XOR,

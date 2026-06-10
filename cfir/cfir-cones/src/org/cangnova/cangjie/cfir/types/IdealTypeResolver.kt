@@ -12,9 +12,14 @@ object IdealTypeResolver {
 
     /**
      * 将 IdealInt 解析为目标整数类型。
-     * 若目标类型为整数则采用，否则默认 Int64。
+     * 若目标类型为整数或 `Option<整数>` 则采用，否则默认 Int64。
      */
-    fun resolveIdealInt(targetType: ConeCangJieType? = null): ConePrimitiveType {
+    fun resolveIdealInt(targetType: ConeCangJieType? = null): ConeCangJieType {
+        targetType?.optionElementType?.let { optionElementType ->
+            if (optionElementType is ConePrimitiveType && optionElementType.kind.isInteger && !optionElementType.kind.isIdeal) {
+                return targetType
+            }
+        }
         if (targetType is ConePrimitiveType && targetType.kind.isInteger && !targetType.kind.isIdeal) {
             return targetType
         }
@@ -23,9 +28,14 @@ object IdealTypeResolver {
 
     /**
      * 将 IdealFloat 解析为目标浮点类型。
-     * 若目标类型为浮点则采用，否则默认 Float64。
+     * 若目标类型为浮点或 `Option<浮点>` 则采用，否则默认 Float64。
      */
-    fun resolveIdealFloat(targetType: ConeCangJieType? = null): ConePrimitiveType {
+    fun resolveIdealFloat(targetType: ConeCangJieType? = null): ConeCangJieType {
+        targetType?.optionElementType?.let { optionElementType ->
+            if (optionElementType is ConePrimitiveType && optionElementType.kind.isFloat && !optionElementType.kind.isIdeal) {
+                return targetType
+            }
+        }
         if (targetType is ConePrimitiveType && targetType.kind.isFloat && !targetType.kind.isIdeal) {
             return targetType
         }

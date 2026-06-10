@@ -159,6 +159,18 @@ object LightTreePositioningStrategies {
             return markElement(throwKeyword, startOffset, endOffset, tree, node)
         }
     }
+    val ARRAY_LITERAL_LEFT_BRACKET: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
+        override fun mark(
+            node: LighterASTNode,
+            startOffset: Int,
+            endOffset: Int,
+            tree: FlyweightCapableTreeStructure<LighterASTNode>,
+        ): List<TextRange> {
+            val leftBracket = tree.findChildByType(node, CjTokens.LBRACKET)
+                ?: return super.mark(node, startOffset, endOffset, tree)
+            return markElement(leftBracket, startOffset, endOffset, tree, node)
+        }
+    }
 
     val OPERATOR: LightTreePositioningStrategy = object : LightTreePositioningStrategy() {
         override fun mark(

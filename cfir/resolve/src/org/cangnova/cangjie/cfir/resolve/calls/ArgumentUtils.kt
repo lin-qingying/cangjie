@@ -8,7 +8,6 @@ import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
@@ -63,7 +62,6 @@ internal fun substituteTypeParameterUpperBoundIfNeeded(
                 ?: ConeTypeParameterTypeImpl(originalTypeParameter, argumentType.attributes)
         }
 
-        is ConeIdealLiteralType -> argumentType.defaultType
         else -> null
     } ?: return argumentType
     return chosenSupertype
@@ -80,7 +78,6 @@ internal fun normalizeTypeForCompatibilityCheck(type: ConeCangJieType): ConeCang
             }
         }
 
-        is ConeIdealLiteralType -> type.defaultType
         else -> type
     }
 }

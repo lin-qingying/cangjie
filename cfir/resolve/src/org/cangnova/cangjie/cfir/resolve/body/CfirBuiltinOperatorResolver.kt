@@ -12,4 +12,11 @@ object CfirBuiltinOperatorResolver {
         argumentTypes: List<ConeCangJieType>,
     ): BuiltinPrimitiveOperatorMatch? =
         BuiltinPrimitiveOperators.resolve(name, receiverType, argumentTypes)
+
+    fun canDiagnoseInvalidPrimitiveOperator(
+        name: Name,
+        receiverType: ConeCangJieType?,
+        argumentTypes: List<ConeCangJieType>,
+    ): Boolean =
+        BuiltinPrimitiveOperators.canDiagnoseInvalidPrimitiveOperator(name, receiverType, argumentTypes)
 }

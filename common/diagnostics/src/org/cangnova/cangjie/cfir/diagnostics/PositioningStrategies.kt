@@ -7,6 +7,7 @@ import org.cangnova.cangjie.psi.CjBinaryExpression
 import org.cangnova.cangjie.psi.CjBinaryExpressionWithTypeRHS
 import org.cangnova.cangjie.psi.CjCallableDeclaration
 import org.cangnova.cangjie.psi.CjCallExpression
+import org.cangnova.cangjie.psi.CjCollectionLiteralExpression
 import org.cangnova.cangjie.psi.CjConstructor
 import org.cangnova.cangjie.psi.CjDotQualifiedExpression
 import org.cangnova.cangjie.psi.CjExpression
@@ -136,6 +137,12 @@ object PositioningStrategies {
             val throwKeyword = throwExpression.node.findChildByType(CjTokens.THROW_KEYWORD)?.psi
                 ?: return super.mark(element)
             return markElement(throwKeyword)
+        }
+    }
+    val ARRAY_LITERAL_LEFT_BRACKET: PositioningStrategy<PsiElement> = object : PositioningStrategy<PsiElement>() {
+        override fun mark(element: PsiElement): List<TextRange> {
+            val arrayLiteral = element as? CjCollectionLiteralExpression ?: return super.mark(element)
+            return arrayLiteral.leftBracket?.let(::markElement) ?: super.mark(element)
         }
     }
 

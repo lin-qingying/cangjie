@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
@@ -115,7 +116,7 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
         .asSequence()
         .filter { it.isBound }
         .filter { it.isVisibleIn(ownerDeclaration, context) }
-        .groupBy { it.stableSignatureKey() }
+        .groupBy { it.overrideSignatureKey() }
 
     for ((_, symbols) in visibleGroups) {
         val abstractSymbols = symbols.filter { it.isAbstractLike(context) }

@@ -4,6 +4,8 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
+// LLT_COMPANION_SOURCES
+
 private func foo(): Unit {
     println("foo in 1.cj")
     hoo()

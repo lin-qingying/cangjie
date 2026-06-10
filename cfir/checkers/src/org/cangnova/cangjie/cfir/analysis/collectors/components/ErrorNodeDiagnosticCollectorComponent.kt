@@ -3,6 +3,7 @@
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
+import org.cangnova.cangjie.cfir.analysis.checkers.expression.isInvalidPrimitiveCompoundAssignmentCall
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.analysis.diagnostics.toCfirDiagnostics
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
@@ -29,12 +30,15 @@ import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
+import org.cangnova.cangjie.cfir.diagnostic.ConeDiagnosticWithSingleCandidate
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedReferenceError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedSymbolError
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.toReference
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
@@ -145,14 +149,14 @@ class ErrorNodeDiagnosticCollectorComponent(
     /**
      * 访问错误表达式节点（[CfirErrorExpression]）。
      *
-     * [CfirErrorExpression] 是解析阶段无法正常解析某个表达式时产生的占位节点，
-     * 其类型字段可能携带 [ConeErrorType]，在此提取并报告。
+     * 对齐 K2 `FirErrorNodeDiagnosticCollectorComponent.visitErrorExpression`：
+     * 错误表达式自身的 [CfirErrorExpression.diagnostic] 是诊断源，不能通过
+     * `coneTypeOrNull` 间接读取；无内层 expression 的错误表达式会把类型建模为
+     * `ConeUnreportedDuplicateDiagnostic`，该诊断在映射层会被跳过。
      */
     override fun visitErrorExpression(errorExpression: CfirErrorExpression, data: CheckerContext) {
         val source = errorExpression.source as? CjSourceElement ?: return
-        processConeTypeDiagnostic(errorExpression, errorExpression.coneTypeOrNull, source, data)
-        // 注：CfirErrorExpression 本身的错误无需额外处理，类型字段已涵盖所有信息。
-        return
+        reportConeDiagnostic(errorExpression.diagnostic, source, data)
     }
 
 
@@ -172,7 +176,6 @@ class ErrorNodeDiagnosticCollectorComponent(
             // Use the source of the enclosing FirQualifiedAccess if it is exactly the call to the erroneous callee.
             it.toReference(session) == reference
         }
-
         if (((reference is CfirNamedReference && reference.name.asString() == "<super>") || reference is CfirSuperReference) &&
             context.findClosestDeclaration<CfirExtend>() != null
         ) {
@@ -203,6 +206,10 @@ class ErrorNodeDiagnosticCollectorComponent(
                 callOrAssignment.explicitReceiver.cannotBeResolved()
             ) return
         }
+
+        if (callOrAssignment is CfirFunctionCall &&
+            callOrAssignment.isInvalidPrimitiveCompoundAssignmentCall(context)
+        ) return
 
 //        with(context) {
 //            source = source?.delegatedPropertySourceOrThis()
@@ -345,10 +352,48 @@ class ErrorNodeDiagnosticCollectorComponent(
             is ConeUnresolvedSymbolError -> true
             is org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic ->
                 diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.SuperNotAllowed ||
-                        diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.GenericTypeWithoutTypeArgument
+                        diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.GenericTypeWithoutTypeArgument ||
+                        diagnostic.kind == org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind.EmptyArrayLiteralTypeUndefined
             else -> false
         }
     }
+
+    /**
+     * lambda 参数类型推断失败若发生在未映射到形参的调用实参上，
+     * 主错误属于外层调用参数映射；这里不再把该 lambda 参数作为独立错误类型重复报告。
+     */
+    private fun ConeDiagnostic.isUnmappedCallArgumentLambdaParameterDiagnostic(
+        source: CjSourceElement?,
+        context: CheckerContext,
+    ): Boolean {
+        if (this !is ConeCannotInferValueParameterType || source == null) return false
+        val containingCall = context.callsOrAssignments
+            .asReversed()
+            .filterIsInstance<CfirFunctionCall>()
+            .firstOrNull { call ->
+                call.argumentList.arguments.any { argument ->
+                    argument is CfirAnonymousFunctionExpression &&
+                        argument.anonymousFunction.valueParameters.any { parameter ->
+                            parameter.source?.contains(source) == true
+                        }
+                }
+            }
+            ?: return false
+
+        val candidateDiagnostic = (containingCall.calleeReference as? CfirDiagnosticHolder)?.diagnostic
+        val candidate = (candidateDiagnostic as? ConeDiagnosticWithSingleCandidate)?.candidate ?: return false
+        if (!candidate.argumentMappingInitialized) return false
+
+        return candidate.argumentMapping.keys.none { atom ->
+            val expression = atom.expression as? CfirAnonymousFunctionExpression ?: return@none false
+            expression.anonymousFunction.valueParameters.any { parameter ->
+                parameter.source?.contains(source) == true
+            }
+        }
+    }
+
+    private fun CjSourceElement.contains(other: CjSourceElement): Boolean =
+        startOffset <= other.startOffset && other.endOffset <= endOffset
 
     // ── 内部数据类 ────────────────────────────────────────────────────────────
 
@@ -380,6 +425,7 @@ class ErrorNodeDiagnosticCollectorComponent(
         valueParameter: CfirValueParameter? = null
 
     ) {
+        if (diagnostic.isUnmappedCallArgumentLambdaParameterDiagnostic(source, context)) return
         reportCfirDiagnostic(
             diagnostic = diagnostic,
             source = source,

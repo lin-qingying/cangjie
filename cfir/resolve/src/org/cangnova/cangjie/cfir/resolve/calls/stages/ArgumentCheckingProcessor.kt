@@ -2,8 +2,15 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.resolve.calls.*
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
@@ -12,6 +19,7 @@ import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParamet
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeRegularLambdaArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
+import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -23,6 +31,7 @@ import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
@@ -122,6 +131,7 @@ internal object ArgumentCheckingProcessor {
         when (atom) {
             is ConeResolutionAtomWithPostponedChild -> when (atom.expression) {
                 is CfirAnonymousFunctionExpression -> preprocessLambdaArgument(atom)
+                is CfirNamedAccessExpression -> preprocessFunctionReferenceArgument(atom, atom.expression)
                 else -> {
                     atom.useFallbackSubAtom()
                     val child = atom.subAtom
@@ -147,6 +157,32 @@ internal object ArgumentCheckingProcessor {
 
             is ConePostponedResolvedAtom -> Unit
         }
+    }
+
+    private fun ArgumentContext.preprocessFunctionReferenceArgument(
+        atom: ConeResolutionAtomWithPostponedChild,
+        expression: CfirNamedAccessExpression,
+    ) {
+        val fallback = atom.fallbackSubAtom ?: run {
+            atom.useFallbackSubAtom()
+            resolvePlainExpressionArgument(atom)
+            return
+        }
+        val targetExpectedType = expectedType
+        if (targetExpectedType == null) {
+            atom.useFallbackSubAtom()
+            resolveArgumentExpression(fallback)
+            return
+        }
+
+        val postponedAtom = ConeSimpleNameForContextSensitiveResolution(
+            expression = expression,
+            expectedType = targetExpectedType,
+            containingCallCandidate = candidate,
+            fallbackSubAtom = fallback,
+        )
+        atom.setPostponedSubAtom(postponedAtom)
+        candidate.addPostponedAtom(postponedAtom)
     }
 
     private fun ArgumentContext.resolvePlainExpressionArgument(atom: ConeResolutionAtom) {

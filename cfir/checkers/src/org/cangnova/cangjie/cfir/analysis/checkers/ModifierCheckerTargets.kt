@@ -236,8 +236,11 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowed
         CangJieTarget.ENUM_ENTRY,
     ),
     PROTECTED_KEYWORD to always(
+        CangJieTarget.FILE,
         CangJieTarget.CLASS_ONLY,
+        CangJieTarget.STRUCT,
         CangJieTarget.ENUM,
+        CangJieTarget.EXTEND,
     ),
     INTERNAL_KEYWORD to always(
         CangJieTarget.CLASS_ONLY,
@@ -251,6 +254,7 @@ internal val possibleParentTargetPredicateMap: Map<CjKeywordToken, TargetAllowed
         CangJieTarget.STRUCT,
         CangJieTarget.ENUM,
         CangJieTarget.ENUM_ENTRY,
+        CangJieTarget.EXTEND,
         CangJieTarget.FILE,
     ),
 )

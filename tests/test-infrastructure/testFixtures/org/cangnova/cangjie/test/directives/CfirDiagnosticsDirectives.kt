@@ -35,6 +35,10 @@ object CfirDiagnosticsDirectives : SimpleDirectivesContainer(){
         description = "Enables experimental CFIR checkers in tests."
     )
 
+    val LLT_COMPANION_SOURCES by directive(
+        description = "Adds sibling .cj files from the same official LLT case directory as additional sources.",
+    )
+
     val DUMP_INFERENCE_LOGS by directive(
         description = "Enables CFIR inference logger collection and dumps it to a side file.",
     )
