@@ -1,20 +1,40 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
-import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.calls.ReceiverValue
-import org.cangnova.cangjie.cfir.diagnostic.HiddenCandidate
-import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
+import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-import org.cangnova.cangjie.cfir.declarations.builder.buildErrorNamedValue
-import org.cangnova.cangjie.cfir.declarations.builder.buildErrorFunction
-import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunction
-import org.cangnova.cangjie.cfir.declarations.builder.buildTypeParameter
-import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
+import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
+import org.cangnova.cangjie.cfir.diagnostic.HiddenCandidate
+import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
@@ -22,29 +42,15 @@ import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithSingleChild
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.session.inferenceLogger
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirErrorEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirErrorNamedValueSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.resolve.calls.components.PostponedArgumentsAnalyzerContext
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
+import org.cangnova.cangjie.source.CjSourceElement
 
 /**
  * Small construction seam for candidates discovered during tower traversal.
@@ -263,68 +269,6 @@ class CandidateFactory(
                 coneType = ConeClassLikeType(StdlibClassIds.Array.toLookupTag(), typeArguments = listOf(elementType))
             }
             this.valueParameters.addAll(valueParameters)
-            body = null
-            this.symbol = symbol
-            name = callInfo.name
-            isMut = false
-        }
-
-        return createCandidate(
-            callInfo = callInfo,
-            symbol = symbol,
-            originScope = null,
-        )
-    }
-
-    /**
-     * 构造仓颉原始类型转换表达式的合成候选。
-     *
-     * 官方 `TypeConvExpr` 对 `Int32(x)` 这类写法独立执行 `SynNumTypeConvExpr`，
-     * 语义上不是用户声明的构造器。CFIR 仍复用现有 call candidate 管线承载
-     * 参数映射、参数检查和调用完成，因此这里用 synthetic fake function 表达
-     * “一个参数转换为目标原始类型”的调用形状。
-     */
-    fun createPrimitiveTypeConversionCandidate(
-        callInfo: CallInfo,
-        targetKind: PrimitiveTypeKind,
-        sourceType: ConePrimitiveType,
-    ): Candidate {
-        val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
-        val parameterName = Name.identifier("primitiveTypeConversionArg")
-        val parameter = buildValueParameter {
-            source = callInfo.arguments.singleOrNull()?.source ?: callInfo.callSite.source
-            moduleData = context.session.moduleData
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE
-            origin = CfirDeclarationOrigin.Synthetic.FakeFunction
-            attributes = CfirDeclarationAttributes.EMPTY
-            isLocal = true
-            dispatchReceiverType = null
-            this.symbol = CfirValueParameterSymbol(CallableId(parameterName))
-            containingDeclarationSymbol = symbol
-            isNamed = false
-            status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-            returnTypeRef = buildResolvedTypeRef {
-                source = callInfo.arguments.singleOrNull()?.source ?: callInfo.callSite.source
-                coneType = sourceType
-            }
-            name = parameterName
-            defaultValue = null
-        }
-
-        buildNamedFunction {
-            source = callInfo.callSite.source
-            moduleData = context.session.moduleData
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE
-            origin = CfirDeclarationOrigin.Synthetic.FakeFunction
-            attributes = CfirDeclarationAttributes.EMPTY
-            isLocal = true
-            dispatchReceiverType = null
-            status = CfirDeclarationStatusImpl()
-            returnTypeRef = buildResolvedTypeRef {
-                source = callInfo.callSite.source
-                coneType = ConePrimitiveType(targetKind)
-            }
-            valueParameters.add(parameter)
             body = null
             this.symbol = symbol
             name = callInfo.name

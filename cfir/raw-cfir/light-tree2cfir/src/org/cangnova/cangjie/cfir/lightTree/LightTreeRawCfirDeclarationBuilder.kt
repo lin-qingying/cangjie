@@ -1,52 +1,61 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjSourceFile
+import org.cangnova.cangjie.cfir.CfirFunctionTarget
+import org.cangnova.cangjie.cfir.builder.AbstractRawCfirBuilder
+import org.cangnova.cangjie.cfir.builder.BodyBuildingMode
+import org.cangnova.cangjie.cfir.builder.Context
+import org.cangnova.cangjie.cfir.builder.buildQualifierPart
+import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.copyWithNewSource
 import org.cangnova.cangjie.cfir.correspondingProperty
-import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.CfirFunctionTarget
-import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
-import org.cangnova.cangjie.cfir.builder.*
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
-import org.cangnova.cangjie.cfir.expressions.builder.buildAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.builder.buildBlock
-import org.cangnova.cangjie.cfir.expressions.builder.buildInoutArgumentExpression
-import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
-import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceIdGenerator
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
-import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
-import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.cfir.expressions.builder.*
+import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
-import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.CjSourceFileLinesMapping
-import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.builtinTypes
+import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
+import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -55,8 +64,10 @@ import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
-import org.cangnova.cangjie.descriptors.Visibility
-import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceFileLinesMapping
+import org.cangnova.cangjie.source.fakeElement
 
 /**
  * LightTree → Raw CFIR 声明构建器（对齐 PsiRawCfirBuilder 的声明转换部分）。
@@ -625,6 +636,7 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertFinalizer(node: LighterASTNode): CfirFinalizer {
         val modifiers = LightTreeModifierList.from(tree, node)
         val functionSymbol = CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))
+        val typeParams = extractFunctionTypeParameters(node, functionSymbol)
         val valueParams = extractValueParameters(node, functionSymbol)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(functionSymbol) {
@@ -638,11 +650,12 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
+                attributes = declarationAttributes(node)
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
                 status = modifiers.toDeclarationStatusForCurrentContext()
-                returnTypeRef = buildImplicitTypeRef()
+                this.typeParameters.addAll(typeParams)
+                returnTypeRef = baseSession.builtinTypes.unitType.toCfirResolvedTypeRef(source)
                 this.valueParameters.addAll(valueParams)
                 this.body = body
             }
@@ -810,6 +823,7 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun convertConstructor(node: LighterASTNode, isPrimary: Boolean): CfirConstructor {
         val modifiers = LightTreeModifierList.from(tree, node)
         val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
+        val typeParams = extractFunctionTypeParameters(node, constructorSymbol)
         val valueParams = extractValueParameters(node, constructorSymbol, requiresExplicitType = true)
         val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
         val body = if (bodyBuildingMode == BodyBuildingMode.LAZY_BODIES) null else withContainerSymbol(constructorSymbol) {
@@ -824,10 +838,11 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
-                    attributes = CfirDeclarationAttributes.EMPTY
+                    attributes = declarationAttributes(node)
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
                     status = modifiers.toDeclarationStatusForCurrentContext()
+                    this.typeParameters.addAll(typeParams)
                     returnTypeRef = buildImplicitTypeRef()
                     this.valueParameters.addAll(valueParams)
                     this.body = body
@@ -839,10 +854,11 @@ class LightTreeRawCfirDeclarationBuilder(
                     this.symbol = symbol
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
-                    attributes = CfirDeclarationAttributes.EMPTY
+                    attributes = declarationAttributes(node)
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
                     status = modifiers.toDeclarationStatusForCurrentContext()
+                    this.typeParameters.addAll(typeParams)
                     returnTypeRef = buildImplicitTypeRef()
                     this.valueParameters.addAll(valueParams)
                     this.body = body
@@ -1636,21 +1652,44 @@ class LightTreeRawCfirDeclarationBuilder(
         carrier: CfirDeclaration,
     ) {
         if (carrier is CfirFunction && carrier.returnTypeRef is CfirImplicitTypeRef) {
-            val restoredReturnType = findFunctionReturnTypeRefInMacroExpression(macroExpression)
-                ?.let(::convertTypeRef)
+            val restoredReturnType = (
+                    findFunctionLikeReturnTypeRef(macroExpression)
+                        ?: findMacroExpressionWrapperReturnTypeRef(macroExpression)
+                    )?.let(::convertTypeRef)
             restoredReturnType?.let(carrier::replaceReturnTypeRef)
         }
     }
 
-    private fun findFunctionReturnTypeRefInMacroExpression(macroExpression: LighterASTNode): LighterASTNode? {
+    private fun findMacroExpressionWrapperReturnTypeRef(macroExpression: LighterASTNode): LighterASTNode? {
         val parameterList = findFirstDescendantByType(macroExpression, CjNodeTypes.VALUE_PARAMETER_LIST) ?: return null
         val block = findFirstDescendantByType(macroExpression, CjNodeTypes.BLOCK)
         val afterParameters = tree.getEndOffset(parameterList)
         val beforeBody = block?.let(tree::getStartOffset) ?: macroExpression.endOffset
         return findDescendantsByType(macroExpression, CjNodeTypes.TYPE_REFERENCE)
             .firstOrNull { typeRef ->
-                tree.getStartOffset(typeRef) >= afterParameters && tree.getEndOffset(typeRef) <= beforeBody
+                tree.getStartOffset(typeRef) >= afterParameters &&
+                        tree.getEndOffset(typeRef) <= beforeBody &&
+                        !isInsideTypeConstraintList(typeRef, macroExpression)
             }
+    }
+
+    private fun isInsideTypeConstraintList(node: LighterASTNode, root: LighterASTNode): Boolean {
+        val nodeStart = tree.getStartOffset(node)
+        val nodeEnd = tree.getEndOffset(node)
+        var result = false
+        fun visit(current: LighterASTNode, insideConstraint: Boolean) {
+            if (tree.getStartOffset(current) == nodeStart && tree.getEndOffset(current) == nodeEnd) {
+                result = insideConstraint
+                return
+            }
+            if (result) return
+            val nextInsideConstraint = insideConstraint || current.tokenType == CjNodeTypes.TYPE_CONSTRAINT_LIST
+            tree.forEachChildren(current) { child ->
+                visit(child, nextInsideConstraint)
+            }
+        }
+        visit(root, insideConstraint = false)
+        return result
     }
 
     private fun findDescendantsByType(
@@ -1865,6 +1904,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 CfirTypeConstraintReference(
                     parameterName = Name.identifier(parameterNameNode.asText()),
                     source = parameterNameNode.toSource(),
+                    constraintSource = constraint.toSource(),
                 )
             }
 
@@ -1876,10 +1916,35 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     private fun declarationAttributes(ownerNode: LighterASTNode): CfirDeclarationAttributes {
-        val diagnosticData = collectTypeConstraintDiagnosticData(ownerNode) ?: return CfirDeclarationAttributes.EMPTY
-        return CfirDeclarationAttributes().apply {
-            typeConstraintDiagnosticData = diagnosticData
+        var hasAttributes = false
+        val attributes = CfirDeclarationAttributes()
+
+        collectTypeConstraintDiagnosticData(ownerNode)?.let { diagnosticData ->
+            attributes.typeConstraintDiagnosticData = diagnosticData
+            hasAttributes = true
         }
+
+        collectFunctionBodyDiagnosticData(ownerNode)?.let { diagnosticData ->
+            attributes.functionBodyDiagnosticData = diagnosticData
+            hasAttributes = true
+        }
+
+        return if (hasAttributes) attributes else CfirDeclarationAttributes.EMPTY
+    }
+
+    private fun collectFunctionBodyDiagnosticData(ownerNode: LighterASTNode): CfirFunctionBodyDiagnosticData? {
+        val parameterLists = tree.getChildrenByType(ownerNode, CjNodeTypes.VALUE_PARAMETER_LIST)
+            .map { parameterList ->
+                CfirValueParameterListReference(
+                    source = parameterList.toSource(),
+                )
+            }
+
+        if (parameterLists.size <= 1) return null
+
+        return CfirFunctionBodyDiagnosticData(
+            valueParameterLists = parameterLists,
+        )
     }
 
     private fun extractSuperTypeRefs(node: LighterASTNode): List<CfirTypeRef> {
@@ -1982,11 +2047,21 @@ class LightTreeRawCfirDeclarationBuilder(
             CjNodeTypes.FUNC,
             CjNodeTypes.MAIN_FUNC,
             CjNodeTypes.MACRO,
-            -> findFunctionReturnTypeRefInMacroExpression(node)
-                ?: tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
+                -> findFunctionLikeReturnTypeRef(node)
             else -> tree.findChildByType(node, CjNodeTypes.TYPE_REFERENCE)
         }
         return convertTypeRef(typeRef)
+    }
+
+    private fun findFunctionLikeReturnTypeRef(node: LighterASTNode): LighterASTNode? {
+        var isReturnType = false
+        tree.forEachChildren(node) { child ->
+            when (child.tokenType) {
+                CjTokens.COLON -> isReturnType = true
+                CjNodeTypes.TYPE_REFERENCE -> if (isReturnType) return child
+            }
+        }
+        return null
     }
 
     /** 提取值参数列表 */

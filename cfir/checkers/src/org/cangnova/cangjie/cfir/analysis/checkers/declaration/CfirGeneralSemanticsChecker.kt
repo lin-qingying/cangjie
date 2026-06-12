@@ -1,36 +1,44 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.isCatchParameter
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.isCatchParameter
 import org.cangnova.cangjie.cfir.session.cjMappingConfigProvider
 import org.cangnova.cangjie.cfir.session.noPrelude
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 
 /**
@@ -264,60 +272,83 @@ object CfirGeneralSemanticsChecker : CfirFileChecker() {
      * 检查文件中的声明是否存在可访问性问题。
      *
      * 对齐 C++ DiagKind::sema_accessibility_error:
-     * 公开声明的签名中不能引用非公开类型。
+     * 非 private 声明的签名中不能引用访问级别更低的类型。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkAccessibilityInFile(file: CfirFile) {
         for (declaration in file.declarations) {
-            checkPublicDeclarationExposesPrivateType(declaration)
+            checkNonPrivateDeclarationAccessLevelValidity(declaration, containingAccessLevel = null)
         }
     }
 
     /**
-     * 公开声明不能暴露非公开类型。
+     * 声明对外可见的签名不能暴露更低访问级别的类型。
+     *
+     * 对齐官方 CheckInternalTypeUse.cpp：
+     * - 顶层和成员都跳过 private 声明；
+     * - 成员有效访问级别不高于外层 nominal 声明；
+     * - 函数检查返回类型、参数类型和泛型约束；
+     * - nominal/typealias 检查泛型约束，并递归检查成员。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkPublicDeclarationExposesPrivateType(declaration: CfirDeclaration) {
-        val visibility = when (declaration) {
-            is CfirNamedFunction -> declaration.status.visibility
-            is CfirProperty -> declaration.status.visibility
-            is CfirFieldVariable -> declaration.status.visibility
-            is CfirClass -> declaration.status.visibility
-            is CfirInterface -> declaration.status.visibility
-            is CfirStruct -> declaration.status.visibility
-            is CfirEnum -> declaration.status.visibility
-            else -> return
-        }
-        if (visibility != Visibilities.Public) return
+    private fun checkNonPrivateDeclarationAccessLevelValidity(
+        declaration: CfirDeclaration,
+        containingAccessLevel: Visibility?,
+    ) {
+        val ownVisibility = declaration.accessLevelVisibility() ?: return
+        if (Visibilities.isPrivate(ownVisibility)) return
 
-        // 检查返回类型或属性类型的可访问性
-        val returnTypeRef = when (declaration) {
-            is CfirNamedFunction -> declaration.returnTypeRef
-            is CfirProperty -> declaration.returnTypeRef
-            is CfirFieldVariable -> declaration.returnTypeRef
-            else -> return
-        }
-        val resolvedType = (returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
-        if (resolvedType is ConeErrorType) return
-
-        val typeClassId = resolvedType.classIdOrNull() ?: return
-        val typeSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(typeClassId) ?: return
-        val typeDecl = typeSymbol.cfir
-        val typeVisibility = when (typeDecl) {
-            is CfirClass -> typeDecl.status.visibility
-            is CfirInterface -> typeDecl.status.visibility
-            is CfirStruct -> typeDecl.status.visibility
-            is CfirEnum -> typeDecl.status.visibility
-            else -> return
-        }
-        if (typeVisibility == Visibilities.Private || typeVisibility == Visibilities.Internal) {
+        val effectiveVisibility = ownVisibility.effectiveInside(containingAccessLevel)
+        val exposure = declaration.findFirstSignatureExposure(effectiveVisibility)
+        if (exposure != null) {
             reporter.reportOn(
-                source = returnTypeRef.source ?: declaration.source,
+                source = declaration.accessibilityDiagnosticSource(),
                 factory = CfirErrors.ACCESSIBILITY_ERROR,
                 a = declaration.declarationName()?.asString() ?: "<unknown>",
-                b = typeVisibility,
+                b = exposure,
             )
         }
+
+        if (declaration is CfirClassLikeDeclaration) {
+            for (member in declaration.declarations) {
+                checkNonPrivateDeclarationAccessLevelValidity(member, effectiveVisibility)
+            }
+        }
+    }
+
+    context(context: CheckerContext)
+    private fun CfirDeclaration.findFirstSignatureExposure(
+        declarationVisibility: Visibility,
+    ): Visibility? {
+        (this as? CfirTypeParameterRefsOwner)
+            ?.findFirstTypeParameterBoundExposure(declarationVisibility)
+            ?.let { return it }
+
+        return when (this) {
+            is CfirNamedFunction -> {
+                returnTypeRef.findFirstExposure(declarationVisibility)
+                    ?: valueParameters.asSequence()
+                        .mapNotNull { it.returnTypeRef.findFirstExposure(declarationVisibility) }
+                        .firstOrNull()
+            }
+
+            is CfirProperty -> returnTypeRef.findFirstExposure(declarationVisibility)
+            is CfirFieldVariable -> returnTypeRef.findFirstExposure(declarationVisibility)
+            is CfirTypeAlias -> expandedTypeRef.findFirstExposure(declarationVisibility)
+            else -> null
+        }
+    }
+
+    context(context: CheckerContext)
+    private fun CfirTypeParameterRefsOwner.findFirstTypeParameterBoundExposure(
+        declarationVisibility: Visibility,
+    ): Visibility? {
+        for (typeParameter in typeParameters) {
+            for (bound in typeParameter.symbol.resolvedBounds) {
+                bound.findFirstExposure(declarationVisibility)?.let { return it }
+            }
+        }
+        return null
     }
 }
 
@@ -597,6 +628,100 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
 
 // ──────────── 工具函数 ────────────
 
+private fun CfirDeclaration.accessLevelVisibility(): Visibility? =
+    (this as? CfirMemberDeclaration)?.status?.visibility
+
+private fun Visibility.effectiveInside(containingAccessLevel: Visibility?): Visibility {
+    val ownRank = cangjieAccessLevelRank() ?: return this
+    val containingRank = containingAccessLevel?.cangjieAccessLevelRank() ?: return this
+    return if (containingRank < ownRank) containingAccessLevel else this
+}
+
+private fun Visibility.canExpose(typeVisibility: Visibility): Boolean {
+    val declarationRank = cangjieAccessLevelRank() ?: return true
+    val typeRank = typeVisibility.cangjieAccessLevelRank() ?: return true
+    return declarationRank <= typeRank
+}
+
+private fun Visibility.cangjieAccessLevelRank(): Int? = when (this) {
+    Visibilities.Private, Visibilities.PrivateToThis -> 0
+    Visibilities.Internal -> 1
+    Visibilities.Protected -> 2
+    Visibilities.Public -> 3
+    else -> null
+}
+
+private fun CfirDeclaration.accessibilityDiagnosticSource(): AbstractCjSourceElement? = when (this) {
+    is CfirClassLikeDeclaration -> classLikeNameDiagnosticSource()
+    is CfirNamedFunction -> functionNameDiagnosticSource()
+    else -> source
+}
+
+context(context: CheckerContext)
+private fun CfirTypeRef.findFirstExposure(declarationVisibility: Visibility): Visibility? {
+    val resolvedType = (this as? CfirResolvedTypeRef)?.coneType ?: return null
+    return resolvedType.findFirstExposure(declarationVisibility)
+}
+
+context(context: CheckerContext)
+private fun ConeCangJieType.findFirstExposure(
+    declarationVisibility: Visibility,
+    visitedTypes: MutableSet<ConeCangJieType> = linkedSetOf(),
+): Visibility? {
+    if (this is ConeErrorType) return null
+    if (!visitedTypes.add(this)) return null
+
+    for (projection in typeArguments) {
+        projection.type.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+    }
+
+    when (this) {
+        is ConeFunctionType -> {
+            for (parameterType in parameterTypes) {
+                parameterType.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+            }
+            returnType.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+        }
+
+        is ConeTupleType -> {
+            for (elementType in elementTypes) {
+                elementType.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+            }
+        }
+
+        is ConeVArrayType -> elementType.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+        is ConePointerType -> pointeeType.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+        is ConeIntersectionType -> {
+            for (intersectedType in intersectedTypes) {
+                intersectedType.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+            }
+            upperBoundForApproximation?.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+        }
+
+        is ConeUnionType -> {
+            for (unionType in unionTypes) {
+                unionType.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+            }
+        }
+
+        else -> {}
+    }
+
+    classIdOrNull()?.let { classId ->
+        val referencedDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
+        val referencedVisibility = referencedDeclaration?.accessLevelVisibility()
+        if (referencedVisibility != null && !declarationVisibility.canExpose(referencedVisibility)) {
+            return referencedVisibility
+        }
+    }
+
+    if (this is ConeTypeAliasType) {
+        expandedType?.findFirstExposure(declarationVisibility, visitedTypes)?.let { return it }
+    }
+
+    return null
+}
+
 private fun CfirDeclaration.declarationName(): Name? = when (this) {
     is CfirClass -> name
     is CfirInterface -> name
@@ -620,9 +745,10 @@ private fun ConeCangJieType.containsTypeParameter(name: Name): Boolean {
 
 private fun ConeCangJieType.classIdOrNull(): org.cangnova.cangjie.name.ClassId? {
     return when (this) {
-        is org.cangnova.cangjie.cfir.types.ConeClassLikeType -> classId
-        is org.cangnova.cangjie.cfir.types.ConeStructType -> classId
-        is org.cangnova.cangjie.cfir.types.ConeEnumType -> classId
+        is ConeClassLikeType -> classId
+        is ConeStructType -> classId
+        is ConeEnumType -> classId
+        is ConeTypeAliasType -> classId
         else -> null
     }
 }

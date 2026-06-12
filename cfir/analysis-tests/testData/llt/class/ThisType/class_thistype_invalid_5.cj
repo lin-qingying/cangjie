@@ -6,7 +6,7 @@
 
 
 class R{
-  public static func a2() : This{
+  public static func a2() : <!INVALID_POSITION_OF_THIS_TYPE!>This<!>{
 
   }
 }

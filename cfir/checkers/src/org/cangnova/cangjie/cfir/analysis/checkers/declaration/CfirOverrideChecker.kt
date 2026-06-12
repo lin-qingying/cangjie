@@ -1,20 +1,39 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * Override checker aligned to Kotlin FIR order:
@@ -45,6 +64,9 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             }
 
             if (overriddenCandidates.isEmpty()) {
+                if (callable.hasInheritedSignatureIgnoringStatic(classScope)) {
+                    continue
+                }
                 reporter.reportOn(
                     source = callable.source,
                     factory = CfirErrors.NOTHING_TO_OVERRIDE,
@@ -64,6 +86,7 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             }
 
             checkParameterNamingCompatibility(callable, visibleOverriddenSymbols)
+            checkGenericConstraintCompatibility(callable, visibleOverriddenSymbols)
             checkVisibilityCompatibility(callable, visibleOverriddenSymbols)
             checkReturnTypeCompatibility(callable, visibleOverriddenSymbols)
         }
@@ -77,6 +100,14 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         if (status.isRedef && !status.isStatic) return false
         if (status.isOverride && status.isStatic) return false
         return true
+    }
+
+    private fun CfirCallableDeclaration.hasInheritedSignatureIgnoringStatic(classScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope): Boolean {
+        return when (val symbol = symbol) {
+            is CfirNamedFunctionSymbol -> classScope.collectDirectOverriddenFunctionsIgnoringStatic(symbol).isNotEmpty()
+            is CfirPropertySymbol -> classScope.collectDirectOverriddenPropertiesIgnoringStatic(symbol).isNotEmpty()
+            else -> false
+        }
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -132,7 +163,16 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         for (overridden in overriddenSymbols) {
             if (!overridden.isBound) continue
             val overriddenReturnType = context.returnTypeCalculator.tryCalculateReturnType(overridden.cfir).coneType
+                .substituteAllTypeParameters(declarationSymbol, overridden)
             if (overriddenReturnType is ConeErrorType) continue
+
+            if (overriddenReturnType.isThisType && !overridingReturnType.isThisType) {
+                reporter.reportOn(
+                    source = declaration.source,
+                    factory = CfirErrors.INHERIT_NOT_RETURN_THIS,
+                )
+                return
+            }
 
             val isCompatible = when {
                 declarationSymbol is CfirPropertySymbol &&
@@ -162,7 +202,118 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             return
         }
     }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkGenericConstraintCompatibility(
+        declaration: CfirCallableDeclaration,
+        overriddenSymbols: List<CfirCallableSymbol<*>>,
+    ) {
+        val childTypeParameters = (declaration as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+        if (childTypeParameters.isEmpty()) return
+
+        for (overridden in overriddenSymbols) {
+            val parentTypeParameters = (overridden.cfir as? CfirTypeParameterRefsOwner)?.typeParameters.orEmpty()
+            if (parentTypeParameters.size != childTypeParameters.size) continue
+
+            val parentToChildSubstitutor = createParentToChildTypeParameterSubstitutor(
+                parentTypeParameters,
+                childTypeParameters,
+            )
+
+            for (index in childTypeParameters.indices) {
+                val childBounds = childTypeParameters[index].symbol.resolvedBounds
+                    .filterUsableGenericConstraintBounds()
+                    .filterNot { it.coneType.isAnyBound() }
+                if (childBounds.isEmpty()) continue
+
+                val parentBounds = parentTypeParameters[index].symbol.resolvedBounds
+                    .filterUsableGenericConstraintBounds()
+                    .map { parentToChildSubstitutor.substituteOrSelf(it.coneType) }
+
+                val nonLooserBound = childBounds.firstOrNull { childBound ->
+                    !parentBounds.any { parentBound ->
+                        AbstractTypeChecker.isSubtypeOf(context.session.typeContext, parentBound, childBound.coneType)
+                    }
+                } ?: parentBounds.firstOrNull { parentBound ->
+                    childBounds.any { childBound ->
+                        childBound.coneType != parentBound &&
+                                AbstractTypeChecker.isSubtypeOf(
+                                    context.session.typeContext,
+                                    childBound.coneType,
+                                    parentBound
+                                )
+                    }
+                }?.let { childBounds.first() }
+
+                if (nonLooserBound != null) {
+                    reporter.reportOn(
+                        source = declaration.genericConstraintDiagnosticSource(childTypeParameters[index])
+                            ?: nonLooserBound.source
+                            ?: declaration.source,
+                        factory = CfirErrors.GENERIC_CONSTRAINT_NOT_LOOSER,
+                    )
+                    return
+                }
+            }
+        }
+    }
+
+    context(context: CheckerContext)
+    private fun createParentToChildTypeParameterSubstitutor(
+        parentTypeParameters: List<CfirTypeParameterRef>,
+        childTypeParameters: List<CfirTypeParameterRef>,
+    ) = createTypeSubstitutorByTypeConstructor(
+        map = parentTypeParameters.zip(childTypeParameters).associate { (parent, child) ->
+            parent.typeConstructorForSubstitution() to ConeTypeParameterTypeImpl(child.symbol.toLookupTag())
+        },
+        context = context.session.typeContext,
+        approximateIntegerLiterals = false,
+    )
 }
+
+context(context: CheckerContext)
+private fun ConeCangJieType.substituteAllTypeParameters(
+    overrideDeclaration: CfirCallableSymbol<*>,
+    baseDeclaration: CfirCallableSymbol<*>,
+): ConeCangJieType {
+    val overrideTypeParameters = overrideDeclaration.cfir.typeParameters
+    if (overrideTypeParameters.isEmpty()) return this
+
+    val baseTypeParameters = baseDeclaration.cfir.typeParameters
+    val size = minOf(overrideTypeParameters.size, baseTypeParameters.size)
+    if (size == 0) return this
+
+    val map = LinkedHashMap<TypeConstructorMarker, ConeCangJieType>(size)
+    for (index in 0 until size) {
+        map[baseTypeParameters[index].typeConstructorForSubstitution()] =
+            ConeTypeParameterTypeImpl(overrideTypeParameters[index].symbol.toLookupTag())
+    }
+
+    return createTypeSubstitutorByTypeConstructor(
+        map = map,
+        context = context.session.typeContext,
+        approximateIntegerLiterals = false,
+    ).substituteOrSelf(this)
+}
+
+private fun CfirTypeParameterRef.typeConstructorForSubstitution(): TypeConstructorMarker =
+    symbol.toLookupTag() as TypeConstructorMarker
+
+private fun CfirCallableDeclaration.genericConstraintDiagnosticSource(
+    typeParameter: CfirTypeParameterRef,
+) = attributes.typeConstraintDiagnosticData
+    ?.typeConstraints
+    ?.firstOrNull { it.parameterName == typeParameter.symbol.name }
+    ?.constraintSource
+
+private fun List<CfirResolvedTypeRef>.filterUsableGenericConstraintBounds(): List<CfirResolvedTypeRef> =
+    filterNot { it.coneType is ConeErrorType }
+
+private fun ConeCangJieType.isAnyBound(): Boolean =
+    this == ConeAnyType || (this as? ConeClassLikeType)?.classId == StdlibClassIds.Any
+
+private val ConeCangJieType.isThisType: Boolean
+    get() = (this as? ConeClassLikeType)?.isThisType == true
 
 private fun CfirFunction.hasMismatchedParameterNamingAgainst(overridden: CfirFunction): Boolean {
     if (valueParameters.size != overridden.valueParameters.size) return false

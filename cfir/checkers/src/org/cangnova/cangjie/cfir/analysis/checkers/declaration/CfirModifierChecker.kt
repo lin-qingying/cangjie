@@ -1,28 +1,38 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
-import org.cangnova.cangjie.cfir.analysis.checkers.CangJieTarget
-import org.cangnova.cangjie.cfir.analysis.checkers.SourceModifier
-import org.cangnova.cangjie.cfir.analysis.checkers.actualParentTargets
-import org.cangnova.cangjie.cfir.analysis.checkers.actualTargetsFor
-import org.cangnova.cangjie.cfir.analysis.checkers.checkModifiersCompatibility
+import org.cangnova.cangjie.cfir.analysis.checkers.*
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.analysis.checkers.deprecatedParentTargetMap
-import org.cangnova.cangjie.cfir.analysis.checkers.deprecatedTargetMap
-import org.cangnova.cangjie.cfir.analysis.checkers.firstOrThisDescription
-import org.cangnova.cangjie.cfir.analysis.checkers.isConstructorSource
-import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
-import org.cangnova.cangjie.cfir.analysis.checkers.possibleParentTargetPredicateMap
-import org.cangnova.cangjie.cfir.analysis.checkers.possibleTargetMap
-import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
-import org.cangnova.cangjie.cfir.analysis.checkers.redundantTargetMap
+import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.lexer.CjTokens
 
 object CfirModifierChecker : CfirBasicDeclarationChecker() {
@@ -142,8 +152,31 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
                 CfirErrors.REDEF_INSTANCE_ERROR,
                 callable.declarationKindName(),
             )
+            if (callable.hasInheritedNonStaticSignatureIgnoringStatic()) {
+                reporter.reportOn(
+                    redefModifier.source,
+                    CfirErrors.NOTHING_TO_OVERRIDE,
+                )
+            }
         }
 
+    }
+
+    context(context: CheckerContext)
+    private fun CfirCallableDeclaration.hasInheritedNonStaticSignatureIgnoringStatic(): Boolean {
+        val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>() ?: return false
+        val classScope = context.createUseSiteMemberScope(owner)
+        return when (val symbol = symbol) {
+            is CfirNamedFunctionSymbol -> classScope
+                .collectDirectOverriddenFunctionsIgnoringStatic(symbol)
+                .any { !it.cfir.status.isStatic }
+
+            is CfirPropertySymbol -> classScope
+                .collectDirectOverriddenPropertiesIgnoringStatic(symbol)
+                .any { !it.cfir.status.isStatic }
+
+            else -> false
+        }
     }
 
     private fun CfirCallableDeclaration.declarationKindName(): String = when (this) {

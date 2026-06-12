@@ -1,48 +1,68 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
 import com.intellij.psi.tree.IElementType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
-import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.CfirLoopTarget
-import org.cangnova.cangjie.cfir.isCatchParameter
 import org.cangnova.cangjie.cfir.builder.*
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.builder.*
+import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.buildAnonymousFunction
+import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariable
+import org.cangnova.cangjie.cfir.declarations.builder.buildPatternVariable
+import org.cangnova.cangjie.cfir.declarations.builder.buildProperty
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
-import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
-import org.cangnova.cangjie.cfir.patterns.*
+import org.cangnova.cangjie.cfir.isCatchParameter
+import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
-import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceIdGenerator
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
+import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.builder.buildBasicTypeRef
+import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjNodeTypes
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.BASIC_REFERENCE_EXPRESSION
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
 
 /**
  * LightTree → Raw CFIR 表达式构建器（对齐 PsiRawCfirBuilder 的表达式转换部分）。
@@ -86,7 +106,7 @@ class LightTreeRawCfirExpressionBuilder(
         CjNodeTypes.OPTIONAL_EXPRESSION -> convertOptionalExpression(node)
         CjNodeTypes.OPTIONAL_CHAIN_EXPRESSION -> convertOptionalChainExpression(node)
         CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> convertDotQualified(node)
-        CjNodeTypes.REFERENCE_EXPRESSION -> convertNameReference(node)
+        CjNodeTypes.REFERENCE_EXPRESSION, BASIC_REFERENCE_EXPRESSION -> convertNameReference(node)
 
         // 调用
         CjNodeTypes.CALL_EXPRESSION -> convertCall(node)
@@ -543,7 +563,6 @@ class LightTreeRawCfirExpressionBuilder(
               effectiveTypeArgNodes.addAll(nestedTypeArgNodes)
           }
 
-          val callArguments = effectiveArgNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
           val directTypeArgs = effectiveTypeArgNodes.map { typeRefNode ->
               convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
           }
@@ -552,6 +571,16 @@ class LightTreeRawCfirExpressionBuilder(
           } else {
               collectTypeArgumentsFromCallee(effectiveCalleeNode)
           }
+
+          tryBuildTypeConversion(
+              node,
+              effectiveCalleeNode,
+              effectiveArgNodes,
+              typeArgs,
+              lambdaArgNodes
+          )?.let { return it }
+
+          val callArguments = effectiveArgNodes.mapNotNull { convertCallArgument(it) }.toMutableList()
           val lambdaArgs = lambdaArgNodes.mapNotNull { lambdaArg ->
               val lambdaExpr = tree.findChildByType(lambdaArg, CjNodeTypes.LAMBDA_EXPRESSION)
               lambdaExpr?.let {
@@ -613,12 +642,53 @@ class LightTreeRawCfirExpressionBuilder(
         }
     }
 
+    private fun tryBuildTypeConversion(
+        callNode: LighterASTNode,
+        calleeNode: LighterASTNode?,
+        argNodes: List<LighterASTNode>,
+        typeArgs: List<CfirTypeRef>,
+        lambdaArgNodes: List<LighterASTNode>,
+    ): CfirExpression? {
+        val targetKind = calleeNode?.primitiveTypeConversionKindOrNull() ?: return null
+        if (typeArgs.isNotEmpty() || lambdaArgNodes.isNotEmpty()) {
+            return buildErrorExpression(callNode.toSourceElement(), "Malformed primitive type conversion")
+        }
+
+        val valueArgumentNode = argNodes.singleOrNull()
+            ?: return buildErrorExpression(callNode.toSourceElement(), "Malformed primitive type conversion")
+        if (tree.findChildByType(valueArgumentNode, CjNodeTypes.VALUE_ARGUMENT_NAME) != null) {
+            return buildErrorExpression(callNode.toSourceElement(), "Malformed primitive type conversion")
+        }
+        val argumentNode = findFirstExpression(valueArgumentNode)
+            ?: return buildErrorExpression(
+                valueArgumentNode.toSourceElement(),
+                "Missing primitive type conversion argument"
+            )
+
+        return buildTypeConversion {
+            source = callNode.toSource()
+            argument = convertExpression(argumentNode)
+            targetTypeRef = buildBasicTypeRef {
+                source = calleeNode.toSource()
+                name = Name.identifier(targetKind.typeName)
+            }
+        }
+    }
+
+    private fun LighterASTNode.primitiveTypeConversionKindOrNull(): PrimitiveTypeKind? {
+        if (tokenType != BASIC_REFERENCE_EXPRESSION) return null
+        val rawName = referenceNameFromText(asText()).asString()
+        return PrimitiveTypeKind.entries.firstOrNull {
+            it.isExposedBuiltinClassifier && it.typeName == rawName
+        }
+    }
+
     private fun resolveCalleeReference(calleeNode: LighterASTNode?): Pair<CfirExpression?, org.cangnova.cangjie.cfir.references.CfirNamedReference> {
         if (calleeNode == null) {
             return null to buildNamedReference(Name.identifier("<error>"))
         }
         return when (calleeNode.tokenType) {
-            CjNodeTypes.REFERENCE_EXPRESSION -> {
+            CjNodeTypes.REFERENCE_EXPRESSION, BASIC_REFERENCE_EXPRESSION -> {
                 null to buildNamedReference(referenceNameFromText(calleeNode.asText()), calleeNode.toSource())
             }
             CjNodeTypes.DOT_QUALIFIED_EXPRESSION -> {
@@ -633,18 +703,16 @@ class LightTreeRawCfirExpressionBuilder(
                         afterDot && selectorNode == null && isSemanticToken(tt) -> selectorNode = child
                     }
                 }
+                if (selectorNode?.tokenType == CjNodeTypes.CALL_EXPRESSION) {
+                    return convertExpression(calleeNode) to buildNamedReference(
+                        OperatorNameConventions.INVOKE,
+                        calleeNode.toSource(),
+                    )
+                }
+
                 val recv = receiverNode?.let { convertExpression(it) }
                 val refNode = when (selectorNode?.tokenType) {
-                    CjNodeTypes.REFERENCE_EXPRESSION -> selectorNode
-                    CjNodeTypes.CALL_EXPRESSION -> {
-                        var callCalleeNode: LighterASTNode? = null
-                        tree.forEachChildren(selectorNode!!) { child ->
-                            if (callCalleeNode == null && isExpressionToken(child.tokenType)) {
-                                callCalleeNode = child
-                            }
-                        }
-                        callCalleeNode
-                    }
+                    CjNodeTypes.REFERENCE_EXPRESSION, BASIC_REFERENCE_EXPRESSION -> selectorNode
                     else -> null
                 }
                 val refName = refNode?.asText() ?: "<error>"
@@ -755,7 +823,10 @@ class LightTreeRawCfirExpressionBuilder(
                 }
             }
 
-            val ref = if (calleeRef?.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
+            val ref = if (
+                calleeRef?.tokenType == CjNodeTypes.REFERENCE_EXPRESSION ||
+                calleeRef?.tokenType == BASIC_REFERENCE_EXPRESSION
+            ) {
                 buildNamedReference(referenceNameFromText(calleeRef!!.asText()), calleeRef!!.toSource())
             } else {
                 buildNamedReference(referenceNameFromText(calleeRef?.asText() ?: "<error>"), calleeRef?.toSource() ?: selector.toSource())
@@ -792,7 +863,7 @@ class LightTreeRawCfirExpressionBuilder(
         }
 
         // selector 为简单名称引用
-        if (selector.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
+        if (selector.tokenType == CjNodeTypes.REFERENCE_EXPRESSION || selector.tokenType == BASIC_REFERENCE_EXPRESSION) {
             val typeArgs = collectReferenceTypeArguments(selector)
             if (typeArgs.isNotEmpty()) {
                 return buildNamedAccessExpression {
@@ -1777,7 +1848,7 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.PREFIX_EXPRESSION, CjNodeTypes.POSTFIX_EXPRESSION,
             CjNodeTypes.OPTIONAL_EXPRESSION, CjNodeTypes.OPTIONAL_CHAIN_EXPRESSION,
             CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
-            CjNodeTypes.REFERENCE_EXPRESSION, CjNodeTypes.CALL_EXPRESSION,
+            CjNodeTypes.REFERENCE_EXPRESSION, BASIC_REFERENCE_EXPRESSION, CjNodeTypes.CALL_EXPRESSION,
             CjNodeTypes.SPAWN_EXPRESSION,
             CjNodeTypes.IF, CjNodeTypes.MATCH,
             CjNodeTypes.FOR, CjNodeTypes.WHILE, CjNodeTypes.DO_WHILE,
@@ -1824,6 +1895,7 @@ class LightTreeRawCfirExpressionBuilder(
             isExpressionToken(tt) || isDeclarationToken(tt) || isPatternToken(tt)
                     || tt == CjNodeTypes.OPERATION_REFERENCE
                     || tt == CjNodeTypes.REFERENCE_EXPRESSION
+                    || tt == BASIC_REFERENCE_EXPRESSION
     }
 }
 

@@ -1,40 +1,51 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import kotlinx.collections.immutable.PersistentList
 import kotlinx.collections.immutable.persistentListOf
 import kotlinx.collections.immutable.toPersistentList
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.calls.ImplicitDispatchReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitValue
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.CfirLocalScopes
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueMapper
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.LocalVariableScopeStorage
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeStubType
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
 
 @ConsistentCopyVisibility
@@ -240,7 +251,7 @@ fun SessionAndScopeSessionHolder.collectTowerDataElementsForClass(
 
     return CfirTowerElementsForClass(
         thisReceiver = thisReceiver,
-        staticScope = owner.staticScope(session, scopeSession),
+        staticScope = owner.staticScope(session, scopeSession, defaultType),
         superClassesStaticScopes = superClassesStatics.toList().asReversed(),
     )
 }
@@ -251,12 +262,10 @@ fun CfirClassLikeDeclaration.staticScope(sessionHolder: SessionAndScopeSessionHo
 fun CfirClassLikeDeclaration.staticScope(
     session: CfirSession,
     scopeSession: ScopeSession,
+    qualifierType: ConeCangJieType? = null,
 ): CfirContainingNamesAwareScope? {
     val symbol = symbol as? CfirClassLikeSymbol<*> ?: return null
-    val key = "static:" + symbol.classId.asString()
-    return scopeSession.getOrBuild(key, ClassStaticScopeKey) {
-        CfirClassStaticScope(this)
-    }
+    return symbol.staticScopeForQualifierType(session, scopeSession, qualifierType ?: symbol.constructType())
 }
 
 fun CfirClassLikeDeclaration.typeParametersForTower(): List<CfirTypeParameter> = when (this) {
@@ -290,12 +299,10 @@ private fun collectSuperClassesStaticScopes(
         val superDeclaration = superSymbol.cfir
         if (superDeclaration !is CfirClassLikeDeclaration || superDeclaration is CfirInterface) continue
 
-        superDeclaration.staticScope(session, scopeSession)
+        superDeclaration.staticScope(session, scopeSession, resolvedTypeRef.coneType)
             ?.asTowerDataElementForStaticScope(superSymbol)
             ?.let(result::add)
 
         collectSuperClassesStaticScopes(superDeclaration, session, scopeSession, result, visited)
     }
 }
-
-private object ClassStaticScopeKey : org.cangnova.cangjie.cfir.ScopeSessionKey<String, CfirContainingNamesAwareScope>()

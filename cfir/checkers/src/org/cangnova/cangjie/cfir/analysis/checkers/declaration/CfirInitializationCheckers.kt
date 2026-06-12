@@ -1,55 +1,45 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
-import org.cangnova.cangjie.cfir.expressions.CfirAssignment
-import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
-import org.cangnova.cangjie.cfir.expressions.CfirIfExpression
-import org.cangnova.cangjie.cfir.expressions.CfirLoopExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
-import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
-import org.cangnova.cangjie.cfir.expressions.CfirSpawnExpression
-import org.cangnova.cangjie.cfir.expressions.CfirStringInterpolation
-import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
-import org.cangnova.cangjie.cfir.expressions.CfirSynchronizedExpression
-import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTupleLiteral
-import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
-import org.cangnova.cangjie.cfir.expressions.CfirUnsafeExpression
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.primaryBindingNameOrNull
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -246,6 +236,7 @@ private class CfirInitializationFlowAnalyzer(
         is CfirBinaryOp -> analyzeChildrenSequentially(expression, state)
         is CfirComparisonExpression -> analyzeChildrenSequentially(expression, state)
         is CfirTypeOperator -> analyzeChildrenSequentially(expression, state)
+        is CfirTypeConversion -> analyzeChildrenSequentially(expression, state)
         is CfirRangeExpression -> analyzeChildrenSequentially(expression, state)
         is CfirStringInterpolation -> analyzeChildrenSequentially(expression, state)
         is CfirArrayLiteral -> analyzeChildrenSequentially(expression, state)
@@ -548,11 +539,13 @@ private data class InitializationState(
         trackedVariable: TrackedVariableInfo,
         initialized: Boolean,
     ): InitializationState {
-        val nextTracked = tracked + (trackedVariable.symbol to trackedVariable)
+        val normalizedSymbol = trackedVariable.symbol.initializationSymbol()
+        val normalizedTrackedVariable = trackedVariable.copy(symbol = normalizedSymbol)
+        val nextTracked = tracked + (normalizedSymbol to normalizedTrackedVariable)
         val nextInitialized = if (initialized) {
-            this.initialized + trackedVariable.symbol
+            this.initialized + normalizedSymbol
         } else {
-            this.initialized - trackedVariable.symbol
+            this.initialized - normalizedSymbol
         }
         return copy(tracked = nextTracked, initialized = nextInitialized)
     }
@@ -561,24 +554,26 @@ private data class InitializationState(
         trackedVariables: Collection<TrackedVariableInfo>,
         initializedSymbols: Set<CfirVariableSymbol<*>>,
     ): InitializationState {
+        val normalizedInitializedSymbols = initializedSymbols.mapTo(linkedSetOf()) { it.initializationSymbol() }
         var currentState = this
         for (trackedVariable in trackedVariables) {
             currentState = currentState.declare(
                 trackedVariable = trackedVariable,
-                initialized = trackedVariable.symbol in initializedSymbols,
+                initialized = trackedVariable.symbol.initializationSymbol() in normalizedInitializedSymbols,
             )
         }
         return currentState
     }
 
     fun markInitialized(symbol: CfirVariableSymbol<*>): InitializationState {
-        if (!isTracked(symbol)) return this
-        return copy(initialized = initialized + symbol)
+        val normalizedSymbol = symbol.initializationSymbol()
+        if (normalizedSymbol !in tracked) return this
+        return copy(initialized = initialized + normalizedSymbol)
     }
 
-    fun isTracked(symbol: CfirVariableSymbol<*>): Boolean = symbol in tracked
+    fun isTracked(symbol: CfirVariableSymbol<*>): Boolean = symbol.initializationSymbol() in tracked
 
-    fun isInitialized(symbol: CfirVariableSymbol<*>): Boolean = symbol in initialized
+    fun isInitialized(symbol: CfirVariableSymbol<*>): Boolean = symbol.initializationSymbol() in initialized
 
     fun intersect(other: InitializationState): InitializationState {
         val sharedTrackedSymbols = tracked.keys.intersect(other.tracked.keys)
@@ -592,9 +587,10 @@ private data class InitializationState(
     }
 
     fun retainOnly(visibleSymbols: Set<CfirVariableSymbol<*>>): InitializationState {
+        val normalizedVisibleSymbols = visibleSymbols.mapTo(linkedSetOf()) { it.initializationSymbol() }
         return copy(
-            tracked = tracked.filterKeys { symbol -> symbol in visibleSymbols },
-            initialized = initialized.filterTo(linkedSetOf()) { symbol -> symbol in visibleSymbols },
+            tracked = tracked.filterKeys { symbol -> symbol in normalizedVisibleSymbols },
+            initialized = initialized.filterTo(linkedSetOf()) { symbol -> symbol in normalizedVisibleSymbols },
         )
     }
 
@@ -602,6 +598,9 @@ private data class InitializationState(
 
     fun withoutTermination(): InitializationState = if (!terminated) this else copy(terminated = false)
 }
+
+private fun CfirVariableSymbol<*>.initializationSymbol(): CfirVariableSymbol<*> =
+    if (isBound) unwrapSubstitutionOverrides() else this
 
 private enum class ConstructorDelegationKind {
     THIS,

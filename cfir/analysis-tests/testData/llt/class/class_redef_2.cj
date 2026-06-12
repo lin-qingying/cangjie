@@ -11,7 +11,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    public static redef func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>(): Int64 {
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static redef func foo(): Int64 {
         return 3
     }
 }

@@ -1,35 +1,45 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
-import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.ProcessorAction
-import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
-import org.cangnova.cangjie.cfir.session.extendProviderOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.constructType
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
+import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * Use-site member scope for class-like receivers. Declared members win over
@@ -58,6 +68,7 @@ class CfirClassUseSiteMemberScope private constructor(
     private val extendProvider: CfirExtendProvider? = null,
     private val directSupertypeProvider: CfirDirectSupertypeProvider? = null,
     private val ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
+    private val dispatchReceiverType: ConeCangJieType? = ownerType,
     private val scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
     private val supertypePath: CfirSupertypePath = CfirSupertypePath.root(classSymbol.classId),
 ) : CfirTypeScope() {
@@ -68,6 +79,7 @@ class CfirClassUseSiteMemberScope private constructor(
         extendProvider: CfirExtendProvider? = null,
         directSupertypeProvider: CfirDirectSupertypeProvider? = null,
         ownerType: ConeCangJieType? = declarationSelfType(classSymbol),
+        dispatchReceiverType: ConeCangJieType? = ownerType,
         scopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE,
     ) : this(
         session = session,
@@ -76,6 +88,7 @@ class CfirClassUseSiteMemberScope private constructor(
         extendProvider = extendProvider,
         directSupertypeProvider = directSupertypeProvider,
         ownerType = ownerType,
+        dispatchReceiverType = dispatchReceiverType,
         scopeKind = scopeKind,
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
@@ -92,6 +105,7 @@ class CfirClassUseSiteMemberScope private constructor(
         extendProvider = extendProvider,
         directSupertypeProvider = directSupertypeProvider,
         ownerType = declarationSelfType(classSymbol),
+        dispatchReceiverType = declarationSelfType(classSymbol),
         scopeKind = CfirClassMemberScopeKind.USE_SITE,
         supertypePath = CfirSupertypePath.root(classSymbol.classId),
     )
@@ -161,6 +175,7 @@ class CfirClassUseSiteMemberScope private constructor(
         extendProvider = newSession.extendProviderOrNull,
         directSupertypeProvider = newSession.directSupertypeProviderOrNull,
         ownerType = ownerType,
+        dispatchReceiverType = dispatchReceiverType,
         scopeKind = scopeKind,
         supertypePath = supertypePath,
     )
@@ -185,10 +200,21 @@ class CfirClassUseSiteMemberScope private constructor(
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
         if (name !in getCallableNames()) return
 
-        declaredScope.processFunctionsByName(name, processor)
-        extendScope?.processFunctionsByName(name, processor)
+        val local = mutableListOf<CfirNamedFunctionSymbol>()
+        declaredScope.processFunctionsByName(name) { local += it }
+        extendScope?.processFunctionsByName(name) { local += it }
+        local.forEach(processor)
+
+        val parentCandidates = mutableListOf<MemberWithBaseScope<CfirNamedFunctionSymbol>>()
         for (parent in parentScopes) {
-            parent.processFunctionsByName(name, processor)
+            parent.processFunctionsByName(name) { parentCandidates += MemberWithBaseScope(it, parent) }
+        }
+        for (candidate in filterOutOverridden(
+            parentCandidates,
+            CfirTypeScope::processDirectOverriddenFunctionsWithBaseScope
+        )) {
+            if (local.any { it.overridesFunctionCandidate(candidate.symbol) }) continue
+            processor(candidate.symbol)
         }
     }
 
@@ -233,16 +259,18 @@ class CfirClassUseSiteMemberScope private constructor(
             val classId = supertype.classIdOrPrimitiveClassId ?: return@mapNotNull null
             if (supertypePath.contains(classId)) return@mapNotNull null
             val parentSymbol = symbolProvider.getClassLikeSymbolByClassId(classId) ?: return@mapNotNull null
-            CfirClassUseSiteMemberScope(
+            val parentScope = CfirClassUseSiteMemberScope(
                 session = session,
                 classSymbol = parentSymbol,
                 symbolProvider = symbolProvider,
                 extendProvider = extendProvider,
                 directSupertypeProvider = directSupertypeProvider,
                 ownerType = supertype,
+                dispatchReceiverType = dispatchReceiverType ?: rootType,
                 scopeKind = scopeKind,
                 supertypePath = supertypePath.child(classId),
             )
+            parentScope.substitutionScopeForSupertype(parentSymbol, supertype)
         }
     }
 
@@ -341,9 +369,11 @@ class CfirClassUseSiteMemberScope private constructor(
 
     private fun directParentTypesOf(type: ConeCangJieType): List<ConeCangJieType> {
         if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE) {
+            val substitutor = classSymbol.createDeclarationSubstitutor(type)
             return classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
                 val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
-                resolvedRef.coneType
+                val supertype = resolvedRef.coneType
+                substitutor?.substituteOrSelf(supertype) ?: supertype
             }
         }
 
@@ -361,13 +391,32 @@ class CfirClassUseSiteMemberScope private constructor(
             }
     }
 
+    private fun CfirTypeScope.substitutionScopeForSupertype(
+        parentSymbol: CfirClassLikeSymbol<*>,
+        supertype: ConeCangJieType,
+    ): CfirTypeScope {
+        val receiverType = dispatchReceiverType ?: return this
+        if (!parentSymbol.isBound || parentSymbol.cfir.typeParameters.isEmpty()) return this
+        val typeArguments = (supertype as? ConeLookupTagBasedType)?.typeArguments.orEmpty()
+        if (typeArguments.isEmpty()) return this
+        return CfirClassSubstitutionScope(session, this, receiverType)
+    }
+
+    private fun CfirClassLikeSymbol<*>.createDeclarationSubstitutor(type: ConeCangJieType): CfirTypeSubstitutorByMap? {
+        if (type !is ConeLookupTagBasedType) return null
+        if (!isBound || cfir.typeParameters.isEmpty()) return null
+        if (cfir.typeParameters.size != type.typeArguments.size) return null
+
+        val replacements: Map<TypeConstructorMarker, ConeCangJieType> =
+            cfir.typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
+                typeParameter.symbol.toLookupTag() to argument.type
+            }
+        return replacements.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap)
+    }
+
     override fun toString(): String {
         return "Use site scope of ${classSymbol.classId}"
     }
-}
-
-private fun declarationSelfType(symbol: CfirClassLikeSymbol<*>): ConeCangJieType? {
-    return symbol.takeIf { it.isBound }?.constructType()
 }
 
 /**
@@ -452,4 +501,12 @@ private fun <S : CfirCallableSymbol<*>> overrides(
     }
 
     return visit(member)
+}
+
+private fun CfirNamedFunctionSymbol.overridesFunctionCandidate(
+    candidate: CfirNamedFunctionSymbol,
+): Boolean {
+    if (this == candidate) return true
+    if (isStaticMemberForOverride() != candidate.isStaticMemberForOverride()) return false
+    return overrideSignatureKey() == candidate.overrideSignatureKey()
 }

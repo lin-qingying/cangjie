@@ -75,15 +75,9 @@ open class CjCallExpression(node: ASTNode) : CjExpressionImpl(node), CjCallEleme
         return null
     }
 
-    fun getBasicTypeExpr(): CjExpression? {
-        val typeElement = findChildByType<CjTypeReference>(CjNodeTypes.TYPE_REFERENCE) ?: return null
-
-        return typeElement.node.findChildByType(CjNodeTypes.BASIC_TYPE)?.psi as? CjExpression
-    }
-
     override val calleeExpression: CjExpression?
         get() {
-            return findChildByClass(CjExpression::class.java) ?: getBasicTypeExpr()
+            return findChildByClass(CjExpression::class.java)
         }
 
     override val valueArgumentList: CjValueArgumentList?

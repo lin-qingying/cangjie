@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.resolve.calls.inference.components
 
 import org.cangnova.cangjie.LanguageVersionSettings
@@ -273,72 +297,79 @@ class ConstraintIncorporator(
     ) {
         if (causeOfIncorporationVariable in otherConstraint.derivedFrom) return
 
-        val type = computeConstraintTypeForSecondIncorporationKind(
-            causeOfIncorporationVariable, causeOfIncorporationConstraint, otherConstraint,
-        )
-
         // 生成上界方向的新约束（β <: Inv<Number>）
         if (otherConstraint.kind != ConstraintKind.LOWER) {
-            addNewConstraintForSecondIncorporationKind(
-                causeOfIncorporationVariable, causeOfIncorporationConstraint,
-                otherVariable, otherConstraint,
-                type, isSubtype = false,
-            )
+            computeConstraintTypeForSecondIncorporationKind(
+                causeOfIncorporationVariable,
+                causeOfIncorporationConstraint,
+                otherConstraint,
+                toSuper = true,
+            )?.let { type ->
+                addNewConstraintForSecondIncorporationKind(
+                    causeOfIncorporationVariable, causeOfIncorporationConstraint,
+                    otherVariable, otherConstraint,
+                    type, isSubtype = false,
+                )
+            }
         }
 
         // 生成下界方向的新约束
         if (otherConstraint.kind != ConstraintKind.UPPER) {
-            addNewConstraintForSecondIncorporationKind(
-                causeOfIncorporationVariable, causeOfIncorporationConstraint,
-                otherVariable, otherConstraint,
-                type, isSubtype = true,
-            )
+            computeConstraintTypeForSecondIncorporationKind(
+                causeOfIncorporationVariable,
+                causeOfIncorporationConstraint,
+                otherConstraint,
+                toSuper = false,
+            )?.let { type ->
+                addNewConstraintForSecondIncorporationKind(
+                    causeOfIncorporationVariable, causeOfIncorporationConstraint,
+                    otherVariable, otherConstraint,
+                    type, isSubtype = true,
+                )
+            }
         }
     }
 
     /**
      * 计算第二类合并中，将 α 替换为对应类型后的约束类型。
      *
-     * 仓颉泛型严格不变，无需创建 CapturedType：
-     * - 等式约束：直接用等式右侧类型替换。
-     * - 上界/下界约束 + 简单类型：用 Nothing/Any 或约束类型替换。
-     * - 上界/下界约束 + 泛型类型：仓颉泛型不变，直接用约束类型替换（等价于 capture→approximate 恒等变换）。
+     * Kotlin 在泛型容器中传播非等式约束时会创建 captured projection，
+     * 再按目标方向近似为 `out`/`in` 投影。仓颉没有 use-site projection，
+     * 且官方语义对同构造器泛型实参做双向统一；因此非等式约束不能被直接
+     * 替换进带实参的泛型容器，否则会把 `Base<K>` 错误收紧成 `Base<Any>`。
+     *
+     * - 等式约束：直接替换，保留精确信息。
+     * - 非等式约束 + 非泛型类型：按 Kotlin captured 近似后的方向结果替换。
+     * - 非等式约束 + 泛型类型：无可表示的投影结果，跳过该派生约束。
      *
      * @param causeOfIncorporationVariable α
      * @param causeOfIncorporationConstraint α 的约束
      * @param otherConstraint β 的约束（含 α 的那条）
-     * @return 替换后的约束类型
+     * @param toSuper true 表示生成上界方向约束，false 表示生成下界方向约束
+     * @return 替换后的约束类型；若无可表示的仓颉类型则返回 null
      */
     context(c: Context)
     private fun computeConstraintTypeForSecondIncorporationKind(
         causeOfIncorporationVariable: TypeVariableMarker,
         causeOfIncorporationConstraint: Constraint,
         otherConstraint: Constraint,
-    ): CangJieTypeMarker {
+        toSuper: Boolean,
+    ): CangJieTypeMarker? {
+        val isBaseGenericType = otherConstraint.type.argumentsCount() != 0
         val alphaReplacement = when (causeOfIncorporationConstraint.kind) {
             ConstraintKind.EQUALITY -> {
                 // 等式约束：直接替换
                 causeOfIncorporationConstraint.type
             }
             ConstraintKind.UPPER -> {
-                // α <: Number（上界约束）
-                when (otherConstraint.kind) {
-                    // β 是下界且类型简单：替换为 Nothing（下界中的 α 取最小值）
-                    ConstraintKind.LOWER if otherConstraint.type.argumentsCount() == 0 ->
-                        c.nothingType()
-                    // 其他情况（包括泛型类型）：仓颉泛型不变，直接用约束类型替换
-                    else -> causeOfIncorporationConstraint.type
-                }
+                if (isBaseGenericType) return null
+                // α <: Number：上界方向得到 Number，下界方向得到 Nothing。
+                if (toSuper) causeOfIncorporationConstraint.type else c.nothingType()
             }
             ConstraintKind.LOWER -> {
-                // Number <: α（下界约束）
-                when (otherConstraint.kind) {
-                    // β 是上界且类型简单：替换为 Any（上界中的 α 取最大值）
-                    ConstraintKind.UPPER if otherConstraint.type.argumentsCount() == 0 ->
-                        c.anyType()
-                    // 其他情况（包括泛型类型）：仓颉泛型不变，直接用约束类型替换
-                    else -> causeOfIncorporationConstraint.type
-                }
+                if (isBaseGenericType) return null
+                // Number <: α：上界方向得到 Any，下界方向得到 Number。
+                if (toSuper) c.anyType() else causeOfIncorporationConstraint.type
             }
         }
 

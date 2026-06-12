@@ -1,6 +1,32 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.tree.generator
 
-import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.cfir.tree.generator.CfirTree.anonymousFunction
+import org.cangnova.cangjie.cfir.tree.generator.CfirTree.function
+import org.cangnova.cangjie.cfir.tree.generator.CfirTree.typeRef
 import org.cangnova.cangjie.cfir.tree.generator.context.AbstractCfirTreeBuilder
 import org.cangnova.cangjie.cfir.tree.generator.model.Element
 import org.cangnova.cangjie.cfir.tree.generator.model.Element.Kind.*
@@ -10,8 +36,9 @@ import org.cangnova.cangjie.cfir.tree.generator.util.type
 import org.cangnova.cangjie.generators.tree.AbstractField
 import org.cangnova.cangjie.generators.tree.ImplementationKind
 import org.cangnova.cangjie.generators.tree.TypeKind
-import org.cangnova.cangjie.generators.tree.TypeRef as TreeTypeRef
 import org.cangnova.cangjie.generators.tree.withArgs
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.generators.tree.TypeRef as TreeTypeRef
 
 object CfirTree : AbstractCfirTreeBuilder() {
     val sourceElementType = type<CjSourceElement>()
@@ -745,6 +772,18 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("operation", typeOperationKindType)
         +field("argument", expression, withTransform = true)
         +field("typeRef", typeRef, withTransform = true)
+    }
+
+    /**
+     * 基本类型转换表达式。
+     *
+     * 对齐官方 AST `TypeConvExpr`：`Int64(x)` 是语言级类型转换表达式，
+     * 不参与普通函数调用、构造器调用或内置成员解析。
+     */
+    val typeConversion: Element by element(Expression, name = "TypeConversion") {
+        parent(expression)
+        +field("argument", expression, withTransform = true)
+        +field("targetTypeRef", typeRef, withTransform = true)
     }
 
     val ifExpression: Element by element(Expression, name = "IfExpression") {

@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.diagnostics
 
 import com.intellij.psi.PsiElement
@@ -6,19 +30,12 @@ import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.*
-import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
-import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirResolvable
-import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.inference.AnonymousFunctionBasedMultiLambdaBuilderInferenceRestriction
-import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.inference.model.ConeLambdaArgumentConstraintPosition
-import org.cangnova.cangjie.cfir.resolve.inference.model.ConeReceiverConstraintPosition
+import org.cangnova.cangjie.cfir.resolve.inference.model.*
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
@@ -210,6 +227,8 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     if (candidate.hasGenericCallNotEnoughTypeInformation()) {
         return listOfNotNull(unableToInferGenericFunctionDiagnostic(source, qualifiedAccessSource, session))
     }
+    explicitTypeArgumentConstraintMismatchDiagnostic(source, qualifiedAccessSource, session)
+        ?.let { return listOf(it) }
     if (hasGenericInferenceConstraintMismatch()) {
         return listOfNotNull(genericInferenceErrorDiagnostic(source, qualifiedAccessSource, session))
     }
@@ -1091,6 +1110,9 @@ private fun ConeDiagnostic.mapOtherDiagnostic(
             DiagnosticKind.ThisTypeNotAllowed ->
                 CfirErrors.parse_this_type_not_allow.on(source ?: diagnosticSource, session)
 
+            DiagnosticKind.InvalidThisTypePosition ->
+                CfirErrors.INVALID_POSITION_OF_THIS_TYPE.on(source ?: diagnosticSource, session)
+
             DiagnosticKind.EmptyArrayLiteralTypeUndefined ->
                 CfirErrors.ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED.on(diagnosticSource, session)
 
@@ -1289,6 +1311,53 @@ private fun ConeConstraintSystemHasContradiction.hasGenericInferenceConstraintMi
     if (candidate.hasExplicitTypeArgumentsInCall()) return false
 
     return candidate.errors.any { it is ConstraintMismatch }
+}
+
+private fun ConeConstraintSystemHasContradiction.explicitTypeArgumentConstraintMismatchDiagnostic(
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+    session: CfirSession,
+): CjDiagnostic? {
+    if (!candidate.hasExplicitTypeArgumentsInCall()) return null
+    val mismatch = candidate.errors
+        .filterIsInstance<ConstraintMismatch>()
+        .firstOrNull { it.position.from is ConeExplicitTypeParameterConstraintPosition }
+        ?: return null
+    val explicitPosition = mismatch.position.from as ConeExplicitTypeParameterConstraintPosition
+    val diagnosticSource = explicitPosition.typeArgument.source?.firstCharacterDiagnosticSource()
+        ?: qualifiedAccessSource?.genericInferenceWholeCallSource()
+        ?: candidate.callInfo.callSite.source?.genericInferenceWholeCallSource()
+        ?: source?.genericInferenceWholeCallSource()
+        ?: return null
+
+    val actualType = mismatch.lowerConeType.substituteTypeVariableTypes(candidate, session)
+    val upperBound = mismatch.upperConeType.substituteTypeVariableTypes(candidate, session)
+    val genericType = candidate.callableConstraintOwnerType(session) ?: return null
+
+    return CfirErrors.GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT.on(
+        diagnosticSource,
+        actualType,
+        upperBound,
+        genericType,
+        session,
+    )
+}
+
+private fun AbstractCallCandidate<*>.callableConstraintOwnerType(session: CfirSession): ConeCangJieType? {
+    val callable = symbol as? CfirCallableSymbol<*> ?: return null
+    val declaration = callable.cfir
+    return when (declaration) {
+        is CfirFunction -> {
+            val parameterTypes = declaration.valueParameters.map { parameter ->
+                val parameterType = parameter.returnTypeRef.coneTypeOrNull ?: return null
+                parameterType.substituteTypeVariableTypes(this, session)
+            }
+            val returnType = declaration.returnTypeRef.coneTypeOrNull ?: return null
+            ConeFunctionType(parameterTypes, returnType.substituteTypeVariableTypes(this, session))
+        }
+
+        else -> declaration.returnTypeRef.coneTypeOrNull?.substituteTypeVariableTypes(this, session)
+    }
 }
 
 private fun AbstractCallCandidate<*>.hasGenericInferenceArgumentMismatch(): Boolean {

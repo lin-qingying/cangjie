@@ -1,59 +1,61 @@
-﻿package org.cangnova.cangjie.cfir.builder
+﻿/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
+package org.cangnova.cangjie.cfir.builder
 
 import com.intellij.psi.PsiElement
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.AstLoadingFilter
 import org.cangnova.cangjie.CjPsiSourceFile
-import org.cangnova.cangjie.cfir.copyWithNewSource
-import org.cangnova.cangjie.cfir.correspondingProperty
-import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.CfirFunctionTarget
-import org.cangnova.cangjie.cfir.CfirLoopTarget
-import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.isCatchParameter
-import org.cangnova.cangjie.source.AbstractCjSourceElement
-import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.CjPsiSourceFileLinesMapping
-import org.cangnova.cangjie.source.CjRealPsiSourceElement
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
-import org.cangnova.cangjie.source.fakeElement
-import org.cangnova.cangjie.source.toCjPsiSourceElement
+import org.cangnova.cangjie.cfir.*
+import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.builder.*
+import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
-import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
-import org.cangnova.cangjie.cfir.patterns.*
+import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
-import org.cangnova.cangjie.cfir.builder.macro.MacroPayloadTokenizer
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirReplaceHandle
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationReplaceCarrier
-import org.cangnova.cangjie.cfir.resolve.providers.macro.CfirAnnotationSlotSnapshot
-import org.cangnova.cangjie.cfir.resolve.providers.macro.IfAvailableSurface
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroCallSite
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurface
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceContainerContext
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceDecl
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceExpr
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceIdGenerator
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceParam
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceScopeContext
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceSourceRange
-import org.cangnova.cangjie.cfir.resolve.providers.macro.MacroSurfaceToken
+import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.scopes.CfirScopeProvider
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.ensureAnnotationMetadataRegistry
 import org.cangnova.cangjie.cfir.symbols.*
-import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
+import org.cangnova.cangjie.cfir.types.builder.buildBasicTypeRef
+import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
@@ -63,11 +65,9 @@ import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.*
-import org.cangnova.cangjie.psi.CjNodeTypes.BOOLEAN_CONSTANT
-import org.cangnova.cangjie.psi.CjNodeTypes.FLOAT_CONSTANT
-import org.cangnova.cangjie.psi.CjNodeTypes.INTEGER_CONSTANT
-import org.cangnova.cangjie.psi.CjNodeTypes.RUNE_CONSTANT
-import org.cangnova.cangjie.psi.CjNodeTypes.UNIT_CONSTANT
+import org.cangnova.cangjie.psi.CjNodeTypes.*
+import org.cangnova.cangjie.source.*
+import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
 
 /**
  * `PSI -> Raw CFIR` 构建器，对齐 Kotlin 的 `PsiRawFirBuilder`。
@@ -984,6 +984,7 @@ class PsiRawCfirBuilder(
 
         fun convertFinalizer(psi: CjFinalizer): CfirFinalizer {
             val finalizerSymbol = CfirFinalizerSymbol(callableIdFor(SpecialNames.END_INIT))
+            val typeParametersForFinalizer = convertFunctionTypeParameters(psi, finalizerSymbol)
             val valueParams = psi.valueParameters.map { convertValueParameter(it, finalizerSymbol) }
             val functionTarget = CfirFunctionTarget(labelName = null, isLambda = false)
             val body = psi.buildCfirBody(functionTarget, finalizerSymbol)
@@ -996,11 +997,12 @@ class PsiRawCfirBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
 
-                    attributes = CfirDeclarationAttributes.EMPTY
+                    attributes = declarationAttributes(psi)
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
                     status = convertDeclarationStatus(psi)
-                    returnTypeRef = buildImplicitTypeRef()
+                    typeParameters.addAll(typeParametersForFinalizer)
+                    returnTypeRef = baseSession.builtinTypes.unitType.toCfirResolvedTypeRef(source)
                     valueParameters.addAll(valueParams)
                     this.body = body
                 }
@@ -1040,6 +1042,7 @@ class PsiRawCfirBuilder(
 
         private fun convertConstructor(psi: CjConstructor<*>, isPrimary: Boolean): CfirConstructor {
             val constructorSymbol = CfirConstructorSymbol(callableIdFor(SpecialNames.INIT))
+            val typeParametersForConstructor = convertFunctionTypeParameters(psi, constructorSymbol)
             val valueParams = psi.valueParameters.map {
                 convertValueParameter(it, constructorSymbol, requiresExplicitType = true)
             }
@@ -1055,10 +1058,11 @@ class PsiRawCfirBuilder(
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
 
-                        attributes = CfirDeclarationAttributes.EMPTY
+                        attributes = declarationAttributes(psi)
                         isLocal = context.inLocalContext
                         dispatchReceiverType = currentDispatchReceiverType()
                         status = convertDeclarationStatus(psi)
+                        typeParameters.addAll(typeParametersForConstructor)
                         returnTypeRef = buildImplicitTypeRef()
                         valueParameters.addAll(valueParams)
                         this.body = body
@@ -1071,10 +1075,11 @@ class PsiRawCfirBuilder(
                         origin = CfirDeclarationOrigin.Source
                         moduleData = baseModuleData
 
-                        attributes = CfirDeclarationAttributes.EMPTY
+                        attributes = declarationAttributes(psi)
                         isLocal = context.inLocalContext
                         dispatchReceiverType = currentDispatchReceiverType()
                         status = convertDeclarationStatus(psi)
+                        typeParameters.addAll(typeParametersForConstructor)
                         returnTypeRef = buildImplicitTypeRef()
                         valueParameters.addAll(valueParams)
                         this.body = body
@@ -1842,10 +1847,12 @@ class PsiRawCfirBuilder(
                 }
             }
 
-            // valueArguments 已经包含了 lambdaArguments，不需要再单独处理
-            val allArgs = psi.valueArguments.mapNotNull(::convertCallArgument)
             val typeArgs = extractCallTypeArguments(psi, callee)
 
+            tryBuildTypeConversion(psi, callee, typeArgs)?.let { return it }
+
+            // valueArguments 已经包含了 lambdaArguments，不需要再单独处理
+            val allArgs = psi.valueArguments.mapNotNull(::convertCallArgument)
             val (receiver, reference) = resolveCalleeReference(callee)
 
             if (psi.valueArgumentList == null && lambdaArgs.isEmpty() && typeArgs.isNotEmpty()) {
@@ -1903,6 +1910,44 @@ class PsiRawCfirBuilder(
             }
         }
 
+        private fun tryBuildTypeConversion(
+            psi: CjCallExpression,
+            callee: CjExpression?,
+            typeArgs: List<CfirTypeRef>,
+        ): CfirExpression? {
+            val targetKind = (callee as? CjNameBasicReferenceExpression)
+                ?.primitiveTypeConversionKindOrNull()
+                ?: return null
+            if (psi.valueArgumentList == null || psi.lambdaArguments.isNotEmpty() || typeArgs.isNotEmpty()) {
+                return buildErrorExpression(psi.toSourceElement(), "Malformed primitive type conversion")
+            }
+
+            val valueArgument = psi.valueArguments.singleOrNull()
+                ?: return buildErrorExpression(psi.toSourceElement(), "Malformed primitive type conversion")
+            if (valueArgument.isNamed()) {
+                return buildErrorExpression(psi.toSourceElement(), "Malformed primitive type conversion")
+            }
+            val argumentExpression = valueArgument.getArgumentExpression()
+                ?: return buildErrorExpression(
+                    valueArgument.asElement().toSourceElement(),
+                    "Missing primitive type conversion argument"
+                )
+
+            return buildTypeConversion {
+                source = psi.toCjPsiSourceElement()
+                argument = convertExpression(argumentExpression)
+                targetTypeRef = buildBasicTypeRef {
+                    source = callee.toCjPsiSourceElement()
+                    name = Name.identifier(targetKind.typeName)
+                }
+            }
+        }
+
+        private fun CjNameBasicReferenceExpression.primitiveTypeConversionKindOrNull(): PrimitiveTypeKind? =
+            PrimitiveTypeKind.entries.firstOrNull {
+                it.isExposedBuiltinClassifier && it.typeName == referencedName
+            }
+
         private fun resolveCalleeReference(callee: CjExpression?): Pair<CfirExpression?, CfirNamedReference> {
             return when (callee) {
                 is CjSimpleNameExpression -> null to buildNamedReference(
@@ -1921,19 +1966,18 @@ class PsiRawCfirBuilder(
                 )
 
                 is CjDotQualifiedExpression -> {
-                    val recv = convertExpression(callee.receiverExpression)
                     val selector = callee.selectorExpression
+                    if (selector is CjCallExpression) {
+                        return convertExpression(callee) to buildNamedReference(
+                            OperatorNameConventions.INVOKE,
+                            callee.toCjPsiSourceElement(),
+                        )
+                    }
+
+                    val recv = convertExpression(callee.receiverExpression)
                     val ref = when (selector) {
                         is CjSimpleNameExpression ->
                             buildNamedReference(selector.referencedNameAsName, selector.toCjPsiSourceElement())
-
-                        is CjCallExpression -> {
-                            val calleeReference = selector.calleeExpression as? CjSimpleNameExpression
-                            buildNamedReference(
-                                calleeReference?.referencedNameAsName ?: Name.identifier("<error>"),
-                                calleeReference?.toCjPsiSourceElement() ?: selector.toCjPsiSourceElement(),
-                            )
-                        }
 
                         else -> buildNamedReference(Name.identifier("<error>"), selector?.toCjPsiSourceElement())
                     }
@@ -2755,6 +2799,7 @@ class PsiRawCfirBuilder(
                 CfirTypeConstraintReference(
                     parameterName = parameterName,
                     source = parameterSource,
+                    constraintSource = constraint.toCjPsiSourceElement(),
                 )
             }
 
@@ -2765,13 +2810,41 @@ class PsiRawCfirBuilder(
             )
         }
 
+        private fun collectFunctionBodyDiagnosticData(owner: CjFunction): CfirFunctionBodyDiagnosticData? {
+            val parameterLists = owner.children
+                .filterIsInstance<CjParameterList>()
+                .map { parameterList ->
+                    CfirValueParameterListReference(
+                        source = parameterList.toCjPsiSourceElement(),
+                    )
+                }
+
+            if (parameterLists.size <= 1) return null
+
+            return CfirFunctionBodyDiagnosticData(
+                valueParameterLists = parameterLists,
+            )
+        }
+
         private fun declarationAttributes(owner: CjElement?): CfirDeclarationAttributes {
-            val typeParameterOwner = owner as? CjTypeParameterListOwner ?: return CfirDeclarationAttributes.EMPTY
-            val diagnosticData =
-                collectTypeConstraintDiagnosticData(typeParameterOwner) ?: return CfirDeclarationAttributes.EMPTY
-            return CfirDeclarationAttributes().apply {
-                typeConstraintDiagnosticData = diagnosticData
+            var hasAttributes = false
+            val attributes = CfirDeclarationAttributes()
+
+            (owner as? CjTypeParameterListOwner)?.let { typeParameterOwner ->
+                collectTypeConstraintDiagnosticData(typeParameterOwner)?.let { diagnosticData ->
+                    attributes.typeConstraintDiagnosticData = diagnosticData
+                    hasAttributes = true
+                }
             }
+
+            (owner as? CjFunction)?.let { function ->
+                collectFunctionBodyDiagnosticData(function)?.let { diagnosticData ->
+                    attributes.functionBodyDiagnosticData = diagnosticData
+                    hasAttributes = true
+                }
+            }
+
+            return if (hasAttributes) attributes else CfirDeclarationAttributes.EMPTY
         }
 
         private fun convertTypeParameters(
@@ -2820,7 +2893,7 @@ class PsiRawCfirBuilder(
         }
 
         private fun convertFunctionTypeParameters(
-            psi: CjNamedFunction,
+            psi: CjFunction,
             containingDeclarationSymbol: CfirBasedSymbol<*>,
         ): List<CfirTypeParameter> {
             val typeConstraintBounds = collectTypeConstraintBounds(psi)

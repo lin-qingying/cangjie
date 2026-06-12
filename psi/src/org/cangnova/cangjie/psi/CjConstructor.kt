@@ -24,16 +24,16 @@
 
 package org.cangnova.cangjie.psi
 
-import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.stubs.CangJieConstructorStub
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.navigation.ItemPresentationProviders
 import com.intellij.psi.PsiElement
 import com.intellij.psi.search.SearchScope
 import com.intellij.util.IncorrectOperationException
+import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.FqName
+import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.stubs.CangJieConstructorStub
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 abstract class CjConstructor<T : CjConstructor<T>> : CjDeclarationStub<CangJieConstructorStub<T>>, CjFunction {
     protected constructor(node: ASTNode) : super(node)
@@ -82,10 +82,17 @@ abstract class CjConstructor<T : CjConstructor<T>> : CjDeclarationStub<CangJieCo
         return bodyExpression != null
     }
 
-    override val typeParameterList: CjTypeParameterList? = null
-    override val typeConstraintList: CjTypeConstraintList? = null
-    override val typeConstraints: List<CjTypeConstraint> = emptyList()
-    override val typeParameters: List<CjTypeParameter> = emptyList()
+    override val typeParameterList: CjTypeParameterList?
+        get() = getStubOrPsiChild(CjStubElementTypes.TYPE_PARAMETER_LIST)
+
+    override val typeConstraintList: CjTypeConstraintList?
+        get() = getStubOrPsiChild(CjStubElementTypes.TYPE_CONSTRAINT_LIST)
+
+    override val typeConstraints: List<CjTypeConstraint>
+        get() = typeConstraintList?.constraints ?: emptyList()
+
+    override val typeParameters: List<CjTypeParameter>
+        get() = typeParameterList?.parameters ?: emptyList()
 
     override fun hasDeclaredReturnType() = false
 

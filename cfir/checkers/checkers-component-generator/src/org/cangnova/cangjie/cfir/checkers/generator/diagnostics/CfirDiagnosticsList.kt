@@ -1,4 +1,28 @@
-﻿package org.cangnova.cangjie.cfir.checkers.generator.diagnostics
+﻿/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
+package org.cangnova.cangjie.cfir.checkers.generator.diagnostics
 
 import com.intellij.psi.PsiElement
 import org.cangnova.cangjie.cfir.checkers.generator.diagnostics.model.DiagnosticList
@@ -9,14 +33,7 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjBlockExpression
-import org.cangnova.cangjie.psi.CjDeclaration
-import org.cangnova.cangjie.psi.CjElement
-import org.cangnova.cangjie.psi.CjExpression
-import org.cangnova.cangjie.psi.CjImportItem
-import org.cangnova.cangjie.psi.CjNamedDeclaration
-import org.cangnova.cangjie.psi.CjResumeExpression
-import org.cangnova.cangjie.psi.CjTypeReference
+import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.util.PrivateForInline
 
 /**
@@ -597,12 +614,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Boolean>("isMismatchDueToNullability")  // 是否因为可空性导致不匹配
         }
 
-        // 赋值类型不匹配：赋值右侧表达式的类型与左侧变量类型不符
-        val ASSIGNMENT_TYPE_MISMATCH by error<CjExpression>(PositioningStrategy.OPERATOR) {
+        // 赋值类型不匹配：官方 Sema 将 sema_mismatched_types 锚定在赋值右侧表达式。
+        val ASSIGNMENT_TYPE_MISMATCH by error<CjExpression> {
             parameter<ConeCangJieType>("expectedType")  // 变量的目标类型
             parameter<ConeCangJieType>("actualType")  // 赋值表达式的实际类型
             parameter<Boolean>("isMismatchDueToNullability")  // 是否因为可空性导致不匹配
-            // PositioningStrategy.OPERATOR 表示将错误标记位置设置在赋值操作符处
         }
 
         /**
@@ -636,6 +652,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // This 类型只允许出现在 class 实例成员函数返回类型中。
         val parse_this_type_not_allow by error<CjTypeReference>()
 
+        // This 类型出现在 parser 允许、但 Sema 禁止的位置，例如 class static 成员函数返回类型。
+        val INVALID_POSITION_OF_THIS_TYPE by error<CjTypeReference>()
+
         // 可见性错误：成员在当前上下文不可见
         val INVISIBLE_MEMBER by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<String>("member")
@@ -665,8 +684,8 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("className")
         }
 
-        // 非抽象类/结构体未实现继承来的抽象成员
-        val ABSTRACT_MEMBER_NOT_IMPLEMENTED by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
+        // 非抽象类/结构体未实现继承来的抽象成员。官方 cjc 报在类型声明起始处。
+        val ABSTRACT_MEMBER_NOT_IMPLEMENTED by error<CjNamedDeclaration> {
             parameter<Name>("className")
         }
 
@@ -1086,7 +1105,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         }
 
         // open 函数返回 This 类型时，override 也必须保持返回 This
-        val INHERIT_NOT_RETURN_THIS by error<PsiElement>()
+        val INHERIT_NOT_RETURN_THIS by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
     }
 
     /**
@@ -1129,6 +1148,22 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 实例成员不能在 finalizer 中使用
         val INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER by error<PsiElement> {
             parameter<String>("memberKind")
+        }
+
+        // finalizer 不能出现在 open/abstract class 中
+        val FINALIZER_FORBIDDEN_IN_CLASS by error<PsiElement> {
+            parameter<Name>("className")
+            parameter<String>("classKind")
+        }
+
+        // finalizer/constructor/getter/setter 不支持柯里化参数列表
+        val CANNOT_CURRYING by error<PsiElement> {
+            parameter<String>("declarationKind")
+        }
+
+        // finalizer 不能声明泛型参数
+        val FORBID_GENERIC_FINALIZER by error<PsiElement> {
+            parameter<Name>("finalizerName")
         }
 
         // 非抽象类不能使用 sealed 修饰

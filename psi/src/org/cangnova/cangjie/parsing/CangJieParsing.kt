@@ -2634,7 +2634,7 @@ class CangJieParsing private constructor(
                 error(CangJieParsingBundle.message("parsing.error.expecting.element", "enum constructor"))
             }
 
-            parseMembers(null, null)
+            parseMembers(ENUM_KEYWORD_Id, null)
 
             expect(RBRACE, "Expecting '}'")
         } else {
@@ -3136,6 +3136,23 @@ class CangJieParsing private constructor(
 
         if (declType != null) return declType
 
+        if (tokenId != null && at(TILDE)) {
+            val tilde = mark()
+            advance() // TILDE ~
+            if (builder.newlineBeforeCurrentToken() || !at(INIT_KEYWORD)) {
+                tilde.error(CangJieParsingBundle.message("parsing.error.expecting.member.declaration"))
+                return INVALID_DECLARATION
+            }
+            val scopeError = if (tokenId != CLASS_KEYWORD_Id) tilde else null
+            if (scopeError == null) {
+                tilde.drop()
+            }
+            advance() // INIT_KEYWORD
+            scopeError?.error(CangJieParsingBundle.message("parsing.error.invalid.declaration.scope"))
+            parseInitFuncRest()
+            return FINALIZER
+        }
+
         if (tokenId != null && tokenId != INTERFACE_KEYWORD_Id) {
 
             // 注意：修饰符已在 parseMemberDeclaration 中解析，这里不需要再调用 parseModifierList
@@ -3158,12 +3175,6 @@ class CangJieParsing private constructor(
                     declType = PRIMARY_CONSTRUCTOR
                 }
 
-                at(TILDE) && lookahead(1) == INIT_KEYWORD -> {
-                    advance() // TILDE ~
-                    parseInitFunc()
-                    // 析构函数
-                    declType = FINALIZER
-                }
             }
         }
 
@@ -3221,17 +3232,30 @@ class CangJieParsing private constructor(
         assert(_at(INIT_KEYWORD))
         advance() // INIT_KEYWORD
 
+        parseInitFuncRest()
+    }
+
+    context(parseContext: ParsingContext)
+    private fun parseInitFuncRest() {
         if (at(RBRACE)) {
             error(CangJieParsingBundle.message("parsing.error.function.body.expected"))  // 应该为函数体
             return
         }
 
         builder.disableJoiningComplexTokens()
-        // 类型参数
-        if (at(LPAR)) {
-            parseValueParameterList()
+
+        val typeParameterListOccurred = if (at(LT)) {
+            parseTypeParameterList(LBRACKET_LBRACE_RBRACE_LPAR_SET)
+            true
         } else {
-            // error("Expecting '(' ")  // 应该为'('
+            false
+        }
+
+        if (at(LPAR)) {
+            do {
+                parseValueParameterList()
+            } while (at(LPAR))
+        } else {
             errorAndAdvance(
                 CangJieParsingBundle.message(
                     "parsing.error.expecting.left.parenthesis.but.available", builder.tokenText ?: "<unknown>"
@@ -3239,6 +3263,7 @@ class CangJieParsing private constructor(
             )
         }
 
+        parseTypeConstraintsGuarded(typeParameterListOccurred)
 
         parseInitFunctionBody()
     }

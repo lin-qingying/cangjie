@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.type
 
 import org.cangnova.cangjie.type.model.*
@@ -258,6 +282,10 @@ object AbstractTypeChecker {
             if (ctx.possibleIntegerTypes(superType).any { completeIsSubTypeOf(state, subType, it) }) return true
         }
 
+        // 仓颉函数/元组是内置结构类型，不走普通用户泛型的不变实参规则。
+        checkSubtypeForFunctionType(state, subType, superType)?.let { return it }
+        checkSubtypeForTupleType(state, subType, superType)?.let { return it }
+
         // 同构造器 + 无参数 → true
         if (ctx.areEqualTypeConstructors(subConstructor, superConstructor)) {
             if (ctx.argumentsCount(subType) == 0) return true
@@ -282,6 +310,76 @@ object AbstractTypeChecker {
         }
 
         return false
+    }
+
+    /**
+     * 函数类型子类型规则。
+     *
+     * 对齐官方 TypeManager::IsFuncSubtype / LocalTypeArgumentSynthesis::UnifyFuncTy：
+     * - 参数个数一致；
+     * - 参数逆变：super.param <: sub.param；
+     * - 返回协变：sub.ret <: super.ret；
+     * - CFunc 与变长参数等函数类型头部信息一致。
+     */
+    private fun checkSubtypeForFunctionType(
+        state: TypeCheckerState,
+        subType: RigidTypeMarker,
+        superType: RigidTypeMarker,
+    ): Boolean? {
+        val ctx = state.typeSystemContext
+        val subIsFunction = ctx.isFunctionType(subType)
+        val superIsFunction = ctx.isFunctionType(superType)
+        if (!subIsFunction && !superIsFunction) return null
+        if (!subIsFunction || !superIsFunction) return false
+        if (!ctx.areEqualFunctionTypeKinds(subType, superType)) return false
+
+        val subArguments = ctx.extractArgumentsForFunctionType(subType)
+        val superArguments = ctx.extractArgumentsForFunctionType(superType)
+        if (subArguments.size != superArguments.size || subArguments.isEmpty()) return false
+
+        val returnIndex = subArguments.lastIndex
+        for (index in 0 until returnIndex) {
+            val subParameterType = subArguments[index]
+            val superParameterType = superArguments[index]
+            state.runWithArgumentsSettings(subParameterType) {
+                if (!isSubtypeOf(state, superParameterType, subParameterType)) return false
+            }
+        }
+
+        return state.runWithArgumentsSettings(subArguments[returnIndex]) {
+            isSubtypeOf(state, subArguments[returnIndex], superArguments[returnIndex])
+        }
+    }
+
+    /**
+     * 元组类型子类型规则。
+     *
+     * 对齐官方 TypeManager::IsTupleSubtype：同长度元组逐元素协变。
+     */
+    private fun checkSubtypeForTupleType(
+        state: TypeCheckerState,
+        subType: RigidTypeMarker,
+        superType: RigidTypeMarker,
+    ): Boolean? {
+        val ctx = state.typeSystemContext
+        val subIsTuple = ctx.isTupleType(subType)
+        val superIsTuple = ctx.isTupleType(superType)
+        if (!subIsTuple && !superIsTuple) return null
+        if (!subIsTuple || !superIsTuple) return false
+
+        val subElements = ctx.extractElementsForTupleType(subType)
+        val superElements = ctx.extractElementsForTupleType(superType)
+        if (subElements.size != superElements.size) return false
+
+        for (index in subElements.indices) {
+            val subElementType = subElements[index]
+            val superElementType = superElements[index]
+            state.runWithArgumentsSettings(subElementType) {
+                if (!isSubtypeOf(state, subElementType, superElementType)) return false
+            }
+        }
+
+        return true
     }
 
     /**
@@ -404,6 +502,26 @@ private fun TypeSystemContext.isIntegerLiteralType(type: RigidTypeMarker): Boole
 
 /** 桥接 [TypeSystemContext.possibleIntegerTypes] */
 private fun TypeSystemContext.possibleIntegerTypes(type: RigidTypeMarker): Collection<CangJieTypeMarker> = type.possibleIntegerTypes()
+
+/** 桥接 [TypeSystemContext.isFunctionType] */
+private fun TypeSystemContext.isFunctionType(type: CangJieTypeMarker): Boolean = with(this) { type.isFunctionType() }
+
+/** 桥接 [TypeSystemContext.extractArgumentsForFunctionType] */
+private fun TypeSystemContext.extractArgumentsForFunctionType(type: CangJieTypeMarker): List<CangJieTypeMarker> =
+    with(this) { type.extractArgumentsForFunctionType() }
+
+/** 桥接 [TypeSystemContext.areEqualFunctionTypeKinds] */
+private fun TypeSystemContext.areEqualFunctionTypeKinds(
+    subType: CangJieTypeMarker,
+    superType: CangJieTypeMarker,
+): Boolean = with(this) { areEqualFunctionTypeKinds(subType, superType) }
+
+/** 桥接 [TypeSystemContext.isTupleType] */
+private fun TypeSystemContext.isTupleType(type: CangJieTypeMarker): Boolean = with(this) { type.isTupleType() }
+
+/** 桥接 [TypeSystemContext.extractElementsForTupleType] */
+private fun TypeSystemContext.extractElementsForTupleType(type: CangJieTypeMarker): List<CangJieTypeMarker> =
+    with(this) { type.extractElementsForTupleType() }
 
 /** 桥接 [TypeSystemContext.argumentsCount] */
 private fun TypeSystemContext.argumentsCount(type: CangJieTypeMarker): Int = type.argumentsCount()

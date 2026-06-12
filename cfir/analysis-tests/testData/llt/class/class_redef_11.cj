@@ -6,7 +6,7 @@
 
 
 main(): Int64 {
-    if (<!GENERIC_ARGUMENT_NO_MATCH!>Coo.foo<Int32>(1, 2)<!> != 2 || Boo<Int32>.foo<Int32>(3, 4) != 4) {
+    if (Coo.foo<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>I<!>nt32>(1, 2) != 2 || Boo<Int32>.foo<Int32>(3, 4) != 4) {
         return 1
     }
     return 0
@@ -19,7 +19,7 @@ open class Boo<T> {
 }
 
 class Coo <: Boo<Int32> {
-    public static redef func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: Int32, y: V) where V <: <!GENERIC_CONSTRAINT_NOT_LOOSER!>Int64<!> {
+    public static redef func foo<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>V<!>>(x: Int32, y: V) where <!GENERIC_CONSTRAINT_NOT_LOOSER!>V <: Int64<!> {
         return y
     }
 }

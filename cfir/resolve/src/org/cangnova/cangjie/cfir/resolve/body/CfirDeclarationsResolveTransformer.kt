@@ -1,41 +1,51 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.body
 
-import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.resolve.ResolutionMode
-import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
-import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
-import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.scopes.impl.*
-import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
-import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
-import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
-import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeAnyType
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.IdealTypeResolver
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
-import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
-import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.expressions.CfirBlock
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
+import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
+import org.cangnova.cangjie.cfir.resolve.dfa.CfirControlFlowGraphReferenceImpl
+import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
+import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
+import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.scopes.impl.*
 import org.cangnova.cangjie.cfir.session.builtinTypes
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.session.importBindingStoreOrNull
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
