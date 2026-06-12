@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 LinQingYing. and contributors.
+ * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -2430,6 +2430,12 @@ open class CangJieExpressionParsing(
     context(context: ParsingContext)
     private fun parseSelectorCallExpression() {
         val mark = mark()
+
+        if (at(TILDE)) {
+            val unexpected = mark()
+            advance()
+            unexpected.error(CangJieParsingBundle.message("parsing.error.expecting.identifier"))
+        }
 
         parseAtomicExpression()
 

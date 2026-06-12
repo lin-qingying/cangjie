@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.services
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
@@ -14,18 +38,8 @@ import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.type
-import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * 为类型系统提供“具体类型 -> 已实例化父类型”的统一入口。
@@ -116,13 +130,15 @@ class CfirTypeAwareSupertypeProviderImpl(
         concreteType: ConeCangJieType,
     ): List<ConeCangJieType> {
         val targetPattern = resolveExtendTypeRef(extend, extend.extendedTypeRef) ?: return emptyList()
-        val substitutions = linkedMapOf<String, ConeCangJieType>()
-        val extendTypeParameterNames = extend.typeParameters.mapTo(linkedSetOf()) { it.name.asString() }
+        val substitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
+        val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
+            it.symbol.toLookupTag()
+        }
 
-        if (!matchExtendTargetType(targetPattern, concreteType, extendTypeParameterNames, substitutions)) {
+        if (!matchExtendTargetType(targetPattern, concreteType, extendTypeParameterConstructors, substitutions)) {
             return emptyList()
         }
-        if (extendTypeParameterNames.any { it !in substitutions }) {
+        if (extendTypeParameterConstructors.any { it !in substitutions }) {
             return emptyList()
         }
 
@@ -164,20 +180,20 @@ class CfirTypeAwareSupertypeProviderImpl(
     private fun matchExtendTargetType(
         pattern: ConeCangJieType,
         actual: ConeCangJieType,
-        extendTypeParameterNames: Set<String>,
-        substitutions: MutableMap<String, ConeCangJieType>,
+        extendTypeParameterConstructors: Set<TypeConstructorMarker>,
+        substitutions: MutableMap<TypeConstructorMarker, ConeCangJieType>,
     ): Boolean {
         return when (pattern) {
             is ConeTypeParameterType -> {
-                val typeParameterName = pattern.lookupTag.name.asString()
-                if (typeParameterName !in extendTypeParameterNames) {
+                val typeParameterConstructor = pattern.lookupTag
+                if (typeParameterConstructor !in extendTypeParameterConstructors) {
                     pattern == actual
                 } else {
-                    val existing = substitutions[typeParameterName]
+                    val existing = substitutions[typeParameterConstructor]
                     existing == null || existing == actual
                 }.also { matches ->
                     if (matches) {
-                        substitutions.putIfAbsent(typeParameterName, actual)
+                        substitutions.putIfAbsent(typeParameterConstructor, actual)
                     }
                 }
             }
@@ -193,7 +209,7 @@ class CfirTypeAwareSupertypeProviderImpl(
                     matchExtendTargetType(
                         pattern = pattern.typeArguments[index].type,
                         actual = actualClassifier.typeArguments[index].type,
-                        extendTypeParameterNames = extendTypeParameterNames,
+                        extendTypeParameterConstructors = extendTypeParameterConstructors,
                         substitutions = substitutions,
                     )
                 }
@@ -227,8 +243,9 @@ class CfirTypeAwareSupertypeProviderImpl(
         if (typeParameters.isEmpty()) return null
         if (typeParameters.size != type.typeArguments.size) return null
 
-        val replacements: Map<String, ConeCangJieType> = typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
-            typeParameter.symbol.name.asString() to argument.type
+        val replacements: Map<TypeConstructorMarker, ConeCangJieType> =
+            typeParameters.zip(type.typeArguments).associate { (typeParameter, argument) ->
+                typeParameter.symbol.toLookupTag() to argument.type
         }
         return CfirTypeSubstitutorByMap(replacements)
     }

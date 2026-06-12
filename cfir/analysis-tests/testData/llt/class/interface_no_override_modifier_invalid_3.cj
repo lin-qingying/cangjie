@@ -11,7 +11,7 @@ interface I1 {
 }
 
 interface I2 <: I1 {
-    func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>(): Int64 {
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>f<!>unc foo(): Int64 {
         return 2
     }
 }

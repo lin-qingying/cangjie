@@ -1,20 +1,51 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * 基于声明侧类型参数替换表构造的 ConeSubstitutor。
+ *
+ * 与 Kotlin FIR `ConeSubstitutorByMap` 一致，替换键必须是类型参数的
+ * constructor/symbol 身份，而不能是名称。不同声明中的同名类型参数在语义上
+ * 是不同参数，按名称替换会错误捕获外层或其它声明的类型参数。
  *
  * 该能力属于通用类型系统基础设施，应放在 providers 层供 supertype 展开、
  * use-site scope 和调用解析共享，而不是局限在 resolve 某个阶段。
  */
 class CfirTypeSubstitutorByMap(
-    private val replacements: Map<String, ConeCangJieType>,
+    private val replacements: Map<TypeConstructorMarker, ConeCangJieType>,
 ) : ConeSubstitutor() {
     override fun substituteOrNull(type: ConeCangJieType): ConeCangJieType? {
         return when (type) {
-            is ConeTypeParameterType -> replacements[type.lookupTag.name.asString()]
+            is ConeTypeParameterType -> replacements[type.lookupTag]
+            is ConeTypeVariableType -> replacements[type.typeConstructor]
+            is ConeStubType -> replacements[type.constructor]
             is ConeClassLikeType -> substituteArguments(type.typeArguments)?.let { arguments ->
                 ConeClassLikeType(type.lookupTag, arguments, type.attributes, type.isInterface, type.isThisType)
             }

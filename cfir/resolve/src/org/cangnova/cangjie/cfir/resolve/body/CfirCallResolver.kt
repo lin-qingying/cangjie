@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.ImportPath
@@ -9,7 +33,6 @@ import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
 import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
@@ -67,8 +90,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
-import org.cangnova.cangjie.cfir.scopes.impl.CfirClassStaticScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
+import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
@@ -93,9 +116,7 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
-import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
@@ -769,14 +790,6 @@ class CfirCallResolver(
         val actualClassifier = (classifier as? CfirTypeAliasSymbol)?.fullyExpandedClass(session) ?: classifier
         actualClassifier.lazyResolveToPhase(CfirResolvePhase.TYPES)
         val actualDeclaration = actualClassifier.cfir
-        if (actualDeclaration is CfirPrimitiveTypeDeclaration) {
-            return collectPrimitiveTypeConversionCandidates(
-                functionCall = functionCall,
-                classifier = classifier,
-                primitiveDeclaration = actualDeclaration,
-                resolutionMode = resolutionMode,
-            )
-        }
         if (actualClassifier.classId == StdlibClassIds.Array) {
             return collectBuiltinArrayConstructorCandidates(
                 functionCall = functionCall,
@@ -902,64 +915,6 @@ class CfirCallResolver(
         )
     }
 
-    /**
-     * 仓颉 `Int32(x)` / `Rune(x)` 等原始类型写法对应官方 `TypeConvExpr`，
-     * 不是 class/struct constructor。这里把它保留在 classifier fallback 层，
-     * 但候选本身使用 synthetic function 继续走统一的 call resolution stages。
-     */
-    private fun collectPrimitiveTypeConversionCandidates(
-        functionCall: CfirFunctionCall,
-        classifier: CfirClassLikeSymbol<*>,
-        primitiveDeclaration: CfirPrimitiveTypeDeclaration,
-        resolutionMode: ResolutionMode,
-    ): ResolutionResult {
-        val callInfo = createClassifierCallInfo(functionCall, classifier, resolutionMode)
-
-        val sourceKinds = if (callInfo.arguments.size == 1) {
-            primitiveConversionSourceKindsForTarget(primitiveDeclaration.kind)
-        } else {
-            // 参数数量错误时仍合成一个候选，让统一参数映射阶段报告数量错误，而不是退化成 unresolved。
-            listOfNotNull(primitiveDeclaration.kind.takeIf { it.isOfficialTypeConversionSource })
-        }
-
-        if (sourceKinds.isEmpty()) {
-            return ResolutionResult(
-                info = callInfo,
-                applicability = CandidateApplicability.HIDDEN,
-                candidates = emptyList(),
-                forwardedDiagnostics = emptyList(),
-            )
-        }
-
-        val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
-        val conversionCandidates = sourceKinds.map { sourceKind ->
-            candidateFactory.createPrimitiveTypeConversionCandidate(
-                callInfo = callInfo,
-                targetKind = primitiveDeclaration.kind,
-                sourceType = ConePrimitiveType(sourceKind),
-            )
-        }
-        val (reducedCandidates, applicability) = reduceCollectedCandidates(
-            candidates = conversionCandidates,
-            collectorApplicability = CandidateApplicability.HIDDEN,
-            isCandidateSuccessful = Candidate::isSuccessful,
-            candidateApplicability = Candidate::lowestApplicability,
-            fullyProcessCandidate = { candidate ->
-                components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
-            },
-            chooseMostSpecific = { currentCandidates ->
-                currentCandidates.singleOrNull()?.let(::setOf)
-                    ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
-            },
-        )
-        return ResolutionResult(
-            info = callInfo,
-            applicability = applicability,
-            candidates = reducedCandidates,
-            forwardedDiagnostics = emptyList(),
-        )
-    }
-
     private fun createClassifierCallInfo(
         functionCall: CfirFunctionCall,
         classifier: CfirClassLikeSymbol<*>,
@@ -978,35 +933,6 @@ class CfirCallResolver(
         containingDeclarations = transformer.components.containingDeclarations,
         resolutionMode = resolutionMode,
     )
-
-    private fun primitiveConversionSourceKindsForTarget(targetKind: PrimitiveTypeKind): List<PrimitiveTypeKind> =
-        PrimitiveTypeKind.entries.filter { sourceKind ->
-            sourceKind.isOfficialTypeConversionSource && sourceKind.canConvertToPrimitiveKind(targetKind)
-        }
-
-    private val PrimitiveTypeKind.isOfficialTypeConversionSource: Boolean
-        get() = this == PrimitiveTypeKind.NOTHING ||
-                this == PrimitiveTypeKind.RUNE ||
-                (isNumeric && !isIdeal)
-
-    /**
-     * 对齐官方 `SynNumTypeConvExpr`：
-     * - `Nothing` 可转换到 `Rune` 或任意数值类型；
-     * - `Rune` 可转换到 `UInt32`；
-     * - 整数可转换到 `Rune`；
-     * - 数值类型之间可相互转换。
-     */
-    private fun PrimitiveTypeKind.canConvertToPrimitiveKind(targetKind: PrimitiveTypeKind): Boolean {
-        val isNothingToRuneOrNumeric =
-            this == PrimitiveTypeKind.NOTHING && (targetKind == PrimitiveTypeKind.RUNE || targetKind.isNumeric)
-        val isRuneToUInt32 =
-            this == PrimitiveTypeKind.RUNE && targetKind == PrimitiveTypeKind.UINT32
-        val isIntegerToRune =
-            targetKind == PrimitiveTypeKind.RUNE && isInteger
-        val isBetweenNumeric =
-            targetKind.isNumeric && isNumeric
-        return isNothingToRuneOrNumeric || isRuneToUInt32 || isIntegerToRune || isBetweenNumeric
-    }
 
     private fun findClassifierForCall(
         qualifiedAccess: CfirQualifiedAccessExpression,
@@ -1092,9 +1018,11 @@ class CfirCallResolver(
         receiver: CfirExpression,
         name: Name,
     ): CfirClassLikeSymbol<*>? {
-        val qualifierClassifier = receiver.unwrapSmartcastExpression().resolvedQualifierClassifier(session) ?: return null
-        val declaration = qualifierClassifier.cfir as? CfirClassLikeDeclaration ?: return null
-        val staticScope = CfirClassStaticScope(declaration)
+        val unwrappedReceiver = receiver.unwrapSmartcastExpression()
+        val qualifierClassifier = unwrappedReceiver.resolvedQualifierClassifier(session) ?: return null
+        val qualifierType = unwrappedReceiver.coneTypeOrNull ?: qualifierClassifier.constructType()
+        val staticScope =
+            qualifierClassifier.staticScopeForQualifierType(session, components.scopeSession, qualifierType)
         var result: CfirClassLikeSymbol<*>? = null
         staticScope.processClassifiersByName(name) { classifier ->
             if (result == null) {

@@ -1,31 +1,40 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
+import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
-import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
-import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
-import org.cangnova.cangjie.cfir.resolve.providers.getContainingFile
-import org.cangnova.cangjie.cfir.resolve.providers.canAccessPackageInternalDeclaration
-import org.cangnova.cangjie.cfir.session.ProcessorAction
-import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
-import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.ClassId
 
@@ -93,6 +102,20 @@ internal fun CfirTypeScope.collectDirectOverriddenFunctions(functionSymbol: Cfir
     return result.toList()
 }
 
+internal fun CfirTypeScope.collectDirectOverriddenFunctionsIgnoringStatic(
+    functionSymbol: CfirNamedFunctionSymbol,
+): List<CfirFunctionSymbol<*>> {
+    val targetSignature = functionSymbol.overrideSignatureKey()
+    val result = linkedSetOf<CfirFunctionSymbol<*>>()
+    processDirectOverriddenFunctionsWithBaseScope(functionSymbol) { candidate, _ ->
+        if (candidate != functionSymbol && candidate.overrideSignatureKey() == targetSignature) {
+            result += candidate
+        }
+        ProcessorAction.NEXT
+    }
+    return result.toList()
+}
+
 internal fun CfirTypeScope.collectDirectOverriddenProperties(propertySymbol: CfirPropertySymbol): List<CfirPropertySymbol> {
     val targetSignature = propertySymbol.overrideSignatureKey()
     val targetIsStatic = propertySymbol.isStaticMemberForOverride()
@@ -103,6 +126,20 @@ internal fun CfirTypeScope.collectDirectOverriddenProperties(propertySymbol: Cfi
             candidate.overrideSignatureKey() == targetSignature &&
             candidate.isStaticMemberForOverride() == targetIsStatic
         ) {
+            result += candidate
+        }
+        ProcessorAction.NEXT
+    }
+    return result.toList()
+}
+
+internal fun CfirTypeScope.collectDirectOverriddenPropertiesIgnoringStatic(
+    propertySymbol: CfirPropertySymbol,
+): List<CfirPropertySymbol> {
+    val targetSignature = propertySymbol.overrideSignatureKey()
+    val result = linkedSetOf<CfirPropertySymbol>()
+    processDirectOverriddenPropertiesWithBaseScope(propertySymbol) { candidate, _ ->
+        if (candidate != propertySymbol && candidate.overrideSignatureKey() == targetSignature) {
             result += candidate
         }
         ProcessorAction.NEXT

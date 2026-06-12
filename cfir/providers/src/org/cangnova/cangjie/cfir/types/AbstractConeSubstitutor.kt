@@ -1,7 +1,30 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.types
 
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.type.model.TypeSubstitutorMarker
 
@@ -33,6 +56,12 @@ abstract class AbstractConeSubstitutor(
         return when (this) {
             is ConeErrorType -> substituteErrorType()
             is ConeTypeAliasType -> substituteTypeAlias()
+            is ConeFunctionType -> substituteFunctionType()
+            is ConeTupleType -> substituteTupleType()
+            is ConeVArrayType -> substituteVArrayType()
+            is ConePointerType -> substitutePointerType()
+            is ConeIntersectionType -> substituteIntersectionType()
+            is ConeUnionType -> substituteUnionType()
             is ConeRigidType -> substituteArguments()
             else -> null
         }
@@ -59,6 +88,65 @@ abstract class AbstractConeSubstitutor(
 
         val arguments = (substitutedArguments as? ConeTypeAliasType)?.typeArguments ?: typeArguments
         return ConeTypeAliasType(classId, substitutedExpandedType ?: expandedType, arguments, attributes)
+    }
+
+    /**
+     * 仓颉的函数、元组、VArray、指针、交叉与联合类型是结构类型，
+     * 组成类型存放在专用字段中；替换器必须递归进入这些字段。
+     */
+    private fun ConeFunctionType.substituteFunctionType(): ConeCangJieType? {
+        val substitutedParameterTypes = substituteTypes(parameterTypes)
+        val substitutedReturnType = substituteOrNull(returnType)
+        if (substitutedParameterTypes == null && substitutedReturnType == null) return null
+
+        return ConeFunctionType(
+            parameterTypes = substitutedParameterTypes ?: parameterTypes,
+            returnType = substitutedReturnType ?: returnType,
+            isCFunc = isCFunc,
+            isClosureType = isClosureType,
+            hasVariableLenArg = hasVariableLenArg,
+            attributes = attributes,
+        )
+    }
+
+    private fun ConeTupleType.substituteTupleType(): ConeCangJieType? {
+        val substitutedElements = substituteTypes(elementTypes) ?: return null
+        return ConeTupleType(substitutedElements, attributes)
+    }
+
+    private fun ConeVArrayType.substituteVArrayType(): ConeCangJieType? {
+        val substitutedElementType = substituteOrNull(elementType) ?: return null
+        return ConeVArrayType(substitutedElementType, size, attributes)
+    }
+
+    private fun ConePointerType.substitutePointerType(): ConeCangJieType? {
+        val substitutedPointeeType = substituteOrNull(pointeeType) ?: return null
+        return ConePointerType(substitutedPointeeType, attributes)
+    }
+
+    private fun ConeIntersectionType.substituteIntersectionType(): ConeCangJieType? {
+        val substitutedIntersectedTypes = substituteTypes(intersectedTypes)
+        val substitutedUpperBound = upperBoundForApproximation?.let { substituteOrNull(it) ?: it }
+        if (substitutedIntersectedTypes == null && substitutedUpperBound == upperBoundForApproximation) return null
+
+        return ConeIntersectionType(
+            intersectedTypes = substitutedIntersectedTypes ?: intersectedTypes,
+            upperBoundForApproximation = substitutedUpperBound,
+            attributes = attributes,
+        )
+    }
+
+    private fun ConeUnionType.substituteUnionType(): ConeCangJieType? {
+        val substitutedUnionTypes = substituteTypes(unionTypes) ?: return null
+        return ConeUnionType(substitutedUnionTypes.toSet(), attributes)
+    }
+
+    private fun substituteTypes(types: Collection<ConeCangJieType>): List<ConeCangJieType>? {
+        var changed = false
+        val substituted = types.map { type ->
+            substituteOrNull(type)?.also { changed = true } ?: type
+        }
+        return substituted.takeIf { changed }
     }
 
     private fun ConeRigidType.substituteArguments(): ConeCangJieType? {

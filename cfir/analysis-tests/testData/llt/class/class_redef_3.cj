@@ -12,7 +12,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    public <!REDEF_INSTANCE_ERROR, NOTHING_TO_OVERRIDE!>redef<!> func foo(): Int64 {
+    public <!NOTHING_TO_OVERRIDE, REDEF_INSTANCE_ERROR!>redef<!> func foo(): Int64 {
         return 3
     }
 }

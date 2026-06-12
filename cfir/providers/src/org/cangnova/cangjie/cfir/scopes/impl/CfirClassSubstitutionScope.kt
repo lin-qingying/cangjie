@@ -1,53 +1,43 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideAttr
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
-import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariableCopy
-import org.cangnova.cangjie.cfir.declarations.builder.buildNamedFunctionCopy
-import org.cangnova.cangjie.cfir.declarations.builder.buildPropertyAccessorCopy
-import org.cangnova.cangjie.cfir.declarations.builder.buildPropertyCopy
-import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameterCopy
-import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
-import org.cangnova.cangjie.cfir.scopes.DeferredCallableCopyReturnType
-import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
-import org.cangnova.cangjie.cfir.scopes.deferredCallableCopyReturnType
-import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
-import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.session.ProcessorAction
-import org.cangnova.cangjie.cfir.session.cfirProvider
-import org.cangnova.cangjie.cfir.session.extendProvider
-import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
+import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideAttr
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.type
-import org.cangnova.cangjie.cfir.types.withReplacedSourceAndType
+import org.cangnova.cangjie.cfir.scopes.*
+import org.cangnova.cangjie.cfir.session.*
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
  * 对齐 Kotlin `FirClassSubstitutionScope` 的 use-site substitution scope。
@@ -376,9 +366,10 @@ class CfirClassSubstitutionScope(
         if (declaration.typeParameters.isEmpty()) return ConeSubstitutor.Empty
         if (declaration.typeParameters.size != concreteType.typeArguments.size) return null
 
-        val replacements = declaration.typeParameters.zip(concreteType.typeArguments).associate { (typeParameter, argument) ->
-            typeParameter.symbol.name.asString() to argument.type
-        }
+        val replacements: Map<TypeConstructorMarker, ConeCangJieType> =
+            declaration.typeParameters.zip(concreteType.typeArguments).associate { (typeParameter, argument) ->
+                typeParameter.symbol.toLookupTag() to argument.type
+            }
         return replacements.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap) ?: ConeSubstitutor.Empty
     }
 
@@ -404,13 +395,21 @@ class CfirClassSubstitutionScope(
         concreteReceiverType: ConeCangJieType,
     ): ConeSubstitutor? {
         val targetPattern = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return null
-        val substitutions = linkedMapOf<String, ConeCangJieType>()
-        val extendTypeParameterNames = extend.typeParameters.mapTo(linkedSetOf()) { it.name.asString() }
+        val substitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
+        val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
+            it.symbol.toLookupTag()
+        }
 
-        if (!matchExtendTargetType(targetPattern, concreteReceiverType, extendTypeParameterNames, substitutions)) {
+        if (!matchExtendTargetType(
+                targetPattern,
+                concreteReceiverType,
+                extendTypeParameterConstructors,
+                substitutions
+            )
+        ) {
             return null
         }
-        if (extendTypeParameterNames.any { it !in substitutions }) {
+        if (extendTypeParameterConstructors.any { it !in substitutions }) {
             return null
         }
 
@@ -420,20 +419,20 @@ class CfirClassSubstitutionScope(
     private fun matchExtendTargetType(
         pattern: ConeCangJieType,
         actual: ConeCangJieType,
-        extendTypeParameterNames: Set<String>,
-        substitutions: MutableMap<String, ConeCangJieType>,
+        extendTypeParameterConstructors: Set<TypeConstructorMarker>,
+        substitutions: MutableMap<TypeConstructorMarker, ConeCangJieType>,
     ): Boolean {
         return when (pattern) {
             is org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType -> {
-                val typeParameterName = pattern.lookupTag.name.asString()
-                if (typeParameterName !in extendTypeParameterNames) {
+                val typeParameterConstructor = pattern.lookupTag
+                if (typeParameterConstructor !in extendTypeParameterConstructors) {
                     pattern == actual
                 } else {
-                    val existing = substitutions[typeParameterName]
+                    val existing = substitutions[typeParameterConstructor]
                     existing == null || existing == actual
                 }.also { matches ->
                     if (matches) {
-                        substitutions.putIfAbsent(typeParameterName, actual)
+                        substitutions.putIfAbsent(typeParameterConstructor, actual)
                     }
                 }
             }
@@ -449,7 +448,7 @@ class CfirClassSubstitutionScope(
                     matchExtendTargetType(
                         pattern = pattern.typeArguments[index].type,
                         actual = actualClassifier.typeArguments[index].type,
-                        extendTypeParameterNames = extendTypeParameterNames,
+                        extendTypeParameterConstructors = extendTypeParameterConstructors,
                         substitutions = substitutions,
                     )
                 }

@@ -14,20 +14,20 @@ class B {
 }
 
 class C {
-    ~init<!sema_cannot_currying!>(<!>)() {}
+    ~init<!CANNOT_CURRYING!>(<!>)() {}
 }
 
 class D {
     ~init() {}
-    <!sema_overload_conflicts!>~init<!>() {}
+    <!CONFLICTING_OVERLOADS!>~init<!>() {}
 }
 
 open class E {
-    <!sema_finalizer_forbidden_in_class!>~<!>init() {}
+    <!FINALIZER_FORBIDDEN_IN_CLASS!>~<!>init() {}
 }
 
 open class F {
-    <!sema_finalizer_forbidden_in_class!>~<!>init() {}
+    <!FINALIZER_FORBIDDEN_IN_CLASS!>~<!>init() {}
     public open func f() {
         0
     }

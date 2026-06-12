@@ -1,130 +1,144 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.scopes.impl
 
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.ScopeSession
+import org.cangnova.cangjie.cfir.ScopeSessionKey
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirContainingNamesAwareScope
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
+import org.cangnova.cangjie.cfir.scopes.scopeSessionKey
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
+import org.cangnova.cangjie.cfir.session.extendProvider
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
 /**
- * Mirrors Kotlin FIR's class static scope slot for tower construction.
+ * 类 qualifier 的 static scope，对齐 Kotlin FIR `FirStaticScope`。
+ *
+ * 这层只负责过滤 static callable；成员枚举、use-site 继承、extend 注入、
+ * 泛型实参替换都必须先由 delegate scope 完成，避免 static 解析绕开
+ * `CfirClassSubstitutionScope`。
  */
 class CfirClassStaticScope(
-    owner: CfirClassLikeDeclaration,
+    private val delegateScope: CfirContainingNamesAwareScope,
 ) : CfirContainingNamesAwareScope() {
-    private val memberIndex: MemberIndex by lazy(LazyThreadSafetyMode.PUBLICATION) { buildIndex(owner.declarations) }
+    override fun getCallableNames(): Set<Name> = delegateScope.getCallableNames()
+
+    override fun getClassifierNames(): Set<Name> = delegateScope.getClassifierNames()
+
+    override fun mayContainName(name: Name): Boolean = delegateScope.mayContainName(name)
+
+    override val scopeOwnerLookupNames: List<String>
+        get() = delegateScope.scopeOwnerLookupNames
 
     override val hasDefinitelyNoStaticMembers: Boolean
-        get() = memberIndex.isEmpty
+        get() = delegateScope.hasDefinitelyNoStaticMembers
 
-    override fun getCallableNames(): Set<Name> = memberIndex.callableNames
-
-    override fun getClassifierNames(): Set<Name> = memberIndex.classifierNames
+    override fun processClassifiersByNameWithSubstitution(
+        name: Name,
+        processor: (CfirClassifierSymbol<*>, ConeSubstitutor) -> Unit,
+    ) {
+        delegateScope.processClassifiersByNameWithSubstitution(name, processor)
+    }
 
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
-        memberIndex.classifiers[name]?.forEach(processor)
+        delegateScope.processClassifiersByName(name, processor)
     }
 
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
-        memberIndex.functions[name]?.forEach(processor)
+        delegateScope.processFunctionsByName(name) { function ->
+            if (function.isStaticCallableForClassQualifier()) {
+                processor(function)
+            }
+        }
     }
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
-        memberIndex.properties[name]?.forEach(processor)
+        delegateScope.processPropertiesByName(name) { property ->
+            if (property.isStaticCallableForClassQualifier()) {
+                processor(property)
+            }
+        }
     }
 
     override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
-        memberIndex.enumConstructors[name]?.forEach(processor)
-        memberIndex.functions[name]?.forEach(processor)
-        memberIndex.properties[name]?.forEach(processor)
-        memberIndex.fields[name]?.forEach(processor)
+        delegateScope.processCallablesByName(name) { callable ->
+            if (callable.isStaticCallableForClassQualifier()) {
+                processor(callable)
+            }
+        }
     }
 
     override fun withReplacedSessionOrNull(
-        newSession: org.cangnova.cangjie.cfir.session.CfirSession,
-        newScopeSession: org.cangnova.cangjie.cfir.ScopeSession,
-    ): CfirContainingNamesAwareScope = this
+        newSession: CfirSession,
+        newScopeSession: ScopeSession,
+    ): CfirContainingNamesAwareScope? =
+        delegateScope.withReplacedSessionOrNull(newSession, newScopeSession)?.let(::CfirClassStaticScope)
+}
 
-    private data class MemberIndex(
-        val classifiers: Map<Name, List<CfirClassLikeSymbol<*>>>,
-        val enumConstructors: Map<Name, List<CfirEnumConstructorSymbol>>,
-        val functions: Map<Name, List<CfirNamedFunctionSymbol>>,
-        val properties: Map<Name, List<CfirPropertySymbol>>,
-        val fields: Map<Name, List<CfirFieldVariableSymbol>>,
-    ) {
-        val callableNames: Set<Name> = buildSet {
-            addAll(enumConstructors.keys)
-            addAll(functions.keys)
-            addAll(properties.keys)
-            addAll(fields.keys)
-        }
-
-        val classifierNames: Set<Name> = classifiers.keys
-
-        val isEmpty: Boolean
-            get() = classifiers.isEmpty()
-                    && enumConstructors.isEmpty()
-                    && functions.isEmpty()
-                    && properties.isEmpty()
-                    && fields.isEmpty()
-    }
-
-    private fun buildIndex(declarations: List<CfirDeclaration>): MemberIndex {
-        val classifiers = linkedMapOf<Name, MutableList<CfirClassLikeSymbol<*>>>()
-        val enumConstructors = linkedMapOf<Name, MutableList<CfirEnumConstructorSymbol>>()
-        val functions = linkedMapOf<Name, MutableList<CfirNamedFunctionSymbol>>()
-        val properties = linkedMapOf<Name, MutableList<CfirPropertySymbol>>()
-        val fields = linkedMapOf<Name, MutableList<CfirFieldVariableSymbol>>()
-
-        for (declaration in declarations) {
-            when (declaration) {
-                is CfirClassLikeDeclaration -> {
-                    val symbol = declaration.symbol as? CfirClassLikeSymbol<*> ?: continue
-                    classifiers.getOrPut(symbol.name) { mutableListOf() }.add(symbol)
-                }
-
-                is CfirEnumConstructor -> {
-                    val symbol = declaration.symbol as? CfirEnumConstructorSymbol ?: continue
-                    enumConstructors.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
-                }
-
-                is CfirNamedFunction -> {
-                    declaration.symbol?.lazyResolveToPhase(CfirResolvePhase.STATUS)
-                    if (!declaration.status.isStatic) continue
-                    val symbol = declaration.symbol ?: continue
-                    functions.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
-                }
-
-                is CfirProperty -> {
-                    declaration.symbol?.lazyResolveToPhase(CfirResolvePhase.STATUS)
-                    if (!declaration.status.isStatic) continue
-                    val symbol = declaration.symbol as? CfirPropertySymbol ?: continue
-                    properties.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
-                }
-
-                is CfirFieldVariable -> {
-                    // 静态字段与 Kotlin 静态 property 一样只能通过 qualifier scope 暴露。
-                    declaration.symbol.lazyResolveToPhase(CfirResolvePhase.STATUS)
-                    if (!declaration.status.isStatic) continue
-                    val symbol = declaration.symbol as? CfirFieldVariableSymbol ?: continue
-                    fields.getOrPut(declaration.name) { mutableListOf() }.add(symbol)
-                }
-
-                else -> continue
-            }
-        }
-
-        return MemberIndex(classifiers, enumConstructors, functions, properties, fields)
+fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+    qualifierType: ConeCangJieType = constructType(),
+): CfirContainingNamesAwareScope {
+    val expandedQualifierType = qualifierType.fullyExpandedType(session)
+    val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType)
+    return scopeSession.getOrBuild(cacheKey, StaticScopeForQualifierTypeScopeKey) {
+        val useSiteScope = CfirClassUseSiteMemberScope(
+            session = session,
+            classSymbol = this,
+            symbolProvider = session.symbolProvider,
+            extendProvider = session.extendProvider,
+            directSupertypeProvider = session.directSupertypeProviderOrNull,
+            ownerType = expandedQualifierType,
+            dispatchReceiverType = expandedQualifierType,
+            scopeKind = CfirClassMemberScopeKind.USE_SITE,
+        )
+        CfirClassStaticScope(CfirClassSubstitutionScope(session, useSiteScope, expandedQualifierType))
     }
 }
+
+private fun CfirCallableSymbol<*>.isStaticCallableForClassQualifier(): Boolean {
+    if (this is CfirEnumConstructorSymbol) return true
+    if (this !is CfirNamedFunctionSymbol && this !is CfirPropertySymbol && this !is CfirFieldVariableSymbol) {
+        return false
+    }
+
+    lazyResolveToPhase(org.cangnova.cangjie.cfir.declarations.CfirResolvePhase.STATUS)
+    return cfir.status.isStatic
+}
+
+private data class StaticScopeForQualifierTypeKey(
+    val classId: ClassId,
+    val qualifierType: ConeCangJieType,
+)
+
+private val StaticScopeForQualifierTypeScopeKey: ScopeSessionKey<StaticScopeForQualifierTypeKey, CfirContainingNamesAwareScope> =
+    scopeSessionKey()

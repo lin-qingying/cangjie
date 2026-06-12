@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 LinQingYing. and contributors.
+ * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,10 @@ import com.intellij.psi.tree.IElementType;
 import com.intellij.psi.tree.IFileElementType;
 import com.intellij.psi.tree.TokenSet;
 import org.cangnova.cangjie.lang.CangJieLanguage;
-import org.cangnova.cangjie.psi.stubs.elements.*;
+import org.cangnova.cangjie.psi.stubs.elements.BlockExpressionElementType;
+import org.cangnova.cangjie.psi.stubs.elements.CaseBlockExpressionElementType;
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes;
+import org.cangnova.cangjie.psi.stubs.elements.LambdaExpressionElementType;
 
 public interface CjNodeTypes {
 
@@ -43,7 +46,7 @@ public interface CjNodeTypes {
     IElementType OPTIONAL_TYPE = CjStubElementTypes.OPTIONAL_TYPE;
 
 
-    IElementType INVALID_DECLARATION = new IElementType("INVALID_DECLARATION", CangJieLanguage.INSTANCE);
+    IElementType INVALID_DECLARATION = new CjNodeType("INVALID_DECLARATION", null);
     IElementType INTERFACE = CjStubElementTypes.INTERFACE;
     IElementType STRUCT = CjStubElementTypes.STRUCT;
     IElementType PROPERTY = CjStubElementTypes.PROPERTY;

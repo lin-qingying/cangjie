@@ -1,55 +1,48 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve
 
-import org.cangnova.cangjie.cfir.diagnostic.ConeHiddenCandidateError
-import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
-import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostic.ConeVisibilityError
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
-import org.cangnova.cangjie.cfir.diagnostic.ResolutionResultOverridesOtherToPreserveCompatibility
-import org.cangnova.cangjie.cfir.diagnostic.VisibilityError
-import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.references.CfirSuperReference
-import org.cangnova.cangjie.cfir.references.CfirThisReference
-import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
-import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
-import org.cangnova.cangjie.cfir.references.builder.buildResolvedErrorReference
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
-import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
-import org.cangnova.cangjie.cfir.symbols.constructType
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.diagnostic.*
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.CfirResolvable
+import org.cangnova.cangjie.cfir.references.*
+import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildResolvedErrorReference
+import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirErrorFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirErrorNamedValueSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
-import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
-import org.cangnova.cangjie.cfir.types.asCone
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.type.model.safeSubstitute
 import org.cangnova.cangjie.utils.exceptions.errorWithAttachment
@@ -63,6 +56,18 @@ val CfirTypeParameterSymbol.defaultType: ConeTypeParameterType
     get() = ConeTypeParameterTypeImpl(toLookupTag())
 
 fun <T : CfirResolvable> BodyResolveComponents.typeFromCallee(access: T): ConeCangJieType {
+    if (access is CfirQualifiedAccessExpression && access.typeArguments.isNotEmpty()) {
+        val classifierSymbol = (access.calleeReference as? CfirResolvedNamedReference)
+            ?.resolvedSymbol as? CfirClassifierSymbol<*>
+        if (classifierSymbol != null) {
+            val typeArguments = access.typeArguments.map { typeArgument ->
+                typeArgument.coneTypeOrNull ?: return ConeErrorType(
+                    ConeSimpleDiagnostic("Unresolved qualifier type argument", DiagnosticKind.Other)
+                )
+            }
+            return classifierSymbol.constructTypeForQualifiedAccess(typeArguments)
+        }
+    }
     return typeFromCallee(access.calleeReference)
 }
 
@@ -163,6 +168,13 @@ private fun BodyResolveComponents.typeFromSymbol(symbol: CfirBasedSymbol<*>): Co
             withCfirEntry("declaration", symbol.cfir)
         }
     }
+}
+
+private fun CfirClassifierSymbol<*>.constructTypeForQualifiedAccess(
+    typeArguments: List<ConeTypeProjection>,
+): ConeCangJieType = when (this) {
+    is CfirTypeAliasSymbol -> ConeTypeAliasType(classId, typeArguments = typeArguments)
+    else -> constructType(typeArguments)
 }
 
 fun createConeDiagnosticForCandidateWithError(

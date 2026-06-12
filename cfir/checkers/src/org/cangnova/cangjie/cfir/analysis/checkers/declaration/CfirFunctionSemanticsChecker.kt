@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -5,11 +29,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaratio
 import org.cangnova.cangjie.cfir.analysis.checkers.modifierByToken
 import org.cangnova.cangjie.cfir.analysis.checkers.realSourceModifiers
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
@@ -17,6 +37,9 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.lexer.CjTokens
+import org.cangnova.cangjie.name.SpecialNames
+import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 /**
  * 函数语义检查器（Function 分组）
@@ -130,7 +153,7 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
  */
 object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    override fun check(declaration: org.cangnova.cangjie.cfir.declarations.CfirFunction) {
+    override fun check(declaration: CfirFunction) {
         val returnTypeRef = declaration.returnTypeRef
         if (returnTypeRef is CfirErrorTypeRef && returnTypeRef.isFunctionReturnTypeInferenceFailure()) {
             if (declaration is CfirNamedFunction && declaration.body != null) {
@@ -159,6 +182,79 @@ object CfirFunctionReturnTypeInferenceChecker : CfirFunctionChecker() {
 
             else -> false
         }
+    }
+}
+
+/**
+ * finalizer 声明语义检查器。
+ *
+ * 对齐官方 C++:
+ * - `DeclAttributeChecker::CheckFuncDeclAttributes` 中 `sema_finalizer_forbidden_in_class`
+ * - `TypeChecker::CheckFinalizer` 中 `sema_forbid_generic_finalizer` / `sema_cannot_currying`
+ */
+object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirFunction) {
+        val finalizer = declaration as? CfirFinalizer ?: return
+
+        checkFinalizerInInheritableClass(finalizer)
+        checkGenericFinalizer(finalizer)
+        checkCurriedFinalizer(finalizer)
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkFinalizerInInheritableClass(finalizer: CfirFinalizer) {
+        val owner = context.findClosestDeclaration<CfirClass>() ?: return
+        val classKind = when {
+            owner.status.isOpen -> "open"
+            owner.status.isAbstract -> "abstract"
+            else -> return
+        }
+
+        reporter.reportOn(
+            source = finalizer.tildeSource(),
+            factory = CfirErrors.FINALIZER_FORBIDDEN_IN_CLASS,
+            a = owner.name,
+            b = classKind,
+        )
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkGenericFinalizer(finalizer: CfirFinalizer) {
+        if (finalizer.typeParameters.isEmpty()) return
+
+        reporter.reportOn(
+            source = finalizer.tildeSource(),
+            factory = CfirErrors.FORBID_GENERIC_FINALIZER,
+            a = SpecialNames.END_INIT,
+        )
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun checkCurriedFinalizer(finalizer: CfirFinalizer) {
+        val parameterLists = finalizer.attributes.functionBodyDiagnosticData?.valueParameterLists.orEmpty()
+        if (parameterLists.size <= 1) return
+
+        reporter.reportOn(
+            source = parameterLists.first().source.leftParenthesisSource(),
+            factory = CfirErrors.CANNOT_CURRYING,
+            a = "finalizer",
+        )
+    }
+
+    private fun AbstractCjSourceElement.leftParenthesisSource(): CjOffsetsOnlySourceElement {
+        return CjOffsetsOnlySourceElement(
+            startOffset = startOffset,
+            endOffset = minOf(startOffset + 1, endOffset),
+        )
+    }
+
+    private fun CfirFinalizer.tildeSource(): AbstractCjSourceElement? {
+        val source = source ?: return null
+        return CjOffsetsOnlySourceElement(
+            startOffset = source.startOffset,
+            endOffset = minOf(source.startOffset + 1, source.endOffset),
+        )
     }
 }
 

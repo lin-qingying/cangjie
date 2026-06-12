@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -8,12 +32,18 @@ import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
+import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
  * 继承深层检查器（InheritanceDeep 分组）
@@ -28,14 +58,14 @@ import org.cangnova.cangjie.name.Name
 object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(declaration: CfirClassLikeDeclaration) {
-        if (declaration !is CfirClass) return
-        checkSealedInheritanceScope(declaration)
-        checkAbstractClassStaticUnimplemented(declaration)
-        checkMemberVisibilityNotWiderThanClass(declaration)
+        if (declaration is CfirClass) {
+            checkSealedInheritanceScope(declaration)
+            checkAbstractClassStaticUnimplemented(declaration)
+            checkMemberVisibilityNotWiderThanClass(declaration)
+        }
         checkInheritedMemberKindConsistency(declaration)
         checkSuperMembersKindConsistency(declaration)
         checkInheritedMemberTypeConsistency(declaration)
-        checkOverrideReturnThis(declaration)
     }
 
     /**
@@ -44,7 +74,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * 对齐 C++ sema_inherit_super_member_kind_inconsistent
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkSuperMembersKindConsistency(classDecl: CfirClass) {
+    private fun checkSuperMembersKindConsistency(classDecl: CfirClassLikeDeclaration) {
         val kindsByName = mutableMapOf<Name, MutableSet<String>>()
         for (superTypeRef in classDecl.superTypeRefs) {
             val type = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
@@ -78,24 +108,23 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * 对齐 C++ sema_inherit_member_type_inconsistent
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkInheritedMemberTypeConsistency(classDecl: CfirClass) {
-        val fnTypesByName = mutableMapOf<Name, MutableList<org.cangnova.cangjie.cfir.types.ConeCangJieType>>()
-        for (superTypeRef in classDecl.superTypeRefs) {
-            val type = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-            if (type is ConeErrorType) continue
-            val classId = (type as? ConeClassLikeType)?.classId ?: continue
-            val superDecl = context.session.symbolProvider
-                .getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration ?: continue
-            for (m in superDecl.declarations) {
-                if (m !is CfirNamedFunction) continue
-                val rt = (m.returnTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-                fnTypesByName.getOrPut(m.name) { mutableListOf() }.add(rt)
+    private fun checkInheritedMemberTypeConsistency(classDecl: CfirClassLikeDeclaration) {
+        val ownerClassId = (classDecl.symbol as? CfirClassLikeSymbol<*>)?.classId
+        val classScope = context.createUseSiteMemberScope(classDecl)
+        for (name in classScope.getCallableNames()) {
+            val inheritedFunctions = mutableListOf<CfirFunctionSymbol<*>>()
+            classScope.processFunctionsByName(name) { symbol ->
+                if (symbol.ownerClassId(context) != ownerClassId) {
+                    inheritedFunctions += symbol
+                }
             }
-        }
-        for ((name, types) in fnTypesByName) {
-            if (types.size < 2) continue
-            val first = types[0]
-            if (types.any { it != first }) {
+            val bySignature = inheritedFunctions
+                .filter { it.isBound }
+                .groupBy { it.overrideSignatureKey() }
+            for ((_, symbols) in bySignature) {
+                val returnTypes = symbols.mapNotNull { it.resolvedReturnTypeOrNull(context) }
+                    .filterNot { it is ConeErrorType }
+                if (returnTypes.size < 2 || !returnTypes.hasInconsistentInheritedTypes(context)) continue
                 reporter.reportOn(
                     source = classDecl.source,
                     factory = CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT,
@@ -103,43 +132,32 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     b = "function",
                     c = name,
                 )
+                return
             }
         }
     }
 
-    /**
-     * 父类 open 函数返回 This 时，override 子函数必须保持 This。
-     *
-     * 对齐 C++ sema_inherit_not_return_this
-     */
-    context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkOverrideReturnThis(classDecl: CfirClass) {
-        for (member in classDecl.declarations) {
-            if (member !is CfirNamedFunction) continue
-            if (!member.status.isOverride) continue
-            val myRet = (member.returnTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType
-            if (myRet?.isThisType == true) continue
+    private fun CfirFunctionSymbol<*>.resolvedReturnTypeOrNull(
+        context: CheckerContext,
+    ): ConeCangJieType? {
+        if (!isBound) return null
+        (cfir.returnTypeRef as? CfirResolvedTypeRef)?.coneType?.let { return it }
+        return context.returnTypeCalculator.tryCalculateReturnType(cfir).coneType
+    }
 
-            // 在父类型中查找同名 open 函数
-            var superReturnsThis = false
-            for (superTypeRef in classDecl.superTypeRefs) {
-                val t = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
-                val cid = (t as? ConeClassLikeType)?.classId ?: continue
-                val sd = context.session.symbolProvider
-                    .getClassLikeSymbolByClassId(cid)?.cfir as? CfirClassLikeDeclaration ?: continue
-                val sm = sd.declarations.firstOrNull {
-                    it is CfirNamedFunction && it.name == member.name
-                } as? CfirNamedFunction ?: continue
-                val sr = (sm.returnTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType
-                if (sr?.isThisType == true) { superReturnsThis = true; break }
-            }
-            if (superReturnsThis) {
-                reporter.reportOn(
-                    source = member.returnTypeRef.source ?: member.source ?: classDecl.source,
-                    factory = CfirErrors.INHERIT_NOT_RETURN_THIS,
-                )
+    private fun List<ConeCangJieType>.hasInconsistentInheritedTypes(context: CheckerContext): Boolean {
+        val typeCheckerState = context.session.typeContext
+        for (i in indices) {
+            for (j in i + 1 until size) {
+                val first = this[i]
+                val second = this[j]
+                if (AbstractTypeChecker.equalTypes(typeCheckerState, first, second)) continue
+                val related = AbstractTypeChecker.isSubtypeOf(typeCheckerState, first, second) ||
+                        AbstractTypeChecker.isSubtypeOf(typeCheckerState, second, first)
+                if (!related) return true
             }
         }
+        return false
     }
 
     /**
@@ -282,17 +300,29 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * - INHERIT_NOT_RETURN_THIS: open 函数返回 This 类型时 override 必须保持
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkInheritedMemberKindConsistency(classDecl: CfirClass) {
-        // 收集子类自身的成员
+    private fun checkInheritedMemberKindConsistency(classDecl: CfirClassLikeDeclaration) {
         val ownMembers = classDecl.declarations.mapNotNull { member ->
             when (member) {
-                is CfirNamedFunction -> member.name to "function"
-                is CfirProperty -> member.name to "property"
+                is CfirNamedFunction -> InheritedMemberInfo(
+                    name = member.name,
+                    kind = "function",
+                    isStatic = member.status.isStatic,
+                    source = member.source,
+                )
+
+                is CfirProperty -> InheritedMemberInfo(
+                    name = member.name,
+                    kind = "property",
+                    isStatic = member.status.isStatic,
+                    source = member.source,
+                )
+
                 else -> null
             }
-        }.toMap()
+        }.groupBy { it.name }
 
-        // 对每个父类型，检查同名成员的声明类型是否一致
+        val reportedStaticConflicts = mutableSetOf<Name>()
+        val reportedKindConflicts = mutableSetOf<Name>()
         for (superTypeRef in classDecl.superTypeRefs) {
             val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
             if (superType is ConeErrorType) continue
@@ -301,24 +331,73 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             val superDecl = superSymbol.cfir as? CfirClassLikeDeclaration ?: continue
 
             for (superMember in superDecl.declarations) {
-                val (superName, superKind) = when (superMember) {
-                    is CfirNamedFunction -> superMember.name to "function"
-                    is CfirProperty -> superMember.name to "property"
+                val superInfo = when (superMember) {
+                    is CfirNamedFunction -> InheritedMemberInfo(
+                        name = superMember.name,
+                        kind = "function",
+                        isStatic = superMember.status.isStatic,
+                        source = superMember.source,
+                    )
+
+                    is CfirProperty -> InheritedMemberInfo(
+                        name = superMember.name,
+                        kind = "property",
+                        isStatic = superMember.status.isStatic,
+                        source = superMember.source,
+                    )
+
                     else -> continue
                 }
-                val ownKind = ownMembers[superName] ?: continue
+                val ownSameNameMembers = ownMembers[superInfo.name].orEmpty()
 
-                if (ownKind != superKind) {
-                    reporter.reportOn(
-                        source = classDecl.source,
-                        factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
-                        a = ownKind,
-                        b = superName,
-                        c = superKind,
-                        d = superClassId.shortClassName,
-                    )
+                for (ownInfo in ownSameNameMembers) {
+                    if (ownInfo.isStatic != superInfo.isStatic) {
+                        if (reportedStaticConflicts.add(ownInfo.name)) {
+                            reporter.reportOn(
+                                source = ownInfo.source?.firstCharacterDiagnosticSource() ?: classDecl.source,
+                                factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
+                                a = ownInfo.staticKind,
+                                b = ownInfo.name,
+                                c = superInfo.staticKind,
+                                d = superClassId.shortClassName,
+                            )
+                        }
+                        continue
+                    }
+
+                    if (ownInfo.kind != superInfo.kind) {
+                        if (reportedKindConflicts.add(ownInfo.name)) {
+                            reporter.reportOn(
+                                source = ownInfo.source ?: classDecl.source,
+                                factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
+                                a = ownInfo.kind,
+                                b = ownInfo.name,
+                                c = superInfo.kind,
+                                d = superClassId.shortClassName,
+                            )
+                        }
+                        continue
+                    }
                 }
             }
         }
     }
+
+    private data class InheritedMemberInfo(
+        val name: Name,
+        val kind: String,
+        val isStatic: Boolean,
+        val source: CjSourceElement?,
+    ) {
+        val staticKind: String get() = if (isStatic) "static" else "non-static"
+    }
+
+    private fun CjSourceElement.firstCharacterDiagnosticSource(): CjSourceElement =
+        fakeElement(
+            CjFakeSourceElementKind.ErrorTypeRef,
+            CjSourceElementOffsetStrategy.Custom.Initialized(
+                startOffset = startOffset,
+                endOffset = (startOffset + 1).coerceAtMost(endOffset),
+            ),
+        )
 }

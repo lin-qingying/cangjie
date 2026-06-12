@@ -1,36 +1,58 @@
-﻿package org.cangnova.cangjie.cfir.analysis.diagnostics
+﻿/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
+package org.cangnova.cangjie.cfir.analysis.diagnostics
 
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ARGUMENT_TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ARRAY_LITERAL_TYPE_CANNOT_BE_INFERRED
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.ASSIGNMENT_TYPE_MISMATCH
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CANNOT_INFER_PARAMETER_TYPE
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CLASSIFIER_REDECLARATION
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONFLICTING_OVERLOADS
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_ARITHMETIC_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_DIVIDE_BY_ZERO
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_NEGATIVE_SHIFT_COUNT
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONST_EVAL_SHIFT_COUNT_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INCONSISTENT_ARRAY_LITERAL_ELEMENT_TYPE
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INFERRED_TYPE_VARIABLE_INTO_EMPTY_INTERSECTION
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INFERRED_TYPE_VARIABLE_INTO_POSSIBLE_EMPTY_INTERSECTION
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INVALID_OPERATOR_PARAMETER_COUNT
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.LITERAL_NUMERIC_OVERFLOW
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.NEW_INFERENCE_ERROR
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.NO_CONSTRUCTOR
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.REF_NOT_BE_TYPE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.PATTERN_INITIALIZER_TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.REDECLARATION
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INVALID_OPERATOR_PARAMETER_COUNT
+import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.REF_NOT_BE_TYPE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.RETURN_TYPE_MISMATCH
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_INCOMPATIBLE
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_INFERENCE_ONLY_INPUT_TYPES_ERROR
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.TYPE_MISMATCH
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CLASSIFIER_REDECLARATION
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.CONFLICTING_OVERLOADS
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.BUILDER_INFERENCE_MULTI_LAMBDA_RESTRICTION
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INFERRED_TYPE_VARIABLE_INTO_EMPTY_INTERSECTION
-import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors.INFERRED_TYPE_VARIABLE_INTO_POSSIBLE_EMPTY_INTERSECTION
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.DECLARATION_NAME
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticRenderers.RENDER_TYPE_LIST
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticFactoryToRendererMap
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.NOT_RENDERED
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.NULLABLE_STRING
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.TO_STRING
 import org.cangnova.cangjie.cfir.diagnostics.CjDiagnosticRenderers.VISIBILITY
 import org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory
@@ -482,6 +504,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_NAME,
         )
         map.put(CfirErrors.parse_this_type_not_allow, "'This' type is only allowed as an instance member function return type")
+        map.put(CfirErrors.INVALID_POSITION_OF_THIS_TYPE, "'This' type is not allowed here")
         map.put(
             CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,
             "class ''{0}'' does not implement inherited abstract members",
@@ -642,6 +665,14 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // ================================================================
         map.put(CfirErrors.TYPE_UNINITIALIZED_STATIC_FIELD, "the static member variable ''{0}'' is not initialized", RENDER_NAME)
         map.put(CfirErrors.INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER, "instance {0} cannot be used in the finalizer", RENDER_STRING)
+        map.put(
+            CfirErrors.FINALIZER_FORBIDDEN_IN_CLASS,
+            "finalizer is not allowed in {1} class ''{0}''",
+            RENDER_NAME,
+            RENDER_STRING
+        )
+        map.put(CfirErrors.CANNOT_CURRYING, "{0} cannot be currying function", RENDER_STRING)
+        map.put(CfirErrors.FORBID_GENERIC_FINALIZER, "generic finalizer ''{0}'' is not allowed", RENDER_NAME)
         map.put(CfirErrors.NON_ABSTRACT_CLASS_CANNOT_BE_SEALED, "non-abstract class cannot be modified by 'sealed'")
         map.put(CfirErrors.STATIC_VARIABLE_USE_GENERIC_PARAMETER, "static member cannot depend on generic parameter ''{0}''", RENDER_NAME)
         map.put(CfirErrors.CSTRUCT_CANNOT_IMPL_INTERFACES, "struct with @C cannot implement interfaces")

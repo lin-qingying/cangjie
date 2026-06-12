@@ -88,10 +88,17 @@ class CjFinalizer : CjDeclarationStub<CangJieFinalizerStub>, CjFunction {
         return bodyExpression != null
     }
 
-    override val typeParameterList: CjTypeParameterList? = null
-    override val typeConstraintList: CjTypeConstraintList? = null
-    override val typeConstraints: List<CjTypeConstraint> = emptyList()
-    override val typeParameters: List<CjTypeParameter> = emptyList()
+    override val typeParameterList: CjTypeParameterList?
+        get() = getStubOrPsiChild(CjStubElementTypes.TYPE_PARAMETER_LIST)
+
+    override val typeConstraintList: CjTypeConstraintList?
+        get() = getStubOrPsiChild(CjStubElementTypes.TYPE_CONSTRAINT_LIST)
+
+    override val typeConstraints: List<CjTypeConstraint>
+        get() = typeConstraintList?.constraints ?: emptyList()
+
+    override val typeParameters: List<CjTypeParameter>
+        get() = typeParameterList?.parameters ?: emptyList()
 
     override fun hasDeclaredReturnType() = false
 

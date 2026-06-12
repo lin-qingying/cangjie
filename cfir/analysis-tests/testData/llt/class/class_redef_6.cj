@@ -12,7 +12,7 @@ open class C1 {
 }
 
 class C2 <: C1 {
-    public <!REDEF_INSTANCE_ERROR!>redef<!> func <!INHERIT_MEMBER_KIND_INCONSISTENT!>foo<!>(): Int64 {
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic <!REDEF_INSTANCE_ERROR!>redef<!> func foo(): Int64 {
         return 3
     }
 }

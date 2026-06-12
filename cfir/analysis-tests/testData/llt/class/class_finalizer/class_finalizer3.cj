@@ -11,12 +11,12 @@
 // }
 
 class B {
-    ~init<!sema_cannot_currying!>(<!>)() {}
+    ~init<!CANNOT_CURRYING!>(<!>)() {}
 }
 
 class C {
     ~init() {
-        return <!sema_cannot_convert_literal!>0<!>
+        return <!RETURN_TYPE_MISMATCH!>0<!>
     }
 }
 
@@ -24,8 +24,8 @@ class D {
     ~init() {}
 }
 
-class F<<!sema_upper_bound_must_be_class_or_interface!>T<!>> where T <: String {
-    <!sema_forbid_generic_finalizer!>~<!>init<<!sema_upper_bound_must_be_class_or_interface!>T<!>>() where T <: String {}
+class F<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: String {
+    <!FORBID_GENERIC_FINALIZER!>~<!>init<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>() where T <: String {}
 }
 
 main() {

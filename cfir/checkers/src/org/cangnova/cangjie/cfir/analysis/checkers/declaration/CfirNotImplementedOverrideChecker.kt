@@ -1,16 +1,41 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
-import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
@@ -44,7 +69,7 @@ object CfirNotImplementedOverrideChecker : CfirClassLikeChecker() {
         if (!classScope.hasUnimplementedAbstractMember(declaration, context)) return
 
         reporter.reportOn(
-            source = declaration.source,
+            source = declaration.classLikeDeclarationHeaderDiagnosticSource(),
             factory = CfirErrors.ABSTRACT_MEMBER_NOT_IMPLEMENTED,
             a = declaration.name,
         )
@@ -119,6 +144,10 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
         .groupBy { it.overrideSignatureKey() }
 
     for ((_, symbols) in visibleGroups) {
+        if (symbols.hasConcreteInterfaceImplementationConflict(ownerDeclaration, context)) {
+            return true
+        }
+
         val abstractSymbols = symbols.filter { it.isAbstractLike(context) }
         if (abstractSymbols.isEmpty()) continue
 
@@ -135,6 +164,27 @@ private fun <S : CfirCallableSymbol<*>> List<S>.hasUnimplementedAbstractBySignat
     }
 
     return false
+}
+
+private fun <S : CfirCallableSymbol<*>> List<S>.hasConcreteInterfaceImplementationConflict(
+    ownerDeclaration: CfirClassLikeDeclaration,
+    context: CheckerContext,
+): Boolean {
+    val ownerClassId = (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId
+    val hasOwnConcreteImplementation = any { symbol ->
+        symbol.ownerClassId(context) == ownerClassId && !symbol.isAbstractLike(context)
+    }
+    if (hasOwnConcreteImplementation) return false
+
+    val inheritedConcreteInterfaceOwners = mapNotNull { symbol ->
+        if (symbol.ownerClassId(context) == ownerClassId) return@mapNotNull null
+        val owner = context.ownerClassSymbol(symbol)?.cfir
+        if (owner !is CfirInterface) return@mapNotNull null
+        if (symbol.isAbstractLike(context)) return@mapNotNull null
+        (owner.symbol as? CfirClassLikeSymbol<*>)?.classId
+    }.toSet()
+
+    return inheritedConcreteInterfaceOwners.size > 1
 }
 
 private fun CfirCallableSymbol<*>.canImplementAbstractMember(abstractSymbol: CfirCallableSymbol<*>): Boolean {

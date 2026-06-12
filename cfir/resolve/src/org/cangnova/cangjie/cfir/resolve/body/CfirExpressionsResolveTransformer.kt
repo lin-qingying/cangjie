@@ -1,80 +1,64 @@
-﻿package org.cangnova.cangjie.cfir.resolve.body
+﻿/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
+package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.LanguageFeature
-import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.resolvedTypeFromPrototype
-import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.*
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.expressions.builder.buildArgumentList
-import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteralCopy
-import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression
-import org.cangnova.cangjie.cfir.expressions.builder.buildFunctionCall
-import org.cangnova.cangjie.cfir.expressions.builder.buildNamedAccessExpression
+import org.cangnova.cangjie.cfir.expressions.builder.*
 import org.cangnova.cangjie.cfir.patterns.*
-import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPatternCopy
-import org.cangnova.cangjie.cfir.patterns.builder.buildEnumPattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildEnumPatternCopy
-import org.cangnova.cangjie.cfir.patterns.builder.buildOrPattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildTuplePatternCopy
-import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
-import org.cangnova.cangjie.cfir.references.CfirNamedReference
-import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.references.CfirThisReference
-import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
-import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
+import org.cangnova.cangjie.cfir.patterns.builder.*
+import org.cangnova.cangjie.cfir.references.*
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
-import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
+import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
+import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.impl.CfirNamedReferenceImpl
-import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
-import org.cangnova.cangjie.cfir.resolve.ResolutionMode
+import org.cangnova.cangjie.cfir.references.impl.CfirResolvedAppliedCallableReference
+import org.cangnova.cangjie.cfir.resolve.*
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessAnalyzer
 import org.cangnova.cangjie.cfir.resolve.match.exhaustive.ExhaustivenessResult
-import org.cangnova.cangjie.cfir.resolve.typeFromCallee
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.resolve.withExpectedType
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
-import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
-import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
-import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
-import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
-import org.cangnova.cangjie.cfir.diagnostic.ConeEffectsFeatureDisabledError
-import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
-import org.cangnova.cangjie.cfir.diagnostic.ConeImplicitResumeOutsideHandlerError
-import org.cangnova.cangjie.cfir.diagnostic.ConeInconsistentArrayLiteralElementTypeError
-import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
-import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
-import org.cangnova.cangjie.cfir.diagnostic.ConeOptionalChainNonOptionalError
-import org.cangnova.cangjie.cfir.diagnostic.ConeResumeNoWithError
-import org.cangnova.cangjie.cfir.diagnostic.ConeResumeThrowingMismatchTypeError
-import org.cangnova.cangjie.cfir.diagnostic.ConeTypeMismatchError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirSpecificTypeResolverTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.resultType
+import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.languageVersionSettings
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
-import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
-import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
-import org.cangnova.cangjie.source.fakeElement
-import org.cangnova.cangjie.source.realElement
+import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -1536,6 +1520,85 @@ open class CfirExpressionsResolveTransformer(
         }
         typeOperator.replaceConeTypeOrNull(resultType)
         return typeOperator
+    }
+
+    override fun transformTypeConversion(
+        typeConversion: CfirTypeConversion,
+        data: ResolutionMode,
+    ): CfirExpression {
+        typeConversion.transformAnnotations(transformer, data)
+        typeConversion.transformTargetTypeRef(transformer, ResolutionMode.ContextIndependent)
+        typeConversion.transformArgument(transformer, ResolutionMode.ContextIndependent)
+
+        val targetType = typeConversion.targetTypeRef.coneTypeOrNull
+        val targetPrimitiveType = targetType as? ConePrimitiveType
+        if (targetPrimitiveType == null) {
+            val resultType = when (targetType) {
+                is ConeErrorType -> ConeErrorType(ConeUnreportedDuplicateDiagnostic(targetType.diagnostic))
+                else -> errorType("type conversion target is not a primitive type")
+            }
+            typeConversion.replaceConeTypeOrNull(resultType)
+            return typeConversion
+        }
+
+        val argumentType = typeConversion.argument.coneTypeOrNull
+        if (argumentType == null) {
+            typeConversion.replaceConeTypeOrNull(errorType("type conversion argument type is unresolved"))
+            return typeConversion
+        }
+        if (argumentType is ConeErrorType) {
+            typeConversion.replaceConeTypeOrNull(ConeErrorType(ConeUnreportedDuplicateDiagnostic(argumentType.diagnostic)))
+            return typeConversion
+        }
+
+        val normalizedArgumentType = IdealTypeResolver.resolveIfIdeal(argumentType)
+        if (normalizedArgumentType != argumentType) {
+            typeConversion.argument.replaceConeTypeOrNull(normalizedArgumentType)
+        }
+
+        val synthesizedType = if (targetPrimitiveType.canConvertFrom(normalizedArgumentType)) {
+            targetPrimitiveType
+        } else {
+            errorType("numeric conversion requires numeric operand")
+        }
+
+        val expectedType = data.expectedTypeOrNull
+        val checkedType = if (
+            expectedType != null &&
+            synthesizedType !is ConeErrorType &&
+            AbstractTypeChecker.isSubtypeOf(session.typeContext, synthesizedType, expectedType) != true
+        ) {
+            ConeErrorType(
+                diagnostic = ConeTypeMismatchError(expectedType, synthesizedType),
+                delegatedType = synthesizedType,
+            )
+        } else {
+            synthesizedType
+        }
+
+        typeConversion.replaceConeTypeOrNull(checkedType)
+        return typeConversion
+    }
+
+    /**
+     * 对齐官方 `SynNumTypeConvExpr`：
+     * - `Nothing` 可转换到 `Rune` 或任意数值类型；
+     * - `Rune` 可转换到 `UInt32`；
+     * - 整数可转换到 `Rune`；
+     * - 数值类型之间可相互转换。
+     */
+    private fun ConePrimitiveType.canConvertFrom(argumentType: ConeCangJieType): Boolean {
+        val sourceKind = (argumentType as? ConePrimitiveType)?.kind ?: return false
+        val targetKind = kind
+        val isNothingToRuneOrNumeric =
+            sourceKind == PrimitiveTypeKind.NOTHING && (targetKind == PrimitiveTypeKind.RUNE || targetKind.isNumeric)
+        val isRuneToUInt32 =
+            sourceKind == PrimitiveTypeKind.RUNE && targetKind == PrimitiveTypeKind.UINT32
+        val isIntegerToRune =
+            targetKind == PrimitiveTypeKind.RUNE && sourceKind.isInteger
+        val isBetweenNumeric =
+            targetKind.isNumeric && sourceKind.isNumeric
+        return isNothingToRuneOrNumeric || isRuneToUInt32 || isIntegerToRune || isBetweenNumeric
     }
 
     // ── For-In / Loop ─────────────────────────────────────────────────────────
