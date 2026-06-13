@@ -33,12 +33,15 @@ import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.resultType
 import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
 import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirValueParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -101,6 +104,9 @@ class CfirCallCompleter(
         }
 
         session.lookupTracker?.recordTypeResolveAsLookup(initialType, call.source, components.context.file.source)
+        candidate.noArgEnumConstructorTargetTypeSubstitutor(initialType, resolutionMode)?.let { substitutor ->
+            return call.transformSingle(createCompletionResultsWriter(substitutor), null)
+        }
         addConstraintFromExpectedType(candidate, initialType, resolutionMode)
 
         if (skipEvenPartialCompletion) return call
@@ -109,7 +115,13 @@ class CfirCallCompleter(
             session.inferenceComponents,
             resolutionMode,
             initialType,
-        )
+        ).let {
+            when {
+                it == ConstraintSystemCompletionMode.FULL ->
+                    inferenceSession.customCompletionModeInsteadOfFull(call) ?: ConstraintSystemCompletionMode.FULL
+                else -> it
+            }
+        }
         val analyzer = createPostponedArgumentsAnalyzer(transformer.resolutionContext)
 
         return when (completionMode) {
@@ -154,6 +166,7 @@ class CfirCallCompleter(
         val system = candidate.system
 
         if (candidate.addBuiltinArrayConstructorExpectedElementConstraint(expectedType)) return
+        if (candidate.addEnumConstructorExpectedTypeConstraint(initialType, expectedType)) return
 
         when {
             resolutionMode.fromCast -> {
@@ -199,6 +212,79 @@ class CfirCallCompleter(
     }
 
     /**
+     * 官方 enum sugar 在目标类型能确定同一个 enum owner 时，直接把该目标类型
+     * 作为 enum constructor 表达式类型；这比普通 subtype 约束更强，能够保留
+     * `Option<T>` 这类仍含声明类型参数的上下文。
+     */
+    private fun Candidate.addEnumConstructorExpectedTypeConstraint(
+        initialType: ConeCangJieType,
+        expectedType: ConeCangJieType,
+    ): Boolean {
+        if (symbol.takeIf { it.isBound }?.cfir !is CfirEnumConstructor) return false
+        val initialEnumClassId = initialType.fullyExpandedType().enumConstructorOwnerClassIdOrNull()
+            ?: return false
+        val expectedEnumClassId = expectedType.fullyExpandedType().enumConstructorOwnerClassIdOrNull()
+            ?: return false
+        if (initialEnumClassId != expectedEnumClassId) return false
+
+        system.addEqualityConstraintIfCompatible(initialType, expectedType, ConeExpectedTypeConstraintPosition)
+        return true
+    }
+
+    /**
+     * 无参 enum constructor 的官方语义是目标类型直接定型。
+     *
+     * 普通约束求解不适合 `None` -> `Option<T>` 这种目标类型仍含声明类型参数的场景，
+     * 因为 fresh owner 变量会被当作“未能推断”处理；官方前端在这里直接把表达式
+     * 类型设置为目标 enum 类型。
+     */
+    private fun Candidate.noArgEnumConstructorTargetTypeSubstitutor(
+        initialType: ConeCangJieType,
+        resolutionMode: ResolutionMode,
+    ): ConeSubstitutor? {
+        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return null
+        if (enumConstructor.valueParameters.isNotEmpty()) return null
+        if (callInfo.hasExplicitTypeArguments) return null
+
+        val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return null
+        val ownerClassId = session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId ?: return null
+        val initialEnumClassId = initialType.fullyExpandedType().enumConstructorOwnerClassIdOrNull() ?: return null
+        if (initialEnumClassId != ownerClassId) return null
+
+        val targetType = enumConstructorTargetType(ownerClassId, resolutionMode) ?: return null
+        val targetTypeArguments = targetType.enumTypeArgumentsForClassId(ownerClassId) ?: return null
+        if (targetTypeArguments.size != freshVariables.size) return null
+        if (freshVariables.isEmpty()) return ConeSubstitutor.Empty
+
+        return CfirTypeSubstitutorByMap(
+            freshVariables.zip(targetTypeArguments).associate { (variable, typeArgument) ->
+                variable.typeConstructor to typeArgument
+            }
+        )
+    }
+
+    /**
+     * enum constructor 既可以由外层 expected type 定型，也可以由
+     * `Option<Int>.None` 这类 member access 的显式 enum owner 类型定型。
+     * 后者是仓颉 enum sugar 的真实语义，不属于调用解析兜底。
+     */
+    private fun Candidate.enumConstructorTargetType(
+        ownerClassId: ClassId,
+        resolutionMode: ResolutionMode,
+    ): ConeCangJieType? {
+        val expectedType = (resolutionMode as? ResolutionMode.WithExpectedType)
+            ?.expectedType
+            ?.fullyExpandedType()
+            ?.takeIf { it.enumConstructorOwnerClassIdOrNull() == ownerClassId }
+        if (expectedType != null) return expectedType
+
+        return callInfo.explicitReceiver
+            ?.coneTypeOrNull
+            ?.fullyExpandedType()
+            ?.takeIf { it.enumConstructorOwnerClassIdOrNull() == ownerClassId }
+    }
+
+    /**
      * enum 构造器的 owner 泛型只能从同一个 enum 的期望类型中推断。
      * 若期望类型属于其它 enum/非 enum，官方 enum sugar 路径不会把该期望类型
      * 注入构造器泛型约束，而是保留构造器自身类型，后续再报告裸泛型或类型不匹配。
@@ -216,6 +302,12 @@ class CfirCallCompleter(
     private fun ConeCangJieType.enumConstructorOwnerClassIdOrNull(): ClassId? = when (this) {
         is ConeEnumType -> classId
         is ConeClassLikeType -> classId.takeIf { it == StdlibClassIds.Option }
+        else -> null
+    }
+
+    private fun ConeCangJieType.enumTypeArgumentsForClassId(classId: ClassId): List<ConeCangJieType>? = when (this) {
+        is ConeEnumType -> typeArguments.map { it.type }.takeIf { this.classId == classId }
+        is ConeClassLikeType -> typeArguments.map { it.type }.takeIf { this.classId == classId }
         else -> null
     }
 
@@ -320,6 +412,7 @@ class CfirCallCompleter(
             forOverloadByLambdaReturnType: Boolean,
         ): ReturnArgumentsAnalysisResult {
             val lambda = lambdaAtom.anonymousFunction
+            val expectedFunctionType = lambdaAtom.expectedType as? ConeFunctionType
             lambda.replaceMatchingParameterFunctionType(lambdaAtom.expectedType)
             rewriteLambdaParameterTypes(lambda.valueParameters, parameters, candidate, withPCLASession)
 
@@ -342,6 +435,20 @@ class CfirCallCompleter(
              * `ARGUMENT_TYPE_MISMATCH` / `CANNOT_INFER_PARAMETER_TYPE`，
              * 而不是继续让返回值约束反向流回外层调用。
              */
+            val resolutionMode = expectedReturnType
+                ?.let { returnType ->
+                    org.cangnova.cangjie.cfir.resolve.withExpectedType(
+                        ConeFunctionType(
+                            parameterTypes = parameters,
+                            returnType = returnType,
+                            isCFunc = expectedFunctionType?.isCFunc ?: false,
+                            isClosureType = expectedFunctionType?.isClosureType ?: false,
+                            hasVariableLenArg = expectedFunctionType?.hasVariableLenArg ?: false,
+                            attributes = expectedFunctionType?.attributes ?: org.cangnova.cangjie.cfir.types.ConeAttributes.Empty,
+                        ),
+                    )
+                }
+                ?: ResolutionMode.ContextDependent
             var additionalConstraints: ConstraintStorage? = null
 
             transformer.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
@@ -357,6 +464,7 @@ class CfirCallCompleter(
                         declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
                             lambdaExpression,
                             expectedReturnTypeRef,
+                            resolutionMode,
                         )
                     }
                 } else {
@@ -367,6 +475,7 @@ class CfirCallCompleter(
                         declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
                             lambdaExpression,
                             expectedReturnTypeRef,
+                            resolutionMode,
                         )
                     }
                 }

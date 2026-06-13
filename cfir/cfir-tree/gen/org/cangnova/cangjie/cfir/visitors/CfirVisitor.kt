@@ -230,6 +230,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitTypeConversion(typeConversion: CfirTypeConversion, data: D): R =
         visitElement(typeConversion, data)
 
+    open fun visitLetPatternExpression(letPatternExpression: CfirLetPatternExpression, data: D): R =
+        visitElement(letPatternExpression, data)
+
     open fun visitIfExpression(ifExpression: CfirIfExpression, data: D): R =
         visitElement(ifExpression, data)
 

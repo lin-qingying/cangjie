@@ -584,6 +584,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformTypeConversion(typeConversion, data)
     }
 
+    open fun transformLetPatternExpression(letPatternExpression: CfirLetPatternExpression, data: D): CfirStatement {
+        return transformElement(letPatternExpression, data)
+    }
+
+    final override fun visitLetPatternExpression(letPatternExpression: CfirLetPatternExpression, data: D): CfirStatement {
+        return transformLetPatternExpression(letPatternExpression, data)
+    }
+
     open fun transformIfExpression(ifExpression: CfirIfExpression, data: D): CfirStatement {
         return transformElement(ifExpression, data)
     }

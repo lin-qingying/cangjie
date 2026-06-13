@@ -34,7 +34,8 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeParameterInQualifiedAccess
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.expressions.buildArgumentListForErrorCall
+import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
+import org.cangnova.cangjie.cfir.expressions.builder.buildArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlockCopy
 import org.cangnova.cangjie.cfir.expressions.builder.buildReturnExpression
 import org.cangnova.cangjie.cfir.lookupTracker
@@ -44,6 +45,7 @@ import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.render
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzer
 import org.cangnova.cangjie.cfir.resolve.body.buildAppliedCallableReference
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithPostponedChild
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
@@ -51,6 +53,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.substituteExplicitTypeArgumentConstraints
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toErrorReference
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractTreeTransformer
@@ -68,8 +71,10 @@ import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.types.TypeApproximatorConfiguration
+import java.util.IdentityHashMap
 
 class CfirCallCompletionResultsWriterTransformer(
     override val session: CfirSession,
@@ -191,10 +196,14 @@ class CfirCallCompletionResultsWriterTransformer(
 
         val resultType = completedResultType(candidate)
         val allArgs = calleeReference.computeAllArguments(originalArgumentList)
-        val (regularMapping, allArgsMapping) = candidate.handleVarargsAndReturnResultingArgumentsMapping(allArgs)
+        val (regularMapping, allArgsMapping) = candidate.handleVarargsAndReturnResultingArgumentsMapping(
+            argumentList = allArgs,
+            callSource = functionCall.source,
+        )
         val expectedArgumentsTypeMapping = candidate.createArgumentsMapping(forErrorReference = calleeReference.isError)
         result.replaceArgumentList(
             rewriteArgumentList(
+                candidate = candidate,
                 originalArgumentList = originalArgumentList,
                 expectedArgumentsTypeMapping = expectedArgumentsTypeMapping,
                 regularMapping = regularMapping,
@@ -210,6 +219,7 @@ class CfirCallCompletionResultsWriterTransformer(
     }
 
     private fun rewriteArgumentList(
+        candidate: Candidate,
         originalArgumentList: CfirArgumentList,
         expectedArgumentsTypeMapping: ExpectedArgumentType.ArgumentsMap?,
         regularMapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
@@ -218,13 +228,21 @@ class CfirCallCompletionResultsWriterTransformer(
     ): CfirArgumentList {
         val transformedRegularMapping = LinkedHashMap<CfirExpression, CfirValueParameter>(regularMapping.size)
         val transformedAllArgsMapping = LinkedHashMap<CfirExpression, CfirValueParameter?>(allArgsMapping.size)
+        val transformedArguments = IdentityHashMap<CfirExpression, CfirExpression>()
 
-        for (originalArgument in originalArgumentList.arguments) {
-            val transformedArgument = transformCallArgument(originalArgument, expectedArgumentsTypeMapping)
-            transformedAllArgsMapping[transformedArgument] = allArgsMapping[originalArgument]
-            regularMapping[originalArgument]?.let { parameter ->
-                transformedRegularMapping[transformedArgument] = parameter
+        fun transform(argument: CfirExpression, parameter: CfirValueParameter?): CfirExpression =
+            transformedArguments.getOrPut(argument) {
+                val transformed = transformCallArgument(argument, expectedArgumentsTypeMapping)
+                    .withResolvedArrayArgumentType(candidate, parameter)
+                transformed
             }
+
+        for ((argument, parameter) in allArgsMapping) {
+            transformedAllArgsMapping[transform(argument, parameter)] = parameter
+        }
+
+        for ((argument, parameter) in regularMapping) {
+            transformedRegularMapping[transform(argument, parameter)] = parameter
         }
 
         return if (forErrorReference) {
@@ -232,6 +250,20 @@ class CfirCallCompletionResultsWriterTransformer(
         } else {
             buildResolvedArgumentList(originalArgumentList, transformedRegularMapping)
         }
+    }
+
+    private fun CfirExpression.withResolvedArrayArgumentType(
+        candidate: Candidate,
+        parameter: CfirValueParameter?,
+    ): CfirExpression {
+        if (this !is CfirArrayLiteral || elements.isNotEmpty() || parameter == null) return this
+        val expectedArrayType = parameter.returnTypeRef.coneTypeOrNull
+            ?.substituteType(candidate)
+            ?.fullyExpandedType()
+            ?.takeIf { it.arrayElementType != null }
+            ?: return this
+        replaceConeTypeOrNull(expectedArrayType)
+        return this
     }
 
     private fun transformCallArgument(
@@ -247,6 +279,14 @@ class CfirCallCompletionResultsWriterTransformer(
         val expectedType = expectedArgumentsTypeMapping?.getExpectedType(originalArgument)
             ?: expectedArgumentsTypeMapping?.getExpectedType(argumentBeforeTransform)
             ?: expectedArgumentsTypeMapping?.getExpectedType(replacedAfterTransform)
+        val expectedArrayType = expectedType?.fullyExpandedType()
+            ?.takeIf { it.arrayElementType != null }
+        if (replacedAfterTransform is CfirArrayLiteral &&
+            replacedAfterTransform.elements.isEmpty() &&
+            expectedArrayType != null
+        ) {
+            replacedAfterTransform.replaceConeTypeOrNull(expectedArrayType)
+        }
         return replacedAfterTransform.transformSingle(integerOperatorApproximator, expectedType) as CfirExpression
     }
 
@@ -263,9 +303,22 @@ class CfirCallCompletionResultsWriterTransformer(
             }
         }
 
+        val cangjieVariadicParameter = cangjieVariadicParameterForCall
         for ((atom, valueParameter) in argumentMapping) {
-            val expectedType = valueParameter.returnTypeRef.coneTypeOrNull?.substituteType(this) ?: continue
-            registerExpectedType(atom.unwrapAtom(), expectedType)
+            val parameterType = valueParameter.returnTypeRef.coneTypeOrNull
+                ?.substituteType(this)
+                ?.let { substituteExplicitTypeArgumentConstraints(it) }
+                ?: continue
+            val expectedType = if (valueParameter == cangjieVariadicParameter) {
+                parameterType.arrayElementType ?: parameterType
+            } else {
+                parameterType
+            }
+            registerExpectedType(atom.expression, expectedType)
+            val unwrappedArgument = atom.unwrapAtom()
+            if (unwrappedArgument !== atom.expression) {
+                registerExpectedType(unwrappedArgument, expectedType)
+            }
         }
 
         val argumentReplacements = this@createArgumentsMapping.argumentReplacements
@@ -291,27 +344,77 @@ class CfirCallCompletionResultsWriterTransformer(
 
     private fun Candidate.handleVarargsAndReturnResultingArgumentsMapping(
         argumentList: List<CfirExpression>,
+        callSource: CjSourceElement?,
         precomputedArgumentMapping: LinkedHashMap<CfirExpression, CfirValueParameter>? = null,
     ): ResultingArgumentsMapping {
         val argumentMapping = precomputedArgumentMapping ?: this.argumentMapping.unwrapAtoms()
-//TODO 变长参数 目前仓颉使用的是Array，留后处理
-//        val varargParameter = argumentMapping.values.firstOrNull { it.isVararg }
-//        return if (varargParameter != null) {
-//            // Create a CfirVarargArgumentExpression for the vararg arguments
-//            val varargParameterTypeRef = varargParameter.returnTypeRef
-//            val resolvedArrayType = varargParameterTypeRef.substitute(this)
-//            val argumentMappingWithAllArgs =
-//                remapArgumentsWithVararg(session, varargParameter, resolvedArrayType, argumentMapping, argumentList)
-//            ResultingArgumentsMapping(
-//                argumentMappingWithAllArgs.filterValuesNotNull(),
-//                argumentMappingWithAllArgs
-//            )
-//        } else {
-      return  ResultingArgumentsMapping(
-            argumentMapping,
-            argumentList.associateWithTo(LinkedHashMap()) { argumentMapping[it] }
-        )
-//        }
+        val variadicParameter = cangjieVariadicParameterForCall
+        return if (variadicParameter != null) {
+            val resolvedArrayType = variadicParameter.returnTypeRef.coneTypeOrNull?.substituteType(this)
+                ?: ConeErrorType(ConeSimpleDiagnostic("Unresolved variadic array parameter type"))
+            val argumentMappingWithAllArgs = remapArgumentsWithCangjieVararg(
+                variadicParameter = variadicParameter,
+                resolvedArrayType = resolvedArrayType,
+                argumentMapping = argumentMapping,
+                argumentList = argumentList,
+                callSource = callSource,
+                parameters = declaredParametersForMapping(),
+            )
+            ResultingArgumentsMapping(
+                argumentMappingWithAllArgs.filterValuesNotNullToLinkedMap(),
+                argumentMappingWithAllArgs,
+            )
+        } else {
+            ResultingArgumentsMapping(
+                argumentMapping,
+                argumentList.associateWithTo(LinkedHashMap()) { argumentMapping[it] },
+            )
+        }
+    }
+
+    private fun remapArgumentsWithCangjieVararg(
+        variadicParameter: CfirValueParameter,
+        resolvedArrayType: ConeCangJieType,
+        argumentMapping: LinkedHashMap<CfirExpression, CfirValueParameter>,
+        argumentList: List<CfirExpression>,
+        callSource: CjSourceElement?,
+        parameters: List<CfirValueParameter>,
+    ): LinkedHashMap<CfirExpression, CfirValueParameter?> {
+        val result = LinkedHashMap<CfirExpression, CfirValueParameter?>()
+        val variadicArguments = mutableListOf<CfirExpression>()
+        val variadicParameterIndex = parameters.indexOf(variadicParameter)
+        var variadicArrayAdded = false
+
+        fun flushVariadicArguments(source: CjSourceElement?) {
+            if (variadicArrayAdded) return
+            val variadicArray = buildArrayLiteral {
+                this.source = source?.fakeElement(CjFakeSourceElementKind.VarargArgument)
+                coneTypeOrNull = resolvedArrayType
+                elements.addAll(variadicArguments)
+            }
+            result[variadicArray] = variadicParameter
+            variadicArguments.clear()
+            variadicArrayAdded = true
+        }
+
+        for (argument in argumentList) {
+            val parameter = argumentMapping[argument]
+            if (parameter == variadicParameter) {
+                variadicArguments += argument
+            } else {
+                val parameterIndex = parameter?.let { parameters.indexOf(it) } ?: -1
+                if (
+                    !variadicArrayAdded &&
+                    variadicParameterIndex >= 0 &&
+                    parameterIndex > variadicParameterIndex
+                ) {
+                    flushVariadicArguments(variadicArguments.firstOrNull()?.source ?: argument.source)
+                }
+                result[argument] = parameter
+            }
+        }
+        flushVariadicArguments(variadicArguments.firstOrNull()?.source ?: callSource)
+        return result
     }
 
     override fun transformNamedAccessExpression(
@@ -368,6 +471,12 @@ class CfirCallCompletionResultsWriterTransformer(
         data?.argumentReplacements?.get(arrayLiteral)?.let { replacement ->
             return replacement.transformSingle(this, data)
         }
+        val expectedArrayType = data?.getExpectedType(arrayLiteral)?.fullyExpandedType()
+            ?.takeIf { it.arrayElementType != null }
+        if (arrayLiteral.elements.isEmpty() && expectedArrayType != null) {
+            arrayLiteral.replaceConeTypeOrNull(expectedArrayType)
+            return arrayLiteral
+        }
         arrayLiteral.transformChildren(this, data)
         arrayLiteral.replaceConeTypeOrNull(
             integerOperatorApproximator.approximateType(
@@ -376,6 +485,28 @@ class CfirCallCompletionResultsWriterTransformer(
             )
         )
         return arrayLiteral
+    }
+
+    override fun transformBlock(block: CfirBlock, data: ExpectedArgumentType?): CfirExpression {
+        val expectedType = data?.getExpectedType(block)
+        if (expectedType != null && block.statements.singleOrNull() is CfirExpression) {
+            block.transformStatements(this, expectedType.toExpectedType(data.argumentReplacements))
+            block.transformOtherChildren(this, data)
+            block.replaceConeTypeOrNull((block.statements.single() as CfirExpression).coneTypeOrNull)
+            return block
+        }
+
+        block.transformChildren(this, data)
+        block.replaceConeTypeOrNull((block.statements.lastOrNull() as? CfirExpression)?.coneTypeOrNull)
+        return block
+    }
+
+    override fun transformWrappedExpression(wrappedExpression: CfirWrappedExpression, data: ExpectedArgumentType?): CfirExpression {
+        val expectedType = data?.getExpectedType(wrappedExpression)
+        val expressionData = expectedType?.toExpectedType(data.argumentReplacements) ?: data
+        wrappedExpression.transformChildren(this, expressionData)
+        wrappedExpression.replaceConeTypeOrNull(wrappedExpression.expression.coneTypeOrNull)
+        return wrappedExpression
     }
 
     override fun transformRangeExpression(rangeExpression: CfirRangeExpression, data: ExpectedArgumentType?): CfirExpression {
@@ -409,7 +540,7 @@ class CfirCallCompletionResultsWriterTransformer(
             ?: data?.getExpectedType(anonymousFunctionExpression.anonymousFunction)
         val anonymousFunction = anonymousFunctionExpression.anonymousFunction
         val approximatedType = integerOperatorApproximator.approximateType(
-            buildLambdaType(anonymousFunction),
+            buildLambdaType(anonymousFunction, expectedType as? ConeFunctionType),
             expectedType,
         )
         if (approximatedType != null) {
@@ -554,11 +685,21 @@ class CfirCallCompletionResultsWriterTransformer(
         anonymousFunction.addReturnToLastStatementIfNeeded()
     }
 
-    private fun buildLambdaType(function: CfirFunction): ConeCangJieType? {
+    private fun buildLambdaType(
+        function: CfirFunction,
+        expectedFunctionType: ConeFunctionType? = null,
+    ): ConeCangJieType? {
         val parameterTypes = function.valueParameters.mapNotNull { it.returnTypeRef.coneTypeSafe<ConeCangJieType>() }
         val returnType =
             function.returnTypeRef.coneTypeSafe<ConeCangJieType>() ?: function.body?.coneTypeOrNull ?: return null
-        return ConeFunctionType(parameterTypes, returnType)
+        return ConeFunctionType(
+            parameterTypes = parameterTypes,
+            returnType = returnType,
+            isCFunc = expectedFunctionType?.isCFunc ?: false,
+            isClosureType = expectedFunctionType?.isClosureType ?: false,
+            hasVariableLenArg = expectedFunctionType?.hasVariableLenArg ?: false,
+            attributes = expectedFunctionType?.attributes ?: org.cangnova.cangjie.cfir.types.ConeAttributes.Empty,
+        )
     }
 
     private fun computeAnonymousFunctionReturnType(
@@ -821,6 +962,16 @@ private fun ConeResolutionAtom.unwrapAtom(): CfirExpression {
 
 fun <V> LinkedHashMap<ConeResolutionAtom, V>.unwrapAtoms(): LinkedHashMap<CfirExpression, V> {
     return mapKeysToLinkedMap { it.unwrapAtom() }
+}
+
+private fun <K, V : Any> LinkedHashMap<K, V?>.filterValuesNotNullToLinkedMap(): LinkedHashMap<K, V> {
+    val result = LinkedHashMap<K, V>()
+    for ((key, value) in this) {
+        if (value != null) {
+            result[key] = value
+        }
+    }
+    return result
 }
 
 inline fun <K1, K2, V> LinkedHashMap<K1, V>.mapKeysToLinkedMap(transform: (K1) -> K2): LinkedHashMap<K2, V> {

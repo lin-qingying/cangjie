@@ -55,8 +55,7 @@ sealed class ConeResolutionAtom : AbstractConeResolutionAtom() {
         private fun CfirNamedAccessExpression.shouldBeResolvedAsFunctionReferenceArgument(): Boolean {
             val diagnostic = (calleeReference as? CfirErrorNamedReference)?.diagnostic as? ConeAmbiguityError
                 ?: return false
-            return explicitReceiver == null &&
-                diagnostic.candidates.isNotEmpty() &&
+            return diagnostic.candidates.isNotEmpty() &&
                 diagnostic.candidates.all { candidate ->
                     candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
                 }
@@ -203,6 +202,10 @@ class ConeResolvedCallableReferenceAtom(
 ) : ConePostponedAtomWithRevisableExpectedType(), PostponedCallableReferenceMarker {
     override val inputTypes: Collection<ConeCangJieType> = emptyList()
     override val outputType: ConeCangJieType? = null
+    var resultingTypeForCallableReference: ConeCangJieType? = null
+        internal set
+    var isPostponedBecauseOfAmbiguity: Boolean = false
+        internal set
 
     override var revisedExpectedType: CangJieTypeMarker? = null
         private set

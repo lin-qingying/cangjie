@@ -366,96 +366,23 @@ fun CfirExpression.resolvedQualifierSymbol(session: CfirSession): CfirClassifier
     }
 }
 
+fun CfirExpression.resolvedQualifierTypeParameter(): CfirTypeParameterSymbol? {
+    val resolvedSymbol = ((this as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol
+        ?: return null
+    return resolvedSymbol as? CfirTypeParameterSymbol
+}
+
 fun CfirExpression.qualifierScopeOrNull(
     session: CfirSession,
     scopeSession: ScopeSession,
 ): CfirScope? {
-    return when (val classifier = resolvedQualifierSymbol(session)) {
-        is CfirClassLikeSymbol<*> -> {
-            val qualifierType = coneTypeOrNull ?: classifier.constructType()
-            classifier.staticScopeForQualifierType(session, scopeSession, qualifierType)
-        }
-
-        is CfirTypeParameterSymbol -> {
-            val qualifierType = coneTypeOrNull ?: classifier.constructType()
-            typeParameterQualifierScopeOrNull(session, scopeSession, qualifierType)
-        }
-
-        else -> null
+    resolvedQualifierClassifier(session)?.let { classifier ->
+        val qualifierType = coneTypeOrNull ?: classifier.constructType()
+        return classifier.staticScopeForQualifierType(session, scopeSession, qualifierType)
     }
-}
 
-private fun typeParameterQualifierScopeOrNull(
-    session: CfirSession,
-    scopeSession: ScopeSession,
-    type: ConeCangJieType,
-): CfirScope? {
-    val scopes = linkedSetOf<CfirScope>()
-    collectTypeParameterStaticScopes(session, scopeSession, type, scopes, linkedSetOf(), linkedSetOf())
-    return when (scopes.size) {
-        0 -> null
-        1 -> scopes.single()
-        else -> CfirCompositeScope(scopes.toList())
-    }
-}
-
-private fun collectTypeParameterStaticScopes(
-    session: CfirSession,
-    scopeSession: ScopeSession,
-    type: ConeCangJieType,
-    destination: MutableSet<CfirScope>,
-    visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
-    visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
-) {
-    when (type) {
-        is ConeTypeVariableType -> {
-            val originalTypeParameter =
-                type.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag ?: return
-            collectTypeParameterStaticScopes(
-                session,
-                scopeSession,
-                ConeTypeParameterTypeImpl(originalTypeParameter, type.attributes),
-                destination,
-                visitedClassIds,
-                visitedTypeParameters,
-            )
-        }
-
-        is ConeTypeParameterType -> {
-            if (!visitedTypeParameters.add(type.lookupTag)) return
-            val bounds = collectTypeParameterUpperBounds(type)
-            bounds.forEach { bound ->
-                collectTypeParameterStaticScopes(
-                    session,
-                    scopeSession,
-                    bound,
-                    destination,
-                    visitedClassIds,
-                    visitedTypeParameters,
-                )
-            }
-        }
-
-        is ConeIntersectionType -> {
-            type.intersectedTypes.forEach { bound ->
-                collectTypeParameterStaticScopes(
-                    session,
-                    scopeSession,
-                    bound,
-                    destination,
-                    visitedClassIds,
-                    visitedTypeParameters,
-                )
-            }
-        }
-
-        else -> {
-            val classId = type.classIdOrPrimitiveClassId ?: return
-            if (!visitedClassIds.add(classId)) return
-            val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return
-            destination += symbol.staticScopeForQualifierType(session, scopeSession, type)
-        }
-    }
+    val typeParameter = resolvedQualifierTypeParameter() ?: return null
+    return typeParameter.staticScopeForQualifierType(session, scopeSession)
 }
 
 private fun CfirTypeAliasSymbol.expandedClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol<*>? {

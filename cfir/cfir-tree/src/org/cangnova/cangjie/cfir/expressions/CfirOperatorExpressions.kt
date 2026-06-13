@@ -5,6 +5,7 @@ enum class CfirBinaryOpKind(val symbol: String) {
     OR("||"),
     COALESCING("??"),
     PIPELINE("|>"),
+    COMPOSITION("~>"),
 }
 
 enum class CfirComparisonOp(val symbol: String) {

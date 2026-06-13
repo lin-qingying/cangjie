@@ -146,6 +146,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitTypeConversion(typeConversion: CfirTypeConversion, data: D): R =
         visitExpression(typeConversion, data)
 
+    override fun visitLetPatternExpression(letPatternExpression: CfirLetPatternExpression, data: D): R =
+        visitExpression(letPatternExpression, data)
+
     override fun visitIfExpression(ifExpression: CfirIfExpression, data: D): R =
         visitExpression(ifExpression, data)
 

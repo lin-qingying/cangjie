@@ -1,4 +1,4 @@
-﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
+package org.cangnova.cangjie.cfir.resolve.constants
 
 import java.math.BigInteger
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
@@ -13,7 +13,13 @@ import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 
-internal object CfirIntConstantEvalUtils {
+/**
+ * CFIR 整数字面量的共享语义解析入口。
+ *
+ * raw CFIR 构建阶段会保留整数字面量的源文本，后续 resolve、checker 和语义模型
+ * 必须通过同一个入口解释进制、下划线与显式后缀，避免各阶段根据局部形态重复猜测。
+ */
+object CfirIntConstantEvalUtils {
     private val INT8_MIN = BigInteger.valueOf(Byte.MIN_VALUE.toLong())
     private val INT8_MAX = BigInteger.valueOf(Byte.MAX_VALUE.toLong())
     private val INT16_MIN = BigInteger.valueOf(Short.MIN_VALUE.toLong())
@@ -35,6 +41,7 @@ internal object CfirIntConstantEvalUtils {
     )
 
     data class ParsedSignedIntExpression(
+        val originalText: String,
         val value: BigInteger,
         val explicitSuffix: String?,
     )
@@ -48,8 +55,22 @@ internal object CfirIntConstantEvalUtils {
 
     fun parseIntLiteral(expression: CfirLiteralExpression): ParsedIntLiteral? {
         if (expression.kind != CfirLiteralKind.INT) return null
-        val text = expression.value as? String ?: return null
-        return parseIntLiteral(text)
+        return parseIntLiteralValue(expression.value)
+    }
+
+    fun parseIntLiteralValue(value: Any?): ParsedIntLiteral? {
+        return when (value) {
+            is String -> parseIntLiteral(value)
+            is Byte -> ParsedIntLiteral(value.toString(), BigInteger.valueOf(value.toLong()), null)
+            is Short -> ParsedIntLiteral(value.toString(), BigInteger.valueOf(value.toLong()), null)
+            is Int -> ParsedIntLiteral(value.toString(), BigInteger.valueOf(value.toLong()), null)
+            is Long -> ParsedIntLiteral(value.toString(), BigInteger.valueOf(value), null)
+            is UByte -> ParsedIntLiteral(value.toString(), BigInteger.valueOf(value.toLong()), null)
+            is UShort -> ParsedIntLiteral(value.toString(), BigInteger.valueOf(value.toLong()), null)
+            is UInt -> ParsedIntLiteral(value.toString(), BigInteger.valueOf(value.toLong()), null)
+            is ULong -> ParsedIntLiteral(value.toString(), BigInteger(value.toString()), null)
+            else -> null
+        }
     }
 
     fun parseIntLiteral(text: String): ParsedIntLiteral? {
@@ -94,7 +115,7 @@ internal object CfirIntConstantEvalUtils {
         val literal = expression as? CfirLiteralExpression
         if (literal != null) {
             val parsed = parseIntLiteral(literal) ?: return null
-            return ParsedSignedIntExpression(parsed.value, parsed.explicitSuffix)
+            return ParsedSignedIntExpression(parsed.originalText, parsed.value, parsed.explicitSuffix)
         }
 
         val unaryCall = expression as? CfirFunctionCall ?: return null
@@ -104,10 +125,18 @@ internal object CfirIntConstantEvalUtils {
 
         return when (extractOperatorName(unaryCall)) {
             OperatorNameConventions.UNARY_MINUS ->
-                ParsedSignedIntExpression(parsedReceiver.value.negate(), parsedReceiver.explicitSuffix)
+                ParsedSignedIntExpression(
+                    "-${parsedReceiver.originalText}",
+                    parsedReceiver.value.negate(),
+                    parsedReceiver.explicitSuffix,
+                )
 
             OperatorNameConventions.UNARY_PLUS ->
-                ParsedSignedIntExpression(parsedReceiver.value, parsedReceiver.explicitSuffix)
+                ParsedSignedIntExpression(
+                    "+${parsedReceiver.originalText}",
+                    parsedReceiver.value,
+                    parsedReceiver.explicitSuffix,
+                )
 
             else -> null
         }
@@ -150,11 +179,13 @@ internal object CfirIntConstantEvalUtils {
             PrimitiveTypeKind.INT64,
             PrimitiveTypeKind.INT_NATIVE,
             PrimitiveTypeKind.IDEAL_INT -> IntegerRange(INT64_MIN, INT64_MAX)
+
             PrimitiveTypeKind.UINT8 -> IntegerRange(BigInteger.ZERO, UINT8_MAX)
             PrimitiveTypeKind.UINT16 -> IntegerRange(BigInteger.ZERO, UINT16_MAX)
             PrimitiveTypeKind.UINT32 -> IntegerRange(BigInteger.ZERO, UINT32_MAX)
             PrimitiveTypeKind.UINT64,
             PrimitiveTypeKind.UINT_NATIVE -> IntegerRange(BigInteger.ZERO, UINT64_MAX)
+
             else -> null
         }
     }

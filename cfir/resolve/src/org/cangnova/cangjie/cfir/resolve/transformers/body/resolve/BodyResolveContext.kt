@@ -30,13 +30,20 @@ import org.cangnova.cangjie.cfir.calls.ImplicitExtensionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
 import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
 import org.cangnova.cangjie.cfir.declarations.*
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.body.*
 import org.cangnova.cangjie.cfir.resolve.body.asTowerDataElement
+import org.cangnova.cangjie.cfir.resolve.body.collectTowerDataElementsForClass
+import org.cangnova.cangjie.cfir.resolve.body.typeParametersForTower
+import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
+import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExpectedTypeConstraintPosition
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
@@ -44,12 +51,21 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.coneType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
+import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible
+import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemCompletionMode
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 import org.cangnova.cangjie.util.PrivateForInline
 import java.util.EnumMap
 import java.util.IdentityHashMap
@@ -574,7 +590,7 @@ class BodyResolveContext(
 
     // ── Function body / lambda ────────────────────────────────────────────
 
-    /** 对齐 K2 `withNamedFunction`：非 class 成员时把函数注册到当前局部作用域。 */
+    /** 对齐 K2 `withNamedFunction`：注册局部函数，并在函数声明 container 外层安装函数类型参数作用域。 */
     @OptIn(PrivateForInline::class)
     inline fun <T> withNamedFunction(namedFunction: CfirNamedFunction, session: CfirSession, f: () -> T): T {
         if (containerIfAny !is CfirClass) {
@@ -645,7 +661,7 @@ class BodyResolveContext(
     }
 
     /**
-     * 对齐 K2 `forFunctionBody`：开一层局部作用域并把每个参数注册进去。
+     * 对齐 K2 `forFunctionBody`：函数体只开参数局部 scope；函数类型参数由 `withNamedFunction` 提前安装。
      * 仓颉没有 context parameter / receiver parameter 独立声明，逻辑相应简化。
      */
     @OptIn(PrivateForInline::class)
@@ -1193,13 +1209,181 @@ abstract class CfirInferenceSession {
 
     companion object {
         val DEFAULT: CfirInferenceSession = object : CfirInferenceSession() {}
+
+        @JvmStatic
+        protected fun prepareSharedBaseSystem(
+            outerSystem: ConstraintSystemImpl,
+            components: InferenceComponents,
+        ): ConstraintSystemImpl {
+            return components.createConstraintSystem().apply {
+                addOuterSystem(outerSystem.currentStorage())
+            }
+        }
     }
 }
 
 class CfirPCLAInferenceSession(
-    private val candidate: org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate,
-    private val inferenceComponents: org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents,
-) : CfirInferenceSession()
+    private val outerCandidate: Candidate,
+    private val inferenceComponents: InferenceComponents,
+) : CfirInferenceSession() {
+    private var currentCommonSystem: ConstraintSystemImpl = prepareSharedBaseSystem(outerCandidate.system, inferenceComponents)
+
+    override fun baseConstraintStorageForCandidate(
+        candidate: Candidate,
+        bodyResolveContext: BodyResolveContext,
+    ): ConstraintStorage? {
+        if (candidate.mightBeAnalyzedAndCompletedIndependently(bodyResolveContext)) return null
+        return currentCommonSystem.currentStorage()
+    }
+
+    override fun customCompletionModeInsteadOfFull(
+        call: CfirResolvable,
+    ): ConstraintSystemCompletionMode? = when {
+        call.candidate()?.usedOuterCs == true -> ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL
+        else -> null
+    }
+
+    override fun <T> processPartiallyResolvedCall(
+        call: T,
+        resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
+        completionMode: ConstraintSystemCompletionMode,
+    ) where T : CfirResolvable, T : CfirExpression {
+        call.updateReturnTypeWithCurrentSubstitutor(resolutionMode)
+
+        val candidate = call.candidate()
+        if (candidate?.usedOuterCs != true) return
+
+        currentCommonSystem.replaceContentWith(candidate.system.currentStorage())
+
+        if (completionMode == ConstraintSystemCompletionMode.PCLA_POSTPONED_CALL) {
+            outerCandidate.postponedPCLACalls += ConeAtomWithCandidate(call, candidate)
+        }
+    }
+
+    override fun runLambdaCompletion(
+        candidate: Candidate,
+        forOverloadByLambdaReturnType: Boolean,
+        block: () -> Unit,
+    ): ConstraintStorage? {
+        if (forOverloadByLambdaReturnType) {
+            val constraintAccumulatorForLambda = inferenceComponents.createConstraintSystem().apply {
+                setBaseSystem(currentCommonSystem.currentStorage())
+            }
+
+            runWithSpecifiedCurrentCommonSystem(constraintAccumulatorForLambda, block)
+            return constraintAccumulatorForLambda.currentStorage()
+        }
+
+        runWithSpecifiedCurrentCommonSystem(candidate.system, block)
+        return null
+    }
+
+    private fun <T> runWithSpecifiedCurrentCommonSystem(newSystem: ConstraintSystemImpl, block: () -> T): T {
+        val previous = currentCommonSystem
+        return try {
+            currentCommonSystem = newSystem
+            block()
+        } finally {
+            currentCommonSystem = previous
+        }
+    }
+
+    fun applyResultsToMainCandidate() {
+        outerCandidate.system.replaceContentWith(currentCommonSystem.currentStorage())
+    }
+
+    override fun addSubtypeConstraintIfCompatible(
+        lowerType: ConeCangJieType,
+        upperType: ConeCangJieType,
+        system: ConstraintSystemImpl,
+    ) {
+        currentCommonSystem.addSubtypeConstraintIfCompatible(
+            lowerType,
+            upperType,
+            ConeExpectedTypeConstraintPosition,
+        )
+    }
+
+    private fun CfirExpression.updateReturnTypeWithCurrentSubstitutor(
+        resolutionMode: org.cangnova.cangjie.cfir.resolve.ResolutionMode,
+    ) {
+        val system = (this as? CfirResolvable)?.candidate()?.system ?: currentCommonSystem
+        val substitutor = system.currentStorage()
+            .buildCurrentSubstitutor(inferenceComponents.session.typeContext, emptyMap<TypeConstructorMarker, org.cangnova.cangjie.type.model.CangJieTypeMarker>())
+            .asCone()
+        val currentType = coneTypeOrNull ?: return
+        val updatedType = substitutor.substituteOrNull(currentType) ?: return
+        replaceConeTypeOrNull(updatedType)
+    }
+
+    private fun CfirResolvable.candidate(): Candidate? =
+        (calleeReference as? CfirNamedReferenceWithCandidate)?.candidate
+
+    private fun Candidate.mightBeAnalyzedAndCompletedIndependently(bodyResolveContext: BodyResolveContext): Boolean {
+        when (val mode = callInfo.resolutionMode) {
+            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.WithExpectedType -> {
+                if (mode.expectedType.containsNotFixedTypeVariables()) return false
+            }
+
+            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.WithStatus,
+            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.UpdateImplicitTypeRef,
+            -> error("$this call should not be analyzed in ${callInfo.resolutionMode}")
+
+            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.ContextDependent,
+            org.cangnova.cangjie.cfir.resolve.ResolutionMode.ContextIndependent,
+            is org.cangnova.cangjie.cfir.resolve.ResolutionMode.ReceiverResolution,
+            -> {
+            }
+        }
+
+        val callSite = callInfo.callSite
+        if (callSite is CfirAnnotationCall) return true
+        if (callSite is CfirArrayLiteral) return bodyResolveContext.isInsideAnnotationContext
+        if (callSite !is CfirResolvable) return false
+
+        if (dispatchReceiver?.expression?.isReceiverPostponed() == true) return false
+        if (givenExtensionReceiver?.expression?.isReceiverPostponed() == true) return false
+
+        val returnType = (symbol as? CfirCallableSymbol<*>)?.cfir
+            ?.let { it as? CfirCallableDeclaration }
+            ?.let(bodyResolveContext.returnTypeCalculator::tryCalculateReturnType)
+        if (returnType?.coneType?.containsNotFixedTypeVariables() == true) return false
+
+        if (callInfo.arguments.any { !it.isTrivialArgument() }) return false
+        return true
+    }
+
+    private fun CfirExpression.isTrivialArgument(): Boolean = when (this) {
+        is CfirArrayLiteral -> false
+        is CfirResolvable -> when (val candidate = candidate()) {
+            null -> coneTypeOrNull?.containsNotFixedTypeVariables() != true
+            else -> !candidate.usedOuterCs
+        }
+
+        is CfirWrappedExpression -> expression.isTrivialArgument()
+        is CfirFunctionCall -> argumentList.arguments.all { it.isTrivialArgument() }
+        is CfirBinaryOp -> left.isTrivialArgument() && right.isTrivialArgument()
+        is CfirComparisonExpression -> left.isTrivialArgument() && right.isTrivialArgument()
+        is CfirBlock -> (statements.lastOrNull() as? CfirExpression)?.isTrivialArgument() ?: true
+        is CfirTupleLiteral -> elements.all { it.isTrivialArgument() }
+        is CfirStringInterpolation -> parts.all { it.isTrivialArgument() }
+        is CfirLiteralExpression -> true
+        else -> false
+    }
+
+    private fun CfirExpression.isReceiverPostponed(): Boolean {
+        return when {
+            coneTypeOrNull?.containsNotFixedTypeVariables() == true -> true
+            (this as? CfirResolvable)?.candidate()?.usedOuterCs == true -> true
+            else -> false
+        }
+    }
+
+    private fun ConeCangJieType.containsNotFixedTypeVariables(): Boolean =
+        contains {
+            it is ConeTypeVariableType && it.typeConstructor in currentCommonSystem.allTypeVariables
+        }
+}
 
 private fun CfirScope.asTowerDataElement(isLocal: Boolean): CfirTowerDataElement =
     CfirTowerDataElement(scope = this, implicitReceiver = null, isLocal = isLocal)

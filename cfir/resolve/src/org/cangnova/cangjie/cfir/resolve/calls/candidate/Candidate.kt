@@ -307,6 +307,27 @@ class Candidate(
     var usedIdealNumericCompatibility: Boolean = false
     var usedExtendParticipation: Boolean = false
 
+    private var _cangjieVariadicParameterForCall: CfirValueParameter? = null
+
+    /**
+     * 本次调用实际采用的仓颉变参形参。
+     *
+     * 仓颉变参由调用解析按 `Array<T>` 形状解糖产生，不能只看声明形状；
+     * 普通数组实参匹配同一个声明时不应被标记为变参调用。
+     */
+    val cangjieVariadicParameterForCall: CfirValueParameter?
+        get() = _cangjieVariadicParameterForCall
+
+    val usesCangjieVariadicCall: Boolean
+        get() = _cangjieVariadicParameterForCall != null
+
+    fun initializeCangjieVariadicParameterForCall(parameter: CfirValueParameter?) {
+        require(_cangjieVariadicParameterForCall == null) {
+            "Cangjie variadic parameter for call already initialized"
+        }
+        _cangjieVariadicParameterForCall = parameter
+    }
+
     // ---------------------------------------- Type argument mapping ----------------------------------------
 
     lateinit var typeArgumentMapping: TypeArgumentMapping

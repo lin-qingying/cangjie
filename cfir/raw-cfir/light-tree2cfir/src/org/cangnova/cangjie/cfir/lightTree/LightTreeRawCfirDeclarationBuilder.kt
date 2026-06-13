@@ -396,7 +396,7 @@ class LightTreeRawCfirDeclarationBuilder(
                             val enumBody = tree.findChildByType(node, CjNodeTypes.ENUM_BODY)
                             if (enumBody != null) {
                                 val enumCtors = tree.getChildrenByType(enumBody, CjNodeTypes.ENUM_CONSTRUCTOR)
-                                    .map { convertEnumConstructor(it, typeParameters) }
+                                    .map { convertEnumConstructor(it) }
                                 declarations.addAll(0, enumCtors)
                             }
                         }
@@ -938,7 +938,6 @@ class LightTreeRawCfirDeclarationBuilder(
 
     private fun convertEnumConstructor(
         node: LighterASTNode,
-        ownerTypeParameters: List<CfirTypeParameter> = emptyList(),
     ): CfirEnumConstructor {
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
             ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
@@ -973,7 +972,6 @@ class LightTreeRawCfirDeclarationBuilder(
                 attributes = CfirDeclarationAttributes.EMPTY
                 isLocal = context.inLocalContext
                 status = CfirDeclarationStatusImpl.DEFAULT
-                typeParameters.addAll(ownerTypeParameters)
                 returnTypeRef = buildImplicitTypeRef()
                 this.valueParameters.addAll(valueParameters)
                 name = enumName

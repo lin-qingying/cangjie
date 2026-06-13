@@ -584,6 +584,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(typeConversion)
     }
 
+    final override fun visitLetPatternExpression(letPatternExpression: CfirLetPatternExpression, data: Nothing?) {
+        visitLetPatternExpression(letPatternExpression)
+    }
+
+    open fun visitLetPatternExpression(letPatternExpression: CfirLetPatternExpression) {
+        visitElement(letPatternExpression)
+    }
+
     final override fun visitIfExpression(ifExpression: CfirIfExpression, data: Nothing?) {
         visitIfExpression(ifExpression)
     }

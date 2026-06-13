@@ -8,9 +8,9 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.name.Name
@@ -53,7 +53,7 @@ object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkRightLiteralRange(rightExpression: CfirExpression?, targetType: ConePrimitiveType): Boolean {
-        val parsed = rightExpression?.signedIntLiteral() ?: return false
+        val parsed = rightExpression?.let(CfirIntConstantEvalUtils::parseSignedIntExpression) ?: return false
         if (parsed.explicitSuffix != null) return false
 
         val range = CfirIntConstantEvalUtils.rangeForLiteralTargetType(targetType) ?: return false
@@ -71,7 +71,7 @@ object CfirCompoundAssignmentSemanticsChecker : CfirAssignmentChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkShiftCount(rightExpression: CfirExpression?, leftKind: PrimitiveTypeKind) {
-        val parsed = rightExpression?.signedIntLiteral() ?: return
+        val parsed = rightExpression?.let(CfirIntConstantEvalUtils::parseSignedIntExpression) ?: return
         val source = rightExpression.source as? AbstractCjSourceElement ?: return
 
         if (parsed.value < BigInteger.ZERO) {
@@ -165,35 +165,6 @@ private fun allowedCompoundAssignmentKinds(operatorName: Name): Set<PrimitiveTyp
     -> setOf(PrimitiveTypeKind.BOOLEAN)
 
     else -> null
-}
-
-private data class SignedLiteral(
-    val originalText: String,
-    val value: BigInteger,
-    val explicitSuffix: String?,
-)
-
-private fun CfirExpression.signedIntLiteral(): SignedLiteral? {
-    val literal = this as? CfirLiteralExpression
-    if (literal != null) {
-        val parsed = CfirIntConstantEvalUtils.parseIntLiteral(literal) ?: return null
-        return SignedLiteral(parsed.originalText, parsed.value, parsed.explicitSuffix)
-    }
-
-    val unaryCall = this as? CfirFunctionCall ?: return null
-    if (unaryCall.argumentList.arguments.isNotEmpty()) return null
-    val receiver = unaryCall.explicitReceiver as? CfirLiteralExpression ?: return null
-    val parsedReceiver = CfirIntConstantEvalUtils.parseIntLiteral(receiver) ?: return null
-
-    return when (unaryCall.operatorName()) {
-        OperatorNameConventions.UNARY_MINUS ->
-            SignedLiteral("-${parsedReceiver.originalText}", parsedReceiver.value.negate(), parsedReceiver.explicitSuffix)
-
-        OperatorNameConventions.UNARY_PLUS ->
-            SignedLiteral("+${parsedReceiver.originalText}", parsedReceiver.value, parsedReceiver.explicitSuffix)
-
-        else -> null
-    }
 }
 
 private fun CfirFunctionCall.operatorName(): Name? {

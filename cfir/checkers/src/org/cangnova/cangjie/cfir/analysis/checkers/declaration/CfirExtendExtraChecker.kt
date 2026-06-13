@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
@@ -155,36 +156,68 @@ object CfirExtendExtraChecker : CfirExtendChecker() {
         val targetDecl = context.session.symbolProvider
             .getClassLikeSymbolByClassId(targetType.classId)?.cfir as? org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
             ?: return
-
-        val existingMemberNames = targetDecl.declarations.mapNotNull { member ->
-            when (member) {
-                is CfirNamedFunction -> member.name
-                is CfirProperty -> member.name
-                else -> null
-            }
-        }.toSet()
+        val targetScope = context.createUseSiteMemberScope(targetDecl)
 
         for (member in extend.declarations) {
-            val memberName = when (member) {
-                is CfirNamedFunction -> member.name
-                is CfirProperty -> member.name
-                else -> continue
+            val memberName = member.shadowableName() ?: continue
+            if (!member.shadowsExistingMember(targetScope)) continue
+
+            val typeName = targetType.classId.shortClassName
+            val source = when (member) {
+                is CfirNamedFunction -> member.functionNameDiagnosticSource()
+                is CfirProperty -> member.propertyNameDiagnosticSource()
+                else -> member.source
             }
-            if (memberName in existingMemberNames) {
-                val typeName = targetType.classId.shortClassName
-                val source = when (member) {
-                    is CfirNamedFunction -> member.functionNameDiagnosticSource()
-                    is CfirProperty -> member.propertyNameDiagnosticSource()
-                    else -> member.source
-                }
-                reporter.reportOn(
-                    source = source ?: member.source ?: extend.source,
-                    factory = CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
-                    a = memberName,
-                    b = typeName,
-                )
-            }
+            reporter.reportOn(
+                source = source ?: member.source ?: extend.source,
+                factory = CfirErrors.EXTEND_MEMBER_CANNOT_SHADOW,
+                a = memberName,
+                b = typeName,
+            )
         }
+    }
+
+    /**
+     * extend shadow 必须按成员签名判断，不能只按名称判断。
+     *
+     * Kotlin FIR 的 extension shadow checker 会比较参数个数、泛型参数个数和 overloadability；
+     * 本项目已有 `overrideSignatureKey()` 作为 override/继承共用签名入口，这里复用同一入口，
+     * 与官方编译器 `StructInheritanceChecker::CheckExtendMemberValid` 的 member-signature 语义对齐。
+     */
+    private fun CfirDeclaration.shadowsExistingMember(
+        targetScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
+    ): Boolean {
+        return when (this) {
+            is CfirNamedFunction -> {
+                val signature = symbol.overrideSignatureKey()
+                var found = false
+                targetScope.processFunctionsByName(name) { candidate ->
+                    if (candidate.isBound && candidate.cfir !== this && candidate.overrideSignatureKey() == signature) {
+                        found = true
+                    }
+                }
+                found
+            }
+
+            is CfirProperty -> {
+                val signature = symbol.overrideSignatureKey()
+                var found = false
+                targetScope.processPropertiesByName(name) { candidate ->
+                    if (candidate.isBound && candidate.cfir !== this && candidate.overrideSignatureKey() == signature) {
+                        found = true
+                    }
+                }
+                found
+            }
+
+            else -> false
+        }
+    }
+
+    private fun CfirDeclaration.shadowableName(): Name? = when (this) {
+        is CfirNamedFunction -> name
+        is CfirProperty -> name
+        else -> null
     }
 
     /**

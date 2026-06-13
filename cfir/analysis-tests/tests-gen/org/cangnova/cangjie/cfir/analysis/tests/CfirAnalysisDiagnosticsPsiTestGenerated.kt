@@ -43,16 +43,6 @@ class CfirAnalysisDiagnosticsPsiTestGenerated : AbstractCfirPsiDiagnosticTest() 
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics")
     }
 
-    @TestMetadata(".cache")
-    @TestDataPath("\$PROJECT_ROOT")
-    @Nested
-    inner class Cache : AbstractCfirPsiDiagnosticTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/.cache")
-        }
-    }
-
     @TestMetadata("call")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested

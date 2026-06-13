@@ -5,7 +5,10 @@ import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.type
 
@@ -64,6 +67,7 @@ object CfirGenericDeepChecker : CfirTypeParameterChecker() {
             val boundType = boundRef.coneType
             if (boundType is ConeErrorType) continue
             if (boundType is ConeTypeParameterType) continue // 直接引用已经由上面检查
+            if (boundType.isClassLikeUpperBound()) continue
 
             // 检查上界类型的类型参数中是否间接包含当前泛型参数
             if (containsTypeParameterInArgs(boundType, paramName)) {
@@ -76,6 +80,17 @@ object CfirGenericDeepChecker : CfirTypeParameterChecker() {
             }
         }
     }
+
+    /**
+     * 官方编译器只对“非 class/interface 上界”执行该递归约束检查。
+     *
+     * 对齐 C++ `PreCheck.cpp::ValidRecursiveConstraintCheck` 中的
+     * `!upper->IsClassLike()` 前置条件；`T <: Day<T>`、`T <: Interface<T>`
+     * 是合法 F-bound，不应进入 class-irrelevant upper bound 诊断。
+     */
+    context(context: CheckerContext)
+    private fun ConeCangJieType.isClassLikeUpperBound(): Boolean =
+        fullyExpandedType(context.session) is ConeClassLikeType
 
     /**
      * 检查类型的类型参数中是否包含指定名称的类型参数引用。

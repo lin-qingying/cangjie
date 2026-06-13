@@ -57,7 +57,7 @@ class CfirTypeParameterScopeImpl(
     }
 
     /** 按名称查找类型参数符号 */
-    fun processTypeParametersByName(name: Name, processor: (CfirTypeParameterSymbol) -> Unit) {
+    override fun processTypeParametersByName(name: Name, processor: (CfirTypeParameterSymbol) -> Unit) {
         typeParametersByName[name]?.forEach(processor)
     }
 

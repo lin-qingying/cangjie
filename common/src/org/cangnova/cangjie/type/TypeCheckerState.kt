@@ -29,6 +29,8 @@ open class TypeCheckerState(
     val isStubTypeEqualsToAnything: Boolean,
     /** 是否允许类型变量参与子类型判断 */
     val allowedTypeVariable: Boolean,
+    /** 普通子类型判断是否允许 struct/enum 等值类型隐式装箱到接口类型 */
+    allowImplicitBoxing: Boolean = true,
     /** 类型系统上下文，提供所有类型操作 */
     val typeSystemContext: TypeSystemContext,
     /** 类型预处理器，在比较前对类型做规范化处理 */
@@ -43,6 +45,25 @@ open class TypeCheckerState(
     /** 使用预处理器对类型进行规范化 */
     fun prepareType(type: CangJieTypeMarker): CangJieTypeMarker =
         cangjieTypePreparator.prepareType(type)
+
+    /**
+     * 当前子类型判断是否允许官方 TypeManager::IsSubtype 的 implicitBoxed 路径。
+     *
+     * 普通表达式/赋值检查默认允许隐式装箱；函数类型子类型判断会临时关闭该路径，
+     * 对齐官方 `IsFuncSubtype` 中 `IsSubtype(..., implicitBoxed = noCast)` 的语义。
+     */
+    var isImplicitBoxingAllowed: Boolean = allowImplicitBoxing
+        private set
+
+    internal inline fun <T> runWithImplicitBoxing(allowed: Boolean, f: TypeCheckerState.() -> T): T {
+        val previous = isImplicitBoxingAllowed
+        isImplicitBoxingAllowed = allowed
+        return try {
+            f()
+        } finally {
+            isImplicitBoxingAllowed = previous
+        }
+    }
 
     /**
      * 自定义子类型判断钩子
