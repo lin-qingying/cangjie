@@ -19,16 +19,6 @@ class CfirAnalysisDiagnosticsWithoutAliasExpansionTestGenerated : AbstractCfirLi
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics")
     }
 
-    @TestMetadata(".cache")
-    @TestDataPath("\$PROJECT_ROOT")
-    @Nested
-    inner class Cache : AbstractCfirLightTreeDiagnosticsWithoutAliasExpansionTest() {
-        @Test
-        fun testAllFilesPresent() {
-            assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/diagnostics/.cache")
-        }
-    }
-
     @TestMetadata("call")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
