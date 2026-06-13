@@ -687,6 +687,9 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     /** 判断是否是 Any（所有类型的公共父类型） */
     fun CangJieTypeMarker.isAny() = typeConstructor().isAnyConstructor()
 
+    /** 判断是否是 class/interface 等引用语义类型，不包含 struct/enum 值语义类型。 */
+    fun CangJieTypeMarker.isClassLikeType(): Boolean = false
+
     /** 判断是否是 Nothing（不可达底层类型） */
     fun CangJieTypeMarker.isNothing() = typeConstructor().isNothingConstructor()
 

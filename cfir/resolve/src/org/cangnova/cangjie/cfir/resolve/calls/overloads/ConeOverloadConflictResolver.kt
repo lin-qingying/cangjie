@@ -3,6 +3,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.overloads
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariableSubstitutorStage
 import org.cangnova.cangjie.cfir.resolve.inference.InferenceComponents
 import org.cangnova.cangjie.cfir.types.createTypeSubstitutorByTypeConstructor
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
@@ -13,6 +14,7 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.resolve.calls.inference.model.SimpleConstraintSystemConstraintPosition
 import org.cangnova.cangjie.resolve.calls.results.*
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.CangJieTypeMarker
 import org.cangnova.cangjie.type.model.TypeParameterMarker
 import org.cangnova.cangjie.type.model.TypeSubstitutorMarker
@@ -217,6 +219,9 @@ class ConeOverloadConflictResolver(
     }
 
     private fun chooseByCangjieSpecificity(candidates: Set<Candidate>): Set<Candidate>? {
+        // 官方 ChkCallExpr 只有在普通匹配没有结果时才进入变参解糖；
+        // 若同一候选集合中已有普通调用候选成功，实际变参候选不能继续参与冲突。
+        preferCandidates(candidates) { !it.usesCangjieVariadicCall }?.let { return it }
         preferCandidates(candidates) { !it.usedExtendParticipation }?.let { return it }
         preferCandidates(candidates) { !it.usedQuestFallback }?.let { return it }
         preferCandidates(candidates) { !it.usedIdealNumericCompatibility }?.let { return it }
@@ -301,8 +306,6 @@ class ConeOverloadConflictResolver(
         if (hasVarargs1 && !hasVarargs2) return false
         if (!hasVarargs1 && hasVarargs2) return true
 
-        if (call1.numDefaults > call2.numDefaults) return false
-
         return true
     }
 
@@ -317,18 +320,277 @@ class ConeOverloadConflictResolver(
             val isGeneric2 = call2.isGeneric
 
             when {
-                !isGeneric1 && isGeneric2 -> return true
+                // Kotlin 在第二轮比较中让非泛型候选直接赢过泛型候选。
+                // 仓颉官方 CompareFuncCandidates 仍会拿非泛型候选的参数类型
+                // 去推导泛型候选的类型参数；推导失败时必须保留 ambiguous。
+                !isGeneric1 && isGeneric2 -> {}
                 isGeneric1 -> return false
             }
         }
 
-        return createEmptyConstraintSystem().isSignatureEquallyOrMoreSpecific(
+        val isEquallyOrMoreSpecific = createEmptyConstraintSystem().isSignatureEquallyOrMoreSpecific(
             call1,
             call2,
             SpecificityComparisonWithNumerics,
             specificityComparator,
             useOriginalSamTypes,
         )
+        if (!isEquallyOrMoreSpecific) return false
+
+        return satisfiesCangjieCommonTypeVariableRule(call1, call2)
+    }
+
+    /**
+     * 对齐官方 Cangjie `TypeCheckCall.cpp::CompareFuncCandidates` 中
+     * `LocalTypeArgumentSynthesis` 对公共类型变元的约束。
+     *
+     * Kotlin 的 `FlatSignature` 只要求比较约束系统没有 contradiction；
+     * 仓颉在候选 A 的参数类型被拿去推导候选 B 的泛型参数时，还要求每个
+     * 在 B 的参数列表中重复出现的类型参数能从 A 的对应位置选出一个一致替代类型。
+     * 该规则决定 `g<X>(X, () -> X)` 与 `g<Y>(Y, () -> A)` 这类调用不能因为
+     * 调用实参已经把某个候选推窄，就提前丢掉另一个官方认为仍可竞争的候选。
+     */
+    private fun satisfiesCangjieCommonTypeVariableRule(
+        specific: CandidateSignature,
+        general: CandidateSignature,
+    ): Boolean {
+        val trackedParameters = general.typeParameters
+            .filterIsInstance<ConeTypeParameterLookupTag>()
+            .toSet()
+        if (trackedParameters.isEmpty()) return true
+
+        val occurrences = linkedMapOf<ConeTypeParameterLookupTag, MutableList<CommonTypeVariableOccurrence>>()
+        for (index in specific.valueParameterTypes.indices) {
+            val specificType = specific.valueParameterTypes[index]?.resultType as? ConeCangJieType ?: continue
+            val generalType = general.valueParameterTypes.getOrNull(index)?.resultType as? ConeCangJieType ?: continue
+            if (!satisfiesCangjieContextTypeVariableRule(specificType, generalType, trackedParameters)) return false
+            collectCommonTypeVariableOccurrences(
+                specificType = specificType,
+                generalType = generalType,
+                positionVariance = TypePositionVariance.COVARIANT,
+                trackedParameters = trackedParameters,
+                occurrences = occurrences,
+            )
+        }
+
+        return occurrences.values.all { occurrenceList ->
+            occurrenceList.size <= 1 || hasConsistentCommonTypeVariableTarget(occurrenceList)
+        }
+    }
+
+    private enum class TypePositionVariance {
+        COVARIANT,
+        CONTRAVARIANT,
+        INVARIANT;
+
+        fun flip(): TypePositionVariance = when (this) {
+            COVARIANT -> CONTRAVARIANT
+            CONTRAVARIANT -> COVARIANT
+            INVARIANT -> INVARIANT
+        }
+
+        fun invariant(): TypePositionVariance = INVARIANT
+    }
+
+    private data class CommonTypeVariableOccurrence(
+        val specificType: ConeCangJieType,
+        val variance: TypePositionVariance,
+    )
+
+    private fun collectCommonTypeVariableOccurrences(
+        specificType: ConeCangJieType,
+        generalType: ConeCangJieType,
+        positionVariance: TypePositionVariance,
+        trackedParameters: Set<ConeTypeParameterLookupTag>,
+        occurrences: MutableMap<ConeTypeParameterLookupTag, MutableList<CommonTypeVariableOccurrence>>,
+    ) {
+        val directTypeParameter = generalType.typeParameterLookupTagOrNull()
+        if (directTypeParameter != null && directTypeParameter in trackedParameters) {
+            occurrences.getOrPut(directTypeParameter, ::mutableListOf)
+                .add(CommonTypeVariableOccurrence(specificType, positionVariance))
+            return
+        }
+
+        when (generalType) {
+            is ConeFunctionType -> {
+                val specificFunctionType = specificType as? ConeFunctionType ?: return
+                if (generalType.parameterTypes.size != specificFunctionType.parameterTypes.size) return
+                for (index in generalType.parameterTypes.indices) {
+                    collectCommonTypeVariableOccurrences(
+                        specificType = specificFunctionType.parameterTypes[index],
+                        generalType = generalType.parameterTypes[index],
+                        positionVariance = positionVariance.flip(),
+                        trackedParameters = trackedParameters,
+                        occurrences = occurrences,
+                    )
+                }
+                collectCommonTypeVariableOccurrences(
+                    specificType = specificFunctionType.returnType,
+                    generalType = generalType.returnType,
+                    positionVariance = positionVariance,
+                    trackedParameters = trackedParameters,
+                    occurrences = occurrences,
+                )
+            }
+
+            is ConeTupleType -> {
+                val specificTupleType = specificType as? ConeTupleType ?: return
+                if (generalType.elementTypes.size != specificTupleType.elementTypes.size) return
+                for (index in generalType.elementTypes.indices) {
+                    collectCommonTypeVariableOccurrences(
+                        specificType = specificTupleType.elementTypes[index],
+                        generalType = generalType.elementTypes[index],
+                        positionVariance = positionVariance,
+                        trackedParameters = trackedParameters,
+                        occurrences = occurrences,
+                    )
+                }
+            }
+
+            is ConeVArrayType -> {
+                val specificVArrayType = specificType as? ConeVArrayType ?: return
+                collectCommonTypeVariableOccurrences(
+                    specificType = specificVArrayType.elementType,
+                    generalType = generalType.elementType,
+                    positionVariance = positionVariance.invariant(),
+                    trackedParameters = trackedParameters,
+                    occurrences = occurrences,
+                )
+            }
+
+            else -> collectInvariantTypeArgumentOccurrences(
+                specificType = specificType,
+                generalType = generalType,
+                trackedParameters = trackedParameters,
+                occurrences = occurrences,
+            )
+        }
+    }
+
+    private fun collectInvariantTypeArgumentOccurrences(
+        specificType: ConeCangJieType,
+        generalType: ConeCangJieType,
+        trackedParameters: Set<ConeTypeParameterLookupTag>,
+        occurrences: MutableMap<ConeTypeParameterLookupTag, MutableList<CommonTypeVariableOccurrence>>,
+    ) {
+        val specificArguments = specificType.typeArguments
+        val generalArguments = generalType.typeArguments
+        if (specificArguments.size != generalArguments.size) return
+
+        for (index in generalArguments.indices) {
+            collectCommonTypeVariableOccurrences(
+                specificType = specificArguments[index].type,
+                generalType = generalArguments[index].type,
+                positionVariance = TypePositionVariance.INVARIANT,
+                trackedParameters = trackedParameters,
+                occurrences = occurrences,
+            )
+        }
+    }
+
+    private fun ConeCangJieType.typeParameterLookupTagOrNull(): ConeTypeParameterLookupTag? {
+        return when (this) {
+            is ConeTypeParameterType -> lookupTag as? ConeTypeParameterLookupTag
+            is ConeTypeVariableType -> typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+            else -> null
+        }
+    }
+
+    /**
+     * 对齐官方 `LocalTypeArgumentSynthesis::UnifyContextTyVar`：
+     * 当 specific 候选的参数类型本身是声明类型参数时，它是上下文泛型，
+     * 不能作为裸类型去匹配 general 候选的非占位参数类型，必须先提升为声明上界。
+     */
+    private fun satisfiesCangjieContextTypeVariableRule(
+        specificType: ConeCangJieType,
+        generalType: ConeCangJieType,
+        trackedParameters: Set<ConeTypeParameterLookupTag>,
+    ): Boolean {
+        if (generalType.isDirectTrackedTypeParameter(trackedParameters)) return true
+
+        val promotedSpecificType = (specificType as? ConeTypeParameterType)
+            ?.contextTypeVariableUpperBoundForComparison()
+            ?: return true
+
+        return createEmptyConstraintSystem().isSignatureEquallyOrMoreSpecific(
+            FlatSignature(
+                origin = Unit,
+                typeParameters = emptyList(),
+                valueParameterTypes = listOf(promotedSpecificType),
+                hasExtensionReceiver = false,
+                contextReceiverCount = 0,
+                hasVarargs = false,
+                numDefaults = 0,
+                isExpect = false,
+                isSyntheticMember = false,
+            ),
+            FlatSignature(
+                origin = Unit,
+                typeParameters = trackedParameters,
+                valueParameterTypes = listOf(generalType),
+                hasExtensionReceiver = false,
+                contextReceiverCount = 0,
+                hasVarargs = false,
+                numDefaults = 0,
+                isExpect = false,
+                isSyntheticMember = false,
+            ),
+            SpecificityComparisonWithNumerics,
+            specificityComparator,
+        )
+    }
+
+    private fun ConeCangJieType.isDirectTrackedTypeParameter(
+        trackedParameters: Set<ConeTypeParameterLookupTag>,
+    ): Boolean {
+        return typeParameterLookupTagOrNull() in trackedParameters
+    }
+
+    private fun ConeTypeParameterType.contextTypeVariableUpperBoundForComparison(): ConeCangJieType {
+        lookupTag.typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        val bounds = lookupTag.typeParameterSymbol.resolvedBounds
+            .map { it.coneType }
+            .filterNot { it is ConeErrorType }
+
+        return when (bounds.size) {
+            0 -> ConeAnyType
+            1 -> bounds.single()
+            else -> ConeIntersectionType(bounds)
+        }
+    }
+
+    private fun hasConsistentCommonTypeVariableTarget(
+        occurrences: List<CommonTypeVariableOccurrence>,
+    ): Boolean {
+        val invariantTypes = occurrences
+            .filter { it.variance == TypePositionVariance.INVARIANT }
+            .map { it.specificType }
+        val covariantTypes = occurrences
+            .filter { it.variance == TypePositionVariance.COVARIANT }
+            .map { it.specificType }
+        val contravariantTypes = occurrences
+            .filter { it.variance == TypePositionVariance.CONTRAVARIANT }
+            .map { it.specificType }
+
+        val targetTypes = when {
+            invariantTypes.isNotEmpty() -> invariantTypes
+            else -> covariantTypes + contravariantTypes
+        }.distinct()
+
+        return targetTypes.any { targetType ->
+            invariantTypes.all { isSameCangjieType(it, targetType) } &&
+                covariantTypes.all { isCangjieSubtypeOf(it, targetType) } &&
+                contravariantTypes.all { isCangjieSubtypeOf(targetType, it) }
+        }
+    }
+
+    private fun isSameCangjieType(first: ConeCangJieType, second: ConeCangJieType): Boolean {
+        return AbstractTypeChecker.equalTypes(inferenceComponents.session.typeContext, first, second)
+    }
+
+    private fun isCangjieSubtypeOf(subType: ConeCangJieType, superType: ConeCangJieType): Boolean {
+        return AbstractTypeChecker.isSubtypeOf(inferenceComponents.session.typeContext, subType, superType) ||
+            SpecificityComparisonWithNumerics.isNonSubtypeEquallyOrMoreSpecific(subType, superType)
     }
 
     @Suppress("PrivatePropertyName")
@@ -375,11 +637,11 @@ class ConeOverloadConflictResolver(
     private fun createFlatSignature(call: Candidate, declaration: CfirFunction): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
-            typeParameters = declaration.typeParameters.toTypeParameterMarkers(),
+            typeParameters = call.typeParametersForSignature(declaration),
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
-            hasVarargs = false,
+            hasVarargs = call.usesCangjieVariadicCall,
             numDefaults = call.numDefaults,
             isExpect = false,
             isSyntheticMember = declaration.origin is CfirDeclarationOrigin.Synthetic,
@@ -389,11 +651,11 @@ class ConeOverloadConflictResolver(
     private fun createFlatSignature(call: Candidate, declaration: CfirConstructor): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
-            typeParameters = declaration.typeParameters.toTypeParameterMarkers(),
+            typeParameters = call.typeParametersForSignature(declaration),
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
-            hasVarargs = false,
+            hasVarargs = call.usesCangjieVariadicCall,
             numDefaults = call.numDefaults,
             isExpect = false,
             isSyntheticMember = declaration.origin is CfirDeclarationOrigin.Synthetic,
@@ -403,7 +665,7 @@ class ConeOverloadConflictResolver(
     private fun createFlatSignature(call: Candidate, declaration: CfirEnumConstructor): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
-            typeParameters = declaration.typeParameters.toTypeParameterMarkers(),
+            typeParameters = call.typeParametersForSignature(declaration),
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
@@ -417,11 +679,11 @@ class ConeOverloadConflictResolver(
     private fun createFlatSignature(call: Candidate, declaration: CfirProperty): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
-            typeParameters = declaration.typeParameters.toTypeParameterMarkers(),
+            typeParameters = call.typeParametersForSignature(declaration),
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
-            hasVarargs = false,
+            hasVarargs = call.usesCangjieVariadicCall,
             numDefaults = call.numDefaults,
             isExpect = false,
             isSyntheticMember = declaration.origin is CfirDeclarationOrigin.Synthetic,
@@ -431,12 +693,7 @@ class ConeOverloadConflictResolver(
     private fun createFlatSignature(call: Candidate, declaration: CfirVariable): FlatSignature<Candidate> {
         return FlatSignature(
             origin = call,
-            typeParameters = when (declaration) {
-                is CfirFieldVariable -> declaration.typeParameters.toTypeParameterMarkers()
-                is CfirPatternBindingVariable -> declaration.typeParameters.toTypeParameterMarkers()
-                is org.cangnova.cangjie.cfir.declarations.CfirPatternVariable -> declaration.typeParameters.toTypeParameterMarkers()
-                else -> emptyList()
-            },
+            typeParameters = call.typeParametersForSignature(declaration),
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
@@ -475,8 +732,14 @@ class ConeOverloadConflictResolver(
                         TypeWithConversion(argument.type.prepareType(session, call))
                     }
             } else if (call.argumentMappingInitialized) {
-                call.argumentMapping.mapTo(this) { (argument, parameter) ->
-                    parameter.toTypeWithConversion(argument, session, call)
+                val variadicParameter = call.cangjieVariadicParameterForCall
+                var variadicParameterAdded = false
+                for ((argument, parameter) in call.argumentMapping) {
+                    if (parameter == variadicParameter) {
+                        if (variadicParameterAdded) continue
+                        variadicParameterAdded = true
+                    }
+                    add(parameter.toTypeWithConversion(argument, session, call))
                 }
             } else {
                 declaredParametersFor(called).mapTo(this) { parameter ->
@@ -538,7 +801,13 @@ class ConeOverloadConflictResolver(
         }
     }
 
-    private fun List<CfirTypeParameter>.toTypeParameterMarkers(): List<TypeParameterMarker> {
+    private fun Candidate.typeParametersForSignature(declaration: Any?): List<TypeParameterMarker> {
+        return CfirCreateFreshTypeVariableSubstitutorStage
+            .collectCandidateTypeParametersForFreshVariables(inferenceComponents.session, this, declaration)
+            .toTypeParameterMarkers()
+    }
+
+    private fun List<CfirTypeParameterRef>.toTypeParameterMarkers(): List<TypeParameterMarker> {
         return mapNotNull { (it.symbol as? CfirTypeParameterSymbol)?.toLookupTag() as? TypeParameterMarker }
     }
 

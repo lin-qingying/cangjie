@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.diagnostic.AmbiguousArgumentType
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentTypeMismatch
+import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
@@ -16,6 +17,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeReceiverConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeRegularLambdaArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaParameterType
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
@@ -35,6 +37,7 @@ import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
+import org.cangnova.cangjie.resolve.calls.inference.addSubtypeConstraintIfCompatible
 import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
 import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgumentInputTypesResolver.Companion.TYPE_VARIABLE_NAME_FOR_LAMBDA_RETURN_TYPE
 import org.cangnova.cangjie.resolve.calls.inference.components.PostponedArgumentInputTypesResolver.Companion.TYPE_VARIABLE_NAME_PREFIX_FOR_LAMBDA_PARAMETER_TYPE
@@ -175,11 +178,9 @@ internal object ArgumentCheckingProcessor {
             return
         }
 
-        val postponedAtom = ConeSimpleNameForContextSensitiveResolution(
+        val postponedAtom = ConeResolvedCallableReferenceAtom(
             expression = expression,
             expectedType = targetExpectedType,
-            containingCallCandidate = candidate,
-            fallbackSubAtom = fallback,
         )
         atom.setPostponedSubAtom(postponedAtom)
         candidate.addPostponedAtom(postponedAtom)
@@ -201,8 +202,9 @@ internal object ArgumentCheckingProcessor {
         argumentType: ConeCangJieType,
         sourceForReceiver: CjSourceElement? = null,
     ) {
+        val expression = atom.expression
         val position = when {
-//            isReceiver -> ConeReceiverConstraintPosition(expression, sourceForReceiver)
+            isReceiver -> ConeReceiverConstraintPosition(expression, sourceForReceiver)
             else -> createArgumentConstraintPosition(atom)
         }
         val preparedType = prepareArgumentType(argumentType, context.session)
@@ -216,7 +218,6 @@ internal object ArgumentCheckingProcessor {
         if (expectedType == null) return
 
         val argumentType = substituteTypeParameterUpperBoundIfNeeded(argumentTypeBeforeCapturing, expectedType, session)
-        val normalizedArgumentType = normalizeTypeForCompatibilityCheck(argumentType)
         val expression = atom.expression
 
         fun subtypeError(actualExpectedType: ConeCangJieType): ResolutionDiagnostic {
@@ -255,11 +256,13 @@ internal object ArgumentCheckingProcessor {
             )
         }
 
-        val compatible = csBuilder.isSubtypeConstraintCompatible(normalizedArgumentType, expectedType)
-        csBuilder.addSubtypeConstraint(argumentType, expectedType, position)
-        if (!compatible) {
-            reportDiagnostic(subtypeError(expectedType))
+        if (csBuilder.addSubtypeConstraintIfCompatible(argumentType, expectedType, position)) return
+        if (isReceiver) {
+            csBuilder.addSubtypeConstraint(argumentType, expectedType, position)
+            reportDiagnostic(InapplicableWrongReceiver(expectedType, argumentType))
+            return
         }
+        reportDiagnostic(subtypeError(expectedType))
     }
     private fun  ArgumentContext.shouldRunConversion(): Boolean {
         // Currently, we only apply conversions for arguments, not lambda's return expressions
@@ -331,9 +334,9 @@ internal object ArgumentCheckingProcessor {
             null
         }
 
-        val lambdaReturnType = anonymousFunction.returnTypeRef.coneTypeOrNull
+        val lambdaReturnType = expectedFunctionType?.returnType
             ?: returnTypeVariable?.defaultType
-            ?: expectedFunctionType?.returnType
+            ?: anonymousFunction.returnTypeRef.coneTypeOrNull
             ?: createdReturnTypeVariable!!.defaultType
 
         val resolvedAtom = ConeResolvedLambdaAtom(
@@ -350,7 +353,14 @@ internal object ArgumentCheckingProcessor {
 
         val targetExpectedType = expectedType
         if (targetExpectedType != null) {
-            val lambdaType = ConeFunctionType(parameterTypes = parameterTypes, returnType = lambdaReturnType)
+            val lambdaType = ConeFunctionType(
+                parameterTypes = parameterTypes,
+                returnType = lambdaReturnType,
+                isCFunc = expectedFunctionType?.isCFunc ?: false,
+                isClosureType = expectedFunctionType?.isClosureType ?: false,
+                hasVariableLenArg = expectedFunctionType?.hasVariableLenArg ?: false,
+                attributes = expectedFunctionType?.attributes ?: org.cangnova.cangjie.cfir.types.ConeAttributes.Empty,
+            )
             val position = ConeArgumentConstraintPosition(expression)
             if (duringCompletion) {
                 csBuilder.addSubtypeConstraint(lambdaType, targetExpectedType, position)

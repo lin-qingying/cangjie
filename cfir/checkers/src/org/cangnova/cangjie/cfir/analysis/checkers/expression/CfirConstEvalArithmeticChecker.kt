@@ -11,6 +11,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions

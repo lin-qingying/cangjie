@@ -36,6 +36,12 @@ import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeIntersectionType
+import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
+import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.collectUpperBounds
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
@@ -103,6 +109,23 @@ class CfirClassStaticScope(
         delegateScope.withReplacedSessionOrNull(newSession, newScopeSession)?.let(::CfirClassStaticScope)
 }
 
+fun CfirTypeParameterSymbol.staticScopeForQualifierType(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+): CfirContainingNamesAwareScope =
+    scopeSession.getOrBuild(this, StaticScopeForTypeParameterQualifierScopeKey) {
+        val typeParameterType = constructType() as ConeTypeParameterType
+        val upperBoundStaticScopes = typeParameterType
+            .collectUpperBounds(session.typeContext)
+            .mapNotNull { upperBound -> upperBound.staticScopeForUpperBound(session, scopeSession) }
+
+        when (upperBoundStaticScopes.size) {
+            0 -> CfirEmptyContainingNamesAwareScope
+            1 -> upperBoundStaticScopes.single()
+            else -> CfirCompositeContainingNamesAwareScope(upperBoundStaticScopes)
+        }
+    }
+
 fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
     session: CfirSession,
     scopeSession: ScopeSession,
@@ -125,6 +148,103 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
     }
 }
 
+private fun ConeCangJieType.staticScopeForUpperBound(
+    session: CfirSession,
+    scopeSession: ScopeSession,
+): CfirContainingNamesAwareScope? {
+    return when (val expandedType = fullyExpandedType(session)) {
+        is ConeErrorType -> null
+        is ConeTypeParameterType -> CfirCompositeContainingNamesAwareScope(
+            expandedType.collectUpperBounds(session.typeContext)
+                .mapNotNull { it.staticScopeForUpperBound(session, scopeSession) }
+        )
+        is ConeTypeVariableType -> {
+            val originalTypeParameter = expandedType.typeConstructor.originalTypeParameter as? ConeTypeParameterLookupTag
+                ?: return null
+            originalTypeParameter.typeParameterSymbol.staticScopeForQualifierType(session, scopeSession)
+        }
+        is ConeIntersectionType -> CfirCompositeContainingNamesAwareScope(
+            expandedType.intersectedTypes.mapNotNull { it.staticScopeForUpperBound(session, scopeSession) }
+        )
+        else -> {
+            val classId = expandedType.classIdOrPrimitiveClassId ?: return null
+            val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return null
+            symbol.staticScopeForQualifierType(session, scopeSession, expandedType)
+        }
+    }
+}
+
+private object CfirEmptyContainingNamesAwareScope : CfirContainingNamesAwareScope() {
+    override fun getCallableNames(): Set<Name> = emptySet()
+
+    override fun getClassifierNames(): Set<Name> = emptySet()
+
+    override val hasDefinitelyNoStaticMembers: Boolean
+        get() = true
+
+    override fun mayContainName(name: Name): Boolean = false
+
+    override fun withReplacedSessionOrNull(
+        newSession: CfirSession,
+        newScopeSession: ScopeSession,
+    ): CfirContainingNamesAwareScope = this
+}
+
+private class CfirCompositeContainingNamesAwareScope(
+    private val scopes: List<CfirContainingNamesAwareScope>,
+) : CfirContainingNamesAwareScope() {
+    override fun getCallableNames(): Set<Name> = buildSet {
+        scopes.forEach { addAll(it.getCallableNames()) }
+    }
+
+    override fun getClassifierNames(): Set<Name> = buildSet {
+        scopes.forEach { addAll(it.getClassifierNames()) }
+    }
+
+    override val hasDefinitelyNoStaticMembers: Boolean
+        get() = scopes.all { it.hasDefinitelyNoStaticMembers }
+
+    override val scopeOwnerLookupNames: List<String>
+        get() = scopes.flatMap { it.scopeOwnerLookupNames }
+
+    override fun mayContainName(name: Name): Boolean = scopes.any { it.mayContainName(name) }
+
+    override fun processClassifiersByNameWithSubstitution(
+        name: Name,
+        processor: (CfirClassifierSymbol<*>, ConeSubstitutor) -> Unit,
+    ) {
+        scopes.forEach { it.processClassifiersByNameWithSubstitution(name, processor) }
+    }
+
+    override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {
+        scopes.forEach { it.processClassifiersByName(name, processor) }
+    }
+
+    override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
+        scopes.forEach { it.processFunctionsByName(name, processor) }
+    }
+
+    override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
+        scopes.forEach { it.processPropertiesByName(name, processor) }
+    }
+
+    override fun processCallablesByName(name: Name, processor: (CfirCallableSymbol<*>) -> Unit) {
+        scopes.forEach { it.processCallablesByName(name, processor) }
+    }
+
+    override fun withReplacedSessionOrNull(
+        newSession: CfirSession,
+        newScopeSession: ScopeSession,
+    ): CfirContainingNamesAwareScope? {
+        val replacedScopes = scopes.mapNotNull { it.withReplacedSessionOrNull(newSession, newScopeSession) }
+        return if (replacedScopes.size == scopes.size) {
+            CfirCompositeContainingNamesAwareScope(replacedScopes)
+        } else {
+            null
+        }
+    }
+}
+
 private fun CfirCallableSymbol<*>.isStaticCallableForClassQualifier(): Boolean {
     if (this is CfirEnumConstructorSymbol) return true
     if (this !is CfirNamedFunctionSymbol && this !is CfirPropertySymbol && this !is CfirFieldVariableSymbol) {
@@ -141,4 +261,7 @@ private data class StaticScopeForQualifierTypeKey(
 )
 
 private val StaticScopeForQualifierTypeScopeKey: ScopeSessionKey<StaticScopeForQualifierTypeKey, CfirContainingNamesAwareScope> =
+    scopeSessionKey()
+
+private val StaticScopeForTypeParameterQualifierScopeKey: ScopeSessionKey<CfirTypeParameterSymbol, CfirContainingNamesAwareScope> =
     scopeSessionKey()

@@ -1099,7 +1099,7 @@ class CfirDeclDeserializer(
         val owner = currentEnumOwner
         val symbol = CfirEnumConstructorSymbol(owner?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name))
         val status = buildStatus(decl)
-        val typeParams = owner?.typeParameters?.toMutableList() ?: deserializeTypeParameters(decl)
+        val typeParams = if (owner != null) mutableListOf() else deserializeTypeParameters(decl)
 
         val enumCtor = CfirEnumConstructorImpl(
             source = null,
@@ -1128,7 +1128,7 @@ class CfirDeclDeserializer(
         val owner = currentEnumOwner
         val symbol = CfirEnumConstructorSymbol(owner?.let { CallableId(it.classId, name) } ?: CallableId(packageFqName, name))
         val status = buildStatus(decl)
-        val typeParams = owner?.typeParameters?.toMutableList() ?: withContainingDeclarationSymbol(symbol) {
+        val typeParams = if (owner != null) mutableListOf() else withContainingDeclarationSymbol(symbol) {
             deserializeTypeParameters(decl)
         }
         val valueParameters = withContainingDeclarationSymbol(symbol) {

@@ -558,7 +558,7 @@ internal open class CfirSupertypeResolverVisitor(
             if (ref.coneType is ConeErrorType) ref.toErrorTypeRef() else ref
         }.let { resolvedRefs ->
             resolvedRefs.withImplicitStdCoreSupertypes(classLikeDeclaration, session)
-        }.markDuplicateSupertypes()
+        }.markDuplicateSupertypes(session)
         supertypeComputationSession.storeSupertypes(classLikeDeclaration, resolvedTypeRefs)
         return resolvedTypeRefs
     }
@@ -919,12 +919,12 @@ private fun CfirResolvedTypeRef.toErrorTypeRef(): CfirResolvedTypeRef {
     }
 }
 
-private fun List<CfirResolvedTypeRef>.markDuplicateSupertypes(): List<CfirResolvedTypeRef> {
-    val firstIndexByKey = linkedMapOf<String, Int>()
+private fun List<CfirResolvedTypeRef>.markDuplicateSupertypes(session: CfirSession): List<CfirResolvedTypeRef> {
+    val firstIndexByKey = linkedMapOf<ConeCangJieType, Int>()
     val duplicates = mutableSetOf<Int>()
 
     forEachIndexed { index, ref ->
-        val key = ref.duplicateKey() ?: return@forEachIndexed
+        val key = ref.duplicateKey(session) ?: return@forEachIndexed
         val previous = firstIndexByKey.putIfAbsent(key, index)
         if (previous != null) {
             duplicates += previous
@@ -945,12 +945,12 @@ private fun List<CfirResolvedTypeRef>.markDuplicateSupertypes(): List<CfirResolv
     }
 }
 
-private fun CfirResolvedTypeRef.duplicateKey(): String? {
-    return when (val type = coneType) {
-        is ConePrimitiveType -> "primitive:${type.kind.typeName}"
-        is ConeClassLikeType -> "class:${type.classId}"
-        is ConeStructType -> "struct:${type.classId}"
-        is ConeEnumType -> "enum:${type.classId}"
+private fun CfirResolvedTypeRef.duplicateKey(session: CfirSession): ConeCangJieType? {
+    return when (val type = coneType.fullyExpandedType(session)) {
+        is ConePrimitiveType,
+        is ConeClassLikeType,
+        is ConeStructType,
+        is ConeEnumType -> type
         else -> null
     }
 }

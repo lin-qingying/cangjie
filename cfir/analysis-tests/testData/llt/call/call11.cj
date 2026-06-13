@@ -9,6 +9,6 @@ func test<T>(input: Int64): Int64 {
 }
 
 main() {
-    var a = test(1)
+    var a = <!UNABLE_TO_INFER_GENERIC_FUNC!>test(1)<!>
     return a
 }

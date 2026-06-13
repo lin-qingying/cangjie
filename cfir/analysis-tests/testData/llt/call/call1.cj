@@ -29,6 +29,6 @@ func foo2(a: ((B, C)) -> B): Int32 {
 main() {
     let a = <!AMBIGUOUS_FUNCTION_CALL!>foo1<!>(1, 2, 3)
     let b = {x: (B, C) => C()}
-    let c = <!AMBIGUOUS_FUNCTION_CALL!>foo2<!>(b)
+    let c = foo2(b)
     return 0
 }
