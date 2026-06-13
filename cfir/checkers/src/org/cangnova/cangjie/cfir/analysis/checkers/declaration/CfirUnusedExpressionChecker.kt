@@ -7,8 +7,6 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
-import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.visitors.CfirDefaultVisitor
@@ -146,28 +144,12 @@ object CfirUnusedExpressionChecker : CfirBasicDeclarationChecker() {
                 is CfirFunctionCall -> true
 
                 is CfirQualifiedAccessExpression -> {
-                    val dispatchHasSideEffect = dispatchReceiver?.hasSideEffect() == true
-                    val explicitHasSideEffect = explicitReceiver?.hasSideEffect() == true
-                    if (dispatchHasSideEffect || explicitHasSideEffect) {
-                        true
-                    } else {
-                        when (val symbol = (calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol) {
-                            is CfirValueParameterSymbol,
-                            is CfirPatternVariableSymbol,
-                            is CfirPatternBindingSymbol,
-                                -> false
-
-                            is CfirFieldVariableSymbol -> symbol.isBound && symbol.cfir.isLocal
-                            is CfirPropertySymbol -> {
-                                symbol.isBound &&
-                                        symbol.cfir.isLocal &&
-                                        symbol.getterSymbol == null &&
-                                        symbol.setterSymbol == null
-                            }
-
-                            else -> true
-                        }
-                    }
+                    /*
+                     * 官方 cjc 将裸变量、形参、成员属性等名称访问交给 unused-variable/DCE
+                     * 诊断族处理，不再额外报告 unused expression；属性访问是否有 accessor
+                     * 不是 CFIR unused-expression checker 的判定边界。
+                     */
+                    true
                 }
 
                 else -> true

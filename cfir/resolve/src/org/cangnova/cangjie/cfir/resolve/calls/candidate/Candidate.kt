@@ -194,6 +194,15 @@ class Candidate(
     override val argumentMapping: LinkedHashMap<ConeResolutionAtom, CfirValueParameter>
         get() = _argumentMapping ?: error("Argument mapping is not initialized yet")
 
+    private var _variadicParameter: CfirValueParameter? = null
+    private var _variadicElementType: ConeCangJieType? = null
+    private var _variadicFixedPositionalArity: Int? = null
+    private var _variadicArgumentExpectedTypes: LinkedHashMap<ConeResolutionAtom, ConeCangJieType>? = null
+
+    val usesVariadicCall: Boolean
+        get() = _variadicArgumentExpectedTypes?.isNotEmpty() == true ||
+                (_variadicParameter != null && _variadicFixedPositionalArity == arguments.size)
+
     fun initializeArgumentMapping(
         arguments: List<ConeResolutionAtom>,
         argumentMapping: LinkedHashMap<ConeResolutionAtom, CfirValueParameter>,
@@ -206,6 +215,61 @@ class Candidate(
     @UpdatingCandidateInvariants
     fun updateArgumentMapping(argumentMapping: LinkedHashMap<ConeResolutionAtom, CfirValueParameter>) {
         _argumentMapping = argumentMapping
+        _variadicArgumentExpectedTypes?.keys?.retainAll(argumentMapping.keys)
+    }
+
+    fun initializeVariadicCallInfo(
+        parameter: CfirValueParameter,
+        elementType: ConeCangJieType,
+        fixedPositionalArity: Int,
+    ) {
+        require(_variadicParameter == null || _variadicParameter == parameter) {
+            "Variadic call info already initialized"
+        }
+        _variadicParameter = parameter
+        _variadicElementType = elementType
+        _variadicFixedPositionalArity = fixedPositionalArity
+    }
+
+    fun canUseVariadicArgument(atom: ConeResolutionAtom): Boolean =
+        _variadicParameter != null && argumentMapping[atom] == _variadicParameter
+
+    fun markVariadicArgument(atom: ConeResolutionAtom): ConeCangJieType? {
+        val elementType = _variadicElementType ?: return null
+        val expectedTypes = _variadicArgumentExpectedTypes
+            ?: LinkedHashMap<ConeResolutionAtom, ConeCangJieType>().also {
+                _variadicArgumentExpectedTypes = it
+            }
+        expectedTypes[atom] = elementType
+        return elementType
+    }
+
+    fun markEmptyVariadicCall() {
+        require(_variadicParameter != null) { "Variadic call info is not initialized" }
+    }
+
+    fun variadicExpectedTypeForArgument(atom: ConeResolutionAtom): ConeCangJieType? =
+        _variadicArgumentExpectedTypes?.get(atom)
+
+    fun hasVariadicParameter(parameter: CfirValueParameter): Boolean =
+        _variadicParameter == parameter
+
+    val variadicFixedPositionalArity: Int?
+        get() = _variadicFixedPositionalArity
+
+    private fun remapVariadicArgumentExpectedTypes(
+        oldToNewArguments: Map<ConeResolutionAtom, ConeResolutionAtom>,
+        remainingArguments: List<ConeResolutionAtom>,
+    ) {
+        val oldExpectedTypes = _variadicArgumentExpectedTypes ?: return
+        val newExpectedTypes = LinkedHashMap<ConeResolutionAtom, ConeCangJieType>()
+        for ((oldArgument, newArgument) in oldToNewArguments) {
+            oldExpectedTypes[oldArgument]?.let { newExpectedTypes[newArgument] = it }
+        }
+        for (argument in remainingArguments) {
+            oldExpectedTypes[argument]?.let { newExpectedTypes[argument] = it }
+        }
+        _variadicArgumentExpectedTypes = newExpectedTypes.takeIf { it.isNotEmpty() }
     }
 
     /**
@@ -221,8 +285,10 @@ class Candidate(
         val remainingArguments = arguments.subList(newArgumentPrefix.size, arguments.size)
 
         val newArgumentMapping = LinkedHashMap<ConeResolutionAtom, CfirValueParameter>()
+        val oldToNewArguments = LinkedHashMap<ConeResolutionAtom, ConeResolutionAtom>()
         for ((oldArgument, newArgument) in arguments.zip(newArgumentPrefix)) {
             newArgumentMapping[newArgument] = argumentMapping.getValue(oldArgument)
+            oldToNewArguments[oldArgument] = newArgument
         }
 
         for (argument in remainingArguments) {
@@ -233,6 +299,7 @@ class Candidate(
 
         _arguments = newArguments
         _argumentMapping = newArgumentMapping
+        remapVariadicArgumentExpectedTypes(oldToNewArguments, remainingArguments)
     }
 
     var numDefaults: Int = 0

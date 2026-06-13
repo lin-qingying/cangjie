@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.diagnostic.ArgumentPassedTwice
@@ -19,7 +20,11 @@ import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.arrayElementType
+import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.psi
@@ -77,6 +82,7 @@ object CfirMapArguments : ResolutionStage() {
         val trailingLambdaArguments = argumentInfos.filter { it.isTrailingLambda }
         val argumentMapping = LinkedHashMap<ConeResolutionAtom, CfirValueParameter>(argumentAtoms.size)
         val usedParameters = linkedSetOf<CfirValueParameter>()
+        val positionalArgumentCount = nonTrailingArguments.takeWhile { it.name == null }.size
 
         if (candidate.symbol.takeIf { it.isBound }?.cfir is CfirVariable) {
             candidate.initializeArgumentMapping(argumentAtoms, argumentMapping)
@@ -86,6 +92,15 @@ object CfirMapArguments : ResolutionStage() {
                 )
             }
             return
+        }
+
+        val variadicInfo = candidate.possibleVariadicInfo(parameters, positionalArgumentCount)
+        if (variadicInfo != null) {
+            candidate.initializeVariadicCallInfo(
+                parameter = variadicInfo.parameter,
+                elementType = variadicInfo.elementType,
+                fixedPositionalArity = variadicInfo.fixedPositionalArity,
+            )
         }
 
         var nextPositionalIndex = 0
@@ -125,6 +140,19 @@ object CfirMapArguments : ResolutionStage() {
                 nextPositionalIndex += 1
             }
 
+            if (variadicInfo != null && nextPositionalIndex >= variadicInfo.fixedPositionalArity) {
+                if (seenNamedArgument) {
+                    sink.reportDiagnostic(MixingNamedAndPositionalArguments(argument.atom.expression))
+                }
+                usedParameters.add(variadicInfo.parameter)
+                argumentMapping[argument.atom] = variadicInfo.parameter
+                nextPositionalIndex = variadicInfo.fixedPositionalArity + 1
+                if (positionalArgumentCount > variadicInfo.fixedPositionalArity + 1) {
+                    candidate.markVariadicArgument(argument.atom)
+                }
+                continue
+            }
+
             val parameter = parameters.getOrNull(nextPositionalIndex)
             if (parameter == null) {
                 sink.reportDiagnostic(TooManyArguments(argument.atom.expression, candidate.callInfo.name))
@@ -142,6 +170,11 @@ object CfirMapArguments : ResolutionStage() {
             usedParameters.add(parameter)
             argumentMapping[argument.atom] = parameter
             nextPositionalIndex += 1
+        }
+
+        if (variadicInfo != null && positionalArgumentCount == variadicInfo.fixedPositionalArity) {
+            usedParameters.add(variadicInfo.parameter)
+            candidate.markEmptyVariadicCall()
         }
 
         mapTrailingLambdaArguments(
@@ -194,6 +227,40 @@ object CfirMapArguments : ResolutionStage() {
 
 private fun Candidate.hasTooManyArgumentsDiagnostic(): Boolean =
     diagnostics.any { it is TooManyArguments }
+
+private data class VariadicInfo(
+    val parameter: CfirValueParameter,
+    val elementType: ConeCangJieType,
+    val fixedPositionalArity: Int,
+)
+
+private fun Candidate.possibleVariadicInfo(
+    parameters: List<CfirValueParameter>,
+    positionalArgumentCount: Int,
+): VariadicInfo? {
+    val declaration = symbol.takeIf { it.isBound }?.cfir ?: return null
+    if (declaration is CfirEnumConstructor) return null
+    if (declaration is CfirNamedFunction && declaration.name.isDisallowedVariadicOperatorName()) return null
+
+    val variadicParameterIndex = parameters.indexOfLast { !it.isNamed }
+    if (variadicParameterIndex < 0) return null
+    if (positionalArgumentCount + 1 < variadicParameterIndex + 1) return null
+
+    val variadicParameter = parameters[variadicParameterIndex]
+    val elementType = variadicParameter.returnTypeRef.coneType.arrayElementType ?: return null
+    return VariadicInfo(
+        parameter = variadicParameter,
+        elementType = elementType,
+        fixedPositionalArity = variadicParameterIndex,
+    )
+}
+
+private fun Name.isDisallowedVariadicOperatorName(): Boolean {
+    if (this !in OperatorNameConventions.TOKENS_BY_OPERATOR_NAME) return false
+    return this != OperatorNameConventions.INVOKE &&
+            this != OperatorNameConventions.GET &&
+            this != OperatorNameConventions.SET
+}
 
 private data class CallArgumentInfo(
     val atom: ConeResolutionAtom,

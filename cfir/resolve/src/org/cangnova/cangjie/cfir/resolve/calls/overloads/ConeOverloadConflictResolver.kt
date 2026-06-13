@@ -379,7 +379,7 @@ class ConeOverloadConflictResolver(
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
-            hasVarargs = false,
+            hasVarargs = call.usesVariadicCall,
             numDefaults = call.numDefaults,
             isExpect = false,
             isSyntheticMember = declaration.origin is CfirDeclarationOrigin.Synthetic,
@@ -393,7 +393,7 @@ class ConeOverloadConflictResolver(
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
-            hasVarargs = false,
+            hasVarargs = call.usesVariadicCall,
             numDefaults = call.numDefaults,
             isExpect = false,
             isSyntheticMember = declaration.origin is CfirDeclarationOrigin.Synthetic,
@@ -407,7 +407,7 @@ class ConeOverloadConflictResolver(
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
-            hasVarargs = false,
+            hasVarargs = call.usesVariadicCall,
             numDefaults = call.numDefaults,
             isExpect = false,
             isSyntheticMember = declaration.origin is CfirDeclarationOrigin.Synthetic,
@@ -421,7 +421,7 @@ class ConeOverloadConflictResolver(
             valueParameterTypes = computeSignatureTypes(call, declaration),
             hasExtensionReceiver = false,
             contextReceiverCount = 0,
-            hasVarargs = false,
+            hasVarargs = call.usesVariadicCall,
             numDefaults = call.numDefaults,
             isExpect = false,
             isSyntheticMember = declaration.origin is CfirDeclarationOrigin.Synthetic,
@@ -476,7 +476,9 @@ class ConeOverloadConflictResolver(
                     }
             } else if (call.argumentMappingInitialized) {
                 call.argumentMapping.mapTo(this) { (argument, parameter) ->
-                    parameter.toTypeWithConversion(argument, session, call)
+                    call.variadicExpectedTypeForArgument(argument)?.let { variadicExpectedType ->
+                        TypeWithConversion(variadicExpectedType.prepareType(session, call))
+                    } ?: parameter.toTypeWithConversion(argument, session, call)
                 }
             } else {
                 declaredParametersFor(called).mapTo(this) { parameter ->
