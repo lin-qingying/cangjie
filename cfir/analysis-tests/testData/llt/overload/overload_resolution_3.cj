@@ -4,7 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-abstract open class Component {}
+abstract <!REDUNDANT_MODIFIER!>open<!> class Component {}
 
 class Button <: Component {
     Button(let pushed: Bool) {}

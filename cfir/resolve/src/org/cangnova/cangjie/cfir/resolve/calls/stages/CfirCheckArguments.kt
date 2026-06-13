@@ -26,6 +26,7 @@ package org.cangnova.cangjie.cfir.resolve.calls.stages
 
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostic.InapplicableCandidate
+import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
@@ -34,9 +35,14 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.yieldDiagnostic
 import org.cangnova.cangjie.cfir.resolve.calls.getExpectedType
+import org.cangnova.cangjie.cfir.resolve.calls.prepareArgumentType
 import org.cangnova.cangjie.cfir.resolve.transformers.ensureResolvedTypeDeclaration
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 object CfirCheckArguments : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
@@ -81,7 +87,7 @@ object CfirCheckArguments : ResolutionStage() {
         val argument = atom.expression
         argument.coneTypeOrNull.ensureResolvedTypeDeclaration(context.session)
         val expectedType =
-            prepareExpectedType(context.session, callInfo, argument, parameter)
+            prepareExpectedType(context.session, callInfo, atom, argument, parameter)
         ArgumentCheckingProcessor.resolveArgumentExpression(
             this,
             atom,
@@ -108,11 +114,13 @@ context(context: ResolutionContext)
 private fun Candidate.prepareExpectedType(
     session: CfirSession,
     callInfo: CallInfo,
+    atom: ConeResolutionAtom,
     argument: CfirExpression,
     parameter: CfirValueParameter?,
 ): ConeCangJieType? {
     if (parameter == null) return null
-    val basicExpectedType = argument.getExpectedType(session, parameter)
+    val basicExpectedType = selectVariadicExpectedType(session, atom, argument, parameter)
+        ?: argument.getExpectedType(session, parameter)
 
     // 仓颉没有 SAM 转换，直接跳过那一步
     val expectedType =
@@ -120,4 +128,31 @@ private fun Candidate.prepareExpectedType(
             ?: basicExpectedType
 
     return this.substitutor.substituteOrSelf(expectedType)
+}
+
+context(context: ResolutionContext)
+private fun Candidate.selectVariadicExpectedType(
+    session: CfirSession,
+    atom: ConeResolutionAtom,
+    argument: CfirExpression,
+    parameter: CfirValueParameter,
+): ConeCangJieType? {
+    variadicExpectedTypeForArgument(atom)?.let { return it }
+    if (!canUseVariadicArgument(atom)) return null
+    val variadicFixedPositionalArity = variadicFixedPositionalArity ?: return null
+    val argumentIndex = arguments.indexOf(atom)
+    if (argumentIndex < variadicFixedPositionalArity) return null
+
+    val argumentType = argument.coneTypeOrNull ?: return null
+    val normalExpectedType = this.substitutor.substituteOrSelf(argument.getExpectedType(session, parameter))
+    if (argumentType is ConeErrorType || normalExpectedType is ConeErrorType) return null
+    if (argument is CfirArrayLiteral) return null
+
+    val preparedArgumentType = prepareArgumentType(argumentType, session)
+    val matchesNormalArrayParameter =
+        AbstractTypeChecker.isSubtypeOf(session.typeContext, preparedArgumentType, normalExpectedType) == true
+    if (matchesNormalArrayParameter) return null
+
+    // 官方 cjc 会在普通调用匹配失败后把这部分位置实参收束成 ArrayLit。
+    return markVariadicArgument(atom)
 }

@@ -89,6 +89,21 @@ open class CfirExpressionsResolveTransformer(
         delegatedType: ConeCangJieType? = null,
     ): ConeErrorType = ConeErrorType(ConeSimpleDiagnostic(reason, kind), delegatedType = delegatedType)
 
+    /**
+     * 将已经由子表达式承载的错误类型向外传播，避免组合表达式重新报告同一个根因。
+     */
+    private fun ConeCangJieType.propagatedErrorTypeOrNull(): ConeErrorType? {
+        val errorType = this as? ConeErrorType ?: return null
+        if (errorType.diagnostic is ConeUnreportedDuplicateDiagnostic) return errorType
+        return ConeErrorType(
+            ConeUnreportedDuplicateDiagnostic(errorType.diagnostic),
+            isUninferredParameter = errorType.isUninferredParameter,
+            delegatedType = errorType.delegatedType,
+            typeArguments = errorType.typeArguments,
+            attributes = errorType.attributes,
+        )
+    }
+
     init {
         components.callResolver.initTransformer(this)
     }
@@ -478,6 +493,12 @@ open class CfirExpressionsResolveTransformer(
         val receiverType = explicitReceiver.coneTypeOrNull ?: return null
         val argumentTypes = functionCall.argumentList.arguments.map { argument ->
             argument.coneTypeOrNull ?: return null
+        }
+        (receiverType.propagatedErrorTypeOrNull() ?: argumentTypes.firstNotNullOfOrNull { argumentType ->
+            argumentType.propagatedErrorTypeOrNull()
+        })?.let { propagatedErrorType ->
+            functionCall.replaceConeTypeOrNull(propagatedErrorType)
+            return functionCall
         }
 
         val builtinMatch = CfirBuiltinOperatorResolver.tryResolveBuiltinOperator(
