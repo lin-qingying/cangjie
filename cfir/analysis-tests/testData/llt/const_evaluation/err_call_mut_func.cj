@@ -25,6 +25,6 @@ main() {
     print(Foo.c) // ok
     v.f1() // ok
     v.f2() // ok
-    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>v.f3()<!> // error, f3 is mut
+    <!IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION!>v<!>.f3() // error, f3 is mut
     return 0
 }

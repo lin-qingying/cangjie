@@ -440,6 +440,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
         visitElement(functionCall)
     }
 
+    final override fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression, data: Nothing?) {
+        visitIncrementDecrementExpression(incrementDecrementExpression)
+    }
+
+    open fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression) {
+        visitElement(incrementDecrementExpression)
+    }
+
     final override fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference, data: Nothing?) {
         visitErrorNamedReference(errorNamedReference)
     }
@@ -614,6 +622,14 @@ abstract class CfirVisitorVoid : CfirVisitor<Unit, Nothing?>() {
 
     open fun visitMatchBranch(matchBranch: CfirMatchBranch) {
         visitElement(matchBranch)
+    }
+
+    final override fun visitCatchPattern(catchPattern: CfirCatchPattern, data: Nothing?) {
+        visitCatchPattern(catchPattern)
+    }
+
+    open fun visitCatchPattern(catchPattern: CfirCatchPattern) {
+        visitElement(catchPattern)
     }
 
     final override fun visitCatch(catch: CfirCatch, data: Nothing?) {

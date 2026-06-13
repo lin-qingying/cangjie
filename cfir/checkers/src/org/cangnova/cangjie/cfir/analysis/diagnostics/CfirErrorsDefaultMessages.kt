@@ -138,6 +138,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.INTERFACE_CANNOT_INHERIT_CLASS, "interface ''{0}'' cannot inherit non-interface type ''{1}''", RENDER_NAME, RENDER_NAME)
         map.put(CfirErrors.MULTIPLE_CLASS_SUPER_TYPES, "type ''{0}'' has multiple class supertypes: {1}", RENDER_NAME, RENDER_NAME_LIST)
         map.put(CfirErrors.STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE, "declaration ''{0}'': static declaration cannot be open/abstract/override", RENDER_NULLABLE_NAME)
+        map.put(CfirErrors.MISSING_FUNC_BODY, "{0} ''{1}'' can not be abstract", RENDER_STRING, RENDER_NAME)
         map.put(
             CfirErrors.MUT_ONLY_ON_FUNCTION,
             "declaration ''{0}'': mut modifier is only valid on property declarations and function declarations inside struct bodies",
@@ -165,6 +166,14 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_TYPE,
             RENDER_NAME,
         )
+        map.put(
+            CfirErrors.PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF,
+            "The type of the override/implement property must be the same.",
+            RENDER_TYPE,
+            RENDER_TYPE,
+            RENDER_NAME,
+        )
+        map.put(CfirErrors.MISSING_ENTRY, "''main'' is missing")
         map.put(
             CfirErrors.CANNOT_OVERRIDE_INVISIBLE_MEMBER,
             "Cannot override invisible member ''{0}''.",
@@ -640,6 +649,12 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // InheritanceDeep
         // ================================================================
         map.put(CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT, "{0} member ''{1}'' cannot have the same name with {2} member in {3}", RENDER_STRING, RENDER_NAME, RENDER_STRING, RENDER_NAME)
+        map.put(
+            CfirErrors.MEMBER_VARIABLE_CAN_NOT_SHADOW,
+            "the variable ''{0}'' must not shadow a member variable of the supertype",
+            RENDER_NAME
+        )
+        map.put(CfirErrors.CANNOT_OVERRIDE, "cannot override {0} ''{1}''", RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.INHERIT_SUPER_MEMBER_KIND_INCONSISTENT, "inherited members ''{0}'' have inconsistent decl types", RENDER_NAME)
         map.put(CfirErrors.INHERIT_MEMBER_TYPE_INCONSISTENT, "{0} of the inherited {1} members ''{2}'' are not identical and not in subtype relation", RENDER_STRING, RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC, "abstract class ''{0}'' cannot contain unimplemented static {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
@@ -672,6 +687,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING
         )
         map.put(CfirErrors.CANNOT_CURRYING, "{0} cannot be currying function", RENDER_STRING)
+        map.put(CfirErrors.CANNOT_HAVE_PARAMETER, "{0} cannot have parameter", RENDER_STRING)
         map.put(CfirErrors.FORBID_GENERIC_FINALIZER, "generic finalizer ''{0}'' is not allowed", RENDER_NAME)
         map.put(CfirErrors.NON_ABSTRACT_CLASS_CANNOT_BE_SEALED, "non-abstract class cannot be modified by 'sealed'")
         map.put(CfirErrors.STATIC_VARIABLE_USE_GENERIC_PARAMETER, "static member cannot depend on generic parameter ''{0}''", RENDER_NAME)

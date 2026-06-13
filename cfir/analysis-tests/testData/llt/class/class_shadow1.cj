@@ -9,7 +9,7 @@ open class Base {
 }
 
 class Data <: Base {
-    public static let <!INHERIT_MEMBER_KIND_INCONSISTENT!>val<!> = 2
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static let val = 2
 }
 
 main(): Int64 {

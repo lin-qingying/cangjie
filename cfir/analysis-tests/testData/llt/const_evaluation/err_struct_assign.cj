@@ -13,9 +13,9 @@ struct Foo {
 
 func f() {
     let v = Foo()
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>v.a<!> = 1
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>v.b<!>++
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>Foo.c<!> = 1
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>v.a = 1<!>
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>v.b++<!>
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>Foo.c = 1<!>
 }
 
 main() {}

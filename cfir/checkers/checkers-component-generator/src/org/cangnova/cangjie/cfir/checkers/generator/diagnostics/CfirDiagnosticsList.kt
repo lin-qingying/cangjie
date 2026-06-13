@@ -220,6 +220,12 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name?>("declarationName")  // 声明的名称（可能为空）
         }
 
+        // class 成员缺少函数体/属性访问器，导致不能作为 abstract 成员存在
+        val MISSING_FUNC_BODY by error<PsiElement> {
+            parameter<String>("memberKind")
+            parameter<Name>("memberName")
+        }
+
         // mut 修饰符只能用于属性声明以及 struct 体内的函数声明
         val MUT_ONLY_ON_FUNCTION by error<CjNamedDeclaration>(PositioningStrategy.ACTUAL_DECLARATION_NAME) {
             parameter<Name?>("declarationName")  // 声明的名称（可能为空）
@@ -412,7 +418,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("variableName")
         }
 
-        val IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+        val IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION by error<PsiElement> {
             parameter<Name>("currentFunctionName")
             parameter<Name>("targetFunctionName")
         }
@@ -673,6 +679,16 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<ConeCangJieType>("expectedType")
             parameter<Name>("overriddenName")
         }
+
+        // 属性 override/implement 的类型必须完全一致。
+        val PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF by error<PsiElement> {
+            parameter<ConeCangJieType>("actualType")
+            parameter<ConeCangJieType>("expectedType")
+            parameter<Name>("overriddenName")
+        }
+
+        // 可执行编译目标缺少程序入口。
+        val MISSING_ENTRY by error<PsiElement>()
 
         // override 目标不可见
         val CANNOT_OVERRIDE_INVISIBLE_MEMBER by error<CjNamedDeclaration>(PositioningStrategy.OVERRIDE_MODIFIER) {
@@ -1061,6 +1077,17 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<Name>("containerName")
         }
 
+        // 成员变量不能遮蔽父类型中的成员变量
+        val MEMBER_VARIABLE_CAN_NOT_SHADOW by error<PsiElement> {
+            parameter<Name>("memberName")
+        }
+
+        // 父成员不是 open/abstract/interface 成员，子类不能覆盖
+        val CANNOT_OVERRIDE by error<PsiElement> {
+            parameter<String>("memberKind")
+            parameter<Name>("memberName")
+        }
+
         // 从多个父类型继承的同名成员声明类型不一致
         val INHERIT_SUPER_MEMBER_KIND_INCONSISTENT by error<PsiElement> {
             parameter<Name>("memberName")
@@ -1158,6 +1185,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // finalizer/constructor/getter/setter 不支持柯里化参数列表
         val CANNOT_CURRYING by error<PsiElement> {
+            parameter<String>("declarationKind")
+        }
+
+        // getter 不能声明参数
+        val CANNOT_HAVE_PARAMETER by error<PsiElement> {
             parameter<String>("declarationKind")
         }
 

@@ -171,12 +171,30 @@ internal fun CfirCallableSymbol<*>.isVisibleIn(
     return ownerClassId == currentClassId
 }
 
+/**
+ * override/redef 的目标搜索遵循官方继承检查的 inherited member 语义：
+ * 父类 private 成员不会作为子类可覆盖/可重定义目标参与后续检查。
+ */
+internal fun CfirCallableSymbol<*>.canParticipateInOverrideTargetSearch(
+    ownerDeclaration: CfirClassLikeDeclaration,
+    context: CheckerContext,
+): Boolean {
+    if (!isBound) return true
+    if (cfir.status.visibility != Visibilities.Private) return true
+
+    val ownerClassId = ownerClassId(context) ?: return false
+    val currentClassId = (ownerDeclaration.symbol as? CfirClassLikeSymbol<*>)?.classId ?: return false
+    return ownerClassId == currentClassId
+}
+
 internal fun CfirCallableSymbol<*>.isAbstractLike(context: CheckerContext): Boolean {
     if (!isBound) return false
     if (cfir.status.isAbstract) return true
 
     val ownerClass = context.ownerClassSymbol(this)?.cfir
-    if (ownerClass !is CfirInterface) return false
+    val ownerMayDeclareAbstractMember =
+        ownerClass is CfirInterface || ownerClass is CfirClass && ownerClass.status.isAbstract
+    if (!ownerMayDeclareAbstractMember) return false
 
     val declaration = cfir
     return when (declaration) {

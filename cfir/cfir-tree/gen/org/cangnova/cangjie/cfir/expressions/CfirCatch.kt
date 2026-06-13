@@ -6,7 +6,7 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -19,7 +19,7 @@ abstract class CfirCatch : CfirExpression() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
-    abstract val parameter: CfirProperty
+    abstract val pattern: CfirCatchPattern
     abstract val body: CfirBlock
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
@@ -35,7 +35,7 @@ abstract class CfirCatch : CfirExpression() {
 
     abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirCatch
 
-    abstract fun <D> transformParameter(transformer: CfirTransformer<D>, data: D): CfirCatch
+    abstract fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirCatch
 
     abstract fun <D> transformBody(transformer: CfirTransformer<D>, data: D): CfirCatch
 }

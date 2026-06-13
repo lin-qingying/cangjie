@@ -13,7 +13,7 @@ open class Data <: Base {
 }
 
 class Derived <: Data {
-    public static let <!INHERIT_MEMBER_KIND_INCONSISTENT!>val<!> = 3
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static let val = 3
 }
 
 main(): Int64 {

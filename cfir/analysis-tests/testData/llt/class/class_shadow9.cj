@@ -10,8 +10,8 @@ open class Base {
 }
 
 class Data <: Base {
-    <!sema_member_variable_can_not_shadow!>p<!>ublic let val: Int32 = 1
-    public let f: Int32 = <!sema_this_or_super_not_allowed_to_initialize_non_static_member!>s<!>uper.val
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic let val: Int32 = 1
+    public let f: Int32 = <!ILLEGAL_THIS_OR_SUPER_CALL!>super<!>.val
 }
 
 main(): Int64 {

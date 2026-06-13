@@ -72,19 +72,21 @@ open class CangJieExpressionParsing(
      * 优先级顺序（从高到低）：
      * 1. POSTFIX - 后缀运算符（++, --, ., ?.）
      * 2. PREFIX - 前缀运算符（-, !）
-     * 3. AS - 类型转换运算符（as）
-     * 4. MULTIPLICATIVE - 乘法运算符（*, /, %, **）
+     * 3. EXPONENTIATION - 幂运算符（**）
+     * 4. MULTIPLICATIVE - 乘法运算符（*, /, %）
      * 5. ADDITIVE - 加法运算符（+, -）
-     * 6. RANGE - 区间运算符（.., ..=）
-     * 7. COALESCING - 合并运算符（??）
-     * 8. IS - 类型检查运算符（is）
-     * 9. COMPARISON - 比较运算符（<, >, <=, >=）
-     * 10. EQUALITY - 相等运算符（==, !=）
-     * 11. CONJUNCTION - 逻辑与运算符（&&）
-     * 12. DISJUNCTION - 逻辑或运算符（||）
-     * 13. BITWISE - 位运算符（&, |, ^, <<, >>, <<=, >>=）
-     * 14. FLOW - 流运算符（|>, >>）
-     * 15. ASSIGNMENT - 赋值运算符（=, +=, -=, *=, /=, %=, &=, &&=, ||=, |=, ^=, <<=, >>=, **=）
+     * 6. SHIFT - 移位运算符（<<, >>）
+     * 7. RANGE - 区间运算符（.., ..=）
+     * 8. TYPE_AND_COMPARISON - 类型/比较运算符（as, is, <, >, <=, >=）
+     * 9. EQUALITY - 相等运算符（==, !=）
+     * 10. BIT_AND - 按位与运算符（&）
+     * 11. BIT_XOR - 按位异或运算符（^）
+     * 12. BIT_OR - 按位或运算符（|）
+     * 13. CONJUNCTION - 逻辑与运算符（&&）
+     * 14. DISJUNCTION - 逻辑或运算符（||）
+     * 15. COALESCING - 合并运算符（??）
+     * 16. FLOW - 流运算符（|>, ~>）
+     * 17. ASSIGNMENT - 赋值运算符（=, +=, -=, *=, /=, %=, &=, &&=, ||=, |=, ^=, <<=, >>=, **=）
      *
      * @param operations 该优先级包含的运算符token类型
      */
@@ -121,33 +123,22 @@ open class CangJieExpressionParsing(
             }
         },
 
-        /**
-         * 类型转换运算符优先级
-         *
-         * 包含：
-         * - `as` - 类型转换
-         *
-         * 右侧解析类型引用而非表达式。
-         */
-        AS(AS_KEYWORD) {
-            context(context: ParsingContext)
-
-
-            override fun parseRightHandSide(
-                operation: IElementType,
-                parser: CangJieExpressionParsing,
-
-                ): IElementType {
-                parser.mark().drop()
-                parser.cangJieParsing.parseTypeRefWithoutIntersections()
-                return BINARY_WITH_TYPE
-            }
-
+        EXPONENTIATION(MULMUL) {
             context(context: ParsingContext)
             override fun parseHigherPrecedence(parser: CangJieExpressionParsing) {
                 with(context) {
                     parser.parsePrefixExpression()
                 }
+            }
+
+            context(context: ParsingContext)
+            override fun parseRightHandSide(
+                operation: IElementType,
+                parser: CangJieExpressionParsing,
+            ): IElementType {
+                // 官方 parser 将 `**` 作为右结合二元运算解析。
+                parser.parseBinaryExpression(this)
+                return BINARY_EXPRESSION
             }
         },
 
@@ -158,9 +149,8 @@ open class CangJieExpressionParsing(
          * - `*` - 乘法
          * - `/` - 除法
          * - `%` - 取模
-         * - `**` - 幂运算
          */
-        MULTIPLICATIVE(MUL, DIV, PERC, MULMUL),
+        MULTIPLICATIVE(MUL, DIV, PERC),
 
         /**
          * 加法运算符优先级
@@ -170,6 +160,8 @@ open class CangJieExpressionParsing(
          * - `-` - 减法
          */
         ADDITIVE(PLUS, MINUS),
+
+        SHIFT(LTLT, GTGT),
 
         /**
          * 区间运算符优先级
@@ -198,64 +190,30 @@ open class CangJieExpressionParsing(
         },
 
         /**
-         * 合并运算符优先级
+         * 类型转换、类型检查和比较运算符优先级
          *
          * 包含：
-         * - `??` - 空值合并运算符
-         *
-         * 用于处理可选类型，当左侧为None时使用右侧值。
-         */
-        COALESCING(CjTokens.COALESCING) {
-            context(context: ParsingContext)
-            override fun parseRightHandSide(
-                operation: IElementType,
-                parser: CangJieExpressionParsing,
-
-                ): IElementType {
-                if (operation == CjTokens.COALESCING) {
-
-                    parser.parseExpression()
-
-                    return BINARY_EXPRESSION
-                }
-                return super.parseRightHandSide(operation, parser)
-            }
-        },
-
-        /**
-         * 类型检查运算符优先级
-         *
-         * 包含：
+         * - `as` - 类型转换
          * - `is` - 类型检查
+         * - `<`, `>`, `<=`, `>=` - 比较
          *
-         * 右侧解析类型引用，生成IS_EXPRESSION节点。
+         * 官方 token 优先级表中这几类运算符同属一个优先级；其中 `as` / `is`
+         * 的右侧解析类型引用而非表达式。
          */
-        IS(IS_KEYWORD) {
+        TYPE_AND_COMPARISON(AS_KEYWORD, IS_KEYWORD, LT, GT, LTEQ, GTEQ) {
             context(context: ParsingContext)
             override fun parseRightHandSide(
                 operation: IElementType,
                 parser: CangJieExpressionParsing,
-
-                ): IElementType {
-                if (operation === IS_KEYWORD) {
+            ): IElementType {
+                if (operation === AS_KEYWORD || operation === IS_KEYWORD) {
                     parser.mark().drop()
                     parser.cangJieParsing.parseTypeRefWithoutIntersections()
-                    return IS_EXPRESSION
+                    return if (operation === AS_KEYWORD) BINARY_WITH_TYPE else IS_EXPRESSION
                 }
                 return super.parseRightHandSide(operation, parser)
             }
         },
-
-        /**
-         * 比较运算符优先级
-         *
-         * 包含：
-         * - `<` - 小于
-         * - `>` - 大于
-         * - `<=` - 小于等于
-         * - `>=` - 大于等于
-         */
-        COMPARISON(LT, GT, LTEQ, GTEQ),
 
         /**
          * 相等运算符优先级
@@ -265,6 +223,12 @@ open class CangJieExpressionParsing(
          * - `!=` - 不等于
          */
         EQUALITY(EQEQ, EXCLEQ),
+
+        BIT_AND(AND),
+
+        BIT_XOR(XOR),
+
+        BIT_OR(OR),
 
         /**
          * 逻辑与运算符优先级
@@ -283,25 +247,30 @@ open class CangJieExpressionParsing(
         DISJUNCTION(OROR),
 
         /**
-         * 位运算符优先级
+         * 合并运算符优先级
          *
          * 包含：
-         * - `&` - 按位与
-         * - `|` - 按位或
-         * - `^` - 按位异或
-         * - `<<` - 左移
-         * - `>>` - 右移
-         * - `<<=` - 左移赋值
-         * - `>>=` - 右移赋值
+         * - `??` - 空值合并运算符
+         *
+         * 用于处理可选类型，当左侧为None时使用右侧值。
          */
-        BITWISE(AND, OR, XOR, LTLT, GTGT, LTLTEQ, GTGTEQ),
+        COALESCING(CjTokens.COALESCING) {
+            context(context: ParsingContext)
+            override fun parseRightHandSide(
+                operation: IElementType,
+                parser: CangJieExpressionParsing,
+            ): IElementType {
+                parser.parseBinaryExpression(this)
+                return BINARY_EXPRESSION
+            }
+        },
 
         /**
          * 流运算符优先级
          *
          * 包含：
          * - `|>` - 管道运算符
-         * - `>>` - 组合运算符
+         * - `~>` - 组合运算符
          */
         FLOW(PIPELINE, COMPOSITION),
 

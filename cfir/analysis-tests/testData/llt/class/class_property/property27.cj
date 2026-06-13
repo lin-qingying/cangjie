@@ -10,6 +10,6 @@ main(): Int64 {
 }
 
 abstract class Boo {
-    private mut prop <!sema_invalid_member_visibility_in_class!>l<!>: Int32
-    <!sema_missing_func_body!>p<!>ublic mut static prop m: Int32
+    private mut prop <!INVALID_MEMBER_VISIBILITY_IN_CLASS!>l<!>: Int32
+    <!MISSING_FUNC_BODY!>p<!>ublic mut static prop m: Int32
 }

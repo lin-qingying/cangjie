@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.lightTree
 
 import com.intellij.lang.LighterASTNode
+import com.intellij.psi.TokenType
 import com.intellij.util.diff.FlyweightCapableTreeStructure
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.CfirFunctionTarget
@@ -102,9 +103,17 @@ class LightTreeRawCfirDeclarationBuilder(
 
     private fun LightTreeModifierList.toDeclarationStatusForCurrentContext(
         defaultVisibility: Visibility? = null,
+        isDefault: Boolean = false,
+        isImplicitAbstract: Boolean = false,
     ): CfirDeclarationStatus {
         val inInterfaceContext = !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
-        return toDeclarationStatus(context.inLocalContext, inInterfaceContext, defaultVisibility)
+        return toDeclarationStatus(
+            context.inLocalContext,
+            inInterfaceContext,
+            defaultVisibility,
+            isDefault,
+            isImplicitAbstract,
+        )
     }
 
     private enum class MacroSurfaceOwnerKind {
@@ -456,6 +465,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
                 status = modifiers.toDeclarationStatusForCurrentContext()
+                    .withConstDeclarationKeyword(hasConstKeyword(node))
                 returnTypeRef = valueParameter.returnTypeRef.copyWithNewSource(propertySource)
                 this.name = name
                 getter = null
@@ -564,7 +574,10 @@ class LightTreeRawCfirDeclarationBuilder(
                 attributes = declarationAttributes(node)
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext()
+                status = modifiers.toDeclarationStatusForCurrentContext(
+                    isDefault = isDefaultInterfaceFunction(node, modifiers),
+                    isImplicitAbstract = isImplicitAbstractClassLikeFunction(node, modifiers),
+                )
                 this.typeParameters.addAll(typeParams)
                 this.returnTypeRef = returnTypeRef
                 this.name = name
@@ -664,8 +677,22 @@ class LightTreeRawCfirDeclarationBuilder(
 
     // ===== 属性/字段/变量 =====
 
-    private fun convertProperty(node: LighterASTNode): CfirProperty {
-        val name = extractName(node)
+    private fun convertProperty(node: LighterASTNode): CfirDeclaration {
+        val name = extractPropertyName(node)
+        if (name.isSpecial) {
+            return buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
+                buildInvalidDeclaration {
+                    resolvePhase = CfirResolvePhase.RAW_CFIR
+                    source = node.toSource()
+                    this.symbol = symbol
+                    origin = CfirDeclarationOrigin.Source
+                    moduleData = baseModuleData
+                    attributes = CfirDeclarationAttributes.EMPTY
+                    reason = "Property declaration has no valid name"
+                }
+            }
+        }
+
         val modifiers = LightTreeModifierList.from(tree, node)
         val typeRef = extractReturnTypeRef(node)
         val accessors = extractPropertyAccessorNodes(node)
@@ -694,10 +721,13 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
+                attributes = declarationAttributes(node)
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext()
+                status = modifiers.toDeclarationStatusForCurrentContext(
+                    isDefault = isDefaultInterfaceProperty(node, modifiers, accessors),
+                    isImplicitAbstract = isImplicitAbstractClassLikeProperty(node, modifiers, accessors),
+                )
                 this.returnTypeRef = typeRef
                 this.name = name
                 this.getter = getter
@@ -743,10 +773,12 @@ class LightTreeRawCfirDeclarationBuilder(
                 this.symbol = symbol
                 origin = CfirDeclarationOrigin.Source
                 moduleData = baseModuleData
-                attributes = CfirDeclarationAttributes.EMPTY
+                attributes = declarationAttributes(node)
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
-                status = modifiers.toDeclarationStatusForCurrentContext()
+                status = modifiers.toDeclarationStatusForCurrentContext(
+                    isDefault = isDefaultInterfaceAccessor(node, modifiers),
+                )
                 returnTypeRef = explicitReturnTypeRef
                     ?: if (isGetter) propertyTypeRef else baseSession.builtinTypes.unitType.toCfirResolvedTypeRef(source)
                 this.propertySymbol = propertySymbol
@@ -775,6 +807,7 @@ class LightTreeRawCfirDeclarationBuilder(
                 isLocal = context.inLocalContext
                 dispatchReceiverType = currentDispatchReceiverType()
                 status = modifiers.toDeclarationStatusForCurrentContext()
+                    .withConstDeclarationKeyword(hasConstKeyword(node))
                 this.returnTypeRef = typeRef
                 this.name = name
                 this.initializer = initializer
@@ -788,6 +821,7 @@ class LightTreeRawCfirDeclarationBuilder(
         val typeRef = extractReturnTypeRef(node)
         val patternNode = findPatternChild(node)
         val status = modifiers.toDeclarationStatusForCurrentContext()
+            .withConstDeclarationKeyword(hasConstKeyword(node))
         val pattern = patternNode?.let {
             expressionBuilder.convertPattern(
                 node = it,
@@ -1780,6 +1814,28 @@ class LightTreeRawCfirDeclarationBuilder(
         }
     }
 
+    /**
+     * 属性名必须来自 `prop` 后紧邻的声明名槽位。
+     * 解析错误恢复后的后续标识符不能被当作属性名，否则会把无效声明推进到 CFIR resolve。
+     */
+    private fun extractPropertyName(node: LighterASTNode): Name {
+        var afterPropKeyword = false
+        var result: Name? = null
+
+        tree.forEachChildren(node) { child ->
+            if (result != null) return@forEachChildren
+            when {
+                child.tokenType == CjTokens.PROP_KEYWORD -> afterPropKeyword = true
+                !afterPropKeyword -> Unit
+                child.tokenType == CjTokens.IDENTIFIER -> result = Name.identifier(child.asText())
+                child.tokenType == CjNodeTypes.OPERATION_NAME -> result = child.asText().asOperatorName()
+                child.tokenType == TokenType.ERROR_ELEMENT -> result = Name.special("<anonymous>")
+            }
+        }
+
+        return result ?: Name.special("<anonymous>")
+    }
+
     private fun extractFunctionName(node: LighterASTNode, valueParametersCount: Int): Name {
         val nameNode = tree.findChildByType(node, CjTokens.IDENTIFIER)
             ?: tree.findChildByType(node, CjNodeTypes.OPERATION_NAME)
@@ -2125,6 +2181,21 @@ class LightTreeRawCfirDeclarationBuilder(
         return false
     }
 
+    /** 判断变量声明关键字是否为 const。 */
+    private fun hasConstKeyword(node: LighterASTNode): Boolean {
+        tree.forEachChildren(node) { child ->
+            if (child.tokenType == CjTokens.CONST_KEYWORD) return true
+        }
+        return false
+    }
+
+    private fun CfirDeclarationStatus.withConstDeclarationKeyword(hasConstKeyword: Boolean): CfirDeclarationStatus {
+        if (hasConstKeyword && this is CfirDeclarationStatusImpl) {
+            isConst = true
+        }
+        return this
+    }
+
     /** 判断主构造参数是否声明为成员参数。 */
     private fun hasLetOrVarKeyword(node: LighterASTNode): Boolean {
         tree.forEachChildren(node) { child ->
@@ -2188,11 +2259,66 @@ class LightTreeRawCfirDeclarationBuilder(
             copied.isCommon = status.isCommon
             copied.isSpecific = status.isSpecific
             copied.isRedef = status.isRedef
+            copied.isDefault = status.isDefault
             copied.isAbstract = status.isAbstract
             copied.isOpen = status.isOpen
             copied.isSealed = status.isSealed
         }
     }
+
+    private fun isDefaultInterfaceFunction(node: LighterASTNode, modifiers: LightTreeModifierList): Boolean =
+        isInInterfaceMemberContext() &&
+                !modifiers.isForeign &&
+                !modifiers.isAbstract &&
+                hasSyntaxBody(node)
+
+    private fun isDefaultInterfaceProperty(
+        node: LighterASTNode,
+        modifiers: LightTreeModifierList,
+        accessors: List<LighterASTNode> = extractPropertyAccessorNodes(node),
+    ): Boolean =
+        isInInterfaceMemberContext() &&
+                !modifiers.isAbstract &&
+                accessors.any(::hasSyntaxBody)
+
+    private fun isDefaultInterfaceAccessor(node: LighterASTNode, modifiers: LightTreeModifierList): Boolean =
+        isInInterfaceMemberContext() &&
+                !modifiers.isAbstract &&
+                hasSyntaxBody(node)
+
+    private fun isInInterfaceMemberContext(): Boolean =
+        !context.inLocalContext && containerSymbolIfAny is CfirInterfaceSymbol
+
+    /**
+     * 官方 parser 在 class/interface 体内把无 body 函数、无属性体且无 getter/setter 的属性标记为 abstract。
+     * LightTree 路径必须基于源码语法判断，不能受 lazy body 构建模式影响。
+     */
+    private fun isImplicitAbstractClassLikeFunction(
+        node: LighterASTNode,
+        modifiers: LightTreeModifierList,
+    ): Boolean =
+        isInClassOrInterfaceMemberContext() &&
+                !modifiers.isForeign &&
+                !hasSyntaxBody(node)
+
+    private fun isImplicitAbstractClassLikeProperty(
+        node: LighterASTNode,
+        modifiers: LightTreeModifierList,
+        accessors: List<LighterASTNode>,
+    ): Boolean =
+        isInClassOrInterfaceMemberContext() &&
+                !modifiers.isForeign &&
+                !hasPropertyBody(node) &&
+                accessors.isEmpty()
+
+    private fun isInClassOrInterfaceMemberContext(): Boolean =
+        !context.inLocalContext && (containerSymbolIfAny is CfirClassSymbol || containerSymbolIfAny is CfirInterfaceSymbol)
+
+    private fun hasSyntaxBody(node: LighterASTNode): Boolean =
+        tree.findChildByType(node, CjNodeTypes.BLOCK) != null
+
+    private fun hasPropertyBody(node: LighterASTNode): Boolean =
+        tree.findChildByType(node, CjNodeTypes.PROPERTY_BODY) != null
 
     private inline fun <D : CfirDeclaration, S : CfirBasedSymbol<D>> buildSourceDeclaration(
         symbol: S,

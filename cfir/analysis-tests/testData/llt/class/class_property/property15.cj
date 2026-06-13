@@ -10,13 +10,13 @@ class A {
         get() {
             1
         }
-        <!sema_cannot_currying!>s<!>et(v)(x) {}
+        <!CANNOT_CURRYING!>s<!>et(v)(x) {}
     }
 }
 
 class B {
     public mut prop a: Int64 {
-        <!sema_cannot_have_parameter!>g<!>et(v) {
+        <!CANNOT_HAVE_PARAMETER!>g<!>et(v) {
             1
         }
         set(v) {}
@@ -25,7 +25,7 @@ class B {
 
 class C {
     public mut prop a: Int64 {
-        <!sema_cannot_currying!>g<!>et()() {
+        <!CANNOT_CURRYING!>g<!>et()() {
             1
         }
         set(v) {}

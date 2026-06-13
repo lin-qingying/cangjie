@@ -28,15 +28,10 @@ import com.intellij.lang.LighterASTNode
 import com.intellij.openapi.util.Ref
 import com.intellij.psi.util.PsiTreeUtil
 import com.intellij.util.diff.FlyweightCapableTreeStructure
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjFinalizer
-import org.cangnova.cangjie.psi.CjNamedFunction
-import org.cangnova.cangjie.psi.CjNodeTypes
-import org.cangnova.cangjie.psi.CjOperationName
+import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.source.*
 import org.cangnova.cangjie.psi.CjClassLikeDeclaration as CjPsiClassLikeDeclaration
 
@@ -75,6 +70,16 @@ internal fun CfirClassLikeDeclaration.classLikeDeclarationHeaderDiagnosticSource
     )
 }
 
+/**
+ * 官方 cjc 的部分声明级诊断锚定在声明节点起始位置，JSON 主范围只有首字符。
+ * 使用 offsets-only source 避免 PSI 默认范围扩展到整条声明。
+ */
+internal fun AbstractCjSourceElement.firstCharacterDiagnosticSource(): AbstractCjSourceElement =
+    CjOffsetsOnlySourceElement(
+        startOffset = startOffset,
+        endOffset = (startOffset + 1).coerceAtMost(endOffset),
+    )
+
 internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceElement? =
     source?.psi?.let { psi ->
         val functionPsi = when (psi) {
@@ -87,6 +92,57 @@ internal fun CfirNamedFunction.functionNameDiagnosticSource(): AbstractCjSourceE
         nameElement?.toCjPsiSourceElement()
     }
         ?: (source as? CjSourceElement)?.findFunctionNameSource(name)
+        ?: source
+
+internal fun CfirConstructor.constructorNameDiagnosticSource(
+    includeConstKeyword: Boolean = false,
+): AbstractCjSourceElement? =
+    source?.psi?.let { psi ->
+        val constructorPsi = when (psi) {
+            is CjConstructor<*> -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjConstructor::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjConstructor::class.java)
+        }
+        val initKeyword = constructorPsi?.getInitKeyword()
+        if (initKeyword != null) {
+            if (includeConstKeyword) {
+                val constKeyword = constructorPsi.node.findChildByType(CjTokens.CONST_KEYWORD)?.psi
+                if (constKeyword != null && constKeyword.textRange.startOffset <= initKeyword.textRange.startOffset) {
+                    return CjOffsetsOnlySourceElement(
+                        startOffset = constKeyword.textRange.startOffset,
+                        endOffset = initKeyword.textRange.endOffset,
+                    )
+                }
+            }
+            return initKeyword.toCjPsiSourceElement()
+        }
+        constructorPsi?.nameIdentifier?.toCjPsiSourceElement()
+    }
+        ?: (source as? CjSourceElement)?.findConstructorNameSource(includeConstKeyword)
+        ?: source
+
+internal fun CfirFieldVariable.fieldVariableNameDiagnosticSource(): AbstractCjSourceElement? =
+    source?.psi?.let { psi ->
+        val fieldPsi = when (psi) {
+            is CjFieldVariable -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjFieldVariable::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjFieldVariable::class.java)
+        }
+        fieldPsi?.nameIdentifier?.toCjPsiSourceElement()
+    }
+        ?: (source as? CjSourceElement)?.findFieldVariableNameSource(name)
+        ?: source
+
+internal fun CfirProperty.propertyNameDiagnosticSource(): AbstractCjSourceElement? =
+    source?.psi?.let { psi ->
+        val propertyPsi = when (psi) {
+            is CjProperty -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjProperty::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjProperty::class.java)
+        }
+        propertyPsi?.nameIdentifier?.toCjPsiSourceElement()
+    }
+        ?: (source as? CjSourceElement)?.findPropertyNameSource(name)
         ?: source
 
 internal fun CfirFinalizer.finalizerNameDiagnosticSource(): AbstractCjSourceElement? =
@@ -166,6 +222,74 @@ private fun CjSourceElement.findFunctionNameSource(name: Name): AbstractCjSource
     return null
 }
 
+private fun CjSourceElement.findFieldVariableNameSource(name: Name): AbstractCjSourceElement? {
+    val tokens = collectSourceNodes()
+
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType !in fieldVariableDeclarationKeywords) continue
+        val nameToken = tokens.asSequence()
+            .drop(index + 1)
+            .takeWhile { it.tokenType != CjTokens.COLON && it.tokenType != CjTokens.EQ && it.tokenType != CjTokens.LBRACE }
+            .firstOrNull { node ->
+                node.tokenType in fieldVariableNameTokenTypes &&
+                        treeStructure.toString(node).toString() == name.asString()
+            }
+            ?: continue
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(nameToken),
+            endOffset = treeStructure.getEndOffset(nameToken),
+        )
+    }
+
+    return null
+}
+
+private fun CjSourceElement.findPropertyNameSource(name: Name): AbstractCjSourceElement? {
+    val tokens = collectSourceNodes()
+
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType != CjTokens.PROP_KEYWORD) continue
+        val nameToken = tokens.asSequence()
+            .drop(index + 1)
+            .takeWhile { it.tokenType != CjTokens.COLON && it.tokenType != CjTokens.LBRACE }
+            .firstOrNull { node ->
+                node.tokenType in propertyNameTokenTypes &&
+                        treeStructure.toString(node).toString() == name.asString()
+            }
+            ?: continue
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(nameToken),
+            endOffset = treeStructure.getEndOffset(nameToken),
+        )
+    }
+
+    return null
+}
+
+private fun CjSourceElement.findConstructorNameSource(
+    includeConstKeyword: Boolean,
+): AbstractCjSourceElement? {
+    val tokens = collectLeafTokens()
+
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType != CjTokens.INIT_KEYWORD) continue
+        val startToken = if (includeConstKeyword) {
+            tokens.asSequence()
+                .take(index)
+                .lastOrNull { it.tokenType == CjTokens.CONST_KEYWORD }
+                ?: token
+        } else {
+            token
+        }
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(startToken),
+            endOffset = treeStructure.getEndOffset(token),
+        )
+    }
+
+    return null
+}
+
 private fun CjSourceElement.findFinalizerNameSource(): AbstractCjSourceElement? {
     val tokens = collectLeafTokens()
 
@@ -187,6 +311,22 @@ private fun CjSourceElement.findFinalizerNameSource(): AbstractCjSourceElement? 
 private val functionNameTokenTypes = setOf(
     CjTokens.IDENTIFIER,
     CjNodeTypes.OPERATION_NAME,
+)
+
+private val fieldVariableDeclarationKeywords = setOf(
+    CjTokens.LET_KEYWORD,
+    CjTokens.CONST_KEYWORD,
+    CjTokens.VAR_KEYWORD,
+)
+
+private val fieldVariableNameTokenTypes = setOf(
+    CjTokens.IDENTIFIER,
+    CjTokens.FIELD_IDENTIFIER,
+)
+
+private val propertyNameTokenTypes = setOf(
+    CjTokens.IDENTIFIER,
+    CjTokens.FIELD_IDENTIFIER,
 )
 
 private fun CjSourceElement.collectSourceNodes(): List<LighterASTNode> {

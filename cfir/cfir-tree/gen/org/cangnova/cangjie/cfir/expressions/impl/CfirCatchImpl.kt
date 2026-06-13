@@ -10,10 +10,10 @@ package org.cangnova.cangjie.cfir.expressions.impl
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
 import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirCatch
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
@@ -24,19 +24,19 @@ class CfirCatchImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
-    override var parameter: CfirProperty,
+    override var pattern: CfirCatchPattern,
     override var body: CfirBlock,
 ) : CfirCatch() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
-        parameter.accept(visitor, data)
+        pattern.accept(visitor, data)
         body.accept(visitor, data)
     }
 
     override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirCatchImpl {
         transformAnnotations(transformer, data)
-        transformParameter(transformer, data)
+        transformPattern(transformer, data)
         transformBody(transformer, data)
         return this
     }
@@ -46,8 +46,8 @@ class CfirCatchImpl @CfirImplementationDetail constructor(
         return this
     }
 
-    override fun <D> transformParameter(transformer: CfirTransformer<D>, data: D): CfirCatchImpl {
-        parameter = parameter.transform(transformer, data)
+    override fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirCatchImpl {
+        pattern = pattern.transform(transformer, data)
         return this
     }
 

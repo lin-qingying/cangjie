@@ -169,11 +169,11 @@ object CfirModifierChecker : CfirBasicDeclarationChecker() {
         return when (val symbol = symbol) {
             is CfirNamedFunctionSymbol -> classScope
                 .collectDirectOverriddenFunctionsIgnoringStatic(symbol)
-                .any { !it.cfir.status.isStatic }
+                .any { !it.cfir.status.isStatic && it.canParticipateInOverrideTargetSearch(owner, context) }
 
             is CfirPropertySymbol -> classScope
                 .collectDirectOverriddenPropertiesIgnoringStatic(symbol)
-                .any { !it.cfir.status.isStatic }
+                .any { !it.cfir.status.isStatic && it.canParticipateInOverrideTargetSearch(owner, context) }
 
             else -> false
         }

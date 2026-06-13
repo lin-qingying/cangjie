@@ -24,10 +24,6 @@
 
 package org.cangnova.cangjie.psi
 
-import org.cangnova.cangjie.lexer.CjTokens
-import org.cangnova.cangjie.psi.stubs.CangJieVariableStub
-import org.cangnova.cangjie.psi.stubs.PatternKind
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.lang.ASTNode
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.util.NlsSafe
@@ -37,8 +33,12 @@ import com.intellij.psi.stubs.IStubElementType
 import com.intellij.psi.stubs.StubElement
 import com.intellij.psi.tree.TokenSet
 import com.intellij.psi.util.PsiTreeUtil
+import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.psi.stubs.CangJieVariableStub
+import org.cangnova.cangjie.psi.stubs.PatternKind
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * 变量声明的抽象基类
@@ -200,6 +200,16 @@ class CjPatternVariable : CjVariable<CangJieVariableStub> {
             }
 
             return node.findChildByType(CjTokens.VAR_KEYWORD) != null
+        }
+
+    val isConst: Boolean
+        get() {
+            val stub = stub
+            if (stub != null) {
+                return stub.isConst()
+            }
+
+            return node.findChildByType(CjTokens.CONST_KEYWORD) != null
         }
 
     override val isStatic: Boolean

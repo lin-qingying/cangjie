@@ -1,26 +1,38 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.substitutedPayloadParameterTypes
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
-import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
-import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
-import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
@@ -28,20 +40,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.type
-import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.source.AbstractCjSourceElement
@@ -269,11 +268,10 @@ private fun CfirEnumPattern.enumConstructorArgumentTypes(
     expectedType: ConeCangJieType,
     context: CheckerContext,
 ): List<ConeCangJieType>? {
-    val enumType = expectedType.expandedPatternEnumType()
-    val optionArgumentTypes = resolveStdlibOptionArgumentTypes(this, enumType)
+    val optionArgumentTypes = resolveStdlibOptionArgumentTypes(this, expectedType)
     if (optionArgumentTypes != null) return optionArgumentTypes
 
-    if (enumType !is ConeEnumType) return null
+    val enumType = expectedType.expandedPatternEnumType(context.session) ?: return null
     val enumDeclaration = context.session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
         ?: return null
     val constructorName = constructorName() ?: return null
@@ -284,11 +282,6 @@ private fun CfirEnumPattern.enumConstructorArgumentTypes(
     return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
 }
 
-private fun ConeCangJieType.expandedPatternEnumType(): ConeCangJieType = when (this) {
-    is ConeTypeAliasType -> expandedType?.expandedPatternEnumType() ?: this
-    else -> this
-}
-
 /**
  * 标准库 `Option<T>` 在本地类型表示中可能是 class-like，
  * 但官方语义仍是 `Some(T)` / `None` 的 enum 构造器。
@@ -297,11 +290,10 @@ private fun resolveStdlibOptionArgumentTypes(
     pattern: CfirEnumPattern,
     expectedType: ConeCangJieType,
 ): List<ConeCangJieType>? {
-    val optionType = expectedType as? ConeClassLikeType ?: return null
-    if (optionType.classId != StdlibClassIds.Option) return null
+    val optionArgumentType = expectedType.optionElementType ?: return null
 
     return when (pattern.constructorName()) {
-        OPTION_SOME_CONSTRUCTOR_NAME -> optionType.typeArguments.singleOrNull()?.type?.let(::listOf) ?: emptyList()
+        OPTION_SOME_CONSTRUCTOR_NAME -> listOf(optionArgumentType)
         OPTION_NONE_CONSTRUCTOR_NAME -> emptyList()
         else -> null
     }

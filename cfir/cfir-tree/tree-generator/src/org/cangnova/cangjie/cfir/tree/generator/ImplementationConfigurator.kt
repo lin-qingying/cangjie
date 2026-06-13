@@ -265,6 +265,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         ifExpression,
         matchExpression,
         matchBranch,
+        catchPattern,
         catchClause,
         loopExpression,
         forInExpression,

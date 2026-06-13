@@ -14,7 +14,7 @@ open class B <: A {
 }
 
 class C <: B {
-    <!sema_member_variable_can_not_shadow!>p<!>ublic var a = 20
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var a = 20
 }
 
 main() {

@@ -589,6 +589,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
             "common",
             "specific",
             "redef",
+            "default",
             "abstract",
             "open",
             "sealed",
@@ -648,6 +649,21 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("origin", functionCallOrigin)
         +field("hasTrailingLambda", boolean)
 
+    }
+
+    /**
+     * 自增/自减表达式。
+     *
+     * 对齐 Kotlin FIR 的 `FirIncrementDecrementExpression` 与仓颉官方 AST 的
+     * `IncOrDecExpr`：raw CFIR 保留语法级节点，resolve 阶段再按赋值语义脱糖。
+     */
+    val incrementDecrementExpression: Element by element(Expression, name = "IncrementDecrementExpression") {
+        parent(expression)
+
+        +field("isPrefix", boolean)
+        +field("operationName", nameType)
+        +field("expression", expression, withTransform = true)
+        +field("operationSource", sourceElementType, nullable = true)
     }
     val errorNamedReference: Element by element(Reference) {
         parent(namedReference)
@@ -819,9 +835,25 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("body", block, withTransform = true)
     }
 
+    /**
+     * catch 子句的异常模式。
+     *
+     * 官方仓颉 AST 中 `catch (_)` 是 `WildcardPattern`，`catch (e: E | F)` 是
+     * `ExceptTypePattern(pattern = VarPattern(e), types = [E, F])`。这里保留
+     * “绑定名 + 多个异常类型”的结构，但不接到通用 match pattern，避免把异常模式
+     * 混入普通模式匹配的合法性和穷尽性分析。
+     */
+    val catchPattern: Element by element(Pattern, name = "CatchPattern") {
+        parent(rootElement)
+        +field("bindingName", nameType, nullable = true)
+        +field("isWildcard", booleanType)
+        +listField("typeRefs", typeRef, withTransform = true)
+        +field("bindingVariable", patternBindingVariable, nullable = true, withTransform = true)
+    }
+
     val catchClause: Element by element(Expression, name = "Catch") {
         parent(expression)
-        +field("parameter", property, withTransform = true)
+        +field("pattern", catchPattern, withTransform = true)
         +field("body", block, withTransform = true)
     }
 

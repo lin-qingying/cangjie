@@ -10,11 +10,11 @@ open class A {
 }
 
 open class B <: A {
-    <!sema_member_variable_can_not_shadow!>p<!>ublic var a = 10
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var a = 10
 }
 
 class C <: B {
-    <!sema_member_variable_can_not_shadow!>p<!>ublic var a = 20
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var a = 20
 }
 
 main() {

@@ -26,20 +26,23 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
+import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.descriptors.Visibility
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -60,9 +63,14 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             checkAbstractClassStaticUnimplemented(declaration)
             checkMemberVisibilityNotWiderThanClass(declaration)
         }
-        checkInheritedMemberKindConsistency(declaration)
+        checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
         checkSuperMembersKindConsistency(declaration)
         checkInheritedMemberTypeConsistency(declaration)
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    internal fun checkExtend(declaration: CfirExtend) {
+        checkInheritedMemberKindConsistency(declaration.memberInheritanceSubject())
     }
 
     /**
@@ -79,13 +87,12 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
             val classId = (type as? ConeClassLikeType)?.classId ?: continue
             val superDecl = context.session.symbolProvider
                 .getClassLikeSymbolByClassId(classId)?.cfir as? CfirClassLikeDeclaration ?: continue
-            for (m in superDecl.declarations) {
-                val (n, k) = when (m) {
-                    is CfirNamedFunction -> m.name to "function"
-                    is CfirProperty -> m.name to "property"
-                    else -> continue
+            val superScope = context.createUseSiteMemberScope(superDecl)
+            for (name in superScope.getCallableNames()) {
+                superScope.processCallablesByName(name) { symbol ->
+                    val info = symbol.inheritedMemberInfoOrNull(context) ?: return@processCallablesByName
+                    kindsByName.getOrPut(info.name) { mutableSetOf() }.add(info.kind)
                 }
-                kindsByName.getOrPut(n) { mutableSetOf() }.add(k)
             }
         }
         for ((name, kinds) in kindsByName) {
@@ -240,32 +247,42 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val classIsAbstract = classDecl.status.isAbstract
         val classIsInheritable = classDecl.status.isOpen || classDecl.status.isAbstract
         for (member in classDecl.declarations) {
-            val (memberVisibility, modifier, memberKind) = when (member) {
-                is CfirNamedFunction -> Triple(
-                    member.status.visibility,
-                    member.invalidVisibilityModifier(classIsAbstract, classIsInheritable),
-                    "function",
+            val memberInfo = when (member) {
+                is CfirNamedFunction -> InvalidVisibilityMemberInfo(
+                    visibility = member.status.visibility,
+                    modifier = member.invalidVisibilityModifier(classIsAbstract, classIsInheritable),
+                    kind = "function",
+                    source = member.functionNameDiagnosticSource(),
                 )
-                is CfirProperty -> Triple(
-                    member.status.visibility,
-                    member.invalidVisibilityModifier(classIsAbstract, classIsInheritable),
-                    "property",
+
+                is CfirProperty -> InvalidVisibilityMemberInfo(
+                    visibility = member.status.visibility,
+                    modifier = member.invalidVisibilityModifier(classIsAbstract, classIsInheritable),
+                    kind = "property",
+                    source = member.propertyNameDiagnosticSource(),
                 )
                 else -> continue
             }
-            if (modifier != null &&
-                memberVisibility != Visibilities.Public &&
-                memberVisibility != Visibilities.Protected
+            if (memberInfo.modifier != null &&
+                memberInfo.visibility != Visibilities.Public &&
+                memberInfo.visibility != Visibilities.Protected
             ) {
                 reporter.reportOn(
-                    source = member.source ?: classDecl.source,
+                    source = memberInfo.source ?: member.source ?: classDecl.source,
                     factory = CfirErrors.INVALID_MEMBER_VISIBILITY_IN_CLASS,
-                    a = modifier,
-                    b = memberKind,
+                    a = memberInfo.modifier,
+                    b = memberInfo.kind,
                 )
             }
         }
     }
+
+    private data class InvalidVisibilityMemberInfo(
+        val visibility: Visibility,
+        val modifier: String?,
+        val kind: String,
+        val source: AbstractCjSourceElement?,
+    )
 
     private fun CfirNamedFunction.invalidVisibilityModifier(
         classIsAbstract: Boolean,
@@ -297,21 +314,40 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
      * - INHERIT_NOT_RETURN_THIS: open 函数返回 This 类型时 override 必须保持
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
-    private fun checkInheritedMemberKindConsistency(classDecl: CfirClassLikeDeclaration) {
-        val ownMembers = classDecl.declarations.mapNotNull { member ->
+    private fun checkInheritedMemberKindConsistency(subject: MemberInheritanceSubject) {
+        val ownMembers = subject.declarations.mapNotNull { member ->
             when (member) {
                 is CfirNamedFunction -> InheritedMemberInfo(
                     name = member.name,
                     kind = "function",
                     isStatic = member.status.isStatic,
-                    source = member.functionNameDiagnosticSource(),
+                    isConst = member.status.isConst,
+                    source = member.source,
+                    nameSource = member.functionNameDiagnosticSource(),
+                    ownerName = null,
+                    symbol = member.symbol,
                 )
 
                 is CfirProperty -> InheritedMemberInfo(
                     name = member.name,
                     kind = "property",
                     isStatic = member.status.isStatic,
+                    isConst = member.status.isConst,
                     source = member.source,
+                    nameSource = member.propertyNameDiagnosticSource(),
+                    ownerName = null,
+                    symbol = member.symbol,
+                )
+
+                is CfirFieldVariable -> InheritedMemberInfo(
+                    name = member.name,
+                    kind = "variable",
+                    isStatic = member.status.isStatic,
+                    isConst = false,
+                    source = member.source,
+                    nameSource = member.fieldVariableNameDiagnosticSource(),
+                    ownerName = null,
+                    symbol = member.symbol,
                 )
 
                 else -> null
@@ -320,73 +356,308 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
 
         val reportedStaticConflicts = mutableSetOf<Name>()
         val reportedKindConflicts = mutableSetOf<Name>()
-        for (superTypeRef in classDecl.superTypeRefs) {
-            val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType ?: continue
+        val reportedConstConflicts = mutableSetOf<String>()
+        val reportedVariableShadows = mutableSetOf<Name>()
+        val reportedCannotOverrides = mutableSetOf<String>()
+        val reportedExtendOverrides = mutableSetOf<String>()
+        for (inheritedSource in subject.inheritedSources) {
+            val superType = (inheritedSource.typeRef as? CfirResolvedTypeRef)?.coneType ?: continue
             if (superType is ConeErrorType) continue
             val superClassId = (superType as? ConeClassLikeType)?.classId ?: continue
             val superSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(superClassId) ?: continue
             val superDecl = superSymbol.cfir as? CfirClassLikeDeclaration ?: continue
+            val superScope = context.createUseSiteMemberScope(superDecl)
 
-            for (superMember in superDecl.declarations) {
-                val superInfo = when (superMember) {
-                    is CfirNamedFunction -> InheritedMemberInfo(
-                        name = superMember.name,
-                        kind = "function",
-                        isStatic = superMember.status.isStatic,
-                        source = superMember.source,
-                    )
-
-                    is CfirProperty -> InheritedMemberInfo(
-                        name = superMember.name,
-                        kind = "property",
-                        isStatic = superMember.status.isStatic,
-                        source = superMember.source,
-                    )
-
-                    else -> continue
-                }
-                val ownSameNameMembers = ownMembers[superInfo.name].orEmpty()
-
-                for (ownInfo in ownSameNameMembers) {
-                    if (ownInfo.isStatic != superInfo.isStatic) {
-                        if (reportedStaticConflicts.add(ownInfo.name)) {
-                            reporter.reportOn(
-                                source = ownInfo.source ?: classDecl.source,
-                                factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
-                                a = ownInfo.staticKind,
-                                b = ownInfo.name,
-                                c = superInfo.staticKind,
-                                d = superClassId.shortClassName,
-                            )
-                        }
-                        continue
+            for (name in ownMembers.keys) {
+                val superInfos = buildList {
+                    superScope.processCallablesByName(name) { symbol ->
+                        symbol.inheritedMemberInfoOrNull(context)?.let(::add)
                     }
+                    if (inheritedSource.includeDirectExtends) {
+                        addAll(collectDirectExtendMemberInfos(superClassId, name, context))
+                    }
+                }
+                for (superInfo in superInfos) {
+                    val ownSameNameMembers = ownMembers[superInfo.name].orEmpty()
 
-                    if (ownInfo.kind != superInfo.kind) {
-                        if (reportedKindConflicts.add(ownInfo.name)) {
+                    for (ownInfo in ownSameNameMembers) {
+                        val hasStaticConflict = ownInfo.isStatic != superInfo.isStatic
+                        if (hasStaticConflict) {
+                            if (reportedStaticConflicts.add(ownInfo.name)) {
+                                reporter.reportOn(
+                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
+                                    a = ownInfo.staticKind,
+                                    b = ownInfo.name,
+                                    c = superInfo.staticKind,
+                                    d = superInfo.ownerName ?: superClassId.shortClassName,
+                                )
+                            }
+                        }
+
+                        if (ownInfo.kind != superInfo.kind) {
+                            if (!hasStaticConflict && reportedKindConflicts.add(ownInfo.name)) {
+                                reporter.reportOn(
+                                    source = ownInfo.nameSource ?: subject.source,
+                                    factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
+                                    a = ownInfo.kind,
+                                    b = ownInfo.name,
+                                    c = superInfo.kind,
+                                    d = superInfo.ownerName ?: superClassId.shortClassName,
+                                )
+                            }
+                            continue
+                        }
+
+                        if (!hasStaticConflict && ownInfo.hasConstFunctionConflict(superInfo)) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedConstConflicts.add(key)) {
+                                reporter.reportOn(
+                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
+                                    a = "non-constant function",
+                                    b = ownInfo.name,
+                                    c = "'const' function",
+                                    d = superInfo.ownerName ?: superClassId.shortClassName,
+                                )
+                            }
+                        }
+
+                        if (!hasStaticConflict && ownInfo.kind == "variable" && reportedVariableShadows.add(ownInfo.name)) {
                             reporter.reportOn(
-                                source = ownInfo.source ?: classDecl.source,
-                                factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
-                                a = ownInfo.kind,
-                                b = ownInfo.name,
-                                c = superInfo.kind,
-                                d = superClassId.shortClassName,
+                                source = ownInfo.source?.firstCharacterDiagnosticSource() ?: subject.source,
+                                factory = CfirErrors.MEMBER_VARIABLE_CAN_NOT_SHADOW,
+                                a = ownInfo.name,
                             )
                         }
-                        continue
+
+                        if (subject.classLikeDeclaration != null && ownInfo.overridesExtendMember(superInfo, context)) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedExtendOverrides.add(key)) {
+                                reporter.reportOn(
+                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    factory = CfirErrors.EXTEND_FUNCTION_CANNOT_OVERRIDDEN,
+                                    a = ownInfo.kind,
+                                    b = ownInfo.name,
+                                )
+                            }
+                            continue
+                        }
+
+                        val classDecl = subject.classLikeDeclaration
+                        if (classDecl != null && ownInfo.canNotOverride(superInfo, classDecl, context)) {
+                            val key = ownInfo.overrideDiagnosticKey(superInfo)
+                            if (reportedCannotOverrides.add(key)) {
+                                reporter.reportOn(
+                                    source = ownInfo.nameSource ?: ownInfo.source ?: subject.source,
+                                    factory = CfirErrors.CANNOT_OVERRIDE,
+                                    a = ownInfo.kind,
+                                    b = ownInfo.name,
+                                )
+                            }
+                        }
                     }
                 }
             }
         }
     }
 
+    private fun CfirCallableSymbol<*>.inheritedMemberInfoOrNull(context: CheckerContext): InheritedMemberInfo? {
+        if (!isBound) return null
+        val declaration = cfir
+        if (!canBeInheritedMember()) return null
+        val ownerName = ownerClassId(context)?.shortClassName
+        return when (declaration) {
+            is CfirNamedFunction -> InheritedMemberInfo(
+                name = declaration.name,
+                kind = "function",
+                isStatic = declaration.status.isStatic,
+                isConst = declaration.status.isConst,
+                source = declaration.source,
+                nameSource = declaration.functionNameDiagnosticSource(),
+                ownerName = ownerName,
+                symbol = this,
+            )
+
+            is CfirProperty -> InheritedMemberInfo(
+                name = declaration.name,
+                kind = "property",
+                isStatic = declaration.status.isStatic,
+                isConst = declaration.status.isConst,
+                source = declaration.source,
+                nameSource = declaration.propertyNameDiagnosticSource(),
+                ownerName = ownerName,
+                symbol = this,
+            )
+
+            is CfirFieldVariable -> InheritedMemberInfo(
+                name = declaration.name,
+                kind = "variable",
+                isStatic = declaration.status.isStatic,
+                isConst = false,
+                source = declaration.source,
+                nameSource = declaration.fieldVariableNameDiagnosticSource(),
+                ownerName = ownerName,
+                symbol = this,
+            )
+
+            else -> null
+        }
+    }
+
+    /**
+     * 官方 GetInheritedSuperMembers 会把父类型可见 extend 的成员并入继承成员表。
+     * 本项目 declaration-site scope 不承担这件事，因此继承诊断在这里显式读取 extendProvider。
+     */
+    private fun collectDirectExtendMemberInfos(
+        superClassId: ClassId,
+        name: Name,
+        context: CheckerContext,
+    ): List<InheritedMemberInfo> {
+        val provider = context.session.extendProvider
+        return buildList {
+            for (extend in provider.getExtendsForClass(superClassId)) {
+                if (!provider.isExtendAccessible(extend)) continue
+                for (member in extend.declarations) {
+                    when (member) {
+                        is CfirNamedFunction -> {
+                            if (member.name != name) continue
+                            member.symbol?.inheritedMemberInfoOrNull(context)?.let(::add)
+                        }
+
+                        is CfirProperty -> {
+                            if (member.name != name) continue
+                            member.symbol.inheritedMemberInfoOrNull(context)?.let(::add)
+                        }
+
+                        else -> Unit
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 官方继承检查在收集 inherited member 后会执行 RemoveMembersShouldNotInherit，
+     * private 成员不会进入后续同名成员、类型一致性和 shadow 检查。
+     */
+    private fun CfirCallableSymbol<*>.canBeInheritedMember(): Boolean =
+        cfir.status.visibility != Visibilities.Private
+
+    /**
+     * 官方 CheckInheritanceAttributes 在同 kind 的函数/属性形成覆盖关系后检查父成员开放性。
+     * 非 abstract、非 static、非 interface 且没有 open 语义的父成员不能被子成员覆盖。
+     */
+    private fun InheritedMemberInfo.canNotOverride(
+        superInfo: InheritedMemberInfo,
+        classDecl: CfirClassLikeDeclaration,
+        context: CheckerContext,
+    ): Boolean {
+        if (kind != superInfo.kind) return false
+        if (kind != "function" && kind != "property") return false
+        if (!hasSameOverrideSignature(superInfo)) return false
+
+        val superSymbol = superInfo.symbol ?: return false
+        if (!superSymbol.isBound) return false
+        if (superSymbol.cfir.status.isStatic) return false
+        if (superSymbol.isAbstractLike(context)) return false
+        if (superSymbol.isOverridableFrom(classDecl, context)) return false
+
+        return true
+    }
+
+    /**
+     * 官方 CheckExtendMemberValid 会先处理“类成员覆盖父类型 extend 成员”的情况，
+     * 报 sema_extend_function_cannot_overridden 后不再进入普通 cannot-override 检查。
+     */
+    private fun InheritedMemberInfo.overridesExtendMember(
+        superInfo: InheritedMemberInfo,
+        context: CheckerContext,
+    ): Boolean {
+        if (kind != superInfo.kind) return false
+        if (kind != "function" && kind != "property") return false
+        if (!hasSameOverrideSignature(superInfo)) return false
+        val superSymbol = superInfo.symbol ?: return false
+        val originalSuperSymbol = superSymbol.unwrapSubstitutionOverrides()
+        return context.session.extendProvider.getContainingExtend(originalSuperSymbol) != null
+    }
+
+    private fun InheritedMemberInfo.hasSameOverrideSignature(superInfo: InheritedMemberInfo): Boolean {
+        if (kind == "property") return true
+        val ownSymbol = symbol ?: return false
+        val superSymbol = superInfo.symbol ?: return false
+        return ownSymbol.overrideSignatureKey() == superSymbol.overrideSignatureKey()
+    }
+
+    private fun InheritedMemberInfo.hasConstFunctionConflict(superInfo: InheritedMemberInfo): Boolean {
+        if (kind != "function" || superInfo.kind != "function") return false
+        if (isConst || !superInfo.isConst) return false
+        return hasSameOverrideSignature(superInfo)
+    }
+
+    private fun InheritedMemberInfo.overrideDiagnosticKey(superInfo: InheritedMemberInfo): String =
+        buildString {
+            append(kind)
+            append(':')
+            append(name.asString())
+            append(':')
+            append(symbol?.overrideSignatureKey().orEmpty())
+            append(':')
+            append(superInfo.symbol?.overrideSignatureKey().orEmpty())
+        }
+
     private data class InheritedMemberInfo(
         val name: Name,
         val kind: String,
         val isStatic: Boolean,
-        val source: AbstractCjSourceElement?,
+        val isConst: Boolean,
+        val source: CjSourceElement?,
+        val nameSource: AbstractCjSourceElement?,
+        val ownerName: Name?,
+        val symbol: CfirCallableSymbol<*>?,
     ) {
         val staticKind: String get() = if (isStatic) "static" else "non-static"
     }
 
+    private data class MemberInheritanceSubject(
+        val declarations: List<CfirDeclaration>,
+        val inheritedSources: List<InheritedMemberSource>,
+        val source: CjSourceElement?,
+        val classLikeDeclaration: CfirClassLikeDeclaration?,
+    )
+
+    private data class InheritedMemberSource(
+        val typeRef: CfirTypeRef,
+        val includeDirectExtends: Boolean,
+    )
+
+    private fun CfirClassLikeDeclaration.memberInheritanceSubject(): MemberInheritanceSubject =
+        MemberInheritanceSubject(
+            declarations = declarations,
+            inheritedSources = superTypeRefs.map { InheritedMemberSource(it, includeDirectExtends = true) },
+            source = source,
+            classLikeDeclaration = this,
+        )
+
+    private fun CfirExtend.memberInheritanceSubject(): MemberInheritanceSubject =
+        MemberInheritanceSubject(
+            declarations = declarations,
+            inheritedSources = buildList {
+                add(InheritedMemberSource(extendedTypeRef, includeDirectExtends = false))
+                addAll(superTypeRefs.map { InheritedMemberSource(it, includeDirectExtends = false) })
+            },
+            source = source,
+            classLikeDeclaration = null,
+        )
+
+}
+
+/**
+ * extend 声明也属于官方 `InheritableDecl`，需要进入同一组继承成员一致性检查。
+ */
+object CfirExtendInheritanceDeepChecker : CfirExtendChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirExtend) {
+        CfirInheritanceDeepChecker.checkExtend(declaration)
+    }
 }

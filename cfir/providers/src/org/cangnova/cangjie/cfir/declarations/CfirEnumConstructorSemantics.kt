@@ -24,10 +24,10 @@
 
 package org.cangnova.cangjie.cfir.declarations
 
-import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
@@ -54,4 +54,23 @@ fun CfirEnumConstructor.substitutedPayloadParameterTypes(
 
     val substitutor = CfirTypeSubstitutorByMap(replacements)
     return payloadTypes.map(substitutor::substituteOrSelf)
+}
+
+/**
+ * pattern 语境下的 enum subject 类型归一化。
+ *
+ * 官方语义中 `VarOrEnumPattern` 依赖当前目标类型和 enum 构造器表决定裸名是
+ * 构造器模式还是变量绑定；本地 CFIR 类型系统中，部分 enum use-site 类型可能先
+ * 以普通 class-like 形态流入 checker/resolve。因此所有 pattern 路径都应先通过
+ * 统一的符号查询把实际指向 [CfirEnumSymbol] 的类型恢复为 [ConeEnumType]。
+ */
+fun ConeCangJieType.expandedPatternEnumType(session: CfirSession): ConeEnumType? = when (this) {
+    is ConeEnumType -> this
+    is ConeClassLikeType -> {
+        val enumSymbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) as? CfirEnumSymbol
+        if (enumSymbol == null) null else ConeEnumType(lookupTag, typeArguments, attributes, enumSymbol.isRefEnum)
+    }
+
+    is ConeTypeAliasType -> expandedType?.expandedPatternEnumType(session)
+    else -> null
 }

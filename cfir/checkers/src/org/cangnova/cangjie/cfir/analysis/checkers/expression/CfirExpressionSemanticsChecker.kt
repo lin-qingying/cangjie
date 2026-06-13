@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
@@ -11,46 +35,18 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferType
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandHandleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeCommandIncompatibleTypeError
 import org.cangnova.cangjie.cfir.diagnostic.ConeMismatchingHandleBlockError
-import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
-import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.CfirBlock
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirHandleClause
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
-import org.cangnova.cangjie.cfir.expressions.CfirPerformExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirResolvable
-import org.cangnova.cangjie.cfir.expressions.CfirSmartCastExpression
-import org.cangnova.cangjie.cfir.expressions.CfirStatement
-import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
-import org.cangnova.cangjie.cfir.expressions.CfirThisReceiverExpression
-import org.cangnova.cangjie.cfir.expressions.CfirThrowExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTryExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
-import org.cangnova.cangjie.cfir.references.CfirThisReference
-import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.diagnostics.*
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.toLookupTag
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.contains
-import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -312,27 +308,40 @@ object CfirCatchTypeChecker : CfirTryExpressionChecker() {
         val includedTypes = mutableListOf<ConeCangJieType>()
 
         for (catchClause in expression.catches) {
-            val typeRef = catchClause.parameter.returnTypeRef as? CfirResolvedTypeRef ?: continue
-            val catchType = typeRef.coneType
-            if (catchType is ConeErrorType) continue
+            for ((catchType, source) in catchClause.pattern.resolvedCatchTypes()) {
+                if (catchType is ConeErrorType) continue
 
-            if (!catchType.isSubtypeOfExceptionOrError(context)) {
-                reporter.reportOn(
-                    source = typeRef.source ?: catchClause.parameter.source,
-                    factory = CfirErrors.CATCH_TYPE_MUST_EXTEND_EXCEPTION,
-                )
-                continue
-            }
+                if (!catchType.isSubtypeOfExceptionOrError(context)) {
+                    reporter.reportOn(
+                        source = source ?: catchClause.pattern.source,
+                        factory = CfirErrors.CATCH_TYPE_MUST_EXTEND_EXCEPTION,
+                    )
+                    continue
+                }
 
-            if (includedTypes.any { previous -> catchType.isSubtypeOf(previous, context) }) {
-                reporter.reportOn(
-                    source = typeRef.source ?: catchClause.parameter.source,
-                    factory = CfirErrors.USELESS_EXCEPTION_TYPE,
-                )
-            } else {
-                includedTypes += catchType
+                if (includedTypes.any { previous -> catchType.isSubtypeOf(previous, context) }) {
+                    reporter.reportOn(
+                        source = source ?: catchClause.pattern.source,
+                        factory = CfirErrors.USELESS_EXCEPTION_TYPE,
+                    )
+                } else {
+                    includedTypes += catchType
+                }
             }
         }
+    }
+}
+
+private fun CfirCatchPattern.resolvedCatchTypes(): List<Pair<ConeCangJieType, CjSourceElement?>> {
+    if (typeRefs.isEmpty()) {
+        return listOf(
+            org.cangnova.cangjie.cfir.types.ConeClassLikeType(StdlibClassIds.Exception.toLookupTag()) to source,
+        )
+    }
+
+    return typeRefs.mapNotNull { typeRef ->
+        val coneType = (typeRef as? CfirResolvedTypeRef)?.coneType ?: return@mapNotNull null
+        coneType to typeRef.source
     }
 }
 

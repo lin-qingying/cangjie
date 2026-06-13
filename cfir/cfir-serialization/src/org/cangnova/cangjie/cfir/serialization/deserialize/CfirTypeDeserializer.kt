@@ -1,18 +1,35 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
-import org.cangnova.cangjie.cfir.MutableOrEmptyList
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.*
-import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
-import org.cangnova.cangjie.name.Name
 
 private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiagnostic {
     override val reason: String = reason
@@ -198,12 +215,9 @@ class CfirTypeDeserializer(
             ?: return errorType("Generic missing GenericTyInfo")
         val fullId = info.declPtr
             ?: return errorType("GenericTyInfo missing declPtr")
-        val name = context.fullIdResolver.resolveDeclarationName(fullId)
-            ?: return errorType("Cannot resolve generic parameter FullId: ${context.fullIdResolver.describe(fullId)}")
-        val upperBounds = (0 until info.upperBoundsLength).map {
-            deserializeTypeFromField(info.upperBounds(it))
-        }
-        return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, upperBounds).toLookupTag())
+        val symbol = resolveCurrentPackageTypeParameter(fullId)
+            ?: return errorType("Cannot resolve generic parameter symbol: ${context.fullIdResolver.describe(fullId)}")
+        return ConeTypeParameterTypeImpl(symbol.toLookupTag())
     }
 
     private fun createRecursiveTypeFallback(typeIndex: Int): ConeCangJieType {
@@ -211,39 +225,25 @@ class CfirTypeDeserializer(
             ?: return errorType("Recursive type reference: $typeIndex")
         if (semaTy.kind == TypeKind.Generic) {
             val info = semaTy.info(GenericTyInfo()) as? GenericTyInfo
-            val name = Name.identifier(info?.declPtr?.decl ?: "T$typeIndex")
-            return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, emptyList()).toLookupTag())
+            val symbol = info?.declPtr?.let(::resolveCurrentPackageTypeParameter)
+            if (symbol != null) {
+                return ConeTypeParameterTypeImpl(symbol.toLookupTag())
+            }
         }
         return errorType("Recursive type reference: $typeIndex")
     }
 
-    private fun createSyntheticTypeParameterSymbol(
-        name: Name,
-        upperBounds: List<ConeCangJieType>,
-    ): CfirTypeParameterSymbol {
-        val symbol = CfirTypeParameterSymbol()
-        val boundRefs = upperBounds.mapTo(mutableListOf<CfirTypeRef>()) { upperBound ->
-            CfirResolvedTypeRefImpl(
-                source = null,
-                annotations = MutableOrEmptyList.empty(),
-                customRenderer = false,
-                coneType = upperBound,
-                delegatedTypeRef = null,
-            )
-        }
-        val declaration = CfirTypeParameterImpl(
-            source = null,
-            moduleData = context.moduleData,
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
-            annotations = MutableOrEmptyList.empty(),
-            origin = CfirDeclarationOrigin.Library,
-            attributes = CfirDeclarationAttributes.EMPTY,
-            containingDeclarationSymbol = symbol,
-            symbol = symbol,
-            name = name,
-            bounds = boundRefs,
-        )
-        symbol.bind(declaration)
-        return symbol
+    /**
+     * 对齐 Kotlin FIR 反序列化：GenericTy 必须回指声明列表中的类型参数符号。
+     *
+     * fresh type variable substitutor 以声明符号为身份；如果这里临时创建同名
+     * synthetic symbol，`println<T>(value: T)` 这类库函数的形参类型就无法替换成
+     * 调用候选的新鲜类型变量。
+     */
+    private fun resolveCurrentPackageTypeParameter(fullId: FullId): org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol? {
+        val resolved = context.fullIdResolver.resolve(fullId) as? ResolvedFullId.Declaration ?: return null
+        if (resolved.source != ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) return null
+        val declaration = context.declCache[resolved.declaration.zeroBasedIndex] as? CfirTypeParameter ?: return null
+        return declaration.symbol
     }
 }

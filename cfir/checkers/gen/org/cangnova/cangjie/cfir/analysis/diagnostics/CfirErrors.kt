@@ -1,15 +1,32 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 
 
 package org.cangnova.cangjie.cfir.analysis.diagnostics
 
 import com.intellij.psi.PsiElement
-import kotlin.Boolean
-import kotlin.Int
-import kotlin.Long
-import kotlin.String
-import kotlin.collections.Collection
-import org.cangnova.cangjie.LanguageFeature
-import org.cangnova.cangjie.cfir.analysis.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.*
 import org.cangnova.cangjie.cfir.diagnostics.rendering.BaseDiagnosticRendererFactory
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
@@ -18,14 +35,7 @@ import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.psi.CjBlockExpression
-import org.cangnova.cangjie.psi.CjDeclaration
-import org.cangnova.cangjie.psi.CjElement
-import org.cangnova.cangjie.psi.CjExpression
-import org.cangnova.cangjie.psi.CjImportItem
-import org.cangnova.cangjie.psi.CjNamedDeclaration
-import org.cangnova.cangjie.psi.CjResumeExpression
-import org.cangnova.cangjie.psi.CjTypeReference
+import org.cangnova.cangjie.psi.*
 
 /** Generated from: org.cangnova.cangjie.cfir.checkers.generator.diagnostics.DIAGNOSTICS_LIST */
 @Suppress("IncorrectFormatting")
@@ -71,6 +81,13 @@ object CfirErrors : CjDiagnosticsContainer() {
 
     // DeclarationStatus
     val STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE: CjDiagnosticFactory1<Name?> = CjDiagnosticFactory1("CFIR_STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, CjNamedDeclaration::class, getRendererFactory())
+    val MISSING_FUNC_BODY: CjDiagnosticFactory2<String, Name> = CjDiagnosticFactory2(
+        "CFIR_MISSING_FUNC_BODY",
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DEFAULT,
+        PsiElement::class,
+        getRendererFactory()
+    )
     val MUT_ONLY_ON_FUNCTION: CjDiagnosticFactory1<Name?> = CjDiagnosticFactory1("CFIR_MUT_ONLY_ON_FUNCTION", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, CjNamedDeclaration::class, getRendererFactory())
     val NOTHING_TO_OVERRIDE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NOTHING_TO_OVERRIDE", Severity.ERROR, SourceElementPositioningStrategies.OVERRIDE_MODIFIER, CjNamedDeclaration::class, getRendererFactory())
     val OVERRIDE_STATIC_ERROR: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_OVERRIDE_STATIC_ERROR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
@@ -114,7 +131,13 @@ object CfirErrors : CjDiagnosticsContainer() {
 
     // Mutability
     val CANNOT_MODIFY_VAR: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_CANNOT_MODIFY_VAR", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
-    val IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION: CjDiagnosticFactory2<Name, Name> = CjDiagnosticFactory2("CFIR_IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
+    val IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION: CjDiagnosticFactory2<Name, Name> = CjDiagnosticFactory2(
+        "CFIR_IMMUTABLE_FUNCTION_CANNOT_ACCESS_MUTABLE_FUNCTION",
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DEFAULT,
+        PsiElement::class,
+        getRendererFactory()
+    )
 
     // Annotation
     val ANNOTATION_NO_CONST_INIT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_ANNOTATION_NO_CONST_INIT", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, PsiElement::class, getRendererFactory())
@@ -178,6 +201,21 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INVISIBLE_MEMBER: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_INVISIBLE_MEMBER", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val INVISIBLE_REFERENCE: CjDiagnosticFactory2<String, String> = CjDiagnosticFactory2("CFIR_INVISIBLE_REFERENCE", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val OVERRIDING_RETURN_TYPE_MISMATCH: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Name> = CjDiagnosticFactory3("CFIR_OVERRIDING_RETURN_TYPE_MISMATCH", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, PsiElement::class, getRendererFactory())
+    val PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF: CjDiagnosticFactory3<ConeCangJieType, ConeCangJieType, Name> =
+        CjDiagnosticFactory3(
+            "CFIR_PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF",
+            Severity.ERROR,
+            SourceElementPositioningStrategies.DEFAULT,
+            PsiElement::class,
+            getRendererFactory()
+        )
+    val MISSING_ENTRY: CjDiagnosticFactory0 = CjDiagnosticFactory0(
+        "CFIR_MISSING_ENTRY",
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DEFAULT,
+        PsiElement::class,
+        getRendererFactory()
+    )
     val CANNOT_OVERRIDE_INVISIBLE_MEMBER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_CANNOT_OVERRIDE_INVISIBLE_MEMBER", Severity.ERROR, SourceElementPositioningStrategies.OVERRIDE_MODIFIER, CjNamedDeclaration::class, getRendererFactory())
     val CLASS_NOT_OPEN_FOR_INHERITANCE: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_CLASS_NOT_OPEN_FOR_INHERITANCE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjTypeReference::class, getRendererFactory())
     val ABSTRACT_MEMBER_NOT_IMPLEMENTED: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_ABSTRACT_MEMBER_NOT_IMPLEMENTED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, CjNamedDeclaration::class, getRendererFactory())
@@ -264,6 +302,20 @@ object CfirErrors : CjDiagnosticsContainer() {
 
     // InheritanceDeep
     val INHERIT_MEMBER_KIND_INCONSISTENT: CjDiagnosticFactory4<String, Name, String, Name> = CjDiagnosticFactory4("CFIR_INHERIT_MEMBER_KIND_INCONSISTENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val MEMBER_VARIABLE_CAN_NOT_SHADOW: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1(
+        "CFIR_MEMBER_VARIABLE_CAN_NOT_SHADOW",
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DEFAULT,
+        PsiElement::class,
+        getRendererFactory()
+    )
+    val CANNOT_OVERRIDE: CjDiagnosticFactory2<String, Name> = CjDiagnosticFactory2(
+        "CFIR_CANNOT_OVERRIDE",
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DEFAULT,
+        PsiElement::class,
+        getRendererFactory()
+    )
     val INHERIT_SUPER_MEMBER_KIND_INCONSISTENT: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_INHERIT_SUPER_MEMBER_KIND_INCONSISTENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INHERIT_MEMBER_TYPE_INCONSISTENT: CjDiagnosticFactory3<String, String, Name> = CjDiagnosticFactory3("CFIR_INHERIT_MEMBER_TYPE_INCONSISTENT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC: CjDiagnosticFactory3<Name, String, Name> = CjDiagnosticFactory3("CFIR_INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
@@ -285,6 +337,13 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val FINALIZER_FORBIDDEN_IN_CLASS: CjDiagnosticFactory2<Name, String> = CjDiagnosticFactory2("CFIR_FINALIZER_FORBIDDEN_IN_CLASS", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CANNOT_CURRYING: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_CANNOT_CURRYING", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val CANNOT_HAVE_PARAMETER: CjDiagnosticFactory1<String> = CjDiagnosticFactory1(
+        "CFIR_CANNOT_HAVE_PARAMETER",
+        Severity.ERROR,
+        SourceElementPositioningStrategies.DEFAULT,
+        PsiElement::class,
+        getRendererFactory()
+    )
     val FORBID_GENERIC_FINALIZER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_FORBID_GENERIC_FINALIZER", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val NON_ABSTRACT_CLASS_CANNOT_BE_SEALED: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_NON_ABSTRACT_CLASS_CANNOT_BE_SEALED", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, CjNamedDeclaration::class, getRendererFactory())
     val STATIC_VARIABLE_USE_GENERIC_PARAMETER: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_STATIC_VARIABLE_USE_GENERIC_PARAMETER", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

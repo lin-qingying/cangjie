@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 struct S {
-    <!INCOMPATIBLE_MODIFIERS!>mut const<!> func f() { 0 }
+    <!INCOMPATIBLE_MODIFIERS!>mut<!> <!INCOMPATIBLE_MODIFIERS!>const<!> func f() { 0 }
     const init() {}
 }
 

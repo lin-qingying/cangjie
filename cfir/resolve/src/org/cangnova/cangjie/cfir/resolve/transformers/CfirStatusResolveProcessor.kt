@@ -1,52 +1,38 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.transformers
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.ScopeSession
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
-import org.cangnova.cangjie.cfir.declarations.CfirMemberDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.CfirResolvedDeclarationStatus
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildResolvedDeclarationStatus
-import org.cangnova.cangjie.cfir.declarations.replaceResolvePhase
-import org.cangnova.cangjie.cfir.declarations.resolvePhase
-import org.cangnova.cangjie.cfir.declarations.resolvedForStatuslessDeclaration
 import org.cangnova.cangjie.cfir.scopes.unsubstitutedScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirEnumSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPrimitiveTypeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirStructSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
+import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.classId
 import org.cangnova.cangjie.cfir.types.coneType
@@ -630,6 +616,7 @@ private fun CfirMemberDeclaration.publishResolvedStatusIfNeeded() {
             isCommon = currentStatus.isCommon
             isSpecific = currentStatus.isSpecific
             isRedef = currentStatus.isRedef
+            isDefault = currentStatus.isDefault
             isAbstract = currentStatus.isAbstract
             isOpen = currentStatus.isOpen
             isSealed = currentStatus.isSealed
@@ -897,6 +884,9 @@ class CfirStatusResolver(
             resolveModality(declaration, containingProperty, containingClass)
         }
 
+        val resolvedIsAbstract = status.isAbstract ||
+                declaration is CfirCallableDeclaration && modality == Modality.ABSTRACT
+
         return buildResolvedDeclarationStatus {
             source = status.source
             this.visibility = visibility
@@ -912,7 +902,8 @@ class CfirStatusResolver(
             isCommon = status.isCommon
             isSpecific = status.isSpecific
             isRedef = status.isRedef
-            isAbstract = status.isAbstract
+            isDefault = status.isDefault
+            isAbstract = resolvedIsAbstract
             isOpen = status.isOpen
             isSealed = status.isSealed
             this.modality = modality

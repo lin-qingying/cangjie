@@ -33,6 +33,7 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirForInExpression
+import org.cangnova.cangjie.cfir.expressions.CfirMatchBranch
 import org.cangnova.cangjie.cfir.patterns.bindingOccurrences
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.session.CfirSession
@@ -258,6 +259,14 @@ private class LocalRedeclarationVisitor(
         withScope {
             declarePatternVariable(forInExpression.variable)
             forInExpression.body.statements.forEach { it.accept(this) }
+        }
+    }
+
+    override fun visitMatchBranch(matchBranch: CfirMatchBranch) {
+        withScope {
+            matchBranch.pattern.accept(this)
+            matchBranch.guard?.accept(this)
+            matchBranch.body.statements.forEach { it.accept(this) }
         }
     }
 

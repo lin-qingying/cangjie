@@ -140,6 +140,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitNamedReference(namedReferenceWithCandidateBase)
     }
 
+    override fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression) {
+        visitExpression(incrementDecrementExpression)
+    }
+
     override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression) {
         visitWrappedExpression(inoutArgumentExpression)
     }

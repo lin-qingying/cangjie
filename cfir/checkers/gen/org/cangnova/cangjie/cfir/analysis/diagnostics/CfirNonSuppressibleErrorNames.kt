@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 
 
 package org.cangnova.cangjie.cfir.analysis.diagnostics
@@ -38,6 +62,7 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "ENUM_SUPER_NOT_ALLOWED",
     "INTERFACE_SUPER_NOT_ALLOWED",
     "STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE",
+    "MISSING_FUNC_BODY",
     "MUT_ONLY_ON_FUNCTION",
     "NOTHING_TO_OVERRIDE",
     "OVERRIDE_STATIC_ERROR",
@@ -114,6 +139,8 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "INVISIBLE_MEMBER",
     "INVISIBLE_REFERENCE",
     "OVERRIDING_RETURN_TYPE_MISMATCH",
+    "PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF",
+    "MISSING_ENTRY",
     "CANNOT_OVERRIDE_INVISIBLE_MEMBER",
     "CLASS_NOT_OPEN_FOR_INHERITANCE",
     "ABSTRACT_MEMBER_NOT_IMPLEMENTED",
@@ -183,6 +210,8 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "MEET_CONSTRAINT_INDIRECTLY",
     "GENERIC_UPPER_BOUNDS_MUST_BE_JAVA_IN_JAVA",
     "INHERIT_MEMBER_KIND_INCONSISTENT",
+    "MEMBER_VARIABLE_CAN_NOT_SHADOW",
+    "CANNOT_OVERRIDE",
     "INHERIT_SUPER_MEMBER_KIND_INCONSISTENT",
     "INHERIT_MEMBER_TYPE_INCONSISTENT",
     "INHERIT_ABSTRACT_CLASS_STATIC_UNIMPLEMENT_FUNC",
@@ -197,6 +226,7 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "INSTANCE_FUNC_CANNOT_BE_USED_IN_FINALIZER",
     "FINALIZER_FORBIDDEN_IN_CLASS",
     "CANNOT_CURRYING",
+    "CANNOT_HAVE_PARAMETER",
     "FORBID_GENERIC_FINALIZER",
     "NON_ABSTRACT_CLASS_CANNOT_BE_SEALED",
     "STATIC_VARIABLE_USE_GENERIC_PARAMETER",

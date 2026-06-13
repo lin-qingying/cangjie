@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 
 
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
@@ -24,6 +48,8 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         get() = _superReceiverExpressionCheckers
     override val assignmentCheckers: Set<CfirAssignmentChecker>
         get() = _assignmentCheckers
+    override val incrementDecrementExpressionCheckers: Set<CfirIncrementDecrementExpressionChecker>
+        get() = _incrementDecrementExpressionCheckers
     override val binaryOpCheckers: Set<CfirBinaryOpChecker>
         get() = _binaryOpCheckers
     override val comparisonExpressionCheckers: Set<CfirComparisonExpressionChecker>
@@ -56,6 +82,8 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
     private val _qualifiedAccessCheckers: MutableSet<CfirQualifiedAccessChecker> = mutableSetOf()
     private val _superReceiverExpressionCheckers: MutableSet<CfirSuperReceiverExpressionChecker> = mutableSetOf()
     private val _assignmentCheckers: MutableSet<CfirAssignmentChecker> = mutableSetOf()
+    private val _incrementDecrementExpressionCheckers: MutableSet<CfirIncrementDecrementExpressionChecker> =
+        mutableSetOf()
     private val _binaryOpCheckers: MutableSet<CfirBinaryOpChecker> = mutableSetOf()
     private val _comparisonExpressionCheckers: MutableSet<CfirComparisonExpressionChecker> = mutableSetOf()
     private val _typeOperatorCheckers: MutableSet<CfirTypeOperatorChecker> = mutableSetOf()
@@ -78,6 +106,7 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         _qualifiedAccessCheckers.addAll(checkers.qualifiedAccessCheckers)
         _superReceiverExpressionCheckers.addAll(checkers.superReceiverExpressionCheckers)
         _assignmentCheckers.addAll(checkers.assignmentCheckers)
+        _incrementDecrementExpressionCheckers.addAll(checkers.incrementDecrementExpressionCheckers)
         _binaryOpCheckers.addAll(checkers.binaryOpCheckers)
         _comparisonExpressionCheckers.addAll(checkers.comparisonExpressionCheckers)
         _typeOperatorCheckers.addAll(checkers.typeOperatorCheckers)

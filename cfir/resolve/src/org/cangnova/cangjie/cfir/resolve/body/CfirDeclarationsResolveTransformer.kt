@@ -241,6 +241,14 @@ open class CfirDeclarationsResolveTransformer(
         shouldResolveEverything: Boolean,
     ): CfirFunction {
         dataFlowAnalyzer.enterFunction(function)
+
+        if (shouldResolveEverything) {
+            function
+                .transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+                .transformValueParameters(transformer, ResolutionMode.ContextIndependent)
+                .transformAnnotations(transformer, ResolutionMode.ContextIndependent)
+        }
+
         val body = function.body
         if (body != null) {
             function.transformBody(transformer, resolutionModeForBody)
