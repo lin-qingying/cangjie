@@ -68,6 +68,33 @@ class CfirImplicitBodyResolveComputationSession {
     }
 
     /**
+     * 捕获当前隐式 body resolve 计算状态。
+     *
+     * overload-by-lambda 等推测式 body resolve 会在不同候选系统下重复解析同一段
+     * lambda body；试跑产生的本地声明隐式类型缓存不能泄漏到下一候选或最终提交。
+     */
+    fun capture(): CfirImplicitBodyResolveComputationSessionSnapshot =
+        CfirImplicitBodyResolveComputationSessionSnapshot(
+            statusMap = HashMap(statusMap),
+            computingSymbolsStack = computingSymbolsStack.toList(),
+            nonTrivialLoops = nonTrivialLoops.toSet(),
+            cycledSymbol = cycledSymbol,
+        )
+
+    /**
+     * 恢复由 [capture] 捕获的计算状态。
+     */
+    fun restore(snapshot: CfirImplicitBodyResolveComputationSessionSnapshot) {
+        statusMap.clear()
+        statusMap.putAll(snapshot.statusMap)
+        computingSymbolsStack.clear()
+        computingSymbolsStack.addAll(snapshot.computingSymbolsStack)
+        nonTrivialLoops.clear()
+        nonTrivialLoops.addAll(snapshot.nonTrivialLoops)
+        cycledSymbol = snapshot.cycledSymbol
+    }
+
+    /**
      * 执行计算并缓存结果。
      * @param symbol 被计算的符号
      * @param transformation 实际执行 body resolve 的变换闭包
@@ -160,3 +187,16 @@ class CfirImplicitBodyResolveComputationSession {
         }
     }
 }
+
+/**
+ * [CfirImplicitBodyResolveComputationSession] 的浅快照。
+ *
+ * 状态值本身绑定的是 CFIR symbol 与已转换声明对象；对象字段由外层 CFIR 快照负责恢复，
+ * 这里仅恢复“哪些 symbol 已经被计算/正在计算”的事务边界。
+ */
+class CfirImplicitBodyResolveComputationSessionSnapshot internal constructor(
+    internal val statusMap: Map<CfirCallableSymbol<*>, CfirImplicitBodyResolveComputationStatus>,
+    internal val computingSymbolsStack: List<CfirCallableSymbol<*>>,
+    internal val nonTrivialLoops: Set<CfirCallableSymbol<*>>,
+    internal val cycledSymbol: CfirCallableSymbol<*>?,
+)

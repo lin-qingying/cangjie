@@ -112,6 +112,9 @@ class ConeResolutionAtomWithPostponedChild(
     fun useFallbackSubAtom() {
         subAtom = fallbackSubAtom
     }
+
+    fun makeFreshCopy(): ConeResolutionAtomWithPostponedChild =
+        ConeResolutionAtomWithPostponedChild(expression, fallbackSubAtom)
 }
 
 object ConeResolutionAtomFactory {

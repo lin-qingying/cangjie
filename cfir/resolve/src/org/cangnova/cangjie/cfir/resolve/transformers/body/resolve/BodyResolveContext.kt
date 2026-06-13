@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.transformers.body.resolve
 
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
+import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitExtensionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
@@ -26,16 +27,21 @@ import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
 import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
+import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContextSnapshot
+import org.cangnova.cangjie.cfir.resolve.body.SnapshotCfirMapper
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
 import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.asTowerDataElement
 import org.cangnova.cangjie.cfir.resolve.body.collectTowerDataElementsForClass
 import org.cangnova.cangjie.cfir.resolve.body.typeParametersForTower
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
@@ -111,6 +117,8 @@ class BodyResolveContext(
 
     @set:PrivateForInline
     var inferenceSession: CfirInferenceSession = CfirInferenceSession.DEFAULT
+
+    private val overloadByLambdaCandidateStack: ArrayDeque<Candidate> = ArrayDeque()
 
     @set:PrivateForInline
     var isInsideAssignmentRhs: Boolean = false
@@ -854,6 +862,34 @@ class BodyResolveContext(
         specialTowerDataContexts.dropCallableReferenceContext(callableReferenceAccess)
     }
 
+    /**
+     * 捕获延迟参数解析上下文，用于候选级 speculative lambda body 重检后恢复。
+     *
+     * 官方语义允许同一个 lambda body 在不同候选目标函数类型下反复重检；这些重检
+     * 不能消耗掉后续候选或最终提交仍需使用的 tower context。
+     */
+    @OptIn(PrivateForInline::class)
+    fun capturePostponedAtomsResolutionContexts(): CfirSpecialTowerDataContextsSnapshot =
+        specialTowerDataContexts.capture()
+
+    @OptIn(PrivateForInline::class)
+    fun restorePostponedAtomsResolutionContexts(snapshot: CfirSpecialTowerDataContextsSnapshot) {
+        specialTowerDataContexts.restore(snapshot)
+    }
+
+    /**
+     * 捕获 DFA/CFG 上下文，用于 speculative lambda body 重检后的候选级回滚。
+     *
+     * 对位 Kotlin FIR 的 data-flow snapshot 角色：候选试跑可以构造 CFG、记录 return
+     * 表达式和赋值状态，但这些状态只有在最终选中的候选提交时才能保留。
+     */
+    fun captureDataFlowAnalyzerContext(): CfirDataFlowAnalyzerContextSnapshot =
+        dataFlowAnalyzerContext.createSnapshot(IdentitySnapshotCfirMapper)
+
+    fun restoreDataFlowAnalyzerContext(snapshot: CfirDataFlowAnalyzerContextSnapshot) {
+        dataFlowAnalyzerContext.resetFrom(snapshot.context)
+    }
+
     // ── Inference / expectations ──────────────────────────────────────────
 
     @OptIn(PrivateForInline::class)
@@ -867,6 +903,31 @@ class BodyResolveContext(
             inferenceSession.block()
         } finally {
             this.inferenceSession = oldSession
+        }
+    }
+
+    /**
+     * 记录当前正在按候选目标函数类型试跑的 lambda body。
+     *
+     * 仓颉 overload-by-lambda 需要完整重检 lambda body；当外层候选已经因 body 约束失败后，
+     * 嵌套调用继续做完整 OBL 候选试跑不会让外层候选重新成功，只会制造指数级重复分析。
+     */
+    fun <T> withOverloadByLambdaCandidate(candidate: Candidate, block: () -> T): T {
+        overloadByLambdaCandidateStack.addLast(candidate)
+        return try {
+            block()
+        } finally {
+            overloadByLambdaCandidateStack.removeLast()
+        }
+    }
+
+    fun shouldReduceOverloadByLambdaCandidates(): Boolean =
+        overloadByLambdaCandidateStack.lastOrNull()?.isSuccessful != false
+
+    fun reportOverloadByLambdaCandidateDiagnostic(diagnostic: ResolutionDiagnostic) {
+        val candidate = overloadByLambdaCandidateStack.lastOrNull() ?: return
+        if (candidate.isSuccessful) {
+            candidate.addDiagnostic(diagnostic)
         }
     }
 
@@ -1056,6 +1117,29 @@ class CfirSpecialTowerDataContexts {
     fun dropCallableReferenceContext(access: CfirExpression) {
         callableReferenceContexts.remove(access)
     }
+
+    fun capture(): CfirSpecialTowerDataContextsSnapshot = CfirSpecialTowerDataContextsSnapshot(
+        anonymousFunctionContexts = LinkedHashMap(anonymousFunctionContexts),
+        callableReferenceContexts = IdentityHashMap(callableReferenceContexts),
+    )
+
+    fun restore(snapshot: CfirSpecialTowerDataContextsSnapshot) {
+        anonymousFunctionContexts.clear()
+        anonymousFunctionContexts.putAll(snapshot.anonymousFunctionContexts)
+        callableReferenceContexts.clear()
+        callableReferenceContexts.putAll(snapshot.callableReferenceContexts)
+    }
+}
+
+class CfirSpecialTowerDataContextsSnapshot(
+    val anonymousFunctionContexts: LinkedHashMap<CfirFunctionSymbol<*>, CfirPostponedAtomsResolutionContext>,
+    val callableReferenceContexts: IdentityHashMap<CfirExpression, CfirPostponedAtomsResolutionContext>,
+)
+
+private object IdentitySnapshotCfirMapper : SnapshotCfirMapper {
+    override fun <T : CfirBasedSymbol<*>> mapSymbol(symbol: T): T = symbol
+
+    override fun <T : CfirElement> mapElement(element: T): T = element
 }
 
 abstract class CfirInferenceSession {

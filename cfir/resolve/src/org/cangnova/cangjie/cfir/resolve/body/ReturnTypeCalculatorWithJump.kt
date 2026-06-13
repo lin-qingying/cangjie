@@ -56,7 +56,7 @@ import org.cangnova.cangjie.utils.exceptions.withCfirEntry
 open class ReturnTypeCalculatorWithJump(
     protected val session: CfirSession,
     protected val scopeSession: ScopeSession,
-    protected val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
+    val implicitBodyResolveComputationSession: CfirImplicitBodyResolveComputationSession,
 ) : ReturnTypeCalculator() {
     override val callableCopyTypeCalculator: CallableCopyTypeCalculator = CallableCopyTypeCalculatorWithJump()
 

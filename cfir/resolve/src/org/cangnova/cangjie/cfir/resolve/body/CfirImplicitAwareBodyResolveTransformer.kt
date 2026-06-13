@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 
 /**
  * 感知隐式类型的 body resolve transformer。
@@ -128,6 +129,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
         declaration: D,
         transformation: () -> CfirDeclaration,
     ): CfirDeclaration {
+        if (!implicitTypeOnly && declaration is CfirCallableDeclaration && declaration.returnTypeRef is CfirResolvedTypeRef) {
+            return transformation()
+        }
         if (declaration !is CfirCallableDeclaration) {
             return transformation()
         }

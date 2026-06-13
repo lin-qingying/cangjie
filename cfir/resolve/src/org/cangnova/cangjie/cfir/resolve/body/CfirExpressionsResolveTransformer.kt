@@ -1981,6 +1981,8 @@ open class CfirExpressionsResolveTransformer(
             if (expectedFuncType == null && hasUnresolvedParameterType) {
                 // Keep top-level lambda shape unresolved until call completion provides an expected function type.
                 // Eagerly fixing returnType here turns lambda return mismatches into outer argument mismatches.
+                components.dataFlowAnalyzer.enterAnonymousFunctionExpression(anonymousFunctionExpression)
+                context.storeContextForAnonymousFunction(anonFunc)
                 return@withClearedEffectHandlers anonymousFunctionExpression
             }
 

@@ -90,11 +90,14 @@ class LightTree2Cfir(
             CangJieLexer(),
             code,
         )
-        val lightTree = CangJieLightParser.parse(builder, makeErrorListener(sourceFile))
+        val lightTree = CangJieLightParser.parse(builder, makeErrorListener(sourceFile, code))
         return buildCfirFileWithSurfaces(lightTree, sourceFile, linesMapping)
     }
 
-    private fun makeErrorListener(sourceFile: CjSourceFile): CangJieLightParser.LightTreeParsingErrorListener? {
+    private fun makeErrorListener(
+        sourceFile: CjSourceFile,
+        code: CharSequence,
+    ): CangJieLightParser.LightTreeParsingErrorListener? {
         val reporter = diagnosticsReporter ?: return null
         val diagnosticContext = object : DiagnosticContext {
             override val languageVersionSettings = session.languageVersionSettings
@@ -103,11 +106,42 @@ class LightTree2Cfir(
         }
         return CangJieLightParser.LightTreeParsingErrorListener { startOffset, endOffset, message ->
             val factory = CjSyntaxErrors.factoryForParserMessage(message) ?: return@LightTreeParsingErrorListener
+            val diagnosticEndOffset = when (factory) {
+                CjSyntaxErrors.PARSE_UNEXPECTED_DECLARATION_IN_SCOPE ->
+                    unexpectedDeclarationKeywordEndOffset(code, startOffset, endOffset)
+                else -> endOffset
+            }
             reporter.reportOn(
-                CjOffsetsOnlySourceElement(startOffset, endOffset),
+                CjOffsetsOnlySourceElement(startOffset, diagnosticEndOffset),
                 factory,
                 diagnosticContext,
             )
         }
     }
+
+    /**
+     * 官方 cjc 对“语句作用域内出现声明”的主诊断范围落在声明关键字。
+     * light-tree 错误节点可能覆盖整条声明，因此在诊断收集层统一收窄。
+     */
+    private fun unexpectedDeclarationKeywordEndOffset(
+        code: CharSequence,
+        startOffset: Int,
+        endOffset: Int,
+    ): Int {
+        val keyword = declarationKeywords.firstOrNull { keyword ->
+            startOffset + keyword.length <= endOffset &&
+                    code.subSequence(startOffset, startOffset + keyword.length).toString() == keyword
+        } ?: return endOffset
+        return startOffset + keyword.length
+    }
+
+    private val declarationKeywords = listOf(
+        "class",
+        "struct",
+        "interface",
+        "enum",
+        "func",
+        "macro",
+        "extend",
+    )
 }

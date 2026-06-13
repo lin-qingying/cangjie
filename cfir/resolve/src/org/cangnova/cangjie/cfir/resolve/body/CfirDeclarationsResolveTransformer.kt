@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildImport
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
@@ -246,6 +247,58 @@ open class CfirDeclarationsResolveTransformer(
         }
         function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
         return function
+    }
+
+    /**
+     * Call completion 专用的 lambda body 解析入口。
+     *
+     * 对齐 Kotlin FIR `doTransformAnonymousFunctionBodyFromCallCompletion`：补全阶段已经
+     * 确定了参数类型和候选系统，只能在保存的 lambda tower context 下解析函数体，
+     * 不能重新走整个 anonymous-function expression 入口，否则会再次触发 postponed
+     * lambda 的上下文存储/早退路径。
+     */
+    internal fun doTransformAnonymousFunctionBodyFromCallCompletion(
+        anonymousFunctionExpression: CfirAnonymousFunctionExpression,
+        expectedReturnTypeFromCallPosition: CfirResolvedTypeRef?,
+    ) {
+        val anonymousFunction = anonymousFunctionExpression.anonymousFunction
+        val expectedReturnTypeRef = expectedReturnTypeFromCallPosition
+            ?: anonymousFunction.returnTypeRef.takeUnless { it is CfirImplicitTypeRef }
+
+        if (expectedReturnTypeFromCallPosition == null) {
+            context.withLambdaBeingAnalyzedInDependentContext(anonymousFunction.symbol) {
+                transformAnonymousFunctionBody(anonymousFunction, expectedReturnTypeRef)
+            }
+        } else {
+            transformAnonymousFunctionBody(anonymousFunction, expectedReturnTypeRef)
+        }
+    }
+
+    private fun transformAnonymousFunctionBody(
+        anonymousFunction: CfirAnonymousFunction,
+        expectedReturnTypeRef: CfirTypeRef?,
+    ): CfirAnonymousFunction {
+        val lambdaType = anonymousFunction.typeRef
+        return context.withAnonymousFunction(anonymousFunction, components) {
+            withFullBodyResolve {
+                if (expectedReturnTypeRef is CfirResolvedTypeRef &&
+                    anonymousFunction.returnTypeRef !is CfirResolvedTypeRef
+                ) {
+                    anonymousFunction.replaceReturnTypeRef(expectedReturnTypeRef)
+                }
+
+                whileAnalysing(session, anonymousFunction) {
+                    transformFunctionContent(
+                        anonymousFunction,
+                        resolutionModeForBody = expectedReturnTypeRef?.let(::withExpectedType)
+                            ?: ResolutionMode.ContextDependent,
+                        shouldResolveEverything = true,
+                    ) as CfirAnonymousFunction
+                }
+            }
+        }.apply {
+            replaceTypeRef(lambdaType)
+        }
     }
 
     // ── Constructor ───────────────────────────────────────────────────────
