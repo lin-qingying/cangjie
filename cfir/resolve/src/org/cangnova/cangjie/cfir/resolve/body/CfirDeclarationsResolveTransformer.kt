@@ -243,15 +243,22 @@ open class CfirDeclarationsResolveTransformer(
         dataFlowAnalyzer.enterFunction(function)
 
         if (shouldResolveEverything) {
+            // 对齐 Kotlin FIR：函数完整 body resolve 必须先解析返回类型、参数默认值和注解，
+            // 否则默认参数里的调用不会进入统一的调用解析与诊断流水线。
             function
                 .transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
                 .transformValueParameters(transformer, ResolutionMode.ContextIndependent)
                 .transformAnnotations(transformer, ResolutionMode.ContextIndependent)
         }
 
+        val bodyResolutionMode = function.returnTypeRef
+            .takeUnless { it is CfirImplicitTypeRef }
+            ?.let(::withExpectedType)
+            ?: resolutionModeForBody
+
         val body = function.body
         if (body != null) {
-            function.transformBody(transformer, resolutionModeForBody)
+            function.transformBody(transformer, bodyResolutionMode)
         }
         function.replaceControlFlowGraphReference(dataFlowAnalyzer.exitFunction(function))
         return function
@@ -268,23 +275,28 @@ open class CfirDeclarationsResolveTransformer(
     internal fun doTransformAnonymousFunctionBodyFromCallCompletion(
         anonymousFunctionExpression: CfirAnonymousFunctionExpression,
         expectedReturnTypeFromCallPosition: CfirResolvedTypeRef?,
+        resolutionModeForBody: ResolutionMode? = null,
     ) {
         val anonymousFunction = anonymousFunctionExpression.anonymousFunction
         val expectedReturnTypeRef = expectedReturnTypeFromCallPosition
             ?: anonymousFunction.returnTypeRef.takeUnless { it is CfirImplicitTypeRef }
+        val actualResolutionModeForBody = resolutionModeForBody
+            ?: expectedReturnTypeRef?.let(::withExpectedType)
+            ?: ResolutionMode.ContextDependent
 
         if (expectedReturnTypeFromCallPosition == null) {
             context.withLambdaBeingAnalyzedInDependentContext(anonymousFunction.symbol) {
-                transformAnonymousFunctionBody(anonymousFunction, expectedReturnTypeRef)
+                transformAnonymousFunctionBody(anonymousFunction, expectedReturnTypeRef, actualResolutionModeForBody)
             }
         } else {
-            transformAnonymousFunctionBody(anonymousFunction, expectedReturnTypeRef)
+            transformAnonymousFunctionBody(anonymousFunction, expectedReturnTypeRef, actualResolutionModeForBody)
         }
     }
 
     private fun transformAnonymousFunctionBody(
         anonymousFunction: CfirAnonymousFunction,
         expectedReturnTypeRef: CfirTypeRef?,
+        resolutionModeForBody: ResolutionMode,
     ): CfirAnonymousFunction {
         val lambdaType = anonymousFunction.typeRef
         return context.withAnonymousFunction(anonymousFunction, components) {
@@ -298,8 +310,7 @@ open class CfirDeclarationsResolveTransformer(
                 whileAnalysing(session, anonymousFunction) {
                     transformFunctionContent(
                         anonymousFunction,
-                        resolutionModeForBody = expectedReturnTypeRef?.let(::withExpectedType)
-                            ?: ResolutionMode.ContextDependent,
+                        resolutionModeForBody = resolutionModeForBody,
                         shouldResolveEverything = true,
                     ) as CfirAnonymousFunction
                 }
@@ -532,6 +543,9 @@ open class CfirDeclarationsResolveTransformer(
             // 仓颉的 annotation parameter 默认值必须是常量表达式，
             // 但常量求值由后续 checker / codegen 阶段完成，
             // 这里只负责类型推断与 DFA，不做 ArrayLiteralPosition 的注解参数分流。
+            valueParameter.replaceReturnTypeRef(
+                resolveExplicitTypeRefIfNeeded(valueParameter.returnTypeRef, valueParameter.typeParameters),
+            )
             transformDeclarationContent(
                 valueParameter,
                 withExpectedType(valueParameter.returnTypeRef),
@@ -644,17 +658,9 @@ open class CfirDeclarationsResolveTransformer(
         patternVariable: CfirPatternVariable,
         data: ResolutionMode,
     ): CfirPatternVariable {
-        val rawTypeRef = patternVariable.returnTypeRef
-        if (rawTypeRef !is CfirResolvedTypeRef && rawTypeRef !is CfirImplicitTypeRef) {
-            val resolved = specificTypeResolverTransformer.transformTypeRef(
-                rawTypeRef,
-                CfirTypeResolutionConfiguration(
-                    useSiteFile = context.file,
-                    topContainer = context.containers.lastOrNull(),
-                ),
-            )
-            patternVariable.replaceReturnTypeRef(resolved)
-        }
+        patternVariable.replaceReturnTypeRef(
+            resolveExplicitTypeRefIfNeeded(patternVariable.returnTypeRef, patternVariable.typeParameters),
+        )
 
         val explicitTypeRef = patternVariable.returnTypeRef
         val initializerMode = if (explicitTypeRef is CfirResolvedTypeRef) {
@@ -964,7 +970,11 @@ open class CfirDeclarationsResolveTransformer(
 
         if (typeRef is CfirResolvedTypeRef) {
             val delegated = typeRef.delegatedTypeRef
-            if (typeRef.coneType is ConeErrorType && delegated != null && delegated !is CfirImplicitTypeRef) {
+            if (
+                typeRef.coneType.contains { it is ConeErrorType } &&
+                delegated != null &&
+                delegated !is CfirImplicitTypeRef
+            ) {
                 return specificTypeResolverTransformer.transformTypeRef(delegated, config)
             }
             return typeRef

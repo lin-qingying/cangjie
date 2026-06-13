@@ -26,10 +26,18 @@ package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.*
 import org.cangnova.cangjie.cfir.CfirImplementationDetail
+import org.cangnova.cangjie.cfir.MutableOrEmptyList
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
+import org.cangnova.cangjie.name.Name
 
 private fun simpleDiagnostic(reason: String): ConeDiagnostic = object : ConeDiagnostic {
     override val reason: String = reason
@@ -215,9 +223,28 @@ class CfirTypeDeserializer(
             ?: return errorType("Generic missing GenericTyInfo")
         val fullId = info.declPtr
             ?: return errorType("GenericTyInfo missing declPtr")
-        val symbol = resolveCurrentPackageTypeParameter(fullId)
-            ?: return errorType("Cannot resolve generic parameter symbol: ${context.fullIdResolver.describe(fullId)}")
-        return ConeTypeParameterTypeImpl(symbol.toLookupTag())
+        resolveCurrentPackageTypeParameter(fullId)?.let { symbol ->
+            return ConeTypeParameterTypeImpl(symbol.toLookupTag())
+        }
+        val name = context.fullIdResolver.resolveDeclarationName(fullId)
+            ?: return errorType("Cannot resolve generic parameter FullId: ${context.fullIdResolver.describe(fullId)}")
+        val upperBounds = (0 until info.upperBoundsLength).map {
+            deserializeTypeFromField(info.upperBounds(it))
+        }
+        return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, upperBounds).toLookupTag())
+    }
+
+    /**
+     * CJO `GenericTyInfo.declPtr` 指向真实的 `GenericParamDecl`。
+     * 当声明反序列化已物化该类型参数时，类型引用必须复用同一个 symbol，
+     * 否则函数/enum constructor 签名中的 `T` 无法被调用候选的 fresh substitutor 命中。
+     */
+    private fun resolveMaterializedTypeParameterSymbol(fullId: FullId): CfirTypeParameterSymbol? {
+        val resolved = context.fullIdResolver.resolve(fullId) as? ResolvedFullId.Declaration ?: return null
+        if (resolved.source != ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) return null
+        val declaration = context.declCache[resolved.declaration.zeroBasedIndex] as? CfirTypeParameter
+            ?: return null
+        return declaration.symbol
     }
 
     private fun createRecursiveTypeFallback(typeIndex: Int): ConeCangJieType {
@@ -225,9 +252,15 @@ class CfirTypeDeserializer(
             ?: return errorType("Recursive type reference: $typeIndex")
         if (semaTy.kind == TypeKind.Generic) {
             val info = semaTy.info(GenericTyInfo()) as? GenericTyInfo
-            val symbol = info?.declPtr?.let(::resolveCurrentPackageTypeParameter)
+            val fullId = info?.declPtr
+            val symbol = fullId?.let(::resolveCurrentPackageTypeParameter)
             if (symbol != null) {
                 return ConeTypeParameterTypeImpl(symbol.toLookupTag())
+            }
+            if (fullId != null) {
+                val name = context.fullIdResolver.resolveDeclarationName(fullId)
+                    ?: return errorType("Cannot resolve generic parameter FullId: ${context.fullIdResolver.describe(fullId)}")
+                return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, emptyList()).toLookupTag())
             }
         }
         return errorType("Recursive type reference: $typeIndex")
@@ -245,5 +278,35 @@ class CfirTypeDeserializer(
         if (resolved.source != ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) return null
         val declaration = context.declCache[resolved.declaration.zeroBasedIndex] as? CfirTypeParameter ?: return null
         return declaration.symbol
+    }
+
+    private fun createSyntheticTypeParameterSymbol(
+        name: Name,
+        upperBounds: List<ConeCangJieType>,
+    ): CfirTypeParameterSymbol {
+        val symbol = CfirTypeParameterSymbol()
+        val boundRefs = upperBounds.mapTo(mutableListOf<CfirTypeRef>()) { upperBound ->
+            CfirResolvedTypeRefImpl(
+                source = null,
+                annotations = MutableOrEmptyList.empty(),
+                customRenderer = false,
+                coneType = upperBound,
+                delegatedTypeRef = null,
+            )
+        }
+        val declaration = CfirTypeParameterImpl(
+            source = null,
+            moduleData = context.moduleData,
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE,
+            annotations = MutableOrEmptyList.empty(),
+            origin = CfirDeclarationOrigin.Library,
+            attributes = CfirDeclarationAttributes.EMPTY,
+            containingDeclarationSymbol = symbol,
+            symbol = symbol,
+            name = name,
+            bounds = boundRefs,
+        )
+        symbol.bind(declaration)
+        return symbol
     }
 }

@@ -7,6 +7,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirFile
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
@@ -524,6 +525,15 @@ class CfirProviderImpl(
                 )
             }
 
+            is CfirExtend -> {
+                if (!isTopLevel) return
+                recordExtendMemberDeclarations(
+                    declarations = declaration.declarations,
+                    packageFqName = packageFqName,
+                    containingFile = containingFile,
+                )
+            }
+
             // ---- 可调用声明（仅顶层注册）----
 
 
@@ -592,6 +602,27 @@ class CfirProviderImpl(
                 state.callableNamesInPackage.getOrPut(packageFqName, ::mutableSetOf).add(callableName)
             }
             else -> Unit
+        }
+    }
+
+    /**
+     * extend 成员不是目标类型的物理 class member，目标类型语义归属由
+     * [CfirExtendProvider] / extend index 负责；provider 这里只登记声明所在文件，
+     * 保持 visibility、diagnostic、metadata 查询与 Kotlin FirProvider 的职责一致。
+     */
+    private fun recordExtendMemberDeclarations(
+        declarations: Collection<CfirDeclaration>,
+        packageFqName: FqName,
+        containingFile: CfirFile,
+    ) {
+        for (member in declarations) {
+            recordDeclaration(
+                declaration = member,
+                packageFqName = packageFqName,
+                containingClass = null,
+                containingFile = containingFile,
+                isTopLevel = false,
+            )
         }
     }
 

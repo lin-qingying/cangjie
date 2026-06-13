@@ -64,6 +64,17 @@ class NamedParameterNotFound(
  */
 object InapplicableCandidate : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE)
 
+/**
+ * 接收者类型不适用。
+ *
+ * 对齐 Kotlin FIR `InapplicableWrongReceiver`，用于把 receiver 约束失败与普通参数
+ * 类型失败分层，保证 tower resolve 的候选排序使用 `INAPPLICABLE_WRONG_RECEIVER`。
+ */
+class InapplicableWrongReceiver(
+    val expectedType: ConeCangJieType? = null,
+    val actualType: ConeCangJieType? = null,
+) : ResolutionDiagnostic(CandidateApplicability.INAPPLICABLE_WRONG_RECEIVER)
+
 class ArgumentPassedTwice(
     val argument: CfirExpression,
     val parameter: CfirValueParameter,

@@ -22,6 +22,14 @@ enum class CfirFunctionCallOrigin {
     MockIntrinsic,
 
     /**
+     * 编译器生成的 core 包内建调用。
+     *
+     * 对齐官方 AST `Attribute::IN_CORE`：这类引用不是用户源码中的普通名字查找，
+     * 因此不能按用户可见性报告 `INVISIBLE_REFERENCE`。
+     */
+    CompilerCoreIntrinsic,
+
+    /**
      * `this(...)` 构造器 delegation 调用。
      *
      * 它在语法上仍表现为 call expression，但语义上不能再走普通名字解析，

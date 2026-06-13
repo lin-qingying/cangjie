@@ -30,6 +30,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.name.Name
 
 /** 包级 scope，解析包内的顶级声明 */
@@ -58,6 +59,9 @@ abstract class CfirExtendScope : CfirScope() {
 
 /** 类型参数 scope，解析泛型类/函数中的类型参数名称 */
 abstract class CfirTypeParameterScope : CfirContainingNamesAwareScope() {
+    /** 按名称处理类型参数符号 */
+    open fun processTypeParametersByName(name: Name, processor: (CfirTypeParameterSymbol) -> Unit) {}
+
     override fun withReplacedSessionOrNull(
         newSession: CfirSession,
         newScopeSession: ScopeSession,

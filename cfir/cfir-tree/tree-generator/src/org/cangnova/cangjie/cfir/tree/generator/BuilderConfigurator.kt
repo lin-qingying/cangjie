@@ -143,6 +143,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         comparisonExpression,
         typeOperator,
         typeConversion,
+        letPatternExpression,
         ifExpression,
         matchExpression,
         matchBranch,

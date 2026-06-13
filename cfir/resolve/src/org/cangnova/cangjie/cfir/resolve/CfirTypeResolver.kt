@@ -32,10 +32,12 @@ import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -147,11 +149,7 @@ class CfirTypeResolverImpl(
         typeRef: CfirBasicTypeRef,
         configuration: TypeResolutionConfiguration,
     ): ConeCangJieType {
-        val typeName = typeRef.name.asString()
-        val typeParameter = configuration.scopeTypeParameters[typeName]
-        if (typeParameter != null) {
-            return ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag())
-        }
+        configuration.typeParameterTypeOrNull(typeRef.name)?.let { return it }
 
         val primitiveType = session.builtinTypes.getPrimitiveTypeByName(typeRef.name.asString())
         return primitiveType ?: ConeErrorType(ConeSimpleDiagnostic("Unknown basic type: ${typeRef.name.asString()}"))
@@ -174,10 +172,8 @@ class CfirTypeResolverImpl(
             if (qualifierPart.name == cFuncName) {
                 return result(resolveCFuncUserType(qualifierPart, configuration, expandTypeAliases))
             }
-            val typeParameterName = qualifierPart.name.asString()
-            val typeParameter = configuration.scopeTypeParameters[typeParameterName]
-            if (typeParameter != null && qualifierPart.typeArguments.isEmpty()) {
-                return result(ConeTypeParameterTypeImpl(typeParameter.symbol.toLookupTag()))
+            if (qualifierPart.typeArguments.isEmpty()) {
+                configuration.typeParameterTypeOrNull(qualifierPart.name)?.let { return result(it) }
             }
         }
 
@@ -243,6 +239,33 @@ class CfirTypeResolverImpl(
             )
         }
         return result(resolvedType)
+    }
+
+    /**
+     * 类型参数解析同时支持两类来源：
+     * - declaration/type-resolve 阶段传入的 additional type parameters；
+     * - body/tower 阶段安装到 scope 链上的 `CfirTypeParameterScope`。
+     *
+     * 这样显式类型、局部声明类型和函数体内类型实参都走同一个解析入口，
+     * 避免函数或 extend 类型参数在 body resolve 中退化为普通 unresolved classifier。
+     */
+    private fun TypeResolutionConfiguration.typeParameterTypeOrNull(name: Name): ConeTypeParameterTypeImpl? {
+        scopeTypeParameters[name.asString()]?.let { parameter ->
+            return ConeTypeParameterTypeImpl(parameter.symbol.toLookupTag())
+        }
+
+        for (scope in scopes) {
+            val typeParameterScope = scope as? CfirTypeParameterScope ?: continue
+            var result: ConeTypeParameterTypeImpl? = null
+            typeParameterScope.processTypeParametersByName(name) { symbol ->
+                if (result == null) {
+                    result = ConeTypeParameterTypeImpl(symbol.toLookupTag())
+                }
+            }
+            if (result != null) return result
+        }
+
+        return null
     }
 
     private fun resolveThisType(

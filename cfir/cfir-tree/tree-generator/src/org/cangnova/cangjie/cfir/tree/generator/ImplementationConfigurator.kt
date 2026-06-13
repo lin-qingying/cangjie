@@ -262,6 +262,7 @@ object ImplementationConfigurator : AbstractCfirTreeImplementationConfigurator()
         comparisonExpression,
         typeOperator,
         typeConversion,
+        letPatternExpression,
         ifExpression,
         matchExpression,
         matchBranch,

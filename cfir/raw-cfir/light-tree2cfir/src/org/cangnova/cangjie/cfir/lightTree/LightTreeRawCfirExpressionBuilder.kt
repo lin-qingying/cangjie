@@ -121,6 +121,7 @@ class LightTreeRawCfirExpressionBuilder(
         CjNodeTypes.FOR -> convertFor(node)
         CjNodeTypes.WHILE -> convertWhile(node)
         CjNodeTypes.DO_WHILE -> convertDoWhile(node)
+        CjNodeTypes.LET_EXPRESSION -> convertLetPatternExpression(node)
 
         // 跳转 / 异常
         CjNodeTypes.RETURN -> convertReturn(node)
@@ -1011,6 +1012,38 @@ class LightTreeRawCfirExpressionBuilder(
             this.condition = condition
             this.thenBranch = thenBranch
             this.elseBranch = elseBranch
+        }
+    }
+
+    private fun convertLetPatternExpression(node: LighterASTNode): CfirLetPatternExpression {
+        var patternNode: LighterASTNode? = null
+        var initializerNode: LighterASTNode? = null
+
+        tree.forEachChildren(node) { child ->
+            when {
+                patternNode == null && isPatternToken(child.tokenType) -> patternNode = child
+                initializerNode == null && isExpressionToken(child.tokenType) -> initializerNode = child
+            }
+        }
+
+        val status = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
+        val pattern = patternNode?.let {
+            convertPattern(
+                node = it,
+                ownerStatus = status,
+                ownerIsLocal = true,
+                ownerIsVar = false,
+            )
+        } ?: buildWildcardPattern {
+            source = node.toSource()
+        }
+        val initializer = initializerNode?.let { convertExpression(it) }
+            ?: buildErrorExpression(reason = "Missing let-pattern initializer")
+
+        return buildLetPatternExpression {
+            source = node.toSource()
+            this.initializer = initializer
+            this.pattern = pattern
         }
     }
 
@@ -1925,6 +1958,7 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.SPAWN_EXPRESSION,
             CjNodeTypes.IF, CjNodeTypes.MATCH,
             CjNodeTypes.FOR, CjNodeTypes.WHILE, CjNodeTypes.DO_WHILE,
+            CjNodeTypes.LET_EXPRESSION,
             CjNodeTypes.RETURN, CjNodeTypes.BREAK, CjNodeTypes.CONTINUE, CjNodeTypes.THROW,
             CjNodeTypes.PERFORM, CjNodeTypes.RESUME,
             CjNodeTypes.TRY,

@@ -1,8 +1,11 @@
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckArguments
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckCallableReferenceExpectedType
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckExtensionReceiver
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCheckVisibility
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariableSubstitutorStage
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirEagerResolveOfCallableReferences
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirInitializeEmptyArgumentMap
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapArguments
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirMapTypeArguments
@@ -20,7 +23,9 @@ sealed class CallKind(
         CfirMapArguments,
         CfirMapTypeArguments,
         CfirCreateFreshTypeVariableSubstitutorStage,
+        CfirCheckExtensionReceiver,
         CfirCheckArguments,
+        CfirEagerResolveOfCallableReferences,
     )
 
     /**
@@ -34,6 +39,8 @@ sealed class CallKind(
         CfirMapTypeArguments,
         CfirInitializeEmptyArgumentMap,
         CfirCreateFreshTypeVariableSubstitutorStage,
+        CfirCheckExtensionReceiver,
+        CfirCheckCallableReferenceExpectedType,
     )
 
     data object EnumConstructorCall : CallKind(

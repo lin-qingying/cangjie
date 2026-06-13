@@ -3,10 +3,13 @@ package org.cangnova.cangjie.cfir.resolve.calls
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterLookupTag
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
+import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
@@ -14,6 +17,7 @@ import org.cangnova.cangjie.cfir.types.collectUpperBounds
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.cfir.types.hasSupertypeWithGivenClassId
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 
 internal fun prepareArgumentType(argumentType: ConeCangJieType, session: CfirSession): ConeCangJieType {
     return argumentType.fullyExpandedType(session)
@@ -82,21 +86,39 @@ internal fun normalizeTypeForCompatibilityCheck(type: ConeCangJieType): ConeCang
     }
 }
 
+/**
+ * 将调用中显式类型实参形成的等式约束应用到参数 expected type。
+ *
+ * 仓颉 enum constructor 的 owner 泛型、普通泛型调用的显式实参都会先进入候选约束系统；
+ * 参数检查和完成写回必须看到同一个已替换的 expected type，lambda / 字面量才能按目标类型定型。
+ */
+internal fun Candidate.substituteExplicitTypeArgumentConstraints(expectedType: ConeCangJieType): ConeCangJieType {
+    val replacements = system.currentStorage().notFixedTypeVariables
+        .mapNotNull { (typeConstructor, variable) ->
+            val explicitType = variable.constraints
+                .firstOrNull { constraint ->
+                    constraint.kind == ConstraintKind.EQUALITY &&
+                            constraint.position.from is ConeExplicitTypeParameterConstraintPosition
+                }
+                ?.type as? ConeCangJieType
+                ?: return@mapNotNull null
+            typeConstructor to explicitType
+        }
+        .toMap()
+    if (replacements.isEmpty()) return expectedType
+    return CfirTypeSubstitutorByMap(replacements).substituteOrSelf(expectedType)
+}
+
 fun CfirExpression.getExpectedType(
     session: CfirSession,
-    parameter: CfirValueParameter
+    parameter: CfirValueParameter,
+    unwrapCangjieVariadicParameter: Boolean = false,
 ): ConeCangJieType {
-//    val shouldUnwrapVarargType = when (this) {
-//        is CfirSpreadArgumentExpression, is CfirNamedArgumentExpression -> false
-//        else -> parameter.isVararg
-//    }
-
-    val expectedType =
-//        if (shouldUnwrapVarargType) {
-//        parameter.returnTypeRef.coneType.varargElementType()
-//    } else {
+    val expectedType = if (unwrapCangjieVariadicParameter) {
+        parameter.cangjieVariadicElementTypeOrNull() ?: parameter.returnTypeRef.coneType
+    } else {
         parameter.returnTypeRef.coneType
-//    }
+    }
     return expectedType
 //    if (!session.functionTypeService.hasExtensionKinds()) return expectedType
 //    return FunctionTypeKindSubstitutor(session).substituteOrSelf(expectedType)

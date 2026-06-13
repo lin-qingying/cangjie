@@ -96,6 +96,10 @@ interface ConeTypeContext :
 
     override fun CangJieTypeMarker.isError(): Boolean = (this as? ConeCangJieType)?.isError == true
 
+    override fun CangJieTypeMarker.isClassLikeType(): Boolean {
+        return asRigidType() is ConeClassLikeType
+    }
+
     override fun CangJieTypeMarker.isUninferredParameter(): Boolean {
         return this is ConeErrorType && this.isUninferredParameter
     }

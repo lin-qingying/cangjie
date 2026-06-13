@@ -188,6 +188,10 @@ abstract class CfirDefaultVisitorVoid : CfirVisitorVoid() {
         visitExpression(typeConversion)
     }
 
+    override fun visitLetPatternExpression(letPatternExpression: CfirLetPatternExpression) {
+        visitExpression(letPatternExpression)
+    }
+
     override fun visitIfExpression(ifExpression: CfirIfExpression) {
         visitExpression(ifExpression)
     }

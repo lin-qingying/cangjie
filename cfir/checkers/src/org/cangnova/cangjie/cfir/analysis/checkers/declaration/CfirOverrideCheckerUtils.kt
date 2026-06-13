@@ -189,19 +189,9 @@ internal fun CfirCallableSymbol<*>.canParticipateInOverrideTargetSearch(
 
 internal fun CfirCallableSymbol<*>.isAbstractLike(context: CheckerContext): Boolean {
     if (!isBound) return false
-    if (cfir.status.isAbstract) return true
-
-    val ownerClass = context.ownerClassSymbol(this)?.cfir
-    val ownerMayDeclareAbstractMember =
-        ownerClass is CfirInterface || ownerClass is CfirClass && ownerClass.status.isAbstract
-    if (!ownerMayDeclareAbstractMember) return false
-
-    val declaration = cfir
-    return when (declaration) {
-        is CfirFunction -> (this as? CfirFunctionSymbol<*>)?.hasBody == false
-        is CfirProperty -> declaration.getter == null && declaration.setter == null
-        else -> false
-    }
+    // 是否抽象必须以 STATUS 阶段的 resolved status 为准。
+    // cjo / decompiled 的接口默认实现可能没有本地 body 节点，但 status 已经保留其 concrete 语义。
+    return cfir.status.isAbstract
 }
 
 internal fun CfirCallableSymbol<*>.isOverridableFrom(

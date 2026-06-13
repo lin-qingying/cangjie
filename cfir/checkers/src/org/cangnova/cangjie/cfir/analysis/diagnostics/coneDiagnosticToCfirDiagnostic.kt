@@ -202,6 +202,17 @@ private fun ConeConstraintSystemHasContradiction.mapSystemHasContradictionError(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
+    candidate.cangjieVariadicRegularCallDiagnostics
+        .mapCangjieVariadicRegularCallDiagnostics(session, source, qualifiedAccessSource)
+        .takeIf { it.isNotEmpty() }
+        ?.let { return it }
+
+    candidate.diagnostics
+        .filter { it.isArgumentMappingDiagnostic }
+        .mapCangjieVariadicRegularCallDiagnostics(session, source, qualifiedAccessSource)
+        .takeIf { it.isNotEmpty() }
+        ?.let { return it }
+
     val errors = candidate.errors
     candidate.diagnostics
         .filterIsInstance<TooManyArguments>()
@@ -315,6 +326,11 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     source: CjSourceElement?,
     qualifiedAccessSource: CjSourceElement?,
 ): List<CjDiagnostic> {
+    candidate.cangjieVariadicRegularCallDiagnostics
+        .mapCangjieVariadicRegularCallDiagnostics(session, source, qualifiedAccessSource)
+        .takeIf { it.isNotEmpty() }
+        ?.let { return it }
+
     val contradictionDiagnostic = ConeConstraintSystemHasContradiction(candidate)
     contradictionDiagnostic.multiLambdaBuilderInferenceDiagnostics(session, source, qualifiedAccessSource)
         .takeIf { it.isNotEmpty() }
@@ -478,6 +494,70 @@ private fun ConeInapplicableCandidateError.mapInapplicableCandidateError(
     return listOfNotNull(CfirErrors.UNRESOLVED_REFERENCE.on(diagnosticSource, candidateSymbol.debugName, null, session))
 }
 
+private fun List<ResolutionDiagnostic>.mapCangjieVariadicRegularCallDiagnostics(
+    session: CfirSession,
+    source: CjSourceElement?,
+    qualifiedAccessSource: CjSourceElement?,
+): List<CjDiagnostic> = coalesceArgumentMappingDiagnostics().mapNotNull { diagnostic ->
+    when (diagnostic) {
+        is ArgumentPassedTwice -> CfirErrors.ARGUMENT_PASSED_TWICE.on(
+            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            session,
+        )
+
+        is MixingNamedAndPositionalArguments -> CfirErrors.MIXING_NAMED_AND_POSITIONAL_ARGUMENTS.on(
+            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            session,
+        )
+
+        is NamedArgumentsNotAllowed -> CfirErrors.NAMED_ARGUMENTS_NOT_ALLOWED.on(
+            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            diagnostic.targetDescription,
+            session,
+        )
+
+        is NamedParameterNotFound -> CfirErrors.NAMED_PARAMETER_NOT_FOUND.on(
+            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            diagnostic.name,
+            session,
+        )
+
+        is NeedNamedArgument -> CfirErrors.NEED_NAMED_ARGUMENT.on(
+            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            diagnostic.parameter.name,
+            session,
+        )
+
+        is NoValueForParameter -> CfirErrors.NO_VALUE_FOR_PARAMETER.on(
+            qualifiedAccessSource ?: source ?: return@mapNotNull null,
+            diagnostic.valueParameter.name,
+            session,
+        )
+
+        is TooManyArguments -> CfirErrors.TOO_MANY_ARGUMENTS.on(
+            diagnostic.argument.source ?: source ?: qualifiedAccessSource ?: return@mapNotNull null,
+            diagnostic.targetName,
+            session,
+        )
+
+        else -> null
+    }
+}
+
+/**
+ * 官方参数个数错误是调用级诊断；本项目暂以 `NO_VALUE_FOR_PARAMETER`
+ * 表达缺参语义时，同一候选上多个缺失形参应合并成一个用户可见诊断。
+ */
+private fun List<ResolutionDiagnostic>.coalesceArgumentMappingDiagnostics(): List<ResolutionDiagnostic> {
+    var reportedNoValueForParameter = false
+    return filter { diagnostic ->
+        if (diagnostic !is NoValueForParameter) return@filter true
+        if (reportedNoValueForParameter) return@filter false
+        reportedNoValueForParameter = true
+        true
+    }
+}
+
 private fun ConeConstraintSystemHasContradiction.multiLambdaBuilderInferenceDiagnostics(
     session: CfirSession,
     source: CjSourceElement?,
@@ -575,6 +655,16 @@ private fun argumentTypeMismatch(
         session = session,
     )?.let { return it }
 
+    if (expectedType.isFunctionTypeLike() && actualType.isFunctionTypeLike()) {
+        return CfirErrors.TYPE_MISMATCH.on(
+            source,
+            expectedType,
+            actualType,
+            isMismatchDueToNullability,
+            session,
+        )
+    }
+
     if (anonymousFunction != null) {
         val lambdaSource = anonymousFunction.source ?: source
         return CfirErrors.TYPE_MISMATCH.on(
@@ -600,6 +690,17 @@ private fun ConeCangJieType.rangeElementTypeOrNull(): ConeCangJieType? = when (t
     is ConeStructType -> if (classId == StdlibClassIds.Range) typeArguments.singleOrNull()?.type else null
     is ConeTypeAliasType -> expandedType?.rangeElementTypeOrNull()
     else -> null
+}
+
+/**
+ * 函数值作为实参时，参数/返回值结构子类型检查失败属于函数类型整体不匹配。
+ * 官方 Cangjie 在 `IsFuncSubtype` 失败后仍走 `sema_mismatched_types`，
+ * 因此这里不降成普通实参专用诊断。
+ */
+private fun ConeCangJieType.isFunctionTypeLike(): Boolean = when (this) {
+    is ConeFunctionType -> true
+    is ConeTypeAliasType -> expandedType?.isFunctionTypeLike() == true
+    else -> false
 }
 
 private fun ConeAmbiguityError.mapConeAmbiguityError(
@@ -1429,6 +1530,7 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenc
     session: CfirSession,
 ): CjDiagnostic? {
     val qualifiedAccess = unwrapWrappedExpression() as? CfirQualifiedAccessExpression ?: return null
+    if (qualifiedAccess !is CfirFunctionCall) return null
     if (qualifiedAccess.typeArguments.isNotEmpty()) return null
 
     val callableSymbol = qualifiedAccess.genericInferenceCallableSymbolOrNull()
@@ -1746,6 +1848,10 @@ private fun List<ConstraintSystemError>.coalesceExpectedTypeConstraintMismatches
  * 是同一调用参数检查的级联结果，只保留首个作为用户可见主错误。
  */
 private fun List<ResolutionDiagnostic>.coalesceArgumentTypeMismatches(): List<ResolutionDiagnostic> {
+    if (any { it.isArgumentMappingDiagnostic }) {
+        return filter { it !is ArgumentTypeMismatch }
+    }
+
     var reportedArgumentMismatch = false
     return filter { diagnostic ->
         if (diagnostic !is ArgumentTypeMismatch) return@filter true
@@ -1754,6 +1860,25 @@ private fun List<ResolutionDiagnostic>.coalesceArgumentTypeMismatches(): List<Re
         true
     }
 }
+
+/**
+ * 官方 Cangjie 调用检查在进入逐实参类型检查前先验证参数列表形状。
+ * 同一候选已经有缺参、多参、命名参数等映射错误时，实参类型不匹配只是
+ * 后续本地检查的派生噪声，不能压过用户可见的参数列表诊断。
+ */
+private val ResolutionDiagnostic.isArgumentMappingDiagnostic: Boolean
+    get() = when (this) {
+        is ArgumentPassedTwice,
+        is MixingNamedAndPositionalArguments,
+        is NamedArgumentsNotAllowed,
+        is NamedParameterNotFound,
+        is NeedNamedArgument,
+        is NoValueForParameter,
+        is TooManyArguments,
+        -> true
+
+        else -> false
+    }
 
 private fun TypeParameterMarker.asDeclaredTypeParameterSymbolOrNull(): CfirTypeParameterSymbol? = when (this) {
     is ConeTypeParameterLookupTag -> typeParameterSymbol

@@ -35,12 +35,13 @@ import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.*
-import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.*
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.*
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadByLambdaBodyResolver
@@ -49,6 +50,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.overloads.callConflictResolverFac
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
+import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
@@ -64,6 +66,8 @@ import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
+import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
@@ -300,6 +304,21 @@ class CfirCallResolver(
         var result = basicResult
 
         if (transformedAccess.explicitReceiver == null) {
+            if (isUsedAsReceiver && !basicResult.isSuccess) {
+                val typeParameter = towerResolver.findTypeParameters(callee.name).firstOrNull()
+                if (typeParameter != null) {
+                    transformedAccess.replaceCalleeReference(
+                        buildResolvedNamedReference {
+                            source = callee.source
+                            name = callee.name
+                            resolvedSymbol = typeParameter
+                        }
+                    )
+                    transformedAccess.replaceConeTypeOrNull(typeParameter.constructType())
+                    return transformedAccess
+                }
+            }
+
             if (!result.isSuccess || (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })) {
                 val classifier = towerResolver.findClassifiers(callee.name)
                     .firstOrNull { it.isValidClassifierExpression(isUsedAsReceiver) }
@@ -418,6 +437,137 @@ class CfirCallResolver(
         return collector.allCandidates.map { candidate ->
             OverloadCandidate(candidate, isInBestCandidates = candidate in result.candidates)
         }
+    }
+
+    internal fun resolveCallableReferenceArguments(
+        containingCallCandidate: Candidate,
+        atoms: List<ConeResolvedCallableReferenceAtom>,
+    ): Boolean {
+        data class PartialResolution(
+            val storage: ConstraintStorage,
+            val choices: List<CallableReferenceChoice>,
+        )
+
+        var partials = listOf(
+            PartialResolution(
+                storage = containingCallCandidate.system.currentStorage(),
+                choices = emptyList(),
+            )
+        )
+
+        for (atom in atoms) {
+            val nextPartials = mutableListOf<PartialResolution>()
+            for (partial in partials) {
+                for (choice in callableReferenceChoices(containingCallCandidate, atom, partial.storage)) {
+                    nextPartials += PartialResolution(
+                        storage = choice.candidate.system.currentStorage(),
+                        choices = partial.choices + choice,
+                    )
+                }
+            }
+            if (nextPartials.isEmpty()) return false
+            partials = nextPartials
+        }
+
+        if (partials.size != 1) {
+            atoms.forEach { atom -> atom.isPostponedBecauseOfAmbiguity = true }
+            return false
+        }
+
+        val resolved = partials.single()
+        containingCallCandidate.system.replaceContentWith(resolved.storage)
+        for (choice in resolved.choices) {
+            choice.candidate.system.replaceContentWith(resolved.storage)
+            choice.apply()
+        }
+        return true
+    }
+
+    private data class CallableReferenceChoice(
+        val atom: ConeResolvedCallableReferenceAtom,
+        val expression: CfirNamedAccessExpression,
+        val candidate: Candidate,
+        val resultingType: ConeCangJieType,
+    ) {
+        fun apply() {
+            val reference = expression.calleeReference as? CfirNamedReference ?: return
+            candidate.updateSourcesOfReceivers()
+            expression.replaceCalleeReference(
+                CfirNamedReferenceWithCandidate(
+                    reference.source,
+                    reference.name,
+                    candidate,
+                )
+            )
+            expression.replaceConeTypeOrNull(resultingType)
+            atom.resultingTypeForCallableReference = resultingType
+            atom.analyzed = true
+        }
+    }
+
+    private fun callableReferenceChoices(
+        containingCallCandidate: Candidate,
+        atom: ConeResolvedCallableReferenceAtom,
+        baseSystem: ConstraintStorage,
+    ): List<CallableReferenceChoice> {
+        val expression = atom.expression as? CfirNamedAccessExpression ?: return emptyList()
+        val expectedType = atom.expectedTypeForCallableReference(baseSystem) ?: return emptyList()
+        val originalCandidates = expression.callableReferenceCandidates()
+        if (originalCandidates.isEmpty()) return emptyList()
+
+        val callInfo = expression.callableReferenceCallInfo(expectedType)
+        val candidateFactory = CandidateFactory(transformer.resolutionContext, baseSystem)
+        return originalCandidates.mapNotNull { originalCandidate ->
+            val candidate = candidateFactory.createCallableReferenceCandidate(callInfo, originalCandidate)
+            components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
+            val resultingType = candidate.resultingTypeForCallableReference ?: return@mapNotNull null
+            if (!candidate.isSuccessful || candidate.system.hasContradiction) {
+                return@mapNotNull null
+            }
+            CallableReferenceChoice(atom, expression, candidate, resultingType)
+        }
+    }
+
+    private fun ConeResolvedCallableReferenceAtom.expectedTypeForCallableReference(
+        baseSystem: ConstraintStorage,
+    ): ConeCangJieType? {
+        val rawExpectedType = revisedExpectedType?.asCone() ?: expectedType ?: return null
+        val substitutor = baseSystem
+            .buildCurrentSubstitutor(session.typeContext, emptyMap())
+            .asCone()
+        return substitutor.substituteOrSelf(rawExpectedType)
+    }
+
+    private fun CfirNamedAccessExpression.callableReferenceCandidates(): List<Candidate> {
+        return when (val reference = calleeReference) {
+            is CfirNamedReferenceWithCandidate -> listOf(reference.candidate)
+            is CfirErrorNamedReference -> {
+                val ambiguity = reference.diagnostic as? ConeAmbiguityError ?: return emptyList()
+                ambiguity.candidates.filterIsInstance<Candidate>().filter { candidate ->
+                    candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+                }
+            }
+            else -> emptyList()
+        }
+    }
+
+    private fun CfirNamedAccessExpression.callableReferenceCallInfo(
+        expectedType: ConeCangJieType,
+    ): CallInfo {
+        val reference = calleeReference as? CfirNamedReference
+        return CallInfo(
+            callSite = this,
+            callKind = CallKind.NamedValueAccess,
+            name = reference?.name ?: Name.special("<callable-reference>"),
+            explicitReceiver = explicitReceiver,
+            arguments = emptyList(),
+            isUsedAsGetClassReceiver = false,
+            typeArguments = typeArguments,
+            session = session,
+            containingFile = components.file,
+            containingDeclarations = components.containingDeclarations,
+            resolutionMode = withExpectedType(expectedType),
+        )
     }
 
     private fun collectCandidates(
@@ -616,13 +766,21 @@ class CfirCallResolver(
                     explicitReceiver?.diagnosticFromCalleeReference() != null ->
                         ConeUnreportedDuplicateDiagnostic(explicitReceiver.diagnosticFromCalleeReference()!!)
                     matchedClassifier != null && callInfo.callKind == CallKind.Function -> {
+                        val typeAliasExpandedType = (matchedClassifier as? CfirTypeAliasSymbol)
+                            ?.takeIf { it.isBound }
+                            ?.cfir
+                            ?.expandedTypeRef
+                            ?.coneTypeOrNull
+                            ?.fullyExpandedType(session)
                         val actualClassifier = (matchedClassifier as? CfirTypeAliasSymbol)?.fullyExpandedClass(session)
                             ?: matchedClassifier
                         val actualDeclaration = actualClassifier.cfir as? CfirClassLikeDeclaration
-                        if (actualDeclaration is org.cangnova.cangjie.cfir.declarations.CfirEnum) {
-                            ConeNoMatchingInvokeOperatorError(actualClassifier.name, actualClassifier.constructType())
-                        } else {
-                            ConeNoConstructorError
+                        when {
+                            typeAliasExpandedType is ConeFunctionType ->
+                                ConeFunctionExpectedError(name.asString(), typeAliasExpandedType)
+                            actualDeclaration is org.cangnova.cangjie.cfir.declarations.CfirEnum ->
+                                ConeNoMatchingInvokeOperatorError(actualClassifier.name, actualClassifier.constructType())
+                            else -> ConeNoConstructorError
                         }
                     }
                     name.asString() == "invoke" && explicitReceiver is CfirLiteralExpression ->
@@ -666,10 +824,6 @@ class CfirCallResolver(
                 val candidate = candidates.single()
                 when {
                     !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
-                    candidate.isBareGenericEnumValueConstructorWithoutMatchingExpectedType() -> ConeSimpleDiagnostic(
-                        "generic enum constructor should be used with type argument",
-                        DiagnosticKind.GenericTypeWithoutTypeArgument,
-                    )
                     candidate.hasUninferableBareStaticGenericQualifier() -> ConeUnableToInferGenericFuncError()
                     else -> null
                 }
@@ -719,6 +873,7 @@ class CfirCallResolver(
      */
     private fun Candidate.hasUninferableBareStaticGenericQualifier(): Boolean {
         val callable = symbol.cfir as? CfirCallableDeclaration ?: return false
+        if (callable is CfirEnumConstructor) return false
         if (!callable.status.isStatic) return false
 
         val receiver = callInfo.explicitReceiver as? CfirQualifiedAccessExpression ?: return false
@@ -744,35 +899,8 @@ class CfirCallResolver(
         }
     }
 
-    /**
-     * 官方 enum sugar 中，无参泛型 enum constructor 在没有同 owner enum 的期望类型、
-     * 且没有显式类型实参时，报告裸泛型类型实参缺失。
-     */
-    private fun Candidate.isBareGenericEnumValueConstructorWithoutMatchingExpectedType(): Boolean {
-        val enumConstructor = symbol.takeIf { it.isBound }?.cfir as? CfirEnumConstructor ?: return false
-        if (enumConstructor.valueParameters.isNotEmpty()) return false
-        if (callInfo.typeArguments.isNotEmpty()) return false
-
-        val enumConstructorSymbol = symbol as? CfirEnumConstructorSymbol ?: return false
-        val ownerClassId = session.cfirProvider.getContainingClass(enumConstructorSymbol)?.classId ?: return false
-        val ownerEnum = session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId)?.cfir as? CfirEnum
-            ?: return false
-        if (ownerEnum.typeParameters.isEmpty()) return false
-
-        val expectedEnumClassId = callInfo.resolutionMode.expectedType
-            ?.fullyExpandedType()
-            ?.enumConstructorOwnerClassIdOrNull()
-        return expectedEnumClassId != ownerClassId
-    }
-
-    private fun ConeCangJieType.enumConstructorOwnerClassIdOrNull(): ClassId? = when (this) {
-        is ConeEnumType -> classId
-        is ConeClassLikeType -> classId.takeIf { it == StdlibClassIds.Option }
-        else -> null
-    }
-
     private fun ConeCangJieType.referencesTypeParameter(
-        symbol: org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol,
+        symbol: CfirTypeParameterSymbol,
     ): Boolean = contains { type ->
         type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol == symbol
     }

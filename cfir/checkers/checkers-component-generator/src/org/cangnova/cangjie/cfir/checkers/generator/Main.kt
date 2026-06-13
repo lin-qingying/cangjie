@@ -101,6 +101,7 @@ fun main(args: Array<String>) {
                     visitAlso<CfirQuoteExpression>(it)
                     visitAlso<CfirInoutArgumentExpression>(it)
                     visitAlso<CfirTypeConversion>(it)
+                    visitAlso<CfirLetPatternExpression>(it)
                 }
                 alias<CfirLiteralExpression>("LiteralExpressionChecker")
                 alias<CfirFunctionCall>("FunctionCallChecker")
