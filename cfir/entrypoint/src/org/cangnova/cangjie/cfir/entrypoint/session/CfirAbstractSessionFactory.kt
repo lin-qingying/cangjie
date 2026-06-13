@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.entrypoint.session
 
 import org.cangnova.cangjie.LanguageVersionSettings
@@ -6,41 +30,20 @@ import org.cangnova.cangjie.cfir.SessionConfiguration
 import org.cangnova.cangjie.cfir.common.CfirBinaryDependenciesModuleData
 import org.cangnova.cangjie.cfir.common.CfirModuleData
 import org.cangnova.cangjie.cfir.deserialization.ModuleDataProvider
-import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
-import org.cangnova.cangjie.cfir.extensions.CfirSwitchableExtensionDeclarationsSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeExtendProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirCompositeSymbolProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirEmptyExtendProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirProviderImpl
-import org.cangnova.cangjie.cfir.resolve.providers.CfirSessionExtendProvider
-import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
-import org.cangnova.cangjie.cfir.session.registerCliCompilerOnlyResolveComponents
-import org.cangnova.cangjie.cfir.session.registerResolveComponents
-import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
-import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.entrypoint.checkers.registerCommonCheckers
+import org.cangnova.cangjie.cfir.entrypoint.configuration.checkProgramEntry
 import org.cangnova.cangjie.cfir.entrypoint.configuration.diagnosticFactoriesStorage
 import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
-import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceLogger
-
-import org.cangnova.cangjie.cfir.resolve.providers.CfirLibrarySessionProvider
+import org.cangnova.cangjie.cfir.extensions.CfirExtensionRegistrar
+import org.cangnova.cangjie.cfir.extensions.CfirSwitchableExtensionDeclarationsSymbolProvider
 import org.cangnova.cangjie.cfir.resolve.CfirDefaultImportsProvider
-
+import org.cangnova.cangjie.cfir.resolve.inference.CfirInferenceLogger
+import org.cangnova.cangjie.cfir.resolve.providers.*
+import org.cangnova.cangjie.cfir.scopes.CfirCangJieScopeProvider
 import org.cangnova.cangjie.cfir.scopes.CfirDefaultImportsProviderHolder
 import org.cangnova.cangjie.cfir.serialization.provider.AbstractCfirDeserializedSymbolProvider
 import org.cangnova.cangjie.cfir.serialization.provider.CfirDeserializedExtendProvider
-import org.cangnova.cangjie.cfir.session.registerModuleData
-import org.cangnova.cangjie.cfir.session.StructuredProviders
-import org.cangnova.cangjie.cfir.session.DEPENDENCIES_SYMBOL_PROVIDER_QUALIFIED_KEY
-import org.cangnova.cangjie.cfir.session.CfirPreludeSettingsComponent
-import org.cangnova.cangjie.cfir.session.extendProviderOrNull
-import org.cangnova.cangjie.cfir.session.registerCliCompilerAndCommonComponents
-import org.cangnova.cangjie.cfir.session.registerCommonComponentsAfterExtensionsAreConfigured
-import org.cangnova.cangjie.cfir.session.extendIndexStore
-import org.cangnova.cangjie.cfir.session.structuredProviders
-import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.session.*
 import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.utils.addIfNotNull
@@ -208,6 +211,10 @@ abstract class CfirAbstractSessionFactory<CONTEXT> {
             if (configuration.dumpInferenceLogs) register(CfirInferenceLogger::class, CfirInferenceLogger())
             registerCliCompilerAndCommonComponents(languageVersionSettings)
             register(CfirPreludeSettingsComponent::class, CfirPreludeSettingsComponent(configuration.noPrelude))
+            register(
+                CfirProgramEntrySettingsComponent::class,
+                CfirProgramEntrySettingsComponent(configuration.checkProgramEntry)
+            )
             registerResolveComponents(
                 configuration.diagnosticFactoriesStorage ?: error("diagnosticFactoriesStorage is not registered in the configuration"),
                 configuration.lookupTracker,

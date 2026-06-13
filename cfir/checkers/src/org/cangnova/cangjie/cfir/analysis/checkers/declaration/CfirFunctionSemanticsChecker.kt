@@ -119,10 +119,10 @@ object CfirFunctionDeclarationStatusChecker : CfirSimpleFunctionChecker() {
     private fun checkStaticFunctionStatus(function: CfirNamedFunction) {
         if (!function.status.isStatic) return
         val conflictingStatusModifier = when {
-            function.status.isOpen -> CjTokens.OPEN_KEYWORD
-            function.status.isAbstract -> CjTokens.ABSTRACT_KEYWORD
-            function.status.isOverride -> CjTokens.OVERRIDE_KEYWORD
-            function.status.isOperator -> CjTokens.OPERATOR_KEYWORD
+            function.status.isOpen && function.hasSourceModifier(CjTokens.OPEN_KEYWORD) -> CjTokens.OPEN_KEYWORD
+            function.status.isAbstract && function.hasSourceModifier(CjTokens.ABSTRACT_KEYWORD) -> CjTokens.ABSTRACT_KEYWORD
+            function.status.isOverride && function.hasSourceModifier(CjTokens.OVERRIDE_KEYWORD) -> CjTokens.OVERRIDE_KEYWORD
+            function.status.isOperator && function.hasSourceModifier(CjTokens.OPERATOR_KEYWORD) -> CjTokens.OPERATOR_KEYWORD
             else -> null
         }
         if (conflictingStatusModifier == null) {
@@ -250,6 +250,45 @@ object CfirFinalizerDeclarationChecker : CfirFunctionChecker() {
     }
 
     private fun CfirFinalizer.tildeSource(): AbstractCjSourceElement? {
+        val source = source ?: return null
+        return CjOffsetsOnlySourceElement(
+            startOffset = source.startOffset,
+            endOffset = minOf(source.startOffset + 1, source.endOffset),
+        )
+    }
+}
+
+/**
+ * 属性访问器声明语义检查器。
+ *
+ * 对齐官方 C++ `TypeChecker::TypeCheckerImpl::Synthesize(PropDecl&)`：
+ * - getter 不能声明参数：`sema_cannot_have_parameter`
+ * - getter / setter 不能拥有多个参数列表：`sema_cannot_currying`
+ */
+object CfirPropertyAccessorDeclarationChecker : CfirPropertyAccessorChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(declaration: CfirPropertyAccessor) {
+        val declarationKind = if (declaration.isGetter) "getter" else "setter"
+
+        if (declaration.isGetter && declaration.valueParameters.isNotEmpty()) {
+            reporter.reportOn(
+                source = declaration.accessorKeywordSource(),
+                factory = CfirErrors.CANNOT_HAVE_PARAMETER,
+                a = declarationKind,
+            )
+        }
+
+        val parameterLists = declaration.attributes.functionBodyDiagnosticData?.valueParameterLists.orEmpty()
+        if (parameterLists.size > 1) {
+            reporter.reportOn(
+                source = declaration.accessorKeywordSource(),
+                factory = CfirErrors.CANNOT_CURRYING,
+                a = declarationKind,
+            )
+        }
+    }
+
+    private fun CfirPropertyAccessor.accessorKeywordSource(): AbstractCjSourceElement? {
         val source = source ?: return null
         return CjOffsetsOnlySourceElement(
             startOffset = source.startOffset,

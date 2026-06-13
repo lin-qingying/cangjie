@@ -440,6 +440,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
         return transformFunctionCall(functionCall, data)
     }
 
+    open fun transformIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression, data: D): CfirStatement {
+        return transformElement(incrementDecrementExpression, data)
+    }
+
+    final override fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression, data: D): CfirStatement {
+        return transformIncrementDecrementExpression(incrementDecrementExpression, data)
+    }
+
     open fun transformErrorNamedReference(errorNamedReference: CfirErrorNamedReference, data: D): CfirReference {
         return transformElement(errorNamedReference, data)
     }
@@ -614,6 +622,14 @@ abstract class CfirTransformer<in D> : CfirVisitor<CfirElement, D>() {
 
     final override fun visitMatchBranch(matchBranch: CfirMatchBranch, data: D): CfirStatement {
         return transformMatchBranch(matchBranch, data)
+    }
+
+    open fun transformCatchPattern(catchPattern: CfirCatchPattern, data: D): CfirCatchPattern {
+        return transformElement(catchPattern, data)
+    }
+
+    final override fun visitCatchPattern(catchPattern: CfirCatchPattern, data: D): CfirCatchPattern {
+        return transformCatchPattern(catchPattern, data)
     }
 
     open fun transformCatch(catch: CfirCatch, data: D): CfirStatement {

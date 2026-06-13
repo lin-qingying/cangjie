@@ -1,5 +1,5 @@
 /*
- * Copyright 2025 LinQingYing. and contributors.
+ * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,9 @@
 package org.cangnova.cangjie.psi.stubs
 
 import com.intellij.psi.PsiNamedElement
-import com.intellij.psi.stubs.*
+import com.intellij.psi.stubs.NamedStub
+import com.intellij.psi.stubs.PsiFileStub
+import com.intellij.psi.stubs.StubElement
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -151,6 +153,9 @@ interface CangJieVariableStub : StubElement<CjPatternVariable> {
 
     /** 是否为 var 声明（可变） */
     fun isVar(): Boolean
+
+    /** 是否为 const 声明（编译期常量） */
+    fun isConst(): Boolean
 
     /** 是否为顶层变量 */
     fun isTopLevel(): Boolean

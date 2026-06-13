@@ -10,7 +10,7 @@ open class Base {
 }
 
 class Data <: Base {
-    <!sema_member_variable_can_not_shadow!>p<!>ublic let val: Int32 = 1
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic let val: Int32 = 1
 }
 
 open class DataI {
@@ -18,7 +18,7 @@ open class DataI {
 }
 
 class DataIDerived <: DataI {
-    <!sema_static_and_non_static_member_cannot_have_same_name!>p<!>ublic let val: Int32 = 5
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic let val: Int32 = 5
 }
 
 main(): Int64 {

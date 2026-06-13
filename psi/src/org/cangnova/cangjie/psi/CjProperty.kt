@@ -24,14 +24,16 @@
 
 package org.cangnova.cangjie.psi
 
+import com.intellij.lang.ASTNode
+import com.intellij.openapi.diagnostic.Logger
+import com.intellij.psi.PsiComment
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiWhiteSpace
+import com.intellij.psi.tree.TokenSet
 import org.cangnova.cangjie.lexer.CjTokens
 import org.cangnova.cangjie.psi.psiUtil.getStrictParentOfType
 import org.cangnova.cangjie.psi.stubs.CangJiePropertyStub
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
-import com.intellij.lang.ASTNode
-import com.intellij.openapi.diagnostic.Logger
-import com.intellij.psi.PsiElement
-import com.intellij.psi.tree.TokenSet
 
 open class CjProperty : CjTypeParameterListOwnerStub<CangJiePropertyStub>, CjVariableDeclaration {
     companion object {
@@ -113,6 +115,19 @@ open class CjProperty : CjTypeParameterListOwnerStub<CangJiePropertyStub>, CjVar
 
     override val isVar: Boolean
         get() = hasModifier(CjTokens.MUT_KEYWORD)
+
+    override fun getNameIdentifier(): PsiElement? {
+        val propKeyword = node.findChildByType(CjTokens.PROP_KEYWORD) ?: return null
+        var child = propKeyword.treeNext
+        while (child?.psi is PsiWhiteSpace || child?.psi is PsiComment) {
+            child = child?.treeNext
+        }
+        return when (child?.elementType) {
+            CjTokens.IDENTIFIER, CjNodeTypes.OPERATION_NAME -> child.psi
+
+            else -> null
+        }
+    }
 
     override fun toString(): String = super.toString() + ": " + name
     private val receiverTypeRefByTree: CjTypeReference?

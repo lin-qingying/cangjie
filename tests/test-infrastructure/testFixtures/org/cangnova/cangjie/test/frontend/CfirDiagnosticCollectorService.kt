@@ -1,25 +1,44 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.test.frontend
 
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.diagnostics.CjDiagnostic
-import org.cangnova.cangjie.cfir.diagnostics.CjSyntaxErrors
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticContext
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
-import org.cangnova.cangjie.cfir.diagnostics.Severity
-import org.cangnova.cangjie.cfir.diagnostics.impl.DiagnosticsCollectorImpl
-import org.cangnova.cangjie.cfir.diagnostics.reportOn
-import org.cangnova.cangjie.cfir.pipeline.runCheckers
-import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
-import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import com.intellij.psi.PsiElement
+import com.intellij.psi.PsiErrorElement
 import org.cangnova.cangjie.CjPsiSourceFile
+import org.cangnova.cangjie.cfir.declarations.CfirFile
+import org.cangnova.cangjie.cfir.diagnostics.*
+import org.cangnova.cangjie.cfir.diagnostics.impl.DiagnosticsCollectorImpl
+import org.cangnova.cangjie.cfir.pipeline.runCheckers
+import org.cangnova.cangjie.cfir.session.languageVersionSettings
+import org.cangnova.cangjie.cfir.session.lazyDeclarationResolver
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
+import org.cangnova.cangjie.source.toCjPsiSourceElement
 import org.cangnova.cangjie.test.services.TestService
 import org.cangnova.cangjie.test.services.TestServices
 import org.cangnova.cangjie.test.services.sourceFileProvider
 import org.cangnova.cangjie.test.services.toLightTreeShortName
-import org.cangnova.cangjie.source.toCjPsiSourceElement
-import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
-import com.intellij.psi.PsiElement
-import com.intellij.psi.PsiErrorElement
 
 private typealias CfirDiagnosticsMap = Map<CfirFile, List<CjDiagnostic>>
 
@@ -173,12 +192,10 @@ open class CfirDiagnosticCollectorService(
     }
 
     /**
-     * 按官方 cjc Lexer 的数字字面量错误归类补齐 LLT 词法诊断。
+     * 按官方 cjc Lexer 的数字字面量阶段补齐 LLT 词法诊断。
      *
-     * 这里不复刻完整 token 流，只处理官方 `ProcessDigits` 与
-     * `ProcessNumberFloatSuffix` 对数字后紧邻非法字符的诊断位置：
-     * 十进制数字后紧邻 `a..d` 是 `lex_unexpected_digit`，
-     * 其他紧邻标识符样后缀是 `lex_unknown_suffix`。
+     * 官方实现先消费整数部分和合法类型后缀，再处理小数、指数与浮点后缀；
+     * 只有这些合法组成部分之后仍存在标识符样尾部时才报 `lex_unknown_suffix`。
      */
     private fun collectNumericLiteralLexDiagnostics(
         code: String,
@@ -215,46 +232,67 @@ open class CfirDiagnosticCollectorService(
     ): Int {
         var index = start
         var base = 10
-        var reasonPoint = start
+        var hasFloatShape = false
 
         if (code[index] == '0' && index + 1 < code.length) {
             when (code[index + 1].lowercaseChar()) {
                 'x' -> {
                     base = 16
-                    reasonPoint = index + 1
                     index += 2
                 }
                 'o' -> {
                     base = 8
-                    reasonPoint = index + 1
                     index += 2
                 }
                 'b' -> {
                     base = 2
-                    reasonPoint = index + 1
                     index += 2
                 }
             }
         }
 
-        while (index < code.length) {
-            val ch = code[index]
-            when {
-                ch == '_' -> index++
-                ch.isDigit() -> {
-                    if (ch.digitToInt() >= base) {
-                        reportLexDiagnostic(collector, context, index, index + 1, CjSyntaxErrors.LEX_UNEXPECTED_DIGIT)
-                        return skipNumberSuffixTail(code, index + 1)
-                    }
-                    index++
-                }
-                base == 16 && ch.isHexLetter() -> index++
-                base != 16 && ch.isHexLetter() && ch.lowercaseChar() !in setOf('e', 'f') -> {
-                    reportLexDiagnostic(collector, context, index, index + 1, CjSyntaxErrors.LEX_UNEXPECTED_DIGIT)
-                    return skipNumberSuffixTail(code, index + 1)
-                }
-                else -> break
+        val integerDigits = consumeNumberDigits(code, index, base, collector, context)
+        if (integerDigits.reportedError) return integerDigits.nextIndex
+        index = integerDigits.nextIndex
+
+        if (index < code.length && code[index].isIntegerSuffixStart()) {
+            return consumeIntegerSuffixOrReport(code, index, collector, context)
+        }
+
+        if (index < code.length && code[index] == '.' && !isRangeOperatorStart(code, index)) {
+            val fractionStart = index + 1
+            if (fractionStart < code.length && code[fractionStart].isNumberDigitForBase(base)) {
+                hasFloatShape = true
+                val fractionDigits = consumeNumberDigits(code, fractionStart, base, collector, context)
+                if (fractionDigits.reportedError) return fractionDigits.nextIndex
+                index = fractionDigits.nextIndex
             }
+        }
+
+        if (index < code.length && code[index].isExponentMarkerForBase(base)) {
+            hasFloatShape = true
+            index++
+            if (index < code.length && code[index] == '-') index++
+
+            val exponentStart = index
+            val exponentDigits = consumeNumberDigits(code, index, 10, collector, context)
+            if (exponentDigits.reportedError) return exponentDigits.nextIndex
+            index = exponentDigits.nextIndex
+
+            if (exponentStart == index) {
+                reportLexDiagnostic(
+                    collector,
+                    context,
+                    exponentStart - 1,
+                    exponentStart,
+                    CjSyntaxErrors.LEX_UNEXPECTED_DIGIT
+                )
+                return skipNumberSuffixTail(code, exponentStart)
+            }
+        }
+
+        if (index < code.length && code[index] == 'f') {
+            return consumeFloatSuffixOrReport(code, index, base, collector, context)
         }
 
         if (index < code.length && code[index].isIdentifierStart()) {
@@ -264,7 +302,74 @@ open class CfirDiagnosticCollectorService(
             return suffixEnd
         }
 
-        return if (index == start) reasonPoint + 1 else index
+        return when {
+            hasFloatShape -> index
+            index == start -> start + 1
+            else -> index
+        }
+    }
+
+    private data class NumberDigitsResult(
+        val nextIndex: Int,
+        val reportedError: Boolean,
+    )
+
+    private fun consumeNumberDigits(
+        code: String,
+        start: Int,
+        base: Int,
+        collector: DiagnosticsCollectorImpl,
+        context: DiagnosticContext,
+    ): NumberDigitsResult {
+        var index = start
+        while (index < code.length) {
+            val ch = code[index]
+            when {
+                ch == '_' -> index++
+                ch.isDigit() -> {
+                    if (ch.digitToInt() >= base) {
+                        reportLexDiagnostic(collector, context, index, index + 1, CjSyntaxErrors.LEX_UNEXPECTED_DIGIT)
+                        return NumberDigitsResult(skipNumberSuffixTail(code, index + 1), reportedError = true)
+                    }
+                    index++
+                }
+                base == 16 && ch.isHexLetter() -> index++
+                base != 16 && ch.isHexLetter() && ch.lowercaseChar() !in EXPONENT_OR_FLOAT_SUFFIX_STARTS -> {
+                    reportLexDiagnostic(collector, context, index, index + 1, CjSyntaxErrors.LEX_UNEXPECTED_DIGIT)
+                    return NumberDigitsResult(skipNumberSuffixTail(code, index + 1), reportedError = true)
+                }
+
+                else -> return NumberDigitsResult(index, reportedError = false)
+            }
+        }
+        return NumberDigitsResult(index, reportedError = false)
+    }
+
+    private fun consumeIntegerSuffixOrReport(
+        code: String,
+        suffixStart: Int,
+        collector: DiagnosticsCollectorImpl,
+        context: DiagnosticContext,
+    ): Int {
+        val suffixEnd = skipIdentifier(code, suffixStart)
+        val suffix = code.substring(suffixStart, suffixEnd)
+        if (suffix in INTEGER_SUFFIXES) return suffixEnd
+        reportLexDiagnostic(collector, context, suffixStart, suffixEnd, CjSyntaxErrors.LEX_UNKNOWN_SUFFIX)
+        return suffixEnd
+    }
+
+    private fun consumeFloatSuffixOrReport(
+        code: String,
+        suffixStart: Int,
+        base: Int,
+        collector: DiagnosticsCollectorImpl,
+        context: DiagnosticContext,
+    ): Int {
+        val suffixEnd = skipIdentifier(code, suffixStart)
+        val suffix = code.substring(suffixStart, suffixEnd)
+        if (base == 10 && suffix in FLOAT_SUFFIXES) return suffixEnd
+        reportLexDiagnostic(collector, context, suffixStart, suffixEnd, CjSyntaxErrors.LEX_UNKNOWN_SUFFIX)
+        return suffixEnd
     }
 
     private fun reportLexDiagnostic(
@@ -330,6 +435,29 @@ open class CfirDiagnosticCollectorService(
     private fun Char.isIdentifierPart(): Boolean = isIdentifierStart() || isDigit()
 
     private fun Char.isHexLetter(): Boolean = lowercaseChar() in 'a'..'f'
+
+    private fun Char.isNumberDigitForBase(base: Int): Boolean = when {
+        isDigit() -> digitToInt() < base
+        base == 16 -> isHexLetter()
+        else -> false
+    }
+
+    private fun Char.isIntegerSuffixStart(): Boolean = this == 'i' || this == 'u'
+
+    private fun Char.isExponentMarkerForBase(base: Int): Boolean = when (base) {
+        10 -> this == 'e' || this == 'E'
+        16 -> this == 'p' || this == 'P'
+        else -> false
+    }
+
+    private fun isRangeOperatorStart(code: String, index: Int): Boolean =
+        index + 1 < code.length && code[index + 1] == '.'
+
+    private companion object {
+        val INTEGER_SUFFIXES: Set<String> = setOf("u8", "u16", "u32", "u64", "i8", "i16", "i32", "i64")
+        val FLOAT_SUFFIXES: Set<String> = setOf("f16", "f32", "f64")
+        val EXPONENT_OR_FLOAT_SUFFIX_STARTS: Set<Char> = setOf('e', 'f')
+    }
 }
 
 private fun String.normalizePath(): String = replace('\\', '/')

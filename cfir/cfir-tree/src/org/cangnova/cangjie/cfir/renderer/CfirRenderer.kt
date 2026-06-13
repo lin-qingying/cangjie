@@ -855,8 +855,20 @@ class CfirRenderer(
             tryExpression.tryBlock.accept(this)
             printer.popIndent()
             tryExpression.catches.forEach { catchClause ->
-                print("catch(${catchClause.parameter.name.asString()}: ")
-                renderType(catchClause.parameter.returnTypeRef)
+                val pattern = catchClause.pattern
+                print("catch(")
+                if (pattern.isWildcard) {
+                    print("_")
+                } else {
+                    print(pattern.bindingName?.asString() ?: "<error>")
+                }
+                if (pattern.typeRefs.isNotEmpty()) {
+                    print(": ")
+                    pattern.typeRefs.forEachIndexed { index, typeRef ->
+                        if (index > 0) print(" | ")
+                        renderType(typeRef)
+                    }
+                }
                 println("):")
                 printer.pushIndent()
                 catchClause.body.accept(this)

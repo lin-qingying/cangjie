@@ -38,6 +38,9 @@ import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.primaryBindingNameOrNull
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.Name
@@ -58,7 +61,7 @@ private class CfirInitializationFlowAnalyzer(
 ) {
     fun checkFunction(function: CfirFunction) {
         val body = function.body ?: return
-        val owner = if (function is CfirConstructor) {
+        val owner = if (function is CfirConstructor && function.isInstanceConstructor) {
             context.findClosestDeclaration<CfirClassLikeDeclaration>()
         } else {
             null
@@ -68,7 +71,7 @@ private class CfirInitializationFlowAnalyzer(
 
     fun collectInitializationAssignments(function: CfirFunction): Set<CfirAssignment> {
         val body = function.body ?: return emptySet()
-        val owner = if (function is CfirConstructor) {
+        val owner = if (function is CfirConstructor && function.isInstanceConstructor) {
             context.findClosestDeclaration<CfirClassLikeDeclaration>()
         } else {
             null
@@ -92,16 +95,19 @@ private class CfirInitializationFlowAnalyzer(
 
             val initializer = field.initializer
             if (initializer != null) {
-                state = analyzeExpression(initializer, state)
+                state = analyzeExpression(initializer, state.withMemberInitializerContext())
+                    .withoutMemberInitializerContext()
                 state = state.markInitialized(field.symbol)
             }
         }
+        reportFieldsLeftUninitializedByDefaultConstructor(classLike, state)
     }
 
     fun checkConstructorCompleteness(
         owner: CfirClassLikeDeclaration,
         constructor: CfirConstructor,
     ) {
+        if (!constructor.isInstanceConstructor) return
         val body = constructor.body ?: return
         if (constructor.firstDelegationKind() == ConstructorDelegationKind.THIS) return
 
@@ -130,10 +136,15 @@ private class CfirInitializationFlowAnalyzer(
             TrackedVariableInfo(
                 symbol = parameter.symbol,
                 diagnosticName = parameter.name,
+                isInstanceField = false,
             )
         }
-        val fieldInfos = if (function is CfirConstructor && owner != null) owner.instanceFieldInfos() else emptyList()
-        val preInitializedFields = if (function is CfirConstructor && owner != null) {
+        val fieldInfos = if (function is CfirConstructor && function.isInstanceConstructor && owner != null) {
+            owner.instanceFieldInfos()
+        } else {
+            emptyList()
+        }
+        val preInitializedFields = if (function is CfirConstructor && function.isInstanceConstructor && owner != null) {
             owner.instanceFieldsWithInitializer().map(CfirFieldVariable::symbol).toSet()
         } else {
             emptySet()
@@ -178,6 +189,7 @@ private class CfirInitializationFlowAnalyzer(
                 TrackedVariableInfo(
                     symbol = bindingVariable.symbol,
                     diagnosticName = bindingVariable.name,
+                    isInstanceField = false,
                 ),
                 initialized = false,
             )
@@ -204,11 +216,13 @@ private class CfirInitializationFlowAnalyzer(
             TrackedVariableInfo(
                 symbol = variable.symbol,
                 diagnosticName = variable.name,
+                isInstanceField = true,
             ),
             initialized = false,
         )
         val afterInitializer = variable.initializer?.let { initializer ->
-            analyzeExpression(initializer, declared)
+            analyzeExpression(initializer, declared.withMemberInitializerContext())
+                .withoutMemberInitializerContext()
         } ?: declared
         return if (variable.initializer != null) afterInitializer.markInitialized(variable.symbol) else afterInitializer
     }
@@ -268,20 +282,48 @@ private class CfirInitializationFlowAnalyzer(
             val afterReceiver = lValue.explicitReceiver?.let { receiver ->
                 analyzeExpression(receiver, state)
             } ?: state
-            lValue.resolvedVariableSymbolOrNull()?.let { symbol ->
-                recordInitializationAssignmentIfNeeded(symbol, state, assignment)
-                afterReceiver.markInitialized(symbol)
-            } ?: afterReceiver
+            when (val symbol = lValue.resolvedAccessSymbolOrNull()) {
+                is CfirVariableSymbol<*> -> {
+                    recordInitializationAssignmentIfNeeded(symbol, state, assignment)
+                    afterReceiver.markInitialized(symbol)
+                }
+
+                null -> afterReceiver
+                else -> if (afterReceiver.inMemberInitializer && lValue.explicitReceiver is CfirSuperReceiverExpression) {
+                    afterReceiver
+                } else reportIllegalMemberAccessIfNeeded(
+                    symbol = symbol,
+                    diagnosticName = lValue.calleeReference.referenceNameOrNull()
+                        ?: symbol.nameOrNull()
+                        ?: Name.ERROR_NAME,
+                    source = lValue.calleeReference.source ?: lValue.source,
+                    state = afterReceiver,
+                )
+            }
         }
 
         is CfirQualifiedAccessExpression -> {
             val afterReceiver = lValue.explicitReceiver?.let { receiver ->
                 analyzeExpression(receiver, state)
             } ?: state
-            lValue.resolvedVariableSymbolOrNull()?.let { symbol ->
-                recordInitializationAssignmentIfNeeded(symbol, state, assignment)
-                afterReceiver.markInitialized(symbol)
-            } ?: afterReceiver
+            when (val symbol = lValue.resolvedAccessSymbolOrNull()) {
+                is CfirVariableSymbol<*> -> {
+                    recordInitializationAssignmentIfNeeded(symbol, state, assignment)
+                    afterReceiver.markInitialized(symbol)
+                }
+
+                null -> afterReceiver
+                else -> if (afterReceiver.inMemberInitializer && lValue.explicitReceiver is CfirSuperReceiverExpression) {
+                    afterReceiver
+                } else reportIllegalMemberAccessIfNeeded(
+                    symbol = symbol,
+                    diagnosticName = lValue.calleeReference.referenceNameOrNull()
+                        ?: symbol.nameOrNull()
+                        ?: Name.ERROR_NAME,
+                    source = lValue.calleeReference.source ?: lValue.source,
+                    state = afterReceiver,
+                )
+            }
         }
 
         else -> analyzeExpression(lValue, state)
@@ -295,6 +337,28 @@ private class CfirInitializationFlowAnalyzer(
         if (initializationAssignments == null) return
         if (!state.isTracked(symbol) || state.isInitialized(symbol)) return
         initializationAssignments += assignment
+    }
+
+    private fun reportFieldsLeftUninitializedByDefaultConstructor(
+        classLike: CfirClassLikeDeclaration,
+        state: InitializationState,
+    ) {
+        val constructors = classLike.declarations.filterIsInstance<CfirConstructor>()
+            .filter(CfirConstructor::isInstanceConstructor)
+        if (constructors.any { it.body != null }) return
+
+        classLike.declarations
+            .filterIsInstance<CfirFieldVariable>()
+            .filter { field -> !field.status.isStatic && !state.isInitialized(field.symbol) }
+            .forEach { field ->
+                with(context) {
+                    reporter.reportOn(
+                        source = field.source,
+                        factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
+                        a = field.name,
+                    )
+                }
+            }
     }
 
     private fun analyzeIfExpression(
@@ -324,6 +388,7 @@ private class CfirInitializationFlowAnalyzer(
                     TrackedVariableInfo(
                         symbol = bindingVariable.symbol,
                         diagnosticName = bindingVariable.name,
+                        isInstanceField = false,
                     ),
                     initialized = true,
                 )
@@ -374,6 +439,7 @@ private class CfirInitializationFlowAnalyzer(
                 TrackedVariableInfo(
                     symbol = bindingVariable.symbol,
                     diagnosticName = bindingVariable.name,
+                    isInstanceField = false,
                 ),
                 initialized = true,
             )
@@ -390,14 +456,28 @@ private class CfirInitializationFlowAnalyzer(
             analyzeExpression(receiver, state)
         } ?: state
 
-        val callableVariable = expression.resolvedCallableVariableSymbolOrNull()
-        if (callableVariable != null && !expression.origin.isConstructorDelegation) {
-            currentState = reportReadIfNeeded(
-                symbol = callableVariable,
-                diagnosticName = expression.calleeReference.referenceNameOrNull() ?: callableVariable.name,
-                source = expression.calleeReference.source ?: expression.source,
-                state = currentState,
-            )
+        val callableSymbol = expression.resolvedCallableSymbolOrNull()
+        if (callableSymbol != null && !expression.origin.isConstructorDelegation) {
+            val diagnosticName = expression.calleeReference.referenceNameOrNull()
+                ?: callableSymbol.nameOrNull()
+                ?: Name.ERROR_NAME
+            currentState = when (callableSymbol) {
+                is CfirVariableSymbol<*> -> reportReadIfNeeded(
+                    symbol = callableSymbol,
+                    diagnosticName = diagnosticName,
+                    source = expression.calleeReference.source ?: expression.source,
+                    state = currentState,
+                )
+
+                else -> if (currentState.inMemberInitializer && expression.explicitReceiver is CfirSuperReceiverExpression) {
+                    currentState
+                } else reportIllegalMemberAccessIfNeeded(
+                    symbol = callableSymbol,
+                    diagnosticName = diagnosticName,
+                    source = expression.calleeReference.source ?: expression.source,
+                    state = currentState,
+                )
+            }
         }
 
         for (argument in expression.argumentList.arguments) {
@@ -417,9 +497,26 @@ private class CfirInitializationFlowAnalyzer(
 
         if (accessMode != InitializationAccessMode.READ) return afterReceiver
 
-        val symbol = expression.resolvedVariableSymbolOrNull() ?: return afterReceiver
-        val diagnosticName = expression.calleeReference.referenceNameOrNull() ?: symbol.name
-        return reportReadIfNeeded(symbol, diagnosticName, expression.calleeReference.source ?: expression.source, afterReceiver)
+        return when (val symbol = expression.resolvedAccessSymbolOrNull()) {
+            is CfirVariableSymbol<*> -> reportReadIfNeeded(
+                symbol = symbol,
+                diagnosticName = expression.calleeReference.referenceNameOrNull() ?: symbol.name,
+                source = expression.calleeReference.source ?: expression.source,
+                state = afterReceiver,
+            )
+
+            null -> afterReceiver
+            else -> if (afterReceiver.inMemberInitializer && expression.explicitReceiver is CfirSuperReceiverExpression) {
+                afterReceiver
+            } else reportIllegalMemberAccessIfNeeded(
+                symbol = symbol,
+                diagnosticName = expression.calleeReference.referenceNameOrNull()
+                    ?: symbol.nameOrNull()
+                    ?: Name.ERROR_NAME,
+                source = expression.calleeReference.source ?: expression.source,
+                state = afterReceiver,
+            )
+        }
     }
 
     private fun analyzeQualifiedAccess(
@@ -433,9 +530,24 @@ private class CfirInitializationFlowAnalyzer(
 
         if (accessMode != InitializationAccessMode.READ) return afterReceiver
 
-        val symbol = expression.resolvedVariableSymbolOrNull() ?: return afterReceiver
-        val diagnosticName = expression.calleeReference.referenceNameOrNull() ?: symbol.name
-        return reportReadIfNeeded(symbol, diagnosticName, expression.calleeReference.source ?: expression.source, afterReceiver)
+        return when (val symbol = expression.resolvedAccessSymbolOrNull()) {
+            is CfirVariableSymbol<*> -> reportReadIfNeeded(
+                symbol = symbol,
+                diagnosticName = expression.calleeReference.referenceNameOrNull() ?: symbol.name,
+                source = expression.calleeReference.source ?: expression.source,
+                state = afterReceiver,
+            )
+
+            null -> afterReceiver
+            else -> reportIllegalMemberAccessIfNeeded(
+                symbol = symbol,
+                diagnosticName = expression.calleeReference.referenceNameOrNull()
+                    ?: symbol.nameOrNull()
+                    ?: Name.ERROR_NAME,
+                source = expression.calleeReference.source ?: expression.source,
+                state = afterReceiver,
+            )
+        }
     }
 
     private fun analyzeChildrenSequentially(
@@ -491,6 +603,30 @@ private class CfirInitializationFlowAnalyzer(
         }
         return state
     }
+
+    /**
+     * 官方 `CheckIllegalMemberAccess` 在实例成员未全部初始化前禁止访问成员属性/函数。
+     *
+     * 本项目当前没有独立的 `sema_illegal_usage_of_member` 诊断面，LLT 中该语义
+     * 统一落到 `USED_BEFORE_INITIALIZATION`，位置使用被访问成员名。
+     */
+    private fun reportIllegalMemberAccessIfNeeded(
+        symbol: CfirBasedSymbol<*>,
+        diagnosticName: Name,
+        source: org.cangnova.cangjie.source.CjSourceElement?,
+        state: InitializationState,
+    ): InitializationState {
+        if (!reportReadDiagnostics || !state.hasUninitializedInstanceFields()) return state
+        if (!symbol.isInstanceMemberFunctionOrProperty()) return state
+        with(context) {
+            reporter.reportOn(
+                source = source,
+                factory = CfirErrors.USED_BEFORE_INITIALIZATION,
+                a = diagnosticName,
+            )
+        }
+        return state
+    }
 }
 
 internal object CfirInitializationAssignmentClassifier {
@@ -524,15 +660,22 @@ private enum class InitializationAccessMode {
 private data class TrackedVariableInfo(
     val symbol: CfirVariableSymbol<*>,
     val diagnosticName: Name,
+    val isInstanceField: Boolean,
 )
 
 private data class InitializationState(
     val tracked: Map<CfirVariableSymbol<*>, TrackedVariableInfo>,
     val initialized: Set<CfirVariableSymbol<*>>,
     val terminated: Boolean,
+    val inMemberInitializer: Boolean,
 ) {
     companion object {
-        fun empty(): InitializationState = InitializationState(emptyMap(), emptySet(), terminated = false)
+        fun empty(): InitializationState = InitializationState(
+            tracked = emptyMap(),
+            initialized = emptySet(),
+            terminated = false,
+            inMemberInitializer = false,
+        )
     }
 
     fun declare(
@@ -575,6 +718,18 @@ private data class InitializationState(
 
     fun isInitialized(symbol: CfirVariableSymbol<*>): Boolean = symbol.initializationSymbol() in initialized
 
+    fun hasUninitializedInstanceFields(): Boolean {
+        return tracked.any { (symbol, variableInfo) ->
+            variableInfo.isInstanceField && symbol !in initialized
+        }
+    }
+
+    fun withMemberInitializerContext(): InitializationState =
+        if (inMemberInitializer) this else copy(inMemberInitializer = true)
+
+    fun withoutMemberInitializerContext(): InitializationState =
+        if (!inMemberInitializer) this else copy(inMemberInitializer = false)
+
     fun intersect(other: InitializationState): InitializationState {
         val sharedTrackedSymbols = tracked.keys.intersect(other.tracked.keys)
         return InitializationState(
@@ -583,6 +738,7 @@ private data class InitializationState(
                 symbol in sharedTrackedSymbols
             },
             terminated = terminated && other.terminated,
+            inMemberInitializer = inMemberInitializer && other.inMemberInitializer,
         )
     }
 
@@ -606,6 +762,10 @@ private enum class ConstructorDelegationKind {
     THIS,
     SUPER,
 }
+
+// 仓颉 AST 中 `static init` 同时带 STATIC 与 CONSTRUCTOR 属性，但它不是实例构造器。
+private val CfirConstructor.isInstanceConstructor: Boolean
+    get() = !status.isStatic
 
 object CfirFunctionInitializationChecker : CfirFunctionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -641,6 +801,7 @@ private fun CfirClassLikeDeclaration.instanceFieldInfos(): List<TrackedVariableI
             TrackedVariableInfo(
                 symbol = field.symbol,
                 diagnosticName = field.name,
+                isInstanceField = true,
             )
         }
 }
@@ -664,18 +825,35 @@ private fun CfirConstructor.firstDelegationKind(): ConstructorDelegationKind? {
     }
 }
 
-private fun CfirFunctionCall.resolvedCallableVariableSymbolOrNull(): CfirVariableSymbol<*>? {
+private fun CfirFunctionCall.resolvedCallableSymbolOrNull(): CfirBasedSymbol<*>? {
     return when (val calleeReference = calleeReference) {
-        is CfirResolvedNamedReference -> calleeReference.resolvedSymbol as? CfirVariableSymbol<*>
-        is CfirResolvedErrorReference -> calleeReference.resolvedSymbol as? CfirVariableSymbol<*>
+        is CfirResolvedNamedReference -> calleeReference.resolvedSymbol
+        is CfirResolvedErrorReference -> calleeReference.resolvedSymbol
         else -> null
     }
 }
 
-private fun CfirQualifiedAccessExpression.resolvedVariableSymbolOrNull(): CfirVariableSymbol<*>? {
+private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBasedSymbol<*>? {
     return when (val calleeReference = calleeReference) {
-        is CfirResolvedNamedReference -> calleeReference.resolvedSymbol as? CfirVariableSymbol<*>
-        is CfirResolvedErrorReference -> calleeReference.resolvedSymbol as? CfirVariableSymbol<*>
+        is CfirResolvedNamedReference -> calleeReference.resolvedSymbol
+        is CfirResolvedErrorReference -> calleeReference.resolvedSymbol
+        else -> null
+    }
+}
+
+private fun CfirBasedSymbol<*>.isInstanceMemberFunctionOrProperty(): Boolean {
+    return when (this) {
+        is CfirPropertySymbol -> isBound && callableId.classId != null && !cfir.status.isStatic
+        is CfirNamedFunctionSymbol -> isBound && callableId.classId != null && !cfir.status.isStatic
+        else -> false
+    }
+}
+
+private fun CfirBasedSymbol<*>.nameOrNull(): Name? {
+    return when (this) {
+        is CfirVariableSymbol<*> -> name
+        is CfirPropertySymbol -> name
+        is CfirNamedFunctionSymbol -> name
         else -> null
     }
 }

@@ -402,6 +402,31 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression =
         transformFunctionCallInternal(functionCall, data, CallResolutionMode.REGULAR)
 
+    override fun transformIncrementDecrementExpression(
+        incrementDecrementExpression: CfirIncrementDecrementExpression,
+        data: ResolutionMode,
+    ): CfirExpression =
+        whileAnalysing(session, incrementDecrementExpression) {
+            incrementDecrementExpression.transformAnnotations(transformer, data)
+            incrementDecrementExpression.transformExpression(transformer, ResolutionMode.ContextIndependent)
+
+            val operatorCall = buildFunctionCall {
+                source = incrementDecrementExpression.operationSource ?: incrementDecrementExpression.source
+                calleeReference = buildNamedReference {
+                    source = incrementDecrementExpression.operationSource ?: incrementDecrementExpression.source
+                    name = incrementDecrementExpression.operationName
+                }
+                argumentList = buildArgumentList()
+                explicitReceiver = incrementDecrementExpression.expression
+                origin = CfirFunctionCallOrigin.Operator
+            }
+            val resolvedOperatorCall = transformFunctionCallInternal(operatorCall, data, CallResolutionMode.REGULAR)
+            incrementDecrementExpression.replaceConeTypeOrNull(
+                resolvedOperatorCall.coneTypeOrNull ?: builtinTypes.unitType
+            )
+            incrementDecrementExpression
+        }
+
     internal fun transformFunctionCallInternal(
         functionCall: CfirFunctionCall,
         data: ResolutionMode,
@@ -813,12 +838,16 @@ open class CfirExpressionsResolveTransformer(
             return matchExpression
         }
 
+        val branchResolutionMode = (data as? ResolutionMode.WithExpectedType)
+            ?.takeUnless { it.fromCast }
+            ?.copy(forceFullCompletion = false)
+            ?: ResolutionMode.ContextDependent
         val branchTypes = matchExpression.branches.map { branch ->
-            resolveBranch(branch, subjectType)
+            resolveBranch(branch, subjectType, branchResolutionMode)
         }
 
         matchExpression.replaceExhaustiveness(resolveMatchExhaustiveness(matchExpression))
-        matchExpression.replaceConeTypeOrNull(computeMatchResultType(branchTypes))
+        matchExpression.replaceConeTypeOrNull(computeMatchResultType(branchTypes, data.expectedTypeOrNull))
         components.dataFlowAnalyzer.exitMatchExpression(
             matchExpression,
             syntheticElseDecision = components.dataFlowAnalyzer.matchSyntheticElseDecision(matchExpression),
@@ -853,6 +882,7 @@ open class CfirExpressionsResolveTransformer(
     private fun resolveBranch(
         branch: CfirMatchBranch,
         subjectType: ConeCangJieType?,
+        bodyResolutionMode: ResolutionMode,
     ): ConeCangJieType {
         return withNewLocalScope {
             components.dataFlowAnalyzer.enterMatchBranchCondition(branch)
@@ -865,7 +895,7 @@ open class CfirExpressionsResolveTransformer(
 
             branch.transformGuard(transformer, ResolutionMode.ContextIndependent)
             components.dataFlowAnalyzer.exitMatchBranchCondition(branch)
-            branch.transformBody(transformer, ResolutionMode.ContextIndependent)
+            branch.transformBody(transformer, bodyResolutionMode)
             components.dataFlowAnalyzer.exitMatchBranchResult(branch)
 
             val bodyType = branch.body.coneTypeOrNull ?: builtinTypes.unitType
@@ -974,7 +1004,7 @@ open class CfirExpressionsResolveTransformer(
         pattern: CfirVarOrEnumPattern,
         expectedType: ConeCangJieType?,
     ): CfirReference? {
-        val enumType = expectedType?.expandedPatternEnumTypeForDeferredResolution() as? ConeEnumType ?: return null
+        val enumType = expectedType?.expandedPatternEnumType(session) ?: return null
         val enumDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
             ?: return null
         val enumConstructor = enumDeclaration.declarations
@@ -993,7 +1023,7 @@ open class CfirExpressionsResolveTransformer(
         pattern: CfirEnumPattern,
         expectedType: ConeCangJieType?,
     ): List<ConeCangJieType> {
-        val enumType = expectedType?.expandedPatternEnumTypeForDeferredResolution() as? ConeEnumType ?: return emptyList()
+        val enumType = expectedType?.expandedPatternEnumType(session) ?: return emptyList()
         val enumDeclaration = session.symbolProvider.getClassLikeSymbolByClassId(enumType.classId)?.cfir as? CfirEnum
             ?: return emptyList()
         val constructorName = when (val reference = pattern.constructorReference) {
@@ -1007,11 +1037,6 @@ open class CfirExpressionsResolveTransformer(
             ?: return emptyList()
 
         return enumConstructor.substitutedPayloadParameterTypes(enumDeclaration, enumType)
-    }
-
-    private fun ConeCangJieType.expandedPatternEnumTypeForDeferredResolution(): ConeCangJieType = when (this) {
-        is ConeTypeAliasType -> expandedType?.expandedPatternEnumTypeForDeferredResolution() ?: this
-        else -> this
     }
 
     private fun resolveEnumConstructorReferenceOrNull(pattern: CfirVarOrEnumPattern): CfirReference? {
@@ -1054,11 +1079,34 @@ open class CfirExpressionsResolveTransformer(
         }
     }
 
-    private fun computeMatchResultType(branchTypes: List<ConeCangJieType>): ConeCangJieType = when {
-        branchTypes.isEmpty()                        -> builtinTypes.unitType
-        branchTypes.size == 1                        -> branchTypes.single()
-        branchTypes.all { it == branchTypes.first() } -> branchTypes.first()
-        else                                         -> ConeUnionType(branchTypes.toSet())
+    private fun computeMatchResultType(
+        branchTypes: List<ConeCangJieType>,
+        expectedType: ConeCangJieType?,
+    ): ConeCangJieType {
+        if (branchTypes.isEmpty()) return builtinTypes.unitType
+
+        branchTypes.firstOrNull { it is ConeErrorType }?.let { errorType ->
+            return ConeErrorType(ConeUnreportedDuplicateDiagnostic((errorType as ConeErrorType).diagnostic))
+        }
+
+        val normalizedBranchTypes = branchTypes.map { branchType ->
+            IdealTypeResolver.resolveIfIdeal(branchType, expectedType)
+        }
+        val first = normalizedBranchTypes.first()
+        if (normalizedBranchTypes.all { it == first }) return first
+
+        /**
+         * 官方 `ChkMatchExprSetTy` 在外层存在 target type 且任一分支类型等于 target 时，
+         * 直接把整个 match 视为 target，避免 Join 得到比上下文更宽的可见公共父类型。
+         */
+        if (expectedType != null && normalizedBranchTypes.any { branchType ->
+                AbstractTypeChecker.equalTypes(session.typeContext, branchType, expectedType)
+            }
+        ) {
+            return expectedType
+        }
+
+        return commonSupertype(normalizedBranchTypes)
     }
 
     // ── If ────────────────────────────────────────────────────────────────────
@@ -1842,16 +1890,8 @@ open class CfirExpressionsResolveTransformer(
         data: ResolutionMode,
     ): CfirExpression {
         catch.transformAnnotations(transformer, data)
-        /**
-         * 对齐 Kotlin try/catch 解析顺序：
-         * 先在 catch block 作用域里解析参数本身，再在同一作用域里解析 catch body。
-         *
-         * 这样参数名字和类型都走统一的声明解析链路，避免手工塞局部变量后遗漏
-         * local-property 自身的 phase / scope 侧效果。
-         */
-        catch.parameter.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
         context.forBlock(session) {
-            catch.transformParameter(transformer, ResolutionMode.ContextIndependent)
+            resolveCatchPattern(catch.pattern)
             catch.transformBody(transformer, data)
         }
 
@@ -1975,6 +2015,10 @@ open class CfirExpressionsResolveTransformer(
     ): CfirExpression {
         return withClearedEffectHandlers {
             val anonFunc = anonymousFunctionExpression.anonymousFunction
+            anonFunc.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+            anonFunc.valueParameters.forEach { parameter ->
+                parameter.transformReturnTypeRef(transformer, ResolutionMode.ContextIndependent)
+            }
             val expectedFuncType = data.expectedTypeOrNull as? ConeFunctionType
 
             val hasUnresolvedParameterType = anonFunc.valueParameters.any { it.returnTypeRef !is CfirResolvedTypeRef }
@@ -2186,6 +2230,51 @@ open class CfirExpressionsResolveTransformer(
         ).withAdditionalTypeParameters(additionalTypeParameters)
 
         commandPattern.transformTypeRefs(specificTypeResolverTransformer, config)
+    }
+
+    private fun resolveCatchPattern(catchPattern: CfirCatchPattern) {
+        resolveCatchPatternTypeRefs(catchPattern)
+        catchPattern.transformBindingVariable(transformer, ResolutionMode.ContextIndependent)
+
+        val catchTypes = catchPattern.resolvedCatchTypes()
+        val bindingType = when {
+            catchTypes.isEmpty() -> constructNamedType(StdlibClassIds.Exception)
+            catchTypes.size == 1 -> catchTypes.single()
+            else -> commonSupertype(catchTypes)
+        }
+
+        catchPattern.bindingVariable?.let { bindingVariable ->
+            val currentTypeRef = bindingVariable.returnTypeRef
+            bindingVariable.replaceReturnTypeRef(
+                currentTypeRef.resolvedTypeFromPrototype(
+                    bindingType,
+                    currentTypeRef.source,
+                ),
+            )
+            context.storeVariable(bindingVariable, session)
+        }
+    }
+
+    private fun resolveCatchPatternTypeRefs(catchPattern: CfirCatchPattern) {
+        val additionalTypeParameters = context.containers
+            .asSequence()
+            .filterIsInstance<CfirDeclaration>()
+            .flatMap { extractTypeParameters(it).asSequence() }
+            .toList()
+
+        val config = CfirTypeResolutionConfiguration(
+            useSiteFile = context.file,
+            topContainer = context.containers.lastOrNull(),
+        ).withAdditionalTypeParameters(additionalTypeParameters)
+
+        catchPattern.transformTypeRefs(specificTypeResolverTransformer, config)
+    }
+
+    private fun CfirCatchPattern.resolvedCatchTypes(): List<ConeCangJieType> {
+        if (typeRefs.isEmpty()) return emptyList()
+        return typeRefs.mapNotNull { typeRef ->
+            (typeRef as? CfirResolvedTypeRef)?.coneType
+        }
     }
 
     private fun findCommandSupertype(type: ConeCangJieType?): ConeClassLikeType? {

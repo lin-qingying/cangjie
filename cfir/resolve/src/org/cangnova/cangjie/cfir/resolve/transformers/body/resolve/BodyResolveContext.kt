@@ -1,54 +1,49 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.transformers.body.resolve
 
-import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
+import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.calls.ImplicitExtensionReceiverValue
 import org.cangnova.cangjie.cfir.calls.ImplicitReceiverValue
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirCodeFragment
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirPropertyAccessor
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameterRefsOwner
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
-import org.cangnova.cangjie.cfir.declarations.CfirVariable
-import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
+import org.cangnova.cangjie.cfir.calls.InaccessibleImplicitReceiverValue
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.InaccessibleReceiverKind
 import org.cangnova.cangjie.cfir.resolve.ImplicitValueStorage
-import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirDataFlowAnalyzerContextSnapshot
-import org.cangnova.cangjie.cfir.resolve.body.SnapshotCfirMapper
-import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataContext
-import org.cangnova.cangjie.cfir.resolve.body.CfirTowerDataElement
+import org.cangnova.cangjie.cfir.resolve.body.*
 import org.cangnova.cangjie.cfir.resolve.body.asTowerDataElement
-import org.cangnova.cangjie.cfir.resolve.body.collectTowerDataElementsForClass
-import org.cangnova.cangjie.cfir.resolve.body.typeParametersForTower
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
-import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.resolve.codeFragmentContext
 import org.cangnova.cangjie.cfir.resolve.transformers.ReturnTypeCalculator
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirTypeParameterScopeImpl
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.symbols.constructThisType
-import org.cangnova.cangjie.cfir.symbols.constructType
-import org.cangnova.cangjie.cfir.symbols.toLookupTag
+import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
+import org.cangnova.cangjie.cfir.session.CfirSession
+import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.SpecialNames.UNDERSCORE_FOR_UNUSED_VAR
@@ -56,8 +51,28 @@ import org.cangnova.cangjie.resolve.calls.inference.components.ConstraintSystemC
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.util.PrivateForInline
-import java.util.IdentityHashMap
 import java.util.EnumMap
+import java.util.IdentityHashMap
+import kotlin.collections.ArrayDeque
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.List
+import kotlin.collections.MutableList
+import kotlin.collections.MutableMap
+import kotlin.collections.MutableSet
+import kotlin.collections.Set
+import kotlin.collections.emptySet
+import kotlin.collections.filterIsInstance
+import kotlin.collections.firstOrNull
+import kotlin.collections.fold
+import kotlin.collections.hashMapOf
+import kotlin.collections.isNotEmpty
+import kotlin.collections.lastOrNull
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.mutableListOf
+import kotlin.collections.mutableSetOf
+import kotlin.collections.set
+import kotlin.collections.toList
 
 /**
  * Body resolve 阶段的中心上下文。
@@ -565,7 +580,9 @@ class BodyResolveContext(
         if (containerIfAny !is CfirClass) {
             storeFunction(namedFunction, session)
         }
-        return withContainer(namedFunction, f)
+        return withTypeParametersOf(namedFunction) {
+            withContainer(namedFunction, f)
+        }
     }
 
     /**

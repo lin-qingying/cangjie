@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 class Base12<T> {
-    <!CLASS_UNINITIALIZED_FIELD!>public var d: T<!>
+    public var <!CLASS_UNINITIALIZED_FIELD!>d<!>: T
     public mut prop a: T {
         get() {
             return d

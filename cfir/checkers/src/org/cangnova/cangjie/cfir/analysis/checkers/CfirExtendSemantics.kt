@@ -1,27 +1,38 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassKind
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirSuperReference
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 import org.cangnova.cangjie.name.Name
@@ -52,22 +63,38 @@ internal object CfirExtendSemantics {
      * 在 TypeKind.inc 中 TYPE_ENUM 排在 TYPE_FUNC 之前（是 immutable），
      * TYPE_STRUCT 排在 TYPE_FUNC 之后（不是 immutable）。
      *
-     * 因此只有 enum（以及原始类型、String、Range 等内置类型）被视为 immutable，
-     * struct 不是 immutable。
+     * 因此原始类型、tuple、enum、function、String、Range 被视为 immutable；
+     * 普通 struct 不是 immutable。
      */
-    fun isImmutableTarget(coneType: ConeCangJieType): Boolean =
-        coneType is ConeEnumType
+    fun isImmutableTarget(coneType: ConeCangJieType): Boolean = when (coneType) {
+        is ConePrimitiveType,
+        is ConeTupleType,
+        is ConeEnumType,
+        is ConeFunctionType -> true
+
+        is ConeTypeAliasType -> coneType.expandedType?.let(::isImmutableTarget) ?: false
+        else -> coneType.classIdOrPrimitiveClassId in immutableStructLikeClassIds
+    }
 
     /**
      * 判断 extend 目标是否为不可变的非 enum 类型。
      *
      * 官方编译器中 index assignment check 用 `!ed.ty->IsEnum()` 排除 enum，
      * 即 index assignment 限制只对非 enum 的 immutable 类型生效。
-     * 由于 struct 不是 immutable，当前没有 class-like 类型满足此条件，
-     * 此方法保留给未来可能的原始类型 extend 场景。
      */
     fun isImmutableNonEnumTarget(coneType: ConeCangJieType): Boolean =
-        isImmutableTarget(coneType) && coneType !is ConeEnumType
+        isImmutableTarget(coneType) && !coneType.isEnumTarget()
+
+    private val immutableStructLikeClassIds: Set<ClassId> = setOf(
+        StdlibClassIds.String,
+        StdlibClassIds.Range,
+    )
+
+    private fun ConeCangJieType.isEnumTarget(): Boolean = when (this) {
+        is ConeEnumType -> true
+        is ConeTypeAliasType -> expandedType?.isEnumTarget() == true
+        else -> false
+    }
 
     fun isProtectedInterface(classId: ClassId?): Boolean =
         classId == anyClassId || classId == cTypeClassId

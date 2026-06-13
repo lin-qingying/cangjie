@@ -32,7 +32,6 @@ import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import org.cangnova.cangjie.lexer.CjTokens.*
 import org.cangnova.cangjie.messages.CangJieParsingBundle
-import org.cangnova.cangjie.parsing.NameParsingMode.*
 import org.cangnova.cangjie.psi.CallingConvention
 import org.cangnova.cangjie.psi.CjBuiltInAnnotation
 import org.cangnova.cangjie.psi.CjBuiltInAnnotation.*
@@ -1224,7 +1223,10 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     private fun tryParseModifier(
-        tokenConsumer: ((IElementType) -> Unit)?, noModifiersBefore: TokenSet, modifierKeywords: TokenSet
+        tokenConsumer: ((IElementType) -> Unit)?,
+        noModifiersBefore: TokenSet,
+        modifierKeywords: TokenSet,
+        parseConstBeforePrimaryConstructor: Boolean = false,
     ): Boolean {
         val marker = mark()
 
@@ -1243,8 +1245,8 @@ class CangJieParsing private constructor(
                 marker.collapse(tt)
                 return true
             }
-        } else if (at(CONST_KEYWORD) && lookahead(2) != EQ && lookahead(2) != COLON) {
-            // 处理特殊的const修饰的
+        } else if (isConstModifierStart(parseConstBeforePrimaryConstructor)) {
+            // const 既可以是变量声明关键字，也可以修饰 const func/init/主构造器。
             advance() // MODIFIER
             tokenConsumer?.invoke(CONST_KEYWORD)
             marker.collapse(CONST_KEYWORD)
@@ -1265,6 +1267,17 @@ class CangJieParsing private constructor(
         return false
     }
 
+    context(parseContext: ParsingContext)
+    private fun isConstModifierStart(parseConstBeforePrimaryConstructor: Boolean): Boolean {
+        if (!at(CONST_KEYWORD)) return false
+
+        return when (lookahead(1)) {
+            FUNC_KEYWORD, INIT_KEYWORD -> true
+            IDENTIFIER -> parseConstBeforePrimaryConstructor && lookahead(2) == LPAR
+            else -> false
+        }
+    }
+
 
     /**
      * 解析修饰符列表主体
@@ -1280,7 +1293,8 @@ class CangJieParsing private constructor(
         tokenConsumer: ((IElementType) -> Unit)?,
         modifierKeywords: TokenSet,
         noModifiersBefore: TokenSet,
-        isParseMacro: Boolean = false
+        isParseMacro: Boolean = false,
+        parseConstBeforePrimaryConstructor: Boolean = false,
     ): Boolean {
         var empty = true
 
@@ -1297,7 +1311,13 @@ class CangJieParsing private constructor(
                 }
             } else
             */
-            if (!tryParseModifier(tokenConsumer, noModifiersBefore, modifierKeywords)) {
+            if (!tryParseModifier(
+                    tokenConsumer,
+                    noModifiersBefore,
+                    modifierKeywords,
+                    parseConstBeforePrimaryConstructor,
+                )
+            ) {
                 // modifier not advanced
                 break
             }
@@ -1827,10 +1847,19 @@ class CangJieParsing private constructor(
      */
     context(parseContext: ParsingContext)
     fun parseModifierList(
-        tokenConsumer: ((IElementType) -> Unit)?, noModifiersBefore: TokenSet, isParseMacro: Boolean = false
+        tokenConsumer: ((IElementType) -> Unit)?,
+        noModifiersBefore: TokenSet,
+        isParseMacro: Boolean = false,
+        parseConstBeforePrimaryConstructor: Boolean = false,
     ): Boolean {
 
-        return doParseModifierList(tokenConsumer, MODIFIER_KEYWORDS, noModifiersBefore, isParseMacro)
+        return doParseModifierList(
+            tokenConsumer,
+            MODIFIER_KEYWORDS,
+            noModifiersBefore,
+            isParseMacro,
+            parseConstBeforePrimaryConstructor,
+        )
     }
 
 
@@ -1848,11 +1877,18 @@ class CangJieParsing private constructor(
         tokenConsumer: ((IElementType) -> Unit)?,
         modifierKeywords: TokenSet,
         noModifiersBefore: TokenSet,
-        isParseMacro: Boolean = false
+        isParseMacro: Boolean = false,
+        parseConstBeforePrimaryConstructor: Boolean = false,
     ): Boolean {
         val list = mark()
 
-        val empty = doParseModifierListBody(tokenConsumer, modifierKeywords, noModifiersBefore, isParseMacro)
+        val empty = doParseModifierListBody(
+            tokenConsumer,
+            modifierKeywords,
+            noModifiersBefore,
+            isParseMacro,
+            parseConstBeforePrimaryConstructor,
+        )
 
         // 始终创建 MODIFIER_LIST 占位符，保持与反编译 Stub 结构一致
         list.done(MODIFIER_LIST)
@@ -2406,7 +2442,10 @@ class CangJieParsing private constructor(
         // advance past 'prop' keyword
         advance()
 
-        parseIdentifierByTitle(" prop ")
+        if (!parseIdentifierByTitle("property", EOL_OR_SEMICOLON_RBRACE_SET)) {
+            skipUntil(EOL_OR_SEMICOLON_RBRACE_SET)
+            return PROPERTY
+        }
 
         parseByType()
 
@@ -2462,14 +2501,18 @@ class CangJieParsing private constructor(
         val get = mark()
         advance() // GET_KEYWORD
 
-        if (expect(LPAR, "Expecting '('")) {
-            if (expect(RPAR, "Expecting ')'")) {
-                if (at(LBRACE)) {
-                    parseBlock()
-                } else {
-                    error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
-                }
-            }
+        if (at(LPAR)) {
+            do {
+                parseValueParameterList(false, VALUE_PARAMETERS_FOLLOW_SET)
+            } while (at(LPAR))
+        } else {
+            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "("))
+        }
+
+        if (at(LBRACE)) {
+            parseBlock()
+        } else {
+            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
         }
 
         get.done(PROPERTY_ACCESSOR)
@@ -2496,24 +2539,18 @@ class CangJieParsing private constructor(
         // if(detector?.isMutDetected() == true) {
         advance() // SET_KEYWORD
 
-        if (expect(LPAR, "Expecting '('")) {
-            val plist = mark()
-            val value = mark()
+        if (at(LPAR)) {
+            do {
+                parseValueParameterList(false, VALUE_PARAMETERS_FOLLOW_SET)
+            } while (at(LPAR))
+        } else {
+            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "("))
+        }
 
-            if (!expect(UNDERLINE)) {
-                expect(IDENTIFIER, "Expecting identifier")
-            }
-
-            value.done(VALUE_PARAMETER)
-            plist.done(VALUE_PARAMETER_LIST)
-
-            if (expect(RPAR, "Expecting ')'")) {
-                if (at(LBRACE)) {
-                    parseBlock()
-                } else {
-                    error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
-                }
-            }
+        if (at(LBRACE)) {
+            parseBlock()
+        } else {
+            error(CangJieParsingBundle.message("parsing.error.expecting.symbol", "{"))
         }
         // } else {
         //     error("immutable property cannot have setter")
@@ -3071,7 +3108,12 @@ class CangJieParsing private constructor(
         parseAnnotations()
 
         val detector = ModifierDetector()
-        parseModifierList(detector, TokenSet.EMPTY, rollbackMacro)
+        parseModifierList(
+            detector,
+            TokenSet.EMPTY,
+            isParseMacro = rollbackMacro,
+            parseConstBeforePrimaryConstructor = true,
+        )
 
         val declType = parseMemberDeclarationRest(tokenId, classdetector, detector)
 
@@ -3548,16 +3590,17 @@ class CangJieParsing private constructor(
     context(parseContext: ParsingContext)
     private fun parseIdentifierByTitle(
         title: String, recoverySet: TokenSet = TokenSet.EMPTY, isUnderline: Boolean = false
-    ) {
+    ): Boolean {
         if (isUnderline && expect(CangJieExpressionParsing.IDENTIFIER_RECOVERY_SET)) {
-            return
+            return true
         }
 
         if (expect(IDENTIFIER)) {
-            return
+            return true
         }
 
         errorWithRecovery("Expecting $title name", recoverySet)
+        return false
     }
 
     /**

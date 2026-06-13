@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 
 
 package org.cangnova.cangjie.analysis.api.cfir.diagnostics
@@ -197,6 +221,13 @@ internal class StaticCannotBeOpenAbstractOverrideImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.StaticCannotBeOpenAbstractOverride
+
+internal class MissingFuncBodyImpl(
+    override val memberKind: String,
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MissingFuncBody
 
 internal class MutOnlyOnFunctionImpl(
     override val declarationName: Name?,
@@ -685,6 +716,19 @@ internal class OverridingReturnTypeMismatchImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.OverridingReturnTypeMismatch
 
+internal class PropertyOverrideImplementTypeDiffImpl(
+    override val actualType: CaType,
+    override val expectedType: CaType,
+    override val overriddenName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.PropertyOverrideImplementTypeDiff
+
+internal class MissingEntryImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MissingEntry
+
 internal class CannotOverrideInvisibleMemberImpl(
     override val memberName: Name,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -1110,6 +1154,12 @@ internal class InheritMemberKindInconsistentImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InheritMemberKindInconsistent
+
+internal class MemberVariableCanNotShadowImpl(
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MemberVariableCanNotShadow
 
 internal class InheritSuperMemberKindInconsistentImpl(
     override val memberName: Name,
@@ -2426,4 +2476,3 @@ internal class MacroCycleImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MacroCycle
-

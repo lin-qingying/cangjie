@@ -24,6 +24,10 @@
 
 package org.cangnova.cangjie.psi.stubs.elements
 
+import com.intellij.psi.stubs.IndexSink
+import com.intellij.psi.stubs.StubElement
+import com.intellij.psi.stubs.StubInputStream
+import com.intellij.psi.stubs.StubOutputStream
 import org.cangnova.cangjie.psi.*
 import org.cangnova.cangjie.psi.stubs.CangJieVariableStub
 import org.cangnova.cangjie.psi.stubs.PatternKind
@@ -31,11 +35,6 @@ import org.cangnova.cangjie.psi.stubs.elements.StubIndexService.Companion.getIns
 import org.cangnova.cangjie.psi.stubs.impl.CangJieStubOrigin.Companion.deserialize
 import org.cangnova.cangjie.psi.stubs.impl.CangJieStubOrigin.Companion.serialize
 import org.cangnova.cangjie.psi.stubs.impl.CangJieVariableStubImpl
-import com.intellij.psi.stubs.IndexSink
-import com.intellij.psi.stubs.StubElement
-import com.intellij.psi.stubs.StubInputStream
-import com.intellij.psi.stubs.StubOutputStream
-import org.jetbrains.annotations.NonNls
 import java.io.IOException
 
 /**
@@ -99,6 +98,7 @@ class CjPatternVariableElementType(debugName: String) :
             parentStub,
             patternKind,
             psi.isVar,
+            psi.isConst,
             psi.isTopLevel,
             psi.hasInitializer(),
             psi.typeReference != null,
@@ -112,6 +112,7 @@ class CjPatternVariableElementType(debugName: String) :
             val patternKindOrdinal = dataStream.readInt()
             val patternKind = PatternKind.fromOrdinal(patternKindOrdinal)
             val isVar = dataStream.readBoolean()
+            val isConst = dataStream.readBoolean()
             val isTopLevel = dataStream.readBoolean()
             val hasInitializer = dataStream.readBoolean()
             val hasReturnTypeRef = dataStream.readBoolean()
@@ -120,6 +121,7 @@ class CjPatternVariableElementType(debugName: String) :
                 parentStub,
                 patternKind,
                 isVar,
+                isConst,
                 isTopLevel,
                 hasInitializer,
                 hasReturnTypeRef,
@@ -130,6 +132,7 @@ class CjPatternVariableElementType(debugName: String) :
         fun serialize(stub: CangJieVariableStub, dataStream: StubOutputStream) {
             dataStream.writeInt(stub.getPatternKind().ordinal)
             dataStream.writeBoolean(stub.isVar())
+            dataStream.writeBoolean(stub.isConst())
             dataStream.writeBoolean(stub.isTopLevel())
             dataStream.writeBoolean(stub.hasInitializer())
             dataStream.writeBoolean(stub.hasReturnTypeRef())

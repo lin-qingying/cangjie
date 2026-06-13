@@ -176,6 +176,9 @@ abstract class CfirVisitor<out R, in D> {
     open fun visitFunctionCall(functionCall: CfirFunctionCall, data: D): R =
         visitElement(functionCall, data)
 
+    open fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression, data: D): R =
+        visitElement(incrementDecrementExpression, data)
+
     open fun visitErrorNamedReference(errorNamedReference: CfirErrorNamedReference, data: D): R =
         visitElement(errorNamedReference, data)
 
@@ -241,6 +244,9 @@ abstract class CfirVisitor<out R, in D> {
 
     open fun visitMatchBranch(matchBranch: CfirMatchBranch, data: D): R =
         visitElement(matchBranch, data)
+
+    open fun visitCatchPattern(catchPattern: CfirCatchPattern, data: D): R =
+        visitElement(catchPattern, data)
 
     open fun visitCatch(catch: CfirCatch, data: D): R =
         visitElement(catch, data)

@@ -146,6 +146,7 @@ class BuilderConfigurator(model: Model) : AbstractBuilderConfigurator<Element, I
         ifExpression,
         matchExpression,
         matchBranch,
+        catchPattern,
         catchClause,
         loopExpression,
         forInExpression,

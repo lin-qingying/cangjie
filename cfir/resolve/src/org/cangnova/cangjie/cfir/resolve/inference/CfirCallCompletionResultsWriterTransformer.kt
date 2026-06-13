@@ -1,32 +1,40 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.inference
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
-import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
-import org.cangnova.cangjie.cfir.CfirFunctionTarget
-import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
+import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeParameterInQualifiedAccess
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
-import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
-import org.cangnova.cangjie.cfir.expressions.CfirArgumentList
-import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirRangeExpression
-import org.cangnova.cangjie.cfir.expressions.CfirReturnExpression
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.buildArgumentListForErrorCall
-import org.cangnova.cangjie.cfir.expressions.buildResolvedArgumentList
 import org.cangnova.cangjie.cfir.expressions.builder.buildBlockCopy
 import org.cangnova.cangjie.cfir.expressions.builder.buildReturnExpression
 import org.cangnova.cangjie.cfir.lookupTracker
@@ -39,10 +47,11 @@ import org.cangnova.cangjie.cfir.resolve.body.buildAppliedCallableReference
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithPostponedChild
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirErrorReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.resolve.toErrorReference
 import org.cangnova.cangjie.cfir.resolve.transformers.CfirAbstractTreeTransformer
 import org.cangnova.cangjie.cfir.resolve.transformers.IntegerLiteralAndOperatorApproximationTransformer
@@ -51,37 +60,16 @@ import org.cangnova.cangjie.cfir.resolve.transformers.body.resolve.BodyResolveCo
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeClassifierType
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.IdealTypeResolver
-import org.cangnova.cangjie.cfir.types.ConeStructType
-import org.cangnova.cangjie.cfir.types.ConeTypeApproximator
-import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.approximateThisTypeForDeclaration
-import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
+import org.cangnova.cangjie.cfir.toCfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.commonSuperTypeOrNull
-import org.cangnova.cangjie.cfir.types.coneTypeSafe
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.type
-import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.cfir.visitors.transformSingle
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
-import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.types.TypeApproximatorConfiguration
 
 class CfirCallCompletionResultsWriterTransformer(
     override val session: CfirSession,

@@ -1,56 +1,42 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.analysis.decompiler.stub
 
 import com.intellij.psi.stubs.StubElement
 import com.intellij.util.io.StringRef
 import org.cangnova.cangjie.builtins.StandardNames.MAIN
-import org.cangnova.cangjie.cfir.declarations.CfirDeclarationStatus
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirErrorFunction
-import org.cangnova.cangjie.cfir.declarations.CfirErrorNamedValue
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
-import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
-import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
-import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.psi.CjEnumConstructorTypeEntry
-import org.cangnova.cangjie.psi.CjPropertyBody
 import org.cangnova.cangjie.psi.CjPrimaryConstructor
+import org.cangnova.cangjie.psi.CjPropertyBody
 import org.cangnova.cangjie.psi.CjSecondaryConstructor
 import org.cangnova.cangjie.psi.stubs.PatternKind
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
-import org.cangnova.cangjie.psi.stubs.impl.CangJieBindingPatternStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieConstantPatternStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieConstructorStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieEnumConstructorStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieEnumPatternStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieFieldStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieFileStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieFinalizerStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieMacroStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieMainFunctionStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieNameReferenceExpressionStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieNamedFunctionStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJiePlaceHolderStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJiePropertyAccessorStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieTuplePatternStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieTypePatternStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieVarOrEnumPatternStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieVariableStubImpl
-import org.cangnova.cangjie.psi.stubs.impl.CangJieWildcardPatternStubImpl
+import org.cangnova.cangjie.psi.stubs.impl.*
 
 /**
  * `.cjo` callable stub 构建器。
@@ -259,6 +245,7 @@ internal fun createFieldStub(
             parent = parent,
             patternKind = PatternKind.BINDING,
             isVar = declaration.isVar,
+            isConst = declaration.status.isConst,
             isTopLevel = true,
             hasInitializer = declaration.initializer != null,
             hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,
@@ -298,6 +285,7 @@ internal fun createPatternVariableStub(
         parent = parent,
         patternKind = declaration.pattern.toPatternKind(),
         isVar = declaration.isVar,
+        isConst = declaration.status.isConst,
         isTopLevel = parent is CangJieFileStubImpl,
         hasInitializer = declaration.initializer != null,
         hasReturnTypeRef = declaration.returnTypeRef !is CfirImplicitTypeRef,

@@ -108,6 +108,7 @@ fun main(args: Array<String>) {
                 alias<CfirQualifiedAccessExpression>("QualifiedAccessChecker")
                 alias<CfirSuperReceiverExpression>("SuperReceiverExpressionChecker")
                 alias<CfirAssignment>("AssignmentChecker")
+                alias<CfirIncrementDecrementExpression>("IncrementDecrementExpressionChecker")
                 alias<CfirBinaryOp>("BinaryOpChecker")
                 alias<CfirComparisonExpression>("ComparisonExpressionChecker")
                 alias<CfirTypeOperator>("TypeOperatorChecker")

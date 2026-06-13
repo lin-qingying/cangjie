@@ -35,12 +35,11 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildAnonymousFunction
 import org.cangnova.cangjie.cfir.declarations.builder.buildFieldVariable
 import org.cangnova.cangjie.cfir.declarations.builder.buildPatternVariable
-import org.cangnova.cangjie.cfir.declarations.builder.buildProperty
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
-import org.cangnova.cangjie.cfir.isCatchParameter
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.*
@@ -48,7 +47,10 @@ import org.cangnova.cangjie.cfir.references.builder.buildSuperReference
 import org.cangnova.cangjie.cfir.references.builder.buildThisReference
 import org.cangnova.cangjie.cfir.resolve.providers.macro.*
 import org.cangnova.cangjie.cfir.session.CfirSession
-import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.symbols.CfirAnonymousFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirFieldVariableSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPatternVariableSymbol
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.builder.buildBasicTypeRef
@@ -97,6 +99,7 @@ class LightTreeRawCfirExpressionBuilder(
         CjNodeTypes.STRING_TEMPLATE -> convertStringTemplate(node)
 
         // 二元/一元
+        CjNodeTypes.BINARY_WITH_TYPE -> convertTypeOperator(node)
         CjNodeTypes.BINARY_EXPRESSION -> convertBinary(node)
         CjNodeTypes.RANGE_EXPRESSION -> convertRange(node)
         CjNodeTypes.PREFIX_EXPRESSION -> convertPrefix(node)
@@ -392,6 +395,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     private fun convertPrefix(node: LighterASTNode): CfirExpression {
         var opToken: IElementType? = null
+        var opNode: LighterASTNode? = null
         var operandNode: LighterASTNode? = null
 
         tree.forEachChildren(node) { child ->
@@ -399,6 +403,7 @@ class LightTreeRawCfirExpressionBuilder(
                 CjNodeTypes.OPERATION_REFERENCE -> {
                     tree.forEachChildren(child) { opChild ->
                         opToken = opChild.tokenType
+                        opNode = opChild
                     }
                 }
                 else -> if (isExpressionToken(child.tokenType)) { operandNode = child }
@@ -408,6 +413,15 @@ class LightTreeRawCfirExpressionBuilder(
         val base = operandNode?.let { convertExpression(it) }
             ?: return buildErrorExpression(node.toSourceElement(), "Missing prefix operand")
         val opName = opToken?.toPrefixUnaryName() ?: Name.identifier("<prefix>")
+        if (opToken == CjTokens.PLUSPLUS || opToken == CjTokens.MINUSMINUS) {
+            return buildIncrementDecrementExpression {
+                source = node.toSource()
+                isPrefix = true
+                operationName = opName
+                expression = base
+                operationSource = opNode?.toSource()
+            }
+        }
         return buildFunctionCall {
             source = node.toSource()
             calleeReference = buildNamedReference(opName, node.toSource())
@@ -419,6 +433,7 @@ class LightTreeRawCfirExpressionBuilder(
 
     private fun convertPostfix(node: LighterASTNode): CfirExpression {
         var opToken: IElementType? = null
+        var opNode: LighterASTNode? = null
         var operandNode: LighterASTNode? = null
 
         tree.forEachChildren(node) { child ->
@@ -426,6 +441,7 @@ class LightTreeRawCfirExpressionBuilder(
                 CjNodeTypes.OPERATION_REFERENCE -> {
                     tree.forEachChildren(child) { opChild ->
                         opToken = opChild.tokenType
+                        opNode = opChild
                     }
                 }
                 else -> if (isExpressionToken(child.tokenType)) { operandNode = child }
@@ -435,6 +451,15 @@ class LightTreeRawCfirExpressionBuilder(
         val base = operandNode?.let { convertExpression(it) }
             ?: return buildErrorExpression(node.toSourceElement(), "Missing postfix operand")
         val opName = opToken?.toPostfixUnaryName() ?: Name.identifier("<postfix>")
+        if (opToken == CjTokens.PLUSPLUS || opToken == CjTokens.MINUSMINUS) {
+            return buildIncrementDecrementExpression {
+                source = node.toSource()
+                isPrefix = false
+                operationName = opName
+                expression = base
+                operationSource = opNode?.toSource()
+            }
+        }
         return buildFunctionCall {
             source = node.toSource()
             calleeReference = buildNamedReference(opName, node.toSource())
@@ -1485,36 +1510,10 @@ class LightTreeRawCfirExpressionBuilder(
                     CjNodeTypes.BLOCK -> catchBodyNode = child
                 }
             }
-            val paramName = catchParamNode?.let {
-                val nameNode = tree.findChildByType(it, CjTokens.IDENTIFIER)
-                nameNode?.asText()
-            }
-            val paramTypeRef = catchParamNode
-                ?.let { tree.findChildByType(it, CjNodeTypes.TYPE_REFERENCE) }
-                ?.let { convertTypeReference(it, tree, source) { typeRefNode -> typeRefNode.toSourceElement() } }
-                ?: buildImplicitTypeRef()
-
-            val catchParamName = if (paramName != null) Name.identifier(paramName) else Name.special("<error>")
-            val catchStatus = declarationBuilder.cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL))
-            val parameter = buildSourceDeclaration(CfirPropertySymbol(callableIdFor(catchParamName))) { symbol ->
-                buildProperty {
-                    resolvePhase = CfirResolvePhase.RAW_CFIR
-                    source = (catchParamNode ?: catchNode).toSource()
-                    this.symbol = symbol
-                    origin = CfirDeclarationOrigin.Source
-                    moduleData = baseModuleData
-                    attributes = CfirDeclarationAttributes.EMPTY
-                    isLocal = true
-                    dispatchReceiverType = null
-                    status = catchStatus
-                    returnTypeRef = paramTypeRef
-                    name = catchParamName
-                }
-            }.also { it.isCatchParameter = true }
             val body = catchBodyNode?.let { convertBlock(it) } ?: buildBlock { source = catchNode.toSource() }
             buildCatch {
                 source = catchNode.toSource()
-                this.parameter = parameter
+                pattern = convertCatchPattern(catchNode, catchParamNode)
                 this.body = body
             }
         }
@@ -1674,6 +1673,80 @@ class LightTreeRawCfirExpressionBuilder(
         return buildTypeOperator {
             source = node.toSource()
             operation = CfirTypeOperationKind.IS
+            this.argument = argument
+            typeRef = convertTypeReference(typeRefNode, tree, this@LightTreeRawCfirExpressionBuilder.source) {
+                it.toSourceElement()
+            }
+        }
+    }
+
+    private fun convertCatchPattern(
+        catchNode: LighterASTNode,
+        parameterNode: LighterASTNode?,
+    ): CfirCatchPattern {
+        val nameText = parameterNode
+            ?.let { tree.findChildByType(it, CjTokens.IDENTIFIER) }
+            ?.asText()
+        val bindingName = nameText?.let(Name::identifier)
+        val typeRefs = parameterNode
+            ?.let { tree.getChildrenByType(it, CjNodeTypes.TYPE_REFERENCE) }
+            ?.map { typeRefNode ->
+                convertTypeReference(typeRefNode, tree, source) { it.toSourceElement() }
+            }
+            .orEmpty()
+        val bindingStatus = declarationBuilder.cloneDeclarationStatus(
+            CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL),
+        )
+
+        return buildCatchPattern {
+            source = (parameterNode ?: catchNode).toSource()
+            this.bindingName = bindingName
+            isWildcard = bindingName == null
+            this.typeRefs.addAll(typeRefs)
+            bindingVariable = bindingName?.let { name ->
+                declarationBuilder.createPatternBindingVariable(
+                    source = parameterNode?.toSource(),
+                    name = name,
+                    status = bindingStatus,
+                    isLocal = true,
+                    isVar = false,
+                    returnTypeRef = buildImplicitTypeRef(),
+                )
+            }
+        }
+    }
+
+    private fun convertTypeOperator(node: LighterASTNode): CfirTypeOperator {
+        var argNode: LighterASTNode? = null
+        var typeRefNode: LighterASTNode? = null
+        var operationToken: IElementType? = null
+
+        tree.forEachChildren(node) { child ->
+            when (child.tokenType) {
+                CjNodeTypes.OPERATION_REFERENCE -> {
+                    tree.forEachChildren(child) { opChild ->
+                        operationToken = opChild.tokenType
+                    }
+                }
+
+                CjNodeTypes.TYPE_REFERENCE -> typeRefNode = child
+                else -> {
+                    if (argNode == null && isExpressionToken(child.tokenType)) {
+                        argNode = child
+                    }
+                }
+            }
+        }
+
+        val operation = when (operationToken) {
+            CjTokens.AS_KEYWORD -> CfirTypeOperationKind.AS
+            else -> error("Unexpected binary type operator: $operationToken")
+        }
+        val argument = argNode?.let { convertExpression(it) }
+            ?: buildErrorExpression(node.toSourceElement(), "Missing as-cast operand")
+        return buildTypeOperator {
+            source = node.toSource()
+            this.operation = operation
             this.argument = argument
             typeRef = convertTypeReference(typeRefNode, tree, this@LightTreeRawCfirExpressionBuilder.source) {
                 it.toSourceElement()
@@ -1844,7 +1917,7 @@ class LightTreeRawCfirExpressionBuilder(
             CjNodeTypes.INTEGER_CONSTANT, CjNodeTypes.FLOAT_CONSTANT,
             CjNodeTypes.RUNE_CONSTANT, CjNodeTypes.BOOLEAN_CONSTANT,
             CjNodeTypes.UNIT_CONSTANT, CjNodeTypes.STRING_TEMPLATE,
-            CjNodeTypes.BINARY_EXPRESSION, CjNodeTypes.RANGE_EXPRESSION,
+            CjNodeTypes.BINARY_WITH_TYPE, CjNodeTypes.BINARY_EXPRESSION, CjNodeTypes.RANGE_EXPRESSION,
             CjNodeTypes.PREFIX_EXPRESSION, CjNodeTypes.POSTFIX_EXPRESSION,
             CjNodeTypes.OPTIONAL_EXPRESSION, CjNodeTypes.OPTIONAL_CHAIN_EXPRESSION,
             CjNodeTypes.DOT_QUALIFIED_EXPRESSION,

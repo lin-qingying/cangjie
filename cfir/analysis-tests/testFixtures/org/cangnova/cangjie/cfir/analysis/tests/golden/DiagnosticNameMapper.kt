@@ -41,6 +41,8 @@ object DiagnosticNameMapper {
         "ARGUMENT_TYPE_MISMATCH" to "sema_mismatched_types",
         "ASSIGNMENT_TYPE_MISMATCH" to "sema_mismatched_types",
         "OVERRIDING_RETURN_TYPE_MISMATCH" to "sema_mismatched_types",
+        "PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF" to "sema_property_override_implement_type_diff",
+        "MISSING_ENTRY" to "sema_missing_entry",
         "PATTERN_INITIALIZER_TYPE_MISMATCH" to "sema_mismatched_types",
         "TRY_BRANCH_TYPE_MISMATCH" to "sema_mismatched_types",
         "COMMAND_INCOMPATIBLE_TYPE" to "sema_mismatched_types",
@@ -61,6 +63,7 @@ object DiagnosticNameMapper {
         "NO_MATCHING_OPERATOR_INVOKE" to "sema_no_matching_operator_invoke",
         "ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR" to "sema_enum_type_cannot_be_used_as_constructor",
         "CANNOT_OVERRIDE_INVISIBLE_MEMBER" to "sema_cannot_override_invisible_member",
+        "CANNOT_OVERRIDE" to "sema_cannot_override",
 
         // ── Imports ──
         "UNRESOLVED_IMPORT" to "package_import_not_found",
@@ -76,6 +79,7 @@ object DiagnosticNameMapper {
 
         // ── DeclarationStatus / 修饰符 ──
         "STATIC_CANNOT_BE_OPEN_ABSTRACT_OVERRIDE" to "sema_static_cannot_be_open_abstract_override",
+        "MISSING_FUNC_BODY" to "sema_missing_func_body",
         "MUT_ONLY_ON_FUNCTION" to "sema_mut_only_on_function",
         "NOTHING_TO_OVERRIDE" to "sema_nothing_to_override",
         "INCOMPATIBLE_MODIFIERS" to "sema_incompatible_modifiers",
@@ -98,6 +102,7 @@ object DiagnosticNameMapper {
         "ENUM_SUPER_NOT_ALLOWED" to "sema_enum_super_not_allowed",
         "STRUCT_SUPER_NOT_ALLOWED" to "sema_struct_super_not_allowed",
         "INTERFACE_SUPER_NOT_ALLOWED" to "sema_interface_super_not_allowed",
+        "INVALID_MEMBER_VISIBILITY_IN_CLASS" to "sema_invalid_member_visibility_in_class",
 
         // ── Constructor ──
         "ILLEGAL_THIS_OR_SUPER_CALL" to "sema_illegal_this_or_super_call",
@@ -130,6 +135,7 @@ object DiagnosticNameMapper {
         "ONLY_ONE_CLASS_BOUND_ALLOWED" to "sema_only_one_class_bound_allowed",
         "REPEATED_BOUND" to "sema_repeated_bound",
         "CANNOT_CURRYING" to "sema_cannot_currying",
+        "CANNOT_HAVE_PARAMETER" to "sema_cannot_have_parameter",
         "FORBID_GENERIC_FINALIZER" to "sema_forbid_generic_finalizer",
         "FINALIZER_FORBIDDEN_IN_CLASS" to "sema_finalizer_forbidden_in_class",
 

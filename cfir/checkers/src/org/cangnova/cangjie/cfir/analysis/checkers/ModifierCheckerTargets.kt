@@ -1,47 +1,36 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.LanguageVersionSettings
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirAnonymousFunction
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirPatternBindingVariable
-import org.cangnova.cangjie.cfir.declarations.CfirPatternVariable
-import org.cangnova.cangjie.cfir.declarations.CfirProperty
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
-import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
-import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
+import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.lexer.CjKeywordToken
-import org.cangnova.cangjie.lexer.CjTokens.ABSTRACT_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.CONST_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.FOREIGN_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.INTERNAL_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.MUT_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.OPEN_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.OPERATOR_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.OVERRIDE_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.PRIVATE_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.PROTECTED_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.PUBLIC_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.REDEF_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.SEALED_KEYWORD
-import org.cangnova.cangjie.lexer.CjTokens.STATIC_KEYWORD
-import java.util.EnumSet
+import org.cangnova.cangjie.lexer.CjTokens.*
+import java.util.*
 
 internal enum class CangJieTarget(val description: String, val isDefault: Boolean = true) {
     CLASS("class"),
@@ -68,6 +57,7 @@ internal enum class CangJieTarget(val description: String, val isDefault: Boolea
     ENUM_MEMBER_PROPERTY("enum member property", false),
     MACRO("macro"),
     CONSTRUCTOR("constructor"),
+    STATIC_INITIALIZER("static initializer", false),
     PROPERTY_GETTER("getter"),
     PROPERTY_SETTER("setter"),
     LAMBDA_EXPRESSION("lambda expression", false),
@@ -136,6 +126,7 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
         CangJieTarget.STRUCT_MEMBER_FUNCTION,
         CangJieTarget.EXTEND_MEMBER_FUNCTION,
         CangJieTarget.INTERFACE_MEMBER_FUNCTION,
+        CangJieTarget.STATIC_INITIALIZER,
     ),
     ABSTRACT_KEYWORD to EnumSet.of(
         CangJieTarget.CLASS_ONLY,
@@ -194,6 +185,11 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
         CangJieTarget.FUNCTION,
         CangJieTarget.STRUCT_MEMBER_FUNCTION,
         CangJieTarget.CONSTRUCTOR,
+        CangJieTarget.VARIABLE,
+        CangJieTarget.TOP_LEVEL_VARIABLE,
+        CangJieTarget.LOCAL_VARIABLE,
+        CangJieTarget.MEMBER_VARIABLE,
+        CangJieTarget.STATIC_INITIALIZER,
     ),
     OPERATOR_KEYWORD to EnumSet.of(
         CangJieTarget.MEMBER_FUNCTION,
@@ -287,7 +283,11 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
         AnnotationTargetLists.T_VALUE_PARAMETER_WITHOUT_LET.defaultTargets
     }
     is CfirEnumConstructor -> CangJieTarget.ENUM_ENTRY_LIST
-    is CfirConstructor -> AnnotationTargetLists.T_CONSTRUCTOR.defaultTargets
+    is CfirConstructor -> if (declaration.status.isStatic) {
+        AnnotationTargetLists.T_STATIC_INITIALIZER.defaultTargets
+    } else {
+        AnnotationTargetLists.T_CONSTRUCTOR.defaultTargets
+    }
     is CfirMacroDeclaration -> AnnotationTargetLists.T_MACRO.defaultTargets
     is CfirAnonymousFunction -> AnnotationTargetLists.T_FUNCTION_EXPRESSION.defaultTargets
     is CfirMainFunction -> classifyFunctionTargets(declaration)
@@ -353,6 +353,7 @@ private object AnnotationTargetLists {
         extraTargets(CangJieTarget.FIELD)
     }
     val T_CONSTRUCTOR = targetList(CangJieTarget.CONSTRUCTOR)
+    val T_STATIC_INITIALIZER = targetList(CangJieTarget.STATIC_INITIALIZER)
     val T_MACRO = targetList(CangJieTarget.MACRO)
     val T_FUNCTION_EXPRESSION = targetList(
         CangJieTarget.ANONYMOUS_FUNCTION,

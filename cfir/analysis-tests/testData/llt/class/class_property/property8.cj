@@ -15,7 +15,7 @@ open class A {
 }
 
 class B <: A {
-    public mut prop <!sema_cannot_override!>i<!>: Int64 {
+    public mut prop <!CANNOT_OVERRIDE!>i<!>: Int64 {
         get() {
             return 1
         }
@@ -51,7 +51,7 @@ abstract class A2 {
 }
 
 class B2 <: A2 {
-    public mut prop <!sema_cannot_override!>i<!>: Int64 {
+    public mut prop <!CANNOT_OVERRIDE!>i<!>: Int64 {
         get() {
             return 1
         }
@@ -86,8 +86,8 @@ abstract class A4 {
     }
 }
 
-class <!sema_redefinition!>B2<!> <: A4 {
-    public mut prop <!sema_cannot_override!>i<!>: Int64 {
+class <!CLASSIFIER_REDECLARATION!>B2<!> <: A4 {
+    public mut prop <!CANNOT_OVERRIDE!>i<!>: Int64 {
         get() {
             return 1
         }

@@ -87,6 +87,7 @@ object CjSyntaxErrors : CjDiagnosticsContainer() {
             "expecting a cangjie identifier" in normalized -> PARSE_EXPECTED_NAME
             "expecting identifier" in normalized -> PARSE_EXPECTED_NAME
             "expecting an identifier" in normalized -> PARSE_EXPECTED_NAME
+            "expecting property name" in normalized -> PARSE_EXPECTED_NAME
             else -> null
         }
     }

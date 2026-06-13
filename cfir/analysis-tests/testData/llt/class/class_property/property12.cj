@@ -29,7 +29,7 @@ interface Boo {
         get() {
             return 1
         }
-        set(<!chir_dce_unused_variable!>input<!>) {
+        set(input) {
             ()
         }
     }
@@ -46,7 +46,7 @@ interface Coo <: Boo {
         get() {
             return (10)
         }
-        set(<!chir_dce_unused_variable!>input<!>) {
+        set(input) {
             ()
         }
     }

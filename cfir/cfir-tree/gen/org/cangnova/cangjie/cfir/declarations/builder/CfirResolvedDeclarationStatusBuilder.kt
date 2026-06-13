@@ -31,6 +31,7 @@ class CfirResolvedDeclarationStatusBuilder {
     var isCommon: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isSpecific: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isRedef: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
+    var isDefault: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isAbstract: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isOpen: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
     var isSealed: Boolean by kotlin.properties.Delegates.notNull<Boolean>()
@@ -52,6 +53,7 @@ class CfirResolvedDeclarationStatusBuilder {
             isCommon,
             isSpecific,
             isRedef,
+            isDefault,
             isAbstract,
             isOpen,
             isSealed,

@@ -1,31 +1,35 @@
-﻿package org.cangnova.cangjie.cfir.analysis.collectors
+﻿/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
+package org.cangnova.cangjie.cfir.analysis.collectors
 
 import org.cangnova.cangjie.cfir.CfirAnnotationContainer
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContextForProvider
 import org.cangnova.cangjie.cfir.analysis.checkers.context.MutableCheckerContext
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirExtend
-import org.cangnova.cangjie.cfir.declarations.CfirFinalizer
-import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.declarations.CfirInterface
-import org.cangnova.cangjie.cfir.declarations.CfirMacroDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirMainFunction
-import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
-import org.cangnova.cangjie.cfir.declarations.CfirStruct
-import org.cangnova.cangjie.cfir.declarations.CfirClass
-import org.cangnova.cangjie.cfir.expressions.CfirAssignment
-import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
-import org.cangnova.cangjie.cfir.expressions.CfirBreakExpression
-import org.cangnova.cangjie.cfir.expressions.CfirContinueExpression
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirLoopJump
-import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
@@ -95,6 +99,30 @@ abstract class AbstractDiagnosticCollectorVisitor(
 
     override fun visitDeclaration(declaration: CfirDeclaration, data: Nothing?) {
         visitWithDeclaration(declaration)
+    }
+
+    override fun visitMemberDeclaration(memberDeclaration: CfirMemberDeclaration, data: Nothing?) {
+        withAnnotationContainer(memberDeclaration) {
+            visitWithDeclaration(memberDeclaration)
+        }
+    }
+
+    override fun visitVariable(variable: CfirVariable, data: Nothing?) {
+        withAnnotationContainer(variable) {
+            visitWithDeclaration(variable)
+        }
+    }
+
+    override fun visitValueParameter(valueParameter: CfirValueParameter, data: Nothing?) {
+        withAnnotationContainer(valueParameter) {
+            visitWithDeclaration(valueParameter)
+        }
+    }
+
+    override fun visitTypeParameter(typeParameter: CfirTypeParameter, data: Nothing?) {
+        withAnnotationContainer(typeParameter) {
+            visitWithDeclaration(typeParameter)
+        }
     }
 
     override fun visitClass(klass: CfirClass, data: Nothing?) {

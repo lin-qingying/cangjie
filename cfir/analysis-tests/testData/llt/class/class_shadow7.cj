@@ -9,7 +9,7 @@ open class Base {
 }
 
 class Data <: Base {
-    public static func <!INHERIT_MEMBER_KIND_INCONSISTENT!>f<!>(): Int32 {
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static func f(): Int32 {
         return 0
     }
 }

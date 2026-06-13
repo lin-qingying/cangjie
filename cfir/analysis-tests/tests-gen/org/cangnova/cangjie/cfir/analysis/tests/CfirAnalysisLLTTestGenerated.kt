@@ -1,8 +1,32 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.analysis.tests
 
 import com.intellij.testFramework.TestDataPath
 import org.cangnova.cangjie.ObsoleteTestInfrastructure
-import org.cangnova.cangjie.cfir.analysis.tests.runners.AbstractCfirLightTreeDiagnosticsTest
+import org.cangnova.cangjie.cfir.analysis.tests.runners.AbstractCfirLightTreeLlTDiagnosticsTest
 import org.cangnova.cangjie.test.TestMetadata
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -13,7 +37,7 @@ import java.io.File
 @TestDataPath("\$PROJECT_ROOT")
 @OptIn(ObsoleteTestInfrastructure::class)
 @ObsoleteTestInfrastructure
-class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
+class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
     @Test
     fun testAllFilesPresent() {
         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt")
@@ -22,7 +46,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("CompoundAssign")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class CompoundAssign : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class CompoundAssign : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/CompoundAssign")
@@ -55,7 +79,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("Arith")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Arith : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Arith : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/CompoundAssign/Arith")
@@ -113,7 +137,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("Bit")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Bit : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Bit : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/CompoundAssign/Bit")
@@ -135,7 +159,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("Logic")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Logic : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Logic : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/CompoundAssign/Logic")
@@ -164,7 +188,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("ErrMsgs")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class ErrMsgs : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class ErrMsgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ErrMsgs")
@@ -431,7 +455,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("access_not_imported_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class AccessNotImported01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class AccessNotImported01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_01")
@@ -447,7 +471,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("access_not_imported_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class AccessNotImported02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class AccessNotImported02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_02")
@@ -463,7 +487,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("access_not_imported_03")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class AccessNotImported03 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class AccessNotImported03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ErrMsgs/access_not_imported_03")
@@ -480,7 +504,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("Extend")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Extend : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Extend : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend")
@@ -1509,7 +1533,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("Extend_Refactor")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ExtendRefactor : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ExtendRefactor : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/Extend_Refactor")
@@ -1663,7 +1687,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("default_implement")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class DefaultImplement : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class DefaultImplement : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/default_implement")
@@ -1828,7 +1852,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("default_implement_00")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class DefaultImplement00 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class DefaultImplement00 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/default_implement/default_implement_00")
@@ -1844,7 +1868,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("default_implement_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class DefaultImplement01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class DefaultImplement01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/default_implement/default_implement_01")
@@ -1860,7 +1884,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("inherit_relation_of_extend01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class InheritRelationOfExtend01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class InheritRelationOfExtend01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/default_implement/inherit_relation_of_extend01")
@@ -1876,7 +1900,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("inherit_relation_of_extend02")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class InheritRelationOfExtend02 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class InheritRelationOfExtend02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/default_implement/inherit_relation_of_extend02")
@@ -1899,7 +1923,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("extend_export")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ExtendExport : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ExtendExport : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export")
@@ -1908,7 +1932,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("bug_part_import")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class BugPartImport : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class BugPartImport : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/bug_part_import")
@@ -1924,7 +1948,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("direct_extend")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class DirectExtend : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class DirectExtend : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend")
@@ -1933,7 +1957,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_generic01")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendGeneric01 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendGeneric01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic01")
@@ -1967,7 +1991,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_generic02")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendGeneric02 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendGeneric02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic02")
@@ -1989,7 +2013,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_generic03")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendGeneric03 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendGeneric03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_generic03")
@@ -2011,7 +2035,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_inherit")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendInherit : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendInherit : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/direct_extend/extend_inherit")
@@ -2034,7 +2058,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("extend_export_check")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ExtendExportCheck : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ExtendExportCheck : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/extend_export_check")
@@ -2050,7 +2074,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("interface_extend")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class InterfaceExtend : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class InterfaceExtend : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend")
@@ -2059,7 +2083,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("bugfix1")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Bugfix1 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Bugfix1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/bugfix1")
@@ -2075,7 +2099,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("bugfix2")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Bugfix2 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Bugfix2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/bugfix2")
@@ -2091,7 +2115,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("exported_extend_use_non_export_extend")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExportedExtendUseNonExportExtend : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExportedExtendUseNonExportExtend : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/exported_extend_use_non_export_extend")
@@ -2107,7 +2131,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_member_export01")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendMemberExport01 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendMemberExport01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export01")
@@ -2123,7 +2147,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_member_export02")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendMemberExport02 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendMemberExport02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export02")
@@ -2139,7 +2163,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_member_export03")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendMemberExport03 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendMemberExport03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export03")
@@ -2155,7 +2179,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_member_export04")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendMemberExport04 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendMemberExport04 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export04")
@@ -2171,7 +2195,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_member_export05")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendMemberExport05 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendMemberExport05 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export05")
@@ -2241,7 +2265,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("extend_member_export06")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ExtendMemberExport06 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ExtendMemberExport06 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_export/interface_extend/extend_member_export06")
@@ -2265,7 +2289,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("extend_instantiated_type")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ExtendInstantiatedType : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ExtendInstantiatedType : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_instantiated_type")
@@ -2371,7 +2395,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("extend_lookup")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ExtendLookup : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ExtendLookup : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/extend_lookup")
@@ -2387,7 +2411,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Generic : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Generic : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic")
@@ -2492,7 +2516,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("primitive_00")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Primitive00 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Primitive00 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/primitive_00")
@@ -2508,7 +2532,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("same_func_in_different_pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class SameFuncInDifferentPkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class SameFuncInDifferentPkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg")
@@ -2524,7 +2548,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("same_func_in_different_pkg_conflict")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class SameFuncInDifferentPkgConflict : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class SameFuncInDifferentPkgConflict : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/same_func_in_different_pkg_conflict")
@@ -2540,7 +2564,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("use_internal_extend_in_external_generic_with_conflict")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class UseInternalExtendInExternalGenericWithConflict : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class UseInternalExtendInExternalGenericWithConflict : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_with_conflict")
@@ -2556,7 +2580,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("use_internal_extend_in_external_generic_without_conflict")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class UseInternalExtendInExternalGenericWithoutConflict : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class UseInternalExtendInExternalGenericWithoutConflict : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_extend_in_external_generic_without_conflict")
@@ -2572,7 +2596,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("use_internal_generic_extend_in_external_generic")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class UseInternalGenericExtendInExternalGeneric : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class UseInternalGenericExtendInExternalGeneric : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic/use_internal_generic_extend_in_external_generic")
@@ -2589,7 +2613,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_param_decl_call_in_member_func")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericParamDeclCallInMemberFunc : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericParamDeclCallInMemberFunc : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/generic_param_decl_call_in_member_func")
@@ -2647,7 +2671,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("interface_default_implement")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class InterfaceDefaultImplement : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class InterfaceDefaultImplement : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement")
@@ -2758,7 +2782,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("other_pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class OtherPkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class OtherPkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg")
@@ -2774,7 +2798,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("other_pkg_in_generic")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class OtherPkgInGeneric : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class OtherPkgInGeneric : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_in_generic")
@@ -2790,7 +2814,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("other_pkg_prop")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class OtherPkgProp : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class OtherPkgProp : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_prop")
@@ -2806,7 +2830,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("other_pkg_prop_virtual")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class OtherPkgPropVirtual : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class OtherPkgPropVirtual : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_prop_virtual")
@@ -2822,7 +2846,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("other_pkg_virtual")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class OtherPkgVirtual : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class OtherPkgVirtual : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/other_pkg_virtual")
@@ -2838,7 +2862,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("three_pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ThreePkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ThreePkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/interface_default_implement/three_pkg")
@@ -2855,7 +2879,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("modifier")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Modifier : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Modifier : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/modifier")
@@ -2889,7 +2913,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("orphan_rule")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OrphanRule : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OrphanRule : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/orphan_rule")
@@ -2898,7 +2922,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("already_extend_interface")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class AlreadyExtendInterface : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class AlreadyExtendInterface : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/orphan_rule/already_extend_interface")
@@ -2914,7 +2938,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("already_extend_interface_generic")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class AlreadyExtendInterfaceGeneric : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class AlreadyExtendInterfaceGeneric : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/orphan_rule/already_extend_interface_generic")
@@ -2931,7 +2955,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("overload")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Overload : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Overload : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/overload")
@@ -2965,7 +2989,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("property")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Property : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Property : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/property")
@@ -3094,7 +3118,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("extend_enum_property")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ExtendEnumProperty : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ExtendEnumProperty : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/property/extend_enum_property")
@@ -3116,7 +3140,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("record")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Record : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Record : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/property/record")
@@ -3133,7 +3157,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("specialization_duplicate_check")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class SpecializationDuplicateCheck : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class SpecializationDuplicateCheck : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/specialization_duplicate_check")
@@ -3221,7 +3245,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("type_alias")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class TypeAlias : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class TypeAlias : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/type_alias")
@@ -3296,7 +3320,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("orphan_rule")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class OrphanRule : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class OrphanRule : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/type_alias/orphan_rule")
@@ -3313,7 +3337,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("visibility")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Visibility : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Visibility : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/visibility")
@@ -3358,7 +3382,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("default_other_pkg_child_class")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class DefaultOtherPkgChildClass : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class DefaultOtherPkgChildClass : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/visibility/default_other_pkg_child_class")
@@ -3374,7 +3398,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("protect_other_pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ProtectOtherPkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ProtectOtherPkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/visibility/protect_other_pkg")
@@ -3390,7 +3414,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("protect_other_pkg_child_class")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ProtectOtherPkgChildClass : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ProtectOtherPkgChildClass : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/visibility/protect_other_pkg_child_class")
@@ -3407,7 +3431,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("visibility_between_extend")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class VisibilityBetweenExtend : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class VisibilityBetweenExtend : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend/visibility_between_extend")
@@ -3454,7 +3478,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("Extend_Positive")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class ExtendPositive : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class ExtendPositive : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_Positive")
@@ -3482,7 +3506,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("Extend_import")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class ExtendImport : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class ExtendImport : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import")
@@ -3497,7 +3521,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import")
@@ -3513,7 +3537,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import1")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import1 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import1")
@@ -3529,7 +3553,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import10")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import10 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import10 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import10")
@@ -3545,7 +3569,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import11")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import11 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import11 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import11")
@@ -3561,7 +3585,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import12")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import12 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import12 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import12")
@@ -3577,7 +3601,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import13")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import13 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import13 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import13")
@@ -3593,7 +3617,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import14")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import14 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import14 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import14")
@@ -3609,7 +3633,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import15")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import15 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import15 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import15")
@@ -3625,7 +3649,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import16")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import16 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import16 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import16")
@@ -3641,7 +3665,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import2")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import2 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import2")
@@ -3657,7 +3681,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import3")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import3 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import3 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import3")
@@ -3673,7 +3697,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import4")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import4 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import4 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import4")
@@ -3689,7 +3713,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import5")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import5 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import5 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import5")
@@ -3705,7 +3729,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import6")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import6 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import6 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import6")
@@ -3721,7 +3745,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import7")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import7 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import7 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import7")
@@ -3737,7 +3761,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import7_1")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import71 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import71 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import7_1")
@@ -3753,7 +3777,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import9")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import9 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import9 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import9")
@@ -3769,7 +3793,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_orphanrule_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportOrphanrule01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportOrphanrule01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_01")
@@ -3785,7 +3809,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_orphanrule_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportOrphanrule02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportOrphanrule02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_02")
@@ -3801,7 +3825,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_orphanrule_03")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportOrphanrule03 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportOrphanrule03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_03")
@@ -3817,7 +3841,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_orphanrule_04")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportOrphanrule04 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportOrphanrule04 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_04")
@@ -3833,7 +3857,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_orphanrule_05")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportOrphanrule05 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportOrphanrule05 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_05")
@@ -3849,7 +3873,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_orphanrule_06")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportOrphanrule06 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportOrphanrule06 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_06")
@@ -3865,7 +3889,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_orphanrule_07")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportOrphanrule07 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportOrphanrule07 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Extend_import/import_orphanrule_07")
@@ -3882,7 +3906,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("InitializationCheck")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class InitializationCheck : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class InitializationCheck : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/InitializationCheck")
@@ -4131,7 +4155,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("global_variable_not_assignable_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GlobalVariableNotAssignable01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GlobalVariableNotAssignable01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/InitializationCheck/global_variable_not_assignable_01")
@@ -4147,7 +4171,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("global_variable_not_assignable_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GlobalVariableNotAssignable02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GlobalVariableNotAssignable02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/InitializationCheck/global_variable_not_assignable_02")
@@ -4163,7 +4187,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_variable_use_before_init_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticVariableUseBeforeInit02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticVariableUseBeforeInit02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_02")
@@ -4179,7 +4203,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_variable_use_before_init_05")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticVariableUseBeforeInit05 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticVariableUseBeforeInit05 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_05")
@@ -4195,7 +4219,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_variable_use_before_init_06")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticVariableUseBeforeInit06 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticVariableUseBeforeInit06 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/InitializationCheck/static_variable_use_before_init_06")
@@ -4212,7 +4236,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("IsOrAsExpr")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class IsOrAsExpr : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class IsOrAsExpr : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/IsOrAsExpr")
@@ -4299,7 +4323,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_generic_as_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportGenericAs01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportGenericAs01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/IsOrAsExpr/import_generic_as_01")
@@ -4316,7 +4340,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("Loops")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Loops : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Loops : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/Loops")
@@ -4404,7 +4428,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("OptionalModifiers")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class OptionalModifiers : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class OptionalModifiers : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/OptionalModifiers")
@@ -4474,7 +4498,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("OverlappedInstances")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class OverlappedInstances : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class OverlappedInstances : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/OverlappedInstances")
@@ -4514,7 +4538,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("PatternMatching")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class PatternMatching : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class PatternMatching : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching")
@@ -4523,7 +4547,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("ConstPattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ConstPattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ConstPattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/ConstPattern")
@@ -4551,7 +4575,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("EnumPattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class EnumPattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class EnumPattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/EnumPattern")
@@ -4759,7 +4783,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("MatchExpression")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class MatchExpression : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class MatchExpression : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/MatchExpression")
@@ -5003,7 +5027,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("Sealed")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Sealed : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Sealed : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/Sealed")
@@ -5084,7 +5108,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("ABI_stable")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ABIStable : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ABIStable : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/Sealed/ABI_stable")
@@ -5118,7 +5142,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg_class")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PkgClass : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PkgClass : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_class")
@@ -5140,7 +5164,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg_generic_interface")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PkgGenericInterface : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PkgGenericInterface : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_generic_interface")
@@ -5156,7 +5180,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg_interaction")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PkgInteraction : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PkgInteraction : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_interaction")
@@ -5178,7 +5202,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg_interface")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PkgInterface : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PkgInterface : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_interface")
@@ -5212,7 +5236,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg_visibility")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PkgVisibility : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PkgVisibility : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/Sealed/pkg_visibility")
@@ -5235,7 +5259,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("TuplePattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class TuplePattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class TuplePattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/TuplePattern")
@@ -5269,7 +5293,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("TypePattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class TypePattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class TypePattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/TypePattern")
@@ -5476,7 +5500,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg_non_sealed")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PkgNonSealed : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PkgNonSealed : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/PatternMatching/TypePattern/pkg_non_sealed")
@@ -5494,7 +5518,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("accessibility")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Accessibility : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Accessibility : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility")
@@ -5515,7 +5539,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("common_super_type")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CommonSuperType : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CommonSuperType : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type")
@@ -5530,7 +5554,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pb")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pb : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pb : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type/pb")
@@ -5547,7 +5571,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("common_super_type2")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CommonSuperType2 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CommonSuperType2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type2")
@@ -5563,7 +5587,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("common_super_type3")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CommonSuperType3 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CommonSuperType3 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type3")
@@ -5579,7 +5603,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("common_super_type4")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CommonSuperType4 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CommonSuperType4 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type4")
@@ -5595,7 +5619,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("common_super_type5")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CommonSuperType5 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CommonSuperType5 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/accessibility/common_super_type5")
@@ -5612,7 +5636,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("array")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Array : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Array : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/array")
@@ -5819,7 +5843,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("array_extend")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ArrayExtend : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ArrayExtend : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/array/array_extend")
@@ -5836,7 +5860,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("assign")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Assign : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Assign : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/assign")
@@ -5929,7 +5953,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("multipleAssignExpr")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class MultipleAssignExpr : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class MultipleAssignExpr : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/assign/multipleAssignExpr")
@@ -6000,7 +6024,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("binary")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Binary : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Binary : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/binary")
@@ -6111,7 +6135,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("power")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Power : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Power : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/binary/power")
@@ -6128,7 +6152,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("blockexpr")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Blockexpr : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Blockexpr : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/blockexpr")
@@ -6204,7 +6228,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("bottomType")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class BottomType : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class BottomType : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/bottomType")
@@ -6256,7 +6280,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("box")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Box : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Box : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box")
@@ -6421,7 +6445,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("box_export")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class BoxExport : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class BoxExport : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_export")
@@ -6430,7 +6454,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("src")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_export/src")
@@ -6445,7 +6469,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("service")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Service : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Service : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_export/src/service")
@@ -6493,7 +6517,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("box_generic_class_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class BoxGenericClass01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class BoxGenericClass01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_generic_class_01")
@@ -6509,7 +6533,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("box_generic_class_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class BoxGenericClass02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class BoxGenericClass02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_generic_class_02")
@@ -6525,7 +6549,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("box_generic_class_03")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class BoxGenericClass03 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class BoxGenericClass03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/box_generic_class_03")
@@ -6541,7 +6565,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("check_super_box_04")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CheckSuperBox04 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CheckSuperBox04 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/check_super_box_04")
@@ -6557,7 +6581,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("check_super_box_07")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CheckSuperBox07 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CheckSuperBox07 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/check_super_box_07")
@@ -6573,7 +6597,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("check_super_box_08")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CheckSuperBox08 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CheckSuperBox08 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/check_super_box_08")
@@ -6589,7 +6613,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_inline_box_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportInlineBox01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportInlineBox01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/box/import_inline_box_01")
@@ -6606,7 +6630,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("call")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Call : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Call : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/call")
@@ -7126,7 +7150,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("capture")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Capture : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Capture : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/capture")
@@ -7147,7 +7171,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_generic_func_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportGenericFunc01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportGenericFunc01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/capture/import_generic_func_01")
@@ -7164,7 +7188,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("class")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Class : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Class : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class")
@@ -8685,7 +8709,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("ThisType")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ThisType : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ThisType : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/ThisType")
@@ -8976,7 +9000,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("import_this_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ImportThis01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ImportThis01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/ThisType/import_this_01")
@@ -8992,7 +9016,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("import_this_02")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ImportThis02 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ImportThis02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/ThisType/import_this_02")
@@ -9009,7 +9033,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("access_modifiers")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class AccessModifiers : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class AccessModifiers : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/access_modifiers")
@@ -9043,7 +9067,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("call_private_ctor_in_other_package")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class CallPrivateCtorInOtherPackage : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class CallPrivateCtorInOtherPackage : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/call_private_ctor_in_other_package")
@@ -9059,7 +9083,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("class_finalizer")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ClassFinalizer : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ClassFinalizer : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_finalizer")
@@ -9117,7 +9141,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("class_instantiation_check")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ClassInstantiationCheck : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ClassInstantiationCheck : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_instantiation_check")
@@ -9216,7 +9240,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("import_test")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ImportTest : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ImportTest : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test")
@@ -9225,7 +9249,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("test1")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Test1 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Test1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test1")
@@ -9241,7 +9265,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("test2")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Test2 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Test2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test2")
@@ -9257,7 +9281,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("test3")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Test3 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Test3 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_instantiation_check/import_test/test3")
@@ -9275,7 +9299,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("class_no_override_modifier_invalid_9")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ClassNoOverrideModifierInvalid9 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ClassNoOverrideModifierInvalid9 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_no_override_modifier_invalid_9")
@@ -9291,7 +9315,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("class_override_modifier_3")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ClassOverrideModifier3 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ClassOverrideModifier3 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_override_modifier_3")
@@ -9300,7 +9324,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("src")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_override_modifier_3/src")
@@ -9317,7 +9341,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("class_property")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ClassProperty : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ClassProperty : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/class_property")
@@ -9513,7 +9537,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("constructor")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Constructor : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Constructor : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/constructor")
@@ -9534,7 +9558,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("cannot_currying")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class CannotCurrying : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class CannotCurrying : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/constructor/cannot_currying")
@@ -9550,7 +9574,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("primaryConstructor")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PrimaryConstructor : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PrimaryConstructor : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor")
@@ -9625,7 +9649,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("import_primary_ctor_01")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class ImportPrimaryCtor01 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class ImportPrimaryCtor01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor/import_primary_ctor_01")
@@ -9641,7 +9665,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("rawIdentifier")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class RawIdentifier : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class RawIdentifier : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/constructor/primaryConstructor/rawIdentifier")
@@ -9659,7 +9683,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_static_function")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportStaticFunction : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportStaticFunction : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function")
@@ -9668,7 +9692,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("generic_class")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class GenericClass : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class GenericClass : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function/generic_class")
@@ -9684,7 +9708,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("no_generic_class")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class NoGenericClass : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class NoGenericClass : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class")
@@ -9700,7 +9724,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("no_generic_class2")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class NoGenericClass2 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class NoGenericClass2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class2")
@@ -9716,7 +9740,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("no_generic_class3")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class NoGenericClass3 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class NoGenericClass3 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/import_static_function/no_generic_class3")
@@ -9733,7 +9757,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("inhert_with_same_name")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class InhertWithSameName : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class InhertWithSameName : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/inhert_with_same_name")
@@ -9749,7 +9773,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("interface_access_control")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class InterfaceAccessControl : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class InterfaceAccessControl : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/interface_access_control")
@@ -9758,7 +9782,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("toplevel_interface_access_control1")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ToplevelInterfaceAccessControl1 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ToplevelInterfaceAccessControl1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control1")
@@ -9774,7 +9798,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("toplevel_interface_access_control2")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ToplevelInterfaceAccessControl2 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ToplevelInterfaceAccessControl2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control2")
@@ -9790,7 +9814,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("toplevel_interface_access_control3")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class ToplevelInterfaceAccessControl3 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class ToplevelInterfaceAccessControl3 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/interface_access_control/toplevel_interface_access_control3")
@@ -9807,7 +9831,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("let_in_init")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class LetInInit : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class LetInInit : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/let_in_init")
@@ -9925,7 +9949,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("open_modifier")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OpenModifier : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OpenModifier : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/open_modifier")
@@ -10007,7 +10031,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("override_unvisible_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OverrideUnvisible01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OverrideUnvisible01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/override_unvisible_01")
@@ -10023,7 +10047,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("override_unvisible_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OverrideUnvisible02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OverrideUnvisible02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/override_unvisible_02")
@@ -10039,7 +10063,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("override_unvisible_03")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OverrideUnvisible03 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OverrideUnvisible03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/override_unvisible_03")
@@ -10055,7 +10079,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("protected")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Protected : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Protected : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/protected")
@@ -10071,7 +10095,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("shadow_parent")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ShadowParent : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ShadowParent : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/shadow_parent")
@@ -10087,7 +10111,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_call_non_static")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticCallNonStatic : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticCallNonStatic : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/static_call_non_static")
@@ -10127,7 +10151,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_init")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticInit : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticInit : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/static_init")
@@ -10172,7 +10196,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("generic_class_static_init_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class GenericClassStaticInit01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class GenericClassStaticInit01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_01")
@@ -10188,7 +10212,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("generic_class_static_init_02")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class GenericClassStaticInit02 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class GenericClassStaticInit02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/static_init/generic_class_static_init_02")
@@ -10204,7 +10228,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("static_init_pkg_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class StaticInitPkg01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class StaticInitPkg01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/static_init/static_init_pkg_01")
@@ -10221,7 +10245,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_or_global_var")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticOrGlobalVar : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticOrGlobalVar : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/static_or_global_var")
@@ -10308,7 +10332,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("static_or_global_var14")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class StaticOrGlobalVar14 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class StaticOrGlobalVar14 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/static_or_global_var/static_or_global_var14")
@@ -10331,7 +10355,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("super_this")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class SuperThis : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class SuperThis : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/class/super_this")
@@ -10426,7 +10450,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("concurrency")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Concurrency : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Concurrency : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/concurrency")
@@ -10501,7 +10525,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_pkg")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportPkg : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportPkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/concurrency/import_pkg")
@@ -10518,7 +10542,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("const")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Const : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Const : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/const")
@@ -10540,7 +10564,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("const_evaluation")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class ConstEvaluation : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class ConstEvaluation : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/const_evaluation")
@@ -11005,7 +11029,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("different_pkgs")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class DifferentPkgs : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class DifferentPkgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/const_evaluation/different_pkgs")
@@ -11022,7 +11046,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("constraint_check")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class ConstraintCheck : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class ConstraintCheck : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/constraint_check")
@@ -11313,7 +11337,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("AssumptionTest")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class AssumptionTest : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class AssumptionTest : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/constraint_check/AssumptionTest")
@@ -11329,7 +11353,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkg001")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkg001 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkg001 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/constraint_check/pkg001")
@@ -11338,7 +11362,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("b")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class B : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class B : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/constraint_check/pkg001/b")
@@ -11356,7 +11380,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("desugar_error_report")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class DesugarErrorReport : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class DesugarErrorReport : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/desugar_error_report")
@@ -11384,7 +11408,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("effect")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Effect : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Effect : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/effect")
@@ -11550,7 +11574,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("enum")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Enum : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Enum : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum")
@@ -11979,7 +12003,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enum22_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enum22Test : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enum22Test : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum22_test")
@@ -11994,7 +12018,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum22_test/pkg")
@@ -12011,7 +12035,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enum23_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enum23Test : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enum23Test : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum23_test")
@@ -12026,7 +12050,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum23_test/pkg")
@@ -12043,7 +12067,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enum24_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enum24Test : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enum24Test : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum24_test")
@@ -12058,7 +12082,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum24_test/pkg")
@@ -12075,7 +12099,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enum31_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enum31Test : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enum31Test : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum31_test")
@@ -12091,7 +12115,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enum33_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enum33Test : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enum33Test : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum33_test")
@@ -12107,7 +12131,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enum34_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enum34Test : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enum34Test : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum34_test")
@@ -12123,7 +12147,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enum8_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enum8Test : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enum8Test : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum8_test")
@@ -12138,7 +12162,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/enum/enum8_test/pkg")
@@ -12156,7 +12180,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("exception")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Exception : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Exception : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/exception")
@@ -12250,7 +12274,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("extends_implements_interface_duplicated")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class ExtendsImplementsInterfaceDuplicated : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class ExtendsImplementsInterfaceDuplicated : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/extends_implements_interface_duplicated")
@@ -12338,7 +12362,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("ffi")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Ffi : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Ffi : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ffi")
@@ -12383,7 +12407,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("bugfix1")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Bugfix1 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Bugfix1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ffi/bugfix1")
@@ -12399,7 +12423,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_cpointer_generic")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportCpointerGeneric : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportCpointerGeneric : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/ffi/import_cpointer_generic")
@@ -12416,7 +12440,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("flow_expr")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class FlowExpr : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class FlowExpr : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/flow_expr")
@@ -12570,7 +12594,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("forin")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Forin : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Forin : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/forin")
@@ -12742,7 +12766,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("function")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Function : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Function : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function")
@@ -13387,7 +13411,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("defaultParameter_pkg_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class DefaultParameterPkg01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class DefaultParameterPkg01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/defaultParameter_pkg_01")
@@ -13403,7 +13427,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_00")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Import00 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Import00 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/import_00")
@@ -13437,7 +13461,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_function")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticFunction : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticFunction : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/static_function")
@@ -13446,7 +13470,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("static_partially_instantiate_import_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class StaticPartiallyInstantiateImport01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class StaticPartiallyInstantiateImport01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_01")
@@ -13455,7 +13479,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("src")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_01/src")
@@ -13472,7 +13496,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("static_partially_instantiate_import_02")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class StaticPartiallyInstantiateImport02 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class StaticPartiallyInstantiateImport02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/function/static_function/static_partially_instantiate_import_02")
@@ -13490,7 +13514,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("functionlinkage")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Functionlinkage : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Functionlinkage : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage")
@@ -13517,7 +13541,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("indirect_used_generic_class_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class IndirectUsedGenericClass01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class IndirectUsedGenericClass01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/indirect_used_generic_class_01")
@@ -13533,7 +13557,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("ok_no_sub_pkg_00")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OkNoSubPkg00 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OkNoSubPkg00 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/ok_no_sub_pkg_00")
@@ -13549,7 +13573,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("used_internal_decl_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UsedInternalDecl01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UsedInternalDecl01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_01")
@@ -13565,7 +13589,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("used_internal_decl_03")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UsedInternalDecl03 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UsedInternalDecl03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/functionlinkage/used_internal_decl_03")
@@ -13582,7 +13606,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("future")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Future : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Future : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/future")
@@ -13616,7 +13640,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("fuzz_invalid_parse")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class FuzzInvalidParse : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class FuzzInvalidParse : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/fuzz_invalid_parse")
@@ -13692,7 +13716,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("generics")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Generics : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Generics : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics")
@@ -14625,7 +14649,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("bugfix1")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Bugfix1 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Bugfix1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/bugfix1")
@@ -14641,7 +14665,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("class_generic_import_05")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ClassGenericImport05 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ClassGenericImport05 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/class_generic_import_05")
@@ -14650,7 +14674,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("src")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/class_generic_import_05/src")
@@ -14665,7 +14689,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("p1")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class P1 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class P1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/class_generic_import_05/src/p1")
@@ -14683,7 +14707,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_constraint")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericConstraint : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericConstraint : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_constraint")
@@ -14770,7 +14794,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("generic_constraint7")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class GenericConstraint7 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class GenericConstraint7 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_constraint/generic_constraint7")
@@ -14787,7 +14811,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_constraint_inheritance")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericConstraintInheritance : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericConstraintInheritance : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_constraint_inheritance")
@@ -14911,7 +14935,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_func_with_default_param_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericFuncWithDefaultParam01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericFuncWithDefaultParam01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_func_with_default_param_01")
@@ -14926,7 +14950,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg0")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkg0 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkg0 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_func_with_default_param_01/pkg0")
@@ -14943,7 +14967,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_inheritance")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericInheritance : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericInheritance : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_inheritance")
@@ -14965,7 +14989,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member")
@@ -15004,7 +15028,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkg01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkg01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member/pkg01")
@@ -15021,7 +15045,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member02")
@@ -15037,7 +15061,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member03")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember03 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member03")
@@ -15053,7 +15077,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member04")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember04 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember04 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member04")
@@ -15069,7 +15093,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member05")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember05 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember05 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member05")
@@ -15085,7 +15109,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member06")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember06 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember06 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member06")
@@ -15101,7 +15125,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member07")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember07 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember07 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member07")
@@ -15117,7 +15141,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member08")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember08 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember08 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member08")
@@ -15133,7 +15157,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member09")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember09 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember09 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member09")
@@ -15149,7 +15173,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_member10")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericMember10 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericMember10 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_member10")
@@ -15165,7 +15189,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_static_field_prop")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericStaticFieldProp : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericStaticFieldProp : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_static_field_prop")
@@ -15271,7 +15295,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_static_functions")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericStaticFunctions : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericStaticFunctions : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/generic_static_functions")
@@ -15395,7 +15419,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_desugar_binary_opt")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportDesugarBinaryOpt : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportDesugarBinaryOpt : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/import_desugar_binary_opt")
@@ -15411,7 +15435,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_internal2external_1002")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportInternal2external1002 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportInternal2external1002 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/import_internal2external_1002")
@@ -15420,7 +15444,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("src")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/import_internal2external_1002/src")
@@ -15437,7 +15461,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_no_conflit_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportNoConflit01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportNoConflit01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/import_no_conflit_01")
@@ -15453,7 +15477,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("instantiation")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Instantiation : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Instantiation : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation")
@@ -15510,7 +15534,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("O2_part_gi")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class O2PartGi : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class O2PartGi : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation/O2_part_gi")
@@ -15538,7 +15562,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("instantiation_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Instantiation01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Instantiation01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation/instantiation_01")
@@ -15554,7 +15578,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("usage_collection_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class UsageCollection01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class UsageCollection01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation/usage_collection_01")
@@ -15570,7 +15594,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("use_import_layout")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class UseImportLayout : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class UseImportLayout : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation/use_import_layout")
@@ -15587,7 +15611,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("instantiationDeletion")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class InstantiationDeletion : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class InstantiationDeletion : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiationDeletion")
@@ -15603,7 +15627,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("instantiation_rearrange_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class InstantiationRearrange01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class InstantiationRearrange01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_01")
@@ -15619,7 +15643,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("instantiation_rearrange_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class InstantiationRearrange02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class InstantiationRearrange02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/instantiation_rearrange_02")
@@ -15635,7 +15659,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("nested_generic_func")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class NestedGenericFunc : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class NestedGenericFunc : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/nested_generic_func")
@@ -15663,7 +15687,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("operatorOverload")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OperatorOverload : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OperatorOverload : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/operatorOverload")
@@ -15697,7 +15721,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("override_super_extend")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OverrideSuperExtend : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OverrideSuperExtend : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/override_super_extend")
@@ -15779,7 +15803,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkg_generic_inheritance")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class PkgGenericInheritance : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class PkgGenericInheritance : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkg_generic_inheritance")
@@ -15795,7 +15819,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkg_generic_inheritance_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class PkgGenericInheritance02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class PkgGenericInheritance02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkg_generic_inheritance_02")
@@ -15811,7 +15835,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkg_instantiation_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class PkgInstantiation01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class PkgInstantiation01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkg_instantiation_01")
@@ -15827,7 +15851,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs001")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs001 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs001 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs001")
@@ -15842,7 +15866,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs001001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs001001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs001001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs001/pkgs001001a")
@@ -15859,7 +15883,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0010_record")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0010Record : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0010Record : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0010_record")
@@ -15874,7 +15898,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0010001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0010001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0010001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0010_record/pkgs0010001a")
@@ -15891,7 +15915,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0011_record")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0011Record : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0011Record : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0011_record")
@@ -15906,7 +15930,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0011001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0011001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0011001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0011_record/pkgs0011001a")
@@ -15923,7 +15947,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0012_record")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0012Record : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0012Record : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0012_record")
@@ -15938,7 +15962,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0012001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0012001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0012001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0012_record/pkgs0012001a")
@@ -15955,7 +15979,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0018_generic_instantiation_rhombus_import")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0018GenericInstantiationRhombusImport : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0018GenericInstantiationRhombusImport : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_generic_instantiation_rhombus_import")
@@ -15970,7 +15994,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0018001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0018001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0018001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_generic_instantiation_rhombus_import/pkgs0018001a")
@@ -15986,7 +16010,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0018002a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0018002a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0018002a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_generic_instantiation_rhombus_import/pkgs0018002a")
@@ -16002,7 +16026,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0018003a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0018003a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0018003a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_generic_instantiation_rhombus_import/pkgs0018003a")
@@ -16019,7 +16043,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0018_multi_package_chain_import")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0018MultiPackageChainImport : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0018MultiPackageChainImport : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_multi_package_chain_import")
@@ -16034,7 +16058,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0018001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0018001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0018001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_multi_package_chain_import/pkgs0018001a")
@@ -16050,7 +16074,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0018002a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0018002a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0018002a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_multi_package_chain_import/pkgs0018002a")
@@ -16067,7 +16091,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0018_multi_packages_rhombus_import")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0018MultiPackagesRhombusImport : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0018MultiPackagesRhombusImport : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_multi_packages_rhombus_import")
@@ -16082,7 +16106,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0018001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0018001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0018001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_multi_packages_rhombus_import/pkgs0018001a")
@@ -16098,7 +16122,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0018002a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0018002a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0018002a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_multi_packages_rhombus_import/pkgs0018002a")
@@ -16114,7 +16138,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs0018003a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs0018003a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs0018003a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0018_multi_packages_rhombus_import/pkgs0018003a")
@@ -16131,7 +16155,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0019_record_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0019RecordTest : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0019RecordTest : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0019_record_test")
@@ -16147,7 +16171,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs002")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs002 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs002 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs002")
@@ -16162,7 +16186,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs002001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs002001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs002001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs002/pkgs002001a")
@@ -16179,7 +16203,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0020_record_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0020RecordTest : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0020RecordTest : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test")
@@ -16195,7 +16219,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0020_record_test2")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0020RecordTest2 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0020RecordTest2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test2")
@@ -16211,7 +16235,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0020_record_test3")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0020RecordTest3 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0020RecordTest3 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0020_record_test3")
@@ -16227,7 +16251,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0021_record_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0021RecordTest : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0021RecordTest : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0021_record_test")
@@ -16243,7 +16267,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0024_ClassTypeArgs")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0024ClassTypeArgs : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0024ClassTypeArgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0024_ClassTypeArgs")
@@ -16258,7 +16282,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0024_ClassTypeArgs/pkgs")
@@ -16275,7 +16299,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0024_EnumTypeArgs")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0024EnumTypeArgs : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0024EnumTypeArgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0024_EnumTypeArgs")
@@ -16290,7 +16314,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0024_EnumTypeArgs/pkgs")
@@ -16307,7 +16331,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0024_RecordTypeArgs")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0024RecordTypeArgs : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0024RecordTypeArgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0024_RecordTypeArgs")
@@ -16322,7 +16346,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0024_RecordTypeArgs/pkgs")
@@ -16339,7 +16363,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0024_typeArgs")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0024TypeArgs : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0024TypeArgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0024_typeArgs")
@@ -16354,7 +16378,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0024_typeArgs/pkgs")
@@ -16371,7 +16395,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0026_generic_record_repeat_import")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0026GenericRecordRepeatImport : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0026GenericRecordRepeatImport : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0026_generic_record_repeat_import")
@@ -16387,7 +16411,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0028_generic_import_ai_demo")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0028GenericImportAiDemo : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0028GenericImportAiDemo : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0028_generic_import_ai_demo")
@@ -16402,7 +16426,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("ops")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Ops : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Ops : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0028_generic_import_ai_demo/ops")
@@ -16419,7 +16443,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0029_generic_class_ai_demo")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0029GenericClassAiDemo : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0029GenericClassAiDemo : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0029_generic_class_ai_demo")
@@ -16434,7 +16458,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("nn")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Nn : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Nn : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0029_generic_class_ai_demo/nn")
@@ -16451,7 +16475,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs003")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs003 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs003 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs003")
@@ -16466,7 +16490,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs003001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs003001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs003001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs003/pkgs003001a")
@@ -16483,7 +16507,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0030_generic_external_use_internal_ui_demo")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0030GenericExternalUseInternalUiDemo : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0030GenericExternalUseInternalUiDemo : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0030_generic_external_use_internal_ui_demo")
@@ -16499,7 +16523,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0031_generic_with_nongeneric_test")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0031GenericWithNongenericTest : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0031GenericWithNongenericTest : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0031_generic_with_nongeneric_test")
@@ -16515,7 +16539,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs0033_generic_multipkg_ai_demo")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs0033GenericMultipkgAiDemo : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs0033GenericMultipkgAiDemo : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs0033_generic_multipkg_ai_demo")
@@ -16531,7 +16555,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs004")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs004 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs004 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs004")
@@ -16546,7 +16570,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs004001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs004001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs004001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs004/pkgs004001a")
@@ -16563,7 +16587,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs005")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs005 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs005 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs005")
@@ -16578,7 +16602,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs005001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs005001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs005001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs005/pkgs005001a")
@@ -16595,7 +16619,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs006")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs006 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs006 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs006")
@@ -16610,7 +16634,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs006001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs006001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs006001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs006/pkgs006001a")
@@ -16633,7 +16657,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs007")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs007 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs007 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs007")
@@ -16648,7 +16672,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs007001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs007001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs007001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs007/pkgs007001a")
@@ -16665,7 +16689,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs009")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs009 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs009 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs009")
@@ -16680,7 +16704,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkgs009001a")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkgs009001a : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkgs009001a : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs009/pkgs009001a")
@@ -16697,7 +16721,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("pkgs010")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Pkgs010 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Pkgs010 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/pkgs010")
@@ -16713,7 +16737,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("rearrange_multi_impl")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class RearrangeMultiImpl : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class RearrangeMultiImpl : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/generics/rearrange_multi_impl")
@@ -16730,7 +16754,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("if")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class If : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class If : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if")
@@ -16902,7 +16926,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("if-let-expr")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class IfLetExpr : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class IfLetExpr : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if-let-expr")
@@ -16995,7 +17019,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enhancedcondition")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enhancedcondition : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enhancedcondition : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition")
@@ -17076,7 +17100,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("o2")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class O2 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class O2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition/o2")
@@ -17098,7 +17122,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("parse")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Parse : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Parse : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition/parse")
@@ -17126,7 +17150,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("patterns")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Patterns : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Patterns : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition/patterns")
@@ -17190,7 +17214,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("precedence")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Precedence : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Precedence : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition/precedence")
@@ -17206,7 +17230,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("vars")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Vars : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Vars : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/if-let-expr/enhancedcondition/vars")
@@ -17260,7 +17284,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("incordec")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Incordec : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Incordec : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/incordec")
@@ -17395,7 +17419,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("increment_11n")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Increment11n : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Increment11n : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/incordec/increment_11n")
@@ -17410,7 +17434,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("src")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/incordec/increment_11n/src")
@@ -17419,7 +17443,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("pkga")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Pkga : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Pkga : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/incordec/increment_11n/src/pkga")
@@ -17437,7 +17461,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("increment_45")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Increment45 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Increment45 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/incordec/increment_45")
@@ -17446,7 +17470,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("src")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/incordec/increment_45/src")
@@ -17461,7 +17485,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("pkga")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Pkga : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Pkga : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/incordec/increment_45/src/pkga")
@@ -17480,7 +17504,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("interface")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Interface : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Interface : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface")
@@ -17603,7 +17627,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic_interface_inheritance")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class GenericInterfaceInheritance : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class GenericInterfaceInheritance : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance")
@@ -17744,7 +17768,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("generic_interface_import")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class GenericInterfaceImport : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class GenericInterfaceImport : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import")
@@ -17753,7 +17777,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("generic_interface_import1")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class GenericInterfaceImport1 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class GenericInterfaceImport1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import1")
@@ -17769,7 +17793,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("generic_interface_import2")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class GenericInterfaceImport2 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class GenericInterfaceImport2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/generic_interface_inheritance/generic_interface_import/generic_interface_import2")
@@ -17787,7 +17811,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("interface_default_impl")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class InterfaceDefaultImpl : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class InterfaceDefaultImpl : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/interface_default_impl")
@@ -17953,7 +17977,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("interface_property")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class InterfaceProperty : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class InterfaceProperty : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/interface_property")
@@ -17993,7 +18017,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("use_interface_default_impl_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UseInterfaceDefaultImpl01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UseInterfaceDefaultImpl01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_01")
@@ -18009,7 +18033,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("use_interface_default_impl_02")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UseInterfaceDefaultImpl02 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UseInterfaceDefaultImpl02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_02")
@@ -18025,7 +18049,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("use_interface_default_impl_03")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UseInterfaceDefaultImpl03 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UseInterfaceDefaultImpl03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/interface/use_interface_default_impl_03")
@@ -18042,7 +18066,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("intrinsics")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Intrinsics : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Intrinsics : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/intrinsics")
@@ -18058,7 +18082,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("join_meet")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class JoinMeet : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class JoinMeet : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/join_meet")
@@ -18128,7 +18152,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("lambda")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Lambda : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Lambda : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lambda")
@@ -18329,7 +18353,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("lambda_capture")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class LambdaCapture : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class LambdaCapture : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lambda/lambda_capture")
@@ -18483,7 +18507,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("trailing_closure")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class TrailingClosure : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class TrailingClosure : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lambda/trailing_closure")
@@ -18602,7 +18626,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("let")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Let : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Let : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/let")
@@ -18660,7 +18684,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("linkage")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Linkage : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Linkage : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage")
@@ -18699,7 +18723,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("private_limit")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class PrivateLimit : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class PrivateLimit : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit")
@@ -18708,7 +18732,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("private_dup01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PrivateDup01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PrivateDup01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup01")
@@ -18724,7 +18748,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("private_dup02")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PrivateDup02 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PrivateDup02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup02")
@@ -18740,7 +18764,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("private_dup03")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class PrivateDup03 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class PrivateDup03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/linkage/private_limit/private_dup03")
@@ -18758,7 +18782,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("lookup")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Lookup : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Lookup : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lookup")
@@ -18821,7 +18845,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("accessible")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Accessible : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Accessible : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lookup/accessible")
@@ -18837,7 +18861,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("multi_files_private_00")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class MultiFilesPrivate00 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class MultiFilesPrivate00 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lookup/multi_files_private_00")
@@ -18852,7 +18876,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("pkg")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Pkg : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Pkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lookup/multi_files_private_00/pkg")
@@ -18869,7 +18893,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("multi_files_private_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class MultiFilesPrivate01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class MultiFilesPrivate01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/lookup/multi_files_private_01")
@@ -18886,7 +18910,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("main")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Main : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Main : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main")
@@ -18901,7 +18925,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("file")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class File : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class File : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/file")
@@ -18935,7 +18959,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("files")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Files : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Files : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/files")
@@ -18951,7 +18975,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("main_redefinition")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class MainRedefinition : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class MainRedefinition : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/main_redefinition")
@@ -18967,7 +18991,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("mod_files_main_06_1_c")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ModFilesMain061C : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ModFilesMain061C : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/mod_files_main_06_1_c")
@@ -18976,7 +19000,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("mod1")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Mod1 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Mod1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/mod_files_main_06_1_c/mod1")
@@ -18985,7 +19009,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("src")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/mod_files_main_06_1_c/mod1/src")
@@ -19000,7 +19024,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                     @TestMetadata("p1")
                     @TestDataPath("\$PROJECT_ROOT")
                     @Nested
-                    inner class P1 : AbstractCfirLightTreeDiagnosticsTest() {
+                    inner class P1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                         @Test
                         fun testAllFilesPresent() {
                             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/mod_files_main_06_1_c/mod1/src/p1")
@@ -19018,7 +19042,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("src")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/mod_files_main_06_1_c/src")
@@ -19035,7 +19059,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("package")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Package : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Package : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/package")
@@ -19062,7 +19086,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("no_main")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class NoMain : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class NoMain : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/main/package/no_main")
@@ -19080,7 +19104,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("match")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Match : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Match : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/match")
@@ -19179,7 +19203,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("bugfix")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Bugfix : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Bugfix : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/match/bugfix")
@@ -19207,7 +19231,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("const_pattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ConstPattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ConstPattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/match/const_pattern")
@@ -19235,7 +19259,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enum_pattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class EnumPattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class EnumPattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/match/enum_pattern")
@@ -19263,7 +19287,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("match_no_selector")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class MatchNoSelector : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class MatchNoSelector : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/match/match_no_selector")
@@ -19333,7 +19357,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("nested_pattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class NestedPattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class NestedPattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/match/nested_pattern")
@@ -19397,7 +19421,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("tuple_pattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class TuplePattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class TuplePattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/match/tuple_pattern")
@@ -19443,7 +19467,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("value_binding_pattern")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ValueBindingPattern : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ValueBindingPattern : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/match/value_binding_pattern")
@@ -19460,7 +19484,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("mut")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Mut : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Mut : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/mut")
@@ -19476,7 +19500,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("native")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Native : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Native : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/native")
@@ -19516,7 +19540,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("nonExhaustiveEnum")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class NonExhaustiveEnum : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class NonExhaustiveEnum : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/nonExhaustiveEnum")
@@ -19537,7 +19561,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("bad")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Bad : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Bad : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/nonExhaustiveEnum/bad")
@@ -19595,7 +19619,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("binaryCompat")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class BinaryCompat : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class BinaryCompat : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/nonExhaustiveEnum/binaryCompat")
@@ -19624,7 +19648,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("operator")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Operator : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Operator : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/operator")
@@ -19801,7 +19825,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("bitwise_operator")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class BitwiseOperator : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class BitwiseOperator : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/operator/bitwise_operator")
@@ -19834,7 +19858,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("shift")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Shift : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Shift : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/operator/bitwise_operator/shift")
@@ -19864,7 +19888,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("operator_overload")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class OperatorOverload : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class OperatorOverload : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/operator_overload")
@@ -20071,7 +20095,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("err_module")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ErrModule : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ErrModule : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/operator_overload/err_module")
@@ -20086,7 +20110,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("mod1")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Mod1 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Mod1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/operator_overload/err_module/mod1")
@@ -20104,7 +20128,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("optimization")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Optimization : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Optimization : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/optimization")
@@ -20120,7 +20144,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("optional_chain")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class OptionalChain : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class OptionalChain : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/optional_chain")
@@ -20250,7 +20274,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("overflow_check")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class OverflowCheck : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class OverflowCheck : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/overflow_check")
@@ -20271,7 +20295,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_overflow_check")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportOverflowCheck : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportOverflowCheck : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/overflow_check/import_overflow_check")
@@ -20288,7 +20312,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("overload")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Overload : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Overload : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/overload")
@@ -20382,7 +20406,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("postfixAdd")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class PostfixAdd : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class PostfixAdd : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/postfixAdd")
@@ -20398,7 +20422,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("property")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Property : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Property : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/property")
@@ -20497,7 +20521,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_prop_check")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportPropCheck : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportPropCheck : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/property/import_prop_check")
@@ -20513,7 +20537,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_prop_lookup")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportPropLookup : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportPropLookup : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/property/import_prop_lookup")
@@ -20530,7 +20554,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("range")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Range : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Range : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/range")
@@ -20629,7 +20653,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("range_class")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class RangeClass : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class RangeClass : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/range/range_class")
@@ -20646,7 +20670,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("record")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Record : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Record : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record")
@@ -20877,7 +20901,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("access_modifiers")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class AccessModifiers : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class AccessModifiers : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/access_modifiers")
@@ -20893,7 +20917,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("constructor")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Constructor : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Constructor : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor")
@@ -20902,7 +20926,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("access_control")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class AccessControl : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class AccessControl : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/access_control")
@@ -20917,7 +20941,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("pkg01")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Pkg01 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Pkg01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/access_control/pkg01")
@@ -20932,7 +20956,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                     @TestMetadata("pkg")
                     @TestDataPath("\$PROJECT_ROOT")
                     @Nested
-                    inner class Pkg : AbstractCfirLightTreeDiagnosticsTest() {
+                    inner class Pkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                         @Test
                         fun testAllFilesPresent() {
                             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/access_control/pkg01/pkg")
@@ -20955,7 +20979,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("pkg02")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Pkg02 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Pkg02 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/access_control/pkg02")
@@ -20970,7 +20994,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                     @TestMetadata("pkg")
                     @TestDataPath("\$PROJECT_ROOT")
                     @Nested
-                    inner class Pkg : AbstractCfirLightTreeDiagnosticsTest() {
+                    inner class Pkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                         @Test
                         fun testAllFilesPresent() {
                             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/access_control/pkg02/pkg")
@@ -20999,7 +21023,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("pkg03")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Pkg03 : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Pkg03 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/access_control/pkg03")
@@ -21014,7 +21038,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                     @TestMetadata("pkg")
                     @TestDataPath("\$PROJECT_ROOT")
                     @Nested
-                    inner class Pkg : AbstractCfirLightTreeDiagnosticsTest() {
+                    inner class Pkg : AbstractCfirLightTreeLlTDiagnosticsTest() {
                         @Test
                         fun testAllFilesPresent() {
                             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/access_control/pkg03/pkg")
@@ -21044,7 +21068,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("call_other_init")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class CallOtherInit : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class CallOtherInit : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/call_other_init")
@@ -21066,7 +21090,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("cannot_currying")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class CannotCurrying : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class CannotCurrying : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/constructor/cannot_currying")
@@ -21083,7 +21107,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("member_variable")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class MemberVariable : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class MemberVariable : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/member_variable")
@@ -21117,7 +21141,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("mut")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Mut : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Mut : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut")
@@ -21360,7 +21384,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("record_extend_mut_invalid_6")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class RecordExtendMutInvalid6 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class RecordExtendMutInvalid6 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_invalid_6")
@@ -21369,7 +21393,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("src")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_invalid_6/src")
@@ -21386,7 +21410,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("record_extend_mut_ok_2")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class RecordExtendMutOk2 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class RecordExtendMutOk2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_ok_2")
@@ -21395,7 +21419,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("src")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_extend_mut_ok_2/src")
@@ -21412,7 +21436,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("record_mut_invalid_10")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class RecordMutInvalid10 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class RecordMutInvalid10 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_mut_invalid_10")
@@ -21421,7 +21445,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
                 @TestMetadata("src")
                 @TestDataPath("\$PROJECT_ROOT")
                 @Nested
-                inner class Src : AbstractCfirLightTreeDiagnosticsTest() {
+                inner class Src : AbstractCfirLightTreeLlTDiagnosticsTest() {
                     @Test
                     fun testAllFilesPresent() {
                         assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/mut/record_mut_invalid_10/src")
@@ -21439,7 +21463,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("primaryConstructor")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class PrimaryConstructor : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class PrimaryConstructor : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/primaryConstructor")
@@ -21521,7 +21545,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("property")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Property : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Property : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/property")
@@ -21543,7 +21567,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("record_implement_interface")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class RecordImplementInterface : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class RecordImplementInterface : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/record_implement_interface")
@@ -21559,7 +21583,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("record_vardecl_cpointer")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class RecordVardeclCpointer : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class RecordVardeclCpointer : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/record_vardecl_cpointer")
@@ -21575,7 +21599,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_call_non_static")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticCallNonStatic : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticCallNonStatic : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/static_call_non_static")
@@ -21603,7 +21627,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("static_init")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class StaticInit : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class StaticInit : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/static_init")
@@ -21630,7 +21654,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("generic_struct_static_init_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class GenericStructStaticInit01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class GenericStructStaticInit01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/static_init/generic_struct_static_init_01")
@@ -21646,7 +21670,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("static_init_pkg_01")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class StaticInitPkg01 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class StaticInitPkg01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/record/static_init/static_init_pkg_01")
@@ -21664,7 +21688,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("redefinition")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Redefinition : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Redefinition : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/redefinition")
@@ -21709,7 +21733,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("private_func")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class PrivateFunc : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class PrivateFunc : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/redefinition/private_func")
@@ -21718,7 +21742,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("01_diff_file")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class _01DiffFile : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class _01DiffFile : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/redefinition/private_func/01_diff_file")
@@ -21740,7 +21764,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("02_same_file")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class _02SameFile : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class _02SameFile : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/redefinition/private_func/02_same_file")
@@ -21756,7 +21780,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("03_public")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class _03Public : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class _03Public : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/redefinition/private_func/03_public")
@@ -21778,7 +21802,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("04_diff_file_extend")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class _04DiffFileExtend : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class _04DiffFileExtend : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/redefinition/private_func/04_diff_file_extend")
@@ -21802,7 +21826,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("return")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Return : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Return : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/return")
@@ -21884,7 +21908,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("solveTypeArgs")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class SolveTypeArgs : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class SolveTypeArgs : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/solveTypeArgs")
@@ -21942,7 +21966,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("string")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class String : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class String : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/string")
@@ -22048,7 +22072,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("synchronized")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Synchronized : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Synchronized : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/synchronized")
@@ -22070,7 +22094,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("this")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class This : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class This : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/this")
@@ -22146,7 +22170,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("throw")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Throw : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Throw : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/throw")
@@ -22162,7 +22186,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("toplevel")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Toplevel : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Toplevel : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/toplevel")
@@ -22232,7 +22256,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("tuple")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Tuple : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Tuple : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/tuple")
@@ -22361,7 +22385,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("tupleEqual")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class TupleEqual : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class TupleEqual : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/tuple/tupleEqual")
@@ -22486,7 +22510,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("type")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Type : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Type : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/type")
@@ -22598,7 +22622,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("type_infer")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class TypeInfer : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class TypeInfer : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/type_infer")
@@ -22794,7 +22818,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("typealias")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Typealias : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Typealias : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/typealias")
@@ -23061,7 +23085,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("import_alias")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class ImportAlias : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class ImportAlias : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/typealias/import_alias")
@@ -23077,7 +23101,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("overload_and_alias")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class OverloadAndAlias : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class OverloadAndAlias : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/typealias/overload_and_alias")
@@ -23094,7 +23118,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("unusedImport")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class UnusedImport : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class UnusedImport : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport")
@@ -23103,7 +23127,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("unusedImport001")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UnusedImport001 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UnusedImport001 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001")
@@ -23208,7 +23232,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused013")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused013 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused013 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused013")
@@ -23224,7 +23248,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused015")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused015 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused015 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused015")
@@ -23240,7 +23264,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused016")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused016 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused016 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused016")
@@ -23256,7 +23280,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused017")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused017 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused017 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused017")
@@ -23272,7 +23296,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused018")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused018 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused018 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused018")
@@ -23288,7 +23312,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused019")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused019 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused019 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport001/unused019")
@@ -23305,7 +23329,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("unusedImport002")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UnusedImport002 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UnusedImport002 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002")
@@ -23386,7 +23410,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused013")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused013 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused013 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused013")
@@ -23402,7 +23426,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused014")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused014 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused014 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused014")
@@ -23418,7 +23442,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused015")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused015 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused015 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused015")
@@ -23434,7 +23458,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused016")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused016 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused016 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused016")
@@ -23450,7 +23474,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("unused017")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Unused017 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Unused017 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport002/unused017")
@@ -23467,7 +23491,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("unusedImport003")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UnusedImport003 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UnusedImport003 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport003")
@@ -23531,7 +23555,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("unusedImport004")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UnusedImport004 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UnusedImport004 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/unusedImport/unusedImport004")
@@ -23596,7 +23620,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("users")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Users : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Users : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/users")
@@ -23605,7 +23629,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("UsersTest1")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UsersTest1 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UsersTest1 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/users/UsersTest1")
@@ -23621,7 +23645,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("UsersTest2")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UsersTest2 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UsersTest2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/users/UsersTest2")
@@ -23637,7 +23661,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("UsersTest3")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UsersTest3 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UsersTest3 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/users/UsersTest3")
@@ -23653,7 +23677,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("UsersTest4")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class UsersTest4 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class UsersTest4 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/users/UsersTest4")
@@ -23670,7 +23694,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("var")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Var : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Var : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/var")
@@ -23727,7 +23751,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("multi_file_var_with_pattern_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class MultiFileVarWithPattern01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class MultiFileVarWithPattern01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/var/multi_file_var_with_pattern_01")
@@ -23743,7 +23767,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("var_source_import_01")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class VarSourceImport01 : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class VarSourceImport01 : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/var/var_source_import_01")
@@ -23760,7 +23784,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("varray")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class Varray : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class Varray : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/varray")
@@ -23967,7 +23991,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("generic")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Generic : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Generic : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/varray/generic")
@@ -23990,7 +24014,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
     @TestMetadata("while-let-expr")
     @TestDataPath("\$PROJECT_ROOT")
     @Nested
-    inner class WhileLetExpr : AbstractCfirLightTreeDiagnosticsTest() {
+    inner class WhileLetExpr : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testAllFilesPresent() {
             assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/while-let-expr")
@@ -24059,7 +24083,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
         @TestMetadata("enhancedcondition")
         @TestDataPath("\$PROJECT_ROOT")
         @Nested
-        inner class Enhancedcondition : AbstractCfirLightTreeDiagnosticsTest() {
+        inner class Enhancedcondition : AbstractCfirLightTreeLlTDiagnosticsTest() {
             @Test
             fun testAllFilesPresent() {
                 assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/while-let-expr/enhancedcondition")
@@ -24092,7 +24116,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("o2")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class O2 : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class O2 : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/while-let-expr/enhancedcondition/o2")
@@ -24114,7 +24138,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("parse")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Parse : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Parse : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/while-let-expr/enhancedcondition/parse")
@@ -24130,7 +24154,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("patterns")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Patterns : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Patterns : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/while-let-expr/enhancedcondition/patterns")
@@ -24188,7 +24212,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("precdence")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Precdence : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Precdence : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/while-let-expr/enhancedcondition/precdence")
@@ -24204,7 +24228,7 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeDiagnosticsTest() {
             @TestMetadata("vars")
             @TestDataPath("\$PROJECT_ROOT")
             @Nested
-            inner class Vars : AbstractCfirLightTreeDiagnosticsTest() {
+            inner class Vars : AbstractCfirLightTreeLlTDiagnosticsTest() {
                 @Test
                 fun testAllFilesPresent() {
                     assertAllFilesPresentByMetadata(this, "cfir/analysis-tests/testData/llt/while-let-expr/enhancedcondition/vars")

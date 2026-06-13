@@ -27,74 +27,30 @@ package org.cangnova.cangjie.cfir.resolve.body
 import org.cangnova.cangjie.ImportPath
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionHolder
-import org.cangnova.cangjie.cfir.declarations.CfirCallableDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirEnum
-import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirConstructor
-import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.diagnostic.ConeAmbiguityError
-import org.cangnova.cangjie.cfir.diagnostic.ConeCannotRefToPackageNameError
-import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionExpectedError
-import org.cangnova.cangjie.cfir.diagnostic.ConeFunctionCallExpectedError
-import org.cangnova.cangjie.cfir.diagnostic.ConeNoConstructorError
-import org.cangnova.cangjie.cfir.diagnostic.ConeNoMatchingInvokeOperatorError
-import org.cangnova.cangjie.cfir.diagnostic.ConeNotMemberOfError
-import org.cangnova.cangjie.cfir.diagnostic.ConePackageNameConflictError
-import org.cangnova.cangjie.cfir.diagnostic.ConeResolutionToClassifierError
-import org.cangnova.cangjie.cfir.diagnostic.ConeHiddenCandidateError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedNameError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedError
-import org.cangnova.cangjie.cfir.diagnostic.ConeUnableToInferGenericFuncError
-import org.cangnova.cangjie.cfir.diagnostic.TooManyArguments
+import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
-import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
-import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostic.*
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
-import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
-import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
-import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
-import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
-import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
-import org.cangnova.cangjie.cfir.expressions.CfirResolvable
-import org.cangnova.cangjie.cfir.expressions.unwrapSmartcastExpression
+import org.cangnova.cangjie.cfir.expressions.*
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
-import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
-import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
-import org.cangnova.cangjie.cfir.resolve.CollectionLiteralOuterCandidateContext
-import org.cangnova.cangjie.cfir.resolve.ResolutionMode
-import org.cangnova.cangjie.cfir.resolve.createConeDiagnosticForCandidateWithError
-import org.cangnova.cangjie.cfir.resolve.doesResolutionResultOverrideOtherToPreserveCompatibility
-import org.cangnova.cangjie.cfir.resolve.expectedType
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedClass
-import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
-import org.cangnova.cangjie.cfir.resolve.functionTypeForFunctionValueCandidate
+import org.cangnova.cangjie.cfir.resolve.*
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.BuiltinArrayConstructorKind
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirAllCandidatesCollector
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithErrorCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithExistingCandidate
-import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeCallConflictResolver
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.*
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadByLambdaBodyResolver
+import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeCallConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.callConflictResolverFactory
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
-import org.cangnova.cangjie.cfir.resolve.typeFromCallee
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
-import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
@@ -103,28 +59,8 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirEnumConstructorSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
-import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
-import org.cangnova.cangjie.cfir.symbols.constructType
-import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeDiagnostic
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.ConeIdealLiteralType
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.coneTypeOrNull
-import org.cangnova.cangjie.cfir.types.contains
-import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.cfir.symbols.*
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
@@ -365,7 +301,8 @@ class CfirCallResolver(
 
         if (transformedAccess.explicitReceiver == null) {
             if (!result.isSuccess || (isUsedAsReceiver && result.candidates.all { it.symbol is CfirClassLikeSymbol<*> })) {
-                val classifier = towerResolver.findClassifiers(callee.name).firstOrNull()
+                val classifier = towerResolver.findClassifiers(callee.name)
+                    .firstOrNull { it.isValidClassifierExpression(isUsedAsReceiver) }
                 if (classifier != null) {
                     transformedAccess.replaceCalleeReference(
                         buildResolvedNamedReference {
@@ -380,13 +317,12 @@ class CfirCallResolver(
         }
 
         val shouldTryEnumValueAccess =
-            !isUsedAsReceiver &&
-                    transformedAccess !is CfirFunctionCall &&
+            transformedAccess !is CfirFunctionCall &&
                     (result.candidates.isEmpty() || result.candidates.all { it.symbol is CfirEnumConstructorSymbol })
 
         var functionCallExpected = false
         if (shouldTryEnumValueAccess) {
-            // 先尝试枚举构造器（作为值访问，对应无参枚举构造器的直接引用）
+            // 先尝试枚举构造器值表达式；它后续仍可作为 member access receiver。
             val enumResult = collectCandidates(
                 qualifiedAccess = transformedAccess,
                 name = callee.name,
@@ -1001,7 +937,10 @@ class CfirCallResolver(
         return if (explicitReceiver != null) {
             findClassifierInQualifierScope(explicitReceiver, name)
         } else {
-            towerResolver.findClassifiers(name).firstOrNull() ?: resolveTopLevelClassifierByShortName(name)
+            towerResolver.findClassifiers(name)
+                .filterIsInstance<CfirClassLikeSymbol<*>>()
+                .firstOrNull()
+                ?: resolveTopLevelClassifierByShortName(name)
         }
     }
 
@@ -1078,10 +1017,7 @@ class CfirCallResolver(
         name: Name,
     ): CfirClassLikeSymbol<*>? {
         val unwrappedReceiver = receiver.unwrapSmartcastExpression()
-        val qualifierClassifier = unwrappedReceiver.resolvedQualifierClassifier(session) ?: return null
-        val qualifierType = unwrappedReceiver.coneTypeOrNull ?: qualifierClassifier.constructType()
-        val staticScope =
-            qualifierClassifier.staticScopeForQualifierType(session, components.scopeSession, qualifierType)
+        val staticScope = unwrappedReceiver.qualifierScopeOrNull(session, components.scopeSession) ?: return null
         var result: CfirClassLikeSymbol<*>? = null
         staticScope.processClassifiersByName(name) { classifier ->
             if (result == null) {
@@ -1090,6 +1026,9 @@ class CfirCallResolver(
         }
         return result
     }
+
+    private fun CfirClassifierSymbol<*>.isValidClassifierExpression(isUsedAsReceiver: Boolean): Boolean =
+        this is CfirClassLikeSymbol<*> || (isUsedAsReceiver && this is CfirTypeParameterSymbol)
 
     private fun createErrorReferenceForSingleCandidate(
         candidate: Candidate?,

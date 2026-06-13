@@ -11,7 +11,7 @@ open class Base {
 }
 
 class Data <: Base {
-    public static let <!INHERIT_MEMBER_KIND_INCONSISTENT!>f<!> = 2
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic static let f = 2
 }
 
 main(): Int64 {

@@ -61,10 +61,10 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
                 is CfirFunctionSymbol<*> -> emptyList()
                 is CfirPropertySymbol -> classScope.collectDirectOverriddenProperties(symbol)
                 else -> emptyList()
-            }
+            }.filter { it.canParticipateInOverrideTargetSearch(declaration, context) }
 
             if (overriddenCandidates.isEmpty()) {
-                if (callable.hasInheritedSignatureIgnoringStatic(classScope)) {
+                if (callable.hasInheritedSignatureIgnoringStatic(classScope, declaration)) {
                     continue
                 }
                 reporter.reportOn(
@@ -102,10 +102,20 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
         return true
     }
 
-    private fun CfirCallableDeclaration.hasInheritedSignatureIgnoringStatic(classScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope): Boolean {
+    context(context: CheckerContext)
+    private fun CfirCallableDeclaration.hasInheritedSignatureIgnoringStatic(
+        classScope: org.cangnova.cangjie.cfir.scopes.CfirTypeScope,
+        ownerDeclaration: CfirClassLikeDeclaration,
+    ): Boolean {
         return when (val symbol = symbol) {
-            is CfirNamedFunctionSymbol -> classScope.collectDirectOverriddenFunctionsIgnoringStatic(symbol).isNotEmpty()
-            is CfirPropertySymbol -> classScope.collectDirectOverriddenPropertiesIgnoringStatic(symbol).isNotEmpty()
+            is CfirNamedFunctionSymbol -> classScope
+                .collectDirectOverriddenFunctionsIgnoringStatic(symbol)
+                .any { it.canParticipateInOverrideTargetSearch(ownerDeclaration, context) }
+
+            is CfirPropertySymbol -> classScope
+                .collectDirectOverriddenPropertiesIgnoringStatic(symbol)
+                .any { it.canParticipateInOverrideTargetSearch(ownerDeclaration, context) }
+
             else -> false
         }
     }
@@ -166,7 +176,9 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
                 .substituteAllTypeParameters(declarationSymbol, overridden)
             if (overriddenReturnType is ConeErrorType) continue
 
-            if (overriddenReturnType.isThisType && !overridingReturnType.isThisType) {
+            val isPropertyOverride = declarationSymbol is CfirPropertySymbol && overridden is CfirPropertySymbol
+
+            if (!isPropertyOverride && overriddenReturnType.isThisType && !overridingReturnType.isThisType) {
                 reporter.reportOn(
                     source = declaration.source,
                     factory = CfirErrors.INHERIT_NOT_RETURN_THIS,
@@ -174,16 +186,14 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
                 return
             }
 
-            val isCompatible = when {
-                declarationSymbol is CfirPropertySymbol &&
-                    overridden is CfirPropertySymbol &&
-                    overridden.cfir.status.isMut -> AbstractTypeChecker.equalTypes(
+            val isCompatible = if (isPropertyOverride) {
+                AbstractTypeChecker.equalTypes(
                     context.session.typeContext,
                     overridingReturnType,
                     overriddenReturnType,
                 )
-
-                else -> AbstractTypeChecker.isSubtypeOf(
+            } else {
+                AbstractTypeChecker.isSubtypeOf(
                     context.session.typeContext,
                     overridingReturnType,
                     overriddenReturnType,
@@ -191,6 +201,17 @@ object CfirOverrideChecker : CfirClassLikeChecker() {
             }
 
             if (isCompatible) continue
+
+            if (isPropertyOverride) {
+                reporter.reportOn(
+                    source = declaration.source?.firstCharacterDiagnosticSource(),
+                    factory = CfirErrors.PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF,
+                    a = overridingReturnType,
+                    b = overriddenReturnType,
+                    c = overridden.name,
+                )
+                return
+            }
 
             reporter.reportOn(
                 source = declaration.source,

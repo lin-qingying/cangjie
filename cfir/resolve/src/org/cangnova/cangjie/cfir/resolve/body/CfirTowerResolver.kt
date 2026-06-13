@@ -1,14 +1,38 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.body
 
 import org.cangnova.cangjie.cfir.SessionHolder
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierSymbol
 import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
-import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
-import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CandidateFactoriesAndCollectors
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerResolveTask
@@ -18,7 +42,7 @@ import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirClassifierSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.name.Name
 
@@ -77,7 +101,7 @@ class CfirTowerResolver(
                 // 对齐 Kotlin FirTowerResolver：已解析的类型/包限定符不作为普通表达式接收者处理，
                 // 而是从限定符自身的静态 callable scope 中收集候选。
                 if (
-                    receiver.resolvedQualifierClassifier(session) != null ||
+                    receiver.resolvedQualifierSymbol(session) != null ||
                     receiver.importedPackageQualifierScopeOrNull(components.file, session) != null
                 ) {
                     mainTask.runResolverForQualifierReceiver(info, receiver)
@@ -132,11 +156,11 @@ class CfirTowerResolver(
         return emptyList()
     }
 
-    fun findClassifiers(name: Name): List<CfirClassLikeSymbol<*>> {
+    fun findClassifiers(name: Name): List<CfirClassifierSymbol<*>> {
         val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
         for (scope in scopes) {
-            val result = mutableListOf<CfirClassLikeSymbol<*>>()
-            scope.processClassifiersByName(name) { result += it }
+            val result = mutableListOf<CfirClassifierSymbol<*>>()
+            scope.processClassifiersByNameWithSubstitution(name) { symbol, _ -> result += symbol }
             if (result.isNotEmpty()) return result
         }
         return emptyList()

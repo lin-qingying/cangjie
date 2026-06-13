@@ -1,11 +1,33 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
+import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
-import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
-import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
-import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
+import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -39,7 +61,26 @@ class CfirTypeParameterScopeImpl(
         typeParametersByName[name]?.forEach(processor)
     }
 
-    // CfirScope 的默认方法保持空实现，因为类型参数不是 classifiers/functions/variables
+    /**
+     * 对齐 Kotlin `FirTypeParameterScope`：类型参数通过 classifier 主入口进入 tower。
+     * 仓颉不把类型参数当作 class-like，因此旧的 [processClassifiersByName] 仍保持空实现。
+     */
+    override fun processClassifiersByNameWithSubstitution(
+        name: Name,
+        processor: (CfirClassifierSymbol<*>, ConeSubstitutor) -> Unit,
+    ) {
+        typeParametersByName[name]?.forEach { symbol ->
+            processor(symbol, ConeSubstitutor.Empty)
+        }
+    }
+
+    override fun getCallableNames(): Set<Name> = emptySet()
+
+    override fun getClassifierNames(): Set<Name> = typeParametersByName.keys
+
+    override fun mayContainName(name: Name): Boolean = name in typeParametersByName
+
+    // 类型参数不是 class-like/functions/variables。
     override fun processClassifiersByName(name: Name, processor: (CfirClassLikeSymbol<*>) -> Unit) {}
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {}
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {}

@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.serialization.deserialize
 
 import PackageFormat.*
@@ -6,43 +30,25 @@ import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.buildConstructor
 import org.cangnova.cangjie.cfir.declarations.builder.buildPrimaryConstructor
-import org.cangnova.cangjie.cfir.declarations.builder.buildValueParameter
 import org.cangnova.cangjie.cfir.declarations.impl.*
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.builder.buildLiteralExpression
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildBindingPattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildEnumPattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildTypePattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildTuplePattern
-import org.cangnova.cangjie.cfir.patterns.builder.buildWildcardPattern
+import org.cangnova.cangjie.cfir.patterns.builder.*
 import org.cangnova.cangjie.cfir.references.builder.buildNamedReference
+import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.cfir.symbols.*
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeFunctionType
-import org.cangnova.cangjie.cfir.types.ConeTypeProjection
-import org.cangnova.cangjie.cfir.types.ConeTupleType
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.impl.CfirResolvedTypeRefImpl
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
-import org.cangnova.cangjie.cfir.session.cangjieScopeProvider
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.descriptors.Visibility
 import org.cangnova.cangjie.metadata.model.Attribute
-import org.cangnova.cangjie.name.CallableId
-import org.cangnova.cangjie.name.ClassId
-import org.cangnova.cangjie.name.FqName
-import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.name.*
 import org.cangnova.cangjie.name.OperatorNameConventions.asOperatorName
-import org.cangnova.cangjie.name.SpecialNames
 
 /**
  * 声明反序列化器：Decl → CfirDeclaration。
@@ -969,6 +975,7 @@ class CfirDeclDeserializer(
             copied.isCommon = status.isCommon
             copied.isSpecific = status.isSpecific
             copied.isRedef = status.isRedef
+            copied.isDefault = status.isDefault
             copied.isAbstract = status.isAbstract
             copied.isOpen = status.isOpen
             copied.isSealed = status.isSealed

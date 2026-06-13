@@ -12,8 +12,8 @@ open class Base {
 }
 
 class Data <: Base {
-    public let <!INHERIT_MEMBER_KIND_INCONSISTENT!>val<!>: Int32 = 1
-    public let <!INHERIT_MEMBER_KIND_INCONSISTENT!>f<!>: Int32 = 2
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic let val: Int32 = 1
+    <!INHERIT_MEMBER_KIND_INCONSISTENT!>p<!>ublic let f: Int32 = 2
 }
 
 main(): Int64 {

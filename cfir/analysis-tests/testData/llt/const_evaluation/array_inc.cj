@@ -16,7 +16,7 @@ main() {
 }
 
 const func test(a: Int64) {
-    <!EXPECT_CONST!>array[0]++<!>
-    <!EXPECT_CONST!>array[1] = a<!>
-    <!EXPECT_CONST!>list.add(a)<!>
+    <!EXPECT_CONST!>array<!>[0]++
+    <!EXPECT_CONST!>array<!>[1] = a
+    <!EXPECT_CONST!>list<!>.add(a)
 }

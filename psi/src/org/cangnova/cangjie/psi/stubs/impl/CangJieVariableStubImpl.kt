@@ -24,13 +24,12 @@
 
 package org.cangnova.cangjie.psi.stubs.impl
 
-import org.cangnova.cangjie.psi.CjVariable
-import org.cangnova.cangjie.psi.stubs.CangJieVariableStub
-import org.cangnova.cangjie.psi.stubs.PatternKind
-import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import com.intellij.psi.PsiElement
 import com.intellij.psi.stubs.StubElement
 import org.cangnova.cangjie.psi.CjPatternVariable
+import org.cangnova.cangjie.psi.stubs.CangJieVariableStub
+import org.cangnova.cangjie.psi.stubs.PatternKind
+import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 
 /**
  * 变量声明 Stub 实现
@@ -51,6 +50,7 @@ class CangJieVariableStubImpl(
     parent: StubElement<out PsiElement>?,
     private val patternKind: PatternKind,
     private val isVar: Boolean,
+    private val isConst: Boolean,
     private val isTopLevel: Boolean,
     private val hasInitializer: Boolean,
     private val hasReturnTypeRef: Boolean,
@@ -59,6 +59,7 @@ class CangJieVariableStubImpl(
 
     override fun getPatternKind(): PatternKind = patternKind
     override fun isVar(): Boolean = isVar
+    override fun isConst(): Boolean = isConst
     override fun isTopLevel(): Boolean = isTopLevel
     override fun hasInitializer(): Boolean = hasInitializer
     override fun hasReturnTypeRef(): Boolean = hasReturnTypeRef
@@ -67,6 +68,7 @@ class CangJieVariableStubImpl(
         parent = newParent,
         patternKind = patternKind,
         isVar = isVar,
+        isConst = isConst,
         isTopLevel = isTopLevel,
         hasInitializer = hasInitializer,
         hasReturnTypeRef = hasReturnTypeRef,

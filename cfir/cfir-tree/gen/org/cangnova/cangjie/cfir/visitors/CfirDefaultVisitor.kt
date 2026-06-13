@@ -110,6 +110,9 @@ abstract class CfirDefaultVisitor<out R, in D> : CfirVisitor<R, D>() {
     override fun visitNamedReferenceWithCandidateBase(namedReferenceWithCandidateBase: CfirNamedReferenceWithCandidateBase, data: D): R =
         visitNamedReference(namedReferenceWithCandidateBase, data)
 
+    override fun visitIncrementDecrementExpression(incrementDecrementExpression: CfirIncrementDecrementExpression, data: D): R =
+        visitExpression(incrementDecrementExpression, data)
+
     override fun visitInoutArgumentExpression(inoutArgumentExpression: CfirInoutArgumentExpression, data: D): R =
         visitWrappedExpression(inoutArgumentExpression, data)
 

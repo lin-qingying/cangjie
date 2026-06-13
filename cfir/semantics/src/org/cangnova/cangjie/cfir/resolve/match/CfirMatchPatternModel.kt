@@ -1,37 +1,43 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.cfir.resolve.match
 
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
+import org.cangnova.cangjie.cfir.declarations.expandedPatternEnumType
 import org.cangnova.cangjie.cfir.declarations.payloadArity
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralExpression
 import org.cangnova.cangjie.cfir.expressions.CfirLiteralKind
 import org.cangnova.cangjie.cfir.expressions.CfirMatchExpression
-import org.cangnova.cangjie.cfir.patterns.CfirBindingPattern
-import org.cangnova.cangjie.cfir.patterns.CfirConstPattern
-import org.cangnova.cangjie.cfir.patterns.CfirEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirExpressionPattern
-import org.cangnova.cangjie.cfir.patterns.CfirOrPattern
-import org.cangnova.cangjie.cfir.patterns.CfirPattern
-import org.cangnova.cangjie.cfir.patterns.CfirTuplePattern
-import org.cangnova.cangjie.cfir.patterns.CfirTypePattern
-import org.cangnova.cangjie.cfir.patterns.CfirVarOrEnumPattern
-import org.cangnova.cangjie.cfir.patterns.CfirWildcardPattern
+import org.cangnova.cangjie.cfir.patterns.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.symbolProvider
-import org.cangnova.cangjie.cfir.resolve.match.exhaustive.MatchExhaustivenessContext
-import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeClassLikeType
-import org.cangnova.cangjie.cfir.types.ConeCangJieType
-import org.cangnova.cangjie.cfir.types.ConeEnumType
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.ConePrimitiveType
-import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
-import org.cangnova.cangjie.cfir.types.ConeTupleType
-import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
-import org.cangnova.cangjie.cfir.types.StdlibClassIds
-import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.ClassId
 
 typealias CfirMatrix = List<List<CfirMatchPattern>>
@@ -205,7 +211,7 @@ sealed class CfirConstantValue : Comparable<CfirConstantValue> {
 }
 
 sealed class CfirConstructor {
-    open fun arity(type: ConeCangJieType): Int = when (val patternType = type.expandedPatternEnumType()) {
+    open fun arity(type: ConeCangJieType): Int = when (val patternType = type) {
         is ConeTupleType if this is Single -> patternType.elementTypes.size
         is ConeEnumType if this is Enum -> arityHint
         is ConeClassLikeType if this is Enum && patternType.classId == StdlibClassIds.Option ->
@@ -213,7 +219,7 @@ sealed class CfirConstructor {
         else -> 0
     }
 
-    open fun subTypes(type: ConeCangJieType): List<ConeCangJieType> = when (val patternType = type.expandedPatternEnumType()) {
+    open fun subTypes(type: ConeCangJieType): List<ConeCangJieType> = when (val patternType = type) {
         is ConeTupleType if this is Single -> patternType.elementTypes
         is ConeEnumType if this is Enum -> List(arityHint) { ConeErrorType(ConeSimpleDiagnostic("enum constructor argument")) }
         is ConeClassLikeType if this is Enum && patternType.classId == StdlibClassIds.Option ->
@@ -241,7 +247,8 @@ sealed class CfirConstructor {
     }
 
     companion object {
-        fun allConstructors(type: ConeCangJieType, session: CfirSession): List<CfirConstructor> = when (val patternType = type.expandedPatternEnumType()) {
+        fun allConstructors(type: ConeCangJieType, session: CfirSession): List<CfirConstructor> =
+            when (val patternType = type.expandedPatternEnumType(session) ?: type) {
             is ConePrimitiveType -> when (patternType.kind) {
                 PrimitiveTypeKind.BOOLEAN -> listOf(
                     ConstantValue(CfirConstantValue.BooleanConst(true)),
@@ -269,18 +276,22 @@ sealed class CfirConstructor {
     }
 }
 
-fun CfirMatchExpression.calculateMatrix(subjectType: ConeCangJieType): CfirMatrix {
+fun CfirMatchExpression.calculateMatrix(subjectType: ConeCangJieType, session: CfirSession): CfirMatrix {
     return branches.flatMap { branch ->
-        convertPattern(branch.pattern, subjectType).map { listOf(it) }
+        convertPattern(branch.pattern, subjectType, session).map { listOf(it) }
     }
 }
 
-fun CfirPattern.calculateMatrix(expectedType: ConeCangJieType): CfirMatrix =
-    convertPattern(this, expectedType).map { listOf(it) }
+fun CfirPattern.calculateMatrix(expectedType: ConeCangJieType, session: CfirSession): CfirMatrix =
+    convertPattern(this, expectedType, session).map { listOf(it) }
 
-fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<CfirMatchPattern> {
+fun convertPattern(
+    pattern: CfirPattern,
+    expectedType: ConeCangJieType,
+    session: CfirSession,
+): List<CfirMatchPattern> {
     return when (pattern) {
-        is CfirOrPattern -> pattern.alternatives.flatMap { convertPattern(it, expectedType) }
+        is CfirOrPattern -> pattern.alternatives.flatMap { convertPattern(it, expectedType, session) }
         is CfirWildcardPattern -> listOf(CfirMatchPattern.wild(expectedType))
         is CfirVarOrEnumPattern -> listOf(CfirMatchPattern.Error.copy(cfirPattern = pattern))
         is CfirBindingPattern -> {
@@ -294,7 +305,7 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
                     )
                 )
             } else {
-                convertPattern(nested, expectedType)
+                convertPattern(nested, expectedType, session)
             }
         }
 
@@ -309,7 +320,7 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
         }
 
         is CfirEnumPattern -> {
-            val patternType = expectedType.expandedPatternEnumType()
+            val patternType = expectedType.expandedPatternEnumType(session) ?: expectedType
             val enumClassId = patternType.patternEnumClassId()
             val entryName = (pattern.constructorReference as? CfirNamedReference)?.name?.asString()
             if (enumClassId == null || entryName == null) {
@@ -320,7 +331,7 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
                 val subPatterns = pattern.arguments.mapIndexed { index, sub ->
                     val subType = argumentTypes.getOrNull(index)
                         ?: ConeErrorType(ConeSimpleDiagnostic("enum arg[$index]"))
-                    convertPattern(sub, subType).firstOrNull() ?: CfirMatchPattern.wild(subType)
+                    convertPattern(sub, subType, session).firstOrNull() ?: CfirMatchPattern.wild(subType)
                 }
                 listOf(
                     CfirMatchPattern(
@@ -337,7 +348,7 @@ fun convertPattern(pattern: CfirPattern, expectedType: ConeCangJieType): List<Cf
             val subPatterns = pattern.elements.mapIndexed { index, sub ->
                 val elementType = tupleType?.elementTypes?.getOrNull(index)
                     ?: ConeErrorType(ConeSimpleDiagnostic("tuple element[$index]"))
-                convertPattern(sub, elementType).firstOrNull() ?: CfirMatchPattern.wild(elementType)
+                convertPattern(sub, elementType, session).firstOrNull() ?: CfirMatchPattern.wild(elementType)
             }
             listOf(CfirMatchPattern(expectedType, CfirMatchPatternKind.Tuple(subPatterns), pattern))
         }
@@ -376,11 +387,6 @@ fun inferExpressionType(
     fallback: ConeCangJieType = ConeErrorType(ConeSimpleDiagnostic("unknown")),
 ): ConeCangJieType {
     return expression?.coneTypeOrNull ?: fallback
-}
-
-private fun ConeCangJieType.expandedPatternEnumType(): ConeCangJieType = when (this) {
-    is ConeTypeAliasType -> expandedType?.expandedPatternEnumType() ?: this
-    else -> this
 }
 
 private fun ConeCangJieType.patternEnumClassId(): ClassId? = when (this) {

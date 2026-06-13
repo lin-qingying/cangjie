@@ -517,7 +517,7 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
         if (property.isCatchParameter == true) return
         if (property.source?.kind == CjFakeSourceElementKind.PropertyFromParameter) return
         if (context.containingDeclarations.lastOrNull() is CfirInterface) return
-        if (property.status.isAbstract) return
+        if (property.status.isAbstract || property.symbol.isAbstractLike(context)) return
         if (property.getter == null && property.setter == null) {
             reporter.reportOn(
                 source = property.source,
@@ -537,16 +537,20 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
     }
 
     /**
-     * 实现接口属性时必须同时实现 getter 和 setter（如果接口声明了两者）。
+     * 子属性实现 default/abstract 父属性时，mut 属性必须同时实现 getter 和 setter。
      *
-     * 对齐 C++ DiagKind::sema_property_must_implement_both
+     * 对齐官方 `StructInheritanceChecker::CheckPropertyInheritance` 中
+     * `childProp->isVar && parentProp->TestAnyAttr(DEFAULT, ABSTRACT)` 的触发条件。
      */
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkPropertyMustImplementBoth(property: CfirProperty) {
-        // override 的属性如果父声明同时有 getter 和 setter，子属性也必须同时实现
         if (!property.status.isOverride) return
+        if (!property.status.isMut) return
 
-        // 通过 symbolProvider 查找父类/接口对应属性
+        val subHasGetter = property.getter != null
+        val subHasSetter = property.setter != null
+        if (subHasGetter && subHasSetter) return
+
         val ownerClassId = property.symbol.callableId.classId ?: return
         val ownerSymbol = context.session.symbolProvider.getClassLikeSymbolByClassId(ownerClassId) ?: return
         val ownerDecl = ownerSymbol.cfir as? CfirClassLikeDeclaration ?: return
@@ -561,12 +565,7 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
                 it is CfirProperty && it.name == property.name
             } as? CfirProperty ?: continue
 
-            val superHasGetter = superProp.getter != null
-            val superHasSetter = superProp.setter != null
-            val subHasGetter = property.getter != null
-            val subHasSetter = property.setter != null
-
-            if (superHasGetter && superHasSetter && (!subHasGetter || !subHasSetter)) {
+            if (superProp.status.isDefault || superProp.symbol.isAbstractLike(context)) {
                 reporter.reportOn(
                     source = property.source,
                     factory = CfirErrors.PROPERTY_MUST_IMPLEMENT_BOTH,
@@ -595,14 +594,14 @@ object CfirPropertySemanticsChecker : CfirPropertyChecker() {
             type?.let { context.session.symbolProvider.getClassLikeSymbolByClassId(it.classId)?.cfir as? CfirClassLikeDeclaration }
         }
 
-        val subIsMutable = property.setter != null
+        val subIsMutable = property.status.isMut
 
         for (superDecl in superDecls) {
             val superProp = superDecl.declarations.firstOrNull {
                 it is CfirProperty && it.name == property.name
             } as? CfirProperty ?: continue
 
-            val superIsMutable = superProp.setter != null
+            val superIsMutable = superProp.status.isMut
 
             if (superIsMutable && !subIsMutable) {
                 // 父声明是可变（有 setter），子声明不是

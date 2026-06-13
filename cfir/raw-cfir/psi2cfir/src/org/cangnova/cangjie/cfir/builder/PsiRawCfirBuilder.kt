@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.expressions.builder.*
+import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.patterns.CfirCommandTypePattern
 import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.patterns.builder.*
@@ -748,7 +749,7 @@ class PsiRawCfirBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
 
-                    attributes = CfirDeclarationAttributes.EMPTY
+                    attributes = declarationAttributes(psi)
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
                     status = convertDeclarationStatus(psi)
@@ -817,7 +818,21 @@ class PsiRawCfirBuilder(
             }.also { bindFunctionTarget(functionTarget, it) }
         }
 
-        private fun convertProperty(psi: CjProperty): CfirProperty {
+        private fun convertProperty(psi: CjProperty): CfirDeclaration {
+            if (psi.name == null) {
+                return buildSourceDeclaration(CfirInvalidDeclarationSymbol()) { symbol ->
+                    buildInvalidDeclaration {
+                        resolvePhase = CfirResolvePhase.RAW_CFIR
+                        source = psi.toCjPsiSourceElement()
+                        this.symbol = symbol
+                        origin = CfirDeclarationOrigin.Source
+                        moduleData = baseModuleData
+                        attributes = CfirDeclarationAttributes.EMPTY
+                        reason = "Property declaration has no valid name"
+                    }
+                }
+            }
+
             val name = psi.nameAsSafeName
             val typeRef = convertTypeRef(psi.typeReference)
             val propertySymbol = CfirPropertySymbol(callableIdFor(name))
@@ -846,7 +861,7 @@ class PsiRawCfirBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
 
-                    attributes = CfirDeclarationAttributes.EMPTY
+                    attributes = declarationAttributes(psi)
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
                     status = convertDeclarationStatus(psi)
@@ -890,7 +905,7 @@ class PsiRawCfirBuilder(
                     origin = CfirDeclarationOrigin.Source
                     moduleData = baseModuleData
 
-                    attributes = CfirDeclarationAttributes.EMPTY
+                    attributes = declarationAttributes(psi)
                     isLocal = context.inLocalContext
                     dispatchReceiverType = currentDispatchReceiverType()
                     status = convertDeclarationStatus(psi)
@@ -1510,6 +1525,7 @@ class PsiRawCfirBuilder(
             is CjBlockExpression -> convertBlock(psi)
             is CjConstantExpression -> convertLiteral(psi)
             is CjStringTemplateExpression -> convertStringTemplate(psi)
+            is CjBinaryExpressionWithTypeRHS -> convertTypeOperator(psi)
             is CjBinaryExpression -> convertBinary(psi)
             is CjPrefixExpression -> convertPrefix(psi)
             is CjPostfixExpression -> convertPostfix(psi)
@@ -1768,6 +1784,15 @@ class PsiRawCfirBuilder(
             val base = psi.baseExpression?.let { convertExpression(it) }
                 ?: return buildErrorExpression(psi.toSourceElement(), "Missing prefix operand")
             val opName = psi.operationToken.toPrefixUnaryName() ?: Name.identifier("<prefix>")
+            if (psi.operationToken == CjTokens.PLUSPLUS || psi.operationToken == CjTokens.MINUSMINUS) {
+                return buildIncrementDecrementExpression {
+                    source = psi.toCjPsiSourceElement()
+                    isPrefix = true
+                    operationName = opName
+                    expression = base
+                    operationSource = psi.operationReference.toCjPsiSourceElement()
+                }
+            }
             return buildFunctionCall {
                 source = psi.toCjPsiSourceElement()
                 calleeReference = buildNamedReference(opName, psi.toCjPsiSourceElement())
@@ -1781,6 +1806,15 @@ class PsiRawCfirBuilder(
             val base = psi.baseExpression?.let { convertExpression(it) }
                 ?: return buildErrorExpression(psi.toSourceElement(), "Missing postfix operand")
             val opName = psi.operationToken.toPostfixUnaryName() ?: Name.identifier("<postfix>")
+            if (psi.operationToken == CjTokens.PLUSPLUS || psi.operationToken == CjTokens.MINUSMINUS) {
+                return buildIncrementDecrementExpression {
+                    source = psi.toCjPsiSourceElement()
+                    isPrefix = false
+                    operationName = opName
+                    expression = base
+                    operationSource = psi.operationReference.toCjPsiSourceElement()
+                }
+            }
             return buildFunctionCall {
                 source = psi.toCjPsiSourceElement()
                 calleeReference = buildNamedReference(opName, psi.toCjPsiSourceElement())
@@ -2385,27 +2419,6 @@ class PsiRawCfirBuilder(
                 }
             }
             val catches = psi.catchClauses.map { clause ->
-                val catchParam = clause.catchParameter
-                val catchParamName = catchParam?.name?.let { Name.identifier(it) } ?: Name.special("<error>")
-                val catchStatus = cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL))
-                val parameter =
-                    buildSourceDeclaration(CfirPropertySymbol(callableIdFor(catchParamName))) { symbol ->
-                        buildProperty {
-                            resolvePhase = CfirResolvePhase.RAW_CFIR
-                            source = (catchParam ?: clause).toCjPsiSourceElement()
-                            this.symbol = symbol
-                            origin = CfirDeclarationOrigin.Source
-                            moduleData = baseModuleData
-
-                            attributes = CfirDeclarationAttributes.EMPTY
-                            isLocal = true
-                            dispatchReceiverType = null
-                            status = catchStatus
-                            returnTypeRef =
-                                catchParam?.typeReferences?.firstOrNull()?.let(::convertTypeRef) ?: buildImplicitTypeRef()
-                            name = catchParamName
-                        }
-                    }.also { it.isCatchParameter = true }
                 val body = clause.catchBody?.let {
                     if (it is CjBlockExpression) convertBlock(it) else buildBlock {
                         source = it.toCjPsiSourceElement()
@@ -2414,7 +2427,7 @@ class PsiRawCfirBuilder(
                     ?: buildBlock { source = clause.toCjPsiSourceElement() }
                 buildCatch {
                     source = clause.toCjPsiSourceElement()
-                    this.parameter = parameter
+                    pattern = convertCatchPattern(clause)
                     this.body = body
                 }
             }
@@ -2508,6 +2521,43 @@ class PsiRawCfirBuilder(
                 operation = CfirTypeOperationKind.IS
                 this.argument = argument
                 typeRef = convertTypeRef(psi.typeReference)
+            }
+        }
+
+        private fun convertTypeOperator(psi: CjBinaryExpressionWithTypeRHS): CfirTypeOperator {
+            val operation = when (psi.operationReference.referencedNameElementType) {
+                CjTokens.AS_KEYWORD -> CfirTypeOperationKind.AS
+                else -> error("Unexpected binary type operator: ${psi.operationReference.referencedNameElementType}")
+            }
+            return buildTypeOperator {
+                source = psi.toCjPsiSourceElement()
+                this.operation = operation
+                argument = convertExpression(psi.left)
+                typeRef = convertTypeRef(psi.right)
+            }
+        }
+
+        private fun convertCatchPattern(clause: CjCatchClause): CfirCatchPattern {
+            val parameter = clause.catchParameter
+            val bindingName = parameter?.name?.let(Name::identifier)
+            val typeRefs = parameter?.typeReferences?.map(::convertTypeRef).orEmpty()
+            val bindingStatus = cloneDeclarationStatus(CfirDeclarationStatusImpl(Visibilities.Local, Modality.FINAL))
+
+            return buildCatchPattern {
+                source = (parameter ?: clause).toCjPsiSourceElement()
+                this.bindingName = bindingName
+                isWildcard = bindingName == null
+                this.typeRefs.addAll(typeRefs)
+                bindingVariable = bindingName?.let { name ->
+                    createPatternBindingVariable(
+                        source = parameter?.toCjPsiSourceElement(),
+                        name = name,
+                        status = bindingStatus,
+                        isLocal = true,
+                        isVar = false,
+                        returnTypeRef = buildImplicitTypeRef(),
+                    )
+                }
             }
         }
 
@@ -2740,6 +2790,7 @@ class PsiRawCfirBuilder(
                 copied.isCommon = status.isCommon
                 copied.isSpecific = status.isSpecific
                 copied.isRedef = status.isRedef
+                copied.isDefault = status.isDefault
                 copied.isAbstract = status.isAbstract
                 copied.isOpen = status.isOpen
                 copied.isSealed = status.isSealed
@@ -3022,18 +3073,56 @@ class PsiRawCfirBuilder(
                 },
                 isVisibilityExplicit = isVisibilityExplicit,
                 isModalityExplicit = isModalityExplicit,
-                isAbstract = modifiers?.hasModifier(CjTokens.ABSTRACT_KEYWORD) == true,
+                isAbstract = modifiers?.hasModifier(CjTokens.ABSTRACT_KEYWORD) == true ||
+                        isImplicitAbstractClassLikeMember(declaration, modifiers),
                 isOpen = modifiers?.hasModifier(CjTokens.OPEN_KEYWORD) == true,
                 isSealed = modifiers?.hasModifier(CjTokens.SEALED_KEYWORD) == true,
                 isStatic = modifiers?.hasModifier(CjTokens.STATIC_KEYWORD) == true,
-                isConst = modifiers?.hasModifier(CjTokens.CONST_KEYWORD) == true,
+                isConst = modifiers?.hasModifier(CjTokens.CONST_KEYWORD) == true ||
+                        declaration.hasConstDeclarationKeyword(),
                 isMut = modifiers?.hasModifier(CjTokens.MUT_KEYWORD) == true,
                 isOverride = modifiers?.hasModifier(CjTokens.OVERRIDE_KEYWORD) == true,
                 isRedef = modifiers?.hasModifier(CjTokens.REDEF_KEYWORD) == true,
                 isOperator = modifiers?.hasModifier(CjTokens.OPERATOR_KEYWORD) == true,
                 isUnsafe = modifiers?.hasModifier(CjTokens.UNSAFE_KEYWORD) == true,
                 isForeign = modifiers?.hasModifier(CjTokens.FOREIGN_KEYWORD) == true,
+                isDefault = isDefaultInterfaceMember(declaration),
             )
+        }
+
+        private fun CjDeclaration.hasConstDeclarationKeyword(): Boolean = when (this) {
+            is CjPatternVariable -> isConst
+            is CjFieldVariable -> isConst
+            else -> false
+        }
+
+        /**
+         * 官方 parser 在 class/interface 体内把无 body 函数、无属性体且无 getter/setter 的属性标记为 abstract。
+         * 这里处于 PSI -> Raw CFIR 层，应承接 parser 产物，而不是等待后续 checker 猜测。
+         */
+        private fun isImplicitAbstractClassLikeMember(
+            declaration: CjDeclaration,
+            modifiers: CjModifierList?,
+        ): Boolean {
+            if (containerSymbolIfAny !is CfirClassSymbol && containerSymbolIfAny !is CfirInterfaceSymbol) return false
+            if (modifiers?.hasModifier(CjTokens.FOREIGN_KEYWORD) == true) return false
+
+            return when (declaration) {
+                is CjNamedFunction -> !declaration.hasBody()
+                is CjProperty -> declaration.body == null && declaration.getter == null && declaration.setter == null
+                else -> false
+            }
+        }
+
+        private fun isDefaultInterfaceMember(declaration: CjDeclaration): Boolean {
+            if (containerSymbolIfAny !is CfirInterfaceSymbol) return false
+
+            return when (declaration) {
+                is CjNamedFunction -> !declaration.hasModifier(CjTokens.FOREIGN_KEYWORD) && declaration.hasBody()
+                is CjProperty -> declaration.hasBody()
+                is CjPropertyAccessor -> declaration.hasBody()
+                else -> false
+            }
         }
     }
 

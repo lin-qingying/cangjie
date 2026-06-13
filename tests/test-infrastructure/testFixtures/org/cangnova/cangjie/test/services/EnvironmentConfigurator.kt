@@ -1,27 +1,47 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 package org.cangnova.cangjie.test.services
 
-import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.AnalysisFlag
+import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.LanguageVersion
-import org.cangnova.cangjie.config.CompilerConfiguration
-import org.cangnova.cangjie.config.CompilerConfigurationKey
-import org.cangnova.cangjie.config.CommonConfigurationKeys
-import org.cangnova.cangjie.config.addClasspathRoot
-import org.cangnova.cangjie.config.useLightTree
+import org.cangnova.cangjie.cfir.entrypoint.configuration.CfirFrontendConfigurationKeys
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevel
 import org.cangnova.cangjie.cfir.entrypoint.configuration.apiLevelSyscapConfigPath
 import org.cangnova.cangjie.cfir.entrypoint.configuration.noPrelude
+import org.cangnova.cangjie.config.*
 import org.cangnova.cangjie.test.CfirParser
-import org.cangnova.cangjie.test.config.TestPhaseDirectives
+import org.cangnova.cangjie.test.config.addSourcesForDependsOnClosure
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.API_LEVEL
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.API_LEVEL_SYSCAP
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.IMPORT_PATH
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.NO_PRELUDE
-import org.cangnova.cangjie.test.config.addSourcesForDependsOnClosure
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.WITH_STDLIB
-import org.cangnova.cangjie.test.directives.ConfigurationDirectives
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives
 import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.CFIR_PARSER
+import org.cangnova.cangjie.test.directives.ConfigurationDirectives
 import org.cangnova.cangjie.test.directives.model.RegisteredDirectives
 import org.cangnova.cangjie.test.directives.model.SimpleDirective
 import org.cangnova.cangjie.test.directives.model.ValueDirective
@@ -29,7 +49,6 @@ import org.cangnova.cangjie.test.directives.model.singleOrZeroValue
 import org.cangnova.cangjie.test.model.ServicesAndDirectivesContainer
 import org.cangnova.cangjie.test.model.TestModule
 import java.io.File
-import kotlin.collections.set
 
 @DslMarker
 annotation class DefaultsDsl
@@ -86,6 +105,7 @@ class CommonEnvironmentConfigurator(testServices: TestServices) : EnvironmentCon
 
     override fun DirectiveToConfigurationKeyExtractor.provideConfigurationKeys() {
         register(CfirDiagnosticsDirectives.DUMP_INFERENCE_LOGS, CommonConfigurationKeys.DUMP_INFERENCE_LOGS)
+        register(CfirDiagnosticsDirectives.CHECK_PROGRAM_ENTRY, CfirFrontendConfigurationKeys.CHECK_PROGRAM_ENTRY)
     }
 
     override fun configureCompilerConfiguration(configuration: CompilerConfiguration, module: TestModule) {
