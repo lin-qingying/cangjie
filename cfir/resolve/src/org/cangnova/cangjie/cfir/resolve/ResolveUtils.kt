@@ -141,10 +141,23 @@ private fun BodyResolveComponents.typeFromNamedValueCandidate(candidate: Candida
         return typeFromSymbol(candidate.symbol)
     }
 
+    return functionTypeForFunctionValueCandidate(candidate, declaration)
+}
+
+/**
+ * 构造“函数名作为值”时的函数类型。
+ *
+ * 仓颉函数是一等值，`let f: (Int64) -> Unit = g` 这类引用不能使用
+ * `g` 的返回值类型，而必须使用完整函数签名参与后续期望类型与重载解析。
+ */
+fun BodyResolveComponents.functionTypeForFunctionValueCandidate(
+    candidate: Candidate,
+    declaration: CfirFunction = candidate.symbol.cfir as CfirFunction,
+): ConeCangJieType {
     val parameterTypes = declaration.valueParameters.map { parameter ->
         val resolvedType = (parameter.returnTypeRef as? CfirResolvedTypeRef)?.coneType
             ?: return ConeErrorType(ConeSimpleDiagnostic("Unresolved function parameter type", DiagnosticKind.Other))
-        runCatching { candidate.substitutor.substituteOrSelf(resolvedType) }.getOrDefault(resolvedType)
+        candidate.substitutor.substituteOrSelf(resolvedType)
     }
 
     returnTypeCalculator.tryCalculateReturnType(declaration)

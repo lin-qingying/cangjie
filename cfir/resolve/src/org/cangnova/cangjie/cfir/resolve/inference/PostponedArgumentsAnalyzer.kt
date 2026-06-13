@@ -14,21 +14,26 @@ import org.cangnova.cangjie.cfir.resolve.body.CfirCallResolver
 import org.cangnova.cangjie.cfir.resolve.calls.ConeContextSensitiveAlternativeForQualifierAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeLambdaWithTypeVariableAsExpectedTypeAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConePostponedResolvedAtom
+import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedCallableReferenceAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolvedLambdaAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithPostponedChild
 import org.cangnova.cangjie.cfir.resolve.calls.ConeSimpleNameForContextSensitiveResolution
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
+import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.addSubsystemFromAtom
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ArgumentCheckingProcessor
 import org.cangnova.cangjie.cfir.resolve.calls.stages.CheckerSinkImpl
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.functionTypeForFunctionValueCandidate
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeArgumentConstraintPosition
 import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeVariableForLambdaReturnType
 import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.resolve.calls.inference.isSubtypeConstraintCompatible
@@ -36,6 +41,7 @@ import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintSystemImpl
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.safeSubstitute
 
 data class ReturnArgumentsAnalysisResult(
@@ -67,7 +73,13 @@ class PostponedArgumentsAnalyzer(
         withPCLASession: Boolean,
     ) {
         when (atom) {
-            is ConeResolvedLambdaAtom -> analyzeLambda(csImpl, atom, candidate, withPCLASession)
+            is ConeResolvedLambdaAtom -> analyzeLambda(
+                csImpl = csImpl,
+                atom = atom,
+                candidate = candidate,
+                withPCLASession = withPCLASession,
+                forOverloadByLambdaReturnType = false,
+            )
             is ConeLambdaWithTypeVariableAsExpectedTypeAtom -> {
                 val revisedExpectedType = atom.revisedExpectedType?.asCone() ?: atom.expectedType
                 if (revisedExpectedType is ConeCangJieType) {
@@ -76,7 +88,13 @@ class PostponedArgumentsAnalyzer(
                         resolutionContext,
                         revisedExpectedType,
                     )
-                    analyzeLambda(csImpl, resolved, candidate, withPCLASession)
+                    analyzeLambda(
+                        csImpl = csImpl,
+                        atom = resolved,
+                        candidate = candidate,
+                        withPCLASession = withPCLASession,
+                        forOverloadByLambdaReturnType = false,
+                    )
                 } else {
                     atom.analyzed = true
                 }
@@ -107,11 +125,36 @@ class PostponedArgumentsAnalyzer(
         val errorReference = expression.calleeReference as? CfirErrorNamedReference ?: return
         val ambiguity = errorReference.diagnostic as? ConeAmbiguityError ?: return
         val functionCandidates = ambiguity.candidates
+            .mapNotNull { candidate -> candidate as? Candidate }
             .filter { candidate -> candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction }
         if (functionCandidates.size != ambiguity.candidates.size) {
             ArgumentCheckingProcessor.resolveArgumentExpression(
                 topLevelCandidate,
                 atom.fallbackSubAtom,
+                atom.expectedType,
+                CheckerSinkImpl(topLevelCandidate),
+                context = resolutionContext,
+                isReceiver = false,
+                isDispatch = false,
+            )
+            return
+        }
+
+        val selectedCandidate = selectFunctionReferenceCandidateByExpectedType(atom, functionCandidates)
+        if (selectedCandidate != null) {
+            val functionType = resolutionContext.bodyResolveComponents
+                .functionTypeForFunctionValueCandidate(selectedCandidate)
+            expression.replaceCalleeReference(
+                CfirNamedReferenceWithCandidate(
+                    errorReference.source,
+                    errorReference.name,
+                    selectedCandidate,
+                )
+            )
+            expression.replaceConeTypeOrNull(functionType)
+            ArgumentCheckingProcessor.resolveArgumentExpression(
+                topLevelCandidate,
+                ConeResolutionAtom.createRawAtom(expression),
                 atom.expectedType,
                 CheckerSinkImpl(topLevelCandidate),
                 context = resolutionContext,
@@ -147,13 +190,44 @@ class PostponedArgumentsAnalyzer(
         expression.replaceConeTypeOrNull(ConeErrorType(diagnostic, delegatedType = atom.expectedType))
     }
 
-    private fun analyzeLambda(
+    private fun selectFunctionReferenceCandidateByExpectedType(
+        atom: ConeSimpleNameForContextSensitiveResolution,
+        candidates: List<Candidate>,
+    ): Candidate? {
+        val expectedFunctionType = atom.expectedType
+            .fullyExpandedType(resolutionContext.session) as? ConeFunctionType ?: return null
+        val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
+            val functionType = resolutionContext.bodyResolveComponents
+                .functionTypeForFunctionValueCandidate(candidate)
+            AbstractTypeChecker.isSubtypeOf(resolutionContext.typeContext, functionType, expectedFunctionType)
+        }
+
+        return when (matchingCandidates.size) {
+            0 -> null
+            1 -> matchingCandidates.single()
+            else -> callResolver.conflictResolver
+                .chooseMaximallySpecificCandidates(matchingCandidates)
+                .singleOrNull()
+        }
+    }
+
+    /**
+     * 按当前候选约束系统分析 lambda，并把 lambda body 产生的返回约束写回候选系统。
+     *
+     * 该方法对应 Kotlin FIR `PostponedArgumentsAnalyzer.analyzeLambda`：普通 call
+     * completion 和 overload-by-lambda 分支必须复用同一条 postponed-argument 分析路径，
+     * 避免在重载解析层重新发明 lambda body resolve 流程。
+     */
+    internal fun analyzeLambda(
         csImpl: ConstraintSystemImpl,
         atom: ConeResolvedLambdaAtom,
         candidate: Candidate,
         withPCLASession: Boolean,
-    ) {
-        if (atom.analyzed) return
+        forOverloadByLambdaReturnType: Boolean,
+    ): ReturnArgumentsAnalysisResult {
+        if (atom.analyzed) {
+            return ReturnArgumentsAnalysisResult(atom.returnStatements, additionalConstraints = null)
+        }
 
         val currentSubstitutor = csImpl.buildCurrentSubstitutor()
         fun substitute(type: ConeCangJieType): ConeCangJieType =
@@ -172,12 +246,19 @@ class PostponedArgumentsAnalyzer(
             expectedReturnType = expectedReturnType,
             candidate = candidate,
             withPCLASession = withPCLASession,
-            forOverloadByLambdaReturnType = false,
+            forOverloadByLambdaReturnType = forOverloadByLambdaReturnType,
         )
         applyResultsOfAnalyzedLambdaToCandidateSystem(csImpl, atom, candidate, result, ::substitute)
+        return result
     }
 
-    private fun applyResultsOfAnalyzedLambdaToCandidateSystem(
+    /**
+     * 将已经完成 body resolve 的 lambda 返回 atoms 应用到指定候选系统。
+     *
+     * 对齐 Kotlin FIR 同名职责：overload-by-lambda 分支可以先分析一个 lambda body，
+     * 再把返回表达式约束映射到候选系统，而不是重新跑完整调用完成流程。
+     */
+    internal fun applyResultsOfAnalyzedLambdaToCandidateSystem(
         csImpl: ConstraintSystemImpl,
         atom: ConeResolvedLambdaAtom,
         candidate: Candidate,

@@ -373,6 +373,10 @@ class Candidate(
         }
     }
 
+    internal fun restoreLowestApplicability(applicability: CandidateApplicability) {
+        lowestApplicability = applicability
+    }
+
     /**
      * Note that [lowestApplicability]`.isSuccess == true` doesn't imply [isSuccessful].
      *

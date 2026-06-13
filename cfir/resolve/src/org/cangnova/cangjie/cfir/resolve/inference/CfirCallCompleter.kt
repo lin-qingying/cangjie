@@ -323,13 +323,14 @@ class CfirCallCompleter(
             lambda.replaceMatchingParameterFunctionType(lambdaAtom.expectedType)
             rewriteLambdaParameterTypes(lambda.valueParameters, parameters, candidate, withPCLASession)
 
-            if (expectedReturnType != null) {
-                lambda.replaceReturnTypeRef(
-                    lambda.returnTypeRef.resolvedTypeFromPrototype(
-                        expectedReturnType,
-                        lambda.source?.fakeElement(CjFakeSourceElementKind.ImplicitTypeRef),
-                    ),
+            val expectedReturnTypeRef = expectedReturnType?.let { returnType ->
+                lambda.returnTypeRef.resolvedTypeFromPrototype(
+                    returnType,
+                    lambda.source?.fakeElement(CjFakeSourceElementKind.ImplicitTypeRef),
                 )
+            }
+            if (expectedReturnTypeRef != null) {
+                lambda.replaceReturnTypeRef(expectedReturnTypeRef)
             }
 
             /**
@@ -341,17 +342,11 @@ class CfirCallCompleter(
              * `ARGUMENT_TYPE_MISMATCH` / `CANNOT_INFER_PARAMETER_TYPE`，
              * 而不是继续让返回值约束反向流回外层调用。
              */
-            val resolutionMode = expectedReturnType
-                ?.let { returnType ->
-                    org.cangnova.cangjie.cfir.resolve.withExpectedType(
-                        ConeFunctionType(parameterTypes = parameters, returnType = returnType),
-                    )
-                }
-                ?: ResolutionMode.ContextDependent
             var additionalConstraints: ConstraintStorage? = null
 
             transformer.context.withAnonymousFunctionTowerDataContext(lambda.symbol) {
                 val lambdaExpression = lambdaAtom.expression as CfirAnonymousFunctionExpression
+                val declarationsTransformer = transformer.declarationsTransformer
                 val pclaInferenceSession = runIf(withPCLASession) {
                     candidate.lambdasAnalyzedWithPCLA += lambda
                     CfirPCLAInferenceSession(candidate, session.inferenceComponents)
@@ -359,14 +354,20 @@ class CfirCallCompleter(
 
                 if (pclaInferenceSession != null) {
                     transformer.context.withInferenceSession(pclaInferenceSession) {
-                        lambdaExpression.transform<CfirElement, ResolutionMode>(transformer, resolutionMode)
+                        declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
+                            lambdaExpression,
+                            expectedReturnTypeRef,
+                        )
                     }
                 } else {
                     additionalConstraints = transformer.context.inferenceSession.runLambdaCompletion(
                         candidate,
                         forOverloadByLambdaReturnType,
                     ) {
-                        lambdaExpression.transform<CfirElement, ResolutionMode>(transformer, resolutionMode)
+                        declarationsTransformer.doTransformAnonymousFunctionBodyFromCallCompletion(
+                            lambdaExpression,
+                            expectedReturnTypeRef,
+                        )
                     }
                 }
             }

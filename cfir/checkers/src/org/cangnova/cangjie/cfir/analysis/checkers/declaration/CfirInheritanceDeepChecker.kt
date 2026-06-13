@@ -39,10 +39,7 @@ import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.descriptors.Visibilities
 import org.cangnova.cangjie.name.Name
-import org.cangnova.cangjie.source.CjFakeSourceElementKind
-import org.cangnova.cangjie.source.CjSourceElement
-import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
-import org.cangnova.cangjie.source.fakeElement
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 /**
@@ -307,7 +304,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     name = member.name,
                     kind = "function",
                     isStatic = member.status.isStatic,
-                    source = member.source,
+                    source = member.functionNameDiagnosticSource(),
                 )
 
                 is CfirProperty -> InheritedMemberInfo(
@@ -354,7 +351,7 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
                     if (ownInfo.isStatic != superInfo.isStatic) {
                         if (reportedStaticConflicts.add(ownInfo.name)) {
                             reporter.reportOn(
-                                source = ownInfo.source?.firstCharacterDiagnosticSource() ?: classDecl.source,
+                                source = ownInfo.source ?: classDecl.source,
                                 factory = CfirErrors.INHERIT_MEMBER_KIND_INCONSISTENT,
                                 a = ownInfo.staticKind,
                                 b = ownInfo.name,
@@ -387,17 +384,9 @@ object CfirInheritanceDeepChecker : CfirClassLikeChecker() {
         val name: Name,
         val kind: String,
         val isStatic: Boolean,
-        val source: CjSourceElement?,
+        val source: AbstractCjSourceElement?,
     ) {
         val staticKind: String get() = if (isStatic) "static" else "non-static"
     }
 
-    private fun CjSourceElement.firstCharacterDiagnosticSource(): CjSourceElement =
-        fakeElement(
-            CjFakeSourceElementKind.ErrorTypeRef,
-            CjSourceElementOffsetStrategy.Custom.Initialized(
-                startOffset = startOffset,
-                endOffset = (startOffset + 1).coerceAtMost(endOffset),
-            ),
-        )
 }

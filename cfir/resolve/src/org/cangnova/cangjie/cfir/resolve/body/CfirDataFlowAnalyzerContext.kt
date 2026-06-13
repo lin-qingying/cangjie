@@ -74,6 +74,33 @@ class CfirDataFlowAnalyzerContext(
         variableStorage.reset()
     }
 
+    /**
+     * 在独立 DFA/CFG 上下文中执行 speculative body resolve。
+     *
+     * overload-by-lambda 候选试跑需要真实 CFG 来收集 lambda return 表达式，但试跑结果不应写入
+     * 外层正在构造的 CFG / 变量赋值状态。这里保存并恢复原状态对象引用，避免对大型嵌套 CFG 做深拷贝。
+     */
+    fun <T> withIsolatedContext(block: () -> T): T {
+        val originalGraphBuilder = graphBuilder
+        val originalVariableAssignmentAnalyzer = variableAssignmentAnalyzer
+        val originalVariableStorage = variableStorage
+        val originalAssignmentCounter = assignmentCounter
+
+        graphBuilder = ControlFlowGraphBuilder()
+        variableAssignmentAnalyzer = CfirLocalVariableAssignmentAnalyzer()
+        variableStorage = VariableStorage()
+        assignmentCounter = originalAssignmentCounter
+
+        return try {
+            block()
+        } finally {
+            graphBuilder = originalGraphBuilder
+            variableAssignmentAnalyzer = originalVariableAssignmentAnalyzer
+            variableStorage = originalVariableStorage
+            assignmentCounter = originalAssignmentCounter
+        }
+    }
+
     fun newAssignmentIndex(): Int {
         return assignmentCounter++
     }

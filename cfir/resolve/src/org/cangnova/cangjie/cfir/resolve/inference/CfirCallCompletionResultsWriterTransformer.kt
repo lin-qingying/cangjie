@@ -412,7 +412,6 @@ class CfirCallCompletionResultsWriterTransformer(
         anonymousFunctionExpression: CfirAnonymousFunctionExpression,
         data: ExpectedArgumentType?
     ): CfirExpression {
-        anonymousFunctionExpression.transformChildren(this, null)
         finalizeAnonymousFunction(
             function = anonymousFunctionExpression.anonymousFunction,
             data = data,

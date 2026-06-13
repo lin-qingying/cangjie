@@ -62,6 +62,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirResolvable
 import org.cangnova.cangjie.cfir.expressions.unwrapSmartcastExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
@@ -72,6 +73,7 @@ import org.cangnova.cangjie.cfir.resolve.doesResolutionResultOverrideOtherToPres
 import org.cangnova.cangjie.cfir.resolve.expectedType
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedClass
 import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
+import org.cangnova.cangjie.cfir.resolve.functionTypeForFunctionValueCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
@@ -84,6 +86,7 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirNamedReferenceWithC
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithErrorCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.createErrorReferenceWithExistingCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeCallConflictResolver
+import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadByLambdaBodyResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.callConflictResolverFactory
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
@@ -94,6 +97,7 @@ import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.scopes.impl.staticScopeForQualifierType
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
+import org.cangnova.cangjie.cfir.semantics.ErrorTypeInArguments
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
@@ -120,12 +124,14 @@ import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.contains
+import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.utils.runIf
 
 class CfirCallResolver(
@@ -144,6 +150,10 @@ class CfirCallResolver(
 
     val conflictResolver: ConeCallConflictResolver =
         session.callConflictResolverFactory.create(session.inferenceComponents, components)
+
+    private val overloadByLambdaBodyResolver: CfirOverloadByLambdaBodyResolver by lazy(LazyThreadSafetyMode.NONE) {
+        CfirOverloadByLambdaBodyResolver(components, conflictResolver)
+    }
 
     @ApplicabilityDetail
     private val ResolutionResult.isSuccess: Boolean
@@ -239,6 +249,7 @@ class CfirCallResolver(
 
         functionCall.replaceCalleeReference(nameReference)
         val candidate = (nameReference as? CfirNamedReferenceWithCandidate)?.candidate
+        reportBodyResolutionErrorToOverloadByLambdaCandidate(nameReference, candidate)
         candidate?.updateSourcesOfReceivers()
         return functionCall
     }
@@ -418,10 +429,22 @@ class CfirCallResolver(
         transformedAccess.replaceCalleeReference(nameReference)
         if (reducedCandidates.size == 1) {
             val candidate = reducedCandidates.single()
+            reportBodyResolutionErrorToOverloadByLambdaCandidate(nameReference, candidate)
             candidate.updateSourcesOfReceivers()
+        } else {
+            reportBodyResolutionErrorToOverloadByLambdaCandidate(nameReference, null)
         }
         transformer.storeTypeFromCallee(transformedAccess)
         return transformedAccess
+    }
+
+    private fun reportBodyResolutionErrorToOverloadByLambdaCandidate(
+        reference: CfirReference,
+        selectedCandidate: Candidate?,
+    ) {
+        if (reference is CfirErrorNamedReference || selectedCandidate?.isSuccessful == false) {
+            components.context.reportOverloadByLambdaCandidateDiagnostic(ErrorTypeInArguments)
+        }
     }
 
     fun collectAllCandidates(
@@ -510,7 +533,12 @@ class CfirCallResolver(
         collector: CfirCandidateCollector? = null,
     ): ResolutionResult {
         val resultCollector = towerResolver.runResolver(info, resolutionContext, collector)
-        val (reducedCandidates, applicability) = reduceCandidates(resultCollector)
+        var (reducedCandidates, applicability) = reduceCandidates(resultCollector)
+        reducedCandidates = reduceFunctionValueCandidatesByExpectedType(info, reducedCandidates)
+        val callSite = info.callSite
+        if (callSite is CfirQualifiedAccessExpression && components.context.shouldReduceOverloadByLambdaCandidates()) {
+            reducedCandidates = overloadByLambdaBodyResolver.reduceCandidates(callSite, reducedCandidates)
+        }
 
         return ResolutionResult(
             info = info,
@@ -518,6 +546,37 @@ class CfirCallResolver(
             candidates = reducedCandidates,
             forwardedDiagnostics = resultCollector.forwardedDiagnostics(),
         )
+    }
+
+    /**
+     * 有目标函数类型时，函数名作为值的重载引用按完整函数类型过滤。
+     *
+     * 官方 Sema 在 `ChkRefExpr` 中会把目标类型传给 `CollectValidFuncTys`，
+     * 只有候选函数类型可作为目标函数类型的子类型时才保留；没有目标类型时才继续报告歧义。
+     */
+    private fun reduceFunctionValueCandidatesByExpectedType(
+        info: CallInfo,
+        candidates: Set<Candidate>,
+    ): Set<Candidate> {
+        if (candidates.size <= 1 || info.callKind != CallKind.NamedValueAccess) return candidates
+        val expectedFunctionType = info.resolutionMode.expectedType
+            ?.fullyExpandedType() as? ConeFunctionType ?: return candidates
+
+        val functionCandidates = candidates.filter { candidate ->
+            candidate.symbol.takeIf { it.isBound }?.cfir is CfirFunction
+        }
+        if (functionCandidates.size != candidates.size) return candidates
+
+        val matchingCandidates = functionCandidates.filterTo(linkedSetOf()) { candidate ->
+            val functionType = components.functionTypeForFunctionValueCandidate(candidate)
+            AbstractTypeChecker.isSubtypeOf(session.typeContext, functionType, expectedFunctionType)
+        }
+
+        return when (matchingCandidates.size) {
+            0 -> candidates
+            1 -> matchingCandidates
+            else -> conflictResolver.chooseMaximallySpecificCandidates(matchingCandidates)
+        }
     }
 
     private fun reduceCandidates(
