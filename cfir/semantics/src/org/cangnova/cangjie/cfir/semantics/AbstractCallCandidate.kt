@@ -20,4 +20,21 @@ abstract class AbstractCallCandidate<P : AbstractConeResolutionAtom> : AbstractC
     abstract val errors: List<ConstraintSystemError>
     abstract val system: ConstraintSystem
     abstract val usedOuterCs: Boolean
+
+    private var _cangjieVariadicRegularCallDiagnostics: List<ResolutionDiagnostic>? = null
+
+    /**
+     * 仓颉变参调用必须先尝试普通调用；只有普通调用不匹配时，官方编译器才会
+     * 抑制普通调用诊断并继续尝试变参解糖。若变参尝试最终失败，需要回放这里保存
+     * 的普通调用诊断，而不是报告解糖后数组字面量上的派生错误。
+     */
+    val cangjieVariadicRegularCallDiagnostics: List<ResolutionDiagnostic>
+        get() = _cangjieVariadicRegularCallDiagnostics ?: emptyList()
+
+    fun initializeCangjieVariadicRegularCallDiagnostics(diagnostics: List<ResolutionDiagnostic>) {
+        require(_cangjieVariadicRegularCallDiagnostics == null) {
+            "Cangjie variadic regular-call diagnostics already initialized"
+        }
+        _cangjieVariadicRegularCallDiagnostics = diagnostics
+    }
 }

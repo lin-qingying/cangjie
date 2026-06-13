@@ -36,11 +36,13 @@ import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.diagnostic.HiddenCandidate
 import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithSingleChild
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.inferenceLogger
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
@@ -95,7 +97,33 @@ class CandidateFactory(
             context.session.inferenceLogger?.logStage("CandidateFactory.buildBaseSystem()", system)
             return system.asReadOnlyStorage()
         }
+
+        fun createForCallableReferenceCandidate(
+            context: ResolutionContext,
+            containingCall: Candidate,
+        ): CandidateFactory =
+            CandidateFactory(context, buildBaseSystemForContainingCallAwareCases(context, containingCall, callInfo = null))
     }
+
+    fun createCallableReferenceCandidate(
+        callInfo: CallInfo,
+        originalCandidate: Candidate,
+    ): Candidate {
+        return Candidate(
+            symbol = originalCandidate.symbol,
+            dispatchReceiver = originalCandidate.dispatchReceiver,
+            givenExtensionReceiver = originalCandidate.givenExtensionReceiver,
+            explicitReceiverKind = originalCandidate.explicitReceiverKind,
+            constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
+            baseSystem = baseSystem,
+            callInfo = callInfo,
+            originScope = originalCandidate.originScope,
+            isFromCompanionObjectTypeScope = originalCandidate.isFromCompanionObjectTypeScope,
+            isFromOriginalTypeInPresenceOfSmartCast = originalCandidate.isFromOriginalTypeInPresenceOfSmartCast,
+            bodyResolveContext = context.bodyResolveContext,
+        )
+    }
+
     fun createCandidate(
         callInfo: CallInfo,
         symbol: CfirCallableSymbol<*>,
@@ -103,11 +131,21 @@ class CandidateFactory(
         explicitReceiverKind: ExplicitReceiverKind = ExplicitReceiverKind.NO_EXPLICIT_RECEIVER,
         dispatchReceiver: ReceiverValue? = null,
         givenExtensionReceiver: ReceiverValue? = null,
+        baseSystem: ConstraintStorage = this.baseSystem,
     ): Candidate {
+        val useDispatchReceiverAsExtensionReceiver =
+            givenExtensionReceiver == null &&
+                dispatchReceiver != null &&
+                symbol.isInstanceExtendMemberCandidate()
+        val effectiveDispatchReceiver = if (useDispatchReceiverAsExtensionReceiver) null else dispatchReceiver
+        val effectiveExtensionReceiver = givenExtensionReceiver ?: dispatchReceiver.takeIf {
+            useDispatchReceiverAsExtensionReceiver
+        }
+
         return Candidate(
             symbol = symbol,
-            dispatchReceiver = dispatchReceiver?.receiverExpression?.let(ConeResolutionAtom::createRawAtom),
-            givenExtensionReceiver = givenExtensionReceiver?.receiverExpression?.let(ConeResolutionAtom::createRawAtom),
+            dispatchReceiver = effectiveDispatchReceiver?.receiverExpression?.let(ConeResolutionAtom::createRawAtom),
+            givenExtensionReceiver = effectiveExtensionReceiver?.receiverExpression?.let(ConeResolutionAtom::createRawAtom),
             explicitReceiverKind = explicitReceiverKind,
             constraintSystemFactory = context.inferenceComponents.constraintSystemFactory,
             baseSystem = baseSystem,
@@ -115,6 +153,17 @@ class CandidateFactory(
             originScope = originScope,
             bodyResolveContext = context.bodyResolveContext,
         )
+    }
+
+    /**
+     * use-site member scope 会把 extend 成员并入接收者类型的成员集合。
+     * 对这些 callable，tower level 传入的 dispatch receiver 实际是仓颉 extend receiver；
+     * candidate 层在进入 Kotlin-shaped receiver stage 前统一正规化。
+     */
+    private fun CfirCallableSymbol<*>.isInstanceExtendMemberCandidate(): Boolean {
+        if (cfir.status.isStatic) return false
+        val extendProvider = context.session.extendProviderOrNull ?: return false
+        return extendProvider.getContainingExtend(unwrapSubstitutionOverrides()) != null
     }
 
     fun createFunctionTypeInvokeCandidate(
@@ -174,7 +223,16 @@ class CandidateFactory(
             originScope = null,
             explicitReceiverKind = explicitReceiverKind,
             dispatchReceiver = dispatchReceiver,
+            baseSystem = baseSystem.withSubsystemFromInvokeReceiver(receiverExpression),
         )
+    }
+
+    private fun ConstraintStorage.withSubsystemFromInvokeReceiver(receiverExpression: CfirExpression): ConstraintStorage {
+        val receiverAtom = ConeResolutionAtom.createRawAtom(receiverExpression)
+        val system = context.inferenceComponents.createConstraintSystem()
+        system.setBaseSystem(this)
+        system.addSubsystemFromAtom(receiverAtom)
+        return system.asReadOnlyStorage()
     }
 
     /**

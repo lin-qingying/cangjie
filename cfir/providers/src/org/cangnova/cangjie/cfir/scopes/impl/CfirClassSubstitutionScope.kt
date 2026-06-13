@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverride
 import org.cangnova.cangjie.cfir.originalForSubstitutionOverrideAttr
+import org.cangnova.cangjie.cfir.resolve.providers.findExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.scopes.*
 import org.cangnova.cangjie.cfir.session.*
@@ -53,10 +54,12 @@ class CfirClassSubstitutionScope(
     private val session: CfirSession,
     private val useSiteMemberScope: CfirTypeScope,
     private val dispatchReceiverType: ConeCangJieType,
+    private val substitutionOwnerType: ConeCangJieType? = null,
 ) : CfirTypeScope() {
     private val functionOverrideCache = mutableMapOf<CfirNamedFunctionSymbol, CfirNamedFunctionSymbol>()
     private val propertyOverrideCache = mutableMapOf<CfirPropertySymbol, CfirPropertySymbol>()
     private val fieldOverrideCache = mutableMapOf<CfirFieldVariableSymbol, CfirFieldVariableSymbol>()
+    private val enumConstructorOverrideCache = mutableMapOf<CfirEnumConstructorSymbol, CfirEnumConstructorSymbol>()
     private val wrappedBaseScopeCache = mutableMapOf<CfirTypeScope, CfirTypeScope>()
     private val concreteSupertypeCache = mutableMapOf<ClassId, ConeCangJieType?>()
 
@@ -119,51 +122,56 @@ class CfirClassSubstitutionScope(
 
     override fun withReplacedSessionOrNull(newSession: CfirSession, newScopeSession: ScopeSession): CfirTypeScope? {
         val replacedScope = useSiteMemberScope.withReplacedSessionOrNull(newSession, newScopeSession) ?: return null
-        return CfirClassSubstitutionScope(newSession, replacedScope, dispatchReceiverType)
+        return CfirClassSubstitutionScope(newSession, replacedScope, dispatchReceiverType, substitutionOwnerType)
     }
 
     private fun substitutedBaseScope(baseScope: CfirTypeScope): CfirTypeScope {
         if (baseScope === useSiteMemberScope) return this
         return synchronized(wrappedBaseScopeCache) {
             wrappedBaseScopeCache.getOrPut(baseScope) {
-                CfirClassSubstitutionScope(session, baseScope, dispatchReceiverType)
+                CfirClassSubstitutionScope(session, baseScope, dispatchReceiverType, substitutionOwnerType)
             }
         }
     }
 
     private fun substituteCallableSymbol(symbol: CfirCallableSymbol<*>): CfirCallableSymbol<*> {
-        val originalSymbol = symbol.originalForSubstitutionOverride ?: symbol
-        return when (originalSymbol) {
-            is CfirNamedFunctionSymbol -> substituteFunctionSymbol(originalSymbol)
-            is CfirPropertySymbol -> substitutePropertySymbol(originalSymbol)
-            is CfirFieldVariableSymbol -> substituteFieldSymbol(originalSymbol)
-            else -> originalSymbol
+        return when (symbol) {
+            is CfirNamedFunctionSymbol -> substituteFunctionSymbol(symbol)
+            is CfirPropertySymbol -> substitutePropertySymbol(symbol)
+            is CfirFieldVariableSymbol -> substituteFieldSymbol(symbol)
+            is CfirEnumConstructorSymbol -> substituteEnumConstructorSymbol(symbol)
+            else -> symbol
         }
     }
 
     private fun substituteFunctionSymbol(symbol: CfirNamedFunctionSymbol): CfirNamedFunctionSymbol {
-        val originalSymbol = symbol.unwrapOriginalForSubstitutionOverride()
         return synchronized(functionOverrideCache) {
-            functionOverrideCache.getOrPut(originalSymbol) {
-                createSubstitutedFunctionSymbol(originalSymbol)
+            functionOverrideCache.getOrPut(symbol) {
+                createSubstitutedFunctionSymbol(symbol)
             }
         }
     }
 
     private fun substitutePropertySymbol(symbol: CfirPropertySymbol): CfirPropertySymbol {
-        val originalSymbol = symbol.unwrapOriginalForSubstitutionOverride()
         return synchronized(propertyOverrideCache) {
-            propertyOverrideCache.getOrPut(originalSymbol) {
-                createSubstitutedPropertySymbol(originalSymbol)
+            propertyOverrideCache.getOrPut(symbol) {
+                createSubstitutedPropertySymbol(symbol)
             }
         }
     }
 
     private fun substituteFieldSymbol(symbol: CfirFieldVariableSymbol): CfirFieldVariableSymbol {
-        val originalSymbol = symbol.unwrapOriginalForSubstitutionOverride()
         return synchronized(fieldOverrideCache) {
-            fieldOverrideCache.getOrPut(originalSymbol) {
-                createSubstitutedFieldSymbol(originalSymbol)
+            fieldOverrideCache.getOrPut(symbol) {
+                createSubstitutedFieldSymbol(symbol)
+            }
+        }
+    }
+
+    private fun substituteEnumConstructorSymbol(symbol: CfirEnumConstructorSymbol): CfirEnumConstructorSymbol {
+        return synchronized(enumConstructorOverrideCache) {
+            enumConstructorOverrideCache.getOrPut(symbol) {
+                createSubstitutedEnumConstructorSymbol(symbol)
             }
         }
     }
@@ -223,6 +231,27 @@ class CfirClassSubstitutionScope(
             this.symbol = copiedSymbol
             dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
             returnTypeRef = returnTypeData.typeRef
+        }
+        copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
+        copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
+        return copiedSymbol
+    }
+
+    private fun createSubstitutedEnumConstructorSymbol(symbol: CfirEnumConstructorSymbol): CfirEnumConstructorSymbol {
+        val substitutor = computeCallableSubstitutor(symbol)
+        if (substitutor === ConeSubstitutor.Empty || substitutor == null) return symbol
+
+        symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        val declaration = symbol.cfir
+        val copiedSymbol = CfirEnumConstructorSymbol(symbol.callableId)
+        val returnTypeData = declaration.substitutedReturnTypeData(symbol, substitutor)
+        val copiedDeclaration = buildEnumConstructorCopy(declaration) {
+            origin = substitutionOverrideOrigin(symbol)
+            this.symbol = copiedSymbol
+            dispatchReceiverType = substituteDispatchReceiverType(declaration.dispatchReceiverType, substitutor)
+            returnTypeRef = returnTypeData.typeRef
+            valueParameters.clear()
+            valueParameters += substituteValueParameters(declaration.valueParameters, substitutor)
         }
         copiedDeclaration.attributes.deferredCallableCopyReturnType = returnTypeData.deferredReturnType
         copiedDeclaration.originalForSubstitutionOverrideAttr = declaration
@@ -321,7 +350,7 @@ class CfirClassSubstitutionScope(
         val ownerExtend = session.extendProvider.getContainingExtend(symbol)
             ?.takeIf(session.extendProvider::isExtendAccessible)
         if (ownerExtend != null) {
-            return findExtendDeclarationSubstitutor(ownerExtend)
+            return findExtendDeclarationSubstitution(session, ownerExtend, dispatchReceiverType)?.substitutor
         }
 
         val ownerClassId = session.cfirProvider.getContainingClass(symbol)?.classId
@@ -334,6 +363,13 @@ class CfirClassSubstitutionScope(
     }
 
     private fun concreteTypeForOwner(ownerClassId: ClassId): ConeCangJieType? {
+        substitutionOwnerType
+            ?.takeIf { it.classIdOrPrimitiveClassId == ownerClassId }
+            ?.let { return it }
+        substitutionOwnerType
+            ?.let { findConcreteTypeInHierarchy(it, ownerClassId) }
+            ?.let { return it }
+
         return synchronized(concreteSupertypeCache) {
             concreteSupertypeCache.getOrPut(ownerClassId) {
                 findConcreteTypeInHierarchy(dispatchReceiverType, ownerClassId)
@@ -371,91 +407,6 @@ class CfirClassSubstitutionScope(
                 typeParameter.symbol.toLookupTag() to argument.type
             }
         return replacements.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap) ?: ConeSubstitutor.Empty
-    }
-
-    private fun findExtendDeclarationSubstitutor(extend: CfirExtend): ConeSubstitutor? {
-        val queue = ArrayDeque<ConeCangJieType>()
-        val visited = linkedSetOf<ConeCangJieType>()
-        queue += dispatchReceiverType
-
-        while (queue.isNotEmpty()) {
-            val current = queue.removeFirst()
-            if (!visited.add(current)) continue
-
-            createExtendDeclarationSubstitutor(extend, current)?.let { return it }
-
-            queue.addAll(session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(current).orEmpty())
-        }
-
-        return null
-    }
-
-    private fun createExtendDeclarationSubstitutor(
-        extend: CfirExtend,
-        concreteReceiverType: ConeCangJieType,
-    ): ConeSubstitutor? {
-        val targetPattern = (extend.extendedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return null
-        val substitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
-        val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
-            it.symbol.toLookupTag()
-        }
-
-        if (!matchExtendTargetType(
-                targetPattern,
-                concreteReceiverType,
-                extendTypeParameterConstructors,
-                substitutions
-            )
-        ) {
-            return null
-        }
-        if (extendTypeParameterConstructors.any { it !in substitutions }) {
-            return null
-        }
-
-        return substitutions.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap) ?: ConeSubstitutor.Empty
-    }
-
-    private fun matchExtendTargetType(
-        pattern: ConeCangJieType,
-        actual: ConeCangJieType,
-        extendTypeParameterConstructors: Set<TypeConstructorMarker>,
-        substitutions: MutableMap<TypeConstructorMarker, ConeCangJieType>,
-    ): Boolean {
-        return when (pattern) {
-            is org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType -> {
-                val typeParameterConstructor = pattern.lookupTag
-                if (typeParameterConstructor !in extendTypeParameterConstructors) {
-                    pattern == actual
-                } else {
-                    val existing = substitutions[typeParameterConstructor]
-                    existing == null || existing == actual
-                }.also { matches ->
-                    if (matches) {
-                        substitutions.putIfAbsent(typeParameterConstructor, actual)
-                    }
-                }
-            }
-
-            is ConePrimitiveType -> actual is ConePrimitiveType && pattern.kind == actual.kind
-
-            is ConeLookupTagBasedType -> {
-                val actualClassifier = actual as? ConeLookupTagBasedType ?: return false
-                if (pattern.classIdOrPrimitiveClassId != actualClassifier.classIdOrPrimitiveClassId) return false
-                if (pattern.typeArguments.size != actualClassifier.typeArguments.size) return false
-
-                pattern.typeArguments.indices.all { index ->
-                    matchExtendTargetType(
-                        pattern = pattern.typeArguments[index].type,
-                        actual = actualClassifier.typeArguments[index].type,
-                        extendTypeParameterConstructors = extendTypeParameterConstructors,
-                        substitutions = substitutions,
-                    )
-                }
-            }
-
-            else -> pattern == actual
-        }
     }
 
     override fun toString(): String {

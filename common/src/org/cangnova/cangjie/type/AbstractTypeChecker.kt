@@ -249,8 +249,11 @@ object AbstractTypeChecker {
         // Nothing 是所有类型的子类型
         if (ctx.isNothing(subType)) return true
 
-        // 所有类型都是 Any 的子类型
-        if (ctx.isAnyConstructor(ctx.typeConstructor(superType))) return true
+        // 官方 TypeManager::IsSubtype 中，只有允许 implicitBoxed 时值类型才可装箱到 Any；
+        // 禁止隐式装箱的函数类型子类型检查里，仅 class/interface 这类引用语义类型保留 Any 关系。
+        if (ctx.isAnyConstructor(ctx.typeConstructor(superType))) {
+            if (state.isImplicitBoxingAllowed || ctx.isClassLikeType(subType)) return true
+        }
 
         val optionBoxedElementType = ctx.optionBoxedElementTypeOf(superType)
         if (
@@ -342,12 +345,16 @@ object AbstractTypeChecker {
             val subParameterType = subArguments[index]
             val superParameterType = superArguments[index]
             state.runWithArgumentsSettings(subParameterType) {
-                if (!isSubtypeOf(state, superParameterType, subParameterType)) return false
+                if (!runWithImplicitBoxing(false) { isSubtypeOf(state, superParameterType, subParameterType) }) {
+                    return false
+                }
             }
         }
 
         return state.runWithArgumentsSettings(subArguments[returnIndex]) {
-            isSubtypeOf(state, subArguments[returnIndex], superArguments[returnIndex])
+            runWithImplicitBoxing(false) {
+                isSubtypeOf(state, subArguments[returnIndex], superArguments[returnIndex])
+            }
         }
     }
 
@@ -490,6 +497,10 @@ private fun TypeSystemContext.typeConstructor(type: CangJieTypeMarker): TypeCons
 
 /** 桥接 [TypeSystemContext.isAnyConstructor] */
 private fun TypeSystemContext.isAnyConstructor(ctor: TypeConstructorMarker): Boolean = ctor.isAnyConstructor()
+
+/** 桥接 [TypeSystemContext.isClassLikeType] */
+private fun TypeSystemContext.isClassLikeType(type: CangJieTypeMarker): Boolean =
+    with(this) { type.isClassLikeType() }
 
 /** 桥接 [TypeSystemContext.isIntersection] */
 private fun TypeSystemContext.isIntersection(ctor: TypeConstructorMarker): Boolean = ctor.isIntersection()

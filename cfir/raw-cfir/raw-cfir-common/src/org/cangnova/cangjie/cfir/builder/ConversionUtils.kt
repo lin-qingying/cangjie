@@ -68,6 +68,7 @@ private val BINARY_OP_KINDS: Map<IElementType, CfirBinaryOpKind> = mapOf(
     CjTokens.OROR to CfirBinaryOpKind.OR,
     CjTokens.COALESCING to CfirBinaryOpKind.COALESCING,
     CjTokens.PIPELINE to CfirBinaryOpKind.PIPELINE,
+    CjTokens.COMPOSITION to CfirBinaryOpKind.COMPOSITION,
 )
 
 private val COMPARISON_OPS: Map<IElementType, CfirComparisonOp> = mapOf(

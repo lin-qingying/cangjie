@@ -12,47 +12,47 @@ import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTypeConversion
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.expressions.CfirLetPatternExpression
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.cfir.visitors.transformInplace
 import org.cangnova.cangjie.source.CjSourceElement
 
-class CfirTypeConversionImpl @CfirImplementationDetail constructor(
+class CfirLetPatternExpressionImpl @CfirImplementationDetail constructor(
     override val source: CjSourceElement?,
     override var annotations: MutableOrEmptyList<CfirAnnotation>,
     override var coneTypeOrNull: ConeCangJieType?,
-    override var argument: CfirExpression,
-    override var targetTypeRef: CfirTypeRef,
-) : CfirTypeConversion() {
+    override var initializer: CfirExpression,
+    override var pattern: CfirPattern,
+) : CfirLetPatternExpression() {
 
     override fun <R, D> acceptChildren(visitor: CfirVisitor<R, D>, data: D) {
         annotations.forEach { it.accept(visitor, data) }
-        argument.accept(visitor, data)
-        targetTypeRef.accept(visitor, data)
+        initializer.accept(visitor, data)
+        pattern.accept(visitor, data)
     }
 
-    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirTypeConversionImpl {
+    override fun <D> transformChildren(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpressionImpl {
         transformAnnotations(transformer, data)
-        transformArgument(transformer, data)
-        transformTargetTypeRef(transformer, data)
+        transformInitializer(transformer, data)
+        transformPattern(transformer, data)
         return this
     }
 
-    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTypeConversionImpl {
+    override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpressionImpl {
         annotations.transformInplace(transformer, data)
         return this
     }
 
-    override fun <D> transformArgument(transformer: CfirTransformer<D>, data: D): CfirTypeConversionImpl {
-        argument = argument.transform(transformer, data)
+    override fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpressionImpl {
+        initializer = initializer.transform(transformer, data)
         return this
     }
 
-    override fun <D> transformTargetTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypeConversionImpl {
-        targetTypeRef = targetTypeRef.transform(transformer, data)
+    override fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpressionImpl {
+        pattern = pattern.transform(transformer, data)
         return this
     }
 

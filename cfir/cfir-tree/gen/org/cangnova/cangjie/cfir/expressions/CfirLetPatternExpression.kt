@@ -6,36 +6,36 @@
 package org.cangnova.cangjie.cfir.expressions
 
 import org.cangnova.cangjie.cfir.CfirElement
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.visitors.CfirTransformer
 import org.cangnova.cangjie.cfir.visitors.CfirVisitor
 import org.cangnova.cangjie.source.CjSourceElement
 
 /**
- * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.typeConversion]
+ * Generated from: [org.cangnova.cangjie.cfir.tree.generator.CfirTree.letPatternExpression]
  */
-abstract class CfirTypeConversion : CfirExpression() {
+abstract class CfirLetPatternExpression : CfirExpression() {
     abstract override val source: CjSourceElement?
     abstract override val annotations: List<CfirAnnotation>
     abstract override val coneTypeOrNull: ConeCangJieType?
-    abstract val argument: CfirExpression
-    abstract val targetTypeRef: CfirTypeRef
+    abstract val initializer: CfirExpression
+    abstract val pattern: CfirPattern
 
     override fun <R, D> accept(visitor: CfirVisitor<R, D>, data: D): R =
-        visitor.visitTypeConversion(this, data)
+        visitor.visitLetPatternExpression(this, data)
 
     @Suppress("UNCHECKED_CAST")
     override fun <E : CfirElement, D> transform(transformer: CfirTransformer<D>, data: D): E =
-        transformer.transformTypeConversion(this, data) as E
+        transformer.transformLetPatternExpression(this, data) as E
 
     abstract override fun replaceAnnotations(newAnnotations: List<CfirAnnotation>)
 
     abstract override fun replaceConeTypeOrNull(newConeTypeOrNull: ConeCangJieType?)
 
-    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirTypeConversion
+    abstract override fun <D> transformAnnotations(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpression
 
-    abstract fun <D> transformArgument(transformer: CfirTransformer<D>, data: D): CfirTypeConversion
+    abstract fun <D> transformInitializer(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpression
 
-    abstract fun <D> transformTargetTypeRef(transformer: CfirTransformer<D>, data: D): CfirTypeConversion
+    abstract fun <D> transformPattern(transformer: CfirTransformer<D>, data: D): CfirLetPatternExpression
 }

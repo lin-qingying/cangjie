@@ -361,13 +361,23 @@ fun CfirExpression.resolvedQualifierClassifier(session: CfirSession): CfirClassL
     }
 }
 
+fun CfirExpression.resolvedQualifierTypeParameter(): CfirTypeParameterSymbol? {
+    val resolvedSymbol = ((this as? CfirResolvable)?.calleeReference as? CfirResolvedNamedReference)?.resolvedSymbol
+        ?: return null
+    return resolvedSymbol as? CfirTypeParameterSymbol
+}
+
 fun CfirExpression.qualifierScopeOrNull(
     session: CfirSession,
     scopeSession: ScopeSession,
 ): CfirScope? {
-    val classifier = resolvedQualifierClassifier(session) ?: return null
-    val qualifierType = coneTypeOrNull ?: classifier.constructType()
-    return classifier.staticScopeForQualifierType(session, scopeSession, qualifierType)
+    resolvedQualifierClassifier(session)?.let { classifier ->
+        val qualifierType = coneTypeOrNull ?: classifier.constructType()
+        return classifier.staticScopeForQualifierType(session, scopeSession, qualifierType)
+    }
+
+    val typeParameter = resolvedQualifierTypeParameter() ?: return null
+    return typeParameter.staticScopeForQualifierType(session, scopeSession)
 }
 
 private fun CfirTypeAliasSymbol.expandedClassLikeSymbol(session: CfirSession): CfirClassLikeSymbol<*>? {

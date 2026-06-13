@@ -786,6 +786,18 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
         +field("targetTypeRef", typeRef, withTransform = true)
     }
 
+    /**
+     * let pattern 条件表达式。
+     *
+     * 对齐官方 AST `LetPatternDestructor`：`if/while (let p <- initializer)` 本身是一个
+     * 条件表达式，initializer 先独立解析，pattern 绑定只进入条件对应的 then/body 作用域。
+     */
+    val letPatternExpression: Element by element(Expression, name = "LetPatternExpression") {
+        parent(expression)
+        +field("initializer", expression, withTransform = true)
+        +field("pattern", pattern, withTransform = true)
+    }
+
     val ifExpression: Element by element(Expression, name = "IfExpression") {
         parent(expression)
         +field("condition", expression, withTransform = true)

@@ -12,6 +12,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -42,12 +43,12 @@ object CfirSupertypesChecker : CfirClassLikeChecker() {
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
     private fun checkDuplicateSupertypes(declaration: CfirClassLikeDeclaration) {
-        val firstByKey = linkedMapOf<String, ConcreteSupertype>()
-        val reportedKeys = linkedSetOf<String>()
+        val firstByKey = linkedMapOf<ConeCangJieType, ConcreteSupertype>()
+        val reportedKeys = linkedSetOf<ConeCangJieType>()
 
         for (superTypeRef in declaration.superTypeRefs) {
             val superDeclaration = superTypeRef.toResolvedSuperDeclaration(context) ?: continue
-            val key = superDeclaration.duplicateSupertypeKey() ?: continue
+            val key = superTypeRef.duplicateSupertypeKey(context) ?: continue
             val first = firstByKey.putIfAbsent(key, ConcreteSupertype(superTypeRef, superDeclaration.classLikeName()))
             if (first == null || !reportedKeys.add(key)) continue
 
@@ -127,6 +128,18 @@ private fun CfirTypeRef.toResolvedSuperDeclaration(context: CheckerContext): Cfi
     return resolvedTypeRef.coneType.toResolvedSuperDeclaration(context)
 }
 
+private fun CfirTypeRef.duplicateSupertypeKey(context: CheckerContext): ConeCangJieType? {
+    val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
+    if (resolvedTypeRef.coneType is ConeErrorType) return null
+    return when (val type = resolvedTypeRef.coneType.fullyExpandedType(context.session)) {
+        is ConePrimitiveType,
+        is ConeClassLikeType,
+        is ConeStructType,
+        is ConeEnumType -> type
+        else -> null
+    }
+}
+
 private fun ConeCangJieType.toResolvedSuperDeclaration(context: CheckerContext): CfirClassLikeDeclaration? {
     val expanded = fullyExpandTypeAlias()
     val classId = when (expanded) {
@@ -166,15 +179,6 @@ private fun CfirClassLikeDeclaration.classLikeName(): Name = when (this) {
     is CfirStruct -> name
     is CfirEnum -> name
     is CfirTypeAlias -> name
-}
-
-private fun CfirClassLikeDeclaration.duplicateSupertypeKey(): String? = when (this) {
-    is CfirPrimitiveTypeDeclaration -> "primitive:${kind.typeName}"
-    is CfirClass -> "class:${symbol.classId}"
-    is CfirInterface -> "interface:${symbol.classId}"
-    is CfirStruct -> "struct:${symbol.classId}"
-    is CfirEnum -> "enum:${symbol.classId}"
-    is CfirTypeAlias -> null
 }
 
 private fun CfirClassLikeDeclaration.classLikeIdentityKey(): String? = when (this) {

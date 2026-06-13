@@ -399,7 +399,7 @@ class CfirClassUseSiteMemberScope private constructor(
         if (!parentSymbol.isBound || parentSymbol.cfir.typeParameters.isEmpty()) return this
         val typeArguments = (supertype as? ConeLookupTagBasedType)?.typeArguments.orEmpty()
         if (typeArguments.isEmpty()) return this
-        return CfirClassSubstitutionScope(session, this, receiverType)
+        return CfirClassSubstitutionScope(session, this, receiverType, substitutionOwnerType = supertype)
     }
 
     private fun CfirClassLikeSymbol<*>.createDeclarationSubstitutor(type: ConeCangJieType): CfirTypeSubstitutorByMap? {

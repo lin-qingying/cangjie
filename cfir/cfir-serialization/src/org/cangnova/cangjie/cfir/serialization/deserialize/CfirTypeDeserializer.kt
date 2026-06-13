@@ -6,6 +6,7 @@ import org.cangnova.cangjie.cfir.MutableOrEmptyList
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.impl.CfirTypeParameterImpl
 import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
@@ -203,7 +204,23 @@ class CfirTypeDeserializer(
         val upperBounds = (0 until info.upperBoundsLength).map {
             deserializeTypeFromField(info.upperBounds(it))
         }
+        resolveMaterializedTypeParameterSymbol(fullId)?.let { symbol ->
+            return ConeTypeParameterTypeImpl(symbol.toLookupTag())
+        }
         return ConeTypeParameterTypeImpl(createSyntheticTypeParameterSymbol(name, upperBounds).toLookupTag())
+    }
+
+    /**
+     * CJO `GenericTyInfo.declPtr` 指向真实的 `GenericParamDecl`。
+     * 当声明反序列化已物化该类型参数时，类型引用必须复用同一个 symbol，
+     * 否则函数/enum constructor 签名中的 `T` 无法被调用候选的 fresh substitutor 命中。
+     */
+    private fun resolveMaterializedTypeParameterSymbol(fullId: FullId): CfirTypeParameterSymbol? {
+        val resolved = context.fullIdResolver.resolve(fullId) as? ResolvedFullId.Declaration ?: return null
+        if (resolved.source != ResolvedFullId.Declaration.Source.CURRENT_PACKAGE) return null
+        val declaration = context.declCache[resolved.declaration.zeroBasedIndex] as? CfirTypeParameter
+            ?: return null
+        return declaration.symbol
     }
 
     private fun createRecursiveTypeFallback(typeIndex: Int): ConeCangJieType {

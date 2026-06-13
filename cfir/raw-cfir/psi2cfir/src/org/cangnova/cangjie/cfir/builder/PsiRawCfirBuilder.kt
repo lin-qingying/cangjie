@@ -603,7 +603,7 @@ class PsiRawCfirBuilder(
                                 if (psi is CjEnum) {
                                     declarations.addAll(
                                         0,
-                                        psi.constructor.map { convertEnumConstructor(it, typeParameters) })
+                                        psi.constructor.map { convertEnumConstructor(it) })
                                 }
                             }
                             typeParameters to declarations
@@ -682,7 +682,7 @@ class PsiRawCfirBuilder(
                                 if (psi is CjEnum) {
                                     declarations.addAll(
                                         0,
-                                        psi.constructor.map { convertEnumConstructor(it, typeParameters) })
+                                        psi.constructor.map { convertEnumConstructor(it) })
                                 }
                             }
                             typeParameters to declarations
@@ -1121,7 +1121,6 @@ class PsiRawCfirBuilder(
 
         private fun convertEnumConstructor(
             psi: CjEnumConstructor,
-            ownerTypeParameters: List<CfirTypeParameter>,
         ): CfirEnumConstructor {
             val enumConstructorName =
                 psi.name?.let { Name.identifier(it) } ?: Name.special("<anonymous-enum-constructor>")
@@ -1145,7 +1144,6 @@ class PsiRawCfirBuilder(
                     attributes = CfirDeclarationAttributes.EMPTY
                     isLocal = context.inLocalContext
                     status = DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
-                    typeParameters.addAll(ownerTypeParameters)
                     returnTypeRef = buildImplicitTypeRef()
                     this.valueParameters.addAll(valueParameters)
                     name = enumConstructorName
@@ -2117,7 +2115,8 @@ class PsiRawCfirBuilder(
         // ---- Control Flow ----
 
         private fun convertIf(psi: CjIfExpression): CfirIfExpression {
-            val condition = psi.condition?.let { convertExpression(it) }
+            val condition = psi.letExpression?.let { convertLetPatternExpression(it) }
+                ?: psi.condition?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing if condition")
             val thenBranch = psi.then?.let { toBlock(it) } ?: buildBlock {
                 source = psi.toCjPsiSourceElement()
@@ -2129,6 +2128,24 @@ class PsiRawCfirBuilder(
                 this.condition = condition
                 this.thenBranch = thenBranch
                 this.elseBranch = elseBranch
+            }
+        }
+
+        private fun convertLetPatternExpression(psi: CjLetExpression): CfirLetPatternExpression {
+            val status = cloneDeclarationStatus(CfirDeclarationStatusImpl.DEFAULT)
+            val pattern = convertCasePattern(
+                pattern = psi.pattern,
+                ownerStatus = status,
+                ownerIsLocal = true,
+                ownerIsVar = false,
+            )
+            val initializer = psi.expression?.let { convertExpression(it) }
+                ?: buildErrorExpression(reason = "Missing let-pattern initializer")
+
+            return buildLetPatternExpression {
+                source = psi.toCjPsiSourceElement()
+                this.initializer = initializer
+                this.pattern = pattern
             }
         }
 
@@ -2264,7 +2281,8 @@ class PsiRawCfirBuilder(
         }
 
         private fun convertWhile(psi: CjWhileExpression): CfirLoopExpression {
-            val condition = psi.condition?.let { convertExpression(it) }
+            val condition = psi.letExpression?.let { convertLetPatternExpression(it) }
+                ?: psi.condition?.let { convertExpression(it) }
                 ?: buildErrorExpression(reason = "Missing while condition")
             val target = CfirLoopTarget(labelName = null)
             val loop = withLoopTarget(target) {

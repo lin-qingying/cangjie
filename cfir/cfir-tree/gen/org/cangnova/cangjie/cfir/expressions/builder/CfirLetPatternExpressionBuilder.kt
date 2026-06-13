@@ -13,51 +13,51 @@ import org.cangnova.cangjie.cfir.toMutableOrEmpty
 import org.cangnova.cangjie.cfir.builder.CfirBuilderDsl
 import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.expressions.CfirTypeConversion
-import org.cangnova.cangjie.cfir.expressions.impl.CfirTypeConversionImpl
-import org.cangnova.cangjie.cfir.types.CfirTypeRef
+import org.cangnova.cangjie.cfir.expressions.CfirLetPatternExpression
+import org.cangnova.cangjie.cfir.expressions.impl.CfirLetPatternExpressionImpl
+import org.cangnova.cangjie.cfir.patterns.CfirPattern
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.source.CjSourceElement
 
 @CfirBuilderDsl
-class CfirTypeConversionBuilder {
+class CfirLetPatternExpressionBuilder {
     var source: CjSourceElement? = null
     val annotations: MutableList<CfirAnnotation> = mutableListOf()
     var coneTypeOrNull: ConeCangJieType? = null
-    lateinit var argument: CfirExpression
-    lateinit var targetTypeRef: CfirTypeRef
+    lateinit var initializer: CfirExpression
+    lateinit var pattern: CfirPattern
 
     @OptIn(CfirImplementationDetail::class)
-    fun build(): CfirTypeConversion {
-        return CfirTypeConversionImpl(
+    fun build(): CfirLetPatternExpression {
+        return CfirLetPatternExpressionImpl(
             source,
             annotations.toMutableOrEmpty(),
             coneTypeOrNull,
-            argument,
-            targetTypeRef,
+            initializer,
+            pattern,
         )
     }
 
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun buildTypeConversion(init: CfirTypeConversionBuilder.() -> Unit): CfirTypeConversion {
+inline fun buildLetPatternExpression(init: CfirLetPatternExpressionBuilder.() -> Unit): CfirLetPatternExpression {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
-    return CfirTypeConversionBuilder().apply(init).build()
+    return CfirLetPatternExpressionBuilder().apply(init).build()
 }
 
 @OptIn(ExperimentalContracts::class)
-inline fun buildTypeConversionCopy(original: CfirTypeConversion, init: CfirTypeConversionBuilder.() -> Unit): CfirTypeConversion {
+inline fun buildLetPatternExpressionCopy(original: CfirLetPatternExpression, init: CfirLetPatternExpressionBuilder.() -> Unit): CfirLetPatternExpression {
     contract {
         callsInPlace(init, InvocationKind.EXACTLY_ONCE)
     }
-    val copyBuilder = CfirTypeConversionBuilder()
+    val copyBuilder = CfirLetPatternExpressionBuilder()
     copyBuilder.source = original.source
     copyBuilder.annotations.addAll(original.annotations)
     copyBuilder.coneTypeOrNull = original.coneTypeOrNull
-    copyBuilder.argument = original.argument
-    copyBuilder.targetTypeRef = original.targetTypeRef
+    copyBuilder.initializer = original.initializer
+    copyBuilder.pattern = original.pattern
     return copyBuilder.apply(init).build()
 }

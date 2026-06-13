@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.calls.resolvedQualifierTypeParameter
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CfirCandidateCollector
@@ -15,11 +16,13 @@ import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerResolveTask
 import org.cangnova.cangjie.cfir.resolve.calls.tower.TowerDataElementsForName
 import org.cangnova.cangjie.cfir.resolve.calls.tower.TowerResolveManager
 import org.cangnova.cangjie.cfir.scopes.CfirScope
+import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirLocalScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol
 import org.cangnova.cangjie.name.Name
 
 class CfirTowerResolver(
@@ -78,6 +81,7 @@ class CfirTowerResolver(
                 // 而是从限定符自身的静态 callable scope 中收集候选。
                 if (
                     receiver.resolvedQualifierClassifier(session) != null ||
+                    receiver.resolvedQualifierTypeParameter() != null ||
                     receiver.importedPackageQualifierScopeOrNull(components.file, session) != null
                 ) {
                     mainTask.runResolverForQualifierReceiver(info, receiver)
@@ -138,6 +142,17 @@ class CfirTowerResolver(
             val result = mutableListOf<CfirClassLikeSymbol<*>>()
             scope.processClassifiersByName(name) { result += it }
             if (result.isNotEmpty()) return result
+        }
+        return emptyList()
+    }
+
+    fun findTypeParameters(name: Name): List<CfirTypeParameterSymbol> {
+        val scopes = components.towerDataContext.towerDataElements.asReversed().flatMap { it.getAvailableScopes() }
+        for (scope in scopes) {
+            val typeParameterScope = scope as? CfirTypeParameterScope ?: continue
+            val result = mutableListOf<CfirTypeParameterSymbol>()
+            typeParameterScope.processTypeParametersByName(name) { result += it }
+            if (result.isNotEmpty()) return result.distinct()
         }
         return emptyList()
     }

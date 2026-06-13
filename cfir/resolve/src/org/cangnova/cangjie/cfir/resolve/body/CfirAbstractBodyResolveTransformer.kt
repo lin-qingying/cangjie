@@ -285,7 +285,7 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
                     containingClassDeclarations = context.containingClassDeclarations.toList(),
                     useSiteFile = context.file,
                     topContainer = context.containerIfAny,
-                ),
+                ).withAdditionalTypeParameters(context.containers.flatMap(::extractTypeParameters)),
             ) as CfirResolvedTypeRef
         }
 
@@ -369,6 +369,34 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
 
     override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: ResolutionMode): CfirFieldVariable {
         return declarationsTransformer.transformFieldVariable(fieldVariable, data)
+    }
+
+    /**
+     * Body resolve 内部的显式类型引用可能出现在函数体、局部声明、默认参数等位置。
+     * 这些位置必须继承当前 container 链上所有可见类型参数，保持与 Kotlin
+     * `FirMemberTypeParameterScope` 相同的类型解析上下文。
+     */
+    private fun extractTypeParameters(declaration: CfirDeclaration): List<CfirTypeParameter> {
+        return when (declaration) {
+            is CfirClass -> declaration.typeParameters
+            is CfirInterface -> declaration.typeParameters
+            is CfirStruct -> declaration.typeParameters
+            is CfirEnum -> declaration.typeParameters
+            is CfirConstructor -> declaration.typeParameters
+            is CfirProperty -> declaration.typeParameters
+            is CfirFieldVariable -> declaration.typeParameters
+            is CfirValueParameter -> declaration.typeParameters
+            is CfirExtend -> declaration.typeParameters
+            is CfirTypeAlias -> declaration.typeParameters
+            is CfirPatternVariable -> declaration.typeParameters
+            is CfirMacroDeclaration -> declaration.typeParameters
+            is CfirMainFunction -> declaration.typeParameters
+            is CfirFinalizer -> declaration.typeParameters
+            is CfirFunction -> declaration.typeParameters
+            is CfirCodeFragment -> emptyList()
+            is CfirEnumConstructor -> declaration.typeParameters
+            else -> emptyList()
+        }
     }
 
     override fun transformPatternBindingVariable(
