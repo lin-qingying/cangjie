@@ -409,3 +409,17 @@ fun CangJieTypeMarker.isTupleType(): Boolean = with(c) { isTupleType() }
 context(c: TypeSystemContext)
 fun CangJieTypeMarker.extractElementsForTupleType(): List<CangJieTypeMarker> =
     with(c) { extractElementsForTupleType() }
+
+/** 判断该类型是否是 VArray 类型 */
+context(c: TypeSystemContext)
+fun CangJieTypeMarker.isVArrayType(): Boolean = with(c) { isVArrayType() }
+
+/** 提取 VArray 的元素类型 */
+context(c: TypeSystemContext)
+fun CangJieTypeMarker.extractElementTypeForVArrayType(): CangJieTypeMarker =
+    with(c) { extractElementTypeForVArrayType() }
+
+/** 提取 VArray 的编译期固定尺寸 */
+context(c: TypeSystemContext)
+fun CangJieTypeMarker.extractSizeForVArrayType(): Long =
+    with(c) { extractSizeForVArrayType() }

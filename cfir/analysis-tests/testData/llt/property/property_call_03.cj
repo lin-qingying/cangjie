@@ -21,7 +21,7 @@ class A {
             return y
         }
         set(v) {
-            <!sema_static_function_cannot_access_non_static_member!>X<!> = v
+            <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>X<!> = v
         }
     }
 }

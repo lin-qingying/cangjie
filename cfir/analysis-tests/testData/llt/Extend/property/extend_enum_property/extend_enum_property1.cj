@@ -6,11 +6,11 @@
 
 
 main(): Int64 {
-    if (<!sema_illegal_access_non_static_member!>D<!>ata.n != 1) {
+    if (<!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>D<!>ata.n != 1) {
         return 1
     }
-    <!sema_illegal_access_non_static_member!>D<!>ata.m = 10
-    if (<!sema_illegal_access_non_static_member!>D<!>ata.m != 2) {
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>D<!>ata.m = 10
+    if (<!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>D<!>ata.m != 2) {
         return 2
     }
     return 0

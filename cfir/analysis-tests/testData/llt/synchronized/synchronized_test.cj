@@ -8,7 +8,7 @@
 internal import std.sync.*
 
 var arr: Array<Int64> = Array<Int64>(10, repeat: 10)
-let lock = <!sema_deprecated_warning!>ReentrantMutex<!>()
+let lock = <!DEPRECATED_WARNING!>ReentrantMutex<!>()
 
 func foo() {
     synchronized(lock) {

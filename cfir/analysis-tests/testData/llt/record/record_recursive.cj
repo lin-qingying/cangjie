@@ -1,23 +1,24 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-<!sema_value_type_recursive!>s<!>truct A {
-    <!sema_class_uninitialized_field!>p<!>ublic let x: A
+<!VALUE_TYPE_RECURSIVE!>s<!>truct A {
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let x: A
 }
 
-<!sema_value_type_recursive!>s<!>truct B {
-    <!sema_class_uninitialized_field!>p<!>ublic let x: C
-    <!sema_class_uninitialized_field!>p<!>ublic let y: Int32
+<!VALUE_TYPE_RECURSIVE!>s<!>truct B {
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let x: C
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let y: Int32
 }
 
 struct C {
-    <!sema_class_uninitialized_field!>p<!>ublic let x: D
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let x: D
 }
 
 struct D {
-    <!sema_class_uninitialized_field!>p<!>ublic let x: B
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let x: B
 }

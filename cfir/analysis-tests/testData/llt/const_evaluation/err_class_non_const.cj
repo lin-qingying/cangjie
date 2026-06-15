@@ -12,7 +12,7 @@ func f() {
 }
 
 class A {
-    let x = <!EXPECT_CONST!>f()<!>
+    let x = <!EXPECT_CONST!>f<!>()
     const init() {}
 }
 

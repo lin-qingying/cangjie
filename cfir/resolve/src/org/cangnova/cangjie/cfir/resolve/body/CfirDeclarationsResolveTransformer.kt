@@ -31,6 +31,9 @@ import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
+import org.cangnova.cangjie.cfir.expressions.CfirStatement
+import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.ResolutionMode
 import org.cangnova.cangjie.cfir.resolve.createCurrentScopeList
@@ -47,6 +50,7 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.ConeClassLikeLookupTagImpl
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.whileAnalysing
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
@@ -347,8 +351,7 @@ open class CfirDeclarationsResolveTransformer(
             context.forConstructorParameters(constructor, owningClass, components) {
                 constructor.transformValueParameters(transformer, data)
             }
-            // 仓颉没有独立的 delegated-constructor 节点：委托调用（this(...)/super(...)）
-            // 作为 body 内的普通表达式在下面统一解析。
+            transformDelegatedConstructorCall(constructor, data)
             context.forConstructorBody(constructor, session) {
                 constructor.transformBody(transformer, data)
             }
@@ -357,6 +360,24 @@ open class CfirDeclarationsResolveTransformer(
         val controlFlowGraphReference = dataFlowAnalyzer.exitFunction(constructor)
         constructor.replaceControlFlowGraphReference(controlFlowGraphReference)
         return constructor
+    }
+
+    private fun transformDelegatedConstructorCall(
+        constructor: CfirConstructor,
+        data: ResolutionMode,
+    ) {
+        val call = constructor.body?.statements?.firstOrNull()?.delegatedConstructorCallOrNull() ?: return
+        call.transform<CfirExpression, ResolutionMode>(transformer, data)
+    }
+
+    private fun CfirStatement.delegatedConstructorCallOrNull(): CfirFunctionCall? {
+        val expression = when (this) {
+            is CfirWrappedExpression -> this.expression
+            is CfirExpression -> this
+            else -> return null
+        }
+        val call = expression as? CfirFunctionCall ?: return null
+        return call.takeIf { it.origin.isConstructorDelegation }
     }
 
     // ── Enum constructor ──────────────────────────────────────────────────
@@ -505,18 +526,7 @@ open class CfirDeclarationsResolveTransformer(
             variable.transformInitializer(transformer, initializerMode)
         }
 
-        if (variable.returnTypeRef is CfirImplicitTypeRef) {
-            val initType = variable.initializer?.coneTypeOrNull
-            if (initType != null) {
-                val resolvedType = IdealTypeResolver.resolveIfIdeal(initType).approximateThisTypeForDeclaration()
-                variable.replaceReturnTypeRef(
-                    variable.returnTypeRef.resolvedTypeFromPrototype(
-                        resolvedType,
-                        variable.returnTypeRef.source,
-                    ),
-                )
-            }
-        }
+        variable.resolveImplicitReturnTypeFromInitializer()
 
         context.storeVariable(variable, session)
 
@@ -593,18 +603,7 @@ open class CfirDeclarationsResolveTransformer(
             dataFlowAnalyzer.exitFieldInitializer()
         }
 
-        if (fieldVariable.returnTypeRef is CfirImplicitTypeRef) {
-            val initType = fieldVariable.initializer?.coneTypeOrNull
-            if (initType != null) {
-                val resolvedType = IdealTypeResolver.resolveIfIdeal(initType).approximateThisTypeForDeclaration()
-                fieldVariable.replaceReturnTypeRef(
-                    fieldVariable.returnTypeRef.resolvedTypeFromPrototype(
-                        resolvedType,
-                        fieldVariable.returnTypeRef.source,
-                    ),
-                )
-            }
-        }
+        fieldVariable.resolveImplicitReturnTypeFromInitializer()
 
         context.storeVariable(fieldVariable, session)
 
@@ -674,18 +673,7 @@ open class CfirDeclarationsResolveTransformer(
             patternVariable.transformInitializer(transformer, initializerMode)
         }
 
-        if (patternVariable.returnTypeRef is CfirImplicitTypeRef) {
-            val initType = patternVariable.initializer?.coneTypeOrNull
-            if (initType != null) {
-                val resolvedType = IdealTypeResolver.resolveIfIdeal(initType).approximateThisTypeForDeclaration()
-                patternVariable.replaceReturnTypeRef(
-                    patternVariable.returnTypeRef.resolvedTypeFromPrototype(
-                        resolvedType,
-                        patternVariable.returnTypeRef.source,
-                    ),
-                )
-            }
-        }
+        patternVariable.resolveImplicitReturnTypeFromInitializer()
 
         patternVariable.transformPattern(transformer, ResolutionMode.ContextIndependent)
         resolvePatternBindingTypes(
@@ -707,6 +695,29 @@ open class CfirDeclarationsResolveTransformer(
         }
 
     // ── Helpers ───────────────────────────────────────────────────────────
+
+    /**
+     * 对齐 Kotlin `storeVariableReturnType`：隐式变量类型必须在声明解析阶段收敛。
+     * 有 initializer 时取 initializer 类型；没有可用类型时写入 error type ref，避免
+     * 后续隐式类型缓存或 checker 继续看到裸 `CfirImplicitTypeRef`。
+     */
+    private fun CfirVariable.resolveImplicitReturnTypeFromInitializer() {
+        val implicitTypeRef = returnTypeRef as? CfirImplicitTypeRef ?: return
+        val initType = initializer?.coneTypeOrNull
+        val resolvedTypeRef = if (initType != null) {
+            val resolvedType = IdealTypeResolver.resolveIfIdeal(initType).approximateThisTypeForDeclaration()
+            implicitTypeRef.resolvedTypeFromPrototype(resolvedType, implicitTypeRef.source)
+        } else {
+            buildErrorTypeRef {
+                source = implicitTypeRef.source ?: this@resolveImplicitReturnTypeFromInitializer.source
+                diagnostic = ConeSimpleDiagnostic(
+                    "Cannot infer variable type without an initializer",
+                    DiagnosticKind.InferenceError,
+                )
+            }
+        }
+        replaceReturnTypeRef(resolvedTypeRef)
+    }
 
     private fun createImportingScopes(file: CfirFile): List<CfirScope> {
         val symbolProvider = session.symbolProvider

@@ -13,6 +13,6 @@ open class A {
 
 main(): Int64 {
     var a: A = A()
-    <!sema_type_incompatible!>a<!> -= a
+    <!TYPE_INCOMPATIBLE!>a<!> -= a
     return 0
 }

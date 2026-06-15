@@ -9,7 +9,7 @@ public class Test {
         cond()
     }
     public const init(cond: Bool) {
-        <!EXPECT_CONST!>this {cond}<!>
+        <!EXPECT_CONST!>this<!> {cond}
     }
     public func test() {
         println("ok")

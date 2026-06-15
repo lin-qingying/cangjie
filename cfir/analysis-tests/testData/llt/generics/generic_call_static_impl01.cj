@@ -16,5 +16,5 @@ func f<T>(): Unit where T <: I2 {
 }
 
 main() {
-    f<<!sema_cannot_instantiated_by_incomplete_type!>I<!>2>()
+    f<<!CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE!>I<!>2>()
 }

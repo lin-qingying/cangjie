@@ -8,7 +8,7 @@
 internal import std.collection.*
 
 func IncBuf<T>(data: ArrayList<T>) {
-    data[0] <!sema_invalid_binary_expr!>+<!>= 1
+    data[0] <!INVALID_BINARY_OPERATOR!>+<!>= 1
     return 0
 }
 

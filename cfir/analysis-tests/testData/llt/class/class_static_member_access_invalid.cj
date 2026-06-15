@@ -12,7 +12,7 @@ open class A {
 class B <: A {}
 
 main(): Int64 {
-    var b: Int64 = <!sema_object_cannot_access_static_member!>B<!>().a
+    var b: Int64 = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>B<!>().a
     B.a
     return 0
 }

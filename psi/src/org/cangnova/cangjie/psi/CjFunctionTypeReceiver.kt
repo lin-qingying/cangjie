@@ -36,6 +36,6 @@ class CjFunctionTypeReceiver :
         CjStubElementTypes.FUNCTION_TYPE_RECEIVER,
     )
 
-    val typeReference: CjTypeReference
-        get() = getRequiredStubOrPsiChild<CangJiePlaceHolderStub<CjTypeReference>, CjTypeReference>(CjStubElementTypes.TYPE_REFERENCE)
+    val typeReference
+        get() = getRequiredStubOrPsiChild(CjStubElementTypes.TYPE_REFERENCE)
 }

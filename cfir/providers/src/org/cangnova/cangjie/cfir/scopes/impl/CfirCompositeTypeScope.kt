@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.ProcessorAction
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
@@ -56,7 +57,17 @@ class CfirCompositeTypeScope(
     }
 
     override fun processFunctionsByName(name: Name, processor: (CfirNamedFunctionSymbol) -> Unit) {
-        scopes.forEach { it.processFunctionsByName(name, processor) }
+        val mergedBySignature = linkedMapOf<String, CfirNamedFunctionSymbol>()
+        scopes.forEach { scope ->
+            scope.processFunctionsByName(name) { symbol ->
+                val signature = symbol.overrideSignatureKey()
+                val previous = mergedBySignature[signature]
+                if (previous == null || previous.shouldBeReplacedBy(symbol)) {
+                    mergedBySignature[signature] = symbol
+                }
+            }
+        }
+        mergedBySignature.values.forEach(processor)
     }
 
     override fun processPropertiesByName(name: Name, processor: (CfirPropertySymbol) -> Unit) {
@@ -74,5 +85,12 @@ class CfirCompositeTypeScope(
         } else {
             null
         }
+    }
+
+    private fun CfirNamedFunctionSymbol.shouldBeReplacedBy(candidate: CfirNamedFunctionSymbol): Boolean {
+        if (!isBound || !candidate.isBound) return false
+        val currentFunction = cfir
+        val candidateFunction = candidate.cfir
+        return currentFunction.status.isAbstract && !candidateFunction.status.isAbstract
     }
 }

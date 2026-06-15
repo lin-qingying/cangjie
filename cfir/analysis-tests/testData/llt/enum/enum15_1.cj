@@ -19,7 +19,7 @@ func test(Green: Int32) {
 }
 
 main() {
-    var t0 = <!sema_ref_not_be_type!>G<!>reen
+    var t0 = <!REF_NOT_BE_TYPE!>G<!>reen
     var t1 = Red
     var t2 = Blue
 

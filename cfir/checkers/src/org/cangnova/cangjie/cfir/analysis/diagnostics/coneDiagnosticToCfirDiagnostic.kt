@@ -849,7 +849,7 @@ private fun ConeUnresolvedNameError.mapConeUnresolvedNameError(
         return listOf(diagnostic)
     }
 
-    val diagnosticSource = callOrAssignmentSource ?: source ?: return emptyList()
+    val diagnosticSource = source ?: callOrAssignmentSource ?: return emptyList()
     buildInvalidBinaryOperatorDiagnostic(diagnosticSource, session)?.let { diagnostic ->
         return listOf(diagnostic)
     }
@@ -1534,7 +1534,8 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenc
     if (qualifiedAccess.typeArguments.isNotEmpty()) return null
 
     val callableSymbol = qualifiedAccess.genericInferenceCallableSymbolOrNull()
-    if (callableSymbol?.cfir?.typeParameters?.isNotEmpty() == true) {
+    if (callableSymbol != null) {
+        if (callableSymbol.cfir.typeParameters.isEmpty()) return null
         val source = qualifiedAccess.genericInferenceCalleeSource() ?: return null
         return CfirErrors.NEW_INFERENCE_ERROR.on(
             source,
@@ -1543,10 +1544,8 @@ private fun org.cangnova.cangjie.cfir.expressions.CfirExpression.genericInferenc
         )
     }
 
-    if (callableSymbol == null) {
-        val errorDiagnostic = (qualifiedAccess.coneTypeOrNull as? ConeErrorType)?.diagnostic
-        if (errorDiagnostic !is ConeCannotInferTypeParameterType) return null
-    }
+    val errorDiagnostic = (qualifiedAccess.coneTypeOrNull as? ConeErrorType)?.diagnostic
+    if (errorDiagnostic !is ConeCannotInferTypeParameterType) return null
 
     val source = qualifiedAccess.genericInferenceCalleeSource() ?: return null
     return CfirErrors.NEW_INFERENCE_ERROR.on(

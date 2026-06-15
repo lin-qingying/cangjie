@@ -1,5 +1,5 @@
 
-import std.collection.{ArrayList, <!sema_unused_import!>Map<!>}
+import std.collection.{ArrayList, <!UNUSED_IMPORT!>Map<!>}
 main() {
   var <!chir_dce_unused_variable!>a<!> : ArrayList<Int64>
 }

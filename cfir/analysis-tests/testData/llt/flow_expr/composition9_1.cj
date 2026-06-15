@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -6,6 +7,6 @@
 
 
 func foo() {
-    let h = <!sema_undeclared_identifier!>f<!> ~> <!sema_undeclared_identifier!>g<!>
+    let h = <!UNRESOLVED_REFERENCE!>f<!> ~> <!UNRESOLVED_REFERENCE!>g<!>
     h(-1)
 }

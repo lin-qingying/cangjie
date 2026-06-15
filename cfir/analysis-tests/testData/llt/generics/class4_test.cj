@@ -17,9 +17,9 @@ class Data<T> {
     public let width: T
     public let f: Int32
     public init(x: T) {
-        width = <!sema_ref_not_be_type!>T<!>
-        <!sema_cannot_assign_to_immutable!>width = ((<!sema_ref_not_be_type!>T<!>))<!>
-        f = foo<T>(<!sema_ref_not_be_type!>T<!>)
+        width = <!REF_NOT_BE_TYPE!>T<!>
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>width = ((<!REF_NOT_BE_TYPE!>T<!>))<!>
+        f = foo<T>(<!REF_NOT_BE_TYPE!>T<!>)
     }
 }
 

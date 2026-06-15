@@ -613,6 +613,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.INVALID_UNARY_EXPR, "invalid unary operator ''{0}'' on type ''{1}''", RENDER_STRING, RENDER_TYPE)
         map.put(CfirErrors.INVALID_UNARY_EXPR_WITH_TARGET, "invalid unary operator ''{0}'' on type ''{1}'' with return type ''{2}''", RENDER_STRING, RENDER_TYPE, RENDER_TYPE)
         map.put(CfirErrors.INVALID_SUBSCRIPT_EXPR, "invalid subscript operator [] on type ''{0}'' with index {1}", RENDER_TYPE, RENDER_STRING)
+        map.put(CfirErrors.BUILTIN_INDEX_IN_BOUND, "builtin index is out of bounds")
         map.put(CfirErrors.CANNOT_ASSIGN_TO_SUBSCRIPT, "cannot assign to this subscript expression")
         map.put(CfirErrors.NOT_MEMBER_OF, "''{0}'' is not a member of {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.MEMBER_NOT_IMPORTED, "''{0}'' is not imported", RENDER_NAME)
@@ -931,6 +932,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         // ================================================================
         map.put(CfirErrors.UNUSED_IMPORT, "unused import ''{0}''", RENDER_NULLABLE_FQNAME)
         map.put(CfirErrors.UNUSED_EXPRESSION, "unused expression")
+        map.put(CfirErrors.TYPEALIAS_UNUSED_TYPE_PARAMETERS, "type arg(s) {0} are not used", RENDER_STRING)
 
         // ================================================================
         // Mock

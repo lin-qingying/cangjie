@@ -30,8 +30,8 @@ struct D <: ToString {
 }
 
 main() {
-    print("$<!sema_invalid_string_implementation!>{<!>A()}")
-    print("$<!sema_invalid_string_implementation!>{<!>B()}")
+    print("$<!INVALID_STRING_IMPLEMENTATION!>{<!>A()}")
+    print("$<!INVALID_STRING_IMPLEMENTATION!>{<!>B()}")
     print("${C()}")
     print("${D()}")
     return 0

@@ -9,22 +9,22 @@ main() {
     let a: Bool = true
 
     if (a) {
-        true <!sema_invalid_binary_expr!>+<!> 0
+        true <!INVALID_BINARY_OPERATOR!>+<!> 0
     } else {
-        false <!sema_invalid_binary_expr!>+<!> 1
+        false <!INVALID_BINARY_OPERATOR!>+<!> 1
     }
 
     let b: Bool = if (a) {
-        true <!sema_invalid_binary_expr!>+<!> 0
+        true <!INVALID_BINARY_OPERATOR!>+<!> 0
     } else {
-        false <!sema_invalid_binary_expr!>+<!> 1
+        false <!INVALID_BINARY_OPERATOR!>+<!> 1
     }
 
     if (a) {
-        true <!sema_invalid_binary_expr!>+<!> 0
+        true <!INVALID_BINARY_OPERATOR!>+<!> 0
     }
     let c: Bool = if (a) {
-        true <!sema_invalid_binary_expr!>+<!> 0
+        true <!INVALID_BINARY_OPERATOR!>+<!> 0
     }
     0
 }

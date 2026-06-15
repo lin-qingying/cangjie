@@ -40,6 +40,7 @@ import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.source.AbstractCjSourceElement
+import org.cangnova.cangjie.source.CjOffsetsOnlySourceElement
 
 /**
  * const 变量初始化检查。
@@ -755,8 +756,15 @@ private fun CfirQualifiedAccessExpression.resolvedSymbolOrNull(): CfirBasedSymbo
 private fun CfirExpression.resolvedSymbolOrNull(): CfirBasedSymbol<*>? =
     (this as? CfirQualifiedAccessExpression)?.resolvedSymbolOrNull()
 
-private fun CfirExpression.expectConstDiagnosticSource(): AbstractCjSourceElement? =
-    (this as? CfirQualifiedAccessExpression)?.calleeReference?.source ?: source
+private fun CfirExpression.expectConstDiagnosticSource(): AbstractCjSourceElement? {
+    val access = this as? CfirQualifiedAccessExpression ?: return source
+    val calleeSource = access.calleeReference.source ?: return source
+    val receiverSource = access.explicitReceiver?.source ?: return calleeSource
+    return CjOffsetsOnlySourceElement(
+        startOffset = receiverSource.startOffset,
+        endOffset = calleeSource.endOffset,
+    )
+}
 
 private fun CfirBasedSymbol<*>.callableIdOrNull(): CallableId? =
     (this as? CfirCallableSymbol<*>)?.callableId

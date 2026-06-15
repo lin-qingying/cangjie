@@ -7,7 +7,7 @@
 
 class A {
     static func f() {
-        <!sema_static_function_cannot_access_non_static_member!>g<!>()
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>g<!>()
     }
 
     func g(_: Array<Int64>) {}

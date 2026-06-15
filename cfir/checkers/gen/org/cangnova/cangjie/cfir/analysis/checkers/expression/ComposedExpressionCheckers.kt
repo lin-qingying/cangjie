@@ -14,6 +14,8 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         get() = _basicExpressionCheckers
     override val literalExpressionCheckers: Set<CfirLiteralExpressionChecker>
         get() = _literalExpressionCheckers
+    override val callCheckers: Set<CfirCallChecker>
+        get() = _callCheckers
     override val functionCallCheckers: Set<CfirFunctionCallChecker>
         get() = _functionCallCheckers
     override val namedAccessCheckers: Set<CfirNamedAccessChecker>
@@ -22,6 +24,10 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
         get() = _qualifiedAccessCheckers
     override val superReceiverExpressionCheckers: Set<CfirSuperReceiverExpressionChecker>
         get() = _superReceiverExpressionCheckers
+    override val annotationCheckers: Set<CfirAnnotationChecker>
+        get() = _annotationCheckers
+    override val annotationCallCheckers: Set<CfirAnnotationCallChecker>
+        get() = _annotationCallCheckers
     override val assignmentCheckers: Set<CfirAssignmentChecker>
         get() = _assignmentCheckers
     override val incrementDecrementExpressionCheckers: Set<CfirIncrementDecrementExpressionChecker>
@@ -53,10 +59,13 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
 
     private val _basicExpressionCheckers: MutableSet<CfirBasicExpressionChecker> = mutableSetOf()
     private val _literalExpressionCheckers: MutableSet<CfirLiteralExpressionChecker> = mutableSetOf()
+    private val _callCheckers: MutableSet<CfirCallChecker> = mutableSetOf()
     private val _functionCallCheckers: MutableSet<CfirFunctionCallChecker> = mutableSetOf()
     private val _namedAccessCheckers: MutableSet<CfirNamedAccessChecker> = mutableSetOf()
     private val _qualifiedAccessCheckers: MutableSet<CfirQualifiedAccessChecker> = mutableSetOf()
     private val _superReceiverExpressionCheckers: MutableSet<CfirSuperReceiverExpressionChecker> = mutableSetOf()
+    private val _annotationCheckers: MutableSet<CfirAnnotationChecker> = mutableSetOf()
+    private val _annotationCallCheckers: MutableSet<CfirAnnotationCallChecker> = mutableSetOf()
     private val _assignmentCheckers: MutableSet<CfirAssignmentChecker> = mutableSetOf()
     private val _incrementDecrementExpressionCheckers: MutableSet<CfirIncrementDecrementExpressionChecker> = mutableSetOf()
     private val _binaryOpCheckers: MutableSet<CfirBinaryOpChecker> = mutableSetOf()
@@ -76,10 +85,13 @@ class ComposedExpressionCheckers : ExpressionCheckers() {
     fun register(checkers: ExpressionCheckers) {
         _basicExpressionCheckers.addAll(checkers.basicExpressionCheckers)
         _literalExpressionCheckers.addAll(checkers.literalExpressionCheckers)
+        _callCheckers.addAll(checkers.callCheckers)
         _functionCallCheckers.addAll(checkers.functionCallCheckers)
         _namedAccessCheckers.addAll(checkers.namedAccessCheckers)
         _qualifiedAccessCheckers.addAll(checkers.qualifiedAccessCheckers)
         _superReceiverExpressionCheckers.addAll(checkers.superReceiverExpressionCheckers)
+        _annotationCheckers.addAll(checkers.annotationCheckers)
+        _annotationCallCheckers.addAll(checkers.annotationCallCheckers)
         _assignmentCheckers.addAll(checkers.assignmentCheckers)
         _incrementDecrementExpressionCheckers.addAll(checkers.incrementDecrementExpressionCheckers)
         _binaryOpCheckers.addAll(checkers.binaryOpCheckers)

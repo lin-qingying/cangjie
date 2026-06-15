@@ -13,10 +13,10 @@ interface I2 {
     func foo(): String
 }
 
-func bar<T>(x: T) where <!sema_inherit_member_type_inconsistent!>T <: I1 & I2<!> {
+func bar<T>(x: T) where <!INHERIT_MEMBER_TYPE_INCONSISTENT!>T <: I1 & I2<!> {
 }
 
-class A<T> where <!sema_inherit_member_type_inconsistent!>T <: I1 & I2<!> {}
+class A<T> where <!INHERIT_MEMBER_TYPE_INCONSISTENT!>T <: I1 & I2<!> {}
 
 main() {
 }

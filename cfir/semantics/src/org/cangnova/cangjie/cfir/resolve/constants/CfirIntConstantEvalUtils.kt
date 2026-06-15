@@ -105,6 +105,19 @@ object CfirIntConstantEvalUtils {
     }
 
     /**
+     * 解析 `VArray<T, $N>` 的长度字面量。
+     *
+     * 语法层保留的文本包含 `$` 前缀；官方语义随后按整数字面量求值到 Int64。
+     * 这里复用普通整数字面量入口，统一支持进制前缀和下划线分隔符。
+     */
+    fun parseVArraySizeLiteral(text: String): Long? {
+        val literalText = text.trim().removePrefix("$")
+        val parsed = parseIntLiteral(literalText) ?: return null
+        if (parsed.value < BigInteger.ZERO || parsed.value > INT64_MAX) return null
+        return parsed.value.toLong()
+    }
+
+    /**
      * 提取“带符号”的整型常量表达式。
      *
      * 这里显式支持 `1`、`+1`、`-1` 三类稳定形态。

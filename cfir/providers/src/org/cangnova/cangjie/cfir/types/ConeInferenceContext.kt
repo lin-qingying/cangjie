@@ -339,6 +339,20 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
         return elementTypes
     }
 
+    override fun CangJieTypeMarker.isVArrayType(): Boolean {
+        return this is ConeVArrayType
+    }
+
+    override fun CangJieTypeMarker.extractElementTypeForVArrayType(): CangJieTypeMarker {
+        require(this is ConeVArrayType)
+        return elementType
+    }
+
+    override fun CangJieTypeMarker.extractSizeForVArrayType(): Long {
+        require(this is ConeVArrayType)
+        return size
+    }
+
     override fun createFunctionType(parameterTypes: List<CangJieTypeMarker>, returnType: CangJieTypeMarker): CangJieTypeMarker {
         return ConeFunctionType(
             parameterTypes = parameterTypes.map { it as ConeCangJieType },
@@ -440,6 +454,10 @@ interface ConeInferenceContext : TypeSystemInferenceExtensionContext, ConeTypeCo
                 )
             }
             is ConeTupleType -> constructor
+            is ConeVArrayType -> {
+                val elementType = coneArguments.firstOrNull()?.type ?: return constructor
+                ConeVArrayType(elementType, constructor.size, constructor.attributes)
+            }
             is ConeAnyType -> ConeAnyType
             is ConeTypeVariableTypeConstructor -> ConeTypeVariableType(constructor)
             else -> ConeClassLikeType(

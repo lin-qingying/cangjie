@@ -26,11 +26,13 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.CfirDirectSupertypeProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
+import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
@@ -52,6 +54,14 @@ enum class CfirClassMemberScopeKind {
      * 用于调用解析，允许看到 extend 注入成员以及类型感知后的父类型链。
      */
     USE_SITE,
+
+    /**
+     * 类型本体 body 查找 scope。
+     *
+     * 对齐官方 `LookUpImpl::ProcessStructDeclBody`：当前类型本体不查找自己的 extend 成员，
+     * 但沿父类递归查找时父类型按 `lookupExtend=true` 处理，因此可见父类 extend 成员。
+     */
+    BODY_LOOKUP,
 
     /**
      * 声明检查 scope。
@@ -112,7 +122,11 @@ class CfirClassUseSiteMemberScope private constructor(
 
     private val declaredScope = CfirClassDeclaredMemberScope(classSymbol)
     private val extendScope = takeIf { scopeKind == CfirClassMemberScopeKind.USE_SITE }
-        ?.let { extendProvider?.let { provider -> CfirExtendMemberScope(classSymbol.classId, provider) } }
+        ?.let {
+            val provider = extendProvider ?: return@let null
+            val receiverType = ownerType ?: return@let null
+            CfirExtendMemberScope(classSymbol.classId, provider, session, receiverType)
+        }
     private val parentScopes: List<CfirTypeScope> by lazy { buildParentScopes() }
     private val callableNamesCached by lazy(LazyThreadSafetyMode.PUBLICATION) {
         buildSet {
@@ -267,7 +281,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 directSupertypeProvider = directSupertypeProvider,
                 ownerType = supertype,
                 dispatchReceiverType = dispatchReceiverType ?: rootType,
-                scopeKind = scopeKind,
+                scopeKind = parentScopeKind(),
                 supertypePath = supertypePath.child(classId),
             )
             parentScope.substitutionScopeForSupertype(parentSymbol, supertype)
@@ -305,7 +319,20 @@ class CfirClassUseSiteMemberScope private constructor(
         classSymbol.classId.toPrimitiveTypeKindOrNull()?.let { kind ->
             addAll(provider.getExtendsForBuiltinType(kind))
         }
-    }.filter { extendProvider?.isExtendAccessible(it) != false }
+    }.filter(::isExtendApplicableToCurrentOwner)
+
+    private fun isExtendApplicableToCurrentOwner(extend: CfirExtend): Boolean {
+        val provider = extendProvider ?: return false
+        if (!provider.isExtendAccessible(extend)) return false
+        val receiverType = ownerType ?: return false
+        val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: return false
+        return createExtendDeclarationSubstitution(
+            session = session,
+            extend = extend,
+            targetPattern = targetPattern,
+            concreteReceiverType = receiverType,
+        ) != null
+    }
 
     private fun parentCallableNames(): Set<Name> = buildSet {
         collectParentNames(
@@ -352,7 +379,7 @@ class CfirClassUseSiteMemberScope private constructor(
                 extendProvider = extendProvider,
                 directSupertypeProvider = directSupertypeProvider,
                 ownerType = supertype,
-                scopeKind = scopeKind,
+                scopeKind = parentScopeKind(),
                 supertypePath = supertypePath.child(classId),
             )
             addNames(parentScope.declaredScope.collectDeclaredNames())
@@ -368,7 +395,9 @@ class CfirClassUseSiteMemberScope private constructor(
     }
 
     private fun directParentTypesOf(type: ConeCangJieType): List<ConeCangJieType> {
-        if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE) {
+        if (scopeKind == CfirClassMemberScopeKind.DECLARATION_SITE ||
+            scopeKind == CfirClassMemberScopeKind.BODY_LOOKUP
+        ) {
             val substitutor = classSymbol.createDeclarationSubstitutor(type)
             return classSymbol.cfir.superTypeRefs.mapNotNull { superTypeRef ->
                 val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
@@ -389,6 +418,11 @@ class CfirClassUseSiteMemberScope private constructor(
                 val resolvedRef = superTypeRef as? CfirResolvedTypeRef ?: return@mapNotNull null
                 resolvedRef.coneType
             }
+    }
+
+    private fun parentScopeKind(): CfirClassMemberScopeKind = when (scopeKind) {
+        CfirClassMemberScopeKind.BODY_LOOKUP -> CfirClassMemberScopeKind.USE_SITE
+        else -> scopeKind
     }
 
     private fun CfirTypeScope.substitutionScopeForSupertype(

@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -7,7 +8,7 @@
 
 extend Int64 {
     public static func foo() {
-        return <!sema_static_members_cannot_call_members!>t<!>his
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his
     }
 }
 
@@ -17,7 +18,7 @@ class A {
 
 extend A {
     public static func foo() {
-        return <!sema_static_members_cannot_call_members!>t<!>his.f()
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.f()
     }
 }
 
@@ -27,6 +28,6 @@ struct B {
 
 extend B {
     public static func foo() {
-        return <!sema_static_members_cannot_call_members!>t<!>his.item
+        return <!STATIC_MEMBERS_CANNOT_CALL_MEMBERS!>t<!>his.item
     }
 }

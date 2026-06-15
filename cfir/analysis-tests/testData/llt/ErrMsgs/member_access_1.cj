@@ -6,13 +6,13 @@
 
 
 main() {
-    let err = 1 <!sema_invalid_binary_expr!>+<!> false
+    let err = 1 <!INVALID_BINARY_OPERATOR!>+<!> false
 
-    <!sema_generic_argument_no_match!>err<Bool><!>
-    <!sema_generic_argument_no_match!>err<Bool><!>.e2
-    <!sema_generic_argument_no_match!>err<Bool><!>.e2(e3)
-    <!sema_generic_argument_no_match!>err<Bool><!>.e2<Bool>
-    <!sema_generic_argument_no_match!>err<Bool><!>.e2<Bool>(e3)
+    <!GENERIC_ARGUMENT_NO_MATCH!>err<Bool><!>
+    <!GENERIC_ARGUMENT_NO_MATCH!>err<Bool><!>.e2
+    <!GENERIC_ARGUMENT_NO_MATCH!>err<Bool><!>.e2(e3)
+    <!GENERIC_ARGUMENT_NO_MATCH!>err<Bool><!>.e2<Bool>
+    <!GENERIC_ARGUMENT_NO_MATCH!>err<Bool><!>.e2<Bool>(e3)
 
     err.e2
     err.e2(e3)

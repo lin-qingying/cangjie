@@ -17,6 +17,6 @@ class Cls {
 
 main() {
     var cls = Cls()
-    <!sema_type_incompatible!>c<!>ls.c += 2
+    <!TYPE_INCOMPATIBLE!>c<!>ls.c += 2
     return 0
 }

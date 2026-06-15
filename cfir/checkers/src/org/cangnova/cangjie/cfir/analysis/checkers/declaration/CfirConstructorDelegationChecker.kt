@@ -12,12 +12,15 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
 import org.cangnova.cangjie.cfir.expressions.CfirWrappedExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
@@ -71,7 +74,9 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         call: CfirFunctionCall,
     ) {
         val constructors = owner.declarations.filterIsInstance<CfirConstructor>()
-        val candidates = constructors.filter { constructor -> constructor.matchesDelegationCall(call) }
+        val resolvedConstructor = call.resolvedDelegatedConstructorOrNull()?.takeIf { constructor -> constructor in constructors }
+        val candidates = resolvedConstructor?.let(::listOf)
+            ?: constructors.filter { constructor -> constructor.matchesDelegationCall(call) }
 
         when {
             candidates.isEmpty() -> {
@@ -111,7 +116,9 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
             return
         }
         val constructors = superDeclaration.declarations.filterIsInstance<CfirConstructor>()
-        val candidates = constructors.filter { constructor -> constructor.matchesDelegationCall(call) }
+        val resolvedConstructor = call.resolvedDelegatedConstructorOrNull()?.takeIf { constructor -> constructor in constructors }
+        val candidates = resolvedConstructor?.let(::listOf)
+            ?: constructors.filter { constructor -> constructor.matchesDelegationCall(call) }
 
         when {
             candidates.isEmpty() -> {
@@ -246,6 +253,15 @@ private fun CfirConstructor.matchesDelegationCall(call: CfirFunctionCall): Boole
     return argumentCount in minimum..maximum
 }
 
+private fun CfirFunctionCall.resolvedDelegatedConstructorOrNull(): CfirConstructor? {
+    return when (val reference = calleeReference) {
+        is CfirResolvedNamedReference -> reference.resolvedSymbol.cfir as? CfirConstructor
+        is CfirNamedReferenceWithCandidateBase ->
+            reference.takeUnless { it is CfirDiagnosticHolder }?.candidateSymbol?.cfir as? CfirConstructor
+        else -> null
+    }
+}
+
 private fun CfirConstructor.requiredParameterCount(): Int =
     valueParameters.count { it.defaultValue == null }
 
@@ -257,7 +273,10 @@ private fun CfirConstructor.hasDelegationCycle(constructors: List<CfirConstructo
         val delegationCall = current.body?.statements?.firstOrNull().asDelegationCallOrNull()
         if (delegationCall?.kind != DelegationKind.THIS) return false
 
-        val candidates = constructors.filter { constructor -> constructor.matchesDelegationCall(delegationCall.call) }
+        val resolvedConstructor = delegationCall.call.resolvedDelegatedConstructorOrNull()
+            ?.takeIf { constructor -> constructor in constructors }
+        val candidates = resolvedConstructor?.let(::listOf)
+            ?: constructors.filter { constructor -> constructor.matchesDelegationCall(delegationCall.call) }
         if (candidates.size != 1) return false
         current = candidates.single()
     }

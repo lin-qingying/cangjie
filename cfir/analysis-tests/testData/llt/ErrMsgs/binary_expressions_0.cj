@@ -5,8 +5,8 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 main() {
-    var a = 1 <!sema_invalid_binary_expr!>+<!> true
-    1 <!sema_invalid_binary_expr!>+<!> true + a
+    var a = 1 <!INVALID_BINARY_OPERATOR!>+<!> true
+    1 <!INVALID_BINARY_OPERATOR!>+<!> true + a
 
     1 + 2 + a
     a - 2 - 3

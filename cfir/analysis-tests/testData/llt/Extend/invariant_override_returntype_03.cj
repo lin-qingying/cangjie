@@ -6,7 +6,7 @@
 
 
 public interface I {
-    func <!sema_return_type_invariance!>append<!>(_: String): Any
+    func <!RETURN_TYPE_INVARIANCE!>append<!>(_: String): Any
 }
 
 extend StringBuilder <: I {}

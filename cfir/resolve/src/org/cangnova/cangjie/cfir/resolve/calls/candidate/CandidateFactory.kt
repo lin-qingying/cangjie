@@ -29,20 +29,22 @@ import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationAttributes
 import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.declarations.DEFAULT_STATUS_FOR_STATUSLESS_DECLARATIONS
 import org.cangnova.cangjie.cfir.declarations.builder.*
 import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.declarations.utils.addDefaultBoundIfNecessary
 import org.cangnova.cangjie.cfir.diagnostic.HiddenCandidate
 import org.cangnova.cangjie.cfir.diagnostic.InferenceConstraintError
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
-import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.cfir.resolve.calls.ConeAtomWithCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtomWithSingleChild
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.isInstanceExtendMemberCandidate
+import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.scopes.CfirScope
-import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.inferenceLogger
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
@@ -53,18 +55,50 @@ import org.cangnova.cangjie.resolve.calls.components.PostponedArgumentsAnalyzerC
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tasks.ExplicitReceiverKind
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
- * Small construction seam for candidates discovered during tower traversal.
+ * tower 遍历阶段发现 callable 后，通过本工厂统一构造候选。
  *
- * This keeps tower traversal focused on scope walking while preserving the current
- * receiver/base-system defaults used by local call resolution.
+ * 这里保留 candidate 的 receiver 与 constraint-system 初始化规则，让 tower 层
+ * 只负责作用域遍历，不把候选构造细节扩散到各个调用入口。
  */
 internal enum class BuiltinArrayConstructorKind {
     EMPTY,
     COLLECTION,
     INIT_FUNCTION,
     REPEAT_ELEMENT,
+}
+
+internal data class BuiltinArrayConstructorTypeParameter(
+    val name: Name,
+    val originalSymbol: CfirTypeParameterSymbol? = null,
+)
+
+internal sealed class BuiltinArrayConstructorTarget {
+    abstract val typeParameters: List<BuiltinArrayConstructorTypeParameter>
+    abstract fun returnType(elementType: ConeCangJieType): ConeCangJieType
+
+    data object Array : BuiltinArrayConstructorTarget() {
+        override val typeParameters: List<BuiltinArrayConstructorTypeParameter> =
+            listOf(BuiltinArrayConstructorTypeParameter(Name.identifier("T")))
+
+        override fun returnType(elementType: ConeCangJieType): ConeCangJieType =
+            ConeClassLikeType(StdlibClassIds.Array.toLookupTag(), typeArguments = listOf(elementType))
+    }
+
+    data class VArray(
+        val sizeLiteral: String,
+        val elementType: ConeCangJieType? = null,
+        override val typeParameters: List<BuiltinArrayConstructorTypeParameter> =
+            listOf(BuiltinArrayConstructorTypeParameter(Name.identifier("T"))),
+    ) : BuiltinArrayConstructorTarget() {
+        override fun returnType(elementType: ConeCangJieType): ConeCangJieType {
+            val size = CfirIntConstantEvalUtils.parseVArraySizeLiteral(sizeLiteral)
+                ?: return ConeErrorType(ConeSimpleDiagnostic("Invalid VArray size: $sizeLiteral"))
+            return ConeVArrayType(elementType, size)
+        }
+    }
 }
 
 class CandidateFactory(
@@ -136,7 +170,7 @@ class CandidateFactory(
         val useDispatchReceiverAsExtensionReceiver =
             givenExtensionReceiver == null &&
                 dispatchReceiver != null &&
-                symbol.isInstanceExtendMemberCandidate()
+                symbol.isInstanceExtendMemberCandidate(context.session)
         val effectiveDispatchReceiver = if (useDispatchReceiverAsExtensionReceiver) null else dispatchReceiver
         val effectiveExtensionReceiver = givenExtensionReceiver ?: dispatchReceiver.takeIf {
             useDispatchReceiverAsExtensionReceiver
@@ -153,17 +187,6 @@ class CandidateFactory(
             originScope = originScope,
             bodyResolveContext = context.bodyResolveContext,
         )
-    }
-
-    /**
-     * use-site member scope 会把 extend 成员并入接收者类型的成员集合。
-     * 对这些 callable，tower level 传入的 dispatch receiver 实际是仓颉 extend receiver；
-     * candidate 层在进入 Kotlin-shaped receiver stage 前统一正规化。
-     */
-    private fun CfirCallableSymbol<*>.isInstanceExtendMemberCandidate(): Boolean {
-        if (cfir.status.isStatic) return false
-        val extendProvider = context.session.extendProviderOrNull ?: return false
-        return extendProvider.getContainingExtend(unwrapSubstitutionOverrides()) != null
     }
 
     fun createFunctionTypeInvokeCandidate(
@@ -246,23 +269,25 @@ class CandidateFactory(
     internal fun createBuiltinArrayConstructorCandidate(
         callInfo: CallInfo,
         kind: BuiltinArrayConstructorKind,
+        target: BuiltinArrayConstructorTarget = BuiltinArrayConstructorTarget.Array,
     ): Candidate {
         val symbol = CfirNamedFunctionSymbol(CallableId(callInfo.name))
-        val elementTypeParameterSymbol = CfirTypeParameterSymbol()
-        val elementTypeParameterName = Name.identifier("T")
-        val elementTypeParameter = buildTypeParameter {
-            source = callInfo.callSite.source
-            moduleData = context.session.moduleData
-            resolvePhase = CfirResolvePhase.BODY_RESOLVE
-            origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor
-            attributes = CfirDeclarationAttributes.EMPTY
-            containingDeclarationSymbol = symbol
-            this.symbol = elementTypeParameterSymbol
-            name = elementTypeParameterName
-            addDefaultBoundIfNecessary()
+        val typeParameters = target.typeParameters.map { parameter ->
+            buildTypeParameter {
+                source = callInfo.callSite.source
+                moduleData = context.session.moduleData
+                resolvePhase = CfirResolvePhase.BODY_RESOLVE
+                origin = CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor
+                attributes = CfirDeclarationAttributes.EMPTY
+                containingDeclarationSymbol = symbol
+                this.symbol = CfirTypeParameterSymbol()
+                name = parameter.name
+                addDefaultBoundIfNecessary()
+            }
         }
-        val elementType = ConeTypeParameterTypeImpl(elementTypeParameterSymbol.toLookupTag())
+        val elementType = target.syntheticElementType(typeParameters)
         val int64Type = ConePrimitiveType(PrimitiveTypeKind.INT64)
+        val isVArrayTarget = target is BuiltinArrayConstructorTarget.VArray
         val valueParameters = when (kind) {
             BuiltinArrayConstructorKind.EMPTY -> emptyList()
             BuiltinArrayConstructorKind.COLLECTION -> listOf(
@@ -278,38 +303,64 @@ class CandidateFactory(
                     source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
                 ),
             )
-            BuiltinArrayConstructorKind.INIT_FUNCTION -> listOf(
-                buildSyntheticValueParameter(
-                    ownerSymbol = symbol,
-                    parameterName = ARRAY_SIZE_PARAMETER_NAME,
-                    parameterType = int64Type,
-                    isNamed = false,
-                    source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
-                ),
-                buildSyntheticValueParameter(
-                    ownerSymbol = symbol,
-                    parameterName = ARRAY_INIT_PARAMETER_NAME,
-                    parameterType = ConeFunctionType(parameterTypes = listOf(int64Type), returnType = elementType),
-                    isNamed = false,
-                    source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
-                ),
-            )
-            BuiltinArrayConstructorKind.REPEAT_ELEMENT -> listOf(
-                buildSyntheticValueParameter(
-                    ownerSymbol = symbol,
-                    parameterName = ARRAY_SIZE_PARAMETER_NAME,
-                    parameterType = int64Type,
-                    isNamed = false,
-                    source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
-                ),
-                buildSyntheticValueParameter(
-                    ownerSymbol = symbol,
-                    parameterName = ARRAY_REPEAT_PARAMETER_NAME,
-                    parameterType = elementType,
-                    isNamed = true,
-                    source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
-                ),
-            )
+            BuiltinArrayConstructorKind.INIT_FUNCTION ->
+                if (isVArrayTarget) {
+                    listOf(
+                        buildSyntheticValueParameter(
+                            ownerSymbol = symbol,
+                            parameterName = ARRAY_INIT_PARAMETER_NAME,
+                            parameterType = ConeFunctionType(parameterTypes = listOf(int64Type), returnType = elementType),
+                            isNamed = false,
+                            source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                        ),
+                    )
+                } else {
+                    listOf(
+                        buildSyntheticValueParameter(
+                            ownerSymbol = symbol,
+                            parameterName = ARRAY_SIZE_PARAMETER_NAME,
+                            parameterType = int64Type,
+                            isNamed = false,
+                            source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                        ),
+                        buildSyntheticValueParameter(
+                            ownerSymbol = symbol,
+                            parameterName = ARRAY_INIT_PARAMETER_NAME,
+                            parameterType = ConeFunctionType(parameterTypes = listOf(int64Type), returnType = elementType),
+                            isNamed = false,
+                            source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
+                        ),
+                    )
+                }
+            BuiltinArrayConstructorKind.REPEAT_ELEMENT ->
+                if (isVArrayTarget) {
+                    listOf(
+                        buildSyntheticValueParameter(
+                            ownerSymbol = symbol,
+                            parameterName = ARRAY_REPEAT_PARAMETER_NAME,
+                            parameterType = elementType,
+                            isNamed = true,
+                            source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                        ),
+                    )
+                } else {
+                    listOf(
+                        buildSyntheticValueParameter(
+                            ownerSymbol = symbol,
+                            parameterName = ARRAY_SIZE_PARAMETER_NAME,
+                            parameterType = int64Type,
+                            isNamed = false,
+                            source = callInfo.arguments.getOrNull(0)?.source ?: callInfo.callSite.source,
+                        ),
+                        buildSyntheticValueParameter(
+                            ownerSymbol = symbol,
+                            parameterName = ARRAY_REPEAT_PARAMETER_NAME,
+                            parameterType = elementType,
+                            isNamed = true,
+                            source = callInfo.arguments.getOrNull(1)?.source ?: callInfo.callSite.source,
+                        ),
+                    )
+                }
         }
 
         buildNamedFunction {
@@ -321,10 +372,10 @@ class CandidateFactory(
             isLocal = true
             dispatchReceiverType = null
             status = CfirDeclarationStatusImpl()
-            typeParameters.add(elementTypeParameter)
+            this.typeParameters.addAll(typeParameters)
             returnTypeRef = buildResolvedTypeRef {
                 source = callInfo.callSite.source
-                coneType = ConeClassLikeType(StdlibClassIds.Array.toLookupTag(), typeArguments = listOf(elementType))
+                coneType = target.returnType(elementType)
             }
             this.valueParameters.addAll(valueParameters)
             body = null
@@ -338,6 +389,27 @@ class CandidateFactory(
             symbol = symbol,
             originScope = null,
         )
+    }
+
+    private fun BuiltinArrayConstructorTarget.syntheticElementType(
+        syntheticTypeParameters: List<CfirTypeParameter>,
+    ): ConeCangJieType {
+        val declaredElementType = (this as? BuiltinArrayConstructorTarget.VArray)?.elementType
+        if (declaredElementType == null) {
+            val elementTypeParameter = syntheticTypeParameters.firstOrNull()?.symbol
+                ?: return ConeErrorType(ConeSimpleDiagnostic("Missing builtin array element type parameter"))
+            return ConeTypeParameterTypeImpl(elementTypeParameter.toLookupTag())
+        }
+
+        val originalToSynthetic: Map<TypeConstructorMarker, ConeCangJieType> = typeParameters.zip(syntheticTypeParameters)
+            .mapNotNull { (original, synthetic) ->
+                original.originalSymbol?.toLookupTag()?.let { originalTag ->
+                    originalTag to ConeTypeParameterTypeImpl(synthetic.symbol.toLookupTag())
+                }
+            }
+            .toMap()
+        if (originalToSynthetic.isEmpty()) return declaredElementType
+        return CfirTypeSubstitutorByMap(originalToSynthetic).substituteOrSelf(declaredElementType)
     }
 
     private fun buildSyntheticValueParameter(
@@ -369,6 +441,7 @@ class CandidateFactory(
     fun createErrorCandidate(callInfo: CallInfo, diagnostic: ConeDiagnostic): Candidate {
         val errorSymbol = when(callInfo.callKind) {
             is CallKind.Function,
+            CallKind.DelegatingConstructorCall,
                 ->  createErrorFunctionSymbol(diagnostic)
 
             CallKind.EnumConstructorCall -> createErrorEnumConstructorSymbol(diagnostic)

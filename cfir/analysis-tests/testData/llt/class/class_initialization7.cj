@@ -14,7 +14,7 @@ open class A {
 
 class B <: A {
     public B() {
-        super(this.<!sema_assignment_of_member_variable_cannot_use_this_or_super!>x<!>)
+        super(this.<!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER!>x<!>)
     }
 }
 

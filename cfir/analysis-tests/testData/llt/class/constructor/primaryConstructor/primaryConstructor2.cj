@@ -30,11 +30,11 @@ class H {
 }
 
 class J {
-    public J(z: Int64, var <!sema_redefinition!>z<!>!: Int64 = 1) {}
+    public J(z: Int64, var <!REDECLARATION!>z<!>!: Int64 = 1) {}
 }
 
 class K {
-    <!sema_class_uninitialized_field!>p<!>ublic K(var k: Int64, var <!sema_redefinition!>k<!>!: Int64 = 1) {}
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic K(var k: Int64, var <!REDECLARATION!>k<!>!: Int64 = 1) {}
 }
 
 open class D {
@@ -42,18 +42,18 @@ open class D {
 }
 
 class E <: D {
-    public E(<!sema_member_variable_can_not_shadow!>v<!>ar z!: Int64 = 3) {
+    public E(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
         var c: Int64 = 2
-        <!sema_illegal_place_of_calling_this_or_super!>s<!>uper()
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper()
     }
 }
 
 class L <: D {
-    public L(<!sema_member_variable_can_not_shadow!>v<!>ar z!: Int64 = 3) {
+    public L(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
         <!sema_illegal_place_of_calling_this_primary_constructor!>t<!>his(<!NEED_NAMED_ARGUMENT!>"ww"<!>)
     }
     public init(a!: String = "1") {
-        <!sema_type_incompatible!>t<!>his.z = <!sema_mismatched_types!>"a"<!>
+        <!TYPE_INCOMPATIBLE!>t<!>his.z = <!TYPE_MISMATCH!>"a"<!>
     }
 }
 
@@ -62,8 +62,8 @@ class N <: B<Int64, Int64> {
 }
 
 main(): Int64 {
-    <!sema_invalid_access_control!>B<!><Int64, Int64>(4).z
-    <!sema_no_match_constructor!>C<!>()
+    <!INVALID_ACCESS_CONTROL!>B<!><Int64, Int64>(4).z
+    <!NO_CONSTRUCTOR!>C<!>()
     D()
     E()
     F()

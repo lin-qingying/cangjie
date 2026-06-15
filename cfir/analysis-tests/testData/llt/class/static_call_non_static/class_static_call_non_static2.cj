@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -15,25 +16,25 @@ class Base {
         return 1
     }
     public static func get(): Int32 {
-        func a(x1!: Int32 = <!sema_static_function_cannot_access_non_static_member!>f<!>(), x2!: Int32 = <!sema_static_function_cannot_access_non_static_member!>x<!>): Int32 {
-            <!sema_static_function_cannot_access_non_static_member!>f<!>()
+        func a(x1!: Int32 = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>f<!>(), x2!: Int32 = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>x<!>): Int32 {
+            <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>f<!>()
             f1()
             test
-            <!sema_static_function_cannot_access_non_static_member!>x<!>
-            var lambda1 = {=> <!sema_static_lambdaExpr_cannot_access_non_static!>f<!>()}
-            return <!sema_static_function_cannot_access_non_static_member!>f<!>()
+            <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>x<!>
+            var lambda1 = {=> <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>f<!>()}
+            return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>f<!>()
         }
-        var lambda = {=> <!sema_static_lambdaExpr_cannot_access_non_static!>f<!>()}
+        var lambda = {=> <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>f<!>()}
         return a()
     }
     public static var lam = {
         =>
-        <!sema_static_lambdaExpr_cannot_access_non_static!>f<!>();
+        <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>f<!>();
         0
     }
     public static var lam1 = {
         =>
-        <!sema_static_lambdaExpr_cannot_access_non_static!>x<!>;
+        <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>x<!>;
         0
     }
 }

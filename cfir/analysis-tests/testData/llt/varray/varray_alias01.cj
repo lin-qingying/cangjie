@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 type varr = VArray<Int64, $3>
-type varr1_1<T> = VArray<Int64, $3>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>type varr1_1<T><!> = VArray<Int64, $3>
 
 main() {
     var a: varr = varr(repeat: 0)

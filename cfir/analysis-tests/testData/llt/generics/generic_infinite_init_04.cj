@@ -17,7 +17,7 @@ struct A<X, Y> {
     public operator func [](b: A<X, E<X>>): Bool {
         true
     }
-    public operator func +(b: <!sema_generic_infinite_instantiation!>A<!><Y, E<X>>): Bool {
+    public operator func +(b: <!GENERIC_INFINITE_INSTANTIATION!>A<!><Y, E<X>>): Bool {
         true
     }
 }

@@ -8,11 +8,11 @@
 class C <: A {
     public init() {
         a = 0
-        <!sema_cannot_assign_to_immutable!>b = 0<!>
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b = 0<!>
     }
     public init(c: Int32) {
         a = 0
-        <!sema_cannot_assign_to_immutable!>b = 0<!>
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!>b = 0<!>
     }
 }
 
@@ -29,7 +29,7 @@ open class A {
         }
     }
     public init() {
-        <!sema_cannot_assign_to_immutable!><!sema_illegal_member_used_in_open_constructor!>b<!> = 1<!>
+        <!CANNOT_ASSIGN_TO_IMMUTABLE!><!sema_illegal_member_used_in_open_constructor!>b<!> = 1<!>
     }
 }
 

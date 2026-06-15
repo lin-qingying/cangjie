@@ -13,7 +13,7 @@ main() {
 }
 
 class A<T> {
-    func test(a: <!sema_generic_infinite_instantiation!>B<!><A<T>>) {}
+    func test(a: <!GENERIC_INFINITE_INSTANTIATION!>B<!><A<T>>) {}
 }
 
 class B<T> {

@@ -9,7 +9,7 @@ class Z<T> {
     public func foo() {}
 }
 
-<!sema_generic_type_argument_not_match_constraint!>c<!>lass C<X> where X <: Z<C<<!sema_generic_type_argument_not_match_constraint!>I<!>nt32>> {
+<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>c<!>lass C<X> where X <: Z<C<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>I<!>nt32>> {
     init(input: X) {
         let a: Unit = input.foo()
     }

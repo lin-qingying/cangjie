@@ -5,10 +5,10 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-interface I<<!sema_upper_bound_must_be_class_or_interface!>T<!>> where T <: UIntNative {
+interface I<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>> where T <: UIntNative {
     prop b1: T {
         get() {
-            <!sema_cannot_convert_literal!>1<!>
+            <!CANNOT_CONVERT_LITERAL!>1<!>
         }
     }
 }

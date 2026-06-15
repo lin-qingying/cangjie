@@ -11,12 +11,12 @@ interface I<T> {
     }
 }
 
-<!sema_type_implement_non_interface!>s<!>truct A<T> <: A<A<T>> & I<T> {
+<!TYPE_IMPLEMENT_NON_INTERFACE!>s<!>truct A<T> <: A<A<T>> & I<T> {
 }
 
 main() {
     var a: A<Int64> = A<Int64>()
-    a.test(<!sema_mismatched_types!>a<!>)
+    a.test(<!TYPE_MISMATCH!>a<!>)
 }
 
 // Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.

@@ -6,7 +6,7 @@
 
 
 main() {
-    var b = R<!sema_wrong_number_of_arguments!>(a: 6)<!>
+    var b = R<!WRONG_NUMBER_OF_ARGUMENTS!>(a: 6)<!>
     b.c(7)
     return Int64(b.a - 8)
 }
@@ -19,7 +19,7 @@ interface I {
 struct R {
     public var a: Int32 = 8
     public mut func c(b: Int32): Int32 {
-        let c = <!sema_undeclared_identifier!>c<!>c
+        let c = <!UNRESOLVED_REFERENCE!>c<!>c
         a = c() + b
         return a
     }

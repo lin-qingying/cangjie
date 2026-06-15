@@ -56,6 +56,7 @@ import org.cangnova.cangjie.cfir.types.CfirImplicitTypeRef
 import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.builder.buildBasicTypeRef
+import org.cangnova.cangjie.cfir.types.builder.buildUserTypeRef
 import org.cangnova.cangjie.cfir.types.isExposedBuiltinClassifier
 import org.cangnova.cangjie.descriptors.Modality
 import org.cangnova.cangjie.descriptors.Visibilities
@@ -258,10 +259,16 @@ class PsiRawCfirBuilder(
         argumentListSourceOverride: CjSourceElement? = null,
     ): CfirAnnotationCall {
         return withPackageContext(packageFqName) {
+            val sourceOffsetDelta = sourceOffsetDelta(sourceOverride, annotation)
             converter.convertAnnotationCall(
                 annotation = annotation,
                 containingSymbol = containingSymbol,
                 sourceOverride = sourceOverride,
+                typeRefOverride = annotation.typeReference?.let {
+                    converter.buildAnnotationTypeRef(it, sourceOffsetDelta)
+                },
+                calleeReferenceSourceOverride = annotation.typeReference?.shiftedBy(sourceOffsetDelta)
+                    ?: sourceOverride,
                 argumentListSourceOverride = argumentListSourceOverride,
             )
         }
@@ -465,6 +472,8 @@ class PsiRawCfirBuilder(
                     annotation = annotation,
                     containingSymbol = containingSymbol,
                     sourceOverride = source,
+                    typeRefOverride = psi.toAnnotationTypeRefOverride(),
+                    calleeReferenceSourceOverride = psi.referenceExpression?.toCjPsiSourceElement(),
                     argumentListSourceOverride = psi.attr?.toCjPsiSourceElement(),
                 )
                 val annotationIndex = carrier.annotations.size
@@ -573,6 +582,8 @@ class PsiRawCfirBuilder(
                 annotation = annotation,
                 containingSymbol = containingSymbol,
                 sourceOverride = psi.toCjPsiSourceElement(),
+                typeRefOverride = psi.toAnnotationTypeRefOverride(),
+                calleeReferenceSourceOverride = psi.referenceExpression?.toCjPsiSourceElement(),
                 argumentListSourceOverride = psi.attr?.toCjPsiSourceElement(),
             )
             carrier.replaceAnnotations(carrier.annotations + annotationCall)
@@ -1289,12 +1300,14 @@ class PsiRawCfirBuilder(
             annotation: CjAnnotation,
             containingSymbol: CfirBasedSymbol<*>,
             sourceOverride: CjSourceElement? = null,
+            typeRefOverride: CfirTypeRef? = null,
+            calleeReferenceSourceOverride: CjSourceElement? = null,
             argumentListSourceOverride: CjSourceElement? = null,
         ): CfirAnnotationCall {
             val arguments = convertAnnotationArguments(annotation)
             return buildAnnotationCall {
                 source = sourceOverride ?: annotation.toCjPsiSourceElement()
-                typeRef = convertTypeRef(annotation.typeReference)
+                typeRef = typeRefOverride ?: convertTypeRef(annotation.typeReference)
                 this.arguments.addAll(arguments)
                 argumentList = buildArgumentList {
                     source = argumentListSourceOverride ?: annotation.valueArgumentList?.toCjPsiSourceElement()
@@ -1302,9 +1315,41 @@ class PsiRawCfirBuilder(
                 }
                 calleeReference = buildNamedReference(
                     annotation.shortName ?: Name.identifier("<error>"),
-                    annotation.toCjPsiSourceElement(),
+                    calleeReferenceSourceOverride ?: annotation.toCjPsiSourceElement(),
                 )
                 containingDeclarationSymbol = containingSymbol
+            }
+        }
+
+        private fun CjMacroExpression.toAnnotationTypeRefOverride(): CfirTypeRef? {
+            val rawName = referenceExpression?.text?.trim()?.takeIf(String::isNotEmpty) ?: return null
+            val parts = rawName.split('.').filter(String::isNotBlank)
+            if (parts.isEmpty()) return null
+            val source = referenceExpression?.toCjPsiSourceElement() ?: return null
+            return buildUserTypeRef {
+                this.source = source
+                qualifier += parts.map { part ->
+                    buildQualifierPart {
+                        this.source = source
+                        name = Name.identifier(part)
+                    }
+                }
+            }
+        }
+
+        fun buildAnnotationTypeRef(typeReference: CjTypeReference, sourceOffsetDelta: Int = 0): CfirTypeRef {
+            val rawName = typeReference.text.trim().takeIf(String::isNotEmpty) ?: return buildImplicitTypeRef()
+            val parts = rawName.split('.').filter(String::isNotBlank)
+            if (parts.isEmpty()) return buildImplicitTypeRef()
+            val source = typeReference.shiftedBy(sourceOffsetDelta)
+            return buildUserTypeRef {
+                this.source = source
+                qualifier += parts.map { part ->
+                    buildQualifierPart {
+                        this.source = source
+                        name = Name.identifier(part)
+                    }
+                }
             }
         }
 
@@ -1840,13 +1885,6 @@ class PsiRawCfirBuilder(
             }
 
             val callee = psi.calleeExpression
-            val lambdaArgs = psi.lambdaArguments.mapNotNull { lambdaArgument ->
-                lambdaArgument.getLambdaExpression()?.let { lambda ->
-                    convertLambda(lambda).also { anonymousFunctionExpression ->
-                        anonymousFunctionExpression.replaceIsTrailingLambda(true)
-                    }
-                }
-            }
 
             /**
              * 对齐 Kotlin FIR raw builder：
@@ -1860,26 +1898,31 @@ class PsiRawCfirBuilder(
              * 因此这里需要显式扁平化，把内层普通实参与外层尾随 lambda
              * 合并成同一个调用的 argument list。
              */
-            if (callee is CjCallExpression && psi.valueArgumentList == null && lambdaArgs.isNotEmpty()) {
+            if (callee is CjCallExpression && psi.valueArgumentList == null && psi.lambdaArguments.isNotEmpty()) {
                 val flattenedCallee = callee.calleeExpression
-                val flattenedArguments = callee.valueArguments.mapNotNull(::convertCallArgument) + lambdaArgs
+                val flattenedArguments = callee.valueArguments.mapNotNull(::convertCallArgument) +
+                        psi.lambdaArguments.mapNotNull(::convertCallArgument)
                 val flattenedTypeArguments = extractCallTypeArguments(callee, flattenedCallee)
                 val (receiver, reference) = resolveCalleeReference(flattenedCallee)
+                val varraySizeLiteral = extractVArraySizeLiteral(callee, flattenedCallee)
 
                 return buildFunctionCall {
-                    source = psi.toCjPsiSourceElement()
+                    source = callee.toCjPsiSourceElement()
                     calleeReference = reference
                     argumentList = buildArgumentList {
+                        source = callee.valueArgumentList?.toCjPsiSourceElement()
                         arguments.addAll(flattenedArguments)
                     }
                     explicitReceiver = receiver
                     typeArguments.addAll(flattenedTypeArguments)
                     origin = callOriginFor(flattenedCallee)
                     hasTrailingLambda = true
+                    this.varraySizeLiteral = varraySizeLiteral
                 }
             }
 
             val typeArgs = extractCallTypeArguments(psi, callee)
+            val varraySizeLiteral = extractVArraySizeLiteral(psi, callee)
 
             tryBuildTypeConversion(psi, callee, typeArgs)?.let { return it }
 
@@ -1887,7 +1930,7 @@ class PsiRawCfirBuilder(
             val allArgs = psi.valueArguments.mapNotNull(::convertCallArgument)
             val (receiver, reference) = resolveCalleeReference(callee)
 
-            if (psi.valueArgumentList == null && lambdaArgs.isEmpty() && typeArgs.isNotEmpty()) {
+            if (psi.valueArgumentList == null && psi.lambdaArguments.isEmpty() && typeArgs.isNotEmpty()) {
                 return buildNamedAccessExpression {
                     source = psi.toCjPsiSourceElement()
                     calleeReference = reference
@@ -1897,16 +1940,44 @@ class PsiRawCfirBuilder(
             }
 
             return buildFunctionCall {
-                source = psi.toCjPsiSourceElement()
+                source = psi.callSourceWithoutTrailingLambda()
                 calleeReference = reference
                 argumentList = buildArgumentList {
+                    source = psi.valueArgumentList?.toCjPsiSourceElement()
                     arguments.addAll(allArgs)
                 }
                 explicitReceiver = receiver
                 typeArguments.addAll(typeArgs)
                 origin = callOriginFor(callee)
                 hasTrailingLambda = psi.lambdaArguments.isNotEmpty()
+                this.varraySizeLiteral = varraySizeLiteral
             }
+        }
+
+        /**
+         * 仓颉尾随 lambda 在 PSI 中属于外层 CALL_EXPRESSION，但 CFIR 的调用主体
+         * source 应对应“callee + 普通实参/类型实参”本身；lambda 已作为独立实参保留。
+         */
+        private fun CjCallExpression.callSourceWithoutTrailingLambda(): CjSourceElement {
+            if (lambdaArguments.isEmpty()) return toCjPsiSourceElement()
+
+            val startOffset = textRange.startOffset
+            val fileText = containingFile?.text ?: return toCjPsiSourceElement()
+            var endOffset = lambdaArguments.firstOrNull()
+                ?.asElement()
+                ?.textRange
+                ?.startOffset
+                ?: return toCjPsiSourceElement()
+
+            while (endOffset > startOffset && fileText.getOrNull(endOffset - 1)?.isWhitespace() == true) {
+                endOffset--
+            }
+            if (endOffset <= startOffset) return toCjPsiSourceElement()
+
+            return toCjPsiSourceElement().fakeElement(
+                CjFakeSourceElementKind.SyntheticCall,
+                CjSourceElementOffsetStrategy.Custom.Initialized(startOffset, endOffset),
+            )
         }
 
         /**
@@ -2070,6 +2141,15 @@ class PsiRawCfirBuilder(
             return calleeTypeArguments
         }
 
+        private fun extractVArraySizeLiteral(
+            callExpression: CjCallExpression,
+            calleeExpression: CjExpression?,
+        ): String? {
+            if ((calleeExpression as? CjSimpleNameExpression)?.referencedName != "VArray") return null
+            return callExpression.typeArgumentList?.varrayLiteral?.text
+                ?: calleeExpression.getTypeArgumentList()?.varrayLiteral?.text
+        }
+
         private fun convertDotQualified(psi: CjQualifiedExpression): CfirExpression {
             val receiver = convertExpression(psi.receiverExpression)
             val selector = psi.selectorExpression
@@ -2084,24 +2164,17 @@ class PsiRawCfirBuilder(
                 } else {
                     buildNamedReference(Name.identifier(callee?.text ?: "<error>"), callee?.toCjPsiSourceElement())
                 }
-                val lambdaArgs =
-                    selector.lambdaArguments.mapNotNull { lambdaArgument ->
-                        lambdaArgument.getLambdaExpression()?.let { lambda ->
-                            convertLambda(lambda).also { anonymousFunctionExpression ->
-                                anonymousFunctionExpression.replaceIsTrailingLambda(true)
-                            }
-                        }
-                    }
 
                 return buildFunctionCall {
                     source = psi.toCjPsiSourceElement()
                     calleeReference = ref
                     argumentList = buildArgumentList {
-                        arguments.addAll(callArguments + lambdaArgs)
+                        arguments.addAll(callArguments)
                     }
                     explicitReceiver = receiver
                     typeArguments.addAll(typeArgs)
                     origin = CfirFunctionCallOrigin.Regular
+                    hasTrailingLambda = selector.lambdaArguments.isNotEmpty()
                 }
             }
 
@@ -3183,6 +3256,22 @@ class PsiRawCfirBuilder(
     }
 
 
+}
+
+private fun sourceOffsetDelta(sourceOverride: CjSourceElement?, reparsedPsi: PsiElement): Int {
+    return sourceOverride?.let { it.startOffset - reparsedPsi.textRange.startOffset } ?: 0
+}
+
+private fun PsiElement.shiftedBy(delta: Int): CjSourceElement {
+    val source = toCjPsiSourceElement()
+    if (delta == 0) return source
+    return CjLightSourceElement(
+        lighterASTNode = source.lighterASTNode,
+        startOffset = source.startOffset + delta,
+        endOffset = source.endOffset + delta,
+        treeStructure = source.treeStructure,
+        kind = source.kind,
+    )
 }
 
 private fun List<org.cangnova.cangjie.cfir.builder.macro.MacroPayloadToken>.toMacroSurfaceTokens(): List<MacroSurfaceToken> {

@@ -16,6 +16,6 @@ interface InterfaceI<X> {}
 extend<Y> C<Y> <: InterfaceI<Y> {}
 
 main() {
-    var i: InterfaceI<Int64> = <!sema_mismatched_types!>C<Int64>()<!>
+    var i: InterfaceI<Int64> = <!TYPE_MISMATCH!>C<Int64>()<!>
     0
 }

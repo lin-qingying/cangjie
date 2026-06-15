@@ -6,7 +6,7 @@
 
 
 main() {
-    let err = 1 <!sema_invalid_binary_expr!>+<!> false
+    let err = 1 <!INVALID_BINARY_OPERATOR!>+<!> false
     let range11 = err..10 : 1
     let range12 = 0..err : 1
     let range13 = 0..10 : err

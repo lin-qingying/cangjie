@@ -6,7 +6,7 @@
 
 
 class A<T> {
-    public func test(a: A<T>, b: <!sema_generic_infinite_instantiation!>A<!><(A<T>, A<T>)>): Bool {
+    public func test(a: A<T>, b: <!GENERIC_INFINITE_INSTANTIATION!>A<!><(A<T>, A<T>)>): Bool {
         true
     }
 }

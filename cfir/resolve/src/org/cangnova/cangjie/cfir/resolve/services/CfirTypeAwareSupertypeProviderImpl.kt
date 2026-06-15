@@ -31,12 +31,12 @@ import org.cangnova.cangjie.cfir.resolve.CfirTypeResolutionConfiguration
 import org.cangnova.cangjie.cfir.resolve.SupertypeSupplier
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.resolve.providers.CfirTypeAwareSupertypeProvider
+import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.extendProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.session.typeResolver
 import org.cangnova.cangjie.cfir.symbols.CfirInterfaceSymbol
-import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
@@ -130,22 +130,15 @@ class CfirTypeAwareSupertypeProviderImpl(
         concreteType: ConeCangJieType,
     ): List<ConeCangJieType> {
         val targetPattern = resolveExtendTypeRef(extend, extend.extendedTypeRef) ?: return emptyList()
-        val substitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
-        val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
-            it.symbol.toLookupTag()
-        }
-
-        if (!matchExtendTargetType(targetPattern, concreteType, extendTypeParameterConstructors, substitutions)) {
-            return emptyList()
-        }
-        if (extendTypeParameterConstructors.any { it !in substitutions }) {
-            return emptyList()
-        }
-
-        val substitutor = substitutions.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap)
+        val substitutor = createExtendDeclarationSubstitution(
+            session = session,
+            extend = extend,
+            targetPattern = targetPattern,
+            concreteReceiverType = concreteType,
+        )?.substitutor ?: return emptyList()
         return extend.superTypeRefs.mapNotNull { superTypeRef ->
             val coneType = resolveExtendTypeRef(extend, superTypeRef) ?: return@mapNotNull null
-            substitutor?.substituteOrSelf(coneType) ?: coneType
+            substitutor.substituteOrSelf(coneType)
         }
     }
 
@@ -171,52 +164,6 @@ class CfirTypeAwareSupertypeProviderImpl(
             resolveDeprecations = false,
             supertypeSupplier = SupertypeSupplier.Default,
         ).type
-    }
-
-    /**
-     * 将 `extend TargetPattern` 与当前 concrete type 进行结构匹配，
-     * 推导 extend 自身类型参数在当前 use-site 下应当被替换成什么具体类型。
-     */
-    private fun matchExtendTargetType(
-        pattern: ConeCangJieType,
-        actual: ConeCangJieType,
-        extendTypeParameterConstructors: Set<TypeConstructorMarker>,
-        substitutions: MutableMap<TypeConstructorMarker, ConeCangJieType>,
-    ): Boolean {
-        return when (pattern) {
-            is ConeTypeParameterType -> {
-                val typeParameterConstructor = pattern.lookupTag
-                if (typeParameterConstructor !in extendTypeParameterConstructors) {
-                    pattern == actual
-                } else {
-                    val existing = substitutions[typeParameterConstructor]
-                    existing == null || existing == actual
-                }.also { matches ->
-                    if (matches) {
-                        substitutions.putIfAbsent(typeParameterConstructor, actual)
-                    }
-                }
-            }
-
-            is ConePrimitiveType -> actual is ConePrimitiveType && pattern.kind == actual.kind
-
-            is ConeLookupTagBasedType -> {
-                val actualClassifier = actual as? ConeLookupTagBasedType ?: return false
-                if (pattern.classIdOrPrimitiveClassId != actualClassifier.classIdOrPrimitiveClassId) return false
-                if (pattern.typeArguments.size != actualClassifier.typeArguments.size) return false
-
-                pattern.typeArguments.indices.all { index ->
-                    matchExtendTargetType(
-                        pattern = pattern.typeArguments[index].type,
-                        actual = actualClassifier.typeArguments[index].type,
-                        extendTypeParameterConstructors = extendTypeParameterConstructors,
-                        substitutions = substitutions,
-                    )
-                }
-            }
-
-            else -> pattern == actual
-        }
     }
 
     private fun resolveExtends(type: ConeCangJieType): List<CfirExtend> {

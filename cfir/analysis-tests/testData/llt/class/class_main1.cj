@@ -20,6 +20,6 @@ class Child <: Parent {
     }
 }
 
-<!sema_unexpected_param_for_entry!>m<!>ain(a: Int32): Int64 {
+<!UNEXPECTED_PARAM_FOR_ENTRY!>m<!>ain(a: Int32): Int64 {
     return Child().main1()
 }

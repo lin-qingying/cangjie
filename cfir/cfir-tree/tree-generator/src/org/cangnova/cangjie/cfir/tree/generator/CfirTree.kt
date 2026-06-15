@@ -648,6 +648,7 @@ val cfirScopeProviderType = type("scopes", "CfirScopeProvider")
 
         +field("origin", functionCallOrigin)
         +field("hasTrailingLambda", boolean)
+        +field("varraySizeLiteral", stringType, nullable = true)
 
     }
 

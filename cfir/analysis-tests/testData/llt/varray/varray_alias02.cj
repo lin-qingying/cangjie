@@ -5,8 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-type varr2 = VArray<!parse_varray_type_parameter!>
-<!>
+type varr2 = VArray<!parse_varray_type_parameter!><!>
 main() {
-  var c: varr2<Int64,<!parse_expected_right_delimiter!> <!><!parse_expected_type!>$<!>3> = varr2<Int64, $3>(repeat: 0)
-<!parse_expected_expr_or_decl_in!>}<!>
+  var c: varr2<Int64, <!parse_expected_right_delimiter, parse_expected_type!>$<!>3> = varr2<Int64, $3>(repeat: 0)
+}

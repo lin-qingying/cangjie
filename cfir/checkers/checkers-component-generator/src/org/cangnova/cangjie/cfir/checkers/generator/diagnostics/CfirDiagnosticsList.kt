@@ -937,6 +937,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("indexDescription")
         }
 
+        // 内建下标越界
+        val BUILTIN_INDEX_IN_BOUND by error<PsiElement>()
+
         // 不能赋值给 subscript 表达式
         val CANNOT_ASSIGN_TO_SUBSCRIPT by error<PsiElement>()
 
@@ -2062,6 +2065,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 未使用的表达式
         val UNUSED_EXPRESSION by warning<CjExpression>()
+
+        // type alias 声明了但展开类型未使用的类型参数
+        val TYPEALIAS_UNUSED_TYPE_PARAMETERS by warning<PsiElement> {
+            parameter<String>("typeParameters")
+        }
     }
 
     /**

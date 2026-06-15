@@ -1,6 +1,7 @@
 package org.cangnova.cangjie.cfir.resolve.calls.candidate
 
 import org.cangnova.cangjie.cfir.resolve.body.CfirAbstractBodyResolveTransformer
+import org.cangnova.cangjie.cfir.declarations.CfirFunction
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
@@ -19,6 +20,8 @@ open class CfirCandidateCollector(
 ) {
     private val candidates = mutableListOf<Candidate>()
     private val forwardedDiagnostics = mutableListOf<ResolutionDiagnostic>()
+    private val functionValueCandidates = mutableListOf<Candidate>()
+    private var functionValueCandidatesGroup: CfirTowerGroup? = null
 
     var currentApplicability: CandidateApplicability = CandidateApplicability.HIDDEN
         private set
@@ -29,6 +32,8 @@ open class CfirCandidateCollector(
     open fun newDataSet() {
         candidates.clear()
         forwardedDiagnostics.clear()
+        functionValueCandidates.clear()
+        functionValueCandidatesGroup = null
         currentApplicability = CandidateApplicability.HIDDEN
         bestGroup = null
     }
@@ -40,6 +45,7 @@ open class CfirCandidateCollector(
     ): CandidateApplicability {
         val applicability = resolutionStageRunner.processCandidate(candidate, context)
         val currentBestGroup = bestGroup
+        recordFunctionValueCandidate(group, candidate)
 
         if (
             applicability > currentApplicability ||
@@ -70,6 +76,31 @@ open class CfirCandidateCollector(
     fun forwardedDiagnostics(): List<ResolutionDiagnostic> = forwardedDiagnostics
 
     fun bestCandidates(): List<Candidate> = candidates
+
+    /**
+     * 无目标类型的函数名作为值使用时，同一作用域中的函数候选必须先作为重载集合保留。
+     *
+     * 官方 Cangjie 对 `let f = obj.foo<T>` 这类表达式会先诊断函数引用歧义；
+     * 只有单候选时才下沉到该候选自身的泛型约束错误。
+     */
+    fun functionValueCandidates(): List<Candidate> = functionValueCandidates
+
+    private fun recordFunctionValueCandidate(
+        group: CfirTowerGroup,
+        candidate: Candidate,
+    ) {
+        if (candidate.callInfo.callKind != CallKind.NamedValueAccess) return
+        if (candidate.symbol.takeIf { it.isBound }?.cfir !is CfirFunction) return
+
+        val currentGroup = functionValueCandidatesGroup
+        if (currentGroup == null || group < currentGroup) {
+            functionValueCandidates.clear()
+            functionValueCandidatesGroup = group
+        }
+        if (group == functionValueCandidatesGroup) {
+            functionValueCandidates += candidate
+        }
+    }
 
     open fun shouldStopAtTheGroup(group: CfirTowerGroup): Boolean {
         val currentBestGroup = bestGroup ?: return false

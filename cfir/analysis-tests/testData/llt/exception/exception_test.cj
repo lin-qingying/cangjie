@@ -8,7 +8,7 @@ internal import std.core.*
 
 main(): Int64 {
     try {
-        throw <!sema_undeclared_identifier!>g<!>umentException();
+        throw <!UNRESOLVED_REFERENCE!>g<!>umentException();
     } catch (e: IllegalArgumentException) {
         print("in catch block!")
     } finally {

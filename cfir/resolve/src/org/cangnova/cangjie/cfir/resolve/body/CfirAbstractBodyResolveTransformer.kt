@@ -429,6 +429,27 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformExpression(expression, data) as CfirExpression
     }
 
+    override fun transformWrappedExpression(
+        wrappedExpression: CfirWrappedExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformWrappedExpression(wrappedExpression, data)
+    }
+
+    override fun transformOptionalExpression(
+        optionalExpression: CfirOptionalExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformOptionalExpression(optionalExpression, data)
+    }
+
+    override fun transformOptionalChainExpression(
+        optionalChainExpression: CfirOptionalChainExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformOptionalChainExpression(optionalChainExpression, data)
+    }
+
     override fun transformLiteralExpression(
         literalExpression: CfirLiteralExpression,
         data: ResolutionMode,
@@ -464,6 +485,13 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformFunctionCall(functionCall, data)
     }
 
+    override fun transformIncrementDecrementExpression(
+        incrementDecrementExpression: CfirIncrementDecrementExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformIncrementDecrementExpression(incrementDecrementExpression, data)
+    }
+
     override fun transformIfExpression(
         ifExpression: CfirIfExpression,
         data: ResolutionMode,
@@ -471,11 +499,39 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         return expressionsTransformer.transformIfExpression(ifExpression, data)
     }
 
+    override fun transformLetPatternExpression(
+        letPatternExpression: CfirLetPatternExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformLetPatternExpression(letPatternExpression, data)
+    }
+
     override fun transformReturnExpression(
         returnExpression: CfirReturnExpression,
         data: ResolutionMode,
     ): CfirExpression {
         return expressionsTransformer.transformReturnExpression(returnExpression, data)
+    }
+
+    override fun transformLoopJump(
+        jumpExpression: CfirLoopJump,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformLoopJump(jumpExpression, data)
+    }
+
+    override fun transformBreakExpression(
+        breakExpression: CfirBreakExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformBreakExpression(breakExpression, data)
+    }
+
+    override fun transformContinueExpression(
+        continueExpression: CfirContinueExpression,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformContinueExpression(continueExpression, data)
     }
 
     override fun transformAssignment(
@@ -595,6 +651,13 @@ abstract class CfirAbstractBodyResolveTransformerDispatcher(
         data: ResolutionMode,
     ): CfirExpression {
         return expressionsTransformer.transformTryExpression(tryExpression, data)
+    }
+
+    override fun transformCatch(
+        catch: CfirCatch,
+        data: ResolutionMode,
+    ): CfirExpression {
+        return expressionsTransformer.transformCatch(catch, data)
     }
 
     override fun transformSubscriptExpression(

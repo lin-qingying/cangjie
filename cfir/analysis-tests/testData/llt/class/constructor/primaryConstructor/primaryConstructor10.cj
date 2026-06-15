@@ -6,7 +6,7 @@
 
 
 class Data {
-    public Data(let a!: Bool = <!sema_assignment_of_member_variable_cannot_use_this_or_super, sema_capture_has_shadow_variable!>x<!>, var x!: Bool = a) {}
+    public Data(let a!: Bool = <!ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER, CAPTURE_HAS_SHADOW_VARIABLE!>x<!>, var x!: Bool = a) {}
 }
 
 func run(): Int32 {

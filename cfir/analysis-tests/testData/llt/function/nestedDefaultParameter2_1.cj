@@ -36,7 +36,7 @@ class Class {
             func test3(b!: Bool = {
                     =>
                     Class().var1
-                    true && <!sema_static_lambdaExpr_cannot_access_non_static!>t<!>est()
+                    true && <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>t<!>est()
                 }()): Bool {
                 b;
             }

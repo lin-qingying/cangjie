@@ -23,8 +23,8 @@ interface I2 {
 
 class C1 {}
 
-<!sema_inherit_member_type_inconsistent!>e<!>xtend C1 <: I1 & I2 {
-    <!sema_property_override_implement_type_diff!>p<!>ublic prop foo: Int64 {
+<!INHERIT_MEMBER_TYPE_INCONSISTENT!>e<!>xtend C1 <: I1 & I2 {
+    <!PROPERTY_OVERRIDE_IMPLEMENT_TYPE_DIFF!>p<!>ublic prop foo: Int64 {
         get() {
             return 2
         }

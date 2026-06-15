@@ -9,10 +9,10 @@ let x = 4
 
 <!chir_dce_unused_function!>private func f() {
     <!chir_dce_unused_function!>func f1() {
-        <!sema_capture_has_shadow_variable!>x<!>
+        <!CAPTURE_HAS_SHADOW_VARIABLE!>x<!>
     }<!>
     let <!chir_dce_unused_variable!>a<!> = {
-        => <!sema_capture_has_shadow_variable!>x<!>
+        => <!CAPTURE_HAS_SHADOW_VARIABLE!>x<!>
     }
     let <!chir_dce_unused_variable!>x<!> = 2
 }<!>

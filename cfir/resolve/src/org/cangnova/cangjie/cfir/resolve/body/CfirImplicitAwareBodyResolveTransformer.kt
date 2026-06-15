@@ -101,6 +101,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
     }
 
     override fun transformFieldVariable(fieldVariable: CfirFieldVariable, data: ResolutionMode): CfirFieldVariable {
+        if (!fieldVariable.shouldUseImplicitBodyCache()) {
+            return super.transformFieldVariable(fieldVariable, data)
+        }
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(fieldVariable) {
             super.transformFieldVariable(fieldVariable, data)
@@ -108,6 +111,9 @@ open class CfirImplicitAwareBodyResolveTransformer(
     }
 
     override fun transformPatternVariable(patternVariable: CfirPatternVariable, data: ResolutionMode): CfirPatternVariable {
+        if (!patternVariable.shouldUseImplicitBodyCache()) {
+            return super.transformPatternVariable(patternVariable, data)
+        }
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(patternVariable) {
             super.transformPatternVariable(patternVariable, data)
@@ -115,11 +121,20 @@ open class CfirImplicitAwareBodyResolveTransformer(
     }
 
     override fun transformVariable(variable: CfirVariable, data: ResolutionMode): CfirVariable {
+        if (!variable.shouldUseImplicitBodyCache()) {
+            return super.transformVariable(variable, data)
+        }
         @Suppress("UNCHECKED_CAST")
         return computeCachedTransformationResult(variable) {
             super.transformVariable(variable, data)
         } as CfirVariable
     }
+
+    /**
+     * 局部变量是函数体内部语句，生命周期由当前 body resolve 负责；
+     * 只有声明边界变量才进入跨声明隐式类型计算缓存。
+     */
+    private fun CfirVariable.shouldUseImplicitBodyCache(): Boolean = !isLocal
 
     /**
      * 通过状态机缓存变换结果。

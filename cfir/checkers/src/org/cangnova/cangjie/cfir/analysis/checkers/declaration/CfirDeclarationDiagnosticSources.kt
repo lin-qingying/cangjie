@@ -71,6 +71,32 @@ internal fun CfirClassLikeDeclaration.classLikeDeclarationHeaderDiagnosticSource
 }
 
 /**
+ * typealias 声明级诊断位置：从 `type` 关键字到名称/类型参数列表结束。
+ *
+ * Kotlin FIR 的 typealias checker 直接在 declaration source 上报告；本仓颉前端需要
+ * 明确收窄到声明头部，避免包含右侧展开类型导致 LLT 范围不稳定。
+ */
+internal fun CfirTypeAlias.typeAliasDeclarationHeaderDiagnosticSource(): AbstractCjSourceElement? {
+    val declarationSource = source ?: return null
+    source?.psi?.let { psi ->
+        val typeAliasPsi = when (psi) {
+            is CjTypeAlias -> psi
+            else -> PsiTreeUtil.getParentOfType(psi, CjTypeAlias::class.java, false)
+                ?: PsiTreeUtil.findChildOfType(psi, CjTypeAlias::class.java)
+        }
+        val keyword = typeAliasPsi?.getTypeAliasKeyword()
+        val endElement = typeAliasPsi?.typeParameterList ?: typeAliasPsi?.nameIdentifier
+        if (keyword != null && endElement != null) {
+            return CjOffsetsOnlySourceElement(
+                startOffset = keyword.textRange.startOffset,
+                endOffset = endElement.textRange.endOffset,
+            )
+        }
+    }
+    return (declarationSource as? CjSourceElement)?.findTypeAliasHeaderSource(name) ?: declarationSource
+}
+
+/**
  * 官方 cjc 的部分声明级诊断锚定在声明节点起始位置，JSON 主范围只有首字符。
  * 使用 offsets-only source 避免 PSI 默认范围扩展到整条声明。
  */
@@ -106,7 +132,8 @@ internal fun CfirConstructor.constructorNameDiagnosticSource(
         val initKeyword = constructorPsi?.getInitKeyword()
         if (initKeyword != null) {
             if (includeConstKeyword) {
-                val constKeyword = constructorPsi.node.findChildByType(CjTokens.CONST_KEYWORD)?.psi
+                val constKeyword = constructorPsi.modifierList?.getModifier(CjTokens.CONST_KEYWORD)
+                    ?: constructorPsi.node.findChildByType(CjTokens.CONST_KEYWORD)?.psi
                 if (constKeyword != null && constKeyword.textRange.startOffset <= initKeyword.textRange.startOffset) {
                     return CjOffsetsOnlySourceElement(
                         startOffset = constKeyword.textRange.startOffset,
@@ -194,6 +221,32 @@ private fun CjSourceElement.findClassLikeNameSource(
         return CjOffsetsOnlySourceElement(
             startOffset = treeStructure.getStartOffset(nameToken),
             endOffset = treeStructure.getEndOffset(nameToken),
+        )
+    }
+
+    return null
+}
+
+private fun CjSourceElement.findTypeAliasHeaderSource(name: Name): AbstractCjSourceElement? {
+    val tokens = collectLeafTokens()
+
+    for ((index, token) in tokens.withIndex()) {
+        if (token.tokenType != CjTokens.TYPE_KEYWORD) continue
+        val nameToken = tokens.asSequence()
+            .drop(index + 1)
+            .takeWhile { it.tokenType != CjTokens.EQ && it.tokenType != CjTokens.LBRACE }
+            .firstOrNull { it.tokenType == CjTokens.IDENTIFIER && treeStructure.toString(it).toString() == name.asString() }
+            ?: continue
+        val endToken = tokens.asSequence()
+            .drop(tokens.indexOf(nameToken) + 1)
+            .takeWhile { it.tokenType != CjTokens.EQ && it.tokenType != CjTokens.LBRACE }
+            .filter { treeStructure.toString(it).toString().isNotBlank() }
+            .lastOrNull()
+            ?.takeIf { treeStructure.getEndOffset(it) > treeStructure.getEndOffset(nameToken) }
+            ?: nameToken
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(token),
+            endOffset = treeStructure.getEndOffset(endToken),
         )
     }
 

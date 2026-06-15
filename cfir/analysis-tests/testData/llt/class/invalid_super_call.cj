@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -6,8 +7,8 @@
 
 
 func mm() {
-    <!sema_this_super_use_error_outside_class!>s<!>uper()
-    <!sema_this_super_use_error_outside_class!>s<!>uper
+    <!THIS_SUPER_USE_ERROR_OUTSIDE_CLASS!>s<!>uper()
+    <!THIS_SUPER_USE_ERROR_OUTSIDE_CLASS!>s<!>uper
 }
 
 open class c {
@@ -15,32 +16,32 @@ open class c {
 }
 
 class m <: c {
-    public var a = <!sema_illegal_super_alone!>s<!>uper // ok
-    public var b = <!sema_invalid_this_call_outside_ctor!>s<!>uper()
-    <!sema_member_variable_can_not_shadow!>p<!>ublic var c: Int64 = <!sema_invalid_this_call_outside_ctor!>s<!>uper()
-    public static var d = <!sema_invalid_this_call_outside_ctor!>s<!>uper()
-    public static var e: Int64 = <!sema_invalid_this_call_outside_ctor!>s<!>uper()
+    public var a = <!ILLEGAL_SUPER_ALONE!>s<!>uper // ok
+    public var b = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper()
+    <!MEMBER_VARIABLE_CAN_NOT_SHADOW!>p<!>ublic var c: Int64 = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper()
+    public static var d = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper()
+    public static var e: Int64 = <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper()
     public init() {
         super() // ok
     }
     public init(a: Int64) {
-        <!sema_illegal_super_alone!>s<!>uper // ok
+        <!ILLEGAL_SUPER_ALONE!>s<!>uper // ok
     }
     public init(a: Int64, b: Int64) {
-        <!sema_illegal_place_of_calling_this_or_super!>s<!>uper().<!sema_not_member_of!>a<!>
-        <!sema_illegal_place_of_calling_this_or_super!>s<!>uper().c
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper().<!NOT_MEMBER_OF!>a<!>
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper().c
     }
     public init(a: Int64, b: Int64, c: Int64) {
-        <!sema_illegal_place_of_calling_this_or_super!>s<!>uper().c++
+        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper().c++
     }
     public func f() {
-        <!sema_invalid_this_call_outside_ctor!>s<!>uper()
-        <!sema_invalid_this_call_outside_ctor!>s<!>uper().c
-        <!sema_invalid_this_call_outside_ctor!>s<!>uper().c++
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper()
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper().c
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper().c++
     }
     public static func ff() {
-        <!sema_invalid_this_call_outside_ctor!>s<!>uper()
-        <!sema_invalid_this_call_outside_ctor!>s<!>uper().c
-        <!sema_invalid_this_call_outside_ctor!>s<!>uper().c++
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper()
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper().c
+        <!INVALID_THIS_CALL_OUTSIDE_CTOR!>s<!>uper().c++
     }
 }

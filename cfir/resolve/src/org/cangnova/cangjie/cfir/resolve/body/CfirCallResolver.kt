@@ -29,7 +29,10 @@ import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.SessionHolder
 import org.cangnova.cangjie.cfir.calls.qualifierScopeOrNull
 import org.cangnova.cangjie.cfir.calls.resolvedQualifierClassifier
+import org.cangnova.cangjie.cfir.common.moduleData
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.declarations.builder.buildProperty
+import org.cangnova.cangjie.cfir.declarations.impl.CfirDeclarationStatusImpl
 import org.cangnova.cangjie.cfir.diagnostic.*
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
@@ -63,14 +66,19 @@ import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
+import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
 import org.cangnova.cangjie.name.ClassId
+import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.name.OperatorNameConventions
+import org.cangnova.cangjie.psi.CjValueArgument
 import org.cangnova.cangjie.resolve.calls.inference.buildCurrentSubstitutor
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintStorage
 import org.cangnova.cangjie.resolve.calls.tower.ApplicabilityDetail
 import org.cangnova.cangjie.resolve.calls.tower.CandidateApplicability
 import org.cangnova.cangjie.resolve.calls.tower.isSuccess
+import org.cangnova.cangjie.source.psi
+import org.cangnova.cangjie.source.text
 import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.utils.runIf
 
@@ -122,15 +130,27 @@ class CfirCallResolver(
         var expectedCandidates: Collection<Candidate>? = null
         var matchedClassifier: CfirClassLikeSymbol<*>? = null
         var classLikeCallResolved = false
-        if (!isCollectionLiteralCall && callee.name.asString() == "Array") {
-            val classifier = findClassifierForCall(functionCall, callee.name)
-            if (classifier != null && classifier.isStdlibArrayClassifier()) {
+        if (!isCollectionLiteralCall) {
+            val directVArrayTarget = functionCall.directVArrayConstructorTargetOrNull(callee.name)
+            if (directVArrayTarget != null) {
                 effectiveResult = collectBuiltinArrayConstructorCandidates(
                     functionCall = functionCall,
-                    classifier = classifier,
+                    name = callee.name,
+                    target = directVArrayTarget,
                     resolutionMode = resolutionMode,
                 )
                 classLikeCallResolved = true
+            } else if (callee.name.asString() == "Array") {
+                val classifier = findClassifierForCall(functionCall, callee.name)
+                if (classifier != null && classifier.isStdlibArrayClassifier()) {
+                    effectiveResult = collectBuiltinArrayConstructorCandidates(
+                        functionCall = functionCall,
+                        name = classifier.name,
+                        target = BuiltinArrayConstructorTarget.Array,
+                        resolutionMode = resolutionMode,
+                    )
+                    classLikeCallResolved = true
+                }
             }
         }
         if (!classLikeCallResolved && result.candidates.isEmpty() && !isCollectionLiteralCall) {
@@ -185,6 +205,57 @@ class CfirCallResolver(
             matchedClassifier = matchedClassifier,
             expectedCallKind = expectedCallKind,
             expectedCandidates = expectedCandidates,
+        )
+
+        functionCall.replaceCalleeReference(nameReference)
+        val candidate = (nameReference as? CfirNamedReferenceWithCandidate)?.candidate
+        reportBodyResolutionErrorToOverloadByLambdaCandidate(nameReference, candidate)
+        candidate?.updateSourcesOfReceivers()
+        return functionCall
+    }
+
+    fun resolveDelegatingConstructorCallAndSelectCandidate(
+        functionCall: CfirFunctionCall,
+        targetDeclaration: CfirClassLikeDeclaration,
+        resolutionMode: ResolutionMode,
+    ): CfirFunctionCall {
+        val callee = functionCall.calleeReference as? CfirNamedReference ?: return functionCall
+        targetDeclaration.symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        val actualTarget = targetDeclaration.symbol.cfir
+        val callInfo = createDelegatingConstructorCallInfo(functionCall, actualTarget, resolutionMode)
+        val constructorSymbols = actualTarget.declarations
+            .filterIsInstance<CfirConstructor>()
+            .map(CfirConstructor::symbol)
+        val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
+        val constructorCandidates = constructorSymbols.map { constructorSymbol ->
+            candidateFactory.createCandidate(
+                callInfo = callInfo,
+                symbol = constructorSymbol,
+                originScope = null,
+            )
+        }
+        val (reducedCandidates, applicability) = reduceCollectedCandidates(
+            candidates = constructorCandidates,
+            collectorApplicability = CandidateApplicability.HIDDEN,
+            isCandidateSuccessful = Candidate::isSuccessful,
+            candidateApplicability = Candidate::lowestApplicability,
+            fullyProcessCandidate = { candidate ->
+                components.resolutionStageRunner.fullyProcessCandidate(candidate, transformer.resolutionContext)
+            },
+            chooseMostSpecific = { currentCandidates ->
+                currentCandidates.singleOrNull()?.let(::setOf)
+                    ?: conflictResolver.chooseMaximallySpecificCandidates(currentCandidates)
+            },
+        )
+
+        val nameReference = createResolvedNamedReference(
+            callee,
+            actualTarget.name,
+            callInfo,
+            reducedCandidates,
+            applicability,
+            explicitReceiver = null,
+            createResolvedReferenceWithoutCandidateForLocalVariables = false,
         )
 
         functionCall.replaceCalleeReference(nameReference)
@@ -253,6 +324,7 @@ class CfirCallResolver(
         if (transformedAccess.explicitReceiver?.importedPackageQualifierOrNull(components.file, session) != null) {
             transformedAccess.replaceDispatchReceiver(null)
         }
+        tryResolveVArraySizeAccess(transformedAccess, callee)?.let { return it }
 
         val basicResult by lazy(LazyThreadSafetyMode.NONE) {
             collectCandidates(
@@ -619,7 +691,7 @@ class CfirCallResolver(
         collector: CfirCandidateCollector? = null,
     ): ResolutionResult {
         val resultCollector = towerResolver.runResolver(info, resolutionContext, collector)
-        var (reducedCandidates, applicability) = reduceCandidates(resultCollector)
+        var (reducedCandidates, applicability) = reduceCandidates(resultCollector, info = info)
         reducedCandidates = reduceFunctionValueCandidatesByExpectedType(info, reducedCandidates)
         val callSite = info.callSite
         if (callSite is CfirQualifiedAccessExpression && components.context.shouldReduceOverloadByLambdaCandidates()) {
@@ -632,6 +704,40 @@ class CfirCallResolver(
             candidates = reducedCandidates,
             forwardedDiagnostics = resultCollector.forwardedDiagnostics(),
         )
+    }
+
+    /**
+     * 仓颉尾随 lambda 只参与最后一个函数类型形参的候选。
+     *
+     * 官方 `SyntaxFilterCandidates` 对 trailing closure 会直接检查最后一个
+     * parameter type 是否为函数类型；否则该候选属于语法层不匹配，不能进入
+     * lambda body 重载规约，否则 lambda 会失去目标函数类型并退化成参数标注错误。
+     */
+    private fun reduceTrailingLambdaCandidatesByParameterType(
+        info: CallInfo,
+        candidates: Set<Candidate>,
+    ): Set<Candidate> {
+        if (candidates.size <= 1 || !info.hasTrailingLambdaArgument()) return candidates
+
+        val matchingCandidates = candidates.filterTo(linkedSetOf()) { candidate ->
+            val lastParameterType = candidate.declaredParametersForMapping()
+                .lastOrNull()
+                ?.returnTypeRef
+                ?.coneTypeOrNull
+                ?.let(candidate.substitutor::substituteOrSelf)
+                ?.fullyExpandedType(session)
+
+            lastParameterType is ConeFunctionType
+        }
+
+        return matchingCandidates.ifEmpty { candidates }
+    }
+
+    private fun CallInfo.hasTrailingLambdaArgument(): Boolean {
+        return (callSite as? CfirFunctionCall)?.hasTrailingLambda == true ||
+            arguments.any { argument ->
+                (argument as? CfirAnonymousFunctionExpression)?.isTrailingLambda == true
+            }
     }
 
     /**
@@ -667,19 +773,34 @@ class CfirCallResolver(
 
     private fun reduceCandidates(
         collector: CfirCandidateCollector,
+        info: CallInfo,
         resolutionContext: ResolutionContext = transformer.resolutionContext,
     ): Pair<Set<Candidate>, CandidateApplicability> {
+        val functionValueCandidates = collector.functionValueCandidates()
+        val preserveFunctionValueOverloadSet =
+            info.callKind == CallKind.NamedValueAccess &&
+                    info.resolutionMode.expectedType == null &&
+                    functionValueCandidates.size > 1
+
         return reduceCollectedCandidates(
-            candidates = collector.bestCandidates(),
-            collectorApplicability = collector.currentApplicability,
+            candidates = if (preserveFunctionValueOverloadSet) functionValueCandidates else collector.bestCandidates(),
+            collectorApplicability = if (preserveFunctionValueOverloadSet) {
+                CandidateApplicability.RESOLVED
+            } else {
+                collector.currentApplicability
+            },
             isCandidateSuccessful = Candidate::isSuccessful,
             candidateApplicability = Candidate::lowestApplicability,
             fullyProcessCandidate = { candidate ->
                 components.resolutionStageRunner.fullyProcessCandidate(candidate, resolutionContext)
             },
             chooseMostSpecific = { candidates ->
-                candidates.singleOrNull()?.let(::setOf)
-                    ?: conflictResolver.chooseMaximallySpecificCandidates(candidates)
+                if (preserveFunctionValueOverloadSet) {
+                    return@reduceCollectedCandidates candidates
+                }
+                val syntaxFilteredCandidates = reduceTrailingLambdaCandidatesByParameterType(info, candidates)
+                syntaxFilteredCandidates.singleOrNull()?.let(::setOf)
+                    ?: conflictResolver.chooseMaximallySpecificCandidates(syntaxFilteredCandidates)
             },
         )
     }
@@ -705,7 +826,9 @@ class CfirCallResolver(
         // 根据期望的调用种类生成诊断
         val diagnostic = when {
             expectedCallKind != null -> when (expectedCallKind) {
-                CallKind.Function -> {
+                CallKind.Function,
+                CallKind.DelegatingConstructorCall,
+                -> {
                     val hasValueParameters = candidates.any {
                         (it.symbol as? CfirFunctionSymbol<*>)?.valueParameterSymbols?.isNotEmpty() == true
                     }
@@ -757,6 +880,7 @@ class CfirCallResolver(
 
             candidates.isEmpty() -> {
                 when {
+                    callInfo.callKind == CallKind.DelegatingConstructorCall -> ConeNoConstructorError
                     explicitReceiver?.importedPackageQualifierOrNull(components.file, session)?.packageFqName != null ->
                         ConeNotMemberOfError(
                             memberName = name,
@@ -816,7 +940,9 @@ class CfirCallResolver(
                     name,
                     applicability,
                     candidatesWithErrors as Map<AbstractCandidate, ConeDiagnostic?>,
-                    isCallLike = callInfo.callKind == CallKind.Function || callInfo.callKind == CallKind.EnumConstructorCall,
+                    isCallLike = callInfo.callKind == CallKind.Function ||
+                            callInfo.callKind == CallKind.DelegatingConstructorCall ||
+                            callInfo.callKind == CallKind.EnumConstructorCall,
                 )
             }
 
@@ -905,18 +1031,103 @@ class CfirCallResolver(
         type is ConeTypeParameterType && type.lookupTag.typeParameterSymbol == symbol
     }
 
+    private fun CfirFunctionCall.directVArrayConstructorTargetOrNull(
+        name: Name,
+    ): BuiltinArrayConstructorTarget.VArray? {
+        if (name.asString() != "VArray") return null
+        val sizeLiteral = varraySizeLiteral ?: return null
+        return BuiltinArrayConstructorTarget.VArray(sizeLiteral = sizeLiteral)
+    }
+
+    private fun CfirTypeAliasSymbol.typeAliasVArrayConstructorTarget(
+        typeArgumentRefs: List<CfirTypeRef>,
+    ): BuiltinArrayConstructorTarget.VArray? {
+        lazyResolveToPhase(CfirResolvePhase.SUPER_TYPES)
+        val alias = cfir
+        val appliedArguments = typeArgumentRefs.mapNotNull { typeArgumentRef ->
+            (typeArgumentRef as? CfirResolvedTypeRef)?.coneType
+        }
+        val aliasType: ConeCangJieType = ConeTypeAliasType(
+            classId = classId,
+            typeArguments = appliedArguments,
+        )
+        val expandedType = aliasType.fullyExpandedType(session) as? ConeVArrayType ?: return null
+        return BuiltinArrayConstructorTarget.VArray(
+            sizeLiteral = "$${expandedType.size}",
+            elementType = expandedType.elementType,
+            typeParameters = alias.typeParameters.map { typeParameter ->
+                BuiltinArrayConstructorTypeParameter(
+                    name = typeParameter.name,
+                    originalSymbol = typeParameter.symbol,
+                )
+            },
+        )
+    }
+
+    private fun tryResolveVArraySizeAccess(
+        qualifiedAccess: CfirQualifiedAccessExpression,
+        callee: CfirNamedReference,
+    ): CfirExpression? {
+        if (callee.name.asString() != "size") return null
+        qualifiedAccess.explicitReceiver
+            ?.coneTypeOrNull
+            ?.fullyExpandedType(session) as? ConeVArrayType ?: return null
+
+        val propertySymbol = CfirPropertySymbol(CallableId(callee.name))
+        val int64Type = ConePrimitiveType(PrimitiveTypeKind.INT64)
+        buildProperty {
+            source = callee.source ?: qualifiedAccess.source
+            moduleData = session.moduleData
+            resolvePhase = CfirResolvePhase.BODY_RESOLVE
+            origin = CfirDeclarationOrigin.Synthetic.Default
+            attributes = CfirDeclarationAttributes.EMPTY
+            isLocal = true
+            dispatchReceiverType = null
+            symbol = propertySymbol
+            status = CfirDeclarationStatusImpl()
+            returnTypeRef = buildResolvedTypeRef {
+                source = callee.source ?: qualifiedAccess.source
+                coneType = int64Type
+            }
+            name = callee.name
+            getter = null
+            setter = null
+        }
+        qualifiedAccess.replaceCalleeReference(
+            buildResolvedNamedReference {
+                source = callee.source
+                name = callee.name
+                resolvedSymbol = propertySymbol
+            }
+        )
+        qualifiedAccess.replaceConeTypeOrNull(int64Type)
+        return qualifiedAccess
+    }
+
     private fun collectClassConstructorCandidates(
         functionCall: CfirFunctionCall,
         classifier: CfirClassLikeSymbol<*>,
         resolutionMode: ResolutionMode,
     ): ResolutionResult {
+        val varrayAliasTarget = (classifier as? CfirTypeAliasSymbol)
+            ?.typeAliasVArrayConstructorTarget(functionCall.typeArguments)
+        if (varrayAliasTarget != null) {
+            return collectBuiltinArrayConstructorCandidates(
+                functionCall = functionCall,
+                name = classifier.name,
+                target = varrayAliasTarget,
+                resolutionMode = resolutionMode,
+            )
+        }
+
         val actualClassifier = (classifier as? CfirTypeAliasSymbol)?.fullyExpandedClass(session) ?: classifier
         actualClassifier.lazyResolveToPhase(CfirResolvePhase.TYPES)
         val actualDeclaration = actualClassifier.cfir
         if (actualClassifier.classId == StdlibClassIds.Array) {
             return collectBuiltinArrayConstructorCandidates(
                 functionCall = functionCall,
-                classifier = classifier,
+                name = classifier.name,
+                target = BuiltinArrayConstructorTarget.Array,
                 resolutionMode = resolutionMode,
             )
         }
@@ -981,10 +1192,11 @@ class CfirCallResolver(
      */
     private fun collectBuiltinArrayConstructorCandidates(
         functionCall: CfirFunctionCall,
-        classifier: CfirClassLikeSymbol<*>,
+        name: Name,
+        target: BuiltinArrayConstructorTarget,
         resolutionMode: ResolutionMode,
     ): ResolutionResult {
-        val callInfo = createClassifierCallInfo(functionCall, classifier, resolutionMode)
+        val callInfo = createBuiltinArrayConstructorCallInfo(functionCall, name, target, resolutionMode)
         val candidateFactory = CandidateFactory(transformer.resolutionContext, callInfo)
         val argumentCount = callInfo.arguments.size
 
@@ -993,27 +1205,18 @@ class CfirCallResolver(
                 candidateFactory.createBuiltinArrayConstructorCandidate(
                     callInfo = callInfo,
                     kind = BuiltinArrayConstructorKind.INIT_FUNCTION,
+                    target = target,
                 ).also { candidate ->
                     candidate.addDiagnostic(TooManyArguments(functionCall, callInfo.name))
                 },
             )
         } else {
-            val arrayCandidateKinds = when (argumentCount) {
-                0 -> listOf(BuiltinArrayConstructorKind.EMPTY)
-                1 -> if (functionCall.hasTrailingLambda) {
-                    listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
-                } else {
-                    listOf(BuiltinArrayConstructorKind.COLLECTION)
-                }
-                else -> listOf(
-                    BuiltinArrayConstructorKind.INIT_FUNCTION,
-                    BuiltinArrayConstructorKind.REPEAT_ELEMENT,
-                )
-            }
+            val arrayCandidateKinds = builtinArrayConstructorKinds(functionCall, target, argumentCount)
             arrayCandidateKinds.map { kind ->
                 candidateFactory.createBuiltinArrayConstructorCandidate(
                     callInfo = callInfo,
                     kind = kind,
+                    target = target,
                 )
             }
         }
@@ -1038,6 +1241,49 @@ class CfirCallResolver(
         )
     }
 
+    private fun builtinArrayConstructorKinds(
+        functionCall: CfirFunctionCall,
+        target: BuiltinArrayConstructorTarget,
+        argumentCount: Int,
+    ): List<BuiltinArrayConstructorKind> = when (target) {
+        BuiltinArrayConstructorTarget.Array -> when (argumentCount) {
+            0 -> listOf(BuiltinArrayConstructorKind.EMPTY)
+            1 -> if (functionCall.hasTrailingLambda) {
+                listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
+            } else {
+                listOf(BuiltinArrayConstructorKind.COLLECTION)
+            }
+            else -> listOf(
+                BuiltinArrayConstructorKind.INIT_FUNCTION,
+                BuiltinArrayConstructorKind.REPEAT_ELEMENT,
+            )
+        }
+        is BuiltinArrayConstructorTarget.VArray -> when (argumentCount) {
+            0 -> listOf(BuiltinArrayConstructorKind.EMPTY)
+            1 -> if (functionCall.argumentList.arguments.singleOrNull()?.hasExplicitArgumentName() == true) {
+                listOf(BuiltinArrayConstructorKind.REPEAT_ELEMENT)
+            } else {
+                listOf(BuiltinArrayConstructorKind.INIT_FUNCTION)
+            }
+            else -> listOf(BuiltinArrayConstructorKind.REPEAT_ELEMENT)
+        }
+    }
+
+    private fun CfirExpression.hasExplicitArgumentName(): Boolean {
+        val source = when (this) {
+            is CfirBlock -> source?.takeIf { statements.size == 1 }
+            else -> source
+        } ?: return false
+
+        val psiArgument = source.psi as? CjValueArgument
+        if (psiArgument != null) return psiArgument.getArgumentName() != null
+
+        val rawText = source.text?.toString()?.trim().orEmpty()
+        val separatorIndex = rawText.indexOf(':')
+        if (separatorIndex <= 0) return false
+        return Name.identifierIfValid(rawText.substring(0, separatorIndex).trim()) != null
+    }
+
     private fun createClassifierCallInfo(
         functionCall: CfirFunctionCall,
         classifier: CfirClassLikeSymbol<*>,
@@ -1048,6 +1294,59 @@ class CfirCallResolver(
         name = classifier.name,
         origin = functionCall.origin,
         explicitReceiver = functionCall.explicitReceiver,
+        arguments = functionCall.argumentList.arguments,
+        isUsedAsGetClassReceiver = false,
+        typeArguments = functionCall.typeArguments,
+        session = session,
+        containingFile = components.file,
+        containingDeclarations = transformer.components.containingDeclarations,
+        resolutionMode = resolutionMode,
+    )
+
+    private fun createBuiltinArrayConstructorCallInfo(
+        functionCall: CfirFunctionCall,
+        name: Name,
+        target: BuiltinArrayConstructorTarget,
+        resolutionMode: ResolutionMode,
+    ): CallInfo = CallInfo(
+        callSite = functionCall,
+        callKind = CallKind.Function,
+        name = name,
+        origin = functionCall.origin,
+        explicitReceiver = functionCall.explicitReceiver,
+        arguments = functionCall.argumentList.arguments,
+        isUsedAsGetClassReceiver = false,
+        typeArguments = functionCall.builtinArrayConstructorTypeArguments(target),
+        session = session,
+        containingFile = components.file,
+        containingDeclarations = transformer.components.containingDeclarations,
+        resolutionMode = resolutionMode,
+    )
+
+    /**
+     * 直写 `VArray<T, $N>` 中 `$N` 是内建 VArray 尺寸参数，不是合成构造函数的泛型实参。
+     *
+     * typealias 构造仍然保留别名声明的全部显式实参，因为这些实参用于展开后的 VArray 元素类型。
+     */
+    private fun CfirFunctionCall.builtinArrayConstructorTypeArguments(
+        target: BuiltinArrayConstructorTarget,
+    ): List<CfirTypeRef> {
+        if (target is BuiltinArrayConstructorTarget.VArray && target.elementType == null) {
+            return typeArguments.take(target.typeParameters.size)
+        }
+        return typeArguments
+    }
+
+    private fun createDelegatingConstructorCallInfo(
+        functionCall: CfirFunctionCall,
+        targetDeclaration: CfirClassLikeDeclaration,
+        resolutionMode: ResolutionMode,
+    ): CallInfo = CallInfo(
+        callSite = functionCall,
+        callKind = CallKind.DelegatingConstructorCall,
+        name = targetDeclaration.name,
+        origin = functionCall.origin,
+        explicitReceiver = null,
         arguments = functionCall.argumentList.arguments,
         isUsedAsGetClassReceiver = false,
         typeArguments = functionCall.typeArguments,
@@ -1240,7 +1539,6 @@ internal fun <T> reduceCollectedCandidates(
             applicability = candidateApplicability(candidate),
         )
     }
-
     val selectedGroup = groupedByApplicability.maxBy { it.key }
     return chooseMostSpecific(selectedGroup.value.toSet()) to selectedGroup.key
 }

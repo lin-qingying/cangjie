@@ -20,7 +20,7 @@ class A {
 
 main() {
     let a = A()
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.foo()[0]<!> = 18
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.foo()[0] = 18<!>
 
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>getb("left")[1]<!> = 0
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>getb("left")[1] = 0<!>
 }

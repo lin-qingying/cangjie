@@ -1,27 +1,3 @@
-/*
- * Copyright 2026 LinQingYing. and contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * The use of this source code is governed by the Apache License 2.0,
- * which allows users to freely use, modify, and distribute the code,
- * provided they adhere to the terms of the license.
- *
- * The software is provided "as-is", and the authors are not responsible for
- * any damages or issues arising from its use.
- *
- */
-
 package org.cangnova.cangjie.cfir.analysis.tests
 
 import com.intellij.testFramework.TestDataPath
@@ -5528,12 +5504,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
         @Test
         fun testBugfix1() {
             runTest("cfir/analysis-tests/testData/llt/accessibility/bugfix1.cj")
-        }
-
-        @TestMetadata("bugfix1.pkg.cj")
-        @Test
-        fun testBugfix1Pkg() {
-            runTest("cfir/analysis-tests/testData/llt/accessibility/bugfix1.pkg.cj")
         }
 
         @TestMetadata("common_super_type")
@@ -24002,12 +23972,6 @@ class CfirAnalysisLLTTestGenerated : AbstractCfirLightTreeLlTDiagnosticsTest() {
             fun testCheckVarray() {
                 runTest("cfir/analysis-tests/testData/llt/varray/generic/check_varray.cj")
             }
-
-            @TestMetadata("pkg.cj")
-            @Test
-            fun testPkg() {
-                runTest("cfir/analysis-tests/testData/llt/varray/generic/pkg.cj")
-            }
         }
     }
 
@@ -24250,7 +24214,7 @@ private fun assertAllFilesPresentByMetadata(testInstance: Any, testDataRootRelat
 
     val currentDir = currentClassTestDataDir(testInstance::class.java, testDataDir)
     val expected = currentDir.listFiles().orEmpty().asSequence()
-        .filter { it.isFile && it.extension == "cj" }
+        .filter { it.isGeneratedTestDataFile() }
         .map { it.relativeTo(currentDir).invariantSeparatorsPath }
         .toSet()
 
@@ -24335,3 +24299,15 @@ private fun File.isUnder(parent: File): Boolean {
     val childPath = canonicalFile.toPath()
     return childPath.startsWith(parentPath)
 }
+
+private fun File.isGeneratedTestDataFile(): Boolean {
+    if (!isFile || extension != "cj") return false
+    if (!isPackageCompanionName()) return true
+    val directory = parentFile ?: return true
+    return directory.listFiles().orEmpty().none { sibling ->
+        sibling.isFile && sibling.extension == "cj" && sibling != this && !sibling.isPackageCompanionName()
+    }
+}
+
+private fun File.isPackageCompanionName(): Boolean =
+    name == "pkg.cj" || name.endsWith(".pkg.cj")

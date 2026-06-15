@@ -235,6 +235,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INVALID_UNARY_EXPR: CjDiagnosticFactory2<String, ConeCangJieType> = CjDiagnosticFactory2("CFIR_INVALID_UNARY_EXPR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVALID_UNARY_EXPR_WITH_TARGET: CjDiagnosticFactory3<String, ConeCangJieType, ConeCangJieType> = CjDiagnosticFactory3("CFIR_INVALID_UNARY_EXPR_WITH_TARGET", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVALID_SUBSCRIPT_EXPR: CjDiagnosticFactory2<ConeCangJieType, String> = CjDiagnosticFactory2("CFIR_INVALID_SUBSCRIPT_EXPR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val BUILTIN_INDEX_IN_BOUND: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_BUILTIN_INDEX_IN_BOUND", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CANNOT_ASSIGN_TO_SUBSCRIPT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CANNOT_ASSIGN_TO_SUBSCRIPT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val NOT_MEMBER_OF: CjDiagnosticFactory3<Name, String, Name> = CjDiagnosticFactory3("CFIR_NOT_MEMBER_OF", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val MEMBER_NOT_IMPORTED: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_MEMBER_NOT_IMPORTED", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
@@ -496,6 +497,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     // Unused
     val UNUSED_IMPORT: CjDiagnosticFactory1<FqName> = CjDiagnosticFactory1("CFIR_UNUSED_IMPORT", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, CjImportItem::class, getRendererFactory())
     val UNUSED_EXPRESSION: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_UNUSED_EXPRESSION", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, CjExpression::class, getRendererFactory())
+    val TYPEALIAS_UNUSED_TYPE_PARAMETERS: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_TYPEALIAS_UNUSED_TYPE_PARAMETERS", Severity.WARNING, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
 
     // Mock
     val MOCK_DISABLED: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_MOCK_DISABLED", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())

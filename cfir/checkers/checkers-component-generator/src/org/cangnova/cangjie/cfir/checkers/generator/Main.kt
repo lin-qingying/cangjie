@@ -104,10 +104,13 @@ fun main(args: Array<String>) {
                     visitAlso<CfirLetPatternExpression>(it)
                 }
                 alias<CfirLiteralExpression>("LiteralExpressionChecker")
+                alias<CfirCall>("CallChecker", false)
                 alias<CfirFunctionCall>("FunctionCallChecker")
                 alias<CfirNamedAccessExpression>("NamedAccessChecker")
                 alias<CfirQualifiedAccessExpression>("QualifiedAccessChecker")
                 alias<CfirSuperReceiverExpression>("SuperReceiverExpressionChecker")
+                alias<CfirAnnotation>("AnnotationChecker")
+                alias<CfirAnnotationCall>("AnnotationCallChecker")
                 alias<CfirAssignment>("AssignmentChecker")
                 alias<CfirIncrementDecrementExpression>("IncrementDecrementExpressionChecker")
                 alias<CfirBinaryOp>("BinaryOpChecker")

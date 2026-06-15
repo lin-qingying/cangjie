@@ -11,5 +11,5 @@ enum E {
 
 main() {
     let arr = [A, B(0)]
-    <!sema_forin_pattern_must_be_irrefutable!>f<!>or (<!ENUM_PATTERN_PARAM_SIZE_ERROR!>E<!>.A(x) in arr) {}
+    <!FORIN_PATTERN_MUST_BE_IRREFUTABLE!>f<!>or (<!ENUM_PATTERN_PARAM_SIZE_ERROR!>E<!>.A(x) in arr) {}
 }

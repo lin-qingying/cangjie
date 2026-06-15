@@ -2,17 +2,22 @@ package org.cangnova.cangjie.cfir.scopes.impl
 
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirDeclaration
+import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirFieldVariable
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirProperty
 import org.cangnova.cangjie.cfir.declarations.callableNameOrNull
 import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
+import org.cangnova.cangjie.cfir.resolve.providers.createExtendDeclarationSubstitution
 import org.cangnova.cangjie.cfir.scopes.CfirExtendScope
+import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirClassLikeSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.toPrimitiveTypeKindOrNull
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
@@ -24,6 +29,8 @@ import org.cangnova.cangjie.name.Name
 class CfirExtendMemberScope(
     private val targetClassId: ClassId,
     private val extendProvider: CfirExtendProvider,
+    private val session: CfirSession,
+    private val receiverType: ConeCangJieType,
 ) : CfirExtendScope() {
 
     private val memberIndex: MemberIndex by lazy { buildIndex() }
@@ -66,7 +73,7 @@ class CfirExtendMemberScope(
             }
         }
         for (extend in extends) {
-            if (!extendProvider.isExtendAccessible(extend)) continue
+            if (!extend.isApplicableAtReceiver()) continue
             for (declaration in extend.declarations) {
                 indexDeclaration(
                     declaration = declaration,
@@ -78,6 +85,23 @@ class CfirExtendMemberScope(
             }
         }
         return MemberIndex(classifiers, functions, properties, variables)
+    }
+
+    /**
+     * extend member scope 必须和 use-site substitution/receiver 检查共享同一适用性规则。
+     *
+     * 只按目标 ClassId 建索引会把不满足泛型约束的 extend 成员暴露给调用解析；
+     * 官方成员访问流程会在候选阶段删除这些目标。
+     */
+    private fun CfirExtend.isApplicableAtReceiver(): Boolean {
+        if (!extendProvider.isExtendAccessible(this)) return false
+        val targetPattern = extendedTypeRef.coneTypeOrNull ?: return false
+        return createExtendDeclarationSubstitution(
+            session = session,
+            extend = this,
+            targetPattern = targetPattern,
+            concreteReceiverType = receiverType,
+        ) != null
     }
 
     private fun indexDeclaration(

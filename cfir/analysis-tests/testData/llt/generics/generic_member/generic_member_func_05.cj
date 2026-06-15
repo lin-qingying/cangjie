@@ -21,7 +21,7 @@ class B<X> <: A<X> {
         println("b");
         x
     }
-    public func <!sema_cannot_override!>goo<!><Y>(x: Y): Y {
+    public func <!CANNOT_OVERRIDE!>goo<!><Y>(x: Y): Y {
         println("b");
         x
     }

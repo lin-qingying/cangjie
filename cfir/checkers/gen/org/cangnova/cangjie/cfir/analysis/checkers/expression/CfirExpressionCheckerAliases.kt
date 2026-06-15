@@ -7,8 +7,11 @@ package org.cangnova.cangjie.cfir.analysis.checkers.expression
  * 请勿手动修改
  */
 
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotation
+import org.cangnova.cangjie.cfir.expressions.CfirAnnotationCall
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
 import org.cangnova.cangjie.cfir.expressions.CfirBinaryOp
+import org.cangnova.cangjie.cfir.expressions.CfirCall
 import org.cangnova.cangjie.cfir.expressions.CfirComparisonExpression
 import org.cangnova.cangjie.cfir.expressions.CfirErrorExpression
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
@@ -30,10 +33,13 @@ import org.cangnova.cangjie.cfir.expressions.CfirTypeOperator
 
 typealias CfirBasicExpressionChecker = CfirExpressionChecker<CfirStatement>
 typealias CfirLiteralExpressionChecker = CfirExpressionChecker<CfirLiteralExpression>
+typealias CfirCallChecker = CfirExpressionChecker<CfirCall>
 typealias CfirFunctionCallChecker = CfirExpressionChecker<CfirFunctionCall>
 typealias CfirNamedAccessChecker = CfirExpressionChecker<CfirNamedAccessExpression>
 typealias CfirQualifiedAccessChecker = CfirExpressionChecker<CfirQualifiedAccessExpression>
 typealias CfirSuperReceiverExpressionChecker = CfirExpressionChecker<CfirSuperReceiverExpression>
+typealias CfirAnnotationChecker = CfirExpressionChecker<CfirAnnotation>
+typealias CfirAnnotationCallChecker = CfirExpressionChecker<CfirAnnotationCall>
 typealias CfirAssignmentChecker = CfirExpressionChecker<CfirAssignment>
 typealias CfirIncrementDecrementExpressionChecker = CfirExpressionChecker<CfirIncrementDecrementExpression>
 typealias CfirBinaryOpChecker = CfirExpressionChecker<CfirBinaryOp>

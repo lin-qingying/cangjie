@@ -45,7 +45,7 @@ object CfirGenericDeepChecker : CfirTypeParameterChecker() {
             if (boundType is ConeErrorType) continue
             if (boundType is ConeTypeParameterType && boundType.lookupTag.name == paramName) {
                 reporter.reportOn(
-                    source = boundRef.source ?: typeParam.source,
+                    source = typeParam.source,
                     factory = CfirErrors.GENERIC_PARAM_DIRECTLY_RECURSIVE,
                     a = paramName,
                     b = paramName,
@@ -72,7 +72,7 @@ object CfirGenericDeepChecker : CfirTypeParameterChecker() {
             // 检查上界类型的类型参数中是否间接包含当前泛型参数
             if (containsTypeParameterInArgs(boundType, paramName)) {
                 reporter.reportOn(
-                    source = boundRef.source ?: typeParam.source,
+                    source = typeParam.source,
                     factory = CfirErrors.GENERIC_PARAM_EXIST_IN_CLASS_IRRELEVANT_UPPERBOUND_RECURSIVELY,
                     a = paramName,
                     b = boundType,

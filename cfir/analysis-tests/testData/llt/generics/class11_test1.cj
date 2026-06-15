@@ -8,7 +8,7 @@
 struct B<T> {}
 
 class A<T> {
-    public operator func [](b: <!sema_generic_infinite_instantiation!>A<!><B<T>>): Bool {
+    public operator func [](b: <!GENERIC_INFINITE_INSTANTIATION!>A<!><B<T>>): Bool {
         true
     }
     public func test(a: A<T>, b: A<B<T>>): Bool {

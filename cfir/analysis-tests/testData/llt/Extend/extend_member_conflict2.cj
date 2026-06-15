@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -6,20 +7,20 @@
 
 
 extend A {
-    <!sema_static_and_non_static_member_cannot_have_same_name!>p<!>ublic func x1() {}
-    public static func <!sema_extend_member_cannot_shadow!>x2<!>() {}
-    public func <!sema_extend_member_cannot_shadow!>y1<!>() {}
-    <!sema_static_and_non_static_member_cannot_have_same_name!>p<!>ublic static func y2() {}
-    <!sema_static_and_non_static_member_cannot_have_same_name!>p<!>ublic func <!sema_extend_member_cannot_shadow!>f1<!>() {}
-    public static func <!sema_extend_member_cannot_shadow!>f2<!>() {}
-    public func <!sema_extend_member_cannot_shadow!>g1<!>() {}
-    <!sema_static_and_non_static_member_cannot_have_same_name!>p<!>ublic static func <!sema_extend_member_cannot_shadow!>g2<!>() {}
+    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic func x1() {}
+    public static func <!EXTEND_MEMBER_CANNOT_SHADOW!>x2<!>() {}
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>y1<!>() {}
+    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func y2() {}
+    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic func <!EXTEND_MEMBER_CANNOT_SHADOW!>f1<!>() {}
+    public static func <!EXTEND_MEMBER_CANNOT_SHADOW!>f2<!>() {}
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>g1<!>() {}
+    <!STATIC_AND_NON_STATIC_MEMBER_CANNOT_HAVE_SAME_NAME!>p<!>ublic static func <!EXTEND_MEMBER_CANNOT_SHADOW!>g2<!>() {}
 }
 
 extend A {
-    private func <!sema_extend_member_cannot_shadow!>a<!>() {}
-    public func <!sema_extend_member_cannot_shadow!>b<!>() {}
-    private func <!sema_extend_member_cannot_shadow!>c<!>() {}
+    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>a<!>() {}
+    public func <!EXTEND_MEMBER_CANNOT_SHADOW!>b<!>() {}
+    private func <!EXTEND_MEMBER_CANNOT_SHADOW!>c<!>() {}
     public func d() {}
     private func e() {}
 }

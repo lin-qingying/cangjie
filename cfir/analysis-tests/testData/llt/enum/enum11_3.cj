@@ -18,8 +18,8 @@ enum Time<T> {
 }
 
 func run(): Int64 {
-    var time1 = <!sema_ambiguous_arg_type!>T<!>ime.Day(getTime<Int32>)
-    var time = Time.Day(<!sema_generic_type_without_type_argument!>g<!>etTime)
+    var time1 = <!AMBIGUOUS_ARG_TYPE!>T<!>ime.Day(getTime<Int32>)
+    var time = Time.Day(<!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>g<!>etTime)
     var res: Int32 = match (time) {
         case Day(x) => x(3)
     }

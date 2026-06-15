@@ -30,6 +30,7 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
     override var argumentList: CfirArgumentList = CfirEmptyArgumentList
     override var origin: CfirFunctionCallOrigin = CfirFunctionCallOrigin.Regular
     override var hasTrailingLambda: Boolean = false
+    override var varraySizeLiteral: String? = null
 
     @OptIn(CfirImplementationDetail::class)
     override fun build(): CfirFunctionCall {
@@ -44,6 +45,7 @@ open class CfirFunctionCallBuilder : CfirAbstractFunctionCallBuilder {
             argumentList,
             origin,
             hasTrailingLambda,
+            varraySizeLiteral,
         )
     }
 
@@ -73,5 +75,6 @@ inline fun buildFunctionCallCopy(original: CfirFunctionCall, init: CfirFunctionC
     copyBuilder.argumentList = original.argumentList
     copyBuilder.origin = original.origin
     copyBuilder.hasTrailingLambda = original.hasTrailingLambda
+    copyBuilder.varraySizeLiteral = original.varraySizeLiteral
     return copyBuilder.apply(init).build()
 }

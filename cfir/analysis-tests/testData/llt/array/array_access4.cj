@@ -6,7 +6,7 @@
 
 
 main() {
-    var slicing1 = <!sema_illegal_access_non_static_member!>A<!>rray<Bool>[3]
-    <!sema_illegal_access_non_static_member!>A<!>rray<Bool>[3] = 1
+    var slicing1 = <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>A<!>rray<Bool>[3]
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>A<!>rray<Bool>[3] = 1
     return 0
 }

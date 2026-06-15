@@ -11,7 +11,7 @@ interface I0 {
     }
 
     func foo1(): Int64 {
-        var res = <!sema_object_cannot_access_static_member!>t<!>his.foo()
+        var res = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>t<!>his.foo()
         return res
     }
 }

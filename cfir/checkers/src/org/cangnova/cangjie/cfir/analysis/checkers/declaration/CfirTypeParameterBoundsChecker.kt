@@ -10,7 +10,9 @@ import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.declarations.CfirTypeParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
 import org.cangnova.cangjie.cfir.types.ConeAnyType
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
@@ -20,7 +22,9 @@ import org.cangnova.cangjie.cfir.types.ConeTypeAliasType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.renderForDebugging
+import org.cangnova.cangjie.cfir.types.type
 import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.name.Name
 import org.cangnova.cangjie.type.AbstractTypeChecker
 
 object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
@@ -33,6 +37,8 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
         nonErrorBounds.forEach { bound ->
             uniqueBounds.putIfAbsent(bound.stableBoundKey(), bound)
         }
+
+        if (uniqueBounds.values.any { it.hasRecursiveBoundFailure(declaration.name) }) return
 
         val invalidBounds = uniqueBounds.values
             .mapNotNull { bound -> bound.takeIf { it.upperBoundKind() == UpperBoundKind.INVALID } }
@@ -59,6 +65,27 @@ object CfirTypeParameterBoundsChecker : CfirTypeParameterChecker() {
 private fun CfirResolvedTypeRef.stableBoundKey(): String = coneType
     .fullyExpandTypeAlias()
     .renderForDebugging()
+
+context(context: CheckerContext)
+private fun CfirResolvedTypeRef.hasRecursiveBoundFailure(parameterName: Name): Boolean {
+    val expandedType = coneType.fullyExpandTypeAlias()
+    if (expandedType is ConeTypeParameterType && expandedType.lookupTag.name == parameterName) return true
+    if (expandedType.isClassLikeUpperBound()) return false
+    return expandedType.containsTypeParameterInArguments(parameterName)
+}
+
+context(context: CheckerContext)
+private fun ConeCangJieType.isClassLikeUpperBound(): Boolean =
+    fullyExpandedType(context.session) is ConeClassLikeType
+
+private fun ConeCangJieType.containsTypeParameterInArguments(parameterName: Name): Boolean {
+    for (argument in typeArguments) {
+        val argumentType = argument.type ?: continue
+        if (argumentType is ConeTypeParameterType && argumentType.lookupTag.name == parameterName) return true
+        if (argumentType.containsTypeParameterInArguments(parameterName)) return true
+    }
+    return false
+}
 
 context(context: CheckerContext)
 private fun CfirResolvedTypeRef.upperBoundKind(): UpperBoundKind {

@@ -7,7 +7,7 @@
 
 func f(x: Int64) {
     match (x) {
-        case <!sema_unreachable_pattern!>_: Nothing<!> => -1 // unreachable
+        case <!UNREACHABLE_PATTERN!>_: Nothing<!> => -1 // unreachable
         case _: ToString => 0
     }
 }

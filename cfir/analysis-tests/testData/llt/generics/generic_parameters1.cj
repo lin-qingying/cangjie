@@ -6,8 +6,8 @@
 
 
 open class Base<U> {
-    public var a: <!sema_undeclared_type_name!>T<!>
-    public init(x: <!sema_undeclared_type_name!>T<!>) {
+    public var a: <!UNDECLARED_TYPE_NAME!>T<!>
+    public init(x: <!UNDECLARED_TYPE_NAME!>T<!>) {
         a = x
     }
 }
@@ -15,7 +15,7 @@ open class Base<U> {
 class Data<T> <: Base<Int32> {
     public var f: T
     public init(input: T) {
-        <!sema_no_match_function_declaration_for_call!>s<!>uper(0)
+        <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>s<!>uper(0)
         f = input
     }
 }

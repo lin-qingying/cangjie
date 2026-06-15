@@ -9,16 +9,16 @@ enum A<T> {
     a(T)
 
     public static func foo() {
-        <!sema_static_function_cannot_access_non_static_member!>t<!>est()
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>t<!>est()
     }
     public func test() {}
 }
 
 class B {}
 
-func test<<!sema_upper_bound_must_be_class_or_interface!>T<!>>() where T <: Option<B> {}
+func test<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>>() where T <: Option<B> {}
 
 main(): Int64 {
-    test<<!sema_generic_type_argument_not_match_constraint!>B<!>>()
+    test<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>B<!>>()
     return 1
 }

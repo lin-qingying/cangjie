@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-<!sema_value_type_recursive!>p<!>ublic struct Record10 {
+<!VALUE_TYPE_RECURSIVE!>p<!>ublic struct Record10 {
     public let var69: (Record10, Rune) = (<!RECURSIVE_CONSTRUCTOR_CALL!>Record10<!>(), r'd');
 }
 

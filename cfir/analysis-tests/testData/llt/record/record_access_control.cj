@@ -20,12 +20,12 @@ struct A {
     }
     private func l() {}
     public static func n() {
-        <!sema_static_function_cannot_access_non_static_member!>a<!>
-        <!sema_static_function_cannot_access_non_static_member!>b<!>
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!>
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>b<!>
         c // ok
         d // ok
-        <!sema_static_function_cannot_access_non_static_member!>l<!>()
-        <!sema_static_function_cannot_access_non_static_member!>m<!>()
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>l<!>()
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>m<!>()
         o() // ok
     }
     private static func o() {}
@@ -44,32 +44,32 @@ struct A {
 
 main() {
     A().a // ok
-    <!sema_illegal_access_non_static_member!>A<!>.a
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>A<!>.a
 
-    <!sema_invalid_access_control!>A<!>().b
-    <!sema_illegal_access_non_static_member!>A<!>.b
+    <!INVALID_ACCESS_CONTROL!>A<!>().b
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>A<!>.b
 
-    <!sema_object_cannot_access_static_member!>A<!>().c
+    <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>A<!>().c
     A.c // ok
 
-    <!sema_object_cannot_access_static_member!>A<!>().d
-    <!sema_invalid_access_control!>A<!>.d
+    <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>A<!>().d
+    <!INVALID_ACCESS_CONTROL!>A<!>.d
 
     A().m()
-    <!sema_illegal_access_non_static_member!>A<!>.m()
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>A<!>.m()
 
-    A().<!sema_no_match_function_declaration_for_call!>l<!>()
-    <!sema_illegal_access_non_static_member!>A<!>.l()
+    A().<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>l<!>()
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>A<!>.l()
 
-    <!sema_object_cannot_access_static_member!>A<!>().n()
+    <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>A<!>().n()
     A.n() // ok
 
-    <!sema_object_cannot_access_static_member!>A<!>().o()
-    A.<!sema_no_match_function_declaration_for_call!>o<!>()
+    <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>A<!>().o()
+    A.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>o<!>()
 
-    <!sema_ref_not_be_type!>A<!> <!sema_invalid_binary_expr!>+<!> <!sema_ref_not_be_type!>A<!>
+    <!REF_NOT_BE_TYPE!>A<!> <!INVALID_BINARY_OPERATOR!>+<!> <!REF_NOT_BE_TYPE!>A<!>
     A() + A()
 
-    A() <!sema_invalid_binary_expr!>-<!> A()
+    A() <!INVALID_BINARY_OPERATOR!>-<!> A()
     return 0
 }

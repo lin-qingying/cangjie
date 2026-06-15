@@ -12,7 +12,7 @@ open class CI<T> <: A<C<T>> {}
 
 interface A<T> <: B<C<T>> {}
 
-open class C<T> <: <!sema_generic_infinite_instantiation!>A<!><C<T>> {}
+open class C<T> <: <!GENERIC_INFINITE_INSTANTIATION!>A<!><C<T>> {}
 
 main() {
     return 0

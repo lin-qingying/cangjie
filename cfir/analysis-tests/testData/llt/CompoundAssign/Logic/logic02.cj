@@ -8,7 +8,7 @@
 main(): Int64 {
     var a = 2
     var b = 15
-    <!sema_type_incompatible!>a<!> &&= b
-    <!sema_type_incompatible!>a<!> ||= b
+    <!TYPE_INCOMPATIBLE!>a<!> &&= b
+    <!TYPE_INCOMPATIBLE!>a<!> ||= b
     return 0
 }

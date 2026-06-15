@@ -24,16 +24,22 @@ fun isVisible(
     val session = candidate.callInfo.session
     val useSiteFile = candidate.callInfo.containingFile
     val containingDeclarations = candidate.callInfo.containingDeclarations
+    val declarationContainingFile = session.cfirProvider.getContainingFile(declaration.symbol)
+
+    // 仓颉官方 lookup 对成员访问先执行同文件放行，再进入访问级别判断。
+    if (declarationContainingFile != null && useSiteFile == declarationContainingFile) {
+        return true
+    }
 
     return when (declaration.status.visibility) {
         Visibilities.Public -> true
         Visibilities.Internal -> {
-            canSeePackageInternalDeclaration(session, useSiteFile, declaration)
+            canSeePackageInternalDeclaration(useSiteFile, declarationContainingFile)
         }
         Visibilities.Private -> {
             val ownerClassId = declaration.symbol.getOwnerClassId(session.cfirProvider)
             when (ownerClassId) {
-                null -> canSeePrivateTopLevelDeclarationFromFile(session, useSiteFile, declaration)
+                null -> canSeePrivateTopLevelDeclarationFromFile(useSiteFile, declarationContainingFile)
                 else -> canSeePrivateMemberOf(ownerClassId, containingDeclarations)
             }
         }
@@ -54,22 +60,19 @@ fun isVisible(
  * 避免 resolve、checker、type-accessibility 再各自复制一套规则。
  */
 private fun canSeePackageInternalDeclaration(
-    session: org.cangnova.cangjie.cfir.session.CfirSession,
     useSiteFile: CfirFile,
-    declaration: CfirMemberDeclaration,
+    declarationContainingFile: CfirFile?,
 ): Boolean {
-    val declarationContainingFile = session.cfirProvider.getContainingFile(declaration.symbol) ?: return false
+    declarationContainingFile ?: return false
     val declarationPackage = declarationContainingFile.packageDirective.packageFqName
     val useSitePackage = useSiteFile.packageDirective.packageFqName
     return canAccessPackageInternalDeclaration(useSitePackage, declarationPackage)
 }
 
 private fun canSeePrivateTopLevelDeclarationFromFile(
-    session: org.cangnova.cangjie.cfir.session.CfirSession,
     useSiteFile: CfirFile,
-    declaration: CfirMemberDeclaration,
+    declarationContainingFile: CfirFile?,
 ): Boolean {
-    val declarationContainingFile = session.cfirProvider.getContainingFile(declaration.symbol) ?: return false
     return useSiteFile == declarationContainingFile
 }
 

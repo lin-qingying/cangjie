@@ -36,7 +36,7 @@ public class Foos {
 package test
 
 main(): Int64 {
-    let a: <!sema_undeclared_type_name!>F<!>oos = <!sema_undeclared_identifier!>F<!>oos()
+    let a: <!UNDECLARED_TYPE_NAME!>F<!>oos = <!UNRESOLVED_REFERENCE!>F<!>oos()
 
     a.foos.toArray()
     a.foos.contains(Foo("1"))

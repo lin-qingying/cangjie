@@ -6,7 +6,7 @@
 
 
 main() {
-    let err = <!sema_no_match_operator_function_call!>1<!>(false)
+    let err = <!NO_MATCH_OPERATOR_FUNCTION_CALL!>1<!>(false)
     spawn {err} && false
     spawn {err}.x
 

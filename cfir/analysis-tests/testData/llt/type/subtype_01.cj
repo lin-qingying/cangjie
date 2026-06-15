@@ -7,6 +7,6 @@
 
 interface I {}
 
-<!sema_generic_type_argument_not_match_constraint!>c<!>lass A<<!sema_multiple_class_upperbounds!>T<!>> <: I where T <: A<T> & A<<!sema_generic_type_argument_not_match_constraint!>I<!>nt64> {}
+<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>c<!>lass A<<!MULTIPLE_CLASS_UPPER_BOUNDS!>T<!>> <: I where T <: A<T> & A<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>I<!>nt64> {}
 
 main() {}

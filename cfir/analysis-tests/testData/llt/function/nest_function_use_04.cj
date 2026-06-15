@@ -6,14 +6,14 @@
 
 
 class A {
-    static func <!sema_unable_to_infer_return_type!>foo<!><T>(a: T) {
+    static func <!UNABLE_TO_INFER_RETURN_TYPE!>foo<!><T>(a: T) {
         bar<Int64>(1)
         a
     }
 }
 
 func bar<T>(a: T) {
-    let b = {a: Any => ()}(<!sema_no_match_function_declaration_for_ref!>A<!>.foo<Int64>) // Use type func unknown as reference
+    let b = {a: Any => ()}(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>A<!>.foo<Int64>) // Use type func unknown as reference
     a
 }
 

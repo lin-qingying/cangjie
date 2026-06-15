@@ -7,6 +7,6 @@
 
 main(): Int64 {
     var a: Int8 = 1
-    a <<= <!sema_const_eval_shift_count_overflow!>8<!>
+    a <<= <!CONST_EVAL_SHIFT_COUNT_OVERFLOW!>8<!>
     return 0
 }

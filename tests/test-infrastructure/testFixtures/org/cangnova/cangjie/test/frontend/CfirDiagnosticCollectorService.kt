@@ -180,9 +180,17 @@ open class CfirDiagnosticCollectorService(
         root.accept(object : com.intellij.psi.PsiRecursiveElementWalkingVisitor() {
             override fun visitElement(element: PsiElement) {
                 if (element is PsiErrorElement) {
-                    val factory = CjSyntaxErrors.factoryForParserMessage(element.errorDescription)
-                    if (factory != null) {
-                        collector.reportOn(element.toCjPsiSourceElement(), factory, context)
+                    CjSyntaxErrors.diagnosticsForParserError(
+                        code = element.containingFile.text,
+                        startOffset = element.textRange.startOffset,
+                        endOffset = element.textRange.endOffset,
+                        message = element.errorDescription,
+                    ).forEach { diagnostic ->
+                        collector.reportOn(
+                            CjOffsetsOnlySourceElement(diagnostic.startOffset, diagnostic.endOffset),
+                            diagnostic.factory,
+                            context,
+                        )
                     }
                 }
                 super.visitElement(element)

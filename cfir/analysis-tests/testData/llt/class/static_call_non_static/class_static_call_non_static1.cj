@@ -28,17 +28,17 @@ class Data {
 
     operator func -(operand: Data): Data {
         var left: Int32 = getWidth() - 1
-        <!sema_mismatched_types!>var right: Int32 = getLength() - 1<!>
+        <!TYPE_MISMATCH!>var right: Int32 = getLength() - 1<!>
     }
 
     static func g() {
-        var x = <!sema_static_function_cannot_access_non_static_member!>w<!>idth
+        var x = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>w<!>idth
         return x
     }
 }
 
 func run(): Int64 {
     var data: Data = Data(1, 2)
-    var dd = <!sema_invalid_unary_expr!>-data<!>
+    var dd = <!INVALID_UNARY_EXPR!>-data<!>
     return 0
 }

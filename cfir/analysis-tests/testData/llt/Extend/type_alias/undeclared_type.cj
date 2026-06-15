@@ -7,11 +7,11 @@
 
 type A<T, k> = structA<T, k>
 
-type TI<T, K> = <!sema_not_a_type!>I<!><T, <!sema_undeclared_type_name!>O<!>>
+type TI<T, K> = <!NOT_A_TYPE!>I<!><T, <!UNDECLARED_TYPE_NAME!>O<!>>
 
 var d = r'#'
 
-extend<<!sema_upper_bound_must_be_class_or_interface!>T<!>, <!sema_upper_bound_must_be_class_or_interface!>K<!>> structA<T, K> <: <!sema_extend_not_interface!>TI<T, K><!> where T <: Rune, K <: String {
+extend<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>K<!>> structA<T, K> <: <!EXTEND_NOT_INTERFACE!>TI<T, K><!> where T <: Rune, K <: String {
     mut static prop i: Rune {
         get() {
             d
@@ -33,7 +33,7 @@ interface I<T, K> {
     }
 }
 
-struct structA<<!sema_upper_bound_must_be_class_or_interface!>T<!>, <!sema_upper_bound_must_be_class_or_interface!>K<!>> where T <: Rune, K <: String {
+struct structA<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>T<!>, <!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>K<!>> where T <: Rune, K <: String {
     var a: T
     var b: K
     structA(x: T, y: K) {

@@ -31,6 +31,7 @@ import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
+import org.cangnova.cangjie.cfir.resolve.providers.createCallableOwnerUseSiteSubstitutionMap
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeDeclaredUpperBoundConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.inference.model.ConeExplicitTypeParameterConstraintPosition
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
@@ -38,6 +39,7 @@ import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariabl
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.cfirProvider
 import org.cangnova.cangjie.cfir.session.symbolProvider
+import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemOperation
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
@@ -57,15 +59,29 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
     context(sink: CheckerSink, context: ResolutionContext)
     override suspend fun check(candidate: Candidate) {
         val declaration = candidate.symbol.cfir
+        val knownOwnerSubstitutions = createCallableOwnerUseSiteSubstitutionMap(
+            session = context.session,
+            callableSymbol = candidate.symbol as? CfirCallableSymbol<*>,
+            receiverType = candidate.useSiteReceiverType(),
+        )
         val typeParameters = collectCandidateTypeParametersForFreshVariables(context.session, candidate, declaration)
+            .filterNot { typeParameter -> typeParameter.symbol.toLookupTag() in knownOwnerSubstitutions }
         if (typeParameters.isEmpty()) {
-            candidate.initializeSubstitutorAndVariables(ConeSubstitutor.Empty, emptyList())
+            val substitutor = knownOwnerSubstitutions
+                .takeIf { it.isNotEmpty() }
+                ?.let(::CfirTypeSubstitutorByMap)
+                ?: ConeSubstitutor.Empty
+            candidate.initializeSubstitutorAndVariables(substitutor, emptyList())
             return
         }
 
         val csBuilder = candidate.system.getBuilder()
         val (substitutor, freshVariables) =
-            createToFreshVariableSubstitutorAndAddInitialConstraints(typeParameters, csBuilder)
+            createToFreshVariableSubstitutorAndAddInitialConstraints(
+                typeParameters,
+                knownOwnerSubstitutions,
+                csBuilder,
+            )
         candidate.initializeSubstitutorAndVariables(substitutor, freshVariables)
 
         // 声明侧存在矛盾（如上界冲突）——直接标记不可用
@@ -112,13 +128,18 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
      */
     private fun createToFreshVariableSubstitutorAndAddInitialConstraints(
         typeParameters: List<CfirTypeParameterRef>,
+        knownSubstitutions: Map<TypeConstructorMarker, ConeCangJieType>,
         csBuilder: ConstraintSystemOperation,
     ): Pair<ConeSubstitutor, List<ConeTypeVariable>> {
         val freshTypeVariables = typeParameters.map { ConeTypeParameterBasedTypeVariable(it.symbol) }
 
         // 构建替代器：声明侧类型参数 constructor → 新鲜类型变量的默认类型
-        val replacements: Map<TypeConstructorMarker, ConeCangJieType> = freshTypeVariables.associate {
-            it.typeParameterSymbol.toLookupTag() to (it.defaultType as ConeCangJieType)
+        val replacements = LinkedHashMap<TypeConstructorMarker, ConeCangJieType>()
+        // 已由 use-site receiver 明确给出的 owner 类型实参必须保留为已知替换，
+        // 不能再为同一个 owner 类型参数创建 fresh variable 覆盖它。
+        replacements += knownSubstitutions
+        freshTypeVariables.forEach {
+            replacements[it.typeParameterSymbol.toLookupTag()] = it.defaultType as ConeCangJieType
         }
         val toFreshVariables = CfirTypeSubstitutorByMap(replacements)
 
@@ -141,6 +162,11 @@ object CfirCreateFreshTypeVariableSubstitutorStage : ResolutionStage() {
 
         return toFreshVariables to freshTypeVariables
     }
+
+    private fun Candidate.useSiteReceiverType(): ConeCangJieType? =
+        dispatchReceiverExpression()?.coneTypeOrNull
+            ?: chosenExtensionReceiverExpression()?.coneTypeOrNull
+            ?: callInfo.explicitReceiver?.coneTypeOrNull
 
     /**
      * 返回调用候选参与显式类型实参映射和 fresh-variable 初始化的类型参数。

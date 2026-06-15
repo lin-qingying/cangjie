@@ -33,17 +33,17 @@ func Test() {
         callback: Option<(Int64, Int64) -> Unit>.Some(
             {
                 start: Int64, end: Int64 =>
-                let a = Some<bbb>(bbb.<!sema_not_member_of!>cente<!>)
+                let a = Some<bbb>(bbb.<!NOT_MEMBER_OF!>cente<!>)
                 return
             }
         )
     )
 
-    aaa(<!sema_mismatched_types!>ccc(Int16(1))<!>)
-    aaa(ccc(<!sema_cannot_convert_literal!>r<!>'a'))
-    aaa(ccc(a: r'a', <!sema_unordered_arguments!>1<!>))
-    aaa(ccc(a: r'a', <!sema_multiple_named_argument!>a<!>: 1))
-    aaa(ccc(a: <!sema_cannot_convert_literal!>r<!>'a', b: 1))
+    aaa(<!TYPE_MISMATCH!>ccc(Int16(1))<!>)
+    aaa(ccc(<!CANNOT_CONVERT_LITERAL!>r<!>'a'))
+    aaa(ccc(a: r'a', <!UNORDERED_ARGUMENTS!>1<!>))
+    aaa(ccc(a: r'a', <!MULTIPLE_NAMED_ARGUMENT!>a<!>: 1))
+    aaa(ccc(a: <!CANNOT_CONVERT_LITERAL!>r<!>'a', b: 1))
     return 0
 }
 
