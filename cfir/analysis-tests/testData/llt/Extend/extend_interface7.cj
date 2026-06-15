@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -7,12 +8,12 @@
 
 class A {}
 
-extend Int64 <: <!sema_extend_not_interface!>Int64<!> {}
+extend Int64 <: <!EXTEND_NOT_INTERFACE!>Int64<!> {}
 
-extend A <: <!sema_extend_not_interface!>Int64<!> {}
+extend A <: <!EXTEND_NOT_INTERFACE!>Int64<!> {}
 
-extend Int64 <: <!sema_extend_not_interface!>A<!> {}
+extend Int64 <: <!EXTEND_NOT_INTERFACE!>A<!> {}
 
-extend A <: <!sema_extend_not_interface!>A<!> {}
+extend A <: <!EXTEND_NOT_INTERFACE!>A<!> {}
 
-extend A <: <!sema_extend_not_interface!>Int64<!> & <!sema_extend_not_interface!>A<!> {}
+extend A <: <!EXTEND_NOT_INTERFACE!>Int64<!> & <!EXTEND_NOT_INTERFACE!>A<!> {}

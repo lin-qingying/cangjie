@@ -25,11 +25,13 @@
 package org.cangnova.cangjie.cfir.analysis.checkers
 
 import org.cangnova.cangjie.LanguageVersionSettings
+import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.lexer.CjKeywordToken
 import org.cangnova.cangjie.lexer.CjTokens.*
+import org.cangnova.cangjie.source.CjFakeSourceElementKind
 import java.util.*
 
 internal enum class CangJieTarget(val description: String, val isDefault: Boolean = true) {
@@ -202,6 +204,17 @@ internal val possibleTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = mapOf(
     FOREIGN_KEYWORD to EnumSet.of(
         CangJieTarget.TOP_LEVEL_FUNCTION,
     ),
+    UNSAFE_KEYWORD to EnumSet.of(
+        CangJieTarget.TOP_LEVEL_FUNCTION,
+        CangJieTarget.MEMBER_FUNCTION,
+        CangJieTarget.STRUCT_MEMBER_FUNCTION,
+        CangJieTarget.CLASS_MEMBER_FUNCTION,
+        CangJieTarget.INTERFACE_MEMBER_FUNCTION,
+        CangJieTarget.EXTEND_MEMBER_FUNCTION,
+        CangJieTarget.ENUM_MEMBER_FUNCTION,
+        CangJieTarget.LOCAL_FUNCTION,
+        CangJieTarget.FUNCTION,
+    ),
 )
 
 internal val deprecatedTargetMap: Map<CjKeywordToken, Set<CangJieTarget>> = emptyMap()
@@ -277,7 +290,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
         AnnotationTargetLists.T_TOP_LEVEL_VARIABLE.defaultTargets
     }
     is CfirFieldVariable -> AnnotationTargetLists.T_MEMBER_VARIABLE.defaultTargets
-    is CfirValueParameter -> if (declaration.isVar) {
+    is CfirValueParameter -> if (declaration.correspondingProperty != null) {
         AnnotationTargetLists.T_VALUE_PARAMETER_WITH_LET.defaultTargets
     } else {
         AnnotationTargetLists.T_VALUE_PARAMETER_WITHOUT_LET.defaultTargets
@@ -300,7 +313,7 @@ internal fun CheckerContext.actualTargetsFor(declaration: CfirDeclaration): List
     else -> AnnotationTargetLists.EMPTY.defaultTargets
 }
 
-internal fun CheckerContext.actualParentTargets(): List<CangJieTarget> = when (val parent = containingDeclarations.lastOrNull()) {
+internal fun CheckerContext.actualParentTargets(): List<CangJieTarget> = when (val parent = closestModifierContainingDeclaration()) {
     is CfirClassLikeDeclaration -> CangJieTarget.classActualTargets(parent)
     is CfirExtend -> CangJieTarget.EXTEND_LIST
     is CfirEnumConstructor -> CangJieTarget.ENUM_ENTRY_LIST
@@ -308,6 +321,14 @@ internal fun CheckerContext.actualParentTargets(): List<CangJieTarget> = when (v
     is CfirFunction -> CangJieTarget.FUNCTION_LIST
     else -> CangJieTarget.FILE_LIST
 }
+
+private fun CheckerContext.closestModifierContainingDeclaration(): CfirDeclaration? =
+    containingDeclarations.asReversed().firstOrNull { declaration ->
+        // 对齐 Kotlin FirModifierChecker：属性参数修饰符的包含声明应越过主构造和 fake property，落到外层类型。
+        declaration !is CfirProperty &&
+                !(declaration is CfirConstructor && declaration.isPrimary) &&
+                declaration.source?.kind !is CjFakeSourceElementKind
+    }
 
 internal fun List<CangJieTarget>.firstOrThisDescription(): String = firstOrNull()?.description ?: "this"
 

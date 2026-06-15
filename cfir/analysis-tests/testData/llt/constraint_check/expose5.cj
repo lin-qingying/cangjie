@@ -28,7 +28,7 @@ func Foo<U>(a: U) where U <: C & I<U> & I2<U> {
     return b
 }
 
-<!sema_interface_member_must_be_implemented!>c<!>lass C1 <: C & I<C1> & I2<C1> {}
+<!INTERFACE_MEMBER_MUST_BE_IMPLEMENTED!>c<!>lass C1 <: C & I<C1> & I2<C1> {}
 
 main() {
     var a: C1 = Foo<C1>(C1())

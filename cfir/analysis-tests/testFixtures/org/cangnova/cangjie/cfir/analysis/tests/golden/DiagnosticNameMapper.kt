@@ -206,6 +206,10 @@ object DiagnosticNameMapper {
 
         // ── Varray ──
         "VARRAY_SIZE_MISMATCH" to "sema_varray_size_mismatch",
+        "VARRAY_SUBSCRIPT_NUM" to "sema_varray_subscript_num",
+        "VARRAY_ARGS_NUMBER_MISMATCH" to "sema_varray_args_number_mismatch",
+        "VARRAY_ARG_TYPE_WITH_REFTYPE" to "sema_varray_arg_type_with_reftype",
+        "BUILTIN_INDEX_IN_BOUND" to "sema_builtin_index_in_bound",
 
         // ── Common/Specific ──
         "COMMON_OPEN_CLASS_NO_INIT" to "parse_cjmp_in_common_ctor_required",
@@ -217,6 +221,7 @@ object DiagnosticNameMapper {
 
         // ── General ──
         "CORE_OBJECT_NOT_FOUND_WHEN_NO_PRELUDE" to "sema_core_object_not_found_when_no_prelude",
+        "TYPEALIAS_UNUSED_TYPE_PARAMETERS" to "typealias_unused_type_parameters",
     )
 
     /** cjc DiagKind → 项目诊断名集合（一对多） */

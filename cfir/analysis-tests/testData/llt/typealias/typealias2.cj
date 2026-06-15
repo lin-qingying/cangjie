@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-<!typealias_unused_type_parameters!>t<!>ype A<T> = Int64
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype A<T> = Int64
 
 main() {
     var a: A<Bool> = 10;

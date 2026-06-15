@@ -35,6 +35,7 @@ import org.cangnova.cangjie.cfir.references.buildImplicitThisReference
 import org.cangnova.cangjie.cfir.scopes.CfirCompositeScope
 import org.cangnova.cangjie.cfir.scopes.CfirScope
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
+import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirCompositeTypeScope
@@ -63,7 +64,12 @@ sealed interface ReceiverValue {
         get() = receiverExpression.resolvedType
     override fun scope(c: SessionAndScopeSessionHolder): CfirScope? =
         receiverExpression.qualifierScopeOrNull(c.session, c.scopeSession)
-            ?: typeToScope(c.session, c.scopeSession, type)
+            ?: typeToScope(
+                c.session,
+                c.scopeSession,
+                type,
+                scopeKind = receiverExpression.memberScopeKind(),
+            )
 }
 
 sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
@@ -76,11 +82,13 @@ sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
     private val inaccessibleReceiverKind: InaccessibleReceiverKind? = null,
 ) : ImplicitValue<S>(type, originalType, mutable), ReceiverValue, SessionAndScopeSessionHolder {
 
+    protected open val implicitMemberScopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.BODY_LOOKUP
+
     val implicitScope: CfirTypeScope?
         get() = lazyImplicitScope.value
 
     private var lazyImplicitScope: Lazy<CfirTypeScope?> = lazy(LazyThreadSafetyMode.PUBLICATION) {
-        typeToScope(session, scopeSession, type)
+        typeToScope(session, scopeSession, type, scopeKind = implicitMemberScopeKind)
     }
 
     override fun computeOriginalExpression(): CfirExpression =
@@ -95,7 +103,7 @@ sealed class ImplicitReceiverValue<S : CfirThisOwnerSymbol<*>>(
     override fun updateTypeFromSmartcast(type: ConeCangJieType) {
         super.updateTypeFromSmartcast(type)
         lazyImplicitScope = lazy(LazyThreadSafetyMode.PUBLICATION) {
-            typeToScope(session, scopeSession, type)
+            typeToScope(session, scopeSession, type, scopeKind = implicitMemberScopeKind)
         }
     }
 
@@ -160,6 +168,8 @@ class ImplicitExtensionReceiverValue private constructor(
     scopeSession: ScopeSession,
     mutable: Boolean,
 ) : ImplicitReceiverValue<CfirExtendSymbol>(boundSymbol, type, originalType, useSiteSession, scopeSession, mutable) {
+    override val implicitMemberScopeKind: CfirClassMemberScopeKind = CfirClassMemberScopeKind.USE_SITE
+
     constructor(
         boundSymbol: CfirExtendSymbol,
         type: ConeCangJieType,
@@ -215,13 +225,26 @@ val ImplicitReceiverValue<*>.referencedMemberSymbol: CfirBasedSymbol<*>
 fun ImplicitReceiverValue<*>.producesInapplicableCandidate(): Boolean =
     this is InaccessibleImplicitReceiverValue && !kind.producesApplicableCandidate
 
+private fun CfirExpression.memberScopeKind(): CfirClassMemberScopeKind = when (this) {
+    // 官方查找在原类型本体的 this/super 路径关闭 extend；extend 体内的 this 仍以 extend 声明为当前 owner。
+    is CfirThisReceiverExpression -> if (calleeReference.boundSymbol is CfirExtendSymbol) {
+        CfirClassMemberScopeKind.USE_SITE
+    } else {
+        CfirClassMemberScopeKind.BODY_LOOKUP
+    }
+
+    is CfirSuperReceiverExpression -> CfirClassMemberScopeKind.USE_SITE
+    else -> CfirClassMemberScopeKind.USE_SITE
+}
+
 private fun typeToScope(
     session: CfirSession,
     scopeSession: ScopeSession,
     type: ConeCangJieType,
+    scopeKind: CfirClassMemberScopeKind,
 ): CfirTypeScope? {
     val scopes = linkedSetOf<CfirTypeScope>()
-    collectTypeScopes(session, scopeSession, type, scopes, linkedSetOf(), linkedSetOf())
+    collectTypeScopes(session, scopeSession, type, scopeKind, scopes, linkedSetOf(), linkedSetOf())
     return when (scopes.size) {
         0 -> null
         1 -> scopes.single()
@@ -233,6 +256,7 @@ private fun collectTypeScopes(
     session: CfirSession,
     scopeSession: ScopeSession,
     type: ConeCangJieType,
+    scopeKind: CfirClassMemberScopeKind,
     destination: MutableSet<CfirTypeScope>,
     visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
     visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
@@ -244,6 +268,7 @@ private fun collectTypeScopes(
                 session,
                 scopeSession,
                 originalTypeParameter,
+                scopeKind,
                 destination,
                 visitedClassIds,
                 visitedTypeParameters,
@@ -255,6 +280,7 @@ private fun collectTypeScopes(
                 session,
                 scopeSession,
                 type.lookupTag,
+                scopeKind,
                 destination,
                 visitedClassIds,
                 visitedTypeParameters,
@@ -263,7 +289,15 @@ private fun collectTypeScopes(
 
         is ConeIntersectionType -> {
             type.intersectedTypes.forEach {
-                collectTypeScopes(session, scopeSession, it, destination, visitedClassIds, visitedTypeParameters)
+                collectTypeScopes(
+                    session,
+                    scopeSession,
+                    it,
+                    scopeKind,
+                    destination,
+                    visitedClassIds,
+                    visitedTypeParameters,
+                )
             }
         }
 
@@ -272,7 +306,6 @@ private fun collectTypeScopes(
             if (!visitedClassIds.add(classId)) return
             val symbol = session.symbolProvider.getClassLikeSymbolByClassId(classId) ?: return
             val declaration = symbol.cfir
-
             val rawScope = when (declaration) {
                 is CfirClass -> CfirClassUseSiteMemberScope(
                     session,
@@ -281,6 +314,7 @@ private fun collectTypeScopes(
                     session.extendProvider,
                     session.directSupertypeProviderOrNull,
                     ownerType = type,
+                    scopeKind = scopeKind,
                 )
                 is CfirExtend -> CfirClassUseSiteMemberScope(
                     session,
@@ -289,6 +323,7 @@ private fun collectTypeScopes(
                     session.extendProvider,
                     session.directSupertypeProviderOrNull,
                     ownerType = type,
+                    scopeKind = scopeKind,
                 )
                 else -> CfirClassUseSiteMemberScope(
                     session,
@@ -297,6 +332,7 @@ private fun collectTypeScopes(
                     session.extendProvider,
                     session.directSupertypeProviderOrNull,
                     ownerType = type,
+                    scopeKind = scopeKind,
                 )
             }
             destination += CfirClassSubstitutionScope(session, rawScope, type)
@@ -308,6 +344,7 @@ private fun collectTypeParameterBoundsScopes(
     session: CfirSession,
     scopeSession: ScopeSession,
     lookupTag: ConeTypeParameterLookupTag,
+    scopeKind: CfirClassMemberScopeKind,
     destination: MutableSet<CfirTypeScope>,
     visitedClassIds: MutableSet<org.cangnova.cangjie.name.ClassId>,
     visitedTypeParameters: MutableSet<ConeTypeParameterLookupTag>,
@@ -316,7 +353,15 @@ private fun collectTypeParameterBoundsScopes(
     val typeParameterType = org.cangnova.cangjie.cfir.symbols.ConeTypeParameterTypeImpl(lookupTag)
     val bounds = collectTypeParameterUpperBounds(typeParameterType)
     bounds.forEach {
-        collectTypeScopes(session, scopeSession, it, destination, visitedClassIds, visitedTypeParameters)
+        collectTypeScopes(
+            session,
+            scopeSession,
+            it,
+            scopeKind,
+            destination,
+            visitedClassIds,
+            visitedTypeParameters,
+        )
     }
 }
 

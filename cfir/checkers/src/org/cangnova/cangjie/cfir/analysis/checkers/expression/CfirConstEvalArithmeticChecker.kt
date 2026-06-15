@@ -1,6 +1,7 @@
 ﻿package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
 import java.math.BigInteger
+import org.cangnova.cangjie.CjInMemoryTextSourceFile
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -32,6 +33,7 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
         val operatorName = extractOperatorName(expression) ?: return
         if (operatorName !in SUPPORTED) return
         if (expression.isPrimitiveCompoundAssignmentCall(context)) return
+        if (context.isSubscriptIndexExpression(source)) return
 
         val rightExpression = expression.argumentList.arguments.singleOrNull() ?: return
 
@@ -90,4 +92,41 @@ object CfirConstEvalArithmeticChecker : CfirFunctionCallChecker() {
             else -> null
         }
     }
+}
+
+private fun CheckerContext.isSubscriptIndexExpression(source: AbstractCjSourceElement): Boolean {
+    val text: CharSequence = containingFileSymbol?.sourceFile?.let { sourceFile ->
+        when (sourceFile) {
+            is CjInMemoryTextSourceFile -> sourceFile.text
+            else -> sourceFile.getContentsAsStream().reader(Charsets.UTF_8).use { it.readText() }
+        }
+    } ?: return false
+
+    var bracketDepth = 0
+    var offset = source.startOffset - 1
+    while (offset >= 0) {
+        when (text[offset]) {
+            ']' -> bracketDepth++
+            '[' -> {
+                if (bracketDepth == 0) {
+                    return text.hasSubscriptReceiverBefore(offset)
+                }
+                bracketDepth--
+            }
+            '\n', ';' -> if (bracketDepth == 0) return false
+        }
+        offset--
+    }
+    return false
+}
+
+private fun CharSequence.hasSubscriptReceiverBefore(leftBracketOffset: Int): Boolean {
+    var offset = leftBracketOffset - 1
+    while (offset >= 0 && this[offset].isWhitespace()) {
+        offset--
+    }
+    if (offset < 0) return false
+
+    val previous = this[offset]
+    return previous.isLetterOrDigit() || previous == '_' || previous == ')' || previous == ']'
 }

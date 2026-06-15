@@ -32,7 +32,7 @@ func subFunc2(a: B<Int32>): Int64 {
 }
 
 main() {
-    test(<!sema_no_match_function_declaration_for_ref!>s<!>ubFunc)
+    test(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>s<!>ubFunc)
     test2(subFunc2)
     0
 }

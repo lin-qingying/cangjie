@@ -1,5 +1,6 @@
 package org.cangnova.cangjie.cfir.resolve.calls.stages
 
+import org.cangnova.cangjie.cfir.declarations.CfirDeclarationOrigin
 import org.cangnova.cangjie.cfir.declarations.CfirEnumConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirNamedFunction
 import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
@@ -14,7 +15,9 @@ import org.cangnova.cangjie.cfir.diagnostic.TooManyArguments
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
 import org.cangnova.cangjie.cfir.expressions.CfirBlock
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirFunctionCallOrigin
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.ConeResolutionAtom
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
 import org.cangnova.cangjie.cfir.resolve.calls.cangjieVariadicParameterForMapping
@@ -23,6 +26,8 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
 import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeFunctionType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.cfir.types.arrayElementType
 import org.cangnova.cangjie.cfir.types.coneType
 import org.cangnova.cangjie.name.Name
@@ -57,6 +62,7 @@ object CfirMapArguments : ResolutionStage() {
             }
 
             CallKind.Function,
+            CallKind.DelegatingConstructorCall,
             CallKind.EnumConstructorCall,
             -> mapCallableArguments(candidate, argumentAtoms)
         }
@@ -78,6 +84,12 @@ object CfirMapArguments : ResolutionStage() {
         candidate: Candidate,
         argumentAtoms: List<ConeResolutionAtom>,
     ) {
+        if (candidate.isBuiltinVArrayConstructorCandidate() && argumentAtoms.size != 1) {
+            candidate.initializeArgumentMapping(argumentAtoms, linkedMapOf())
+            candidate.numDefaults = 0
+            return
+        }
+
         val parameters = candidate.declaredParametersForMapping()
         val variadicParameter = candidate.cangjieVariadicParameterForMapping(parameters)
         val argumentInfos = argumentAtoms.map(::CallArgumentInfo)
@@ -307,7 +319,12 @@ object CfirMapArguments : ResolutionStage() {
     ) {
         val externalArgument = trailingLambdaArguments.firstOrNull() ?: return
         val lastParameter = parameters.lastOrNull()
-        if (lastParameter == null || lastParameter == variadicParameter || lastParameter in usedParameters) {
+        if (
+            lastParameter == null ||
+            lastParameter == variadicParameter ||
+            lastParameter in usedParameters ||
+            !candidate.acceptsImplicitTrailingLambda(lastParameter)
+        ) {
             if (diagnostics.none { it is TooManyArguments }) {
                 diagnostics += TooManyArguments(externalArgument.atom.expression, candidate.callInfo.name)
             }
@@ -322,6 +339,23 @@ object CfirMapArguments : ResolutionStage() {
             }
         }
     }
+
+    /**
+     * 官方 Cangjie `SyntaxFilterCandidates` 对隐式尾随 closure 的语法过滤：
+     * 只有最后一个形参是函数类型的候选，才允许把该 lambda 映射到该形参。
+     */
+    private fun Candidate.acceptsImplicitTrailingLambda(parameter: CfirValueParameter): Boolean {
+        val parameterType = parameter.returnTypeRef.coneType
+            .fullyExpandedType(callInfo.session)
+        return parameterType is ConeFunctionType
+    }
+}
+
+private fun Candidate.isBuiltinVArrayConstructorCandidate(): Boolean {
+    val function = symbol.takeIf { it.isBound }?.cfir as? CfirNamedFunction ?: return false
+    if (function.origin != CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor) return false
+    if ((callInfo.callSite as? CfirFunctionCall)?.varraySizeLiteral != null) return true
+    return function.returnTypeRef.coneType is ConeVArrayType
 }
 
 private data class CallableArgumentMappingResult(

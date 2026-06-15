@@ -5,13 +5,13 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-<!sema_inheritance_cycle!>i<!>nterface A <: B {}
+<!INHERITANCE_CYCLE!>i<!>nterface A <: B {}
 
 interface C <: A {}
 
 interface B <: C {}
 
-extend <!sema_illegal_extended_type!>A<!> <: C {}
+extend <!ILLEGAL_EXTENDED_TYPE!>A<!> <: C {}
 
 main() {
     0

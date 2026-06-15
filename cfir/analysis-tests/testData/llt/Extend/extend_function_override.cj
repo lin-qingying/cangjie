@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -13,5 +14,5 @@ extend A {
 }
 
 class B <: A {
-    func <!sema_extend_function_cannot_overridden!>foo<!>() {}
+    func <!EXTEND_FUNCTION_CANNOT_OVERRIDDEN!>foo<!>() {}
 }

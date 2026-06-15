@@ -9,7 +9,7 @@ class Base<T> {}
 
 func buildList<T>(n: Int32): Int64 {
     if (n > 0) {
-        <!sema_generic_infinite_instantiation!>b<!>uildList<Base<T>>(n - 1)
+        <!GENERIC_INFINITE_INSTANTIATION!>b<!>uildList<Base<T>>(n - 1)
     } else {
         buildList<Base<T>>(0)
     }

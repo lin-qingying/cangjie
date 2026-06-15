@@ -23,11 +23,11 @@ enum EE {
 }
 
 main(): Int64 {
-    <!sema_illegal_access_non_static_member!>E<!>E.a1
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>E<!>E.a1
     EE.A
     EE.a2
-    <!sema_illegal_access_non_static_member!>E<!>E.test()
-    <!sema_illegal_access_non_static_member!>E<!>E.test
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>E<!>E.test()
+    <!ILLEGAL_ACCESS_NON_STATIC_MEMBER!>E<!>E.test
     EE.test1
     EE.test1()
     0

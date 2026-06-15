@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -7,4 +8,4 @@
 
 interface Foo<T> {}
 
-extend Int64 <: <!sema_generic_type_without_type_argument!>F<!>oo {}
+extend Int64 <: <!GENERIC_TYPE_SHOULD_BE_USED_WITH_TYPE_ARGUMENT!>F<!>oo {}

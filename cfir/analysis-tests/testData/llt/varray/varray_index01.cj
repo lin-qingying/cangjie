@@ -13,20 +13,20 @@ main() {
     var a = VArray<Int64, $3>(repeat: 0)
     var x: Int32 = 10
     // error
-    <!sema_builtin_index_in_bound!>a<!>[3] == 0
-    <!sema_builtin_index_in_bound!>a<!>[3] = 1
-    <!sema_builtin_index_in_bound!>a<!>[-1] == 0
-    <!sema_builtin_index_in_bound!>a<!>[-1] = 1
+    <!BUILTIN_INDEX_IN_BOUND!>a<!>[3] == 0
+    <!BUILTIN_INDEX_IN_BOUND!>a<!>[3] = 1
+    <!BUILTIN_INDEX_IN_BOUND!>a<!>[-1] == 0
+    <!BUILTIN_INDEX_IN_BOUND!>a<!>[-1] = 1
 
     let x1: Int64 = a[0] // ok
     let x2: I = a[0] // ok
-    let x3: Int32 = <!sema_mismatched_types!>a[0]<!> // error
+    let x3: Int32 = <!TYPE_MISMATCH!>a[0]<!> // error
     a[0] = x1 // ok
-    a[0] = <!sema_mismatched_types!>x2<!> // error
-    a[0] = <!sema_mismatched_types!>x3<!> // error
+    a[0] = <!ASSIGNMENT_TYPE_MISMATCH!>x2<!> // error
+    a[0] = <!ASSIGNMENT_TYPE_MISMATCH!>x3<!> // error
 
-    <!sema_varray_subscript_num!>a[1, 2]<!> // error
-    a[<!sema_mismatched_types!>"1"<!>] // error
+    <!VARRAY_SUBSCRIPT_NUM!>a[1, 2]<!> // error
+    a[<!TYPE_MISMATCH!>"1"<!>] // error
 
     a[1 + 2 * 2] // error
     0

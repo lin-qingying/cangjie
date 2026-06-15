@@ -51,7 +51,7 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeSimpleCangJieType
 import org.cangnova.cangjie.cfir.types.StdlibClassIds
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
-import org.cangnova.cangjie.cfir.types.arrayElementType
+import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
 import org.cangnova.cangjie.cfir.types.asCone
 import org.cangnova.cangjie.cfir.types.builder.buildErrorTypeRef
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
@@ -193,9 +193,9 @@ class CfirCallCompleter(
     }
 
     /**
-     * 官方 `ArrayExpr` 在无显式类型实参时会用左侧 `Array<E>` 的元素类型约束构造器泛型 `T`。
+     * 官方内建数组构造在无显式类型实参时会用左侧目标数组的元素类型约束构造器泛型 `T`。
      *
-     * 显式 `Array<T>(...)` 已经由类型实参固定元素类型；此时左侧期望类型属于
+     * 显式 `Array<T>(...)` / `VArray<T, $N>(...)` 已经由类型实参固定元素类型；此时左侧期望类型属于
      * 初始化表达式整体检查，不能再反向制造调用推断错误。
      */
     private fun Candidate.addBuiltinArrayConstructorExpectedElementConstraint(
@@ -205,7 +205,7 @@ class CfirCallCompleter(
         if (callable.origin != CfirDeclarationOrigin.Synthetic.BuiltinArrayConstructor) return false
         if (callInfo.hasExplicitTypeArguments) return false
 
-        val expectedElementType = expectedType.fullyExpandedType().arrayElementType ?: return false
+        val expectedElementType = expectedType.fullyExpandedType().arrayLiteralElementType ?: return false
         val elementVariableType = freshVariables.singleOrNull()?.defaultType as? ConeCangJieType ?: return false
         system.addSubtypeConstraint(elementVariableType, expectedElementType, ConeExpectedTypeConstraintPosition)
         return true

@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -9,10 +10,10 @@ let a = true
 let b: UInt16 = 5
 
 struct c {
-    <!sema_class_uninitialized_field!>p<!>ublic let d: UInt16
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic let d: UInt16
     public func e() {
         match {
-            case <!sema_mismatched_types!>{=>}<!> => if (true) {
+            case <!TYPE_MISMATCH!>{=>}<!> => if (true) {
                 b
             } else {
                 UInt16(2)

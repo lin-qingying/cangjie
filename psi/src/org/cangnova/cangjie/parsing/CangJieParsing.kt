@@ -28,6 +28,7 @@ import com.intellij.lang.PsiBuilder
 import com.intellij.lang.PsiBuilderUtil.rawTokenText
 import com.intellij.lang.WhitespacesBinders
 import com.intellij.openapi.diagnostic.Logger
+import com.intellij.psi.TokenType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.TokenSet
 import org.cangnova.cangjie.lexer.CjTokens.*
@@ -66,6 +67,10 @@ class CangJieParsing private constructor(
         private val PACKAGE_NAME_RECOVERY_SET = TokenSet.create(DOT, EOL_OR_SEMICOLON)
         private val IMPORT_RECOVERY_SET = TokenSet.create(AS_KEYWORD, DOT, EOL_OR_SEMICOLON)
         private val TYPE_REF_FIRST = TokenSet.create(LBRACKET, IDENTIFIER, LPAR, HASH)
+        private val TYPE_REF_RECOVERY_SET = TokenSet.orSet(
+            TOP_LEVEL_DECLARATION_FIRST,
+            TokenSet.create(EQ, COMMA, GT, RBRACKET, DOT, RPAR, RBRACE, LBRACE, SEMICOLON),
+        )
         private val LBRACE_RBRACE_TYPE_REF_FIRST_SET = TokenSet.orSet(TokenSet.create(LBRACE, RBRACE), TYPE_REF_FIRST)
         private val LTCOLON_COMMA_LBRACE_RBRACE_TYPE_REF_FIRST_SET =
             TokenSet.orSet(TokenSet.create(LTCOLON, COMMA, LBRACE, RBRACE), TYPE_REF_FIRST)
@@ -74,6 +79,12 @@ class CangJieParsing private constructor(
             TokenSet.create(IDENTIFIER, LBRACKET, LET_KEYWORD, CONST_KEYWORD, VAR_KEYWORD),
             TokenSet.andNot(MODIFIER_KEYWORDS, TokenSet.create(FUNC_KEYWORD))
         )
+        private const val PARSE_VARRAY_TYPE_PARAMETER_MESSAGE =
+            "expected type parameters after 'VArray' keyword"
+        private const val PARSE_VARRAY_TYPE_ARGS_MISMATCH_MESSAGE =
+            "expected VArray type arguments between '<' and '>' of 'VArray' type"
+        private const val PARSE_EXPECT_INTEGER_LITERAL_VARRAY_MESSAGE =
+            "expected an integer literal than or equal to 0 after '$' to specificate the size of 'VArray' type"
         private val LAMBDA_VALUE_PARAMETER_FIRST = TokenSet.orSet(
             TokenSet.create(IDENTIFIER, LBRACKET), TokenSet.andNot(MODIFIER_KEYWORDS, TokenSet.create(FUNC_KEYWORD))
         )
@@ -4508,9 +4519,27 @@ class CangJieParsing private constructor(
             error(CangJieParsingBundle.message("parsing.error.expecting", "type"))
         }
 
-        expect(RPAR, "Expecting ')'")
+        expectRightParenthesisInTupleType()
 
         return count
+    }
+
+    /**
+     * 元组/括号类型缺少右括号时，官方 parser 只报告右定界符缺失并把当前类型标为损坏。
+     * 本地也要消费到右括号或声明恢复点，避免后续变量声明层继续报告同一坏类型尾巴。
+     */
+    context(parseContext: ParsingContext)
+    private fun expectRightParenthesisInTupleType() {
+        if (expect(RPAR, "Expecting ')'")) return
+
+        while (!eof() && !at(RPAR) && !at(EQ) && !at(LBRACE) && !at(RBRACE) && !at(SEMICOLON)) {
+            if (builder.newlineBeforeCurrentToken()) return
+            advance()
+        }
+
+        if (at(RPAR)) {
+            advance()
+        }
     }
 
 
@@ -4534,28 +4563,127 @@ class CangJieParsing private constructor(
             advance()
 
             if (at(LT)) {
+                val typeArgumentsMismatch = mark()
                 advance()
                 val list = mark()
                 val projection = mark()
+                val typeArgumentStartsCorrectly = atVArrayTypeArgumentStart()
 
                 parseTypeRef(TokenSet.EMPTY)
 
                 projection.done(TYPE_PROJECTION)
                 list.done(TYPE_ARGUMENT_LIST)
 
-                expect(COMMA, "Should be ','")
-                expect(DOLLAR, "Should be '$'")
+                if (!typeArgumentStartsCorrectly) {
+                    typeArgumentsMismatch.drop()
+                    skipUntil(TokenSet.create(GT, EOL_OR_SEMICOLON))
+                    if (at(GT)) {
+                        advance()
+                    }
+                    typeRefMarker.done(VARRAY_TYPE)
+                    return true
+                }
 
-                expect(INTEGER_LITERAL, "Should be integer literal")
+                if (!at(COMMA)) {
+                    if (at(GT)) {
+                        advance()
+                    } else {
+                        advanceVArrayMismatchLookahead()
+                    }
+                    typeArgumentsMismatch.error(PARSE_VARRAY_TYPE_ARGS_MISMATCH_MESSAGE)
+                    skipUntil(TokenSet.create(EOL_OR_SEMICOLON))
+                    typeRefMarker.done(VARRAY_TYPE)
+                    return true
+                }
+                typeArgumentsMismatch.drop()
+                advance()
 
+                if (!at(DOLLAR)) {
+                    skipVArrayMismatchTrivia()
+                    val mismatch = mark()
+                    advanceVArrayMismatchLookahead()
+                    mismatch.error(PARSE_VARRAY_TYPE_ARGS_MISMATCH_MESSAGE)
+                    skipUntil(TokenSet.create(EOL_OR_SEMICOLON))
+                    typeRefMarker.done(VARRAY_TYPE)
+                    return true
+                }
+                val dollar = mark()
+                advance()
+
+                val tokenStartsOnNextPhysicalLine = physicalNewlineBeforeCurrentToken()
+                if (tokenStartsOnNextPhysicalLine || !at(INTEGER_LITERAL)) {
+                    dollar.error(PARSE_EXPECT_INTEGER_LITERAL_VARRAY_MESSAGE)
+                    if (!tokenStartsOnNextPhysicalLine) {
+                        skipUntilPhysicalLineEnd()
+                    }
+                    typeRefMarker.done(VARRAY_TYPE)
+                    return true
+                }
+                dollar.drop()
+                advance()
                 expect(GT, "Should be '>'")
 
             } else {
-                error(CangJieParsingBundle.message("parsing.error.expecting", "type parameters after 'VArray' keyword"))
+                error(PARSE_VARRAY_TYPE_PARAMETER_MESSAGE)
             }
 
             typeRefMarker.done(VARRAY_TYPE)
             return true
+        }
+
+        return false
+    }
+
+    private fun atVArrayTypeArgumentStart(): Boolean =
+        at(VARRAY_KEYWORD) || atSet(BASICTYPES) || at(IDENTIFIER) || at(LPAR) || at(QUEST) || at(THIS_KEYWORD)
+
+    private fun skipVArrayMismatchTrivia() {
+        while (at(EOL_COMMENT) || at(BLOCK_COMMENT) || at(DOC_COMMENT) || at(SHEBANG_COMMENT)) {
+            advance()
+        }
+    }
+
+    private fun advanceVArrayMismatchLookahead() {
+        skipVArrayMismatchTrivia()
+        if (!eof() && !at(SEMICOLON)) {
+            advance()
+        }
+    }
+
+    /** 按官方 parser 的 ConsumeUntil(NL) 语义恢复到物理行尾。 */
+    private fun skipUntilPhysicalLineEnd() {
+        while (!eof() && !physicalNewlineBeforeCurrentToken()) {
+            advance()
+        }
+    }
+
+    private fun physicalNewlineBeforeCurrentToken(): Boolean {
+        if (eof()) return true
+
+        for (i in 1..builder.currentOffset) {
+            val previousToken = builder.rawLookup(-i)
+            if (
+                previousToken === BLOCK_COMMENT ||
+                previousToken === DOC_COMMENT ||
+                previousToken === EOL_COMMENT ||
+                previousToken === SHEBANG_COMMENT
+            ) {
+                continue
+            }
+            if (previousToken !== TokenType.WHITE_SPACE) {
+                break
+            }
+
+            val previousTokenStart = builder.rawTokenTypeStart(-i)
+            val previousTokenEnd = builder.rawTokenTypeStart(-i + 1).coerceAtMost(builder.originalText.length)
+            if (previousTokenStart < 0 || previousTokenEnd < previousTokenStart) {
+                break
+            }
+            for (offset in previousTokenStart until previousTokenEnd) {
+                if (builder.originalText[offset] == '\n') {
+                    return true
+                }
+            }
         }
 
         return false
@@ -4739,7 +4867,7 @@ class CangJieParsing private constructor(
         val typeRefMarker = mark()
 
         if (!isConstraint) {
-            parseTypeRefContents()
+            parseTypeRefContents(extraRecoverySet)
         } else {
             parseIdentifier()
         }
@@ -4779,7 +4907,7 @@ class CangJieParsing private constructor(
      */
 
     context(parseContext: ParsingContext)
-    private fun parseTypeRefContents() {
+    private fun parseTypeRefContents(extraRecoverySet: TokenSet = TokenSet.EMPTY) {
         when {
             parseVArrayType() -> return
             parseThisType() -> return
@@ -4787,10 +4915,11 @@ class CangJieParsing private constructor(
             at(IDENTIFIER) -> parseUserType()
             at(LPAR) -> parseTupleOrFunctionType()
             at(QUEST) -> parseOptionType()
-            else -> error(
+            else -> errorWithRecovery(
                 CangJieParsingBundle.message(
                     "parsing.error.expecting.found", "type name", "${builder.tokenText}"
-                )
+                ),
+                TokenSet.orSet(TYPE_REF_RECOVERY_SET, extraRecoverySet),
             )
         }
     }

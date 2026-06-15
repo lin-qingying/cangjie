@@ -163,9 +163,7 @@ abstract class AbstractDiagnosticCollectorVisitor(
     }
 
     override fun visitAnnotationCall(annotationCall: CfirAnnotationCall, data: Nothing?) {
-        withElement(annotationCall) {
-            visitNestedElements(annotationCall)
-        }
+        visitWithCallOrAssignment(annotationCall)
     }
 
     override fun visitTypeRef(typeRef: CfirTypeRef, data: Nothing?) {

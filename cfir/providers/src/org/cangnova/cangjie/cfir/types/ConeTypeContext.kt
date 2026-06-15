@@ -146,6 +146,20 @@ interface ConeTypeContext :
         return elementTypes
     }
 
+    override fun CangJieTypeMarker.isVArrayType(): Boolean {
+        return this is ConeVArrayType
+    }
+
+    override fun CangJieTypeMarker.extractElementTypeForVArrayType(): CangJieTypeMarker {
+        require(this is ConeVArrayType)
+        return elementType
+    }
+
+    override fun CangJieTypeMarker.extractSizeForVArrayType(): Long {
+        require(this is ConeVArrayType)
+        return size
+    }
+
     override fun RigidTypeMarker.isStubType(): Boolean = this is ConeStubType
 
     override fun RigidTypeMarker.isStubTypeForVariableInSubtyping(): Boolean =

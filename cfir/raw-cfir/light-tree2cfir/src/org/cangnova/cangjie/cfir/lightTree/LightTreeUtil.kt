@@ -134,9 +134,10 @@ fun FlyweightCapableTreeStructure<LighterASTNode>.getLastChildExpression(
  */
 fun getNodeText(
     node: LighterASTNode,
+    tree: FlyweightCapableTreeStructure<LighterASTNode>,
     source: CharSequence,
 ): String {
-    val start = node.startOffset.coerceAtLeast(0)
-    val end = node.endOffset.coerceAtMost(source.length)
+    val start = tree.getStartOffset(node).coerceAtLeast(0)
+    val end = tree.getEndOffset(node).coerceAtMost(source.length)
     return if (start < end) source.substring(start, end) else ""
 }

@@ -7,7 +7,7 @@
 
 // test ParseVArrayType.
 main() {
-    var a: VArray<!parse_varray_type_parameter!> <!>// error
+    var a: VArray<!parse_varray_type_parameter!><!> // error
     var a: VArray< // error
     <!parse_expected_type!>var<!> a: VArray<!parse_varray_type_args_mismatch!><Int64 // error
     (<!>)

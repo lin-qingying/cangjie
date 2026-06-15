@@ -10,7 +10,7 @@ struct S {
         false
     }
     S() {
-        let g = {=> <!sema_illegal_capture_this!>f<!>()}
+        let g = {=> <!ILLEGAL_CAPTURE_THIS!>f<!>()}
         print("${g()}")
     }
 }

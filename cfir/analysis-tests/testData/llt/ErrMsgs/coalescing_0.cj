@@ -6,10 +6,10 @@
 
 
 main() {
-    (Some(<!sema_no_match_operator_function_call!>1<!>(true)) ?? false) + true
-    (Some(true) ?? <!sema_cannot_convert_literal!>1<!>) * false
+    (Some(<!NO_MATCH_OPERATOR_FUNCTION_CALL!>1<!>(true)) ?? false) + true
+    (Some(true) ?? <!CANNOT_CONVERT_LITERAL!>1<!>) * false
 
-    let err = <!sema_no_match_operator_function_call!>1<!>(true)
+    let err = <!NO_MATCH_OPERATOR_FUNCTION_CALL!>1<!>(true)
     err ?? err
     0
 }

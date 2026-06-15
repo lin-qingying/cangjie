@@ -66,6 +66,7 @@ import org.cangnova.cangjie.name.SpecialNames
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjLightSourceElement
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.source.CjSourceFileLinesMapping
 import org.cangnova.cangjie.source.fakeElement
@@ -222,13 +223,16 @@ class LightTreeRawCfirDeclarationBuilder(
         sourceOverride: CjSourceElement? = null,
         argumentListSourceOverride: CjSourceElement? = null,
     ): CfirAnnotationCall? {
-        val rawName = extractAnnotationNameText(annotation) ?: return null
+        val annotationName = annotationNameInfo(annotation) ?: return null
+        val sourceOffsetDelta = sourceOffsetDelta(sourceOverride, annotation)
         return withPackageContext(packageFqName) {
             buildRawAnnotationCall(
                 annotation = annotation,
-                rawName = rawName,
+                rawName = annotationName.rawName,
                 containingSymbol = containingSymbol,
                 sourceOverride = sourceOverride,
+                typeRefOverride = buildAnnotationTypeRef(annotationName, sourceOffsetDelta),
+                calleeReferenceSourceOverride = annotationName.calleeReferenceSource.shiftedBy(sourceOffsetDelta),
                 argumentListSourceOverride = argumentListSourceOverride,
             )
         }
@@ -245,13 +249,16 @@ class LightTreeRawCfirDeclarationBuilder(
         sourceOverride: CjSourceElement? = null,
         argumentListSourceOverride: CjSourceElement? = null,
     ): CfirAnnotationCall? {
-        val rawName = extractMacroExpressionNameText(macroExpression) ?: return null
+        val annotationName = macroExpressionAnnotationNameInfo(macroExpression) ?: return null
+        val sourceOffsetDelta = sourceOffsetDelta(sourceOverride, macroExpression)
         return withPackageContext(packageFqName) {
             buildRawAnnotationCall(
                 annotation = macroExpression,
-                rawName = rawName,
+                rawName = annotationName.rawName,
                 containingSymbol = containingSymbol,
                 sourceOverride = sourceOverride,
+                typeRefOverride = buildAnnotationTypeRef(annotationName, sourceOffsetDelta),
+                calleeReferenceSourceOverride = annotationName.calleeReferenceSource.shiftedBy(sourceOffsetDelta),
                 argumentListSourceOverride = argumentListSourceOverride,
             )
         }
@@ -1045,9 +1052,15 @@ class LightTreeRawCfirDeclarationBuilder(
 
         val carriedAnnotations = modifiers.annotations.map { it.asText() }
         modifiers.annotations.forEach { annotation ->
-            val rawName = extractAnnotationNameText(annotation) ?: return@forEach
+            val annotationName = annotationNameInfo(annotation) ?: return@forEach
+            val rawName = annotationName.rawName
             val qualifiedName = macroSurfaceQualifiedName(rawName)
-            val annotationCall = buildRawAnnotationCall(annotation, rawName, carrier)
+            val annotationCall = buildRawAnnotationCall(
+                annotation = annotation,
+                rawName = rawName,
+                carrier = carrier,
+                annotationName = annotationName,
+            )
             val annotationIndex = carrier.annotations.size
             carrier.replaceAnnotations(carrier.annotations + annotationCall)
             val valueArgumentList = findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
@@ -1082,12 +1095,19 @@ class LightTreeRawCfirDeclarationBuilder(
         annotation: LighterASTNode,
         rawName: String,
         carrier: CfirDeclaration,
+        annotationName: AnnotationNameInfo? = null,
     ): CfirAnnotationCall {
         val containingSymbol = when (carrier) {
             is CfirValueParameter -> carrier.containingDeclarationSymbol
             else -> carrier.symbol
         }
-        return buildRawAnnotationCall(annotation, rawName, containingSymbol)
+        return buildRawAnnotationCall(
+            annotation = annotation,
+            rawName = rawName,
+            containingSymbol = containingSymbol,
+            typeRefOverride = annotationName?.let { buildAnnotationTypeRef(it) },
+            calleeReferenceSourceOverride = annotationName?.calleeReferenceSource,
+        )
     }
 
     private fun buildRawAnnotationCall(
@@ -1095,19 +1115,24 @@ class LightTreeRawCfirDeclarationBuilder(
         rawName: String,
         containingSymbol: CfirBasedSymbol<*>,
         sourceOverride: CjSourceElement? = null,
+        typeRefOverride: CfirTypeRef? = null,
+        calleeReferenceSourceOverride: CjSourceElement? = null,
         argumentListSourceOverride: CjSourceElement? = null,
     ): CfirAnnotationCall {
         val valueArgumentList = findFirstDescendantByType(annotation, CjNodeTypes.VALUE_ARGUMENT_LIST)
         val arguments = convertAnnotationArguments(annotation, valueArgumentList)
         return buildAnnotationCall {
             source = sourceOverride ?: annotation.toSource()
-            typeRef = buildAnnotationTypeRef(rawName, annotation)
+            typeRef = typeRefOverride ?: buildAnnotationTypeRef(rawName, annotation)
             this.arguments.addAll(arguments)
             argumentList = buildArgumentList {
                 source = argumentListSourceOverride ?: valueArgumentList?.toSource()
                 this.arguments.addAll(arguments)
             }
-            calleeReference = buildNamedReference(Name.identifier(rawName.substringAfterLast('.')), annotation.toSource())
+            calleeReference = buildNamedReference(
+                Name.identifier(rawName.substringAfterLast('.')),
+                calleeReferenceSourceOverride ?: annotationCalleeReferenceSource(annotation),
+            )
             containingDeclarationSymbol = containingSymbol
         }
     }
@@ -1163,11 +1188,30 @@ class LightTreeRawCfirDeclarationBuilder(
     private fun buildAnnotationTypeRef(rawName: String, annotation: LighterASTNode): CfirTypeRef {
         val parts = rawName.split('.').filter(String::isNotBlank)
         if (parts.isEmpty()) return buildImplicitTypeRef()
+        val annotationName = annotationNameInfo(annotation)
+        val nameSource = annotationName?.nameSource ?: annotation.toSource()
+        val segmentSources = annotationName?.segmentSources.orEmpty()
         return buildUserTypeRef {
-            source = annotation.toSource()
-            qualifier += parts.map { part ->
+            source = nameSource
+            qualifier += parts.mapIndexed { index, part ->
                 buildQualifierPart {
-                    source = annotation.toSource()
+                    source = segmentSources.getOrNull(index) ?: nameSource
+                    name = Name.identifier(part)
+                }
+            }
+        }
+    }
+
+    private fun buildAnnotationTypeRef(annotationName: AnnotationNameInfo, sourceOffsetDelta: Int = 0): CfirTypeRef {
+        val parts = annotationName.rawName.split('.').filter(String::isNotBlank)
+        if (parts.isEmpty()) return buildImplicitTypeRef()
+        val nameSource = annotationName.nameSource.shiftedBy(sourceOffsetDelta)
+        val segmentSources = annotationName.segmentSources.map { it.shiftedBy(sourceOffsetDelta) }
+        return buildUserTypeRef {
+            source = nameSource
+            qualifier += parts.mapIndexed { index, part ->
+                buildQualifierPart {
+                    source = segmentSources.getOrNull(index) ?: nameSource
                     name = Name.identifier(part)
                 }
             }
@@ -1315,28 +1359,98 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     private fun extractAnnotationNameText(annotation: LighterASTNode): String? {
+        return annotationNameInfo(annotation)?.rawName
+    }
+
+    private data class AnnotationNameInfo(
+        val rawName: String,
+        val nameSource: CjSourceElement,
+        val segmentSources: List<CjSourceElement>,
+    ) {
+        val calleeReferenceSource: CjSourceElement
+            get() = segmentSources.lastOrNull() ?: nameSource
+    }
+
+    private fun annotationNameInfo(annotation: LighterASTNode): AnnotationNameInfo? {
         val nameNode = findAnnotationNameNode(annotation) ?: return null
-        return nameNode.asText().trim().takeIf { it.isNotEmpty() }
+        val rawName = nameNode.asText().trim().takeIf { it.isNotEmpty() } ?: return null
+        return AnnotationNameInfo(
+            rawName = rawName,
+            nameSource = nameNode.toSource(),
+            segmentSources = collectAnnotationNameSegmentSources(nameNode),
+        )
+    }
+
+    private fun macroExpressionAnnotationNameInfo(node: LighterASTNode): AnnotationNameInfo? {
+        val nameNode = findMacroExpressionAnnotationNameNode(node) ?: return null
+        val rawName = nameNode.asText().trim().takeIf { it.isNotEmpty() } ?: return null
+        return AnnotationNameInfo(
+            rawName = rawName,
+            nameSource = nameNode.toSource(),
+            segmentSources = collectAnnotationNameSegmentSources(nameNode),
+        )
     }
 
     private fun findAnnotationNameNode(annotation: LighterASTNode): LighterASTNode? {
-        var result: LighterASTNode? = null
-
-        fun visit(node: LighterASTNode) {
-            when (node.tokenType) {
-                CjNodeTypes.VALUE_ARGUMENT_LIST,
-                CjNodeTypes.MACRO_INPUT,
-                CjNodeTypes.MACRO_ATTR,
-                -> return
-                CjNodeTypes.DOT_QUALIFIED_EXPRESSION,
-                CjNodeTypes.REFERENCE_EXPRESSION,
-                -> result = node
-            }
-            tree.forEachChildren(node, ::visit)
+        if (annotation.tokenType == CjNodeTypes.MACRO_EXPRESSION) {
+            return findMacroExpressionAnnotationNameNode(annotation)
         }
 
-        visit(annotation)
-        return result
+        return findAnnotationConstructorCalleeNameNode(annotation)
+    }
+
+    /**
+     * 注解 callee source 必须来自 parser 产生的 constructor-callee 类型结构。
+     *
+     * Kotlin light-tree 也固定沿 CONSTRUCTOR_CALLEE -> TYPE_REFERENCE -> USER_TYPE
+     * -> REFERENCE_EXPRESSION 取 annotation callee，不能在整棵 annotation 子树里
+     * 泛化搜索任意引用，否则会把参数、声明输入或恢复节点中的引用误当成注解名。
+     */
+    private fun findAnnotationConstructorCalleeNameNode(annotation: LighterASTNode): LighterASTNode? {
+        val constructorCallee = tree.findChildByType(annotation, CjStubElementTypes.CONSTRUCTOR_CALLEE)
+            ?: return null
+        val typeRef = tree.findChildByType(constructorCallee, CjNodeTypes.TYPE_REFERENCE)
+            ?: return null
+        return tree.findChildByType(typeRef, CjNodeTypes.USER_TYPE)
+    }
+
+    private fun findMacroExpressionAnnotationNameNode(node: LighterASTNode): LighterASTNode? {
+        return findAnnotationConstructorCalleeNameNode(node)
+            ?: findMacroExpressionNameNode(node)
+    }
+
+    private fun annotationCalleeReferenceSource(annotation: LighterASTNode): CjSourceElement? {
+        return annotationNameInfo(annotation)?.calleeReferenceSource
+    }
+
+    private fun sourceOffsetDelta(sourceOverride: CjSourceElement?, reparsedNode: LighterASTNode): Int {
+        return sourceOverride?.let { it.startOffset - reparsedNode.toSource().startOffset } ?: 0
+    }
+
+    private fun CjSourceElement.shiftedBy(delta: Int): CjSourceElement {
+        if (delta == 0) return this
+        return CjLightSourceElement(
+            lighterASTNode = lighterASTNode,
+            startOffset = startOffset + delta,
+            endOffset = endOffset + delta,
+            treeStructure = treeStructure,
+            kind = kind,
+        )
+    }
+
+    private fun collectAnnotationNameSegmentSources(nameNode: LighterASTNode): List<CjSourceElement> {
+        val sources = mutableListOf<CjSourceElement>()
+
+        fun visit(node: LighterASTNode) {
+            if (node.tokenType == CjNodeTypes.REFERENCE_EXPRESSION) {
+                sources += node.toSource()
+                return
+            }
+            node.forEachChildren(::visit)
+        }
+
+        visit(nameNode)
+        return sources
     }
 
     private fun findFirstDescendantByType(
@@ -1614,7 +1728,8 @@ class LightTreeRawCfirDeclarationBuilder(
         carrier: CfirDeclaration,
     ) {
         val inputNode = tree.findChildByType(node, CjNodeTypes.MACRO_INPUT) ?: return
-        val rawName = extractMacroExpressionNameText(node) ?: return
+        val annotationName = macroExpressionAnnotationNameInfo(node) ?: return
+        val rawName = annotationName.rawName
         val surfaceId = MacroSurfaceIdGenerator.next()
         val attrNode = tree.findChildByType(node, CjNodeTypes.MACRO_ATTR)
         val rawAnnotationSyntax = macroExpressionAnnotationSyntax(node, rawName, attrNode)
@@ -1627,6 +1742,8 @@ class LightTreeRawCfirDeclarationBuilder(
             rawName = rawName,
             containingSymbol = containingSymbol,
             sourceOverride = node.toSource(),
+            typeRefOverride = buildAnnotationTypeRef(annotationName),
+            calleeReferenceSourceOverride = annotationName.calleeReferenceSource,
             argumentListSourceOverride = attrNode?.toSource(),
         )
         val annotationIndex = carrier.annotations.size
@@ -1794,8 +1911,13 @@ class LightTreeRawCfirDeclarationBuilder(
     }
 
     private fun extractMacroExpressionNameText(node: LighterASTNode): String? {
-        val reference = tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION) ?: return null
+        val reference = findMacroExpressionAnnotationNameNode(node) ?: return null
         return reference.asText().trim().takeIf { it.isNotEmpty() }
+    }
+
+    private fun findMacroExpressionNameNode(node: LighterASTNode): LighterASTNode? {
+        return tree.findChildByType(node, CjNodeTypes.DOT_QUALIFIED_EXPRESSION)
+            ?: tree.findChildByType(node, CjNodeTypes.REFERENCE_EXPRESSION)
     }
 
     // ===== 通用提取辅助 =====

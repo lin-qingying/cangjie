@@ -17,7 +17,7 @@ func xxx() {
 
 class Test <: A {
     public static func test() {
-        return <!sema_static_function_cannot_access_non_static_member!>x<!>xx(10)
+        return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>x<!>xx(10)
     }
 }
 

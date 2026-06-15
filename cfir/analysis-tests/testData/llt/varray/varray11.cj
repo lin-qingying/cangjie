@@ -14,30 +14,30 @@ struct S {
 }
 
 func f(a: VArray<Int64, $3>) {
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a[1]<!> = 2 // error
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a[1] = 2<!> // error
 }
 
 func f1(a: VArray<VArray<Int64, $3>, $3>) {
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a[1][2]<!> = 2 // error
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a[1][2] = 2<!> // error
 }
 
 func f3(a: S) {
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.a[1][2]<!> = 2 //error
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>a.a[1][2] = 2<!> //error
 }
 
 main() {
     var a = VArray<Int64, $3>(repeat: 0)
     a[1] = 2 // ok
     let b = VArray<Int64, $3>(repeat: 0)
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>b[1]<!> = 2 // error
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>b[1] = 2<!> // error
 
     var arr = VArray<VArray<Int64, $3>, $2>(repeat: [1, 2, 3])
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>arr[1][2]<!> = 1 // error
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>arr[1][2] = 1<!> // error
 
     var varr = Array<VArray<Int64, $3>>(2, repeat: [1, 2, 3])
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>varr[1][2]<!> = 1 // error
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>varr[1][2] = 1<!> // error
 
     var s = S()
-    <!CANNOT_ASSIGN_TO_IMMUTABLE!>s.b[1]<!> = 1 // error
+    <!CANNOT_ASSIGN_TO_IMMUTABLE!>s.b[1] = 1<!> // error
     0
 }

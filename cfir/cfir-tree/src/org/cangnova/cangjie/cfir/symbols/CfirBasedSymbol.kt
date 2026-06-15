@@ -382,7 +382,7 @@ class CfirConstructorSymbol(
 }
 
 /** 属性符号，对应 `prop` 声明。 */
-class CfirPropertySymbol(
+open class CfirPropertySymbol(
     callableId: CallableId,
 ) : CfirNamedValueSymbol<CfirProperty>(callableId) {
     override val name: Name get() = callableId.callableName

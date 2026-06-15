@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -8,8 +9,8 @@
 class A {
     public var a: Int32 = 1
     public static var b: Int32 = 2
-    public static let lambda2 = {=> return <!sema_static_lambdaExpr_cannot_access_non_static!>a<!> + b + <!sema_static_lambdaExpr_cannot_access_non_static!>f<!>oo1()}
-    public static let arr = {=> {=> return <!sema_static_lambdaExpr_cannot_access_non_static!>f<!>oo1()}}
+    public static let lambda2 = {=> return <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>a<!> + b + <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>f<!>oo1()}
+    public static let arr = {=> {=> return <!STATIC_LAMBDA_CANNOT_ACCESS_NON_STATIC!>f<!>oo1()}}
 
     public func foo1(): Int32 {
         return a + b + 2
@@ -17,8 +18,8 @@ class A {
 
     public static func foo2(): Int32 {
         func foo3(): Int32 {
-            return <!sema_static_function_cannot_access_non_static_member!>a<!> + b
+            return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!> + b
         }
-        return <!sema_static_function_cannot_access_non_static_member!>a<!> + b + <!sema_static_function_cannot_access_non_static_member!>f<!>oo1()
+        return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!> + b + <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>f<!>oo1()
     }
 }

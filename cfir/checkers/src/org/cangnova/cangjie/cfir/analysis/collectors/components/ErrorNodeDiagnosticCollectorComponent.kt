@@ -188,8 +188,8 @@ class ErrorNodeDiagnosticCollectorComponent(
             return
         }
 
-        // Don't report duplicated unresolved reference on annotation entry (already reported on its type)
-//        if (source?.elementType == CjNodeTypes.ANNOTATION_ENTRY && diagnostic is ConeUnresolvedNameError) return
+        // 注解项上的 unresolved 已由其类型引用报告，保持与 Kotlin FIR 的去重位置一致。
+        if (source?.elementType == CjNodeTypes.ANNOTATION && diagnostic is ConeUnresolvedNameError) return
         // Already reported in FirConventionFunctionCallChecker
         if (source?.kind == CjFakeSourceElementKind.ArrayAccessNameReference &&
             diagnostic is ConeUnresolvedNameError
@@ -275,7 +275,6 @@ class ErrorNodeDiagnosticCollectorComponent(
      * 任意一组合唯一地标识"同一处同一类型"的错误。
      *
      * 额外抑制规则：
-     *   - 注解节点上的 [ConeUnresolvedNameError] 由注解专项 checker 处理，跳过。
      *   - 数组下标名称引用上的 [ConeUnresolvedNameError] 由下标专项 checker 处理，跳过。
      */
     private fun reportConeDiagnostic(
@@ -285,9 +284,6 @@ class ErrorNodeDiagnosticCollectorComponent(
         callOrAssignmentSource: CjSourceElement? = null,
     ) {
         if (source == null) return
-
-        // 注解节点的 unresolved 错误交由 AnnotationChecker 负责。
-        if (source.elementType == CjNodeTypes.ANNOTATION && diagnostic is ConeUnresolvedNameError) return
 
         // 数组访问名称引用的 unresolved 错误交由 ArrayAccessChecker 负责。
         if (source.kind == CjFakeSourceElementKind.ArrayAccessNameReference && diagnostic is ConeUnresolvedNameError) return

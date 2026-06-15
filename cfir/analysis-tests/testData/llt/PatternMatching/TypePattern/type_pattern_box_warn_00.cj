@@ -12,7 +12,7 @@ struct A <: I {}
 main() {
     let x = (1, A())
     match (x) {
-        case <!sema_unreachable_pattern!>_: (Int64, I)<!> => 0
+        case <!UNREACHABLE_PATTERN!>_: (Int64, I)<!> => 0
         case _ => 1
     }
 }

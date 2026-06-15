@@ -42,7 +42,7 @@ extend<M> C1<M> where M <: Z1 {
     }
 }
 
-type T2<M> = C1<<!sema_cannot_instantiated_by_incomplete_type!>M<!>>
+type T2<M> = C1<<!CANNOT_INSTANTIATED_BY_INCOMPLETE_TYPE!>M<!>>
 
 main() {
     var a = T2<Nothing>()

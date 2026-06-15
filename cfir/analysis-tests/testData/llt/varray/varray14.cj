@@ -6,7 +6,7 @@
 
 
 // test type recursive.
-<!sema_value_type_recursive!>s<!>truct S1 {
+<!VALUE_TYPE_RECURSIVE!>s<!>truct S1 {
     var a: S2 = S2()
 }
 

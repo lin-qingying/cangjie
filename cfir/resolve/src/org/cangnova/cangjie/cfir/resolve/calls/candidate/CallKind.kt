@@ -29,6 +29,23 @@ sealed class CallKind(
     )
 
     /**
+     * 构造器委托调用 `this(...)` / `super(...)`。
+     *
+     * 对齐 Kotlin FIR 的 `CallKind.DelegatingConstructorCall`：它使用 callable
+     * 参数映射、类型实参映射、候选约束与 lambda 期望类型解析，但候选集合由构造器
+     * 语义专用入口提供，而不是走普通 tower 名字查找。
+     */
+    data object DelegatingConstructorCall : CallKind(
+        CfirCheckVisibility,
+        CfirMapArguments,
+        CfirMapTypeArguments,
+        CfirCreateFreshTypeVariableSubstitutorStage,
+        CfirCheckExtensionReceiver,
+        CfirCheckArguments,
+        CfirEagerResolveOfCallableReferences,
+    )
+
+    /**
      * Variable/name access chain.
      *
      * Align with Kotlin's `CallKind.VariableAccess` contract:

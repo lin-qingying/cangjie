@@ -66,7 +66,9 @@ object CfirCheckArguments : ResolutionStage() {
                 candidate.callInfo,
                 argument,
                 parameter,
-                isReceiver = index == 0
+                // 对齐 Kotlin CheckArguments：普通实参不能按 receiver 适用性降级。
+                // 当前仓颉函数类型没有 Kotlin extension-function-type receiver 语义。
+                isReceiver = false,
             )
         }
 

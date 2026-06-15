@@ -14,12 +14,9 @@ main() {
     let class_sub_ins = Class_sub_1()
     var map_main_1: HashMap<UInt16, Int64> = class_sub_ins.map_subCla_1 //子类成员变量
     var map_main_2: HashMap<Int32, Rune> = class_sub_ins.fun_sub_c1(map_top_2) //子类实例函数
-    var map_main_3: HashMap<Int32, Rune> = Class_sub_1.map_cla_2 // 父类静态成员
-    var map_main_4: HashMap<Int32, Rune> = class_sub_ins.fun_c1(map_top_2, par_2: r'H') // 父类实例成员函数
-    var map_main_5: HashMap<Int32, Rune> = Class_sub_1.fun_cs1(12, r'Z') // 父类静态成员函数
-
-    let map_main_6: HashMap<Int32, Rune> = Class_sub_1.fun_sub_cs1(r'G') //子类自有静态函数
-
+    var map_main_3: HashMap<Int32, Rune> = Class_sub_1.map_cla_2 // 父类静态成�?    var map_main_4: HashMap<Int32, Rune> = class_sub_ins.fun_c1(map_top_2, par_2: r'H') // 父类实例成员函数
+    var map_main_5: HashMap<Int32, Rune> = Class_sub_1.fun_cs1(12, r'Z') // 父类静态成员函�?
+    let map_main_6: HashMap<Int32, Rune> = Class_sub_1.fun_sub_cs1(r'G') //子类自有静态函�?
     return -1
 }
 
@@ -41,7 +38,7 @@ open class Clazz_1 {
         return map_fs1
     }
 
-    public open func fun_c1(par_1: HashMap<Int32, Rune>, <!sema_cannot_have_default_param!>par_2!: Rune = r'J'<!>): HashMap<Int32, Rune> {
+    public open func fun_c1(par_1: HashMap<Int32, Rune>, <!CANNOT_HAVE_DEFAULT_PARAM!>par_2!: Rune = r'J'<!>): HashMap<Int32, Rune> {
         var map_f1: HashMap<Int32, Rune> = par_1
         map_f1.add(Int32(map_f1.size), par_2)
         map_f1[12] = r'H'
@@ -57,12 +54,11 @@ open class Class_sub_1 <: Clazz_1 {
         super(110, -120)
     }
 
-    public var clazz_1_ins = Clazz_1() //父类的实例对象
-    public static let sub_cp1: HashMap<Int32, Rune> = Class_sub_1.map_cla_2 //父类成员变量
+    public var clazz_1_ins = Clazz_1() //父类的实例对�?    public static let sub_cp1: HashMap<Int32, Rune> = Class_sub_1.map_cla_2 //父类成员变量
     public var map_subCla_1: HashMap<UInt16, Int64> = HashMap<UInt16, Int64>([(12, 17750), (23, 1836), (56, 3594)])
 
     public static func fun_sub_cs1(par_1: Rune): HashMap<Int32, Rune> {
-        var map_subcla_fun_s1: HashMap<Int32, Rune> = Clazz_1.fun_cs1(Int32(<!sema_static_function_cannot_access_non_static_member!>m<!>ap_subCla_1[23]), r'Z')
+        var map_subcla_fun_s1: HashMap<Int32, Rune> = Clazz_1.fun_cs1(Int32(<!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>m<!>ap_subCla_1[23]), r'Z')
         map_subcla_fun_s1.add(Int32(map_subcla_fun_s1.size), par_1)
         return map_subcla_fun_s1
     }

@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -20,8 +21,8 @@ class DateTime {
     public static func MaxValue(): DateTime {
         var d = DateTime()
         d.SetTick(MinTickValue)
-        <!sema_static_function_cannot_access_non_static_member!>S<!>etTick(MinTickValue)
-        var a = <!sema_static_function_cannot_access_non_static_member!>T<!>icks
+        <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>S<!>etTick(MinTickValue)
+        var a = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>T<!>icks
         return d
     }
 }

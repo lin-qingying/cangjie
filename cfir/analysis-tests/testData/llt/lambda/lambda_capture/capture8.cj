@@ -9,7 +9,7 @@ var a = 1
 
 main(): Int64 {
     <!chir_dce_unused_function!>func g() {
-        var <!chir_dce_unused_variable!>x<!> = {=> <!sema_capture_has_shadow_variable!>a<!>}
+        var <!chir_dce_unused_variable!>x<!> = {=> <!CAPTURE_HAS_SHADOW_VARIABLE!>a<!>}
     }<!>
     let <!chir_dce_unused_variable!>a<!> = true
     return 0

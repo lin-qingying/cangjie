@@ -7,11 +7,11 @@ public interface Job{
 class EntryID{}
 
 public class Entry{
-    public let <!sema_accessibility!>ID<!>: EntryID
+    public let <!ACCESSIBILITY_ERROR!>ID<!>: EntryID
     public var Schedule:Schedule
-    public var WrappedJob:<!sema_not_a_type!>J<!>ob
+    public var WrappedJob:<!NOT_A_TYPE!>J<!>ob
     public var Job:Job
-    init(id:EntryID,s:<!sema_not_a_type!>S<!>chedule,w:<!sema_not_a_type!>J<!>ob,j:<!sema_not_a_type!>J<!>ob){
+    init(id:EntryID,s:<!NOT_A_TYPE!>S<!>chedule,w:<!NOT_A_TYPE!>J<!>ob,j:<!NOT_A_TYPE!>J<!>ob){
         this.ID = id
         this.Schedule = s
         this.Job = j

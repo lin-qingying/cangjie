@@ -6,7 +6,7 @@
 
 
 main() {
-    let a1: VArray<!parse_varray_type_parameter!> <!>= [1, 2, 3] // error
+    let a1: VArray<!parse_varray_type_parameter!><!> = [1, 2, 3] // error
     let a2: VArray<<!parse_expected_type!>$<!>1> = [1, 2, 3] //error
     let a3: VArray<!parse_varray_type_args_mismatch!><Int64><!> = [1, 2, 3] //error
     let a4: VArray<<!parse_expected_type!>$<!>3, Int64> = [1, 2, 3] //error

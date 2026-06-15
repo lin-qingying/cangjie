@@ -9,7 +9,7 @@ enum TimeUnit<T> {
     Year(T) | Month(T)
 }
 
-var time = <!sema_invalid_type_param_of_enum_member_access!>T<!>imeUnit<Int32>.Year<Int64>(4)
+var time = <!INVALID_TYPE_PARAM_OF_ENUM_MEMBER_ACCESS!>T<!>imeUnit<Int32>.Year<Int64>(4)
 var res1: Int32 = match (time) {
     case Year(x) => 2020
     case Month(x) => 9

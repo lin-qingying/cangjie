@@ -38,6 +38,13 @@ package org.cangnova.cangjie.resolve.calls.tasks
  */
 enum class ExplicitReceiverKind {
     /**
+     * 显式接收者是扩展接收者。
+     *
+     * 例如：`obj.extFun()` 中，`obj` 是 extend 成员的扩展接收者。
+     */
+    EXTENSION_RECEIVER,
+
+    /**
      * 显式接收者是派发接收者。
      * 
      * 例如：`obj.foo()` 中，`obj` 是成员函数 `foo` 的派发接收者。
@@ -50,8 +57,23 @@ enum class ExplicitReceiverKind {
      * 例如：直接调用顶层函数 `foo()`，或在当前作用域内调用成员函数。
      */
     NO_EXPLICIT_RECEIVER,
+
+    /**
+     * 同时存在扩展接收者和派发接收者。
+     *
+     * 对齐 Kotlin 的特殊调用形态：成员扩展调用可能把一个显式 receiver
+     * 作为 extension receiver，同时已有 dispatch receiver。
+     */
+    BOTH_RECEIVERS,
     ;
 
+    val isExtensionReceiver: Boolean
+        /**
+         * 判断此调用是否有扩展接收者。
+         *
+         * [EXTENSION_RECEIVER] 和 [BOTH_RECEIVERS] 均返回 true。
+         */
+        get() = this == ExplicitReceiverKind.EXTENSION_RECEIVER || this == ExplicitReceiverKind.BOTH_RECEIVERS
 
     val isDispatchReceiver: Boolean
         /**
@@ -61,5 +83,5 @@ enum class ExplicitReceiverKind {
          * 
          * @return true 表示存在派发接收者
          */
-        get() = this == ExplicitReceiverKind.DISPATCH_RECEIVER
+        get() = this == ExplicitReceiverKind.DISPATCH_RECEIVER || this == ExplicitReceiverKind.BOTH_RECEIVERS
 }

@@ -6,40 +6,40 @@
 
 
 struct R1<T> {
-    <!sema_class_uninitialized_field!>p<!>ublic var i: T
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic var i: T
 
     public mut func foo1() {
-        let f = {=> <!sema_capture_this_or_instance_field_in_func!>t<!>his}
+        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his}
 
         func goo() {
-            <!sema_capture_this_or_instance_field_in_func!>t<!>his
+            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his
         }
         return 0
     }
 
     public mut func foo2(x: T) {
-        let f = {=> <!sema_capture_this_or_instance_field_in_func!>t<!>his.i = x}
+        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.i = x}
 
         func goo() {
-            <!sema_capture_this_or_instance_field_in_func!>t<!>his.i = <!sema_cannot_convert_literal!>2<!>
+            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.i = <!CANNOT_CONVERT_LITERAL!>2<!>
         }
         return 0
     }
 
     public mut func foo3() {
-        let f = {=> <!sema_capture_this_or_instance_field_in_func!>t<!>his.i}
+        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.i}
 
         func goo() {
-            <!sema_capture_this_or_instance_field_in_func!>t<!>his.i
+            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>t<!>his.i
         }
         return 0
     }
 
     public mut func foo4() {
-        let f = {=> <!sema_capture_this_or_instance_field_in_func!>i<!>}
+        let f = {=> <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>i<!>}
 
         func goo() {
-            <!sema_capture_this_or_instance_field_in_func!>i<!>
+            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>i<!>
         }
         return 0
     }

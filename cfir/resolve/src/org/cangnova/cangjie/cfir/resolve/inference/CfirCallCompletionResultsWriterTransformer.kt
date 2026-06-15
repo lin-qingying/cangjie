@@ -29,6 +29,7 @@ import org.cangnova.cangjie.cfir.CfirFunctionTarget
 import org.cangnova.cangjie.cfir.ScopeSession
 import org.cangnova.cangjie.cfir.SessionAndScopeSessionHolder
 import org.cangnova.cangjie.cfir.declarations.*
+import org.cangnova.cangjie.cfir.diagnostic.ConeCannotInferValueParameterType
 import org.cangnova.cangjie.cfir.diagnostic.ConeConstraintSystemHasContradiction
 import org.cangnova.cangjie.cfir.diagnostic.ConeInapplicableCandidateError
 import org.cangnova.cangjie.cfir.diagnostic.ConeTypeParameterInQualifiedAccess
@@ -123,7 +124,7 @@ class CfirCallCompletionResultsWriterTransformer(
         qualifiedAccessExpression.replaceDispatchReceiver(
             subCandidate.dispatchReceiverExpression()?.transformSingle(integerOperatorApproximator, null)
         )
-        qualifiedAccessExpression.replaceTypeArguments(computeTypeArguments(subCandidate))
+        qualifiedAccessExpression.replaceTypeArguments(computeTypeArguments(qualifiedAccessExpression, subCandidate))
         qualifiedAccessExpression.replaceConeTypeOrNull(type)
 
         runPCLARelatedTasksForCandidate(subCandidate)
@@ -260,7 +261,7 @@ class CfirCallCompletionResultsWriterTransformer(
         val expectedArrayType = parameter.returnTypeRef.coneTypeOrNull
             ?.substituteType(candidate)
             ?.fullyExpandedType()
-            ?.takeIf { it.arrayElementType != null }
+            ?.takeIf { it.arrayLiteralElementType != null }
             ?: return this
         replaceConeTypeOrNull(expectedArrayType)
         return this
@@ -280,7 +281,7 @@ class CfirCallCompletionResultsWriterTransformer(
             ?: expectedArgumentsTypeMapping?.getExpectedType(argumentBeforeTransform)
             ?: expectedArgumentsTypeMapping?.getExpectedType(replacedAfterTransform)
         val expectedArrayType = expectedType?.fullyExpandedType()
-            ?.takeIf { it.arrayElementType != null }
+            ?.takeIf { it.arrayLiteralElementType != null }
         if (replacedAfterTransform is CfirArrayLiteral &&
             replacedAfterTransform.elements.isEmpty() &&
             expectedArrayType != null
@@ -472,7 +473,7 @@ class CfirCallCompletionResultsWriterTransformer(
             return replacement.transformSingle(this, data)
         }
         val expectedArrayType = data?.getExpectedType(arrayLiteral)?.fullyExpandedType()
-            ?.takeIf { it.arrayElementType != null }
+            ?.takeIf { it.arrayLiteralElementType != null }
         if (arrayLiteral.elements.isEmpty() && expectedArrayType != null) {
             arrayLiteral.replaceConeTypeOrNull(expectedArrayType)
             return arrayLiteral
@@ -539,6 +540,11 @@ class CfirCallCompletionResultsWriterTransformer(
         val expectedType = data?.getExpectedType(anonymousFunctionExpression)
             ?: data?.getExpectedType(anonymousFunctionExpression.anonymousFunction)
         val anonymousFunction = anonymousFunctionExpression.anonymousFunction
+        rewriteAnonymousFunctionParameterTypes(
+            anonymousFunction = anonymousFunction,
+            expectedType = expectedType,
+            containingCallIsError = (data as? ExpectedArgumentType.ArgumentsMap)?.forErrorReference == true,
+        )
         val approximatedType = integerOperatorApproximator.approximateType(
             buildLambdaType(anonymousFunction, expectedType as? ConeFunctionType),
             expectedType,
@@ -549,6 +555,51 @@ class CfirCallCompletionResultsWriterTransformer(
             )
         }
         return anonymousFunctionExpression
+    }
+
+    /**
+     * 补全阶段必须把已选候选的函数形参类型写回 lambda 参数。
+     *
+     * Kotlin FIR 在 `FirCallCompleter.LambdaAnalyzerImpl` 中完成这一步；仓颉的
+     * overload-by-lambda 会在候选回滚后再由 results writer 统一落树，因此这里
+     * 对同一份 expected function type 做最终写回，而不是让 checker 兜底放行。
+     */
+    private fun rewriteAnonymousFunctionParameterTypes(
+        anonymousFunction: CfirAnonymousFunction,
+        expectedType: ConeCangJieType?,
+        containingCallIsError: Boolean,
+    ) {
+        val expectedFunctionType = (expectedType as? ConeFunctionType)
+            ?.takeUnless { containingCallIsError }
+            ?: return
+
+        anonymousFunction.replaceMatchingParameterFunctionType(expectedFunctionType)
+        anonymousFunction.valueParameters.forEachIndexed { index, parameter ->
+            val parameterType = expectedFunctionType.parameterTypes.getOrNull(index)
+                ?.let(::finallySubstituteOrSelf)
+                ?.let(::approximateLambdaInputType)
+                ?: ConeErrorType(
+                    ConeCannotInferValueParameterType(
+                        parameter.symbol,
+                        "Lambda or anonymous function has more parameters than expected",
+                    ),
+                )
+            val source = parameter.source
+                ?.fakeElement(CjFakeSourceElementKind.ImplicitReturnTypeOfLambdaValueParameter)
+            val typeRef = if (parameter.returnTypeRef is CfirImplicitTypeRef) {
+                parameterType.toCfirResolvedTypeRef(source)
+            } else {
+                parameter.returnTypeRef.resolvedTypeFromPrototype(parameterType, source)
+            }
+            parameter.replaceReturnTypeRef(typeRef)
+        }
+    }
+
+    private fun approximateLambdaInputType(type: ConeCangJieType): ConeCangJieType {
+        return typeApproximator.approximateToSuperType(
+            type,
+            TypeApproximatorConfiguration.IntermediateApproximationToSupertypeAfterCompletionInK2,
+        ) ?: type
     }
 
     private fun computeTypeArgumentTypes(
@@ -567,19 +618,44 @@ class CfirCallCompletionResultsWriterTransformer(
         }
     }
 
-    private fun computeTypeArguments(candidate: Candidate): List<CfirResolvedTypeRef> {
-        return computeTypeArgumentTypes(candidate).map { type ->
+    /**
+     * 对齐 Kotlin `FirCallCompletionResultsWriterTransformer.computeTypeArguments`：
+     * 完成阶段会写回推断后的类型实参，但显式错误实参本身必须保留在树上，
+     * 否则错误 type-ref 的诊断会在替换过程中被剥掉。
+     */
+    private fun computeTypeArguments(
+        access: CfirQualifiedAccessExpression,
+        candidate: Candidate,
+    ): List<CfirResolvedTypeRef> {
+        val typeArguments = computeTypeArgumentTypes(candidate).mapIndexed { index, type ->
+            val sourceTypeArgument = candidate.typeArgumentMapping.sourceTypeRef(index)
+            if (sourceTypeArgument?.coneType?.fullyExpandedType(session) is ConeErrorType) {
+                return@mapIndexed sourceTypeArgument
+            }
+
+            val source = sourceTypeArgument?.source
+            val delegatedTypeRef = sourceTypeArgument?.delegatedTypeRef ?: sourceTypeArgument
             when (type) {
                 is ConeErrorType -> buildErrorTypeRef {
+                    this.source = source
                     coneType = type
+                    this.delegatedTypeRef = delegatedTypeRef
                     diagnostic = type.diagnostic
                 }
 
                 else -> buildResolvedTypeRef {
+                    this.source = source
                     coneType = type
+                    this.delegatedTypeRef = delegatedTypeRef
                 }
             }
         }
+
+        if (typeArguments.size >= access.typeArguments.size) return typeArguments
+
+        return typeArguments + access.typeArguments
+            .subList(typeArguments.size, access.typeArguments.size)
+            .filterIsInstance<CfirResolvedTypeRef>()
     }
 
 

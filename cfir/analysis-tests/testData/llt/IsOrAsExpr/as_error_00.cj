@@ -7,7 +7,7 @@
 
 func doSth<T>(): Option<T> {
     let a = 0
-    <!sema_mismatched_types!>a as Option<T><!>
+    <!TYPE_MISMATCH!>a as Option<T><!>
 }
 
 main() {

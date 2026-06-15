@@ -265,9 +265,38 @@ class CfirDeclDeserializer(
         val generic = decl.generic ?: return mutableListOf()
         val len = generic.typeParametersLength
         if (len == 0) return mutableListOf()
-        return (0 until len).mapNotNullTo(mutableListOf()) { i ->
+        val typeParameters = (0 until len).mapNotNullTo(mutableListOf()) { i ->
             val paramIndex = decodeDeclRef(generic.typeParameters(i)) ?: return@mapNotNullTo null
             deserializeDecl(paramIndex) as? CfirTypeParameter
+        }
+        applyOwnerGenericConstraints(generic, typeParameters)
+        return typeParameters
+    }
+
+    /**
+     * `.cjo` 的泛型约束挂在 owner `Decl.generic.constraints` 上，而不是
+     * `GenericParamDecl.generic` 上。constraint.type 是被约束的类型参数，
+     * constraint.uppers 才是其上界；反序列化后必须写回对应 CfirTypeParameter。
+     */
+    @Suppress("UNCHECKED_CAST")
+    private fun applyOwnerGenericConstraints(
+        generic: Generic,
+        typeParameters: List<CfirTypeParameter>,
+    ) {
+        if (generic.constraintsLength == 0 || typeParameters.isEmpty()) return
+
+        val typeParametersBySymbol = typeParameters.associateBy { it.symbol }
+        for (i in 0 until generic.constraintsLength) {
+            val constraint = generic.constraints(i) ?: continue
+            val constrainedType = typeDeserializer.deserializeTypeFromField(constraint.type)
+            val constrainedSymbol = (constrainedType as? ConeTypeParameterType)?.lookupTag?.typeParameterSymbol
+                ?: continue
+            val typeParameter = typeParametersBySymbol[constrainedSymbol] ?: continue
+            val mutableBounds = typeParameter.bounds as? MutableList<CfirTypeRef> ?: continue
+
+            for (upperIndex in 0 until constraint.uppersLength) {
+                mutableBounds += buildTypeRef(constraint.uppers(upperIndex))
+            }
         }
     }
 
@@ -1072,16 +1101,7 @@ class CfirDeclDeserializer(
         val containingDeclarationSymbol = currentContainingDeclarationSymbol
             ?: error("Type parameter '${name.asString()}' must be deserialized inside a containing declaration")
 
-        // 泛型约束来自 decl.generic.constraints
         val bounds = mutableListOf<CfirTypeRef>()
-        val generic = decl.generic
-        if (generic != null) {
-            for (i in 0 until generic.constraintsLength) {
-                val constraint = generic.constraints(i) ?: continue
-                // constraint.type 是约束类型的 SemaTy 索引
-                bounds.add(buildTypeRef(constraint.type))
-            }
-        }
 
         val cfirParam = CfirTypeParameterImpl(
             source = null,

@@ -57,6 +57,14 @@ class ExpressionCheckersDiagnosticComponent(
         checkers.allSuperReceiverExpressionCheckers.check(superReceiverExpression, data)
     }
 
+    override fun visitAnnotation(annotation: CfirAnnotation, data: CheckerContext) {
+        checkers.allAnnotationCheckers.check(annotation, data)
+    }
+
+    override fun visitAnnotationCall(annotationCall: CfirAnnotationCall, data: CheckerContext) {
+        checkers.allAnnotationCallCheckers.check(annotationCall, data)
+    }
+
     override fun visitAssignment(assignment: CfirAssignment, data: CheckerContext) {
         checkers.allAssignmentCheckers.check(assignment, data)
     }

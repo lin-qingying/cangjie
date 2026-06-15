@@ -5,7 +5,7 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-type x = <!sema_undeclared_type_name!>L<!>ist<T>
+type x = <!UNDECLARED_TYPE_NAME!>L<!>ist<T>
 
 main(): Int64 {
     var a: x = [1]

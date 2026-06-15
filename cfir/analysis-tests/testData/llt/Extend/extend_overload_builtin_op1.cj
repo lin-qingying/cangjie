@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -6,19 +7,19 @@
 
 
 extend Int64 {
-    <!sema_operator_overload_built_in_binary_operator!>p<!>ublic operator func +(right: Int64) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func +(right: Int64) {
         return this
     }
-    <!sema_operator_overload_built_in_binary_operator!>p<!>ublic operator func <!sema_return_type_incompatible!>==<!>(right: Int64) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func <!RETURN_TYPE_INCOMPATIBLE!>==<!>(right: Int64) {
         return this
     }
-    <!sema_operator_overload_built_in_binary_operator!>p<!>ublic operator func <<(right: Int64) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func <<(right: Int64) {
         return this
     }
-    <!sema_operator_overload_built_in_binary_operator!>p<!>ublic operator func -(right: Int64) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func -(right: Int64) {
         return this
     }
-    <!sema_operator_overload_built_in_unary_operator!>p<!>ublic operator func -() {
+    <!OPERATOR_OVERLOAD_BUILT_IN_UNARY_OPERATOR!>p<!>ublic operator func -() {
         return this
     }
     public operator func [](right: Int64) { // OK
@@ -30,7 +31,7 @@ extend Int64 {
 }
 
 extend Bool {
-    <!sema_operator_overload_built_in_binary_operator!>p<!>ublic operator func <!sema_extend_member_cannot_shadow!>==<!>(right: Bool) {
+    <!OPERATOR_OVERLOAD_BUILT_IN_BINARY_OPERATOR!>p<!>ublic operator func <!EXTEND_MEMBER_CANNOT_SHADOW!>==<!>(right: Bool) {
         return true
     }
     public operator func +(right: Bool) { // OK

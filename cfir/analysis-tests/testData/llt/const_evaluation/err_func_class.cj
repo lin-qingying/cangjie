@@ -13,8 +13,8 @@ extend A {
 }
 
 const func f() {
-    let a = <!EXPECT_CONST!>A()<!>
-    <!EXPECT_CONST!>a.f()<!>
+    let a = <!EXPECT_CONST!>A<!>()
+    <!EXPECT_CONST!>a.f<!>()
 }
 
 main() {

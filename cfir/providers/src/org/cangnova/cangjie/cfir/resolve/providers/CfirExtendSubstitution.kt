@@ -1,17 +1,24 @@
 package org.cangnova.cangjie.cfir.resolve.providers
 
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
+import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
 import org.cangnova.cangjie.cfir.resolve.substitution.ConeSubstitutor
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.typeAwareSupertypeProviderOrNull
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.symbols.constructType
+import org.cangnova.cangjie.cfir.symbols.lazyResolveToPhase
 import org.cangnova.cangjie.cfir.types.CfirTypeSubstitutorByMap
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
+import org.cangnova.cangjie.cfir.types.collectUpperBounds
 import org.cangnova.cangjie.cfir.types.type
+import org.cangnova.cangjie.cfir.types.typeContext
+import org.cangnova.cangjie.type.AbstractTypeChecker
 import org.cangnova.cangjie.type.model.TypeConstructorMarker
 
 /**
@@ -44,7 +51,8 @@ fun findExtendDeclarationSubstitution(
         val current = queue.removeFirst()
         if (!visited.add(current)) continue
 
-        createExtendDeclarationSubstitution(extend, current)?.let { return it }
+        val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: return null
+        createExtendDeclarationSubstitution(session, extend, targetPattern, current)?.let { return it }
 
         queue.addAll(session.typeAwareSupertypeProviderOrNull?.getDirectSupertypes(current).orEmpty())
     }
@@ -52,11 +60,19 @@ fun findExtendDeclarationSubstitution(
     return null
 }
 
-private fun createExtendDeclarationSubstitution(
+/**
+ * 在单个已确定 receiver 类型上匹配 extend 目标，并校验 extend 自身泛型约束。
+ *
+ * 官方编译器在成员访问候选过滤中通过 `CheckGenericDeclInstantiation` 删除不满足
+ * extend 约束的目标；这里是 CFIR providers 层的等价入口，供类型感知父类型、
+ * use-site member scope 和调用解析共享。
+ */
+fun createExtendDeclarationSubstitution(
+    session: CfirSession,
     extend: CfirExtend,
+    targetPattern: ConeCangJieType,
     concreteReceiverType: ConeCangJieType,
 ): CfirExtendDeclarationSubstitution? {
-    val targetPattern = extend.extendedTypeRef.coneTypeOrNull ?: return null
     val substitutions = linkedMapOf<TypeConstructorMarker, ConeCangJieType>()
     val extendTypeParameterConstructors = extend.typeParameters.mapTo(linkedSetOf<TypeConstructorMarker>()) {
         it.symbol.toLookupTag()
@@ -77,10 +93,56 @@ private fun createExtendDeclarationSubstitution(
 
     val substitutor = substitutions.takeIf { it.isNotEmpty() }?.let(::CfirTypeSubstitutorByMap)
         ?: ConeSubstitutor.Empty
+    if (!extend.satisfiesGenericConstraints(session, substitutor)) {
+        return null
+    }
     return CfirExtendDeclarationSubstitution(
         substitutor = substitutor,
         substitutedReceiverType = substitutor.substituteOrSelf(targetPattern),
     )
+}
+
+/**
+ * 校验 extend 声明类型参数在当前 use-site 实例化后是否满足声明侧 upper bounds。
+ *
+ * 如果实际实参仍是类型参数，按官方 `CheckGenericDeclInstantiation` 的 generic 分支，
+ * 允许它的任一已知上界满足目标上界。
+ */
+private fun CfirExtend.satisfiesGenericConstraints(
+    session: CfirSession,
+    substitutor: ConeSubstitutor,
+): Boolean {
+    for (typeParameter in typeParameters) {
+        val typeParameterSymbol = typeParameter.symbol
+        typeParameterSymbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+
+        val actualType = substitutor.substituteOrSelf(typeParameterSymbol.constructType())
+        for (bound in typeParameterSymbol.resolvedBounds) {
+            val upperBound = substitutor.substituteOrSelf(bound.coneType)
+            if (upperBound is ConeErrorType || actualType is ConeErrorType) return false
+            if (!actualType.satisfiesUpperBound(session, upperBound, substitutor)) {
+                return false
+            }
+        }
+    }
+    return true
+}
+
+private fun ConeCangJieType.satisfiesUpperBound(
+    session: CfirSession,
+    upperBound: ConeCangJieType,
+    substitutor: ConeSubstitutor,
+): Boolean {
+    if (AbstractTypeChecker.isSubtypeOf(session.typeContext, this, upperBound)) {
+        return true
+    }
+
+    val typeParameterType = this as? ConeTypeParameterType ?: return false
+    return typeParameterType.collectUpperBounds(session.typeContext).any { actualUpperBound ->
+        val substitutedUpperBound = substitutor.substituteOrSelf(actualUpperBound)
+        substitutedUpperBound !is ConeErrorType &&
+                AbstractTypeChecker.isSubtypeOf(session.typeContext, substitutedUpperBound, upperBound)
+    }
 }
 
 private fun matchExtendTargetType(

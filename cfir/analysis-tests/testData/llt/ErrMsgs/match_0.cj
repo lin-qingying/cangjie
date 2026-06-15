@@ -6,7 +6,7 @@
 
 
 main() {
-    var err = 1 <!sema_invalid_binary_expr!>+<!> false
+    var err = 1 <!INVALID_BINARY_OPERATOR!>+<!> false
 
     match (err) {
         case x => 1 + false

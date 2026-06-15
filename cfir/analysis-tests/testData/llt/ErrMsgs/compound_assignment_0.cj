@@ -6,7 +6,7 @@
 
 
 main() {
-    var b = 1 <!sema_invalid_binary_expr!>+<!> true
+    var b = 1 <!INVALID_BINARY_OPERATOR!>+<!> true
     var a = b
 
     a **= 1

@@ -10,14 +10,14 @@ struct S {
 
     init() {
         func g() {
-            <!sema_illegal_capture_this!>x<!> += 1
+            <!ILLEGAL_CAPTURE_THIS!>x<!> += 1
         }
         g()
     }
 
     mut func f() {
         func g() {
-            <!sema_capture_this_or_instance_field_in_func!>x<!> += 1
+            <!CAPTURE_THIS_OR_INSTANCE_FIELD_IN_FUNC!>x<!> += 1
         }
         g()
         x += 1

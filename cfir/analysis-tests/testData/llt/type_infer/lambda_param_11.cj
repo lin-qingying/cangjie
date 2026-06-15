@@ -6,5 +6,5 @@
 
 
 main() {
-    let f1 = {<!sema_lambdaExpr_must_have_type_annotation!>a<!>, b => a + (a ?? 0)}
+    let f1 = {<!LAMBDA_MUST_HAVE_TYPE_ANNOTATION!>a<!>, b => a + (a ?? 0)}
 }

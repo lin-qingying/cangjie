@@ -20,11 +20,11 @@ struct Data {
 
     public operator func -(): Data {
         var left: Int32 = width
-        <!sema_mismatched_types!>var right: Int32 = length<!>
+        <!TYPE_MISMATCH!>var right: Int32 = length<!>
     }
 
     public static func g() {
-        var x = <!sema_static_function_cannot_access_non_static_member!>w<!>idth
+        var x = <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>w<!>idth
         return x
     }
 }

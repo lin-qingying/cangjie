@@ -16,7 +16,7 @@ func f(<!chir_dce_unused_variable!>x<!>: (Int64, I)): A {
 main() {
     let x = (1, f)
     match (x) {
-        case <!sema_unreachable_pattern!>_: (Int64, ((Int64, A)) -> I)<!> => 0
+        case <!UNREACHABLE_PATTERN!>_: (Int64, ((Int64, A)) -> I)<!> => 0
         case _ => 1
     }
 }

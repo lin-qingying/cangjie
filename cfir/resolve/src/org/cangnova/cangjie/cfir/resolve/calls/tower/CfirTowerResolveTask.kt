@@ -184,6 +184,7 @@ internal open class CfirTowerResolveTask(
                     ScopeBasedTowerLevel(components, scope, givenExtensionReceiver = explicitReceiver),
                     info,
                     group,
+                    explicitReceiverKind = ExplicitReceiverKind.EXTENSION_RECEIVER,
                 )
             },
             onImplicitReceiver = { receiver, group ->
@@ -195,7 +196,7 @@ internal open class CfirTowerResolveTask(
                     ),
                     info,
                     group,
-                    explicitReceiverKind = ExplicitReceiverKind.DISPATCH_RECEIVER,
+                    explicitReceiverKind = ExplicitReceiverKind.EXTENSION_RECEIVER,
                 )
             },
         )

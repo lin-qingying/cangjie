@@ -9,7 +9,7 @@ struct Rectangle {
     public var width: Int32 = 1
     public let length: Int32 = 1
     public func set() {
-        <!sema_cannot_modify_var!>width<!> += 1
+        <!CANNOT_MODIFY_VAR!>width<!> += 1
     }
 }
 

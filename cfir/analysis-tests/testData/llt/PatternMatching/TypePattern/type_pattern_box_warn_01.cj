@@ -13,7 +13,7 @@ func f(<!chir_dce_unused_variable!>x<!>: I) {}
 
 main() {
     match (f) {
-        case <!sema_unreachable_pattern!>_: (A) -> Unit<!> => 0
+        case <!UNREACHABLE_PATTERN!>_: (A) -> Unit<!> => 0
         case _ => 1
     }
 }

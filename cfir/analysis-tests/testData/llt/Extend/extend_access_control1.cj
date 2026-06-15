@@ -19,7 +19,7 @@ extend A {
 
 main() {
     let a: A = A()
-    a.<!sema_no_match_function_declaration_for_call!>t<!>est()
+    a.<!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>t<!>est()
     a.foo()
     0
 }

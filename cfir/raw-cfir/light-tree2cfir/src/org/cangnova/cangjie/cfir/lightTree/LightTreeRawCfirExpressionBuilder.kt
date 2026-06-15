@@ -63,6 +63,8 @@ import org.cangnova.cangjie.name.OperatorNameConventions
 import org.cangnova.cangjie.psi.CjNodeTypes
 import org.cangnova.cangjie.psi.stubs.elements.CjStubElementTypes.BASIC_REFERENCE_EXPRESSION
 import org.cangnova.cangjie.source.CjFakeSourceElementKind
+import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.source.CjSourceElementOffsetStrategy
 import org.cangnova.cangjie.source.fakeElement
 import org.cangnova.cangjie.cfir.expressions.builder.buildErrorExpression as buildErrorExpressionNode
 
@@ -508,11 +510,13 @@ class LightTreeRawCfirExpressionBuilder(
           val typeArgNodes = mutableListOf<LighterASTNode>()
           val lambdaArgNodes = mutableListOf<LighterASTNode>()
           var hasValueArgumentList = false
+          var valueArgumentListNode: LighterASTNode? = null
 
         tree.forEachChildren(node) { child ->
             when (child.tokenType) {
                 CjNodeTypes.VALUE_ARGUMENT_LIST -> {
                     hasValueArgumentList = true
+                    valueArgumentListNode = child
                     tree.forEachChildren(child) { arg ->
                         if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
                             argNodes.add(arg)
@@ -539,6 +543,8 @@ class LightTreeRawCfirExpressionBuilder(
           var effectiveCalleeNode = calleeNode
           val effectiveArgNodes = argNodes.toMutableList()
           val effectiveTypeArgNodes = typeArgNodes.toMutableList()
+          var effectiveCallSourceNode = node
+          var effectiveValueArgumentListNode = valueArgumentListNode
 
           /**
            * 对齐 Kotlin FIR light-tree raw builder：
@@ -554,10 +560,12 @@ class LightTreeRawCfirExpressionBuilder(
               var nestedCalleeNode: LighterASTNode? = null
               val nestedArgNodes = mutableListOf<LighterASTNode>()
               val nestedTypeArgNodes = mutableListOf<LighterASTNode>()
+              var nestedValueArgumentListNode: LighterASTNode? = null
 
               tree.forEachChildren(calleeNode!!) { child ->
                   when (child.tokenType) {
                       CjNodeTypes.VALUE_ARGUMENT_LIST -> {
+                          nestedValueArgumentListNode = child
                           tree.forEachChildren(child) { arg ->
                               if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
                                   nestedArgNodes.add(arg)
@@ -583,6 +591,8 @@ class LightTreeRawCfirExpressionBuilder(
               }
 
               effectiveCalleeNode = nestedCalleeNode
+              effectiveCallSourceNode = calleeNode!!
+              effectiveValueArgumentListNode = nestedValueArgumentListNode
               effectiveArgNodes.clear()
               effectiveArgNodes.addAll(nestedArgNodes)
               effectiveTypeArgNodes.clear()
@@ -597,6 +607,7 @@ class LightTreeRawCfirExpressionBuilder(
           } else {
               collectTypeArgumentsFromCallee(effectiveCalleeNode)
           }
+          val varraySizeLiteral = extractVArraySizeLiteral(node, effectiveCalleeNode)
 
           tryBuildTypeConversion(
               node,
@@ -618,27 +629,54 @@ class LightTreeRawCfirExpressionBuilder(
           callArguments.addAll(lambdaArgs)
 
           val (receiver, reference) = resolveCalleeReference(effectiveCalleeNode)
+          val callSource = effectiveCallSourceNode.callSourceWithoutTrailingLambda(lambdaArgNodes)
 
           if (!hasValueArgumentList && lambdaArgs.isEmpty() && typeArgs.isNotEmpty()) {
               return buildNamedAccessExpression {
-                  source = node.toSource()
+                  source = callSource
                   calleeReference = reference
                   explicitReceiver = receiver
                   this.typeArguments.addAll(typeArgs)
               }
           }
 
-          return buildFunctionCall {
-              source = node.toSource()
-              calleeReference = reference
-              argumentList = buildArgumentList {
-                  arguments.addAll(callArguments)
-              }
-              explicitReceiver = receiver
-              typeArguments.addAll(typeArgs)
-              origin = callOriginFor(effectiveCalleeNode)
-          }
-      }
+           return buildFunctionCall {
+               source = callSource
+               calleeReference = reference
+               argumentList = buildArgumentList {
+                   source = effectiveValueArgumentListNode?.toSource()
+                   arguments.addAll(callArguments)
+               }
+               explicitReceiver = receiver
+               typeArguments.addAll(typeArgs)
+               origin = callOriginFor(effectiveCalleeNode)
+               hasTrailingLambda = lambdaArgNodes.isNotEmpty()
+               this.varraySizeLiteral = varraySizeLiteral
+           }
+       }
+
+    /**
+     * LightTree 路径与 PSI 路径保持同一 source 语义：尾随 lambda 是实参，
+     * 不是调用主体 source 的一部分。
+     */
+    private fun LighterASTNode.callSourceWithoutTrailingLambda(
+        lambdaArgNodes: List<LighterASTNode>,
+    ): CjSourceElement {
+        val callSource = toSource()
+        val firstLambda = lambdaArgNodes.firstOrNull() ?: return callSource
+        val startOffset = callSource.startOffset
+        var endOffset = tree.getStartOffset(firstLambda)
+
+        while (endOffset > startOffset && endOffset - 1 < source.length && source[endOffset - 1].isWhitespace()) {
+            endOffset--
+        }
+        if (endOffset <= startOffset) return callSource
+
+        return callSource.fakeElement(
+            CjFakeSourceElementKind.SyntheticCall,
+            CjSourceElementOffsetStrategy.Custom.Initialized(startOffset, endOffset),
+        )
+    }
 
     /**
      * LightTree 路径下同样要保留整段 value-argument source。
@@ -822,10 +860,12 @@ class LightTreeRawCfirExpressionBuilder(
             val argNodes = mutableListOf<LighterASTNode>()
             val typeArgNodes = mutableListOf<LighterASTNode>()
             val lambdaArgNodes = mutableListOf<LighterASTNode>()
+            var valueArgumentListNode: LighterASTNode? = null
 
             tree.forEachChildren(selector) { child ->
                 when (child.tokenType) {
                     CjNodeTypes.VALUE_ARGUMENT_LIST -> {
+                        valueArgumentListNode = child
                         tree.forEachChildren(child) { arg ->
                             if (arg.tokenType == CjNodeTypes.VALUE_ARGUMENT) {
                                 argNodes.add(arg)
@@ -880,11 +920,13 @@ class LightTreeRawCfirExpressionBuilder(
                 source = node.toSource()
                 calleeReference = ref
                 argumentList = buildArgumentList {
+                    source = valueArgumentListNode?.toSource()
                     arguments.addAll(callArguments)
                 }
                 explicitReceiver = receiver
                 typeArguments.addAll(typeArgs)
                 origin = CfirFunctionCallOrigin.Regular
+                hasTrailingLambda = lambdaArgNodes.isNotEmpty()
             }
         }
 
@@ -985,6 +1027,30 @@ class LightTreeRawCfirExpressionBuilder(
 
             else -> emptyList()
         }
+    }
+
+    private fun extractVArraySizeLiteral(
+        callNode: LighterASTNode,
+        calleeNode: LighterASTNode?,
+    ): String? {
+        if (!calleeNode.isDirectVArrayCallee()) return null
+        return findVArraySizeLiteral(callNode) ?: findVArraySizeLiteral(calleeNode)
+    }
+
+    private fun LighterASTNode?.isDirectVArrayCallee(): Boolean {
+        if (this?.tokenType != CjNodeTypes.REFERENCE_EXPRESSION && this?.tokenType != BASIC_REFERENCE_EXPRESSION) return false
+        return referenceNameFromText(asText()).asString() == "VArray"
+    }
+
+    private fun findVArraySizeLiteral(node: LighterASTNode?): String? {
+        node ?: return null
+        if (node.tokenType == CjNodeTypes.TYPE_ARGUMENT_LIST) {
+            tree.findChildByType(node, CjTokens.INTEGER_LITERAL)?.let { return it.asText() }
+        }
+        tree.forEachChildren(node) { child ->
+            findVArraySizeLiteral(child)?.let { return it }
+        }
+        return null
     }
 
     // ===== Control Flow =====

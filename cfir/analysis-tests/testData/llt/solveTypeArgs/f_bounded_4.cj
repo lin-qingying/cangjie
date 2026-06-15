@@ -36,6 +36,6 @@ class CCity <: City {}
 func f<X, Y, Z>(a: X, b: Y, c: Z) where X <: Graph<X, Y, Z>, Y <: Edge<X, Y, Z>, Z <: Vertex<X, Y, Z> {}
 
 main() {
-    <!sema_unable_to_infer_generic_func!>f<!>(MMap(), RRoad(), CCity());
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f<!>(MMap(), RRoad(), CCity());
     0
 }

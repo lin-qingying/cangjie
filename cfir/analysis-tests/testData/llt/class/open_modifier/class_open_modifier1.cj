@@ -6,7 +6,7 @@
 
 
 class A {
-    <!sema_ignore_open!>p<!>ublic open func f(): Int32 {
+    <!IGNORE_OPEN!>p<!>ublic open func f(): Int32 {
         return 0
     }
 

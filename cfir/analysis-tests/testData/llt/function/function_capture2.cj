@@ -11,20 +11,20 @@ func f() {
     func g() {
         print("${x}")
     }
-    let b = <!sema_use_func_capture_var_alone!>g<!>
-    <!sema_use_func_capture_var_alone!>g<!>
+    let b = <!USE_FUNC_CAPTURE_VAR_ALONE!>g<!>
+    <!USE_FUNC_CAPTURE_VAR_ALONE!>g<!>
     g()
     func g2() {
         g()
     }
-    let c = <!sema_func_capture_var_cannot_assign!>g<!>2
+    let c = <!FUNC_CAPTURE_VAR_CANNOT_ASSIGN!>g<!>2
     func h() {
         print("${y}")
     }
     let d = h
-    let e = <!sema_use_func_capture_var_alone!>{=> print("${x}")}<!>
+    let e = <!USE_FUNC_CAPTURE_VAR_ALONE!>{=> print("${x}")}<!>
     let i = {=> x * x}()
-    return <!sema_use_func_capture_var_alone!>g<!>
+    return <!USE_FUNC_CAPTURE_VAR_ALONE!>g<!>
 }
 
 let x = 4
@@ -33,7 +33,7 @@ func f2() {
     var a = x
     let x: Int64
     func f1() {
-        <!sema_capture_before_initialization!>x<!>
+        <!CAPTURE_BEFORE_INITIALIZATION!>x<!>
     }
     x = 99
     f1()

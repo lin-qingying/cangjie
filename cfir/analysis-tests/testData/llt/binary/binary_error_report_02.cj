@@ -16,8 +16,8 @@ class Test <: Base<Int32> {
     public var i1: Int32
     public var i2: Int32
     public init() {
-        i1 = <!sema_object_cannot_access_static_member!>s<!>uper.i
-        i2 = <!sema_object_cannot_access_static_member!>s<!>uper.foo()
+        i1 = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>s<!>uper.i
+        i2 = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>s<!>uper.foo()
     }
 }
 
@@ -25,8 +25,8 @@ class Data<T> <: Base<T> {
     public var i1: Int32
     public var i2: Int32
     public init() {
-        i1 = <!sema_object_cannot_access_static_member!>s<!>uper.i + 1
-        i2 = <!sema_object_cannot_access_static_member!>s<!>uper.foo() + 1
+        i1 = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>s<!>uper.i + 1
+        i2 = <!OBJECT_CANNOT_ACCESS_STATIC_MEMBER!>s<!>uper.foo() + 1
     }
 }
 

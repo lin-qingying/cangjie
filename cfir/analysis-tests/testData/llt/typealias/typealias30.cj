@@ -25,6 +25,6 @@ main() {
     var a: A = A()
     var b: B<Int64> = B<Int64>()
     var c: C<Int64> = GennericClassA<Array<Int64>, Array<Int64>>()
-    var i: InterfaceI<Int64> = <!sema_mismatched_types!>C<Int64>()<!>
+    var i: InterfaceI<Int64> = <!TYPE_MISMATCH!>C<Int64>()<!>
     0
 }

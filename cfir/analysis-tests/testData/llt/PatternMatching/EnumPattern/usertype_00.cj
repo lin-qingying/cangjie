@@ -16,10 +16,10 @@ main() {
     let x = A
     match (x) {
         case E.A => 0
-        case <!sema_unreachable_pattern!>A<!> => 0
-        case <!sema_unreachable_pattern!>E.A<!> => 0
+        case <!UNREACHABLE_PATTERN!>A<!> => 0
+        case <!UNREACHABLE_PATTERN!>E.A<!> => 0
         case B => 1
-        case <!sema_unreachable_pattern!>E.B<!> => 1
-        case <!sema_unreachable_pattern!>E.B<!> => 1
+        case <!UNREACHABLE_PATTERN!>E.B<!> => 1
+        case <!UNREACHABLE_PATTERN!>E.B<!> => 1
     }
 }

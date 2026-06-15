@@ -7,16 +7,16 @@
 
 struct A {
     public let a: Int32
-    <!sema_class_uninitialized_field!>p<!>ublic A(x: Int32) {
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic A(x: Int32) {
     }
 }
 
-<!sema_value_type_recursive!>s<!>truct Data {
+<!VALUE_TYPE_RECURSIVE!>s<!>truct Data {
     public Data() {}
     public var b = <!RECURSIVE_CONSTRUCTOR_CALL!>Data<!>()
 }
 
-<!sema_value_type_recursive!>s<!>truct Data2 {
+<!VALUE_TYPE_RECURSIVE!>s<!>truct Data2 {
     public var b: Data2 = <!RECURSIVE_CONSTRUCTOR_CALL!>Data2<!>()
 }
 
@@ -27,7 +27,7 @@ struct GenRec {
         this(x)
         this.b = y
     }
-    <!sema_class_uninitialized_field!>p<!>rivate GenRec(x: Int64) {
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>rivate GenRec(x: Int64) {
         this.a = x
     }
 }

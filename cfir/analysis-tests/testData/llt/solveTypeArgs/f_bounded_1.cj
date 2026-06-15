@@ -11,7 +11,7 @@ open class C <: I<C> {}
 
 class D <: C {}
 
-func f<<!sema_upper_bound_must_be_class_or_interface!>Y<!>, Z>(a: Y) where Y <: Z, Z <: I<Y> {}
+func f<<!UPPER_BOUND_MUST_BE_CLASS_OR_INTERFACE!>Y<!>, Z>(a: Y) where Y <: Z, Z <: I<Y> {}
 
 main() {
     f(D()) // see below

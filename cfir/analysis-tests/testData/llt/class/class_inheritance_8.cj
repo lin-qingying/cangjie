@@ -17,8 +17,8 @@ open class A {
 }
 
 abstract class B <: A {
-    <!sema_invalid_override_member_in_class!>p<!>ublic func f(): String
-    <!sema_invalid_override_member_in_class!>p<!>ublic prop a: Int
+    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>p<!>ublic func f(): String
+    <!INVALID_OVERRIDE_MEMBER_IN_CLASS!>p<!>ublic prop a: Int
 }
 
 main() {}

@@ -11,7 +11,7 @@ interface I {
         global++
     }
     const func g() {
-        <!EXPECT_CONST!>f()<!>
+        <!EXPECT_CONST!>f<!>()
     }
 }
 

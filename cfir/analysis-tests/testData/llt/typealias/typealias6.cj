@@ -5,9 +5,9 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-<!sema_typealias_cycle!>t<!>ype D = F
+<!TYPEALIAS_CYCLE!>t<!>ype D = F
 
-<!sema_typealias_cycle!>t<!>ype F = D
+<!TYPEALIAS_CYCLE!>t<!>ype F = D
 
 main() {
     return 0

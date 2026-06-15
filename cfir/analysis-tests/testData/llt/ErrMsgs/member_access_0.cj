@@ -6,9 +6,9 @@
 
 
 main() {
-    let a = 1 <!sema_invalid_binary_expr!>+<!> true
+    let a = 1 <!INVALID_BINARY_OPERATOR!>+<!> true
 
-    (false <!sema_invalid_binary_expr!>+<!> 2).f()
+    (false <!INVALID_BINARY_OPERATOR!>+<!> 2).f()
     a.f()
     a.x
 

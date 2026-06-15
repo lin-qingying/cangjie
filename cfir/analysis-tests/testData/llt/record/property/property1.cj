@@ -7,7 +7,7 @@
 
 struct A {
     public mut prop a: Int64 {
-        <!sema_cannot_have_parameter!>g<!>et(b) {
+        <!CANNOT_HAVE_PARAMETER!>g<!>et(b) {
             1
         }
         set(v) {}

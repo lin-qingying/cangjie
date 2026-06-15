@@ -10,6 +10,11 @@ class ConeVArrayType(
     val size: Long,
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
+    /**
+     * VArray 在官方类型系统中以元素类型作为唯一 typeArg，size 属于类型头部。
+     * 这里暴露给通用约束系统，保证 `VArray<α, N>` 能拆解出元素类型约束。
+     */
+    override val typeArguments: List<ConeTypeProjection> = listOf(elementType)
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true

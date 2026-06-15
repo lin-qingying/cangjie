@@ -251,6 +251,17 @@ interface TypeSystemCommonSuperTypesContext : TypeSystemContext, TypeSystemTypeF
     override fun CangJieTypeMarker.extractElementsForTupleType(): List<CangJieTypeMarker> =
         error("Not a tuple type")
 
+    /** 判断该类型是否是 VArray 类型（默认 false，由具体上下文覆盖） */
+    override fun CangJieTypeMarker.isVArrayType(): Boolean = false
+
+    /** 提取 VArray 的元素类型 */
+    override fun CangJieTypeMarker.extractElementTypeForVArrayType(): CangJieTypeMarker =
+        error("Not a VArray type")
+
+    /** 提取 VArray 的编译期固定尺寸 */
+    override fun CangJieTypeMarker.extractSizeForVArrayType(): Long =
+        error("Not a VArray type")
+
     /** 创建元组类型 */
     fun createTupleType(elementTypes: List<CangJieTypeMarker>): CangJieTypeMarker =
         error("Tuple type creation not available in this context")
@@ -719,6 +730,17 @@ interface TypeSystemContext : TypeSystemOptimizationContext {
     /** 提取元组类型的元素类型列表 */
     fun CangJieTypeMarker.extractElementsForTupleType(): List<CangJieTypeMarker> =
         error("Not a tuple type")
+
+    /** 判断该类型是否是 VArray 类型（默认 false，由具体上下文覆盖） */
+    fun CangJieTypeMarker.isVArrayType(): Boolean = false
+
+    /** 提取 VArray 的元素类型 */
+    fun CangJieTypeMarker.extractElementTypeForVArrayType(): CangJieTypeMarker =
+        error("Not a VArray type")
+
+    /** 提取 VArray 的编译期固定尺寸 */
+    fun CangJieTypeMarker.extractSizeForVArrayType(): Long =
+        error("Not a VArray type")
 
     // ------------------------------------------------------------------
     // Option 自动装箱

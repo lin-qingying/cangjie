@@ -15,14 +15,14 @@ interface I {
     }
 }
 
-class D<T> where <!sema_inherit_member_type_inconsistent!>T <: C1 & I<!> {
+class D<T> where <!INHERIT_MEMBER_TYPE_INCONSISTENT!>T <: C1 & I<!> {
     public func foo() {
         return T.foo()
     }
 }
 
 class C1 <: I {
-    public static func <!sema_return_type_incompatible!>foo<!>(): E2 {
+    public static func <!RETURN_TYPE_INCOMPATIBLE!>foo<!>(): E2 {
         return E2()
     }
 }

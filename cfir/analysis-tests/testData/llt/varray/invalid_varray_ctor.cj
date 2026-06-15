@@ -8,6 +8,6 @@
 // Was ICE, should quit normally
 main() {
     VArray<Int64, $3><!parse_varray_with_paren!>6<!>([1, 2, 3, 4])
-    let a = VArray<Int64, $3><!parse_varray_with_paren!>
-<!>    0
+    let a = VArray<Int64, $3><!parse_varray_with_paren!><!>
+    0
 }

@@ -11,7 +11,7 @@ open class C <: I<C> {}
 
 class D <: C {}
 
-func f<<!sema_generic_param_directly_recursive!>X<!>, Y, Z>(a: X) where X <: Y, Y <: I<Y> & Z, Z <: X {}
+func f<<!GENERIC_PARAM_DIRECTLY_RECURSIVE!>X<!>, Y, Z>(a: X) where X <: Y, Y <: I<Y> & Z, Z <: X {}
 
 main() {
     f(D())

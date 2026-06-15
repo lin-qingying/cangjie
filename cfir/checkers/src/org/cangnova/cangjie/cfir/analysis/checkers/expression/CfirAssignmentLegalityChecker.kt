@@ -32,12 +32,14 @@ import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirAssignment
+import org.cangnova.cangjie.cfir.expressions.CfirFunctionCall
 import org.cangnova.cangjie.cfir.expressions.CfirIncrementDecrementExpression
 import org.cangnova.cangjie.cfir.expressions.CfirQualifiedAccessExpression
 import org.cangnova.cangjie.cfir.expressions.CfirSubscriptExpression
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.scopes.CfirTypeScope
 import org.cangnova.cangjie.cfir.scopes.isStaticMemberForOverride
 import org.cangnova.cangjie.cfir.scopes.overrideSignatureKey
@@ -47,8 +49,12 @@ import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeClassLikeType
+import org.cangnova.cangjie.cfir.types.ConeErrorType
+import org.cangnova.cangjie.cfir.types.ConePrimitiveType
 import org.cangnova.cangjie.cfir.types.ConeStructType
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
 import org.cangnova.cangjie.name.Name
+import org.cangnova.cangjie.source.AbstractCjSourceElement
 
 /**
  * 赋值左值合法性检查。
@@ -63,11 +69,41 @@ object CfirAssignmentLegalityChecker : CfirAssignmentChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirAssignment) {
         val lValue = expression.lValue
-        if (lValue is CfirSubscriptExpression) return
+        if (lValue is CfirSubscriptExpression) {
+            when (val target = CfirMutationTargetClassifier.classifySubscriptAssignment(lValue, expression)) {
+                is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
+                    reporter.reportOn(
+                        source = expression.source ?: lValue.source,
+                        factory = CfirErrors.CANNOT_ASSIGN_TO_IMMUTABLE,
+                    )
+                }
+
+                is CfirMutationTargetClassifier.MutationTarget.NonAssignableName -> {
+                    reporter.reportOn(
+                        source = lValue.source ?: expression.source,
+                        factory = CfirErrors.UNQUALIFIED_LEFT_VALUE_ASSIGNED,
+                        a = target.name,
+                    )
+                }
+
+                CfirMutationTargetClassifier.MutationTarget.Assignable,
+                null,
+                -> Unit
+            }
+            return
+        }
 
         val access = lValue as? CfirQualifiedAccessExpression ?: return
         val accessSource = access.calleeReference.source ?: access.source ?: expression.source ?: return
         val assignmentSource = expression.source ?: access.source ?: access.calleeReference.source ?: return
+
+        if (CfirMutationTargetClassifier.isVArraySizeAccess(access)) {
+            reporter.reportOn(
+                source = assignmentSource,
+                factory = CfirErrors.CANNOT_ASSIGN_TO_IMMUTABLE,
+            )
+            return
+        }
 
         when (val target = CfirMutationTargetClassifier.classifyAssignment(access, expression)) {
             is CfirMutationTargetClassifier.MutationTarget.ImmutableValue -> {
@@ -129,7 +165,64 @@ object CfirIncrementDecrementLegalityChecker : CfirIncrementDecrementExpressionC
     }
 }
 
+/**
+ * 自增自减数值类型检查。
+ *
+ * 官方语义要求 `++` / `--` 只作用于整数类型；表达式结果类型由 resolve 阶段固定为
+ * `Unit`，这里仅补充操作数类型约束，避免把非整数目标误当作合法自增表达式。
+ */
+object CfirIncrementDecrementTypeChecker : CfirIncrementDecrementExpressionChecker() {
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    override fun check(expression: CfirIncrementDecrementExpression) {
+        val source = expression.source as? AbstractCjSourceElement ?: return
+        val actualType = expression.expression.coneTypeOrNull ?: return
+        if (actualType is ConeErrorType) return
+
+        val expandedType = actualType.fullyExpandedType(context.session)
+        if (expandedType is ConeErrorType) return
+        if ((expandedType as? ConePrimitiveType)?.kind?.isInteger == true) return
+
+        reporter.reportOn(
+            source = source,
+            factory = CfirErrors.TYPE_MISMATCH,
+            a = ConePrimitiveType.INT64,
+            b = actualType,
+            c = false,
+        )
+    }
+}
+
 internal object CfirMutationTargetClassifier {
+    context(context: CheckerContext)
+    fun classifySubscriptAssignment(
+        subscript: CfirSubscriptExpression,
+        assignment: CfirAssignment,
+    ): MutationTarget? {
+        subscript.receiver.coneTypeOrNull
+            ?.fullyExpandedType(context.session) as? ConeVArrayType ?: return null
+
+        return when (val receiver = subscript.receiver) {
+            is CfirSubscriptExpression -> MutationTarget.ImmutableValue
+            is CfirFunctionCall -> MutationTarget.ImmutableValue
+            is CfirQualifiedAccessExpression -> when (val target = receiver.mutationTarget(assignment)) {
+                MutationTarget.Assignable -> MutationTarget.Assignable
+                is MutationTarget.ImmutableValue -> target
+                is MutationTarget.NonAssignableName -> MutationTarget.ImmutableValue
+                null -> null
+            }
+            else -> MutationTarget.ImmutableValue
+        }
+    }
+
+    context(context: CheckerContext)
+    fun isVArraySizeAccess(access: CfirQualifiedAccessExpression): Boolean {
+        val name = (access.calleeReference as? CfirNamedReference)?.name ?: return false
+        if (name.asString() != "size") return false
+        return access.explicitReceiver
+            ?.coneTypeOrNull
+            ?.fullyExpandedType(context.session) is ConeVArrayType
+    }
+
     context(context: CheckerContext)
     fun classifyAssignment(
         access: CfirQualifiedAccessExpression,

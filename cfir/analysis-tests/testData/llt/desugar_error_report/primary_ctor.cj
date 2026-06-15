@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -7,5 +8,5 @@
 
 struct Test {
     private Test(var name: String) {}
-    <!sema_class_uninitialized_field!><!sema_overload_conflicts!>i<!>nit<!>(name: String) {}
+    <!CLASS_UNINITIALIZED_FIELD!><!OVERLOAD_CONFLICTS!>i<!>nit<!>(name: String) {}
 }

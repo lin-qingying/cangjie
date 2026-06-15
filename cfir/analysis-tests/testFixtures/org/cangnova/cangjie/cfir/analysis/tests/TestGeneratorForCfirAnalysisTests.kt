@@ -122,7 +122,7 @@ object TestGeneratorForCfirAnalysisTests {
         val rootRel = projectRoot.toPath().relativize(testDataRoot.toPath()).toString().replace('\\', '/')
 
         val rootFiles = testDataRoot.listFiles().orEmpty()
-            .filter { it.isFile && it.extension == "cj" }
+            .filter { it.isGeneratedTestDataFile() }
             .sortedBy { it.name }
 
         val subDirs = testDataRoot.listFiles().orEmpty()
@@ -198,7 +198,7 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine()
         appendLine("    val currentDir = currentClassTestDataDir(testInstance::class.java, testDataDir)")
         appendLine("    val expected = currentDir.listFiles().orEmpty().asSequence()")
-        appendLine("        .filter { it.isFile && it.extension == \"cj\" }")
+        appendLine("        .filter { it.isGeneratedTestDataFile() }")
         appendLine("        .map { it.relativeTo(currentDir).invariantSeparatorsPath }")
         appendLine("        .toSet()")
         appendLine()
@@ -283,6 +283,18 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine("    val childPath = canonicalFile.toPath()")
         appendLine("    return childPath.startsWith(parentPath)")
         appendLine("}")
+        appendLine()
+        appendLine("private fun File.isGeneratedTestDataFile(): Boolean {")
+        appendLine("    if (!isFile || extension != \"cj\") return false")
+        appendLine("    if (!isPackageCompanionName()) return true")
+        appendLine("    val directory = parentFile ?: return true")
+        appendLine("    return directory.listFiles().orEmpty().none { sibling ->")
+        appendLine("        sibling.isFile && sibling.extension == \"cj\" && sibling != this && !sibling.isPackageCompanionName()")
+        appendLine("    }")
+        appendLine("}")
+        appendLine()
+        appendLine("private fun File.isPackageCompanionName(): Boolean =")
+        appendLine("    name == \"pkg.cj\" || name.endsWith(\".pkg.cj\")")
     }
 
     private fun StringBuilder.appendDirectoryClass(
@@ -294,7 +306,7 @@ object TestGeneratorForCfirAnalysisTests {
         baseClassName: String,
     ) {
         val files = dir.listFiles().orEmpty()
-            .filter { it.isFile && it.extension == "cj" }
+            .filter { it.isGeneratedTestDataFile() }
             .sortedBy { it.name }
 
         val nestedDirs = dir.listFiles().orEmpty()
@@ -387,4 +399,19 @@ object TestGeneratorForCfirAnalysisTests {
         return result.toString()
     }
 
+    /**
+     * LLT 中的 `pkg.cj` / `*.pkg.cj` 在同目录存在主测试 `.cj` 时是包 companion，
+     * 只应作为同一编译单元的附加源参与主测试，不应生成独立入口测试。
+     */
+    private fun File.isGeneratedTestDataFile(): Boolean {
+        if (!isFile || extension != "cj") return false
+        if (!isPackageCompanionName()) return true
+        val directory = parentFile ?: return true
+        return directory.listFiles().orEmpty().none { sibling ->
+            sibling.isFile && sibling.extension == "cj" && sibling != this && !sibling.isPackageCompanionName()
+        }
+    }
+
+    private fun File.isPackageCompanionName(): Boolean =
+        name == "pkg.cj" || name.endsWith(".pkg.cj")
 }

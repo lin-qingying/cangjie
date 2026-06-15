@@ -7,7 +7,7 @@
 var ff: (Int64) -> Any = {v => ()}
 
 func test<T>(f: (Int64) -> T) where T <: ToString {
-    ff = <!TYPE_MISMATCH!>f<!>
+    ff = <!ASSIGNMENT_TYPE_MISMATCH!>f<!>
 }
 
 main() {

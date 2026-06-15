@@ -38,12 +38,18 @@ import com.intellij.lang.PsiBuilderFactory
 import com.intellij.lexer.Lexer
 import com.intellij.openapi.project.Project
 import com.intellij.psi.PsiElement
+import com.intellij.psi.tree.ICompositeElementType
 import com.intellij.psi.tree.IElementType
 import com.intellij.psi.tree.IErrorCounterReparseableElementType
 import com.intellij.psi.util.PsiTreeUtil
 
   class LambdaExpressionElementType :
-    IErrorCounterReparseableElementType("LAMBDA_EXPRESSION", CangJieLanguage) {
+    IErrorCounterReparseableElementType("LAMBDA_EXPRESSION", CangJieLanguage),
+    ICompositeElementType {
+    override fun createCompositeNode(): ASTNode {
+        return CjLambdaExpression(null)
+    }
+
     override fun parseContents(chameleon: ASTNode): ASTNode {
         val project = chameleon.psi.project
         val builder: PsiBuilder = PsiBuilderFactory.getInstance().createBuilder(

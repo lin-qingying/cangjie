@@ -10,6 +10,6 @@ func foo(a: Float32) {
 }
 
 main() {
-    let a: Float32 = <!sema_cannot_convert_literal!>1<!>
-    return foo(<!sema_cannot_convert_literal!>1<!>)
+    let a: Float32 = <!CANNOT_CONVERT_LITERAL!>1<!>
+    return foo(<!CANNOT_CONVERT_LITERAL!>1<!>)
 }

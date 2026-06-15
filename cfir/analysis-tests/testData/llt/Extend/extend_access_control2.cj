@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -12,7 +13,7 @@ class A {
 
 extend A {
     func foo() {
-        <!sema_no_match_function_declaration_for_call!>g<!>oo()
+        <!NO_MATCH_FUNCTION_DECLARATION_FOR_CALL!>g<!>oo()
         0
     }
 }

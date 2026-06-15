@@ -26,5 +26,6 @@ interface CfirAbstractFunctionCallBuilder : CfirQualifiedAccessExpressionBuilder
     abstract var calleeReference: CfirReference
     abstract var origin: CfirFunctionCallOrigin
     abstract var hasTrailingLambda: Boolean
+    abstract var varraySizeLiteral: String?
     override fun build(): CfirFunctionCall
 }

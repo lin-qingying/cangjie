@@ -30,6 +30,6 @@ class City <: Vertex<Map, Road, City> {}
 func f<X, Y, Z>(a: X, b: Y, c: Z) where X <: Graph<X, Y, Z>, Y <: Edge<X, Y, Z>, Z <: Vertex<X, Y, Z> {}
 
 main() {
-    <!sema_unable_to_infer_generic_func!>f<!>(Map(), Road(), City());
+    <!UNABLE_TO_INFER_GENERIC_FUNC!>f<!>(Map(), Road(), City());
     0
 }

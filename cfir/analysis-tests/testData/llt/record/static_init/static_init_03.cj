@@ -9,7 +9,7 @@ struct A {
     var a: Int64 = 1
     static var b: Int64 = 1
     static init() {
-        println(<!sema_static_function_cannot_access_non_static_member!>a<!>)
+        println(<!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>a<!>)
     }
 }
 

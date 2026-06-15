@@ -9,9 +9,12 @@ import org.cangnova.cangjie.cfir.diagnostic.InapplicableWrongReceiver
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.expressions.CfirAnonymousFunctionExpression
+import org.cangnova.cangjie.cfir.expressions.CfirArrayLiteral
+import org.cangnova.cangjie.cfir.expressions.CfirExpression
 import org.cangnova.cangjie.cfir.expressions.CfirNamedAccessExpression
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.resolve.calls.*
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.Candidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CheckerSink
@@ -34,6 +37,9 @@ import org.cangnova.cangjie.cfir.types.ConeFunctionType
 import org.cangnova.cangjie.cfir.types.ConeTypeIntersector
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.ConeUnreportedDuplicateDiagnostic
+import org.cangnova.cangjie.cfir.types.ConeVArrayType
+import org.cangnova.cangjie.cfir.types.IdealTypeResolver
+import org.cangnova.cangjie.cfir.types.arrayLiteralElementType
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
 import org.cangnova.cangjie.cfir.types.typeContext
 import org.cangnova.cangjie.resolve.calls.inference.ConstraintSystemBuilder
@@ -45,6 +51,7 @@ import org.cangnova.cangjie.resolve.calls.inference.model.ArgumentConstraintPosi
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintKind
 import org.cangnova.cangjie.resolve.calls.inference.model.ConstraintPosition
 import org.cangnova.cangjie.source.CjSourceElement
+import org.cangnova.cangjie.type.AbstractTypeChecker
 
 internal object ArgumentCheckingProcessor {
     private data class ArgumentContext(
@@ -187,9 +194,32 @@ internal object ArgumentCheckingProcessor {
     }
 
     private fun ArgumentContext.resolvePlainExpressionArgument(atom: ConeResolutionAtom) {
-        val argumentType = atom.expression.coneTypeOrNull ?: return
+        val argumentType = arrayLiteralTypeFromExpectedType(atom.expression) ?: atom.expression.coneTypeOrNull ?: return
         resolvePlainArgumentType(atom, argumentType)
     }
+
+    private fun ArgumentContext.arrayLiteralTypeFromExpectedType(expression: CfirExpression): ConeCangJieType? {
+        val arrayLiteral = expression as? CfirArrayLiteral ?: return null
+        val expandedExpectedType = expectedType?.fullyExpandedType(session) ?: return null
+        val expectedElementType = expandedExpectedType.arrayLiteralElementType ?: return null
+        if (expandedExpectedType is ConeVArrayType && expandedExpectedType.size != arrayLiteral.elements.size.toLong()) {
+            return null
+        }
+
+        val elementsCompatible = arrayLiteral.elements.all { element ->
+            val elementType = element.coneTypeOrNull?.let { IdealTypeResolver.resolveIfIdeal(it, expectedElementType) }
+                ?: return@all false
+            elementType is ConeErrorType ||
+                    expectedElementType is ConeErrorType ||
+                    AbstractTypeChecker.equalTypes(session.typeContext, elementType, expectedElementType) ||
+                    AbstractTypeChecker.isSubtypeOf(session.typeContext, elementType, expectedElementType)
+        }
+        if (!elementsCompatible) return null
+
+        arrayLiteral.replaceConeTypeOrNull(expandedExpectedType)
+        return expandedExpectedType
+    }
+
     private fun  ArgumentContext.createArgumentConstraintPosition(atom: ConeResolutionAtom): ArgumentConstraintPosition<*> {
         return when (val containingLambda = anonymousFunctionIfReturnExpression) {
             null -> ConeArgumentConstraintPosition(atom.expression)

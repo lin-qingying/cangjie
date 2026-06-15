@@ -38,7 +38,8 @@ import org.cangnova.cangjie.type.model.*
  * - 支持 IdealInt/IdealFloat 字面量类型
  * - 支持联合类型（A|B）和交叉类型（A&B）
  * - 支持函数类型（参数逆变+返回值协变）
- * - 支持元组类型（同长度+元素逐一子类型）
+     * - 支持元组类型（同长度+元素逐一子类型）
+     * - 支持 VArray 类型（同长度+元素类型相等）
  * - Quest 类型作为通配符
  */
 object AbstractTypeChecker {
@@ -285,9 +286,10 @@ object AbstractTypeChecker {
             if (ctx.possibleIntegerTypes(superType).any { completeIsSubTypeOf(state, subType, it) }) return true
         }
 
-        // 仓颉函数/元组是内置结构类型，不走普通用户泛型的不变实参规则。
+        // 仓颉函数/元组/VArray 是内置结构类型，不走普通用户泛型的不变实参规则。
         checkSubtypeForFunctionType(state, subType, superType)?.let { return it }
         checkSubtypeForTupleType(state, subType, superType)?.let { return it }
+        checkSubtypeForVArrayType(state, subType, superType)?.let { return it }
 
         // 同构造器 + 无参数 → true
         if (ctx.areEqualTypeConstructors(subConstructor, superConstructor)) {
@@ -300,6 +302,14 @@ object AbstractTypeChecker {
             val classifier = ctx.getTypeParameterClassifier(subConstructor)
             if (classifier != null) {
                 val upperBoundCount = ctx.upperBoundCount(classifier)
+                if (ctx.isAnyConstructor(superConstructor) && !state.isImplicitBoxingAllowed) {
+                    // 对齐官方 TypeManager::IsGenericSubtype：
+                    // 函数/元组等结构元素禁止隐式装箱时，T <: Any 只能由 T 的直接 class 上界满足。
+                    return (0 until upperBoundCount).any { index ->
+                        val upperBound = ctx.asRigidType(ctx.getUpperBound(classifier, index)) ?: return@any false
+                        ctx.isClassTypeConstructor(ctx.typeConstructor(upperBound))
+                    }
+                }
                 for (i in 0 until upperBoundCount) {
                     if (completeIsSubTypeOf(state, ctx.getUpperBound(classifier, i), superType)) return true
                 }
@@ -387,6 +397,31 @@ object AbstractTypeChecker {
         }
 
         return true
+    }
+
+    /**
+     * VArray 类型子类型规则。
+     *
+     * 对齐官方 TypeManager::IsVArraySubtype：两侧都必须是 VArray，尺寸一致，
+     * 且元素类型 `IsTyEqual`。这不是协变数组规则。
+     */
+    private fun checkSubtypeForVArrayType(
+        state: TypeCheckerState,
+        subType: RigidTypeMarker,
+        superType: RigidTypeMarker,
+    ): Boolean? {
+        val ctx = state.typeSystemContext
+        val subIsVArray = ctx.isVArrayType(subType)
+        val superIsVArray = ctx.isVArrayType(superType)
+        if (!subIsVArray && !superIsVArray) return null
+        if (!subIsVArray || !superIsVArray) return false
+        if (ctx.extractSizeForVArrayType(subType) != ctx.extractSizeForVArrayType(superType)) return false
+
+        val subElementType = ctx.extractElementTypeForVArrayType(subType)
+        val superElementType = ctx.extractElementTypeForVArrayType(superType)
+        return state.runWithArgumentsSettings(subElementType) {
+            equalTypes(state, subElementType, superElementType)
+        }
     }
 
     /**
@@ -533,6 +568,17 @@ private fun TypeSystemContext.isTupleType(type: CangJieTypeMarker): Boolean = wi
 /** 桥接 [TypeSystemContext.extractElementsForTupleType] */
 private fun TypeSystemContext.extractElementsForTupleType(type: CangJieTypeMarker): List<CangJieTypeMarker> =
     with(this) { type.extractElementsForTupleType() }
+
+/** 桥接 [TypeSystemContext.isVArrayType] */
+private fun TypeSystemContext.isVArrayType(type: CangJieTypeMarker): Boolean = with(this) { type.isVArrayType() }
+
+/** 桥接 [TypeSystemContext.extractElementTypeForVArrayType] */
+private fun TypeSystemContext.extractElementTypeForVArrayType(type: CangJieTypeMarker): CangJieTypeMarker =
+    with(this) { type.extractElementTypeForVArrayType() }
+
+/** 桥接 [TypeSystemContext.extractSizeForVArrayType] */
+private fun TypeSystemContext.extractSizeForVArrayType(type: CangJieTypeMarker): Long =
+    with(this) { type.extractSizeForVArrayType() }
 
 /** 桥接 [TypeSystemContext.argumentsCount] */
 private fun TypeSystemContext.argumentsCount(type: CangJieTypeMarker): Int = type.argumentsCount()

@@ -14,7 +14,7 @@ func help() {
 }
 
 func help2(): Unit {
-    return <!sema_cannot_convert_literal!>0<!>
+    return <!CANNOT_CONVERT_LITERAL!>0<!>
 }
 
 func help3(): Unit {
@@ -27,7 +27,7 @@ func exit() {
     } else {
         return ""
     };
-    <!sema_incompatible_func_body_and_return_type!>r<!>eturn
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>r<!>eturn
 }
 //func exit2() {if (true {return 0} else) {}}
 func exit3() {
@@ -46,10 +46,10 @@ main() {
     test1()
     test1(b: 2)
     test1(a: 1)
-    test1(a: 1, <!sema_unordered_arguments!>1<!>)
+    test1(a: 1, <!UNORDERED_ARGUMENTS!>1<!>)
     test1(<!NEED_NAMED_ARGUMENT!>1<!>, a: 1)
     test1(<!NEED_NAMED_ARGUMENT!>""<!>, "")
-    test1<!sema_wrong_number_of_arguments!>("", "", "")<!>
+    test1<!WRONG_NUMBER_OF_ARGUMENTS!>("", "", "")<!>
     return 0
 }
 
@@ -58,21 +58,21 @@ func fun(a: Int32): Int32 {
 }
 
 func callFunc(myfunc: (Int32, Int32) -> Int32): Int32 {
-    return myfunc<!sema_wrong_number_of_arguments!>(0)<!>
+    return myfunc<!WRONG_NUMBER_OF_ARGUMENTS!>(0)<!>
 }
 
 func foo(): Int32 {
-    return callFunc(<!sema_no_match_function_declaration_for_ref!>f<!>un)
+    return callFunc(<!NO_MATCH_FUNCTION_DECLARATION_FOR_REF!>f<!>un)
 }
 
 func bar() {
     return true;
-    <!sema_incompatible_func_body_and_return_type!>1<!>
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>1<!>
 }
 
 func baz() {
     while (true) {
         return false
     };
-    <!sema_incompatible_func_body_and_return_type!>1<!>
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>1<!>
 }

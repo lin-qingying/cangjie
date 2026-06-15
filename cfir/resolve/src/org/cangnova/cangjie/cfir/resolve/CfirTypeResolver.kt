@@ -26,12 +26,14 @@ package org.cangnova.cangjie.cfir.resolve
 
 import org.cangnova.cangjie.AnalysisFlags
 import org.cangnova.cangjie.ImportPath
+import org.cangnova.cangjie.builtins.StandardNames
 import org.cangnova.cangjie.cfir.CfirQualifierPart
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnmatchedTypeArgumentsError
 import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
+import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
 import org.cangnova.cangjie.cfir.scopes.CfirTypeParameterScope
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.session.*
@@ -83,6 +85,8 @@ class CfirTypeResolverImpl(
     private val session: CfirSession,
 ) : CfirTypeResolver() {
     private val cFuncName = Name.identifier("CFunc")
+    private val cPointerName = StandardNames.CPOINTER
+    private val cStringName = StandardNames.CSTRING
     private val thisTypeName = Name.identifier("This")
     private val aliasedTypeExpansionGloballyDisabled: Boolean =
         !session.languageVersionSettings.getFlag(AnalysisFlags.expandTypeAliasesInTypeResolution)
@@ -113,7 +117,7 @@ class CfirTypeResolverImpl(
             }
             is CfirVArrayTypeRef -> {
                 val elementType = resolveType(typeRef.elementTypeRef, configuration, areBareTypesAllowed, isOperandOfIsOperator, resolveDeprecations, supertypeSupplier, expandTypeAliases).type
-                val size = typeRef.sizeLiteral.toLongOrNull()
+                val size = CfirIntConstantEvalUtils.parseVArraySizeLiteral(typeRef.sizeLiteral)
                 if (size != null) {
                     result(ConeVArrayType(elementType = elementType, size = size))
                 } else {
@@ -172,6 +176,7 @@ class CfirTypeResolverImpl(
             if (qualifierPart.name == cFuncName) {
                 return result(resolveCFuncUserType(qualifierPart, configuration, expandTypeAliases))
             }
+            resolveSpecialBuiltinUserType(qualifierPart, configuration, expandTypeAliases)?.let { return result(it) }
             if (qualifierPart.typeArguments.isEmpty()) {
                 configuration.typeParameterTypeOrNull(qualifierPart.name)?.let { return result(it) }
             }
@@ -327,6 +332,33 @@ class CfirTypeResolverImpl(
             hasVariableLenArg = functionType.hasVariableLenArg,
             attributes = functionType.attributes,
         )
+    }
+
+    /**
+     * CPointer/CString 是官方前端的 non-primitive builtin types：
+     * 只有名字和类型实参数量完全匹配时才进入内建类型路径，保持同名用户类型与错误实参数量的普通解析行为。
+     */
+    private fun resolveSpecialBuiltinUserType(
+        qualifierPart: CfirQualifierPart,
+        configuration: TypeResolutionConfiguration,
+        expandTypeAliases: Boolean,
+    ): ConeCangJieType? {
+        return when {
+            qualifierPart.name == cPointerName && qualifierPart.typeArguments.size == 1 -> {
+                val pointeeType = resolveType(
+                    qualifierPart.typeArguments.single(),
+                    configuration,
+                    areBareTypesAllowed = false,
+                    isOperandOfIsOperator = false,
+                    resolveDeprecations = true,
+                    supertypeSupplier = SupertypeSupplier.Default,
+                    expandTypeAliases = expandTypeAliases,
+                ).type
+                ConePointerType(pointeeType)
+            }
+            qualifierPart.name == cStringName && qualifierPart.typeArguments.isEmpty() -> ConeCStringType()
+            else -> null
+        }
     }
 
     /**

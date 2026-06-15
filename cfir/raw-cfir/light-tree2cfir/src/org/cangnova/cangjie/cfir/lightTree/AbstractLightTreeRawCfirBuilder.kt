@@ -48,7 +48,7 @@ abstract class AbstractLightTreeRawCfirBuilder(
 
     override fun LighterASTNode.elementType(): IElementType = tokenType
 
-    override fun LighterASTNode.asText(): String = getNodeText(this, source)
+    override fun LighterASTNode.asText(): String = getNodeText(this, tree, source)
 
     protected fun LighterASTNode.getParent(): LighterASTNode? = tree.getParent(this)
 

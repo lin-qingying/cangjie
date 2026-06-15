@@ -1,4 +1,5 @@
-<!sema_missing_entry!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+<!MISSING_ENTRY!>/<!>/ Copyright (c) Huawei Technologies Co., Ltd. 2025. All rights reserved.
+// CHECK_PROGRAM_ENTRY
 // This source file is part of the Cangjie project, licensed under Apache-2.0
 // with Runtime Library Exception.
 //
@@ -12,7 +13,7 @@ class A {
 }
 
 extend A {
-    prop <!sema_extend_member_cannot_shadow!>f<!>: String {
+    prop <!EXTEND_MEMBER_CANNOT_SHADOW!>f<!>: String {
         get() {
             return "C"
         }
@@ -24,7 +25,7 @@ class B {
 }
 
 extend B {
-    prop <!sema_extend_member_cannot_shadow!>f<!>: String {
+    prop <!EXTEND_MEMBER_CANNOT_SHADOW!>f<!>: String {
         get() {
             return "C"
         }
@@ -32,7 +33,7 @@ extend B {
 }
 
 extend B {
-    prop <!sema_extend_member_cannot_shadow!>f<!>: String {
+    prop <!EXTEND_MEMBER_CANNOT_SHADOW!>f<!>: String {
         get() {
             return "C"
         }

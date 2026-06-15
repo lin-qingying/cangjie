@@ -33,7 +33,6 @@ import org.cangnova.cangjie.test.config.configureDiagnosticTest
 import org.cangnova.cangjie.test.config.firHandlersStep
 import org.cangnova.cangjie.test.directives.AdditionalFilesDirectives.SPEC_HELPERS
 import org.cangnova.cangjie.test.directives.CangjieTestDirectives.WITH_STDLIB
-import org.cangnova.cangjie.test.directives.CfirDiagnosticsDirectives.CHECK_PROGRAM_ENTRY
 import org.cangnova.cangjie.test.directives.MacroConstructionDirectives
 import org.cangnova.cangjie.test.frontend.CfirFailingTestSuppressor
 import org.cangnova.cangjie.test.frontend.MacroExpandedCfirDumpHandler
@@ -57,26 +56,12 @@ abstract class AbstractCfirLightTreeDiagnosticsTest : AbstractCfirDiagnosticTest
 /**
  * 官方 LLT 诊断测试基类。
  *
- * LLT 数据来自可执行编译场景，按官方 cjc 语义需要检查缺失 `main`；
- * 普通 diagnostics/IDE 场景不继承该配置。
+ * LLT 默认按官方语义中的 type-check / 非可执行诊断场景运行；
+ * 只有显式声明 `CHECK_PROGRAM_ENTRY` 的用例才模拟可执行目标缺失 `main` 检查。
  */
-abstract class AbstractCfirLightTreeLlTDiagnosticsTest : AbstractCfirLightTreeDiagnosticsTest() {
-    override fun configure(builder: TestConfigurationBuilder) {
-        super.configure(builder)
-        builder.defaultDirectives {
-            +CHECK_PROGRAM_ENTRY
-        }
-    }
-}
+abstract class AbstractCfirLightTreeLlTDiagnosticsTest : AbstractCfirLightTreeDiagnosticsTest()
 
-abstract class AbstractCfirPsiLlTDiagnosticsTest : AbstractCfirPsiDiagnosticTest() {
-    override fun configure(builder: TestConfigurationBuilder) {
-        super.configure(builder)
-        builder.defaultDirectives {
-            +CHECK_PROGRAM_ENTRY
-        }
-    }
-}
+abstract class AbstractCfirPsiLlTDiagnosticsTest : AbstractCfirPsiDiagnosticTest()
 
 /**
  * 宏端到端诊断测试基类。

@@ -28,6 +28,7 @@ import org.cangnova.cangjie.source.AbstractCjSourceElement
 object CfirTryTargetTypeMismatchChecker : CfirTryExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirTryExpression) {
+        if (expression.resources.isNotEmpty()) return
         if (expression.handlers.isNotEmpty()) return
 
         val expectedType = expression.expectedTypeFromContext(context) ?: return

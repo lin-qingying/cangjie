@@ -9,10 +9,10 @@ interface I {}
 
 class C<T> where T <: I {}
 
-func foo(x: C<<!sema_generic_type_argument_not_match_constraint!>U<!>nit>) {}
+func foo(x: C<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>U<!>nit>) {}
 
 main() {
-    let v: C<<!sema_generic_type_argument_not_match_constraint!>U<!>nit> = 1
+    let v: C<<!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>U<!>nit> = 1
     foo(1)
     ()
 }

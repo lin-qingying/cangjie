@@ -24,6 +24,7 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
+import java.math.BigInteger
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
@@ -41,6 +42,8 @@ import org.cangnova.cangjie.cfir.patterns.CfirCatchPattern
 import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.CfirSuperReference
+import org.cangnova.cangjie.cfir.resolve.constants.CfirIntConstantEvalUtils
+import org.cangnova.cangjie.cfir.resolve.fullyExpandedType
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirFunctionSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
@@ -260,15 +263,44 @@ object CfirFinalizerThisUsageChecker : CfirBasicExpressionChecker() {
 object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSubscriptExpression) {
-        // VArray subscript 下标数量检查
         val receiverType = expression.receiver.coneTypeOrNull
-        if (receiverType is org.cangnova.cangjie.cfir.types.ConeVArrayType) {
-            if (expression.indices.size != 1) {
+            ?.fullyExpandedType(context.session) as? ConeVArrayType ?: return
+
+        if (expression.indices.size != 1) {
+            reporter.reportOn(
+                source = expression.source,
+                factory = CfirErrors.VARRAY_SUBSCRIPT_NUM,
+            )
+            return
+        }
+
+        val index = expression.indices.single()
+        val indexType = index.coneTypeOrNull
+        if (indexType != null && indexType !is ConeErrorType) {
+            val int64Type = ConePrimitiveType(PrimitiveTypeKind.INT64)
+            if (AbstractTypeChecker.isSubtypeOf(context.session.typeContext, indexType, int64Type) != true) {
                 reporter.reportOn(
-                    source = expression.source,
-                    factory = CfirErrors.VARRAY_SUBSCRIPT_NUM,
+                    source = index.source,
+                    factory = CfirErrors.TYPE_MISMATCH,
+                    a = int64Type,
+                    b = indexType,
+                    c = false,
                 )
+                return
             }
+        } else {
+            return
+        }
+
+        val parsedIndex = CfirIntConstantEvalUtils.parseSignedIntExpression(index) ?: return
+        if (parsedIndex.explicitSuffix != null && parsedIndex.explicitSuffix != "i64") return
+
+        val size = BigInteger.valueOf(receiverType.size)
+        if (parsedIndex.value < BigInteger.ZERO || parsedIndex.value >= size) {
+            reporter.reportOn(
+                source = expression.receiver.source ?: index.source ?: expression.source,
+                factory = CfirErrors.BUILTIN_INDEX_IN_BOUND,
+            )
         }
     }
 }

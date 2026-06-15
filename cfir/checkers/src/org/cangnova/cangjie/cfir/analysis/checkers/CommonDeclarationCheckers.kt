@@ -119,6 +119,7 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
     override val typeAliasCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirTypeAliasChecker>
         get() = setOf(
             CfirTypeAliasCFuncLegalityChecker,
+            CfirTypeAliasUnusedTypeParameterChecker,
         )
 
     override val classLikeCheckers: Set<org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirClassLikeChecker>

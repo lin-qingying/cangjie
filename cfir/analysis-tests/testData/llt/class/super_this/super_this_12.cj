@@ -10,14 +10,14 @@ var f: () -> Int64 = {=> 1}
 open class A {
     var x: Int64 = 123
     init() {
-        f = {=> <!sema_illegal_capture_this!>t<!>his.x}
+        f = {=> <!ILLEGAL_CAPTURE_THIS!>t<!>his.x}
     }
 }
 
 abstract class B {
     var x: Int64 = 123
     init() {
-        f = {=> <!sema_illegal_capture_this!>t<!>his.x}
+        f = {=> <!ILLEGAL_CAPTURE_THIS!>t<!>his.x}
     }
 }
 

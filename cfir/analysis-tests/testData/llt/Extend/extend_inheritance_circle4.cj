@@ -13,7 +13,7 @@ interface C <: A {}
 
 interface B <: C {}
 
-<!sema_inheritance_cycle!>e<!>xtend D <: C {}
+<!INHERITANCE_CYCLE!>e<!>xtend D <: C {}
 
 main() {
     0

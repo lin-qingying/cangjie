@@ -88,6 +88,7 @@ val ConeCangJieType.isArray: Boolean
  * 提取标准库 `Array<T>` 的元素类型。
  *
  * 这里故意只识别名义 `Array<T>`，不再依赖已经被移除的 `ConeArrayType`。
+ * 仓颉普通变参也依赖这个 Array-only 语义，不能把 `VArray<T, N>` 混入这里。
  */
 val ConeCangJieType.arrayElementType: ConeCangJieType?
     get() = when (this) {
@@ -100,6 +101,20 @@ val ConeCangJieType.arrayElementType: ConeCangJieType?
             if (classId == StdlibClassIds.Array) typeArguments.singleOrNull()?.type else null
         is ConeTypeAliasType -> expandedType?.arrayElementType
         else -> null
+    }
+
+/**
+ * 提取数组字面量目标检查使用的元素类型。
+ *
+ * 官方 `ChkArrayLit` 同时接受 `Array<T>` 与 `VArray<T, N>` 作为目标类型；
+ * 这里与普通变参的 `arrayElementType` 分离，避免把 `VArray` 误当作变参形参。
+ */
+val ConeCangJieType.arrayLiteralElementType: ConeCangJieType?
+    get() = when (this) {
+        is ConeVArrayType -> elementType
+        is ConeErrorType -> delegatedType?.arrayLiteralElementType ?: arrayElementType
+        is ConeTypeAliasType -> expandedType?.arrayLiteralElementType
+        else -> arrayElementType
     }
 
 val ConeCangJieType.isOption: Boolean

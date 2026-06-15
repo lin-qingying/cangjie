@@ -12,7 +12,7 @@ func foo() {
     return 1
     let a = one
     let b = two
-    <!sema_incompatible_func_body_and_return_type!>r<!>eturn a + b
+    <!INCOMPATIBLE_FUNC_BODY_AND_RETURN_TYPE!>r<!>eturn a + b
 }
 
 main(): Int64 {

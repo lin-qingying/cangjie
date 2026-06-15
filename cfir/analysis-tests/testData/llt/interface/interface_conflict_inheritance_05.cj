@@ -16,8 +16,8 @@ interface I1 {
 }
 
 interface I2 <: I1 {
-    <!sema_invalid_override_or_redefine_member_in_interface!>m<!>ut static prop a: Int64
-    <!sema_invalid_override_or_redefine_member_in_interface!>s<!>tatic func f(): Unit
+    <!INVALID_OVERRIDE_OR_REDEFINE_MEMBER_IN_INTERFACE!>m<!>ut static prop a: Int64
+    <!INVALID_OVERRIDE_OR_REDEFINE_MEMBER_IN_INTERFACE!>s<!>tatic func f(): Unit
 }
 
 main() {}

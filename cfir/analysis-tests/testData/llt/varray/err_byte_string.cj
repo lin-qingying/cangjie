@@ -7,5 +7,5 @@
 func f(_: VArray<Byte, $3>) {}
 
 main() {
-    f(<!TYPE_MISMATCH!>"123".toArray()<!>)
+    f(<!ARGUMENT_TYPE_MISMATCH!>"123".toArray()<!>)
 }

@@ -63,7 +63,10 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         )
 
     override val incrementDecrementExpressionCheckers: Set<CfirIncrementDecrementExpressionChecker>
-        get() = setOf(CfirIncrementDecrementLegalityChecker)
+        get() = setOf(
+            CfirIncrementDecrementLegalityChecker,
+            CfirIncrementDecrementTypeChecker,
+        )
 
     override val returnExpressionCheckers: Set<CfirReturnExpressionChecker>
         get() = setOf(
@@ -80,6 +83,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
     override val functionCallCheckers: Set<CfirFunctionCallChecker>
         get() = setOf(
 //            CfirArgumentTypeMismatchChecker,
+            CfirSignedLiteralNumericOverflowChecker,
             CfirConstEvalArithmeticChecker,
             CfirConstructorDelegationCallChecker,
             CfirImmutableFunctionCannotAccessMutableFunctionChecker,
@@ -97,6 +101,7 @@ object CommonExpressionCheckers : ExpressionCheckers() {
         get() = setOf(
             CfirFunctionReferenceLegalityChecker,
             CfirGenericBareClassifierAccessChecker,
+            CfirUpperBoundViolatedQualifiedAccessExpressionChecker,
             CfirClassifierAsExpressionChecker,
             CfirMutFuncReferenceChecker,
             CfirUnsafeFuncReferenceChecker,

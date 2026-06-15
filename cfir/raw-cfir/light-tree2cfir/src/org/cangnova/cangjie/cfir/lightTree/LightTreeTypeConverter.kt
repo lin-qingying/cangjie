@@ -64,7 +64,7 @@ private fun convertTypeElement(
     source: CharSequence,
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CfirTypeRef = when (typeElement.tokenType) {
-    CjNodeTypes.BASIC_TYPE -> convertBasicType(typeElement, typeRefNode, source, toSource)
+    CjNodeTypes.BASIC_TYPE -> convertBasicType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.USER_TYPE -> convertUserType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.FUNCTION_TYPE -> convertFunctionType(typeElement, typeRefNode, tree, source, toSource)
     CjNodeTypes.OPTIONAL_TYPE -> convertOptionalType(typeElement, typeRefNode, tree, source, toSource)
@@ -117,10 +117,11 @@ private fun convertOptionalType(
 private fun convertBasicType(
     typeElement: LighterASTNode,
     typeRefNode: LighterASTNode,
+    tree: FlyweightCapableTreeStructure<LighterASTNode>,
     source: CharSequence,
     toSource: (LighterASTNode) -> AbstractCjSourceElement,
 ): CfirTypeRef {
-    val text = getNodeText(typeElement, source)
+    val text = getNodeText(typeElement, tree, source)
     return buildBasicTypeRef {
         this.source = toSource(typeRefNode) as? CjSourceElement
         name = Name.identifier(text)
@@ -189,7 +190,7 @@ private fun buildQualifierFromUserType(
     // 提取当前节点的 REFERENCE_EXPRESSION
     val refExpr = tree.findChildByType(userTypeNode, CjNodeTypes.REFERENCE_EXPRESSION)
     if (refExpr != null) {
-        val name = getNodeText(refExpr, source)
+        val name = getNodeText(refExpr, tree, source)
         if (name.isNotEmpty()) {
             segments.add(
                 buildQualifierPart {
@@ -322,7 +323,7 @@ private fun convertVArrayType(
 
     // 查找大小字面量（INTEGER_LITERAL token，如 $4）
     val sizeLiteralNode = tree.findChildByType(typeElement, CjTokens.INTEGER_LITERAL)
-    val sizeLiteral = if (sizeLiteralNode != null) getNodeText(sizeLiteralNode, source) else null
+    val sizeLiteral = if (sizeLiteralNode != null) getNodeText(sizeLiteralNode, tree, source) else null
     if (sizeLiteral == null) {
         return buildErrorTypeRef {
             this.source = toSource(typeRefNode) as? CjSourceElement

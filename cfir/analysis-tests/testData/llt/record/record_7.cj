@@ -9,7 +9,7 @@ struct Base12 {
     public var x: Int64 = 1
     public static prop a: Int64 {
         get() {
-            return <!sema_static_function_cannot_access_non_static_member!>x<!>
+            return <!STATIC_FUNCTION_CANNOT_ACCESS_NON_STATIC_MEMBER!>x<!>
         }
     }
 }

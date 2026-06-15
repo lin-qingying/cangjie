@@ -32,6 +32,7 @@ import org.cangnova.cangjie.cfir.declarations.CfirVariable
 import org.cangnova.cangjie.cfir.resolve.BodyResolveComponents
 import org.cangnova.cangjie.cfir.resolve.calls.ConstructorFilter
 import org.cangnova.cangjie.cfir.resolve.calls.ResolutionContext
+import org.cangnova.cangjie.cfir.resolve.calls.isInstanceExtendMemberCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallInfo
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CallKind
 import org.cangnova.cangjie.cfir.resolve.calls.candidate.CandidateFactory
@@ -85,6 +86,9 @@ internal class ScopeBasedTowerLevel(
         processor: TowerLevelProcessor,
     ) {
         symbol.lazyResolveToPhase(CfirResolvePhase.TYPES)
+        if (givenExtensionReceiver != null && !symbol.isInstanceExtendMemberCandidate(components.session)) {
+            return
+        }
         processor.consumeCandidate(symbol, scope, dispatchReceiver, givenExtensionReceiver)
     }
 
@@ -216,6 +220,7 @@ internal class TowerLevelHandler {
         return when (info.callKind) {
             CallKind.NamedValueAccess -> towerLevel.processCallablesByName(info, processor)
             CallKind.Function,
+            CallKind.DelegatingConstructorCall,
             CallKind.EnumConstructorCall,
             -> towerLevel.processFunctionsByName(info, processor)
         }

@@ -5,9 +5,9 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 
-<!sema_typealias_cycle, typealias_unused_type_parameters!>t<!>ype D<T> = F<Int32>
+<!TYPEALIAS_CYCLE, TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype D<T> = F<Int32>
 
-<!sema_typealias_cycle, typealias_unused_type_parameters!>t<!>ype F<U> = D<Rune>
+<!TYPEALIAS_CYCLE, TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype F<U> = D<Rune>
 
 main() {
     return 0

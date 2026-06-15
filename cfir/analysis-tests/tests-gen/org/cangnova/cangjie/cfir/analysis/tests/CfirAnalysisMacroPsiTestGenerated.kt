@@ -2350,7 +2350,7 @@ private fun assertAllFilesPresentByMetadata(testInstance: Any, testDataRootRelat
 
     val currentDir = currentClassTestDataDir(testInstance::class.java, testDataDir)
     val expected = currentDir.listFiles().orEmpty().asSequence()
-        .filter { it.isFile && it.extension == "cj" }
+        .filter { it.isGeneratedTestDataFile() }
         .map { it.relativeTo(currentDir).invariantSeparatorsPath }
         .toSet()
 
@@ -2435,3 +2435,15 @@ private fun File.isUnder(parent: File): Boolean {
     val childPath = canonicalFile.toPath()
     return childPath.startsWith(parentPath)
 }
+
+private fun File.isGeneratedTestDataFile(): Boolean {
+    if (!isFile || extension != "cj") return false
+    if (!isPackageCompanionName()) return true
+    val directory = parentFile ?: return true
+    return directory.listFiles().orEmpty().none { sibling ->
+        sibling.isFile && sibling.extension == "cj" && sibling != this && !sibling.isPackageCompanionName()
+    }
+}
+
+private fun File.isPackageCompanionName(): Boolean =
+    name == "pkg.cj" || name.endsWith(".pkg.cj")
