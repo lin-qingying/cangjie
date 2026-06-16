@@ -147,7 +147,9 @@ private fun ConstraintSystemError.mapConstraintSystemError(
         }
 
         is NotEnoughInformationForTypeParameter<*> ->
-            if (
+            if (candidate.hasExplicitTypeArgumentError()) {
+                null
+            } else if (
                 candidate.isImplicitBuiltinArrayConstructorCall() ||
                 candidate.isImplicitGenericCallWithTypeParameters() ||
                 candidate.hasGenericCallNotEnoughTypeInformation() ||
@@ -1764,6 +1766,30 @@ private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentsInCall(): Boolean {
         (callInfo.explicitReceiver as? CfirQualifiedAccessExpression)?.typeArguments?.isNotEmpty() == true ||
         callInfo.callSite.source.hasExplicitTypeArgumentsInSource()
 }
+
+/**
+ * Kotlin FIR 在错误类型已经来自被引用节点时跳过外层推断诊断。
+ * 仓颉 `VArray<C, $N>(...)` 这类显式元素类型错误也应只报告 `C` 本身，
+ * 不再把同一次 synthetic 构造调用折叠成泛型函数不可推断。
+ */
+private fun AbstractCallCandidate<*>.hasExplicitTypeArgumentError(): Boolean {
+    if (!hasExplicitTypeArgumentsInCall()) return false
+    return explicitTypeArgumentRefsInCall().any { typeRef ->
+        (typeRef as? CfirResolvedTypeRef)?.coneType?.containsErrorType() == true ||
+                typeRef is CfirErrorTypeRef
+    }
+}
+
+private fun AbstractCallCandidate<*>.explicitTypeArgumentRefsInCall(): Sequence<CfirTypeRef> =
+    sequence {
+        val callSite = callInfo.callSite as? CfirQualifiedAccessExpression
+        if (callSite != null) yieldAll(callSite.typeArguments)
+
+        val explicitReceiver = callInfo.explicitReceiver as? CfirQualifiedAccessExpression
+        if (explicitReceiver != null && explicitReceiver !== callSite) {
+            yieldAll(explicitReceiver.typeArguments)
+        }
+    }
 
 private fun PsiElement.containingCallExpressionOrNull(): CjCallExpression? =
     this as? CjCallExpression ?: PsiTreeUtil.getParentOfType(this, CjCallExpression::class.java, false)

@@ -107,6 +107,7 @@ object DiagnosticNameMapper {
         // ── Constructor ──
         "ILLEGAL_THIS_OR_SUPER_CALL" to "sema_illegal_this_or_super_call",
         "RECURSIVE_CONSTRUCTOR_CALL" to "sema_recursive_constructor_call",
+        "VALUE_TYPE_RECURSIVE" to "sema_value_type_recursive",
 
         // ── Call / Arguments ──
         "TOO_MANY_ARGUMENTS" to "sema_too_many_arguments",
@@ -210,6 +211,7 @@ object DiagnosticNameMapper {
         "VARRAY_ARGS_NUMBER_MISMATCH" to "sema_varray_args_number_mismatch",
         "VARRAY_ARG_TYPE_WITH_REFTYPE" to "sema_varray_arg_type_with_reftype",
         "BUILTIN_INDEX_IN_BOUND" to "sema_builtin_index_in_bound",
+        "chir_idx_out_of_bounds" to "chir_idx_out_of_bounds",
 
         // ── Common/Specific ──
         "COMMON_OPEN_CLASS_NO_INIT" to "parse_cjmp_in_common_ctor_required",

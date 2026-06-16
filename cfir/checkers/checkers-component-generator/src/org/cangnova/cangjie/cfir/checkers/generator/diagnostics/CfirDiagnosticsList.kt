@@ -359,6 +359,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 构造器委托调用形成递归
         val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
+        // 值类型字段或构造器参数形成递归
+        val VALUE_TYPE_RECURSIVE by error<PsiElement>()
+
         // this/super 构造器委托调用出现在非法位置
         val ILLEGAL_THIS_OR_SUPER_CALL by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<String>("calleeName")
@@ -939,6 +942,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 内建下标越界
         val BUILTIN_INDEX_IN_BOUND by error<PsiElement>()
+
+        // CHIR 阶段数组下标越界
+        val chir_idx_out_of_bounds by error<PsiElement>()
 
         // 不能赋值给 subscript 表达式
         val CANNOT_ASSIGN_TO_SUBSCRIPT by error<PsiElement>()

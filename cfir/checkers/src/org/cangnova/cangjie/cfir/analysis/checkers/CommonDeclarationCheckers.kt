@@ -131,6 +131,8 @@ object CommonDeclarationCheckers : DeclarationCheckers() {
             CfirOverrideChecker,
             CfirNotImplementedOverrideChecker,
             CfirClassStructSemanticsChecker,
+            CfirRecursiveConstructorCallChecker,
+            CfirValueTypeRecursiveChecker,
             CfirConstDeclarationChecker,
             CfirInheritanceDeepChecker,
             CfirCommonSpecificChecker,

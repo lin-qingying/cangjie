@@ -242,6 +242,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "Recursive constructor call detected.",
         )
         map.put(
+            CfirErrors.VALUE_TYPE_RECURSIVE,
+            "Value type recursive detected.",
+        )
+        map.put(
             CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
             "Illegal place of calling ''{0}''.",
             RENDER_STRING,
@@ -614,6 +618,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.INVALID_UNARY_EXPR_WITH_TARGET, "invalid unary operator ''{0}'' on type ''{1}'' with return type ''{2}''", RENDER_STRING, RENDER_TYPE, RENDER_TYPE)
         map.put(CfirErrors.INVALID_SUBSCRIPT_EXPR, "invalid subscript operator [] on type ''{0}'' with index {1}", RENDER_TYPE, RENDER_STRING)
         map.put(CfirErrors.BUILTIN_INDEX_IN_BOUND, "builtin index is out of bounds")
+        map.put(CfirErrors.chir_idx_out_of_bounds, "array index is out of bounds")
         map.put(CfirErrors.CANNOT_ASSIGN_TO_SUBSCRIPT, "cannot assign to this subscript expression")
         map.put(CfirErrors.NOT_MEMBER_OF, "''{0}'' is not a member of {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.MEMBER_NOT_IMPORTED, "''{0}'' is not imported", RENDER_NAME)
