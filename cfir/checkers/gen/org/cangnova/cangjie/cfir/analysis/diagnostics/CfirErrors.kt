@@ -1,3 +1,27 @@
+/*
+ * Copyright 2026 LinQingYing. and contributors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * The use of this source code is governed by the Apache License 2.0,
+ * which allows users to freely use, modify, and distribute the code,
+ * provided they adhere to the terms of the license.
+ *
+ * The software is provided "as-is", and the authors are not responsible for
+ * any damages or issues arising from its use.
+ *
+ */
+
 
 
 package org.cangnova.cangjie.cfir.analysis.diagnostics
@@ -101,6 +125,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val AMBIGUOUS_FUNCTION_CALL: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_AMBIGUOUS_FUNCTION_CALL", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val AMBIGUOUS_ARG_TYPE: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_AMBIGUOUS_ARG_TYPE", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val RECURSIVE_CONSTRUCTOR_CALL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_RECURSIVE_CONSTRUCTOR_CALL", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, PsiElement::class, getRendererFactory())
+    val VALUE_TYPE_RECURSIVE: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_VALUE_TYPE_RECURSIVE", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val ILLEGAL_THIS_OR_SUPER_CALL: CjDiagnosticFactory1<String> = CjDiagnosticFactory1("CFIR_ILLEGAL_THIS_OR_SUPER_CALL", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val EXPLICIT_SUPER_CALL_REQUIRED: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_EXPLICIT_SUPER_CALL_REQUIRED", Severity.ERROR, SourceElementPositioningStrategies.ACTUAL_DECLARATION_NAME, PsiElement::class, getRendererFactory())
     val INVALID_LOOP_CONTROL: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_INVALID_LOOP_CONTROL", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
@@ -236,6 +261,7 @@ object CfirErrors : CjDiagnosticsContainer() {
     val INVALID_UNARY_EXPR_WITH_TARGET: CjDiagnosticFactory3<String, ConeCangJieType, ConeCangJieType> = CjDiagnosticFactory3("CFIR_INVALID_UNARY_EXPR_WITH_TARGET", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val INVALID_SUBSCRIPT_EXPR: CjDiagnosticFactory2<ConeCangJieType, String> = CjDiagnosticFactory2("CFIR_INVALID_SUBSCRIPT_EXPR", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val BUILTIN_INDEX_IN_BOUND: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_BUILTIN_INDEX_IN_BOUND", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
+    val chir_idx_out_of_bounds: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_chir_idx_out_of_bounds", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val CANNOT_ASSIGN_TO_SUBSCRIPT: CjDiagnosticFactory0 = CjDiagnosticFactory0("CFIR_CANNOT_ASSIGN_TO_SUBSCRIPT", Severity.ERROR, SourceElementPositioningStrategies.DEFAULT, PsiElement::class, getRendererFactory())
     val NOT_MEMBER_OF: CjDiagnosticFactory3<Name, String, Name> = CjDiagnosticFactory3("CFIR_NOT_MEMBER_OF", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())
     val MEMBER_NOT_IMPORTED: CjDiagnosticFactory1<Name> = CjDiagnosticFactory1("CFIR_MEMBER_NOT_IMPORTED", Severity.ERROR, SourceElementPositioningStrategies.REFERENCED_NAME_BY_QUALIFIED, PsiElement::class, getRendererFactory())

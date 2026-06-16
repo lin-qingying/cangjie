@@ -24,7 +24,6 @@
 
 package org.cangnova.cangjie.cfir.analysis.checkers.expression
 
-import java.math.BigInteger
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.collectors.components.ErrorNodeDiagnosticCollectorComponent
@@ -51,6 +50,7 @@ import org.cangnova.cangjie.cfir.symbols.toLookupTag
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.source.CjSourceElement
 import org.cangnova.cangjie.type.AbstractTypeChecker
+import java.math.BigInteger
 
 /**
  * 浮点字面量范围检查器
@@ -300,6 +300,15 @@ object CfirSubscriptAssignmentChecker : CfirSubscriptExpressionChecker() {
             reporter.reportOn(
                 source = expression.receiver.source ?: index.source ?: expression.source,
                 factory = CfirErrors.BUILTIN_INDEX_IN_BOUND,
+            )
+            return
+        }
+
+        val chirEffectiveSize = BigInteger.valueOf(receiverType.chirEffectiveSize)
+        if (parsedIndex.value >= chirEffectiveSize) {
+            reporter.reportOn(
+                source = expression.source,
+                factory = CfirErrors.chir_idx_out_of_bounds,
             )
         }
     }
