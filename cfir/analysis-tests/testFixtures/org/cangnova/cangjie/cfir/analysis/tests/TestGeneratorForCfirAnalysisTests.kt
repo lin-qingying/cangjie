@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Copyright 2026 LinQingYing. and contributors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -33,9 +33,24 @@ import java.io.File
  * directory support.
  */
 object TestGeneratorForCfirAnalysisTests {
+
+    /**
+     * 测试套件生成模式
+     *
+     * - SINGLE_CLASS: 所有测试生成在一个类中，通过嵌套类实现目录结构
+     * - PER_PACKAGE: 每个子目录生成一个独立的 Kotlin 文件，包结构与目录结构对应
+     */
+    enum class SuiteGenerationMode {
+        /** 单一类：根目录 + 嵌套类 */
+        SINGLE_CLASS,
+        /** 按包分布：每个子目录对应一个 Kotlin 文件和包 */
+        PER_PACKAGE,
+    }
+
     @JvmStatic
     fun main(args: Array<String>) {
         val projectRoot = if (args.isNotEmpty()) File(args[0]) else File(System.getProperty("user.dir"))
+        cleanGeneratedTests(projectRoot)
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
             relativeTestDataRoot = "cfir/analysis-tests/testData/diagnostics",
@@ -82,7 +97,6 @@ object TestGeneratorForCfirAnalysisTests {
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTTestGenerated.kt",
             generatedClassName = "CfirAnalysisLLTTestGenerated",
             baseClassName = "AbstractCfirLightTreeLlTDiagnosticsTest",
-
         )
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
@@ -90,8 +104,6 @@ object TestGeneratorForCfirAnalysisTests {
             outputRelativePath = "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests/CfirAnalysisLLTPsiTestGenerated.kt",
             generatedClassName = "CfirAnalysisLLTPsiTestGenerated",
             baseClassName = "AbstractCfirPsiLlTDiagnosticsTest",
-
-
         )
         generateDiagnosticsSuite(
             projectRoot = projectRoot,
@@ -115,11 +127,17 @@ object TestGeneratorForCfirAnalysisTests {
         outputRelativePath: String,
         generatedClassName: String,
         baseClassName: String = "AbstractCfirLightTreeDiagnosticsTest",
+        generationMode: SuiteGenerationMode = SuiteGenerationMode.PER_PACKAGE,
+        basePackage: String = "org.cangnova.cangjie.cfir.analysis.tests",
     ) {
         val testDataRoot = projectRoot.resolve(relativeTestDataRoot)
         require(testDataRoot.exists()) { "testData root not found: ${testDataRoot.path}" }
 
-        val rootRel = projectRoot.toPath().relativize(testDataRoot.toPath()).toString().replace('\\', '/')
+        val rootRel = testDataRoot.relativeTo(projectRoot).path.replace('\\', '/')
+
+        // 从 relativeTestDataRoot 提取 testDataRoot 名称作为根包名的一部分
+        // 例如: "cfir/analysis-tests/testData/diagnostics" -> "diagnostics"
+        val testDataRootName = relativeTestDataRoot.substringAfterLast('/')
 
         val rootFiles = testDataRoot.listFiles().orEmpty()
             .filter { it.isGeneratedTestDataFile() }
@@ -129,31 +147,194 @@ object TestGeneratorForCfirAnalysisTests {
             .filter { it.isDirectory }
             .sortedBy { it.name }
 
+        when (generationMode) {
+            SuiteGenerationMode.SINGLE_CLASS -> generateSingleClassSuite(
+                projectRoot = projectRoot,
+                rootRel = rootRel,
+                rootFiles = rootFiles,
+                subDirs = subDirs,
+                outputRelativePath = outputRelativePath,
+                generatedClassName = generatedClassName,
+                baseClassName = baseClassName,
+                basePackage = basePackage,
+            )
+            SuiteGenerationMode.PER_PACKAGE -> generatePerPackageSuite(
+                projectRoot = projectRoot,
+                rootRel = rootRel,
+                rootFiles = rootFiles,
+                subDirs = subDirs,
+                outputRelativePath = outputRelativePath,
+                generatedClassName = generatedClassName,
+                baseClassName = baseClassName,
+                basePackage = basePackage,
+                testDataRootName = testDataRootName,
+            )
+        }
+    }
+
+    /**
+     * tests-gen 是本生成器的完整输出目录。每轮生成前清理旧输出，避免模式切换后
+     * 过期 Kotlin 源继续进入 test source-set。
+     */
+    private fun cleanGeneratedTests(projectRoot: File) {
+        val generatedRoot = projectRoot.resolve(
+            "cfir/analysis-tests/tests-gen/org/cangnova/cangjie/cfir/analysis/tests"
+        )
+        if (generatedRoot.exists()) {
+            generatedRoot.deleteRecursively()
+        }
+    }
+
+    /**
+     * SINGLE_CLASS 模式：生成单一类，所有测试方法和嵌套类都在一起
+     */
+    private fun generateSingleClassSuite(
+        projectRoot: File,
+        rootRel: String,
+        rootFiles: List<File>,
+        subDirs: List<File>,
+        outputRelativePath: String,
+        generatedClassName: String,
+        baseClassName: String,
+        basePackage: String,
+    ) {
         val outputFile = projectRoot.resolve(outputRelativePath)
         outputFile.parentFile.mkdirs()
         outputFile.writeText(
-            renderSuite(
+            renderSingleClassSuite(
                 rootRel = rootRel,
                 rootFiles = rootFiles,
                 subDirs = subDirs,
                 projectRoot = projectRoot,
                 generatedClassName = generatedClassName,
                 baseClassName = baseClassName,
+                basePackage = basePackage,
             ),
             Charsets.UTF_8,
         )
         println("Generated: ${outputFile.path}")
     }
 
-    private fun renderSuite(
+    /**
+     * PER_PACKAGE 模式：每个子目录生成一个独立的 Kotlin 文件，包结构与目录结构对应
+     */
+    private fun generatePerPackageSuite(
+        projectRoot: File,
+        rootRel: String,
+        rootFiles: List<File>,
+        subDirs: List<File>,
+        outputRelativePath: String,
+        generatedClassName: String,
+        baseClassName: String,
+        basePackage: String,
+        testDataRootName: String,
+    ) {
+        // 入口点包名 = basePackage（不含 testDataRootName）
+        val entryPointPackageName = basePackage
+
+        // 子目录测试按生成套件隔离。LLT light-tree、PSI、withoutAlias 等套件会共享同一份
+        // testData 根目录；子包和落盘目录必须带上套件名，避免不同基类的同名目录测试互相覆盖。
+        val suiteNamespace = generatedClassName.removeSuffix("Generated").toPackageSegment()
+
+        // 根包名 = basePackage + suiteNamespace + testDataRootName。包名段必须规整为合法 Kotlin
+        // 标识符，testData 目录名则保持原样写入文件系统路径和 TestMetadata。
+        val rootPackageName = "$basePackage.$suiteNamespace.${testDataRootName.toPackageSegment()}"
+
+        // 生成根目录的主文件
+        val outputDir = projectRoot.resolve(outputRelativePath).parentFile
+        outputDir.mkdirs()
+
+        val mainFile = projectRoot.resolve(outputRelativePath)
+        mainFile.writeText(
+            renderPerPackageRootSuite(
+                rootRel = rootRel,
+                rootFiles = rootFiles,
+                subDirs = subDirs,
+                projectRoot = projectRoot,
+                generatedClassName = generatedClassName,
+                baseClassName = baseClassName,
+                packageName = entryPointPackageName,
+            ),
+            Charsets.UTF_8,
+        )
+        println("Generated: ${mainFile.path}")
+
+        // 为每个子目录生成独立的包文件
+        generatePerPackageSubdirs(
+            projectRoot = projectRoot,
+            rootRel = rootRel,
+            baseOutputDir = File(File(outputDir, suiteNamespace), testDataRootName),
+            baseClassName = baseClassName,
+            rootPackageName = rootPackageName,
+            subDirs = subDirs,
+            relativePathFromRoot = "",
+        )
+    }
+
+    private fun generatePerPackageSubdirs(
+        projectRoot: File,
+        rootRel: String,
+        baseOutputDir: File,
+        baseClassName: String,
+        rootPackageName: String,
+        subDirs: List<File>,
+        relativePathFromRoot: String,
+    ) {
+        for (dir in subDirs) {
+            val subClassName = "${dirNameToPascalCase(dir.name)}Generated"
+            val subOutputDir = File(baseOutputDir, dir.name)
+            subOutputDir.mkdirs()
+            val subOutputFile = File(subOutputDir, "$subClassName.kt")
+
+            // 子目录包名 = rootPackageName + 子目录路径
+            val currentRelativePath = if (relativePathFromRoot.isEmpty()) dir.name else "$relativePathFromRoot/${dir.name}"
+            val subPackageName = "$rootPackageName.${currentRelativePath.toPackagePath()}"
+
+            subOutputFile.writeText(
+                renderPerPackageDirSuite(
+                    dir = dir,
+                    rootRel = rootRel,
+                    projectRoot = projectRoot,
+                    generatedClassName = subClassName,
+                    baseClassName = baseClassName,
+                    packageName = subPackageName,
+                    relativePathFromRoot = currentRelativePath,
+                ),
+                Charsets.UTF_8,
+            )
+            println("Generated: ${subOutputFile.path}")
+
+            // 递归处理嵌套子目录
+            val nestedSubDirs = dir.listFiles().orEmpty()
+                .filter { it.isDirectory }
+                .sortedBy { it.name }
+            if (nestedSubDirs.isNotEmpty()) {
+                generatePerPackageSubdirs(
+                    projectRoot = projectRoot,
+                    rootRel = rootRel,
+                    baseOutputDir = subOutputDir,
+                    baseClassName = baseClassName,
+                    rootPackageName = rootPackageName,
+                    subDirs = nestedSubDirs,
+                    relativePathFromRoot = currentRelativePath,
+                )
+            }
+        }
+    }
+
+    /**
+     * SINGLE_CLASS 模式渲染函数：生成单一类，所有测试方法和嵌套类都在一起
+     */
+    private fun renderSingleClassSuite(
         rootRel: String,
         rootFiles: List<File>,
         subDirs: List<File>,
         projectRoot: File,
         generatedClassName: String,
         baseClassName: String,
+        basePackage: String,
     ): String = buildString {
-        appendLine("package org.cangnova.cangjie.cfir.analysis.tests")
+        appendLine("package $basePackage")
         appendLine()
         appendLine("import com.intellij.testFramework.TestDataPath")
         appendLine("import org.cangnova.cangjie.ObsoleteTestInfrastructure")
@@ -165,7 +346,7 @@ object TestGeneratorForCfirAnalysisTests {
         appendLine()
         appendLine("/** AUTO-GENERATED by TestGeneratorForCfirAnalysisTests. DO NOT EDIT MANUALLY. */")
         appendLine("@TestMetadata(\"$rootRel\")")
-        appendLine("@TestDataPath(\"\\${'$'}PROJECT_ROOT\")")
+        appendLine("@TestDataPath(\"\${'$'}PROJECT_ROOT\")")
         appendLine("@OptIn(ObsoleteTestInfrastructure::class)")
         appendLine("@ObsoleteTestInfrastructure")
         appendLine("class $generatedClassName : $baseClassName() {")
@@ -180,7 +361,7 @@ object TestGeneratorForCfirAnalysisTests {
         }
 
         for (dir in subDirs) {
-            appendDirectoryClass(
+            appendNestedDirectoryClass(
                 dir = dir,
                 rootRel = rootRel,
                 projectRoot = projectRoot,
@@ -192,112 +373,116 @@ object TestGeneratorForCfirAnalysisTests {
 
         appendLine("}")
         appendLine()
-        appendLine("private fun assertAllFilesPresentByMetadata(testInstance: Any, testDataRootRelativePath: String) {")
-        appendLine("    val testDataDir = resolveTestDataPath(testDataRootRelativePath)")
-        appendLine("    require(testDataDir.isDirectory) { \"testData dir not found: \${testDataDir.path}\" }")
-        appendLine()
-        appendLine("    val currentDir = currentClassTestDataDir(testInstance::class.java, testDataDir)")
-        appendLine("    val expected = currentDir.listFiles().orEmpty().asSequence()")
-        appendLine("        .filter { it.isGeneratedTestDataFile() }")
-        appendLine("        .map { it.relativeTo(currentDir).invariantSeparatorsPath }")
-        appendLine("        .toSet()")
-        appendLine()
-        appendLine("    val covered = collectCoveredRelativePaths(testInstance::class.java, currentDir)")
-        appendLine("    val missing = expected - covered")
-        appendLine("    check(missing.isEmpty()) {")
-        appendLine("        \"Missing generated tests for testData files in \${currentDir.path}: \${missing.sorted()}\"")
-        appendLine("    }")
-        appendLine("}")
-        appendLine()
-        appendLine("private fun resolveTestDataPath(path: String): File {")
-        appendLine("    val direct = File(path)")
-        appendLine("    if (direct.isAbsolute) return direct")
-        appendLine("    if (direct.exists()) return direct")
-        appendLine()
-        appendLine("    var cursor = File(System.getProperty(\"user.dir\", \".\")).absoluteFile")
-        appendLine("    while (true) {")
-        appendLine("        val candidate = cursor.resolve(path)")
-        appendLine("        if (candidate.exists()) return candidate")
-        appendLine("        val parent = cursor.parentFile ?: break")
-        appendLine("        cursor = parent")
-        appendLine("    }")
-        appendLine("    return direct")
-        appendLine("}")
-        appendLine()
-        appendLine("private fun currentClassTestDataDir(testClass: Class<*>, rootTestDataDir: File): File {")
-        appendLine("    val classMetadata = testClass.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java)")
-        appendLine("    if (classMetadata != null) {")
-        appendLine("        val metadataPath = classMetadata.value.replace('\\\\', '/')")
-        appendLine("        val candidate = File(metadataPath)")
-        appendLine("        if (candidate.isDirectory) return candidate")
-        appendLine("        val nestedCandidate = rootTestDataDir.resolve(metadataPath)")
-        appendLine("        if (nestedCandidate.isDirectory) return nestedCandidate")
-        appendLine("    }")
-        appendLine("    return rootTestDataDir")
-        appendLine("}")
-        appendLine()
-        appendLine("private fun collectCoveredRelativePaths(rootClass: Class<*>, testDataDir: File): Set<String> {")
-        appendLine("    val covered = linkedSetOf<String>()")
-        appendLine("    collectCoveredFromClass(rootClass, testDataDir, testDataDir, covered)")
-        appendLine("    return covered")
-        appendLine("}")
-        appendLine()
-        appendLine("private fun collectCoveredFromClass(")
-        appendLine("    klass: Class<*>,")
-        appendLine("    rootTestDataDir: File,")
-        appendLine("    inheritedDir: File,")
-        appendLine("    covered: MutableSet<String>,")
-        appendLine(") {")
-        appendLine("    val classScopedDir = classScopedDir(klass, rootTestDataDir, inheritedDir)")
-        appendLine("    for (method in klass.declaredMethods) {")
-        appendLine("        val metadata = method.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java) ?: continue")
-        appendLine("        val metadataPath = metadata.value.replace('\\\\', '/')")
-        appendLine("        val candidate = classScopedDir.resolve(metadataPath)")
-        appendLine("        if (candidate.isFile && candidate.extension == \"cj\" && candidate.isUnder(rootTestDataDir)) {")
-        appendLine("            covered += candidate.relativeTo(rootTestDataDir).invariantSeparatorsPath")
-        appendLine("        }")
-        appendLine("    }")
-        appendLine("    for (nested in klass.declaredClasses) {")
-        appendLine("        collectCoveredFromClass(nested, rootTestDataDir, classScopedDir, covered)")
-        appendLine("    }")
-        appendLine("}")
-        appendLine()
-        appendLine("private fun classScopedDir(")
-        appendLine("    klass: Class<*>,")
-        appendLine("    rootTestDataDir: File,")
-        appendLine("    inheritedDir: File,")
-        appendLine("): File {")
-        appendLine("    val classMetadata = klass.getAnnotation(org.cangnova.cangjie.test.TestMetadata::class.java) ?: return inheritedDir")
-        appendLine("    val metadataPath = classMetadata.value.replace('\\\\', '/')")
-        appendLine("    val direct = resolveTestDataPath(metadataPath)")
-        appendLine("    if (direct.isDirectory) return direct")
-        appendLine("    val nested = rootTestDataDir.resolve(metadataPath)")
-        appendLine("    if (nested.isDirectory) return nested")
-        appendLine("    val inheritedNested = inheritedDir.resolve(metadataPath)")
-        appendLine("    if (inheritedNested.isDirectory) return inheritedNested")
-        appendLine("    return inheritedDir")
-        appendLine("}")
-        appendLine()
-        appendLine("private fun File.isUnder(parent: File): Boolean {")
-        appendLine("    val parentPath = parent.canonicalFile.toPath()")
-        appendLine("    val childPath = canonicalFile.toPath()")
-        appendLine("    return childPath.startsWith(parentPath)")
-        appendLine("}")
-        appendLine()
-        appendLine("private fun File.isGeneratedTestDataFile(): Boolean {")
-        appendLine("    if (!isFile || extension != \"cj\") return false")
-        appendLine("    if (!isPackageCompanionName()) return true")
-        appendLine("    val directory = parentFile ?: return true")
-        appendLine("    return directory.listFiles().orEmpty().none { sibling ->")
-        appendLine("        sibling.isFile && sibling.extension == \"cj\" && sibling != this && !sibling.isPackageCompanionName()")
-        appendLine("    }")
-        appendLine("}")
-        appendLine()
-        appendLine("private fun File.isPackageCompanionName(): Boolean =")
-        appendLine("    name == \"pkg.cj\" || name.endsWith(\".pkg.cj\")")
     }
 
-    private fun StringBuilder.appendDirectoryClass(
+    /**
+     * PER_PACKAGE 模式根文件渲染函数：根目录测试 + 对子目录包的引用（不使用 @Nested）
+     */
+    private fun renderPerPackageRootSuite(
+        rootRel: String,
+        rootFiles: List<File>,
+        subDirs: List<File>,
+        projectRoot: File,
+        generatedClassName: String,
+        baseClassName: String,
+        packageName: String,
+    ): String = buildString {
+        appendLine("package $packageName")
+        appendLine()
+        appendLine("import com.intellij.testFramework.TestDataPath")
+        appendLine("import org.cangnova.cangjie.ObsoleteTestInfrastructure")
+        appendLine("import org.cangnova.cangjie.cfir.analysis.tests.runners.$baseClassName")
+        appendLine("import org.cangnova.cangjie.test.TestMetadata")
+        appendLine("import org.junit.jupiter.api.Test")
+        appendLine("import java.io.File")
+        // 导入公共 utility 函数
+        appendLine("import org.cangnova.cangjie.cfir.analysis.tests.assertAllFilesPresentByMetadata")
+        appendLine()
+        appendLine("/** AUTO-GENERATED by TestGeneratorForCfirAnalysisTests. DO NOT EDIT MANUALLY. */")
+        appendLine("@TestMetadata(\"$rootRel\")")
+        appendLine("@TestDataPath(\"\${'$'}PROJECT_ROOT\")")
+        appendLine("@OptIn(ObsoleteTestInfrastructure::class)")
+        appendLine("@ObsoleteTestInfrastructure")
+        appendLine("class $generatedClassName : $baseClassName() {")
+        appendLine("    @Test")
+        appendLine("    fun testAllFilesPresent() {")
+        appendLine("        assertAllFilesPresentByMetadata(this, \"$rootRel\")")
+        appendLine("    }")
+
+        for (file in rootFiles) {
+            appendLine()
+            appendTestMethod(file, projectRoot, indent = "    ")
+        }
+
+        // PER_PACKAGE 模式：子目录是独立的包/文件，不再用 @Nested
+        for (dir in subDirs) {
+            appendLine()
+            appendPackageReference(dir, indent = "    ")
+        }
+
+        appendLine("}")
+        appendLine()
+    }
+
+    /**
+     * PER_PACKAGE 模式子目录包渲染函数：生成独立的 Kotlin 文件，每个子目录一个
+     */
+    private fun renderPerPackageDirSuite(
+        dir: File,
+        rootRel: String,
+        projectRoot: File,
+        generatedClassName: String,
+        baseClassName: String,
+        packageName: String,
+        relativePathFromRoot: String,
+    ): String = buildString {
+        appendLine("package $packageName")
+        appendLine()
+        appendLine("import com.intellij.testFramework.TestDataPath")
+        appendLine("import org.cangnova.cangjie.ObsoleteTestInfrastructure")
+        appendLine("import org.cangnova.cangjie.cfir.analysis.tests.runners.$baseClassName")
+        appendLine("import org.cangnova.cangjie.test.TestMetadata")
+        appendLine("import org.junit.jupiter.api.Test")
+        appendLine("import java.io.File")
+        // 导入公共 utility 函数
+        appendLine("import org.cangnova.cangjie.cfir.analysis.tests.assertAllFilesPresentByMetadata")
+        appendLine()
+        appendLine("/** AUTO-GENERATED by TestGeneratorForCfirAnalysisTests. DO NOT EDIT MANUALLY. */")
+        appendLine("@TestMetadata(\"$rootRel/$relativePathFromRoot\")")
+        appendLine("@TestDataPath(\"\${'$'}PROJECT_ROOT\")")
+        appendLine("@OptIn(ObsoleteTestInfrastructure::class)")
+        appendLine("@ObsoleteTestInfrastructure")
+        appendLine("class $generatedClassName : $baseClassName() {")
+        appendLine("    @Test")
+        appendLine("    fun testAllFilesPresent() {")
+        appendLine("        assertAllFilesPresentByMetadata(this, \"$rootRel/$relativePathFromRoot\")")
+        appendLine("    }")
+
+        val files = dir.listFiles().orEmpty()
+            .filter { it.isGeneratedTestDataFile() }
+            .sortedBy { it.name }
+
+        for (file in files) {
+            appendLine()
+            appendTestMethod(file, projectRoot, indent = "    ")
+        }
+
+        // PER_PACKAGE 模式：嵌套子目录作为独立文件处理，由 generatePerPackageSubdirs 递归处理
+        // 此处不再生成 @Nested 类
+
+        appendLine("}")
+        appendLine()
+    }
+
+    /**
+     * 在 PER_PACKAGE 模式下输出子目录包的引用注释
+     */
+    private fun StringBuilder.appendPackageReference(dir: File, indent: String) {
+        val className = "${dirNameToPascalCase(dir.name)}Generated"
+        appendLine("${indent}// Package: ${dir.name} -> $className")
+    }
+
+    private fun StringBuilder.appendNestedDirectoryClass(
         dir: File,
         rootRel: String,
         projectRoot: File,
@@ -319,7 +504,7 @@ object TestGeneratorForCfirAnalysisTests {
 
         appendLine()
         appendLine("${indent}@TestMetadata(\"${dir.name}\")")
-        appendLine("${indent}@TestDataPath(\"\\${'$'}PROJECT_ROOT\")")
+        appendLine("${indent}@TestDataPath(\"\${'$'}PROJECT_ROOT\")")
         appendLine("${indent}@Nested")
         appendLine("${indent}inner class $className : $baseClassName() {")
         appendLine("${indent}    @Test")
@@ -333,7 +518,7 @@ object TestGeneratorForCfirAnalysisTests {
         }
 
         for (nestedDir in nestedDirs) {
-            appendDirectoryClass(
+            appendNestedDirectoryClass(
                 dir = nestedDir,
                 rootRel = rootRel,
                 projectRoot = projectRoot,
@@ -376,6 +561,57 @@ object TestGeneratorForCfirAnalysisTests {
             .ifEmpty { "Generated" }
     }
 
+    private fun String.toPackagePath(): String =
+        split('/')
+            .filter(String::isNotBlank)
+            .joinToString(".") { segment -> segment.toPackageSegment() }
+
+    /**
+     * testData 目录名允许 `const-eval`、`class`、`if-let-expr` 这类名字；
+     * 生成 Kotlin package 时必须转成合法且非关键字的标识符。
+     */
+    private fun String.toPackageSegment(): String {
+        val normalized = buildString {
+            for (ch in this@toPackageSegment) {
+                append(if (ch == '_' || ch.isLetterOrDigit()) ch else '_')
+            }
+        }.ifBlank { "generated" }
+        val startsAsIdentifier = normalized.first() == '_' || normalized.first().isLetter()
+        val identifier = if (startsAsIdentifier) normalized else "_$normalized"
+        return if (identifier in kotlinHardKeywords) "_$identifier" else identifier
+    }
+
+    private val kotlinHardKeywords = setOf(
+        "as",
+        "break",
+        "class",
+        "continue",
+        "do",
+        "else",
+        "false",
+        "for",
+        "fun",
+        "if",
+        "in",
+        "interface",
+        "is",
+        "null",
+        "object",
+        "package",
+        "return",
+        "super",
+        "this",
+        "throw",
+        "true",
+        "try",
+        "typealias",
+        "typeof",
+        "val",
+        "var",
+        "when",
+        "while",
+    )
+
     /**
      * 将测试数据目录名规整为 Kotlin 源码可直接声明的类名。
      *
@@ -415,3 +651,7 @@ object TestGeneratorForCfirAnalysisTests {
     private fun File.isPackageCompanionName(): Boolean =
         name == "pkg.cj" || name.endsWith(".pkg.cj")
 }
+
+
+
+

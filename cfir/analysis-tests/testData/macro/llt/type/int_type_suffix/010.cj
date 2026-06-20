@@ -17,9 +17,9 @@ main(): Int64 {
         if (a[i] != b[i]) {
             return 1
         }
-        if (!(a[i] is UInt8)) <!chir_dce_unreachable_block_in_expression!>{
+        if (!(a[i] is UInt8)) {
             return 2
-        }<!>
+        }
     }
     return 0
 }

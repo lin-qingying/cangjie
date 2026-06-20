@@ -214,7 +214,6 @@ open class CfirFrontendFacade(
             cjFiles = cjFiles.values,
             lightTreeFiles = lightTreeFiles.values,
             parser = parser,
-            diagnosticReporterForLightTree = testServices.cfirDiagnosticCollectorService.reporterForLTSyntaxErrors,
         )
         val firFiles = firAnalyzerFacade.runResolution()
 

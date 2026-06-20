@@ -6,11 +6,11 @@
 
 func f(): Float64 {
     var a: Int64 = 1
-    <!TYPE_MISMATCH!>a<!>
+    <!RETURN_TYPE_MISMATCH!>a<!>
 }
 
-<!CONFLICTING_OVERLOADS!>func f<!>(): Int64 {
-    <!TYPE_MISMATCH!>while (true) {}<!>
+func <!CONFLICTING_OVERLOADS!>f<!>(): Int64 {
+    <!RETURN_TYPE_MISMATCH!>while (true) {}<!>
 }
 
 func foo() {

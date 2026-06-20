@@ -4,7 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-type A<T, Y, U> = Int64
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype A<T, Y, U> = Int64
 
 main() {
     var a: A<Bool, Rune, Int64> = 10;

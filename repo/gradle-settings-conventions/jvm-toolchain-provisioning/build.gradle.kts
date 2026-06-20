@@ -1,6 +1,5 @@
 plugins {
     `kotlin-dsl`
-    id("org.jetbrains.kotlin.jvm")
 }
 
 repositories {

@@ -38,6 +38,7 @@ import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.ConeCangJieType
 import org.cangnova.cangjie.cfir.types.ConeErrorType
 import org.cangnova.cangjie.cfir.types.ConeIntersectionType
+import org.cangnova.cangjie.cfir.types.ConeLookupTagBasedType
 import org.cangnova.cangjie.cfir.types.ConeTypeVariableType
 import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.collectUpperBounds
@@ -134,6 +135,10 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
     val expandedQualifierType = qualifierType.fullyExpandedType(session)
     val cacheKey = StaticScopeForQualifierTypeKey(classId, expandedQualifierType)
     return scopeSession.getOrBuild(cacheKey, StaticScopeForQualifierTypeScopeKey) {
+        val allowBareGenericStaticQualifierExtends =
+            expandedQualifierType is ConeLookupTagBasedType &&
+                    expandedQualifierType.typeArguments.isEmpty() &&
+                    cfir.typeParameters.isNotEmpty()
         val useSiteScope = CfirClassUseSiteMemberScope(
             session = session,
             classSymbol = this,
@@ -143,6 +148,7 @@ fun CfirClassLikeSymbol<*>.staticScopeForQualifierType(
             ownerType = expandedQualifierType,
             dispatchReceiverType = expandedQualifierType,
             scopeKind = CfirClassMemberScopeKind.USE_SITE,
+            allowBareGenericStaticQualifierExtends = allowBareGenericStaticQualifierExtends,
         )
         CfirClassStaticScope(CfirClassSubstitutionScope(session, useSiteScope, expandedQualifierType))
     }

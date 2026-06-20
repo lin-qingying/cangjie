@@ -2,7 +2,6 @@ package org.cangnova.cangjie.test.frontend
 
 import org.cangnova.cangjie.CjSourceFile
 import org.cangnova.cangjie.cfir.declarations.CfirFile
-import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.pipeline.AllModulesFrontendOutput
 import org.cangnova.cangjie.cfir.pipeline.SingleModuleFrontendOutput
 import org.cangnova.cangjie.cfir.pipeline.buildPreMacroRawCfirFromCjFiles
@@ -36,7 +35,6 @@ class CfirAnalyzerFacade(
     val cjFiles: Collection<CjFile> = emptyList(), // may be empty if light tree mode enabled
     val lightTreeFiles: Collection<CjSourceFile> = emptyList(), // may be empty if light tree mode disabled
     val parser: CfirParser,
-    val diagnosticReporterForLightTree: DiagnosticReporter? = null
 ) : AbstractCfirAnalyzerFacade() {
     private var cfirFiles: List<CfirFile>? = null
     private var _scopeSession: ScopeSession? = null
@@ -52,7 +50,6 @@ class CfirAnalyzerFacade(
         val pre = when (parser) {
             CfirParser.LightTree -> session.buildPreMacroRawCfirViaLightTree(
                 lightTreeFiles,
-                diagnosticReporterForLightTree,
                 reportFilesAndLines = null,
             )
             CfirParser.Psi -> session.buildPreMacroRawCfirFromCjFiles(cjFiles)

@@ -9,7 +9,7 @@ interface I {}
 
 struct A <: I {}
 
-func f(<!chir_dce_unused_variable!>x<!>: (Int64, I)): A {
+func f(x: (Int64, I)): A {
     A()
 }
 

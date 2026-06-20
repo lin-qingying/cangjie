@@ -5,6 +5,7 @@ import org.cangnova.cangjie.cfir.ScopeSessionKey
 import org.cangnova.cangjie.cfir.declarations.CfirClass
 import org.cangnova.cangjie.cfir.declarations.CfirClassLikeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirResolvePhase
+import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
 import org.cangnova.cangjie.cfir.resolve.providers.CfirSymbolProvider
 import org.cangnova.cangjie.cfir.scopes.impl.CfirScopeWithCallableCopyReturnTypeUpdater
 import org.cangnova.cangjie.cfir.scopes.CallableCopyTypeCalculator
@@ -12,6 +13,7 @@ import org.cangnova.cangjie.cfir.scopes.impl.CfirClassMemberScopeKind
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassUseSiteMemberScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirClassSubstitutionScope
 import org.cangnova.cangjie.cfir.scopes.impl.CfirPackageMemberScope
+import org.cangnova.cangjie.cfir.scopes.impl.TypeAliasConstructorsSubstitutingScope
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.CfirSessionComponent
 import org.cangnova.cangjie.cfir.session.directSupertypeProviderOrNull
@@ -42,6 +44,16 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
                 scopeKind = CfirClassMemberScopeKind.USE_SITE,
             )
             CfirClassSubstitutionScope(useSiteSession, rawScope, classSymbol.constructType())
+        }
+    }
+
+    override fun getTypealiasConstructorScope(
+        typeAlias: CfirTypeAlias,
+        useSiteSession: CfirSession,
+        scopeSession: ScopeSession,
+    ): CfirScope {
+        return scopeSession.getOrBuild(useSiteSession to typeAlias.symbol, TYPEALIAS_CONSTRUCTOR) {
+            TypeAliasConstructorsSubstitutingScope.initialize(typeAlias.symbol, useSiteSession, scopeSession)
         }
     }
 
@@ -78,6 +90,9 @@ open class CfirCangJieScopeProvider : CfirScopeProvider(), CfirSessionComponent 
         val useSiteSession: CfirSession,
     )
 }
+
+private val TYPEALIAS_CONSTRUCTOR: ScopeSessionKey<Pair<CfirSession, org.cangnova.cangjie.cfir.symbols.CfirTypeAliasSymbol>, CfirScope> =
+    scopeSessionKey()
 
 fun CfirClassLikeDeclaration.unsubstitutedScope(
     useSiteSession: CfirSession,

@@ -10,6 +10,8 @@ import org.cangnova.cangjie.cfir.types.*
 internal fun renderTypeRefForDebug(typeRef: CfirTypeRef?, typeRenderer: ConeTypeRenderer): String {
     return when (typeRef) {
         null -> ""
+        is CfirErrorTypeRef -> "R|<ERROR:${typeRef.diagnostic.reason}>|"
+
         is CfirImplicitTypeRef -> "<implicit>"
         is CfirResolvedTypeRef -> "R|${typeRenderer.render(typeRef.coneType)}|"
         is CfirBasicTypeRef -> "R|${typeRef.name.asString()}|"
@@ -50,7 +52,5 @@ internal fun renderTypeRefForDebug(typeRef: CfirTypeRef?, typeRenderer: ConeType
         }
         is CfirVArrayTypeRef ->
             "R|VArray<${renderTypeRefForDebug(typeRef.elementTypeRef, typeRenderer)}, ${typeRef.sizeLiteral}>|"
-        is CfirErrorTypeRef -> "R|<ERROR:${typeRef.diagnostic.reason}>|"
-        else -> typeRef.coneTypeOrNull?.let { "R|${typeRenderer.render(it)}|" }.orEmpty()
     }
 }

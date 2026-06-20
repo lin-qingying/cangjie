@@ -25,6 +25,7 @@
 package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 
 import org.cangnova.cangjie.cfir.CfirElement
+import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
@@ -36,13 +37,20 @@ import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.patterns.bindingVariables
 import org.cangnova.cangjie.cfir.patterns.primaryBindingNameOrNull
+import org.cangnova.cangjie.cfir.references.CfirNamedReferenceWithCandidateBase
 import org.cangnova.cangjie.cfir.references.CfirResolvedErrorReference
 import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
+import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.CfirBasedSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirNamedFunctionSymbol
+import org.cangnova.cangjie.cfir.symbols.CfirPropertyAccessorSymbol
 import org.cangnova.cangjie.cfir.symbols.CfirPropertySymbol
 import org.cangnova.cangjie.cfir.symbols.CfirVariableSymbol
+import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
+import org.cangnova.cangjie.cfir.types.ConeClassLikeType
 import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
+import org.cangnova.cangjie.descriptors.Visibilities
+import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.Name
 
 /**
@@ -81,7 +89,7 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     fun checkClassLikeMemberInitialization(classLike: CfirClassLikeDeclaration) {
-        val trackedFields = classLike.instanceFieldInfos()
+        val trackedFields = classLike.instanceFieldInfos(context, includeInherited = true)
         if (trackedFields.isEmpty()) return
 
         var state = InitializationState.empty().declareAll(
@@ -108,18 +116,19 @@ private class CfirInitializationFlowAnalyzer(
         constructor: CfirConstructor,
     ) {
         if (!constructor.isInstanceConstructor) return
+        if (constructor.isRedundantPrimaryConstructor(owner)) return
         val body = constructor.body ?: return
         if (constructor.firstDelegationKind() == ConstructorDelegationKind.THIS) return
 
         val endState = analyzeFunctionBody(constructor, body, owner)
         if (endState.terminated) return
 
-        owner.instanceFieldInfos()
+        owner.instanceFieldInfos(context)
             .filter { fieldInfo -> !endState.isInitialized(fieldInfo.symbol) }
             .forEach { fieldInfo ->
                 with(context) {
                     reporter.reportOn(
-                        source = constructor.source,
+                        source = constructor.source?.firstCharacterDiagnosticSource(),
                         factory = CfirErrors.CLASS_UNINITIALIZED_FIELD,
                         a = fieldInfo.diagnosticName,
                     )
@@ -140,12 +149,15 @@ private class CfirInitializationFlowAnalyzer(
             )
         }
         val fieldInfos = if (function is CfirConstructor && function.isInstanceConstructor && owner != null) {
-            owner.instanceFieldInfos()
+            owner.instanceFieldInfos(context)
         } else {
             emptyList()
         }
         val preInitializedFields = if (function is CfirConstructor && function.isInstanceConstructor && owner != null) {
-            owner.instanceFieldsWithInitializer().map(CfirFieldVariable::symbol).toSet()
+            buildSet<CfirBasedSymbol<*>> {
+                owner.instanceFieldsWithInitializer().mapTo(this, CfirFieldVariable::symbol)
+                owner.primaryConstructorInitializedPropertiesFor(function).mapTo(this, CfirProperty::symbol)
+            }
         } else {
             emptySet()
         }
@@ -283,7 +295,9 @@ private class CfirInitializationFlowAnalyzer(
                 analyzeExpression(receiver, state)
             } ?: state
             when (val symbol = lValue.resolvedAccessSymbolOrNull()) {
-                is CfirVariableSymbol<*> -> {
+                is CfirVariableSymbol<*>,
+                is CfirPropertyAccessorSymbol,
+                is CfirPropertySymbol -> {
                     recordInitializationAssignmentIfNeeded(symbol, state, assignment)
                     afterReceiver.markInitialized(symbol)
                 }
@@ -307,7 +321,9 @@ private class CfirInitializationFlowAnalyzer(
                 analyzeExpression(receiver, state)
             } ?: state
             when (val symbol = lValue.resolvedAccessSymbolOrNull()) {
-                is CfirVariableSymbol<*> -> {
+                is CfirVariableSymbol<*>,
+                is CfirPropertyAccessorSymbol,
+                is CfirPropertySymbol -> {
                     recordInitializationAssignmentIfNeeded(symbol, state, assignment)
                     afterReceiver.markInitialized(symbol)
                 }
@@ -330,13 +346,29 @@ private class CfirInitializationFlowAnalyzer(
     }
 
     private fun recordInitializationAssignmentIfNeeded(
-        symbol: CfirVariableSymbol<*>,
+        symbol: CfirBasedSymbol<*>,
         state: InitializationState,
         assignment: CfirAssignment,
     ) {
         if (initializationAssignments == null) return
         if (!state.isTracked(symbol) || state.isInitialized(symbol)) return
+        if (symbol is CfirVariableSymbol<*> && symbol.hasSameNamePrimaryConstructorPropertyInOwner()) return
         initializationAssignments += assignment
+    }
+
+    /**
+     * 主构造参数生成的成员属性与显式字段同名时，官方 Sema 已把该名字视为已由构造参数占用。
+     * 后续对显式 `let` 字段的赋值不能再享受“构造器内首次初始化”的不可变豁免。
+     */
+    private fun CfirVariableSymbol<*>.hasSameNamePrimaryConstructorPropertyInOwner(): Boolean {
+        val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>() ?: return false
+        val targetName = name
+        return owner.declarations
+            .asSequence()
+            .filterIsInstance<CfirConstructor>()
+            .flatMap { constructor -> constructor.valueParameters.asSequence() }
+            .mapNotNull { parameter -> parameter.correspondingProperty }
+            .any { property -> property.name == targetName }
     }
 
     private fun reportFieldsLeftUninitializedByDefaultConstructor(
@@ -658,14 +690,14 @@ private enum class InitializationAccessMode {
 }
 
 private data class TrackedVariableInfo(
-    val symbol: CfirVariableSymbol<*>,
+    val symbol: CfirBasedSymbol<*>,
     val diagnosticName: Name,
     val isInstanceField: Boolean,
 )
 
 private data class InitializationState(
-    val tracked: Map<CfirVariableSymbol<*>, TrackedVariableInfo>,
-    val initialized: Set<CfirVariableSymbol<*>>,
+    val tracked: Map<CfirBasedSymbol<*>, TrackedVariableInfo>,
+    val initialized: Set<CfirBasedSymbol<*>>,
     val terminated: Boolean,
     val inMemberInitializer: Boolean,
 ) {
@@ -695,7 +727,7 @@ private data class InitializationState(
 
     fun declareAll(
         trackedVariables: Collection<TrackedVariableInfo>,
-        initializedSymbols: Set<CfirVariableSymbol<*>>,
+        initializedSymbols: Set<CfirBasedSymbol<*>>,
     ): InitializationState {
         val normalizedInitializedSymbols = initializedSymbols.mapTo(linkedSetOf()) { it.initializationSymbol() }
         var currentState = this
@@ -708,15 +740,15 @@ private data class InitializationState(
         return currentState
     }
 
-    fun markInitialized(symbol: CfirVariableSymbol<*>): InitializationState {
+    fun markInitialized(symbol: CfirBasedSymbol<*>): InitializationState {
         val normalizedSymbol = symbol.initializationSymbol()
         if (normalizedSymbol !in tracked) return this
         return copy(initialized = initialized + normalizedSymbol)
     }
 
-    fun isTracked(symbol: CfirVariableSymbol<*>): Boolean = symbol.initializationSymbol() in tracked
+    fun isTracked(symbol: CfirBasedSymbol<*>): Boolean = symbol.initializationSymbol() in tracked
 
-    fun isInitialized(symbol: CfirVariableSymbol<*>): Boolean = symbol.initializationSymbol() in initialized
+    fun isInitialized(symbol: CfirBasedSymbol<*>): Boolean = symbol.initializationSymbol() in initialized
 
     fun hasUninitializedInstanceFields(): Boolean {
         return tracked.any { (symbol, variableInfo) ->
@@ -742,7 +774,7 @@ private data class InitializationState(
         )
     }
 
-    fun retainOnly(visibleSymbols: Set<CfirVariableSymbol<*>>): InitializationState {
+    fun retainOnly(visibleSymbols: Set<CfirBasedSymbol<*>>): InitializationState {
         val normalizedVisibleSymbols = visibleSymbols.mapTo(linkedSetOf()) { it.initializationSymbol() }
         return copy(
             tracked = tracked.filterKeys { symbol -> symbol in normalizedVisibleSymbols },
@@ -755,8 +787,12 @@ private data class InitializationState(
     fun withoutTermination(): InitializationState = if (!terminated) this else copy(terminated = false)
 }
 
-private fun CfirVariableSymbol<*>.initializationSymbol(): CfirVariableSymbol<*> =
-    if (isBound) unwrapSubstitutionOverrides() else this
+private fun CfirBasedSymbol<*>.initializationSymbol(): CfirBasedSymbol<*> = when {
+    this is CfirVariableSymbol<*> && isBound -> unwrapSubstitutionOverrides()
+    this is CfirPropertySymbol && isBound -> unwrapSubstitutionOverrides()
+    this is CfirPropertyAccessorSymbol && isBound -> propertySymbol.unwrapSubstitutionOverrides()
+    else -> this
+}
 
 private enum class ConstructorDelegationKind {
     THIS,
@@ -793,23 +829,141 @@ object CfirConstructorInitializationChecker : CfirConstructorChecker() {
     }
 }
 
-private fun CfirClassLikeDeclaration.instanceFieldInfos(): List<TrackedVariableInfo> {
-    return declarations
-        .filterIsInstance<CfirFieldVariable>()
-        .filter { field -> !field.status.isStatic }
-        .map { field ->
-            TrackedVariableInfo(
-                symbol = field.symbol,
-                diagnosticName = field.name,
-                isInstanceField = true,
-            )
+/**
+ * 初始化检查中的实例字段集合。
+ *
+ * 官方 `InitializationChecker::GetNonFuncDeclsInSuperClass` 会把父类非 private
+ * 实例字段纳入子类初始化阶段；因此成员初始化器检查需要同时跟踪本类字段和可见父类字段。
+ */
+private fun CfirClassLikeDeclaration.instanceFieldInfos(
+    context: CheckerContext,
+    includeInherited: Boolean = false,
+): List<TrackedVariableInfo> = buildList {
+    if (includeInherited && this@instanceFieldInfos is CfirClass) {
+        addAll(inheritedInstanceFieldInfos(context, visitedClasses = linkedSetOf()))
+    }
+    addAll(declaredInstanceFieldInfos())
+}
+
+private fun CfirClassLikeDeclaration.declaredInstanceFieldInfos(): List<TrackedVariableInfo> {
+    return buildList {
+        declarations
+            .filterIsInstance<CfirFieldVariable>()
+            .filter { field -> !field.status.isStatic }
+            .mapTo(this, CfirFieldVariable::toTrackedInstanceFieldInfo)
+        addAll(primaryConstructorPropertyInfos())
+    }
+}
+
+private fun CfirClassLikeDeclaration.inheritedInstanceFieldInfos(
+    context: CheckerContext,
+    visitedClasses: MutableSet<ClassId>,
+): List<TrackedVariableInfo> = buildList {
+    for (superTypeRef in superTypeRefs) {
+        val superType = (superTypeRef as? CfirResolvedTypeRef)?.coneType as? ConeClassLikeType ?: continue
+        val superClassId = superType.classId
+        if (!visitedClasses.add(superClassId)) continue
+
+        val superClass = context.session.symbolProvider
+            .getClassLikeSymbolByClassId(superClassId)
+            ?.cfir as? CfirClass ?: continue
+
+        addAll(
+            superClass.declarations
+                .filterIsInstance<CfirFieldVariable>()
+                .filter { field -> !field.status.isStatic && field.status.visibility != Visibilities.Private }
+                .map(CfirFieldVariable::toTrackedInstanceFieldInfo)
+        )
+        addAll(
+            superClass.primaryConstructorPropertyInfos()
+                .filter { propertyInfo ->
+                    (propertyInfo.symbol as? CfirPropertySymbol)?.cfir?.status?.visibility != Visibilities.Private
+                }
+        )
+        addAll(superClass.inheritedInstanceFieldInfos(context, visitedClasses))
+    }
+}
+
+private fun CfirFieldVariable.toTrackedInstanceFieldInfo(): TrackedVariableInfo =
+    TrackedVariableInfo(
+        symbol = symbol,
+        diagnosticName = name,
+        isInstanceField = true,
+    )
+
+/**
+ * 主构造 `let/var` 参数在 raw CFIR 中以 [CfirProperty] 进入类声明树。
+ *
+ * 官方初始化检查收集的是类中的非函数成员声明，Kotlin FIR 也按 property/backing-field
+ * 做初始化 CFA；因此这里不能只跟踪 [CfirFieldVariable]。同名冲突时仅最早的
+ * 存储声明参与初始化检查，保持与官方 PreCheck “后声明报重定义”的语义一致。
+ */
+private fun CfirClassLikeDeclaration.primaryConstructorPropertyInfos(): List<TrackedVariableInfo> {
+    val effectiveProperties = primaryConstructorParametersWithProperties()
+        .mapNotNull { (_, property) ->
+            property.takeIf { isEarliestStorageDeclaration(property) }
         }
+        .toList()
+
+    return effectiveProperties.map { property ->
+        TrackedVariableInfo(
+            symbol = property.symbol,
+            diagnosticName = property.name,
+            isInstanceField = true,
+        )
+    }
 }
 
 private fun CfirClassLikeDeclaration.instanceFieldsWithInitializer(): List<CfirFieldVariable> {
     return declarations
         .filterIsInstance<CfirFieldVariable>()
         .filter { field -> !field.status.isStatic && field.initializer != null }
+}
+
+private fun CfirClassLikeDeclaration.primaryConstructorInitializedPropertiesFor(constructor: CfirConstructor): List<CfirProperty> {
+    if (!constructor.isPrimary) return emptyList()
+    return constructor.valueParameters
+        .asSequence()
+        .mapNotNull(CfirValueParameter::correspondingProperty)
+        .mapNotNull { property ->
+            property.takeIf {
+                isEarliestStorageDeclaration(property) &&
+                        isUniquePrimaryConstructorProperty(property)
+            }
+        }
+        .toList()
+}
+
+private fun CfirClassLikeDeclaration.primaryConstructorParametersWithProperties(): Sequence<Pair<CfirValueParameter, CfirProperty>> {
+    return declarations
+        .asSequence()
+        .filterIsInstance<CfirConstructor>()
+        .filter(CfirConstructor::isPrimary)
+        .flatMap { constructor -> constructor.valueParameters.asSequence() }
+        .mapNotNull { parameter -> parameter.correspondingProperty?.let { property -> parameter to property } }
+}
+
+private fun CfirClassLikeDeclaration.isUniquePrimaryConstructorProperty(property: CfirProperty): Boolean {
+    val propertyName = property.name
+    return primaryConstructorParametersWithProperties()
+        .map { (_, candidate) -> candidate }
+        .none { candidate -> candidate !== property && candidate.name == propertyName }
+}
+
+private fun CfirClassLikeDeclaration.isEarliestStorageDeclaration(property: CfirProperty): Boolean {
+    val propertyOffset = property.source?.startOffset ?: Int.MAX_VALUE
+    val propertyName = property.name
+    return declarations
+        .asSequence()
+        .filter { declaration -> declaration !== property }
+        .filter { declaration -> declaration.storageDeclarationNameOrNull() == propertyName }
+        .none { declaration -> (declaration.source?.startOffset ?: Int.MAX_VALUE) < propertyOffset }
+}
+
+private fun CfirDeclaration.storageDeclarationNameOrNull(): Name? = when (this) {
+    is CfirFieldVariable -> name
+    is CfirProperty -> name
+    else -> null
 }
 
 private fun CfirPatternVariable.primaryDiagnosticName(): Name {
@@ -825,10 +979,25 @@ private fun CfirConstructor.firstDelegationKind(): ConstructorDelegationKind? {
     }
 }
 
+/**
+ * 多个主构造器时，官方 Sema 只把第二个及后续声明作为
+ * `sema_multiple_primary_constructors` 的非法声明处理，不再要求它完成字段初始化。
+ */
+private fun CfirConstructor.isRedundantPrimaryConstructor(owner: CfirClassLikeDeclaration): Boolean {
+    if (!isPrimary) return false
+    val firstPrimary = owner.declarations
+        .asSequence()
+        .filterIsInstance<CfirConstructor>()
+        .filter(CfirConstructor::isPrimary)
+        .minByOrNull { constructor -> constructor.source?.startOffset ?: Int.MAX_VALUE }
+    return firstPrimary != null && firstPrimary !== this
+}
+
 private fun CfirFunctionCall.resolvedCallableSymbolOrNull(): CfirBasedSymbol<*>? {
     return when (val calleeReference = calleeReference) {
         is CfirResolvedNamedReference -> calleeReference.resolvedSymbol
         is CfirResolvedErrorReference -> calleeReference.resolvedSymbol
+        is CfirNamedReferenceWithCandidateBase -> calleeReference.candidateSymbol
         else -> null
     }
 }
@@ -837,12 +1006,14 @@ private fun CfirQualifiedAccessExpression.resolvedAccessSymbolOrNull(): CfirBase
     return when (val calleeReference = calleeReference) {
         is CfirResolvedNamedReference -> calleeReference.resolvedSymbol
         is CfirResolvedErrorReference -> calleeReference.resolvedSymbol
+        is CfirNamedReferenceWithCandidateBase -> calleeReference.candidateSymbol
         else -> null
     }
 }
 
 private fun CfirBasedSymbol<*>.isInstanceMemberFunctionOrProperty(): Boolean {
     return when (this) {
+        is CfirPropertyAccessorSymbol -> isBound && propertySymbol.callableId.classId != null && !propertySymbol.cfir.status.isStatic
         is CfirPropertySymbol -> isBound && callableId.classId != null && !cfir.status.isStatic
         is CfirNamedFunctionSymbol -> isBound && callableId.classId != null && !cfir.status.isStatic
         else -> false
@@ -852,6 +1023,7 @@ private fun CfirBasedSymbol<*>.isInstanceMemberFunctionOrProperty(): Boolean {
 private fun CfirBasedSymbol<*>.nameOrNull(): Name? {
     return when (this) {
         is CfirVariableSymbol<*> -> name
+        is CfirPropertyAccessorSymbol -> if (isBound) propertySymbol.name else null
         is CfirPropertySymbol -> name
         is CfirNamedFunctionSymbol -> name
         else -> null

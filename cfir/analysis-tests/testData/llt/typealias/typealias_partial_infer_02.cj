@@ -11,7 +11,7 @@ enum E<T, K> {
 
 type X<K> = E<Int32, K>
 
-type Y<K> = E<Int32, Int8>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype Y<K> = E<Int32, Int8>
 
 main() {
     let a = X.EE(11)

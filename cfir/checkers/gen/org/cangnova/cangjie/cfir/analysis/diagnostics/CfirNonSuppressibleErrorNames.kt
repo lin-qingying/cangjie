@@ -1,27 +1,3 @@
-/*
- * Copyright 2026 LinQingYing. and contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * The use of this source code is governed by the Apache License 2.0,
- * which allows users to freely use, modify, and distribute the code,
- * provided they adhere to the terms of the license.
- *
- * The software is provided "as-is", and the authors are not responsible for
- * any damages or issues arising from its use.
- *
- */
-
 
 
 package org.cangnova.cangjie.cfir.analysis.diagnostics
@@ -34,6 +10,7 @@ package org.cangnova.cangjie.cfir.analysis.diagnostics
 val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "NO_CONSTRUCTOR",
     "REF_NOT_BE_TYPE",
+    "INVALID_ACCESS_CONTROL",
     "ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR",
     "CONFLICTING_OVERLOADS",
     "REDECLARATION",
@@ -85,9 +62,14 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "AMBIGUOUS_FUNCTION_CALL",
     "AMBIGUOUS_ARG_TYPE",
     "RECURSIVE_CONSTRUCTOR_CALL",
+    "sema_multiple_primary_constructors",
     "VALUE_TYPE_RECURSIVE",
     "ILLEGAL_THIS_OR_SUPER_CALL",
+    "sema_illegal_place_of_calling_this_or_super",
+    "sema_illegal_place_of_calling_this_primary_constructor",
+    "ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER",
     "EXPLICIT_SUPER_CALL_REQUIRED",
+    "sema_no_non_param_constructor_in_super_class",
     "INVALID_LOOP_CONTROL",
     "USED_BEFORE_INITIALIZATION",
     "CLASS_UNINITIALIZED_FIELD",
@@ -150,9 +132,11 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "CONST_EVAL_ARITHMETIC_OVERFLOW",
     "CONST_EVAL_NEGATIVE_SHIFT_COUNT",
     "CONST_EVAL_SHIFT_COUNT_OVERFLOW",
+    "UNDECLARED_TYPE_NAME",
     "UNRESOLVED_REFERENCE",
     "INVALID_BINARY_OPERATOR",
     "NO_MATCHING_OPERATOR_INVOKE",
+    "NO_MATCH_OPERATOR_FUNCTION_CALL",
     "INVALID_NODE_AFTER_CHECK",
     "UNABLE_TO_INFER_DECL",
     "MISMATCHED_TYPES_MULTIPLE_ASSIGN",
@@ -185,7 +169,6 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "INVALID_UNARY_EXPR_WITH_TARGET",
     "INVALID_SUBSCRIPT_EXPR",
     "BUILTIN_INDEX_IN_BOUND",
-    "chir_idx_out_of_bounds",
     "CANNOT_ASSIGN_TO_SUBSCRIPT",
     "NOT_MEMBER_OF",
     "MEMBER_NOT_IMPORTED",
@@ -387,6 +370,7 @@ val FIR_NON_SUPPRESSIBLE_ERROR_NAMES: Set<String> = setOf(
     "HIDE_MISSING_HIDE",
     "HIDE_COMPILE_TIME_INVISIBLE",
     "HIDE_DIFF_PARAM",
+    "TYPEALIAS_CYCLE",
     "MOCK_DISABLED",
     "MOCK_NOT_IN_TEST_MODE",
     "MOCK_UNSUPPORTED_TYPE",

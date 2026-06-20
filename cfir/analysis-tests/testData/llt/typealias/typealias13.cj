@@ -4,7 +4,7 @@
 //
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
-type B<T> = <!UNRESOLVED_REFERENCE!>Cl<!><T>
+type B<T> = <!UNDECLARED_TYPE_NAME!>Cl<!><T>
 
 func run<T>(a: T): Int64 {
     var b: B<T>

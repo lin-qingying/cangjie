@@ -8,6 +8,7 @@ import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.classId
+import org.cangnova.cangjie.cfir.types.extendLookupKinds
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 
@@ -33,7 +34,10 @@ class CfirSessionExtendProvider(
     }
 
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> {
-        return indexStore.modelsForClass(kind.classId).map(CfirExtendSemanticModel::declaration)
+        return kind.extendLookupKinds
+            .flatMap { indexStore.modelsForClass(it.classId) }
+            .map(CfirExtendSemanticModel::declaration)
+            .distinct()
     }
 
     override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? {

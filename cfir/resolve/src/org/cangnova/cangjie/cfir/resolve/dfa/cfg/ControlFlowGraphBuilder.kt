@@ -679,7 +679,6 @@ class ControlFlowGraphBuilder private constructor(
             is CfirReturnExpression -> exitTargetsForReturn[jump.target.labeledElement.symbol]
             is CfirContinueExpression -> loopConditionEnterNodes[jump.target.labeledElement]
             is CfirBreakExpression -> loopExitNodes[jump.target.labeledElement]
-            else -> error("Unsupported jump type: ${jump::class.simpleName}")
         } ?: return node
 
         val nextFinally = finallyEnterNodes.topOrNull()?.takeIf { it.level > nextNode.level }

@@ -647,7 +647,7 @@ class CfirStatusResolver(
         ) ?: return emptyList()
 
         val result = linkedSetOf<CfirProperty>()
-        scope.processDirectOverriddenPropertiesWithBaseScope(property.symbol as CfirPropertySymbol) { overriddenSymbol, _ ->
+        scope.processDirectOverriddenPropertiesWithBaseScope(property.symbol) { overriddenSymbol, _ ->
             result += overriddenSymbol.cfir
             ProcessorAction.NEXT
         }

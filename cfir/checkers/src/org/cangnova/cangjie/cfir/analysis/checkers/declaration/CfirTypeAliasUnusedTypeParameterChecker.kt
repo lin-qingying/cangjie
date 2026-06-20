@@ -3,12 +3,12 @@ package org.cangnova.cangjie.cfir.analysis.checkers.declaration
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.diagnostic.ConeUnresolvedTypeQualifierError
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.symbols.ConeTypeParameterType
+import org.cangnova.cangjie.cfir.types.CfirErrorTypeRef
 import org.cangnova.cangjie.cfir.types.CfirResolvedTypeRef
-import org.cangnova.cangjie.cfir.types.ConeErrorType
-import org.cangnova.cangjie.cfir.types.contains
 import org.cangnova.cangjie.cfir.types.forEachType
 
 /**
@@ -22,8 +22,10 @@ object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker() {
     override fun check(declaration: CfirTypeAlias) {
         if (declaration.typeParameters.isEmpty()) return
 
-        val expandedType = (declaration.expandedTypeRef as? CfirResolvedTypeRef)?.coneType ?: return
-        if (expandedType.contains { it is ConeErrorType }) return
+        val expandedTypeRef = declaration.expandedTypeRef as? CfirResolvedTypeRef ?: return
+        if (expandedTypeRef is CfirErrorTypeRef && expandedTypeRef.diagnostic is ConeUnresolvedTypeQualifierError) return
+
+        val expandedType = expandedTypeRef.typeForUnusedParameterCheck() ?: return
 
         val usedTypeParameterSymbols = linkedSetOf<org.cangnova.cangjie.cfir.symbols.CfirTypeParameterSymbol>()
         expandedType.forEachType { type ->
@@ -35,9 +37,24 @@ object CfirTypeAliasUnusedTypeParameterChecker : CfirTypeAliasChecker() {
         if (unusedTypeParameters.isEmpty()) return
 
         reporter.reportOn(
-            source = declaration.typeAliasDeclarationHeaderDiagnosticSource(),
+            source = declaration.typeAliasDeclarationHeaderDiagnosticSource()?.firstCharacterDiagnosticSource(),
             factory = CfirErrors.TYPEALIAS_UNUSED_TYPE_PARAMETERS,
             a = unusedTypeParameters.joinToString(",") { "Generics-${it.name.asString()}" },
         )
     }
+
+    /**
+     * 官方 `GetUnusedTysInTypeAlias` 在 cycle 诊断存在时仍基于 RHS typeArgs 计算 unused。
+     * CFIR 在 SUPER_TYPES 阶段会把循环别名改写为 error type ref，因此这里读取
+     * error ref 保存的 delegated/partially-resolved type ref，避免丢失 RHS 类型实参。
+     */
+    private fun CfirResolvedTypeRef.typeForUnusedParameterCheck() =
+        when (this) {
+            is CfirErrorTypeRef -> {
+                val preservedTypeRef = delegatedTypeRef ?: partiallyResolvedTypeRef
+                (preservedTypeRef as? CfirResolvedTypeRef)?.coneType ?: coneType
+            }
+
+            else -> coneType
+        }
 }

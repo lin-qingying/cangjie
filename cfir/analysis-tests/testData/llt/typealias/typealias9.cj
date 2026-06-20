@@ -12,7 +12,7 @@ open class Base {}
 class Cl<U> where U <: Base {}
 
 class Sub<X> {
-    <!CLASS_UNINITIALIZED_FIELD!>public var a: <!GENERIC_ARGUMENT_NO_MATCH!>A<X><!><!>
+    public var <!CLASS_UNINITIALIZED_FIELD!>a<!>: <!GENERIC_TYPE_ARGUMENT_NOT_MATCH_CONSTRAINT!>A<!><X>
 }
 
 main() {

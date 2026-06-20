@@ -7,15 +7,15 @@
 
 let x = 4
 
-<!chir_dce_unused_function!>private func f() {
-    <!chir_dce_unused_function!>func f1() {
+private func f() {
+    func f1() {
         <!CAPTURE_HAS_SHADOW_VARIABLE!>x<!>
-    }<!>
-    let <!chir_dce_unused_variable!>a<!> = {
+    }
+    let a = {
         => <!CAPTURE_HAS_SHADOW_VARIABLE!>x<!>
     }
-    let <!chir_dce_unused_variable!>x<!> = 2
-}<!>
+    let x = 2
+}
 
 main() {
     0

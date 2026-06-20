@@ -68,6 +68,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
     override val MAP: CjDiagnosticFactoryToRendererMap by CjDiagnosticFactoryToRendererMap("FIR") { map ->
         map.put(NO_CONSTRUCTOR, "No constructor available for this type.")
         map.put(REF_NOT_BE_TYPE, "type name cannot be used as an expression")
+        map.put(CfirErrors.INVALID_ACCESS_CONTROL, "Invalid access control.")
         map.put(
             CfirErrors.ENUM_TYPE_CANNOT_BE_USED_AS_CONSTRUCTOR,
             "Enum type ''{0}'' cannot be used as a type constructor; use an enum constructor instead.",
@@ -242,6 +243,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "Recursive constructor call detected.",
         )
         map.put(
+            CfirErrors.sema_multiple_primary_constructors,
+            "Class or struct cannot have more than one primary constructor.",
+        )
+        map.put(
             CfirErrors.VALUE_TYPE_RECURSIVE,
             "Value type recursive detected.",
         )
@@ -251,8 +256,27 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             RENDER_STRING,
         )
         map.put(
+            CfirErrors.sema_illegal_place_of_calling_this_or_super,
+            "Call to ''{0}'' must be first expression in constructor.",
+            RENDER_STRING,
+        )
+        map.put(
+            CfirErrors.sema_illegal_place_of_calling_this_primary_constructor,
+            "Invalid calling 'this' in primary constructor.",
+        )
+        map.put(
+            CfirErrors.ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER,
+            "Member ''{0}'' cannot be used in {1}.",
+            RENDER_STRING,
+            RENDER_STRING,
+        )
+        map.put(
             CfirErrors.EXPLICIT_SUPER_CALL_REQUIRED,
             "Explicit super constructor call is required.",
+        )
+        map.put(
+            CfirErrors.sema_no_non_param_constructor_in_super_class,
+            "There is no non-parameter constructor in super class; invoke super explicitly.",
         )
         map.put(
             CfirErrors.INVALID_LOOP_CONTROL,
@@ -422,6 +446,11 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "This match case has no type.",
         )
         map.put(
+            CfirErrors.UNDECLARED_TYPE_NAME,
+            "Undeclared type name ''{0}''.",
+            RENDER_STRING,
+        )
+        map.put(
             CfirErrors.UNRESOLVED_REFERENCE,
             "Unresolved reference: ''{0}''.",
             RENDER_STRING,
@@ -439,6 +468,10 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
             "no matching function for operator ''()'' on type ''{1}''",
             RENDER_STRING,
             RENDER_TYPE,
+        )
+        map.put(
+            CfirErrors.NO_MATCH_OPERATOR_FUNCTION_CALL,
+            "no matching function for operator ''()'' function call",
         )
         map.put(
             LITERAL_NUMERIC_OVERFLOW,
@@ -618,7 +651,6 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.INVALID_UNARY_EXPR_WITH_TARGET, "invalid unary operator ''{0}'' on type ''{1}'' with return type ''{2}''", RENDER_STRING, RENDER_TYPE, RENDER_TYPE)
         map.put(CfirErrors.INVALID_SUBSCRIPT_EXPR, "invalid subscript operator [] on type ''{0}'' with index {1}", RENDER_TYPE, RENDER_STRING)
         map.put(CfirErrors.BUILTIN_INDEX_IN_BOUND, "builtin index is out of bounds")
-        map.put(CfirErrors.chir_idx_out_of_bounds, "array index is out of bounds")
         map.put(CfirErrors.CANNOT_ASSIGN_TO_SUBSCRIPT, "cannot assign to this subscript expression")
         map.put(CfirErrors.NOT_MEMBER_OF, "''{0}'' is not a member of {1} ''{2}''", RENDER_NAME, RENDER_STRING, RENDER_NAME)
         map.put(CfirErrors.MEMBER_NOT_IMPORTED, "''{0}'' is not imported", RENDER_NAME)
@@ -631,6 +663,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.ENUM_CONSTRUCTOR_WITH_PARAM_MUST_HAVE_ARGS, "enum constructor ''{0}'' must be used with arguments", RENDER_NAME)
         map.put(CfirErrors.OPTIONAL_CHAIN_NON_OPTIONAL, "cannot use optional chaining on non-optional value of type ''{0}''", RENDER_TYPE)
         map.put(CfirErrors.CAPTURE_BEFORE_INITIALIZATION, "cannot capture variable ''{0}'' before initialization", RENDER_NAME)
+        map.put(CfirErrors.CAPTURE_HAS_SHADOW_VARIABLE, "captured variable ''{0}'' has a shadow variable in an intermediate scope", RENDER_NAME)
         map.put(CfirErrors.INTERPOLATION_IN_CONST_PATTERN, "cannot use string interpolation in constant pattern")
         map.put(CfirErrors.CANNOT_REF_TO_PKG_NAME, "package name cannot be referred independently")
         map.put(CfirErrors.USE_EXPR_WITHOUT_IMPORT, "import ''{0}'' to use the ''{1}'' expression", RENDER_NULLABLE_FQNAME, RENDER_STRING)
@@ -938,6 +971,7 @@ object CfirErrorsDefaultMessages : BaseDiagnosticRendererFactory() {
         map.put(CfirErrors.UNUSED_IMPORT, "unused import ''{0}''", RENDER_NULLABLE_FQNAME)
         map.put(CfirErrors.UNUSED_EXPRESSION, "unused expression")
         map.put(CfirErrors.TYPEALIAS_UNUSED_TYPE_PARAMETERS, "type arg(s) {0} are not used", RENDER_STRING)
+        map.put(CfirErrors.TYPEALIAS_CYCLE, "type cycle detected: ''{0}''", RENDER_STRING)
 
         // ================================================================
         // Mock

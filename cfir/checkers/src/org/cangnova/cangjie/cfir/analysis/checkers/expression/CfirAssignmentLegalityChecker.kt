@@ -28,6 +28,7 @@ import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.checkers.declaration.CfirInitializationAssignmentClassifier
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.correspondingProperty
 import org.cangnova.cangjie.cfir.declarations.*
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -354,7 +355,24 @@ internal object CfirMutationTargetClassifier {
         if (field.isVar) return false
         val inConstructor = context.findClosestDeclaration<CfirConstructor>() != null
         if (!inConstructor) return true
+        if (field.hasSameNamePrimaryConstructorPropertyInOwner()) return true
         return field.initializer != null
+    }
+
+    /**
+     * 显式 `let` 字段与主构造参数生成属性同名时，官方 Sema 把字段视为已被构造参数占用。
+     * 因此构造器体里的后续赋值不能作为 `let` 字段首次初始化。
+     */
+    context(context: CheckerContext)
+    private fun CfirFieldVariable.hasSameNamePrimaryConstructorPropertyInOwner(): Boolean {
+        val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>() ?: return false
+        val targetName = name
+        return owner.declarations
+            .asSequence()
+            .filterIsInstance<CfirConstructor>()
+            .flatMap { constructor -> constructor.valueParameters.asSequence() }
+            .mapNotNull { parameter -> parameter.correspondingProperty }
+            .any { property -> property.name == targetName }
     }
 
     context(context: CheckerContext)

@@ -53,6 +53,7 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
     val RESOLVE by object : DiagnosticGroup("Resolve") {
         val NO_CONSTRUCTOR by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED)
         val REF_NOT_BE_TYPE by error<PsiElement>()
+        val INVALID_ACCESS_CONTROL by error<PsiElement>()
 
         /**
          * enum 类型名不能直接当作类型构造器调用，例如 `A(1)`。
@@ -359,6 +360,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 构造器委托调用形成递归
         val RECURSIVE_CONSTRUCTOR_CALL by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
 
+        // 类型声明中存在多个主构造器，对齐官方 sema_multiple_primary_constructors。
+        val sema_multiple_primary_constructors by error<PsiElement>()
+
         // 值类型字段或构造器参数形成递归
         val VALUE_TYPE_RECURSIVE by error<PsiElement>()
 
@@ -367,8 +371,27 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("calleeName")
         }
 
+        // this/super 构造器委托调用不是构造器第一条语句，对齐官方 sema_illegal_place_of_calling_this_or_super。
+        val sema_illegal_place_of_calling_this_or_super by error<PsiElement>() {
+            parameter<String>("calleeName")
+        }
+
+        // 主构造器中调用 this(...)，对齐官方 sema_illegal_place_of_calling_this_primary_constructor。
+        val sema_illegal_place_of_calling_this_primary_constructor by error<PsiElement>()
+
+        // 构造器默认参数或委托参数中读取尚未完成初始化的实例成员
+        val ASSIGNMENT_OF_MEMBER_VARIABLE_CANNOT_USE_THIS_OR_SUPER by error<PsiElement>(
+            PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED
+        ) {
+            parameter<String>("memberName")
+            parameter<String>("contextDescription")
+        }
+
         // 父类不存在可隐式调用的无参构造器，要求显式 super(...)
         val EXPLICIT_SUPER_CALL_REQUIRED by error<PsiElement>(PositioningStrategy.ACTUAL_DECLARATION_NAME)
+
+        // 父类没有可隐式调用的无参构造器，对齐官方 sema_no_non_param_constructor_in_super_class。
+        val sema_no_non_param_constructor_in_super_class by error<PsiElement>()
 
         // break/continue 必须位于循环体内
         val INVALID_LOOP_CONTROL by error<PsiElement>()
@@ -745,6 +768,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
      * 处理无法找到对应定义的符号引用错误
      */
     val UNRESOLVED by object : DiagnosticGroup("Unresolved") {
+        // 类型位置上的名称无法解析，对齐官方 sema_undeclared_type_name。
+        val UNDECLARED_TYPE_NAME by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
+            parameter<String>("typeName")
+        }
+
         // 未解析的引用：代码中引用了一个不存在或无法找到的名称
         val UNRESOLVED_REFERENCE by error<PsiElement>(PositioningStrategy.REFERENCED_NAME_BY_QUALIFIED) {
             parameter<String>("reference")  // 无法解析的引用名称
@@ -763,6 +791,9 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
             parameter<String>("name")       // 变量名
             parameter<ConeCangJieType>("type") // 接收器类型
         }
+
+        // 非函数表达式使用 `()` 调用，对齐官方 sema_no_match_operator_function_call。
+        val NO_MATCH_OPERATOR_FUNCTION_CALL by error<PsiElement>(PositioningStrategy.DEFAULT)
     }
 
     // ========================================================================
@@ -943,9 +974,6 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // 内建下标越界
         val BUILTIN_INDEX_IN_BOUND by error<PsiElement>()
 
-        // CHIR 阶段数组下标越界
-        val chir_idx_out_of_bounds by error<PsiElement>()
-
         // 不能赋值给 subscript 表达式
         val CANNOT_ASSIGN_TO_SUBSCRIPT by error<PsiElement>()
 
@@ -995,6 +1023,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
 
         // 变量初始化之前不能被捕获
         val CAPTURE_BEFORE_INITIALIZATION by error<PsiElement> {
+            parameter<Name>("variableName")
+        }
+
+        // 捕获变量时，中间作用域存在同名遮蔽变量
+        val CAPTURE_HAS_SHADOW_VARIABLE by warning<PsiElement> {
             parameter<Name>("variableName")
         }
 
@@ -2075,6 +2108,11 @@ object DIAGNOSTICS_LIST : DiagnosticList("CfirErrors") {
         // type alias 声明了但展开类型未使用的类型参数
         val TYPEALIAS_UNUSED_TYPE_PARAMETERS by warning<PsiElement> {
             parameter<String>("typeParameters")
+        }
+
+        // type alias 展开链中出现环
+        val TYPEALIAS_CYCLE by error<PsiElement> {
+            parameter<String>("typeAlias")
         }
     }
 

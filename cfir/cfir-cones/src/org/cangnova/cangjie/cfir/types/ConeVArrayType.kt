@@ -35,14 +35,6 @@ class ConeVArrayType(
     override val attributes: ConeAttributes = ConeAttributes.Empty,
 ) : ConeRigidType(), ConeTypeConstructorMarker {
     /**
-     * CHIR `VArrayType::GetSize()` 将 Sema 层 `Int64` 长度转换成 C++ `unsigned int`。
-     * CFIR 需要同时保留 Sema 长度和 CHIR 有效长度，才能区分 `sema_builtin_index_in_bound`
-     * 与 `chir_idx_out_of_bounds` 两个官方诊断层。
-     */
-    val chirEffectiveSize: Long
-        get() = size and 0xFFFF_FFFFL
-
-    /**
      * VArray 在官方类型系统中以元素类型作为唯一 typeArg，size 属于类型头部。
      * 这里暴露给通用约束系统，保证 `VArray<α, N>` 能拆解出元素类型约束。
      */

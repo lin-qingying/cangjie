@@ -238,8 +238,17 @@ interface ConeTypeContext :
 
     override fun areEqualTypeConstructors(c1: TypeConstructorMarker, c2: TypeConstructorMarker): Boolean = c1 == c2
 
-    override fun RigidTypeMarker.fastCorrespondingSupertypes(constructor: TypeConstructorMarker): List<SimpleTypeMarker>? =
-        null
+    override fun RigidTypeMarker.fastCorrespondingSupertypes(constructor: TypeConstructorMarker): List<SimpleTypeMarker>? {
+        val type = this as? ConeCangJieType ?: return null
+        val correspondingSupertypes = session.typeAwareSupertypeProviderOrNull
+            ?.getDirectSupertypes(type)
+            .orEmpty()
+            .mapNotNull { supertype ->
+                val rigidSupertype = supertype as? ConeRigidType ?: return@mapNotNull null
+                rigidSupertype.takeIf { areEqualTypeConstructors(it.typeConstructor(), constructor) }
+            }
+        return correspondingSupertypes.takeIf { it.isNotEmpty() }
+    }
 
     override fun RigidTypeMarker.possibleIntegerTypes(): Collection<CangJieTypeMarker> =
         when (this) {

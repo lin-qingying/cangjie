@@ -542,7 +542,9 @@ internal fun checkForLocalRedeclarations(elements: List<org.cangnova.cangjie.cfi
     groupedByName.values.forEach { conflictingSymbols ->
         if (conflictingSymbols.size <= 1) return@forEach
         val rendered = conflictingSymbols.renderNames()
-        conflictingSymbols.forEach { conflictingSymbol ->
+        conflictingSymbols.sortedBy { symbol ->
+            symbol.boundSourceOrNull()?.startOffset ?: Int.MAX_VALUE
+        }.drop(1).forEach { conflictingSymbol ->
             reporter.reportOn(conflictingSymbol.boundSourceOrNull(), CfirErrors.REDECLARATION, rendered)
         }
     }

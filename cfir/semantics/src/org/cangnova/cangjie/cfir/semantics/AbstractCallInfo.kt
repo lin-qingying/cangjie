@@ -2,6 +2,7 @@ package org.cangnova.cangjie.cfir.semantics
 
 import org.cangnova.cangjie.cfir.CfirElement
 import org.cangnova.cangjie.cfir.expressions.CfirExpression
+import org.cangnova.cangjie.cfir.types.CfirTypeRef
 import org.cangnova.cangjie.name.Name
 
 abstract class AbstractCallInfo {
@@ -16,6 +17,13 @@ abstract class AbstractCallInfo {
      * 和真正的隐式泛型推断失败，避免把具体参数类型错误泛化为推断错误。
      */
     abstract val hasExplicitTypeArguments: Boolean
+    /**
+     * 当前调用语法上携带的显式类型实参。
+     *
+     * 对齐 Kotlin `CallInfo.typeArguments` 的调用信息职责；诊断层只依赖
+     * `AbstractCallInfo`，因此显式类型实参必须跟随调用语义信息跨模块传递。
+     */
+    abstract val typeArguments: List<CfirTypeRef>
     abstract val explicitReceiver: CfirExpression?
     abstract val arguments: List<CfirExpression>
 }

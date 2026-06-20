@@ -32,6 +32,5 @@ open class CfirPatternRenderer(
             append("is ${renderTypeRefForDebug(pattern.typeRef, typeRenderer)}")
             pattern.bindingName?.let { append(" ${it.asString()}") }
         }
-        else -> "<unknown-pattern>"
     }
 }

@@ -157,6 +157,11 @@ data class ConeFunctionExpectedError(
     override val reason: String = "Expression '$expressionName' of type '$type' cannot be invoked as a function"
 }
 
+// 非函数表达式使用 `()` 调用时，对齐官方 sema_no_match_operator_function_call。
+object ConeNoMatchOperatorFunctionCallError : ConeDiagnostic {
+    override val reason: String = "No matching function for operator '()' function call"
+}
+
 // 解析到分类器（类/接口等）的错误
 data class ConeResolutionToClassifierError(
     override val candidate: AbstractCallCandidate<*>,

@@ -221,9 +221,10 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         topLevelType: ConeCangJieType,
     ): VariableFixationFinder.VariableForFixation? {
         val allTypeVariables = getOrderedAllTypeVariables(topLevelAtoms)
-        return variableFixationFinder.findFirstVariableForFixation(
+        val variableForFixation = variableFixationFinder.findFirstVariableForFixation(
             allTypeVariables, postponedArguments, completionMode, topLevelType,
         )
+        return variableForFixation
     }
 
     /**
@@ -330,18 +331,8 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
     ): Boolean {
         val variableWithConstraints = notFixedTypeVariables.getValue(variableForFixation.variable)
         if (!variableForFixation.isReady) return false
-        val resultType = with(this) {
-            inferenceComponents.resultTypeResolver.findResultTypeOrNull(
-                variableWithConstraints,
-                TypeVariableDirectionCalculator.ResolveDirection.UNKNOWN,
-            )
-        } as? ConeCangJieType
-        if (resultType == null) {
-            if (!completionMode.fixNotInferredTypeVariablesToErrorType) return false
-            processVariableWhenNotEnoughInformation(variableWithConstraints, topLevelAtoms)
-            return true
-        }
-        fixResolvedVariable(this, variableWithConstraints, resultType)
+
+        fixVariable(this, variableWithConstraints)
         return true
     }
 
@@ -478,15 +469,17 @@ class ConstraintSystemCompleter(components: BodyResolveComponents) {
         return result.toList()
     }
 
-    /**
-     * 固定类型变量为推断结果类型。
-     * 使用 UNKNOWN 方向让结果类型解析器根据约束自行决定固定方向。
-     */
-    private fun fixResolvedVariable(
+    private fun fixVariable(
         c: ConstraintSystemCompletionContext,
         variableWithConstraints: VariableWithConstraints,
-        resultType: ConeCangJieType,
     ) {
+        val resultType = with(c) {
+            inferenceComponents.resultTypeResolver.findResultType(
+                variableWithConstraints,
+                TypeVariableDirectionCalculator.ResolveDirection.UNKNOWN,
+            )
+        }
+
         val variable = variableWithConstraints.typeVariable
         c.fixVariable(variable, resultType, ConeFixVariableConstraintPosition(variable))
     }

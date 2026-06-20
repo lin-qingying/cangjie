@@ -1,27 +1,3 @@
-/*
- * Copyright 2026 LinQingYing. and contributors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- * The use of this source code is governed by the Apache License 2.0,
- * which allows users to freely use, modify, and distribute the code,
- * provided they adhere to the terms of the license.
- *
- * The software is provided "as-is", and the authors are not responsible for
- * any damages or issues arising from its use.
- *
- */
-
 
 
 package org.cangnova.cangjie.analysis.api.cfir.diagnostics
@@ -53,6 +29,11 @@ internal class NoConstructorImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NoConstructor
+
+internal class RefNotBeTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.RefNotBeType
 
 internal class EnumTypeCannotBeUsedAsConstructorImpl(
     override val enumName: Name,
@@ -387,16 +368,35 @@ internal class AmbiguousFunctionCallImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AmbiguousFunctionCall
 
+internal class AmbiguousArgTypeImpl(
+    override val functionName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.AmbiguousArgType
+
 internal class RecursiveConstructorCallImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.RecursiveConstructorCall
+
+internal class ValueTypeRecursiveImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ValueTypeRecursive
 
 internal class IllegalThisOrSuperCallImpl(
     override val calleeName: String,
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.IllegalThisOrSuperCall
+
+internal class AssignmentOfMemberVariableCannotUseThisOrSuperImpl(
+    override val memberName: String,
+    override val contextDescription: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token),
+    CaCfirDiagnostic.AssignmentOfMemberVariableCannotUseThisOrSuper
 
 internal class ExplicitSuperCallRequiredImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -604,6 +604,16 @@ internal class NewInferenceErrorImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NewInferenceError
 
+internal class ArrayLiteralTypeCannotBeInferredImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ArrayLiteralTypeCannotBeInferred
+
+internal class InconsistentArrayLiteralElementTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InconsistentArrayLiteralElementType
+
 internal class TypeInferenceOnlyInputTypesErrorImpl(
     override val parameter: CaTypeParameterSymbol,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -675,6 +685,12 @@ internal class AssignmentTypeMismatchImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjExpression>(cfirDiagnostic, token), CaCfirDiagnostic.AssignmentTypeMismatch
 
+internal class TypeIncompatibleImpl(
+    override val contextDescription: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TypeIncompatible
+
 internal class VarraySizeMismatchImpl(
     override val expectedSize: Long,
     override val actualSize: Long,
@@ -693,6 +709,11 @@ internal class ParseThisTypeNotAllowImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.ParseThisTypeNotAllow
+
+internal class InvalidPositionOfThisTypeImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<CjTypeReference>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidPositionOfThisType
 
 internal class InvisibleMemberImpl(
     override val member: String,
@@ -776,6 +797,12 @@ internal class ConstEvalShiftCountOverflowImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ConstEvalShiftCountOverflow
 
+internal class UndeclaredTypeNameImpl(
+    override val typeName: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.UndeclaredTypeName
+
 internal class UnresolvedReferenceImpl(
     override val reference: String,
     override val operator: String?,
@@ -797,6 +824,11 @@ internal class NoMatchingOperatorInvokeImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NoMatchingOperatorInvoke
+
+internal class NoMatchOperatorFunctionCallImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.NoMatchOperatorFunctionCall
 
 internal class InvalidNodeAfterCheckImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -996,6 +1028,11 @@ internal class InvalidSubscriptExprImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InvalidSubscriptExpr
 
+internal class BuiltinIndexInBoundImpl(
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.BuiltinIndexInBound
+
 internal class CannotAssignToSubscriptImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
@@ -1093,6 +1130,14 @@ internal class GenericArgumentNoMatchImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.GenericArgumentNoMatch
 
+internal class GenericTypeArgumentNotMatchConstraintImpl(
+    override val actualType: CaType,
+    override val upperBound: CaType,
+    override val genericType: CaType,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.GenericTypeArgumentNotMatchConstraint
+
 internal class GenericConstraintNotLooserImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
@@ -1161,6 +1206,13 @@ internal class MemberVariableCanNotShadowImpl(
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.MemberVariableCanNotShadow
 
+internal class CannotOverrideImpl(
+    override val memberKind: String,
+    override val memberName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CannotOverride
+
 internal class InheritSuperMemberKindInconsistentImpl(
     override val memberName: Name,
     cfirDiagnostic: CjPsiDiagnostic,
@@ -1214,7 +1266,7 @@ internal class InheritThreadContextNotOpenImpl(
 internal class InheritNotReturnThisImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
-) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InheritNotReturnThis
+) : CaAbstractCfirDiagnostic<CjNamedDeclaration>(cfirDiagnostic, token), CaCfirDiagnostic.InheritNotReturnThis
 
 internal class SpawnArgInvalidImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -1244,6 +1296,31 @@ internal class InstanceFuncCannotBeUsedInFinalizerImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.InstanceFuncCannotBeUsedInFinalizer
+
+internal class FinalizerForbiddenInClassImpl(
+    override val className: Name,
+    override val classKind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.FinalizerForbiddenInClass
+
+internal class CannotCurryingImpl(
+    override val declarationKind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CannotCurrying
+
+internal class CannotHaveParameterImpl(
+    override val declarationKind: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.CannotHaveParameter
+
+internal class ForbidGenericFinalizerImpl(
+    override val finalizerName: Name,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.ForbidGenericFinalizer
 
 internal class NonAbstractClassCannotBeSealedImpl(
     cfirDiagnostic: CjPsiDiagnostic,
@@ -2217,6 +2294,12 @@ internal class UnusedExpressionImpl(
     cfirDiagnostic: CjPsiDiagnostic,
     token: CaLifetimeToken,
 ) : CaAbstractCfirDiagnostic<CjExpression>(cfirDiagnostic, token), CaCfirDiagnostic.UnusedExpression
+
+internal class TypealiasUnusedTypeParametersImpl(
+    override val typeParameters: String,
+    cfirDiagnostic: CjPsiDiagnostic,
+    token: CaLifetimeToken,
+) : CaAbstractCfirDiagnostic<PsiElement>(cfirDiagnostic, token), CaCfirDiagnostic.TypealiasUnusedTypeParameters
 
 internal class MockDisabledImpl(
     override val option: String,

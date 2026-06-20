@@ -41,6 +41,7 @@ import org.cangnova.cangjie.cfir.expressions.*
 import org.cangnova.cangjie.cfir.references.CfirNamedReference
 import org.cangnova.cangjie.cfir.references.CfirErrorNamedReference
 import org.cangnova.cangjie.cfir.references.CfirReference
+import org.cangnova.cangjie.cfir.references.CfirResolvedNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildErrorNamedReference
 import org.cangnova.cangjie.cfir.references.builder.buildResolvedNamedReference
 import org.cangnova.cangjie.cfir.resolve.*
@@ -50,11 +51,13 @@ import org.cangnova.cangjie.cfir.resolve.calls.candidate.*
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.CfirOverloadByLambdaBodyResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.ConeCallConflictResolver
 import org.cangnova.cangjie.cfir.resolve.calls.overloads.callConflictResolverFactory
+import org.cangnova.cangjie.cfir.resolve.calls.stages.CfirCreateFreshTypeVariableSubstitutorStage
 import org.cangnova.cangjie.cfir.resolve.calls.stages.ResolutionStageRunner
 import org.cangnova.cangjie.cfir.resolve.calls.stages.fullyProcessCandidate
 import org.cangnova.cangjie.cfir.resolve.calls.tower.CfirTowerGroup
 import org.cangnova.cangjie.cfir.resolve.withExpectedType
 import org.cangnova.cangjie.cfir.resolve.inference.inferenceComponents
+import org.cangnova.cangjie.cfir.resovle.calls.ConeTypeParameterBasedTypeVariable
 import org.cangnova.cangjie.cfir.scopes.defaultImportsProvider
 import org.cangnova.cangjie.cfir.semantics.AbstractCallCandidate
 import org.cangnova.cangjie.cfir.semantics.AbstractCandidate
@@ -63,10 +66,12 @@ import org.cangnova.cangjie.cfir.semantics.ResolutionDiagnostic
 import org.cangnova.cangjie.cfir.session.CfirSession
 import org.cangnova.cangjie.cfir.session.builtinTypes
 import org.cangnova.cangjie.cfir.session.cfirProvider
+import org.cangnova.cangjie.cfir.session.extendProviderOrNull
 import org.cangnova.cangjie.cfir.session.symbolProvider
 import org.cangnova.cangjie.cfir.symbols.*
 import org.cangnova.cangjie.cfir.types.*
 import org.cangnova.cangjie.cfir.types.builder.buildResolvedTypeRef
+import org.cangnova.cangjie.cfir.unwrapSubstitutionOverrides
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.CallableId
 import org.cangnova.cangjie.name.Name
@@ -118,6 +123,11 @@ class CfirCallResolver(
             functionCall.replaceDispatchReceiver(null)
         }
         val isCollectionLiteralCall = collectionLiteralContext != null
+        val sameFileClassifierForCall = if (!isCollectionLiteralCall && functionCall.explicitReceiver == null) {
+            findSameFileTopLevelClassifier(components.file, callee.name)?.symbol
+        } else {
+            null
+        }
         val result = collectCandidates(
             qualifiedAccess = functionCall,
             name = callee.name,
@@ -131,25 +141,34 @@ class CfirCallResolver(
         var matchedClassifier: CfirClassLikeSymbol<*>? = null
         var classLikeCallResolved = false
         if (!isCollectionLiteralCall) {
-            val directVArrayTarget = functionCall.directVArrayConstructorTargetOrNull(callee.name)
-            if (directVArrayTarget != null) {
-                effectiveResult = collectBuiltinArrayConstructorCandidates(
+            if (sameFileClassifierForCall != null) {
+                effectiveResult = collectClassConstructorCandidates(
                     functionCall = functionCall,
-                    name = callee.name,
-                    target = directVArrayTarget,
+                    classifier = sameFileClassifierForCall,
                     resolutionMode = resolutionMode,
                 )
                 classLikeCallResolved = true
-            } else if (callee.name.asString() == "Array") {
-                val classifier = findClassifierForCall(functionCall, callee.name)
-                if (classifier != null && classifier.isStdlibArrayClassifier()) {
+            } else {
+                val directVArrayTarget = functionCall.directVArrayConstructorTargetOrNull(callee.name)
+                if (directVArrayTarget != null) {
                     effectiveResult = collectBuiltinArrayConstructorCandidates(
                         functionCall = functionCall,
-                        name = classifier.name,
-                        target = BuiltinArrayConstructorTarget.Array,
+                        name = callee.name,
+                        target = directVArrayTarget,
                         resolutionMode = resolutionMode,
                     )
                     classLikeCallResolved = true
+                } else if (callee.name.asString() == "Array") {
+                    val classifier = findClassifierForCall(functionCall, callee.name)
+                    if (classifier != null && classifier.isStdlibArrayClassifier()) {
+                        effectiveResult = collectBuiltinArrayConstructorCandidates(
+                            functionCall = functionCall,
+                            name = classifier.name,
+                            target = BuiltinArrayConstructorTarget.Array,
+                            resolutionMode = resolutionMode,
+                        )
+                        classLikeCallResolved = true
+                    }
                 }
             }
         }
@@ -907,11 +926,8 @@ class CfirCallResolver(
                             else -> ConeNoConstructorError
                         }
                     }
-                    name.asString() == "invoke" && explicitReceiver is CfirLiteralExpression ->
-                        ConeFunctionExpectedError(
-                            explicitReceiver.value?.toString() ?: "",
-                            explicitReceiver.coneTypeOrNull ?: components.typeFromCallee(reference),
-                        )
+                    name == OperatorNameConventions.INVOKE && explicitReceiver is CfirLiteralExpression ->
+                        ConeNoMatchOperatorFunctionCallError
                     else -> {
                         val receiverType = explicitReceiver?.coneTypeOrNull
                         when {
@@ -949,8 +965,8 @@ class CfirCallResolver(
             else -> {
                 val candidate = candidates.single()
                 when {
-                    !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
                     candidate.hasUninferableBareStaticGenericQualifier() -> ConeUnableToInferGenericFuncError()
+                    !candidate.isSuccessful -> createConeDiagnosticForCandidateWithError(applicability, candidate)
                     else -> null
                 }
             }
@@ -998,6 +1014,7 @@ class CfirCallResolver(
      * 调用上下文不可能为这些参数提供约束。
      */
     private fun Candidate.hasUninferableBareStaticGenericQualifier(): Boolean {
+        if (callInfo.callKind == CallKind.NamedValueAccess) return false
         val callable = symbol.cfir as? CfirCallableDeclaration ?: return false
         if (callable is CfirEnumConstructor) return false
         if (!callable.status.isStatic) return false
@@ -1007,22 +1024,94 @@ class CfirCallResolver(
 
         val owner = receiver.unwrapSmartcastExpression().resolvedQualifierClassifier(session)?.cfir
             as? CfirClassLikeDeclaration ?: return false
-        val ownerTypeParameterSymbols = owner.typeParameters.mapTo(linkedSetOf()) { it.symbol }
+        val ownerTypeParameterSymbols = candidateBareStaticOuterTypeParameters(owner, receiver)
+            .mapTo(linkedSetOf()) { it.symbol }
         if (ownerTypeParameterSymbols.isEmpty()) return false
+        if (hasExplicitTypeArgumentsForBareStaticQualifier(ownerTypeParameterSymbols)) return false
 
-        val signatureTypes = buildList {
-            callable.returnTypeRef.coneTypeOrNull?.let(::add)
-            when (callable) {
-                is CfirFunction -> callable.valueParameters.mapNotNullTo(this) { it.returnTypeRef.coneTypeOrNull }
-                is CfirConstructor -> callable.valueParameters.mapNotNullTo(this) { it.returnTypeRef.coneTypeOrNull }
-                is CfirEnumConstructor -> callable.valueParameters.mapNotNullTo(this) { it.returnTypeRef.coneTypeOrNull }
-                else -> Unit
+        val notFixedTypeVariables = system.currentStorage().notFixedTypeVariables
+        if (notFixedTypeVariables.isEmpty()) return false
+
+        // 这里必须以候选约束系统的最终状态为准。static extend/typealias/父类提升会在
+        // fresh-variable 阶段把 qualifier owner 参数纳入同一个推断系统，重扫替换后的签名
+        // 会把已经由实参或父类型映射固定的参数误判成不可推断。
+        val storage = system.currentStorage()
+        return freshVariables
+            .asSequence()
+            .filterIsInstance<ConeTypeParameterBasedTypeVariable>()
+            .any { freshVariable ->
+                if (freshVariable.typeParameterSymbol !in ownerTypeParameterSymbols) return@any false
+                val fixedType = storage.fixedTypeVariables[freshVariable.typeConstructor] as? ConeCangJieType
+                val variableWithConstraints = notFixedTypeVariables[freshVariable.typeConstructor]
+                val lowerOrEqualTypes = fixedType?.let(::listOf)
+                    ?: variableWithConstraints?.constraints
+                        ?.filterNot { constraint -> constraint.kind.isUpper() }
+                        ?.mapNotNull { constraint -> constraint.type as? ConeCangJieType }
+                    ?: return@any false
+                if (lowerOrEqualTypes.isEmpty()) return@any true
+
+                val upperTypes = freshVariable.typeParameterSymbol.resolvedBounds
+                    .map { bound -> substitutor.substituteOrSelf(bound.coneType) } +
+                    variableWithConstraints?.constraints
+                        ?.filter { constraint -> constraint.kind.isUpper() }
+                        ?.mapNotNull { constraint -> constraint.type as? ConeCangJieType }
+                        .orEmpty()
+                upperTypes.isNotEmpty() && lowerOrEqualTypes.any { lowerType ->
+                    upperTypes.any { upperType ->
+                        !AbstractTypeChecker.isSubtypeOf(session.typeContext, lowerType, upperType)
+                    }
+                }
+            }
+    }
+
+    /**
+     * 显式类型实参已经按候选的 fresh-variable 参数序列绑定到裸 qualifier owner 时，
+     * 该 qualifier 不再属于“泛型类型缺失类型实参”的场景。
+     */
+    private fun Candidate.hasExplicitTypeArgumentsForBareStaticQualifier(
+        ownerTypeParameterSymbols: Set<CfirTypeParameterSymbol>,
+    ): Boolean {
+        val explicitCount = callInfo.typeArguments.count { it is CfirResolvedTypeRef }
+        if (explicitCount == 0) return false
+
+        val declaration = symbol.takeIf { it.isBound }?.cfir ?: return false
+        val candidateTypeParameters = CfirCreateFreshTypeVariableSubstitutorStage
+            .collectCandidateTypeParametersForFreshVariables(session, this, declaration)
+        if (candidateTypeParameters.size != explicitCount) return false
+
+        val explicitlyMappedSymbols = candidateTypeParameters.mapTo(linkedSetOf()) { it.symbol }
+        return explicitlyMappedSymbols.containsAll(ownerTypeParameterSymbols)
+    }
+
+    /**
+     * 官方 `GetAllGenericTys` 对 static member 使用 callable 的外层声明泛型。
+     *
+     * 普通 class static 成员的外层声明是 qualifier class；static extend 成员的外层
+     * 声明是 owner extend，不能拿 qualifier class 的类型参数判断是否可推断。
+    */
+    private fun Candidate.candidateBareStaticOuterTypeParameters(
+        owner: CfirClassLikeDeclaration,
+        receiver: CfirQualifiedAccessExpression,
+    ): List<CfirTypeParameterRef> {
+        val callableSymbol = symbol as? CfirCallableSymbol<*> ?: return owner.typeParameters
+        val ownerExtend = session.extendProviderOrNull
+            ?.getContainingExtend(callableSymbol.unwrapSubstitutionOverrides())
+            ?.takeIf { session.extendProviderOrNull?.isExtendAccessible(it) == true }
+        if (ownerExtend != null) return ownerExtend.typeParameters
+
+        receiver.resolvedQualifierTypeAliasSymbol()?.cfir?.let { typeAlias ->
+            val expandedType = typeAlias.expandedTypeRef.coneTypeOrNull ?: return emptyList()
+            return typeAlias.typeParameters.filter { parameter ->
+                expandedType.referencesTypeParameter(parameter.symbol)
             }
         }
 
-        return ownerTypeParameterSymbols.any { ownerTypeParameter ->
-            signatureTypes.none { type -> type.referencesTypeParameter(ownerTypeParameter) }
-        }
+        return owner.typeParameters
+    }
+
+    private fun CfirQualifiedAccessExpression.resolvedQualifierTypeAliasSymbol(): CfirTypeAliasSymbol? {
+        val resolvedReference = calleeReference as? CfirResolvedNamedReference ?: return null
+        return resolvedReference.resolvedSymbol as? CfirTypeAliasSymbol
     }
 
     private fun ConeCangJieType.referencesTypeParameter(
@@ -1140,9 +1229,17 @@ class CfirCallResolver(
             )
         }
 
-        val constructorSymbols = actualClassifier.cfir.declarations
-            .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
-            .map(CfirConstructor::symbol)
+        val constructorSymbols = buildList {
+            if (classifier is CfirTypeAliasSymbol) {
+                classifier.cfir.scopeProvider
+                    .getTypealiasConstructorScope(classifier.cfir, session, components.scopeSession)
+                    .processDeclaredConstructors(::add)
+            } else {
+                actualClassifier.cfir.declarations
+                    .filterIsInstance<org.cangnova.cangjie.cfir.declarations.CfirConstructor>()
+                    .mapTo(this, CfirConstructor::symbol)
+            }
+        }
         if (constructorSymbols.isEmpty()) {
             return ResolutionResult(
                 info = createClassifierCallInfo(functionCall, classifier, resolutionMode),

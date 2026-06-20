@@ -4,10 +4,12 @@ import org.cangnova.cangjie.cfir.analysis.checkers.CfirExtendSemantics
 import org.cangnova.cangjie.cfir.analysis.checkers.context.CheckerContext
 import org.cangnova.cangjie.cfir.analysis.checkers.context.findClosestDeclaration
 import org.cangnova.cangjie.cfir.analysis.diagnostics.CfirErrors
+import org.cangnova.cangjie.cfir.declarations.CfirConstructor
 import org.cangnova.cangjie.cfir.declarations.CfirEnum
 import org.cangnova.cangjie.cfir.declarations.CfirExtend
 import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
+import org.cangnova.cangjie.cfir.declarations.CfirValueParameter
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
 import org.cangnova.cangjie.cfir.expressions.CfirSuperReceiverExpression
@@ -21,6 +23,7 @@ object CfirIllegalSuperReferenceChecker : CfirSuperReceiverExpressionChecker() {
     context(context: CheckerContext, reporter: DiagnosticReporter)
     override fun check(expression: CfirSuperReceiverExpression) {
         if (!CfirExtendSemantics.isSuperReference(expression.calleeReference)) return
+        if (context.isInsideConstructorValueParameterDefaultValue()) return
 
         val source = expression.calleeReference.source ?: expression.source
 
@@ -44,4 +47,10 @@ object CfirIllegalSuperReferenceChecker : CfirSuperReceiverExpressionChecker() {
             return
         }
     }
+}
+
+private fun CheckerContext.isInsideConstructorValueParameterDefaultValue(): Boolean {
+    val valueParameter = findClosestDeclaration<CfirValueParameter>() ?: return false
+    val constructor = findClosestDeclaration<CfirConstructor>() ?: return false
+    return valueParameter in constructor.valueParameters && valueParameter.defaultValue != null
 }

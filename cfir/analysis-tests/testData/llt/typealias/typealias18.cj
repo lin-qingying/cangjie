@@ -7,11 +7,11 @@
 
 type A<K> = structA<K>
 
-type B<T> = A<Rune>
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype B<T> = A<Rune>
 
 type C = B<Int64>
 
-type D<T> = C
+<!TYPEALIAS_UNUSED_TYPE_PARAMETERS!>t<!>ype D<T> = C
 
 struct structA<K> {
     public var b: K

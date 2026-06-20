@@ -6,8 +6,9 @@ import org.cangnova.cangjie.cfir.resolve.providers.CfirExtendProvider
 import org.cangnova.cangjie.cfir.symbols.CfirCallableSymbol
 import org.cangnova.cangjie.cfir.types.PrimitiveTypeKind
 import org.cangnova.cangjie.cfir.types.classId
-import org.cangnova.cangjie.cfir.types.classIdOrPrimitiveClassId
 import org.cangnova.cangjie.cfir.types.coneTypeOrNull
+import org.cangnova.cangjie.cfir.types.extendLookupKinds
+import org.cangnova.cangjie.cfir.types.expandedClassIdOrPrimitiveClassId
 import org.cangnova.cangjie.name.ClassId
 import org.cangnova.cangjie.name.FqName
 
@@ -29,7 +30,7 @@ class CfirDeserializedExtendProvider(
         index.byPackage[packageFqName].orEmpty()
 
     override fun getExtendsForBuiltinType(kind: PrimitiveTypeKind): List<CfirExtend> =
-        getExtendsForClass(kind.classId)
+        kind.extendLookupKinds.flatMap { getExtendsForClass(it.classId) }.distinct()
 
     override fun getContainingExtend(symbol: CfirCallableSymbol<*>): CfirExtend? =
         index.byCallableSymbol[symbol]
@@ -49,7 +50,7 @@ class CfirDeserializedExtendProvider(
                 byPackage.getOrPut(packageFqName) { mutableListOf() }.addAll(extends)
                 for (extend in extends) {
                     val targetClassId =
-                        extend.extendedTypeRef.coneTypeOrNull?.classIdOrPrimitiveClassId ?: continue
+                        extend.extendedTypeRef.coneTypeOrNull?.expandedClassIdOrPrimitiveClassId ?: continue
                     byTargetClassId.getOrPut(targetClassId) { mutableListOf() }.add(extend)
                     for (declaration in extend.declarations) {
                         val callableDeclaration = declaration as? CfirCallableDeclaration ?: continue

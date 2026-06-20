@@ -340,6 +340,17 @@ private fun CjSourceElement.findConstructorNameSource(
         )
     }
 
+    val primaryConstructorNameToken = tokens.asSequence()
+        .takeWhile { it.tokenType != CjTokens.LPAR && it.tokenType != CjTokens.LBRACE }
+        .filter { node -> node.tokenType == CjTokens.IDENTIFIER }
+        .lastOrNull()
+    if (primaryConstructorNameToken != null) {
+        return CjOffsetsOnlySourceElement(
+            startOffset = treeStructure.getStartOffset(primaryConstructorNameToken),
+            endOffset = treeStructure.getEndOffset(primaryConstructorNameToken),
+        )
+    }
+
     return null
 }
 

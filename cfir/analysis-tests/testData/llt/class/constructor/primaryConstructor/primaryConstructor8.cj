@@ -5,9 +5,9 @@
 // See https://cangjie-lang.cn/pages/LICENSE for license information.
 
 class Data {
-    <!CLASS_UNINITIALIZED_FIELD!>var b: Int32<!>
+    var b: Int32
     public let p0: Int32
-    public Data(x: Int32, var <!REDECLARATION!>p0<!>: Int32) {
+    <!CLASS_UNINITIALIZED_FIELD!>p<!>ublic Data(x: Int32, var <!REDECLARATION!>p0<!>: Int32) {
         <!CANNOT_ASSIGN_TO_IMMUTABLE!>this.p0 = 3<!>
     }
 }

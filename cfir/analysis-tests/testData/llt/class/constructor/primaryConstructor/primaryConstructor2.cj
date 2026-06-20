@@ -44,7 +44,7 @@ open class D {
 class E <: D {
     public E(<!MEMBER_VARIABLE_CAN_NOT_SHADOW!>v<!>ar z!: Int64 = 3) {
         var c: Int64 = 2
-        <!ILLEGAL_PLACE_OF_CALLING_THIS_OR_SUPER!>s<!>uper()
+        <!sema_illegal_place_of_calling_this_or_super!>s<!>uper()
     }
 }
 

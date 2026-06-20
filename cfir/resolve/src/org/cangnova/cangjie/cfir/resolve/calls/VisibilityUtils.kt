@@ -26,11 +26,6 @@ fun isVisible(
     val containingDeclarations = candidate.callInfo.containingDeclarations
     val declarationContainingFile = session.cfirProvider.getContainingFile(declaration.symbol)
 
-    // 仓颉官方 lookup 对成员访问先执行同文件放行，再进入访问级别判断。
-    if (declarationContainingFile != null && useSiteFile == declarationContainingFile) {
-        return true
-    }
-
     return when (declaration.status.visibility) {
         Visibilities.Public -> true
         Visibilities.Internal -> {
@@ -38,6 +33,8 @@ fun isVisible(
         }
         Visibilities.Private -> {
             val ownerClassId = declaration.symbol.getOwnerClassId(session.cfirProvider)
+            // 对齐官方 TypeCheckUtil::IsLegalAccess：
+            // 顶层 private 按同文件可见，成员 private 只能在同一 nominal 声明内部访问。
             when (ownerClassId) {
                 null -> canSeePrivateTopLevelDeclarationFromFile(useSiteFile, declarationContainingFile)
                 else -> canSeePrivateMemberOf(ownerClassId, containingDeclarations)

@@ -195,7 +195,9 @@ class CfirCallCompletionResultsWriterTransformer(
         val candidate = calleeReference.candidate
         val originalArgumentList = result.argumentList
 
-        val resultType = completedResultType(candidate)
+        val resultType = candidate.callFailureDiagnosticForResultType()?.let { diagnostic ->
+            ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))
+        } ?: result.resolvedType.substituteType(candidate)
         val allArgs = calleeReference.computeAllArguments(originalArgumentList)
         val (regularMapping, allArgsMapping) = candidate.handleVarargsAndReturnResultingArgumentsMapping(
             argumentList = allArgs,
@@ -862,19 +864,6 @@ class CfirCallCompletionResultsWriterTransformer(
                 }
             }
         }
-    }
-
-    private fun completedResultType(candidate: Candidate): ConeCangJieType {
-        candidate.callFailureDiagnosticForResultType()?.let { diagnostic ->
-            return ConeErrorType(ConeUnreportedDuplicateDiagnostic(diagnostic))
-        }
-
-        val substituted = finallySubstituteOrSelf(candidate.substitutedReturnType())
-        val approximated = typeApproximator.approximateToSuperType(
-            substituted,
-            TypeApproximatorConfiguration.IntermediateApproximationToSupertypeAfterCompletionInK2,
-        ) ?: substituted
-        return integerOperatorApproximator.approximateType(approximated, null) ?: approximated
     }
 
     @OptIn(ApplicabilityDetail::class)

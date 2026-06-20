@@ -6,10 +6,6 @@ pluginManagement {
         gradlePluginPortal()
     }
 
-    plugins {
-        // Should be synced with the version in gradle/libs.versions.toml
-        id("org.jetbrains.kotlin.jvm") version "2.2.0"
-    }
 }
 
 plugins {

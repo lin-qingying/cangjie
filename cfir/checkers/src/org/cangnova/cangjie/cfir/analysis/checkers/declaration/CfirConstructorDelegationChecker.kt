@@ -12,6 +12,8 @@ import org.cangnova.cangjie.cfir.declarations.CfirInterface
 import org.cangnova.cangjie.cfir.declarations.CfirPrimitiveTypeDeclaration
 import org.cangnova.cangjie.cfir.declarations.CfirStruct
 import org.cangnova.cangjie.cfir.declarations.CfirTypeAlias
+import org.cangnova.cangjie.cfir.diagnostics.ConeSimpleDiagnostic
+import org.cangnova.cangjie.cfir.diagnostics.DiagnosticKind
 import org.cangnova.cangjie.cfir.diagnostics.CfirDiagnosticHolder
 import org.cangnova.cangjie.cfir.diagnostics.DiagnosticReporter
 import org.cangnova.cangjie.cfir.diagnostics.reportOn
@@ -47,6 +49,8 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         val owner = context.findClosestDeclaration<CfirClassLikeDeclaration>() ?: return
         val body = declaration.body
 
+        declaration.checkMultiplePrimaryConstructors(owner)
+
         val delegationCalls = body?.collectDelegationCalls().orEmpty()
         val firstStatementDelegation = body?.statements?.firstOrNull().asDelegationCallOrNull()
 
@@ -54,17 +58,49 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
             .filter { delegation -> delegation.call !== firstStatementDelegation?.call }
             .forEach { delegation ->
                 reporter.reportOn(
-                    source = delegation.call.delegationDiagnosticSource() ?: declaration.source,
-                    factory = CfirErrors.ILLEGAL_THIS_OR_SUPER_CALL,
+                    source = delegation.call.delegationDiagnosticSource()?.firstCharacterDiagnosticSource()
+                        ?: declaration.source?.firstCharacterDiagnosticSource(),
+                    factory = CfirErrors.sema_illegal_place_of_calling_this_or_super,
                     a = delegation.kind.keyword,
                 )
             }
 
+        firstStatementDelegation?.checkArgumentMemberAccessBeforeInitialization(owner)
+
         when (firstStatementDelegation?.kind) {
-            DelegationKind.THIS -> checkThisDelegation(owner, declaration, firstStatementDelegation.call)
-            DelegationKind.SUPER -> checkSuperDelegation(owner, declaration, firstStatementDelegation.call)
+            ConstructorDelegationCallKind.THIS -> {
+                if (declaration.isPrimary) {
+                    reporter.reportOn(
+                        source = firstStatementDelegation.call.delegationDiagnosticSource()?.firstCharacterDiagnosticSource()
+                            ?: declaration.source?.firstCharacterDiagnosticSource(),
+                        factory = CfirErrors.sema_illegal_place_of_calling_this_primary_constructor,
+                    )
+                    return
+                }
+                checkThisDelegation(owner, declaration, firstStatementDelegation.call)
+            }
+            ConstructorDelegationCallKind.SUPER -> checkSuperDelegation(owner, declaration, firstStatementDelegation.call)
             null -> checkImplicitSuperRequirement(owner, declaration)
         }
+    }
+
+    context(context: CheckerContext, reporter: DiagnosticReporter)
+    private fun CfirConstructor.checkMultiplePrimaryConstructors(owner: CfirClassLikeDeclaration) {
+        if (!isPrimary) return
+        val primaryConstructors = owner.declarations
+            .asSequence()
+            .filterIsInstance<CfirConstructor>()
+            .filter(CfirConstructor::isPrimary)
+            .toList()
+        val firstPrimary = primaryConstructors.minByOrNull { constructor ->
+            constructor.source?.startOffset ?: Int.MAX_VALUE
+        } ?: return
+        if (this === firstPrimary) return
+
+        reporter.reportOn(
+            source = source?.firstCharacterDiagnosticSource(),
+            factory = CfirErrors.sema_multiple_primary_constructors,
+        )
     }
 
     context(context: CheckerContext, reporter: DiagnosticReporter)
@@ -94,11 +130,6 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
                 factory = CfirErrors.AMBIGUOUS_CONSTRUCTOR_CALL,
                 a = owner.classLikeName(),
             )
-
-            declaration.hasDelegationCycle(constructors) -> reporter.reportOn(
-                source = declaration.source ?: call.delegationDiagnosticSource(),
-                factory = CfirErrors.RECURSIVE_CONSTRUCTOR_CALL,
-            )
         }
     }
 
@@ -108,13 +139,8 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         declaration: CfirConstructor,
         call: CfirFunctionCall,
     ) {
-        val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: run {
-            reporter.reportOn(
-                source = call.delegationDiagnosticSource() ?: declaration.source,
-                factory = CfirErrors.NO_CONSTRUCTOR,
-            )
-            return
-        }
+        // 官方实现只在存在实际父类时检查父类构造器；无显式父类的 `super()` 不产生 NO_CONSTRUCTOR。
+        val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: return
         val constructors = superDeclaration.declarations.filterIsInstance<CfirConstructor>()
         val resolvedConstructor = call.resolvedDelegatedConstructorOrNull()?.takeIf { constructor -> constructor in constructors }
         val candidates = resolvedConstructor?.let(::listOf)
@@ -145,7 +171,6 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         declaration: CfirConstructor,
     ) {
         if (owner !is CfirClass) return
-        if (declaration.body?.collectDelegationCalls()?.isNotEmpty() == true) return
 
         val superDeclaration = owner.directConcreteSuperDeclaration(context) ?: return
         val hasImplicitSuper = superDeclaration.declarations
@@ -154,8 +179,8 @@ object CfirConstructorDelegationChecker : CfirConstructorChecker() {
         if (hasImplicitSuper) return
 
         reporter.reportOn(
-            source = declaration.source,
-            factory = CfirErrors.EXPLICIT_SUPER_CALL_REQUIRED,
+            source = declaration.constructorNameDiagnosticSource(),
+            factory = CfirErrors.sema_no_non_param_constructor_in_super_class,
         )
     }
 }
@@ -192,15 +217,26 @@ private fun reportConstructorArgumentCountMismatch(
     return true
 }
 
-private enum class DelegationKind(val keyword: String) {
+internal enum class ConstructorDelegationCallKind(val keyword: String) {
     THIS("this"),
     SUPER("super"),
 }
 
 private data class ConstructorDelegationCall(
-    val kind: DelegationKind,
+    val kind: ConstructorDelegationCallKind,
     val call: CfirFunctionCall,
 )
+
+context(context: CheckerContext, reporter: DiagnosticReporter)
+private fun ConstructorDelegationCall.checkArgumentMemberAccessBeforeInitialization(owner: CfirClassLikeDeclaration) {
+    val place = when (kind) {
+        ConstructorDelegationCallKind.THIS -> ConstructorMemberAccessPlace.THIS_DELEGATION_ARGUMENT
+        ConstructorDelegationCallKind.SUPER -> ConstructorMemberAccessPlace.SUPER_DELEGATION_ARGUMENT
+    }
+    call.argumentList.arguments.forEach { argument ->
+        argument.checkConstructorMemberAccessBeforeInitialization(owner, place)
+    }
+}
 
 /**
  * 构造器 delegation 相关诊断都应该尽量锚定在 `this` / `super` 关键字本身，
@@ -212,25 +248,35 @@ private fun CfirFunctionCall.delegationName(): Name =
     (calleeReference as? CfirNamedReference)?.name ?: Name.special("<constructor>")
 
 private fun CfirElement?.asDelegationCallOrNull(): ConstructorDelegationCall? {
+    val call = constructorDelegationCallOrNull() ?: return null
+    val kind = call.constructorDelegationKindOrNull() ?: return null
+    return ConstructorDelegationCall(kind, call)
+}
+
+internal fun CfirElement?.constructorDelegationCallOrNull(): CfirFunctionCall? {
     if (this is CfirWrappedExpression) {
-        return expression.asDelegationCallOrNull()
+        return expression.constructorDelegationCallOrNull()
     }
     val call = this as? CfirFunctionCall ?: return null
-    return when (call.origin.toDelegationKindOrNull()) {
-        DelegationKind.THIS -> ConstructorDelegationCall(DelegationKind.THIS, call)
-        DelegationKind.SUPER -> ConstructorDelegationCall(DelegationKind.SUPER, call)
-        null -> when ((call.calleeReference as? CfirNamedReference)?.name?.asString()) {
-            "this" -> ConstructorDelegationCall(DelegationKind.THIS, call)
-            "super" -> ConstructorDelegationCall(DelegationKind.SUPER, call)
+    return call.takeIf { it.constructorDelegationKindOrNull() != null }
+}
+
+internal fun CfirFunctionCall.constructorDelegationKindOrNull(): ConstructorDelegationCallKind? {
+    return when (origin.toDelegationKindOrNull()) {
+        ConstructorDelegationCallKind.THIS -> ConstructorDelegationCallKind.THIS
+        ConstructorDelegationCallKind.SUPER -> ConstructorDelegationCallKind.SUPER
+        null -> when ((calleeReference as? CfirNamedReference)?.name?.asString()) {
+            "this" -> ConstructorDelegationCallKind.THIS
+            "super" -> ConstructorDelegationCallKind.SUPER
             else -> null
         }
     }
 }
 
-private fun CfirFunctionCallOrigin.toDelegationKindOrNull(): DelegationKind? {
+private fun CfirFunctionCallOrigin.toDelegationKindOrNull(): ConstructorDelegationCallKind? {
     return when (this) {
-        CfirFunctionCallOrigin.ConstructorDelegationThis -> DelegationKind.THIS
-        CfirFunctionCallOrigin.ConstructorDelegationSuper -> DelegationKind.SUPER
+        CfirFunctionCallOrigin.ConstructorDelegationThis -> ConstructorDelegationCallKind.THIS
+        CfirFunctionCallOrigin.ConstructorDelegationSuper -> ConstructorDelegationCallKind.SUPER
         else -> null
     }
 }
@@ -262,42 +308,42 @@ private fun CfirFunctionCall.resolvedDelegatedConstructorOrNull(): CfirConstruct
     }
 }
 
-private fun CfirConstructor.requiredParameterCount(): Int =
+internal fun CfirConstructor.requiredParameterCount(): Int =
     valueParameters.count { it.defaultValue == null }
 
-private fun CfirConstructor.hasDelegationCycle(constructors: List<CfirConstructor>): Boolean {
-    val visited = linkedSetOf<CfirConstructor>()
-    var current: CfirConstructor? = this
-
-    while (current != null && visited.add(current)) {
-        val delegationCall = current.body?.statements?.firstOrNull().asDelegationCallOrNull()
-        if (delegationCall?.kind != DelegationKind.THIS) return false
-
-        val resolvedConstructor = delegationCall.call.resolvedDelegatedConstructorOrNull()
-            ?.takeIf { constructor -> constructor in constructors }
-        val candidates = resolvedConstructor?.let(::listOf)
-            ?: constructors.filter { constructor -> constructor.matchesDelegationCall(delegationCall.call) }
-        if (candidates.size != 1) return false
-        current = candidates.single()
-    }
-
-    return current != null
-}
-
-private fun CfirClassLikeDeclaration.directConcreteSuperDeclaration(context: CheckerContext): CfirClassLikeDeclaration? {
+internal fun CfirClassLikeDeclaration.directConcreteSuperDeclaration(
+    context: CheckerContext,
+    includeLoopInSupertypeError: Boolean = false,
+): CfirClassLikeDeclaration? {
     return superTypeRefs
-        .mapNotNull { superTypeRef -> superTypeRef.toResolvedSuperDeclaration(context) }
+        .mapNotNull { superTypeRef ->
+            superTypeRef.toResolvedSuperDeclaration(
+                context = context,
+                includeLoopInSupertypeError = includeLoopInSupertypeError,
+            )
+        }
         .firstOrNull { superDeclaration -> superDeclaration !is CfirInterface }
 }
 
-private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toResolvedSuperDeclaration(context: CheckerContext): CfirClassLikeDeclaration? {
+private fun org.cangnova.cangjie.cfir.types.CfirTypeRef.toResolvedSuperDeclaration(
+    context: CheckerContext,
+    includeLoopInSupertypeError: Boolean,
+): CfirClassLikeDeclaration? {
     val resolvedTypeRef = this as? CfirResolvedTypeRef ?: return null
-    if (resolvedTypeRef.coneType is ConeErrorType) return null
-    return resolvedTypeRef.coneType.toResolvedSuperDeclaration(context)
+    val coneType = resolvedTypeRef.coneType
+    val effectiveTypeRef = if (coneType is ConeErrorType) {
+        if (!includeLoopInSupertypeError) return null
+        val diagnostic = coneType.diagnostic as? ConeSimpleDiagnostic ?: return null
+        if (diagnostic.kind != DiagnosticKind.LoopInSupertype) return null
+        resolvedTypeRef.delegatedTypeRef as? CfirResolvedTypeRef ?: return null
+    } else {
+        resolvedTypeRef
+    }
+    return effectiveTypeRef.coneType.toResolvedSuperDeclaration(context)
 }
 
 private fun ConeCangJieType.toResolvedSuperDeclaration(context: CheckerContext): CfirClassLikeDeclaration? {
-    val expanded = fullyExpandTypeAlias()
+    val expanded = fullyExpandTypeAlias(context)
     val classId = when (expanded) {
         is ConePrimitiveType -> expanded.kind.classId
         is ConeClassLikeType -> expanded.classId
@@ -311,10 +357,20 @@ private fun ConeCangJieType.toResolvedSuperDeclaration(context: CheckerContext):
         ?: context.session.symbolProvider.getClassLikeSymbolByClassId(classId)?.cfir
 }
 
-private fun ConeCangJieType.fullyExpandTypeAlias(): ConeCangJieType {
+private fun ConeCangJieType.fullyExpandTypeAlias(context: CheckerContext): ConeCangJieType {
     var current = this
-    while (current is ConeTypeAliasType && current.expandedType != null) {
-        current = current.expandedType ?: break
+    val visitedAliases = linkedSetOf<ClassId>()
+    while (current is ConeTypeAliasType && visitedAliases.add(current.classId)) {
+        val embeddedExpandedType = current.expandedType
+        if (embeddedExpandedType != null) {
+            current = embeddedExpandedType
+            continue
+        }
+        val typeAlias = context.session.cfirProvider.getCfirClassifierByFqName(current.classId) as? CfirTypeAlias
+            ?: context.session.symbolProvider.getClassLikeSymbolByClassId(current.classId)?.cfir as? CfirTypeAlias
+            ?: break
+        val expandedType = (typeAlias.expandedTypeRef as? CfirResolvedTypeRef)?.coneType ?: break
+        current = expandedType
     }
     return current
 }

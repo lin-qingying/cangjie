@@ -9,7 +9,7 @@ interface I {}
 
 struct A <: I {}
 
-func f(<!chir_dce_unused_variable!>x<!>: I) {}
+func f(x: I) {}
 
 main() {
     match (f) {

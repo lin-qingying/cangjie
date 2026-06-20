@@ -192,7 +192,7 @@ class MacroArtifactResolver {
                     artifactSignature = artifactSignature,
                     cjoHash = visibleCjoHash,
                     dynamicLibHash = executableDynamicLibHash,
-                    dependenciesBchirHash = executableBchirHash,
+                    dependenciesArtifactHash = executableBchirHash,
                     resolverAlgorithmVersion = ALGORITHM_VERSION,
                 )
             }

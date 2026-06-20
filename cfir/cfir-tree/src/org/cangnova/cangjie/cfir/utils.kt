@@ -150,7 +150,6 @@ fun <R : CfirTypeRef> R.copyWithNewSource(newSource: CjSourceElement): R {
             typeRef.customRenderer,
         )
 
-        else -> error("copyWithNewSource is not implemented for ${typeRef::class.qualifiedName}")
     } as R
 }
 
